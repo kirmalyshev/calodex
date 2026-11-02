@@ -18,7 +18,7 @@ import {
   explainTargets, lintCopy, localDate, MAX_USER_LINE, onboardingContentFor, planCopyFor, planJourney, fill,
   projectGoal, projectionMonth, resolveCountry, suggestionFirst,
   screenForStep, screenOptions,
-  kcalNumbers, signupCopyFor, weightDisplay, wholeNumbers, type Profile,
+  kcalNumbers, minHealthyWeightKg, signupCopyFor, weightDisplay, weightToKg, wholeNumbers, type Profile,
 } from "@eait/shared";
 import { PKCS8_BEGIN, PKCS8_END, configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
@@ -33,6 +33,7 @@ import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { escape, PAGE_COPY } from "./page.ts";
 import { pageCopyFor } from "./copy.ts";
+import { targetFloor } from "./page/question.ts";
 import { createWebApp } from "../../frontend/server/index.ts";
 import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 
@@ -1286,6 +1287,14 @@ describe("the streak goal", () => {
 });
 
 describe("the target-weight ruler", () => {
+  it("never stops below the server's floor, at any height (#2524)", () => {
+    for (let cm = 120; cm <= 230; cm++) {
+      const floor = minHealthyWeightKg(cm)!;
+      expect(weightToKg("imperial", targetFloor(floor, "imperial")), `${cm}cm`).toBeGreaterThanOrEqual(floor);
+      expect(targetFloor(floor, "metric"), `${cm}cm`).toBe(floor);
+    }
+  });
+
   it("stops on whole pounds and half kilos, so a stored weight reads back as picked (#2517)", async () => {
     const session = await signIn();
     const metric = await walkTo(session, "target_weight_kg");
