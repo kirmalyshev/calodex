@@ -1273,6 +1273,16 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the echoes under the numbers (#2514)", () => {
+  it("names the resting burn on the activity question and the day's burn on the target", async () => {
+    const session = await signIn();
+    expect(await walkTo(session, "activity")).toMatch(/<p class="t13 m qecho">At rest: \d+kcal a day<\/p>/);
+    const target = await walkTo(session, "target_weight_kg");
+    expect(target).toMatch(/<p class="burnline">Your days burn \d+kcal<\/p>/);
+    expect(target.indexOf(`class="burnline"`)).toBeLessThan(target.indexOf(`class="live`));
+  });
+});
+
 describe("the target-weight ruler", () => {
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
