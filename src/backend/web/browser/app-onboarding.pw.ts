@@ -27,6 +27,9 @@ test("the whole W3 walk: plan, sign-up, country, first meal — and back", async
 
   // ── The sign-up: terms required, marketing optional ─────────────────────────────────────
   await page.getByRole("link", { name: "Continue", exact: true }).click();
+  // The streak goal sits between the plan and the sign-up, 14 already picked.
+  await expect(page).toHaveURL(/\/start\/streak/);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page).toHaveURL(/\/start\/signup/);
   await expect(page.getByRole("heading", { name: "Save your progress" })).toBeVisible();
   await expect(page.locator('input[name="terms"]')).not.toBeChecked();

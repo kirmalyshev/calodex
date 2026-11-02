@@ -253,6 +253,7 @@ export const BOARD_CSS = `
    say + figure + button as ONE group, so the ask travels with the cards (#291). how runs the
    boards' 1080 — the three cards need it; ontrack keeps the question column's 720. */
 .ob .wmain.mom { padding-top: 16px; margin: 0 auto; width: 100%; }
+.ob .wmain.pastbar .wcol { padding-top: 24px; }
 .ob .wmain.wide { max-width: 1080px; }
 .ob .igroup { flex: 1; display: flex; flex-direction: column; gap: 24px; min-height: 0; }
 .ob .card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 16px; }

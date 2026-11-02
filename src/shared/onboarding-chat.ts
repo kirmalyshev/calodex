@@ -135,8 +135,8 @@ export const CHAT_PROMPTS: readonly ChatPrompt[] = [
   // Apple Health is the LAST place now — a post-sign-up sync offer, not the body-facts shortcut it
   // was: onboarding v2 types the body on the rulers and Health only keeps them current.
   { id: "health", place: "health", kind: "health" },
-  // The streak goal is the LAST place now — asked after the first verdict, where its reader
-  // (Home's streak chip) is one tap away, not between the questions where nothing showed it back.
+  // The streak goal is the LAST place now — asked after the first verdict on the phone and after
+  // the plan on the web, near its reader (Home's streak chip), not between the questions.
   { id: "streak_goal_days", place: "streak", field: "streak_goal_days", kind: "choice", options: STREAK_GOALS.map(String) },
 ] as const;
 

@@ -27,6 +27,9 @@ test("answers before an account, the plan before the sign-up, and the first meal
 
   // The plan's way on is the sign-up screen, which asks for the two boxes AND the provider.
   await page.getByRole("link", { name: "Continue", exact: true }).click();
+  // The streak goal sits between the plan and the sign-up, 14 already picked.
+  await expect(page).toHaveURL(/\/start\/streak/);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page).toHaveURL(/\/start\/signup/);
   await expect(page.locator('input[name="terms"]')).toBeVisible();
   await expect(page.locator('input[name="marketing"]')).toBeVisible();
