@@ -105,7 +105,7 @@ function optionControl(v: QuestionView): string {
     const label = c?.label ?? optionLabel(place as OnboardingScreenId, o, v.lang);
     if (place === "activity") {
       // The four bands: the count is the badge, the row's words are its hint ("No workouts").
-      return optRow({ value: o, label: c?.hint ?? label, badge: label, checked: chosen.has(o) });
+      return optRow({ value: o, label: c?.hint ?? label, badge: label, ring: true, checked: chosen.has(o) });
     }
     return optRow({
       value: o,
