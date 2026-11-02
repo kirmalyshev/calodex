@@ -293,6 +293,9 @@ function heightControl(v: QuestionView): { seg: string; control: string } {
   return { seg: unitsSeg(v, "height"), control: ctl + alt };
 }
 
+/** The weight rulers' stop: half a kilo, a whole pound. */
+const weightStep = (units: UnitSystem): number => (units === "imperial" ? 1 : 0.5);
+
 function weightControl(v: QuestionView): { seg: string; control: string } {
   const stored = v.current[0] !== undefined ? Number(v.current[0]) : v.profile.weight_kg;
   const kg = v.draft ?? stored ?? ONBOARDING_NEUTRAL.weightKg;
@@ -304,16 +307,16 @@ function weightControl(v: QuestionView): { seg: string; control: string } {
     : BANDS.weight_kg;
   const word = v.units === "imperial" ? "lb" : "kg";
   const ctl = rulerControl(v, {
-    ticks: t, val, min, max, step: 0.5,
+    ticks: t, val, min, max, step: weightStep(v.units),
     fmt: "int", vertical: false, smalls: spellUnit(v.lang, word), unitWord: spellUnit(v.lang, word), settle: true,
   });
-  return { seg: unitsSeg(v, "weight"), control: ctl + numAlt(v, numInput(v, val, min, max, 0.5), spellUnit(v.lang, word)) };
+  return { seg: unitsSeg(v, "weight"), control: ctl + numAlt(v, numInput(v, val, min, max, weightStep(v.units)), spellUnit(v.lang, word)) };
 }
 
-/** The goal line for every half-step the target ruler can stop on (ieat-app#2050's 09). */
+/** The goal line for every stop on the target ruler (ieat-app#2050's 09). */
 function targetGoals(v: QuestionView, min: number, max: number): Record<string, string> {
   const goals: Record<string, string> = {};
-  for (let d = min; d <= max + 1e-9; d += 0.5) {
+  for (let d = min; d <= max + 1e-9; d += weightStep(v.units)) {
     const key = Math.round(d * 10) / 10;
     const line = targetGoalLine(v.profile, v.units === "imperial" ? lbToKg(key) : key, v.units, v.today, v.lang);
     if (line !== null) goals[String(key)] = line;
@@ -343,7 +346,7 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
   const max = Math.round(disp(Math.max(range?.max ?? 0, (nowKg ?? 0) + 20, val + 10)));
   const now = nowKg !== null ? disp(nowKg) : undefined;
   const ctl = rulerControl(v, {
-    ticks: t, val: Math.max(val, min), min, max, step: 0.5,
+    ticks: t, val: Math.max(val, min), min, max, step: weightStep(v.units),
     fmt: "int", vertical: false, smalls: spellUnit(v.lang, word), unitWord: spellUnit(v.lang, word), settle: true,
     marks: true,
     now: now !== undefined
@@ -352,7 +355,7 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
     delta: { dn: copy.target.deltaDown, up: copy.target.deltaUp },
     goals: targetGoals(v, min, max),
   });
-  const alt = numAlt(v, numInput(v, Math.max(val, min), min, max, 0.5), spellUnit(v.lang, word));
+  const alt = numAlt(v, numInput(v, Math.max(val, min), min, max, weightStep(v.units)), spellUnit(v.lang, word));
   return { seg: unitsSeg(v, "weight"), control: ctl + alt };
 }
 

@@ -708,9 +708,16 @@ export function weightDisplay(kg: number, units: Units | null, lang: Lang): stri
   const v = units === "imperial" ? kg * LB_PER_KG : kg;
   const u = units === "imperial" ? "lb" : "kg";
   // A body weight is picked in whole pounds and stored to 0.1kg, so its tenth is the round trip's
-  // noise (165lb read 164.9). A rate or a delta is smaller than any body and keeps its tenth.
+  // noise (165lb read 164.9). A rate is smaller than any body and keeps its tenth.
   const shown = units === "imperial" && kg >= BANDS.weight_kg[0] ? kgToLb(kg) : Math.round(v * 10) / 10;
   return `${numbers(lang)(shown)}${spellUnit(lang, u)}`;
+}
+
+/** The distance between two stored weights, as the two figures on screen subtract: 165lb to 151lb is 14lb (#2517). */
+export function weightDeltaDisplay(aKg: number, bKg: number, units: Units | null, lang: Lang): string {
+  return units === "imperial"
+    ? `${numbers(lang)(Math.abs(kgToLb(aKg) - kgToLb(bKg)))}${spellUnit(lang, "lb")}`
+    : weightDisplay(Math.abs(aKg - bKg), units, lang);
 }
 
 /** A maintainer's goal is a band, not a point (#1694): ±2% of today's weight, CalZen's 62 → 61–63. */
@@ -808,7 +815,7 @@ export function targetGoalLine(p: Profile, targetKg: number, units: Units, today
   if (proj === null || proj.beyondHorizon) return null;
   const c = planCopyFor(lang);
   return fill(targetKg < p.weight_kg ? c.goalLose : c.goalGain, {
-    kg: weightDisplay(Math.abs(p.weight_kg - targetKg), units, lang),
+    kg: weightDeltaDisplay(p.weight_kg, targetKg, units, lang),
     month: projectionMonth(today, proj.weeks, lang),
   });
 }
@@ -886,7 +893,7 @@ export function planGoalLine(p: Profile, today: Date, lang: Lang): string | null
   const projection = projectGoal(p, explainTargets(p, today).basis);
   if (projection === null || projection.beyondHorizon) return null;
   return fill(p.goal === "gain" ? copy.goalGain : copy.goalLose, {
-    delta: weightDisplay(Math.abs(p.weight_kg - p.target_weight_kg), p.units, lang),
+    delta: weightDeltaDisplay(p.weight_kg, p.target_weight_kg, p.units, lang),
     month: projectionMonth(today, projection.weeks, lang),
   });
 }
@@ -925,9 +932,9 @@ export function planHeadline(p: Profile, today: Date, units: UnitSystem, lang: L
   if (p.goal !== "lose" || p.weight_kg === null || p.target_weight_kg === null) return null;
   const projection = projectGoal(p, explainTargets(p, today).basis);
   if (projection === null || projection.beyondHorizon) return null;
-  const loss = p.weight_kg - p.target_weight_kg;
+  const loss = units === "imperial" ? kgToLb(p.weight_kg) - kgToLb(p.target_weight_kg) : p.weight_kg - p.target_weight_kg;
   return fill(chatCopyFor(lang).planGoal[units], {
-    n: numbers(lang)(units === "imperial" ? kgToLb(loss) : loss),
+    n: numbers(lang)(loss),
     month: projectionMonth(today, projection.weeks, lang),
   });
 }
