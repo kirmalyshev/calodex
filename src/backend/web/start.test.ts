@@ -1277,6 +1277,13 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the country grid", () => {
+  it("lays the rows out in the board's three columns", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toContain(".ob .cty .opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }");
+  });
+});
+
 describe("the preliminary plan card", () => {
   it("colours a surplus as the accent and drops the burn row with no burn to show (#2512)", async () => {
     const session = await signIn();
