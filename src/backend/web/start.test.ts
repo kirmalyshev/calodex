@@ -1276,6 +1276,18 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the echoes under the numbers (#2514)", () => {
+  it("names the resting burn on the activity question and the day's burn on the target", async () => {
+    const session = await signIn();
+    const activity = await walkTo(session, "activity");
+    expect(activity).toMatch(/<p class="qecho">At rest: \d+kcal a day<\/p>/);
+    expect(activity).toContain(".ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }");
+    const target = await walkTo(session, "target_weight_kg");
+    expect(target).toMatch(/<p class="burnline">Your days burn \d+kcal<\/p>/);
+    expect(target.indexOf(`class="burnline"`)).toBeLessThan(target.indexOf(`class="live`));
+  });
+});
+
 describe("the streak goal", () => {
   it("runs 7 to 50 with 14 preselected, as the board draws it", async () => {
     const session = await signIn();

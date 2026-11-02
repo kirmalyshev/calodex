@@ -69,7 +69,9 @@ export const BOARD_CSS = `
 .ob .say { display: block; }
 .ob .stopcard .say { display: flex; gap: 12px; align-items: flex-start; }
 .ob .qsub { margin-top: 14px; font-size: 16px; line-height: 1.4; color: var(--ink); }
-.ob .qecho { margin: -6px 0 0; }
+/* 8 under the question, as board 08 draws it: the column's 18 less 10. */
+.ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }
+.ob .burnline { align-self: center; text-align: center; margin: 14px 0 0; font-size: 15px; color: var(--muted); }
 .ob .spud { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-tint);
             display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
 .ob .spud svg { width: 78%; height: 78%; display: block; }
