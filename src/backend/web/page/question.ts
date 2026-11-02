@@ -60,7 +60,7 @@ function page(v: QuestionView, opts: { seg?: string; control: string; foot?: str
 <div class="wmain one q"><div class="wcol">
 ${dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
 ${say(v.lines, opts.sub)}
-${opts.echo ? `<p class="t13 m qecho">${escape(opts.echo)}</p>` : ""}
+${opts.echo ? `<p class="qecho">${escape(opts.echo)}</p>` : ""}
 ${error}
 ${opts.seg ?? ""}
 <form class="qform" method="post" action="${escape(v.action)}" novalidate>
