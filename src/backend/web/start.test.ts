@@ -6,6 +6,7 @@
 // else. The verifier, the sign-in, the profile validation, the target arithmetic and the rendering
 // are all the real ones.
 
+import { prelimCards } from "./page/moment.ts";
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { createHash } from "node:crypto";
@@ -1273,6 +1274,21 @@ describe("the v2 questions that write the new fields", () => {
     // gate agrees, which is `full.onboarded` on the same `onboarded_at`.
     expect((await store.getProfile(await webUser(session)))!.onboarded_at).not.toBeNull();
     expect((await get("/start/q", session)).headers.get("location")).toBe("/start/plan");
+  });
+});
+
+describe("the preliminary plan card", () => {
+  it("colours a surplus as the accent and drops the burn row with no burn to show (#2512)", async () => {
+    const session = await signIn();
+    await answerAll(session, ANSWERS);
+    const p = (await store.getProfile(await webUser(session)))!;
+    const surplus = prelimCards({ ...p, goal: "gain", target_weight_kg: p.weight_kg! + 6 }, "en");
+    expect(surplus).toContain(`class="plg up"`);
+    expect(surplus).toMatch(/You burn.*You eat/s);
+    const flat = prelimCards({ ...p, height_cm: null }, "en");
+    expect(flat).not.toContain("You burn");
+    expect(flat).not.toContain(`class="plg`);
+    expect(flat.match(/class="card plc"/g)?.length).toBe(1);
   });
 });
 
@@ -2595,6 +2611,12 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
           const href = html.match(/<a[^>]*class="cta[^"]*"[^>]*href="([^"]+)"/)?.[1]
             ?? html.match(/<a[^>]*href="([^"]+)"[^>]*class="cta[^"]*"/)?.[1];
           if (href === undefined) throw new Error("a page with neither a prompt nor a continue");
+          // Board 10b: one card, burn then the pace in care blue then eat (#2512).
+          if (lang === "en" && next.includes("show=prelim")) {
+            expect(html.match(/class="card plc"/g)?.length).toBe(1);
+            expect(html).toMatch(/You burn.*class="plg care".*You eat/s);
+            expect(html).not.toContain(`class="card brow"`);
+          }
           // The BMI band is formatted, not typed: German writes the tenth with a comma (#2518).
           if (lang === "de" && html.includes(`class="bm-w"`)) expect(html).toContain(`<div class="bm-w">25–29,9</div>`);
           next = href.replace(/&amp;/g, "&");

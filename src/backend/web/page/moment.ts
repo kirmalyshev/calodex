@@ -40,26 +40,28 @@ function baselineCards(profile: Profile, lang: Lang): string {
 }
 
 /**
- * `prelim` — the mid-journey plan as two rows: "You burn" (the maintenance number the answers
+ * `prelim` — the mid-journey plan as ONE card (board 10b), its two rows: "You burn" (the maintenance number the answers
  * produce — `basis.tdee`, rest plus the days' own activity) against "You eat" (the plan's kcal),
  * with the signed gap named as the pace. `explainTargets` is the one path a kcal target may come
  * from, so the card reads it like every other plan surface. A flat-band profile has no burn to
  * split, and draws the plan's row only.
  */
-function prelimCards(profile: Profile, lang: Lang): string {
+export function prelimCards(profile: Profile, lang: Lang): string {
   const p = chatCopyFor(lang).prelim;
   const { targets, basis } = explainTargets(profile, new Date());
   const kn = kcalNumbers(lang);
   const signed = (x: number): string =>
     (Math.round(x) < 0 ? "−" : Math.round(x) > 0 ? "+" : "") + kn(Math.abs(Math.round(x)));
-  const row = (label: string, figure: string) =>
-    `<div class="card brow"><div><span>${escape(label)}</span>` +
-    `<b class="num">${escape(figure)} <small>${escape(p.perDay)}</small></b></div></div>`;
-  const burn = basis.tdee === null ? "" : row(p.burn, `≈${kn(basis.tdee)}`);
-  const eat = row(p.eat, kn(targets.kcal));
-  const gap = basis.tdee === null ? ""
-    : `<p class="muted-sub cen">${escape(fill(p.gap, { delta: signed(targets.kcal - basis.tdee) }))}</p>`;
-  return `<div class="bstack">${burn}${eat}${gap}</div>`;
+  const row = (label: string, figure: string, eat: boolean) =>
+    `<div class="plr${eat ? " eat" : ""}" role="group" aria-label="${escape(`${label} ${figure} ${p.perDay}`)}">` +
+    `<span>${escape(label)}</span><b class="num">${escape(figure)}</b></div>`;
+  const delta = basis.tdee === null ? 0 : Math.round(targets.kcal - basis.tdee);
+  // DIRECTION (How we got there): a deficit pace is care blue, a surplus the accent, zero muted.
+  const tone = delta < 0 ? "care" : delta > 0 ? "up" : "flat";
+  const burn = basis.tdee === null ? "" : row(p.burn, `≈${kn(basis.tdee)}`, false) +
+    `<p class="plg ${tone}">${escape(fill(p.gap, { delta: signed(delta) }))}</p>`;
+  return `<div class="bstack"><div class="card plc">${burn}${row(p.eat, kn(targets.kcal), true)}` +
+    `<p class="plu" aria-hidden="true">${escape(p.perDay)}</p></div></div>`;
 }
 
 /** An interstitial — the two beats between the questions. GET, not POST: they collect nothing,
