@@ -4,7 +4,7 @@
 // names (`?show=`), not POST handlers of their own: Continue is a link back into the walk.
 
 import {
-  bmi, BMI_AXIS, chatCopyFor, explainTargets, fill, kcalNumbers, numbers,
+  bmi, BMI_AXIS, bmiRange, bmiRangeLabel, chatCopyFor, explainTargets, fill, kcalNumbers, numbers,
 } from "@eait/shared";
 import type { Lang, Profile } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
@@ -34,7 +34,7 @@ function baselineCards(profile: Profile, lang: Lang): string {
     `<span class="bm-v" aria-label="${escape(shown)}"><span class="count" style="--to:${whole};--d:.5s;animation-duration:1.2s"></span>${escape(tail)}</span></div>` +
     `<div class="bm-ax num" aria-hidden="true">${axis}</div>` +
     `<div class="bm-sc"><span class="bm-k" style="left:${at}%"></span></div>` +
-    `<div class="bm-w">${escape(b.bands[band!])}</div></div>`;
+    `<div class="bm-w">${escape(bmiRangeLabel(bmiRange(value), lang))}</div></div>`;
   return `<div class="bstack">${meter}` +
     `<p class="muted-sub cen">${escape(b.what)}</p></div>`;
 }

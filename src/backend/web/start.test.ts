@@ -1221,6 +1221,8 @@ describe("the v2 questions that write the new fields", () => {
     await walkTo(session, "barriers");
     const html = await (await get("/start/q", session)).text();
     expect(html).toContain('name="prompt" value="barriers"');
+    // Board 11b: the question heads the page, "Pick all that fit" sits under it (#2513).
+    expect(html).toContain(`<h1 class="q">What stopped you?</h1><p class="qsub">Pick all that fit</p>`);
     // The chips are the new vocabulary's, labelled from the content — none of the retired one.
     expect(html).toContain('value="too_long"');
     expect(html).not.toContain('value="binge"');
@@ -1718,7 +1720,13 @@ describe("the session account, before and after sign-up (S8)", () => {
     expect(winner.sex).toBe("female");
     expect(winner.food_allergies).toBe("nuts");
     expect(winner.onboarded_at).not.toBeNull();
-    expect((await get("/start/country", signed)).status).toBe(200);
+    const country = await get("/start/country", signed);
+    expect(country.status).toBe(200);
+    // Board 16-country: an empty ring on every row, and only the pick is ticked (#2511).
+    const countryPage = await country.text();
+    expect(countryPage).toContain(`<span class="ck"></span>`);
+    expect(countryPage).not.toContain(`<span class="ck"><i`);
+    expect(countryPage).toContain(`.ob .cty .opt:has(input:checked) .ck::after`);
     // The tick the person just made is stamped where they actually landed.
     expect((await store.consentOf(real))?.termsAcceptedAt).not.toBeNull();
     // And the session account is gone — its token resolves to nothing, answers and all.
@@ -2567,6 +2575,8 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
             expect(html).toMatch(/You burn.*class="plg care".*You eat/s);
             expect(html).not.toContain(`class="card brow"`);
           }
+          // The BMI band is formatted, not typed: German writes the tenth with a comma (#2518).
+          if (lang === "de" && html.includes(`class="bm-w"`)) expect(html).toContain(`<div class="bm-w">25–29,9</div>`);
           next = href.replace(/&amp;/g, "&");
           continue;
         }

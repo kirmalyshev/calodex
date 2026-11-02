@@ -438,11 +438,14 @@ export function question(v: QuestionView): string {
     case "activity":
     case "diet":
     case "counted":
-    case "barrier":
     case "situation":
     case "streak":
     case "medical":
       return page(v, { control: optionControl(v) });
+    // Every language's barrier ask is [question, "Pick all that fit"]; `say` heads with the last
+    // line, and board 11b heads with the question.
+    case "barrier":
+      return page({ ...v, lines: [...v.lines].reverse() }, { control: optionControl(v) });
     case "age":
       return page(v, { ...ageControl(v), sub: chatCopyFor(v.lang).ageWhy });
     case "height": {
