@@ -69,7 +69,9 @@ export const BOARD_CSS = `
 .ob .say { display: block; }
 .ob .stopcard .say { display: flex; gap: 12px; align-items: flex-start; }
 .ob .qsub { margin-top: 14px; font-size: 16px; line-height: 1.4; color: var(--ink); }
-.ob .qecho { margin: -6px 0 0; }
+/* 8 under the question, as board 08 draws it: the column's 18 less 10. */
+.ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }
+.ob .burnline { align-self: center; text-align: center; margin: 14px 0 0; font-size: 15px; color: var(--muted); }
 .ob .spud { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-tint);
             display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
 .ob .spud svg { width: 78%; height: 78%; display: block; }
@@ -435,6 +437,15 @@ export const BOARD_CSS = `
 .ob .bverdict { margin-top: 14px; padding: 14px 18px; border-radius: 16px; background: #FDF1DE; }
 .ob .bverdict b { display: block; font-size: 16px; }
 .ob .bverdict span { font-size: 14px; color: var(--muted); }
+.ob .plc { padding: 18px 22px; }
+.ob .plr { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; }
+.ob .plr span { font-size: 16px; color: var(--muted); }
+.ob .plr b { font-size: 26px; color: var(--ink); }
+.ob .plr.eat b { color: var(--accent); }
+.ob .plg { margin: 0; padding: 6px 0; border-top: 1px dashed var(--line); text-align: right; font-size: 13px; color: var(--muted); }
+.ob .plg.care { color: var(--care); }
+.ob .plg.up { color: var(--accent); }
+.ob .plu { margin: 0; text-align: right; font-size: 13px; color: var(--muted); }
 .ob .brow { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-top: 14px; }
 .ob .brow .bt { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-tint); display: grid; place-items: center; font-size: 22px; }
 .ob .brow span:not(.bt) { display: block; font-size: 13px; color: var(--muted); }
