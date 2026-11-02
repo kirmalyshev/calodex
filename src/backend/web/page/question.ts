@@ -8,9 +8,9 @@
 // field (the walk's `?draft=` and the toggle's POST are how a typed value crosses a unit change).
 
 import {
-  BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, fill, heightDisplayValue,
+  basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, explainTargets, fill, heightDisplayValue, kcalNumbers,
   minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, pacePreview, PACES, rulerLabels, RULER_TICKS,
-  lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
+  LB_PER_KG, lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
   targetRange,
   weightDisplay, weightDisplayValue,
 } from "@eait/shared";
@@ -60,7 +60,7 @@ function page(v: QuestionView, opts: { seg?: string; control: string; foot?: str
 <div class="wmain one q"><div class="wcol">
 ${dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
 ${say(v.lines, opts.sub)}
-${opts.echo ? `<p class="t13 m qecho">${escape(opts.echo)}</p>` : ""}
+${opts.echo ? `<p class="qecho">${escape(opts.echo)}</p>` : ""}
 ${error}
 ${opts.seg ?? ""}
 <form class="qform" method="post" action="${escape(v.action)}" novalidate>
@@ -145,6 +145,8 @@ interface RulerCfg {
   /** The target's goal line per ruler value (display units, one decimal) — the script swaps it as
       the needle moves; a value with no honest date has no entry and draws nothing. */
   goals?: Record<string, string> | undefined;
+  /** A line between the ruler and the live delta (board 09: "Your days burn 1793kcal"). */
+  under?: string | undefined;
   settle?: boolean | undefined;
   /** `marks` draws the marker labels INSTEAD of the numbered scale — the target board, where the
       "lowest" and "now" words would overprint the numbers. */
@@ -216,7 +218,7 @@ function rulerControl(v: QuestionView, cfg: RulerCfg): string {
     (cfg.now ? ` data-now="${cfg.now.at}"` : "") +
     (cfg.delta ? ` data-dn="${escape(cfg.delta.dn)}" data-up="${escape(cfg.delta.up)}"` : "") +
     `>` +
-    (cfg.vertical ? `<div class="vpick">${bign}${ruler}</div>` : `${bign}${ruler}${live}`) +
+    (cfg.vertical ? `<div class="vpick">${bign}${ruler}</div>` : `${bign}${ruler}${cfg.under ? `<p class="burnline">${escape(cfg.under)}</p>` : ""}${live}`) +
     (cfg.goals ? `<p class="goal d d17 num" data-goals="${escape(JSON.stringify(cfg.goals))}">` +
       `${escape(cfg.goals[String(Math.round(cfg.val * 10) / 10)] ?? "")}</p>` : "") +
     `</div>`;
@@ -329,6 +331,10 @@ function targetGoals(v: QuestionView, min: number, max: number): Record<string, 
   return goals;
 }
 
+/** The ruler's lowest stop for a healthy minimum: a whole pound, up from the exact figure. */
+export const targetFloor = (minKg: number, units: UnitSystem): number =>
+  units === "imperial" ? Math.ceil(minKg * LB_PER_KG) : minKg;
+
 function targetControl(v: QuestionView): { seg: string; control: string } {
   const copy = chatCopyFor(v.lang);
   const kg = v.draft
@@ -345,15 +351,15 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
   // The ruler STOPS at the healthy minimum (ieat-app#2050, Kirill 12 Oct): no refused zone drawn
   // under it and no "lowest we set" mark — the board has neither — but nothing below the floor can
   // be picked, and the POST still refuses one typed by hand (#1610's guard is the server's).
-  const min = minHealthy !== null
-    ? Math.ceil(disp(minHealthy) * 2) / 2
-    : Math.round(disp(30));
+  const min = minHealthy !== null ? targetFloor(minHealthy, v.units) : Math.round(disp(30));
   const max = Math.round(disp(Math.max(range?.max ?? 0, (nowKg ?? 0) + 20, val + 10)));
   const now = nowKg !== null ? disp(nowKg) : undefined;
+  const burn = explainTargets(v.profile, v.today).basis.tdee;
   const ctl = rulerControl(v, {
     ticks: t, val: Math.max(val, min), min, max, step: weightStep(v.units),
     fmt: "int", vertical: false, smalls: spellUnit(v.lang, word), unitWord: spellUnit(v.lang, word), settle: true,
     marks: true,
+    under: burn === null ? undefined : fill(copy.echo.days, { burn: kcalNumbers(v.lang)(burn) }),
     now: now !== undefined
       ? { at: now, label: fill(copy.target.now, { weight: weightDisplay(nowKg!, v.units, v.lang) }) }
       : undefined,
@@ -443,13 +449,19 @@ export function question(v: QuestionView): string {
   switch (place) {
     case "goal":
     case "sex":
-    case "activity":
     case "diet":
     case "counted":
     case "situation":
     case "streak":
     case "medical":
       return page(v, { control: optionControl(v) });
+    case "activity": {
+      const rest = basalMetabolicRate(v.profile, v.today);
+      return page(v, {
+        control: optionControl(v),
+        echo: rest === null ? null : fill(chatCopyFor(v.lang).echo.rest, { rest: kcalNumbers(v.lang)(rest) }),
+      });
+    }
     // Every language's barrier ask is [question, "Pick all that fit"]; `say` heads with the last
     // line, and board 11b heads with the question.
     case "barrier":

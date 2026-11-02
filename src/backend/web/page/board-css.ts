@@ -69,12 +69,14 @@ export const BOARD_CSS = `
 .ob .say { display: block; }
 .ob .stopcard .say { display: flex; gap: 12px; align-items: flex-start; }
 .ob .qsub { margin-top: 14px; font-size: 16px; line-height: 1.4; color: var(--ink); }
-.ob .qecho { margin: -6px 0 0; }
+/* 8 under the question, as board 08 draws it: the column's 18 less 10. */
+.ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }
+.ob .burnline { align-self: center; text-align: center; margin: 14px 0 0; font-size: 15px; color: var(--muted); }
 .ob .spud { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-tint);
             display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
 .ob .spud svg { width: 78%; height: 78%; display: block; }
 /* The board's heading (CZ): 34px, left, under the bar — the question is the page's title. */
-.ob .q { font-size: 34px; font-weight: 700; letter-spacing: -.035em; line-height: 1.12; text-wrap: balance; }
+.ob h1.q { font-size: 34px; font-weight: 700; letter-spacing: -.035em; line-height: 1.12; text-wrap: balance; }
 /* Continue sits at the foot of the screen, and stays there over a list that scrolls under it. */
 .ob .qform > .cta.p:last-child, .ob .igroup > .cta.p:last-child {
   margin-top: auto; position: sticky; bottom: 24px; z-index: 1; max-width: none; align-self: stretch; }
@@ -90,7 +92,7 @@ export const BOARD_CSS = `
 .ob .cta.p[disabled] { opacity: .45; cursor: default; }
 
 /* ── the unit toggle ── */
-.ob .seg { display: flex; background: var(--hair); border-radius: 10px;
+.ob .seg { display: flex; line-height: 1.45; background: var(--hair); border-radius: 10px;
            padding: 3px; gap: 2px; width: 150px; align-self: center; }
 /* .wcol form stacks and stretches every form for the one-form screens — the toggle is a row
    the size of its two options, so the column rule is taken back where it would apply. */
@@ -99,7 +101,7 @@ export const BOARD_CSS = `
                   text-align: center; color: var(--muted); background: none; cursor: pointer; font-family: var(--sans); }
 .ob .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 
-/* ── option rows: the board's full-width list — 68 tall, 20 round, 16 apart, picked in the accent ── */
+/* ── option rows: the board's full-width list — 68 tall, 20 round, 10 apart, picked in the accent ── */
 .ob .opts { display: flex; flex-direction: column; gap: 10px; }
 @media (min-width: 721px) {
   .ob .opts.c2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -154,11 +156,11 @@ export const BOARD_CSS = `
              mask-image: linear-gradient(180deg, transparent, #000 38px, #000 calc(100% - 38px), transparent); }
 .ob .wheel::-webkit-scrollbar { display: none; }
 .ob .wheel .wr { height: 44px; display: flex; align-items: center; justify-content: center;
-                 scroll-snap-align: center; font-size: 12px; color: var(--faint); opacity: .3;
+                 scroll-snap-align: center; font-size: 12px; font-weight: 600; color: var(--faint); opacity: .3;
                  font-variant-numeric: tabular-nums; }
 .ob .wheel .wr.o1 { font-size: 19px; opacity: .75; }
 .ob .wheel .wr.o2 { font-size: 16px; opacity: .55; }
-.ob .wheel .wr.on { font-size: 22px; color: var(--ink); opacity: 1; }
+.ob .wheel .wr.on { font-size: 22px; font-weight: 700; color: var(--ink); opacity: 1; }
 
 /* the vertical ruler (height) */
 .ob .vruler { width: 88px; height: 380px; position: relative;
@@ -202,7 +204,7 @@ export const BOARD_CSS = `
 /* the live delta pill under the target ruler — clear of the tick band, not flush on it (#473) */
 .ob .live { position: relative; width: fit-content; margin: 12px auto 0; background: var(--accent-tint);
             border-radius: var(--r-card); padding: 14px 28px; font-size: 28px; font-weight: 700;
-            letter-spacing: -.02em; color: var(--ink); }
+            letter-spacing: -.02em; line-height: 1.45; color: var(--ink); }
 
 /* ── pace (10, the CZ board): "From … to …", the computed rate with the cap's pill under it, an
    accent slider with a white pill thumb, the three names under it, and the landing as a card.
@@ -440,6 +442,15 @@ export const BOARD_CSS = `
 .ob .bverdict { margin-top: 14px; padding: 14px 18px; border-radius: 16px; background: #FDF1DE; }
 .ob .bverdict b { display: block; font-size: 16px; }
 .ob .bverdict span { font-size: 14px; color: var(--muted); }
+.ob .plc { padding: 18px 22px; }
+.ob .plr { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; }
+.ob .plr span { font-size: 16px; color: var(--muted); }
+.ob .plr b { font-size: 26px; color: var(--ink); }
+.ob .plr.eat b { color: var(--accent); }
+.ob .plg { margin: 0; padding: 6px 0; border-top: 1px dashed var(--line); text-align: right; font-size: 13px; color: var(--muted); }
+.ob .plg.care { color: var(--care); }
+.ob .plg.up { color: var(--accent); }
+.ob .plu { margin: 0; text-align: right; font-size: 13px; color: var(--muted); }
 .ob .brow { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-top: 14px; }
 .ob .brow .bt { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-tint); display: grid; place-items: center; font-size: 22px; }
 .ob .brow span:not(.bt) { display: block; font-size: 13px; color: var(--muted); }
