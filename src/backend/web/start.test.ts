@@ -1277,6 +1277,16 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the option grids", () => {
+  it("draws the boards' columns: four tiles for activity, two for the lists", async () => {
+    expect(await walkTo(await signIn(), "activity")).toContain(`<div class="opts c4">`);
+    for (const id of ["barriers", "situations", "diet", "medical"]) {
+      expect(await walkTo(await signIn(), id), id).toContain(`<div class="opts c2">`);
+    }
+    expect(await walkTo(await signIn(), "streak_goal_days")).toContain(`<div class="opts">`);
+  });
+});
+
 describe("the question heading's type", () => {
   // `.q` also names the page's column (`.wmain.q`), so the heading's 34px bold tight type reached
   // every line under it and the small lines read tighter than the boards.
