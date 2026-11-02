@@ -2553,6 +2553,8 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
           const href = html.match(/<a[^>]*class="cta[^"]*"[^>]*href="([^"]+)"/)?.[1]
             ?? html.match(/<a[^>]*href="([^"]+)"[^>]*class="cta[^"]*"/)?.[1];
           if (href === undefined) throw new Error("a page with neither a prompt nor a continue");
+          // The BMI band is formatted, not typed: German writes the tenth with a comma (#2518).
+          if (lang === "de" && html.includes(`class="bm-w"`)) expect(html).toContain(`<div class="bm-w">25–29,9</div>`);
           next = href.replace(/&amp;/g, "&");
           continue;
         }
