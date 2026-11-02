@@ -776,7 +776,7 @@ describe("the questions", () => {
     expect(asked).toEqual([
       "goal", "sex", "birth_year", "height_cm", "weight_kg",
       "activity", "target_weight_kg", "pace", "counted_before", "barriers", "situations",
-      "diet", "medical", "streak_goal_days",
+      "diet", "medical",
     ]);
   });
 
@@ -832,7 +832,7 @@ describe("the plan reveal", () => {
       expect(res.status).toBe(303);
       const set = res.headers.getSetCookie().find((c) => c.startsWith("eait_web="));
       if (set) cookie = set.split(";")[0]!;
-      if (id === "streak_goal_days") {
+      if (id === "medical") {
         // The patch that wrote `complete_onboarding` answers with the plan itself.
         expect(res.headers.get("location")).toBe("/start/plan");
       }
@@ -862,7 +862,7 @@ describe("the plan", () => {
     expect(html).toContain(kcalNumbers(profile.lang)(targets.kcal));
     // The plan's one way on is the sign-up screen (S8): consent and the provider buttons live
     // there, and the first meal is behind them.
-    expect(html).toContain('href="/start/signup"');
+    expect(html).toContain('href="/start/streak"');
   });
 
   it("serves the offer to the route that asks for it, only when one is configured", async () => {
@@ -927,9 +927,9 @@ describe("the plan", () => {
     expect(html).toContain(`≤ ${n(targets.satfat_g!)}g`);
 
     // The primary is the sign-up screen (S8): the account needs an identity before a meal can
-    // be read, and `/start/signup` is where the consent and the buttons live.
+    // be read, and `/start/signup`, one step on from the streak goal, is where the consent lives.
     expect(html).toContain(pageCopyFor("en").continueLabel);
-    expect(html).toContain('href="/start/signup"');
+    expect(html).toContain('href="/start/streak"');
     expect(html).not.toContain('<select name="lang"');
   });
 
@@ -1246,13 +1246,10 @@ describe("the v2 questions that write the new fields", () => {
     const res = await post("/start/q?asked=diet", { prompt: "diet", answer: ["pescatarian"] }, session);
     const loc = res.headers.get("location") ?? "";
     expect(loc).toContain("asked=diet");
-    // `medical` is no longer the last question — the streak is — so its write carries BOTH marks
-    // forward to it rather than answering with a card.
+    // `medical` is the last question, so its write completes the walk and lands on the plan.
     await walkTo(session, "medical");
     const done = await post("/start/q?asked=diet", { prompt: "medical", answer: ["none"] }, session);
-    const doneLoc = done.headers.get("location") ?? "";
-    expect(doneLoc).toContain("asked=diet");
-    expect(doneLoc).toContain("asked=medical");
+    expect(done.headers.get("location")).toBe("/start/plan");
   });
 
   it("writes medical [] for 'none', and keeps a picked diet", async () => {
@@ -1265,10 +1262,10 @@ describe("the v2 questions that write the new fields", () => {
     expect((await store.getProfile(await webUser(session)))!.restrictions).toEqual(["mediterranean"]);
   });
 
-  it("finishes onboarding on the LAST question's patch — the streak — and the plan's gate holds", async () => {
+  it("finishes onboarding on the LAST question's patch — medical — and the plan's gate holds", async () => {
     const session = await signIn();
     await answerAll(session, ANSWERS);
-    // The streak was the last field prompt, so the profile is onboarded already — and the plan's
+    // Medical is the walk's last field prompt, so the profile is onboarded already — and the plan's
     // gate agrees, which is `full.onboarded` on the same `onboarded_at`.
     expect((await store.getProfile(await webUser(session)))!.onboarded_at).not.toBeNull();
     expect((await get("/start/q", session)).headers.get("location")).toBe("/start/plan");
@@ -1276,12 +1273,39 @@ describe("the v2 questions that write the new fields", () => {
 });
 
 describe("the streak goal", () => {
-  it("runs 7 to 50 with 14 preselected, as the board draws it", async () => {
+  /** A finished walk, standing on the plan. */
+  const planned = async () => {
     const session = await signIn();
-    const html = await walkTo(session, "streak_goal_days");
+    await answerAll(session, ANSWERS);
+    return session;
+  };
+
+  it("comes right after the plan, past the bar: 7 to 50, 14 preselected", async () => {
+    const session = await planned();
+    expect(await (await get("/start/plan", session)).text()).toContain(`href="/start/streak"`);
+    const html = await (await get("/start/streak", session)).text();
+    expect(html).not.toContain(`class="dash"`);
     const rows = [...html.matchAll(/<input[^>]*name="answer"[^>]*>/g)].map((m) => m[0]);
     expect(rows.map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["7", "14", "30", "50"]);
     expect(rows.filter((r) => /\schecked/.test(r)).map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["14"]);
+  });
+
+  it("writes the pick and goes on to the sign-up; a bad value writes nothing", async () => {
+    const session = await planned();
+    const user = await webUser(session);
+    expect((await post("/start/streak", { answer: "9" }, session)).status).toBe(200);
+    expect((await store.getProfile(user))!.streak_goal_days).toBeNull();
+    const res = await post("/start/streak", { answer: "30" }, session);
+    expect(res.headers.get("location")).toBe("/start/signup");
+    expect((await store.getProfile(user))!.streak_goal_days).toBe(30);
+    // Reopened, it shows the pick rather than the default.
+    expect(await (await get("/start/streak", session)).text()).toMatch(/value="30"[^>]*checked/);
+  });
+
+  it("waits for the plan: before the walk ends it resumes the walk", async () => {
+    const session = await signIn();
+    await post("/start/q", { prompt: "goal", answer: "lose" }, session);
+    expect((await get("/start/streak", session)).headers.get("location")).toBe("/start/q");
   });
 });
 
@@ -2187,7 +2211,7 @@ describe("the plan page hands over to the product", () => {
     // S8: the plan's one way on is the consent screen that attaches Apple or Google to the
     // account the questions just made. There is no "get the app" and no meal link beside it.
     const html = await planFor(true);
-    expect(html).toContain('href="/start/signup"');
+    expect(html).toContain('href="/start/streak"');
   });
 
   it("links no chat from the plan — the sign-up is the only door (#499's routes still serve)", async () => {
@@ -2599,7 +2623,7 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
 
       // Country is NOT a walk question (S8) — it waits for the sign-up below.
       expect(seen, lang).not.toContain("country");
-      expect(seen.at(-1), lang).toBe("streak_goal_days");
+      expect(seen.at(-1), lang).toBe("medical");
 
       // The plan, then the consent screen — in the language the questions were answered in,
       // which the first answer wrote into the session account.
@@ -2794,10 +2818,10 @@ describe("the counter and Back (#53)", () => {
       .toEqual(expect.arrayContaining(["ldl"]));
     // Back into the question (#53's edit), tick "none of these" — a no-script browser could
     // send it beside a real tag, and the only honest read of both is none. `medical` is a view
-    // of `restrictions`: mid-walk the edit bounces into the question itself, which is the same
-    // place a Back lands — the chips render unticked, so an empty post would store `[]`.
+    // of `restrictions`: the walk is complete, so the edit draws the question itself, which is the
+    // same place a Back lands.
     const edit = await get("/start/q?edit=medical", session);
-    expect(edit.status).toBe(303);
+    expect(edit.status).toBe(200);
     const res = await post("/start/q", { prompt: "medical", answer: ["ldl", "none"] }, session);
     expect(res.status).toBe(303);
     const p = (await store.getProfile(await webUser(session)))!;

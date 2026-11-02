@@ -169,6 +169,7 @@ const SESSION_COOKIE = "eait_web";
 const REF_COOKIE = "eait_ref";
 const REF_MAX_AGE = 7 * 24 * 60 * 60;
 const REFERRAL_PATH = `${START_PREFIX}/referral`;
+const STREAK_PATH = `${START_PREFIX}/streak`;
 const OAUTH_COOKIE = "eait_oauth";
 const OAUTH_TTL_S = 600;
 /**
@@ -330,7 +331,7 @@ const failedCallback = (pathname: string): Response => seeOther(pathname);
 
 /**
  * WHERE A SESSION RESUMES — the flow's own order (S8): questions on the session account, then the
- * plan, then sign-up, then the one deferred question, then the product. A cookie from any point
+ * plan and its streak goal, then sign-up, then the one deferred question, then the product. A cookie from any point
  * in that lands wherever its account actually is, so closing a tab mid-walk is not a lost walk.
  *
  * The sign-in routes and the front door both call this; it is the single place the order lives.
@@ -359,16 +360,16 @@ function questionsFor(profile: Profile, content: OnboardingContent, askCountry =
 
 /**
  * The W2 walk — the field questions PLUS the two interstitials inside them (`baseline` after the
- * weight, `prelim` after the pace). The `welcome`, `summary`, `signup`
- * and `country` places are out: the front door renders its own, the rest are the steps after
- * this walk ends (the plan, sign-up — W3).
+ * weight, `prelim` after the pace). The `welcome`, `summary`, `signup`, `country` and `streak`
+ * places are out: the front door renders its own, the rest are the steps after this walk ends (the
+ * plan, the streak goal, sign-up — W3).
  */
 /** The cards the walk draws between and after the questions; `summary` and `signup` are not. */
 const BEAT_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
 
 function walkFor(profile: Profile, content: OnboardingContent): ChatPrompt[] {
   const off = disabledScreens(content);
-  return promptsFor(profile, [...off, "country"], { health: false })
+  return promptsFor(profile, [...off, "country", "streak"], { health: false })
     .filter((p) => p.field !== undefined || BEAT_PLACES.includes(p.place));
 }
 
@@ -1277,9 +1278,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
             }]
           : []);
       }
-      // COMPLETION RIDES THE LAST QUESTION'S PATCH, whichever one it is — `streak_goal_days`, since
-      // country is S8's own screen after the sign-up and never in this walk. It goes on the patch rather
-      // than a second POST so a partial write can never mark a run complete.
+      // COMPLETION RIDES THE LAST QUESTION'S PATCH, whichever one it is — country and the streak
+      // goal are screens of their own after the plan and never in this walk. It goes on the patch
+      // rather than a second POST so a partial write can never mark a run complete.
       const lastField = walk.length - 1 - [...walk].reverse().findIndex((p) => p.field !== undefined);
       const patch: PatchProfileRequest = {
         ...(editIndex === -1 && at === lastField
@@ -1440,6 +1441,33 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       // The stored profile read above still says country=null. Onboarded, signed in, country just
       // written: what is left is the optional friend's-link step, then the product.
       return seeOther(REFERRAL_PATH);
+    }
+    return notFound();
+  }
+
+  // ── The streak goal, right after the plan (#2516) ─────────────────────────────────────────
+  //
+  // The phone asks it after the first verdict, which the web does not have at this point; the plan
+  // is the nearest moment the goal means something. Optional in effect: a tab closed here leaves
+  // the goal null, and the phone asks it once. Past the bar, so no dash and no way back into the walk.
+  if (pathname === STREAK_PATH) {
+    const signup = `${START_PREFIX}/signup`;
+    if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
+    const content = await onboardingContent(ctx.deps, profile.lang);
+    if (disabledScreens(content).includes("streak")) return seeOther(signup);
+    const prompt = promptById("streak_goal_days")!;
+    const units = profile.units ?? "metric";
+    const ask = (error: string | null) => html(renderQuestion(
+      [prompt], 0, profile, content, error, [], undefined, currentAnswer(prompt, profile), STREAK_PATH, units,
+    ));
+    if (req.method === "GET") return ask(null);
+    if (req.method === "POST") {
+      const form = await req.formData().catch(() => null);
+      const answers = form?.getAll("answer").filter((v): v is string => typeof v === "string") ?? [];
+      const answer = answerFor(prompt, answers, profile, units);
+      if (answer.kind !== "patch") return ask(pageCopyFor(profile.lang).answerRequired);
+      await patchProfile(ctx.deps, userId, answer.patch);
+      return seeOther(signup);
     }
     return notFound();
   }
@@ -1656,7 +1684,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       basis: full.basis,
       projection: projectGoal(full.profile, full.basis),
       content,
-      next: `${START_PREFIX}/signup`,
+      next: disabledScreens(content).includes("streak") ? `${START_PREFIX}/signup` : STREAK_PATH,
       back: backBefore(walkFor(full.profile, content), Infinity),
       hasWebApp: ctx.hasWebApp,
       lang: profile.lang,

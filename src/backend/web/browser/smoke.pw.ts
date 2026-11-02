@@ -24,6 +24,9 @@ test("a person signs in, answers the questions, and reaches their plan", async (
   // The plan's one way on is the sign-up (S8): the consent screen, not a meal and not a chat —
   // and THIS account already signed in, so the sign-up bounces it straight to the next step.
   await page.getByRole("link", { name: "Continue", exact: true }).click();
+  // The streak goal sits between the plan and the sign-up, 14 already picked.
+  await expect(page).toHaveURL(/\/start\/streak/);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page).toHaveURL(/\/start\/country/);
 });
 

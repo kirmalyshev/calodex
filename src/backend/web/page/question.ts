@@ -58,7 +58,7 @@ function page(v: QuestionView, opts: { seg?: string; control: string; foot?: str
   ).join("");
   const body = `${wtop()}
 <div class="wmain one q"><div class="wcol">
-${dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
+${v.prompt.place === "streak" ? "" : dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
 ${say(v.lines, opts.sub)}
 ${opts.echo ? `<p class="t13 m qecho">${escape(opts.echo)}</p>` : ""}
 ${error}
