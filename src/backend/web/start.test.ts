@@ -1220,6 +1220,8 @@ describe("the v2 questions that write the new fields", () => {
     await walkTo(session, "barriers");
     const html = await (await get("/start/q", session)).text();
     expect(html).toContain('name="prompt" value="barriers"');
+    // Board 11b: the question heads the page, "Pick all that fit" sits under it (#2513).
+    expect(html).toContain(`<h1 class="q">What stopped you?</h1><p class="qsub">Pick all that fit</p>`);
     // The chips are the new vocabulary's, labelled from the content — none of the retired one.
     expect(html).toContain('value="too_long"');
     expect(html).not.toContain('value="binge"');
@@ -1285,7 +1287,28 @@ describe("the echoes under the numbers (#2514)", () => {
   });
 });
 
+describe("the streak goal", () => {
+  it("runs 7 to 50 with 14 preselected, as the board draws it", async () => {
+    const session = await signIn();
+    const html = await walkTo(session, "streak_goal_days");
+    const rows = [...html.matchAll(/<input[^>]*name="answer"[^>]*>/g)].map((m) => m[0]);
+    expect(rows.map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["7", "14", "30", "50"]);
+    expect(rows.filter((r) => /\schecked/.test(r)).map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["14"]);
+  });
+});
+
 describe("the target-weight ruler", () => {
+  it("stops on whole pounds and half kilos, so a stored weight reads back as picked (#2517)", async () => {
+    const session = await signIn();
+    const metric = await walkTo(session, "target_weight_kg");
+    expect(metric).toContain(`data-step="0.5"`);
+    const action = metric.match(/action="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "/start/q";
+    await post(action, { prompt: "target_weight_kg", setunits: "imperial" }, session);
+    const imperial = await (await get("/start/q", session)).text();
+    expect(imperial).toContain(`data-step="1"`);
+    expect(imperial).not.toContain(`data-step="0.5"`);
+  });
+
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
     const session = await signIn();
@@ -1714,7 +1737,13 @@ describe("the session account, before and after sign-up (S8)", () => {
     expect(winner.sex).toBe("female");
     expect(winner.food_allergies).toBe("nuts");
     expect(winner.onboarded_at).not.toBeNull();
-    expect((await get("/start/country", signed)).status).toBe(200);
+    const country = await get("/start/country", signed);
+    expect(country.status).toBe(200);
+    // Board 16-country: an empty ring on every row, and only the pick is ticked (#2511).
+    const countryPage = await country.text();
+    expect(countryPage).toContain(`<span class="ck"></span>`);
+    expect(countryPage).not.toContain(`<span class="ck"><i`);
+    expect(countryPage).toContain(`.ob .cty .opt:has(input:checked) .ck::after`);
     // The tick the person just made is stamped where they actually landed.
     expect((await store.consentOf(real))?.termsAcceptedAt).not.toBeNull();
     // And the session account is gone — its token resolves to nothing, answers and all.
@@ -2557,6 +2586,8 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
           const href = html.match(/<a[^>]*class="cta[^"]*"[^>]*href="([^"]+)"/)?.[1]
             ?? html.match(/<a[^>]*href="([^"]+)"[^>]*class="cta[^"]*"/)?.[1];
           if (href === undefined) throw new Error("a page with neither a prompt nor a continue");
+          // The BMI band is formatted, not typed: German writes the tenth with a comma (#2518).
+          if (lang === "de" && html.includes(`class="bm-w"`)) expect(html).toContain(`<div class="bm-w">25–29,9</div>`);
           next = href.replace(/&amp;/g, "&");
           continue;
         }
@@ -2882,6 +2913,8 @@ describe("refer a friend", () => {
     const step = await (await get("/start/referral", `${signed}; ${ref}`)).text();
     expect(step).toContain(`value="api.eait.fit/r/${code}"`);
     expect(step).toContain(escape(PAGE_COPY.referralAsk));
+    // The bar tops the plain column, and only the step below it is centred (`web/ob-referral.html`).
+    expect(step).toMatch(/<div class="wmain one refstep"><div class="wcol">\s*<div class="wbar">.*?class="dash".*?<\/div><\/div>\s*<div class="refmid"><div class="ref">/s);
 
     const applied = await post("/start/referral", { code: `api.eait.fit/r/${code}` }, `${signed}; ${ref}`);
     expect(applied.status).toBe(200);

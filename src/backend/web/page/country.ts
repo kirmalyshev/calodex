@@ -63,7 +63,7 @@ export function country(v: CountryView): string {
     return `    <label class="opt"><input type="radio" name="answer" value="${escape(c)}"` +
       `${c === v.selected ? " checked" : ""}>` +
       `<span class="flag${c === "other" ? " any" : ""}">${escape(flag)}</span>` +
-      `<span>${escape(label)}</span><span class="ck"><i class="ico i-check"></i></span></label>`;
+      `<span>${escape(label)}</span><span class="ck"></span></label>`;
   }).join("\n");
 
   return shell(PAGE_COPY.titleStart, `${wtop()}
