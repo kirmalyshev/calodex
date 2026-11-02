@@ -214,7 +214,7 @@ export const W3_CSS = `
 .ob .cty .srch input { flex: 1; border: 0; background: none; font: inherit; color: var(--ink);
   font-size: 15px; outline: none; }
 .ob .cty form { display: flex; flex-direction: column; gap: 14px; }
-.ob .cty .opts { grid-template-columns: repeat(3, 1fr); }
+.ob .cty .opts { display: grid; grid-template-columns: repeat(3, 1fr); }
 .ob .cty .opt { padding: 14px; font-size: 15px; }
 .ob .cty .opt .flag { font-size: 22px; width: 28px; flex: 0 0 28px; text-align: center; }
 .ob .cty .opt .flag.any { color: var(--muted); font-weight: 600; }

@@ -1273,6 +1273,13 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the country grid", () => {
+  it("lays the rows out in the board's three columns", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toContain(".ob .cty .opts { display: grid; grid-template-columns: repeat(3, 1fr); }");
+  });
+});
+
 describe("the target-weight ruler", () => {
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
