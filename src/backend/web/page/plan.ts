@@ -1,6 +1,6 @@
 import {
   activityWords, fill, kcalNumbers, LANG_LABEL, maintainRange, LANGS_READY, PLAN_TIMELINE, PLAN_WATERFALL, planBalance, planCopyFor,
-  planJourney, planWaterfall, projectionMonth, spellUnit, weightDisplay,
+  planJourney, planWaterfall, projectionMonth, spellUnit, weightDeltaDisplay, weightDisplay,
   wholeNumbers, youCopyFor,
   type FoodTargets, type GoalProjection, type Lang, type OnboardingContent, type Profile,
   type TargetBasis,
@@ -87,7 +87,7 @@ function goalWords(v: PlanView, COPY: ReturnType<typeof planCopyFor>): { kg: str
   if (p.goal === "maintain" || v.projection === null || v.projection.beyondHorizon) return null;
   if (p.weight_kg == null || p.target_weight_kg == null) return null;
   return {
-    kg: weightDisplay(Math.abs(p.weight_kg - p.target_weight_kg), p.units, v.lang),
+    kg: weightDeltaDisplay(p.weight_kg, p.target_weight_kg, p.units, v.lang),
     month: projectionMonth(new Date(), v.projection.weeks, v.lang),
   };
 }

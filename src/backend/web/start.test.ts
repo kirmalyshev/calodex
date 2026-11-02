@@ -1291,7 +1291,28 @@ describe("the preliminary plan card", () => {
   });
 });
 
+describe("the streak goal", () => {
+  it("runs 7 to 50 with 14 preselected, as the board draws it", async () => {
+    const session = await signIn();
+    const html = await walkTo(session, "streak_goal_days");
+    const rows = [...html.matchAll(/<input[^>]*name="answer"[^>]*>/g)].map((m) => m[0]);
+    expect(rows.map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["7", "14", "30", "50"]);
+    expect(rows.filter((r) => /\schecked/.test(r)).map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["14"]);
+  });
+});
+
 describe("the target-weight ruler", () => {
+  it("stops on whole pounds and half kilos, so a stored weight reads back as picked (#2517)", async () => {
+    const session = await signIn();
+    const metric = await walkTo(session, "target_weight_kg");
+    expect(metric).toContain(`data-step="0.5"`);
+    const action = metric.match(/action="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "/start/q";
+    await post(action, { prompt: "target_weight_kg", setunits: "imperial" }, session);
+    const imperial = await (await get("/start/q", session)).text();
+    expect(imperial).toContain(`data-step="1"`);
+    expect(imperial).not.toContain(`data-step="0.5"`);
+  });
+
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
     const session = await signIn();
@@ -2902,6 +2923,8 @@ describe("refer a friend", () => {
     const step = await (await get("/start/referral", `${signed}; ${ref}`)).text();
     expect(step).toContain(`value="api.eait.fit/r/${code}"`);
     expect(step).toContain(escape(PAGE_COPY.referralAsk));
+    // The bar tops the plain column, and only the step below it is centred (`web/ob-referral.html`).
+    expect(step).toMatch(/<div class="wmain one refstep"><div class="wcol">\s*<div class="wbar">.*?class="dash".*?<\/div><\/div>\s*<div class="refmid"><div class="ref">/s);
 
     const applied = await post("/start/referral", { code: `api.eait.fit/r/${code}` }, `${signed}; ${ref}`);
     expect(applied.status).toBe(200);
