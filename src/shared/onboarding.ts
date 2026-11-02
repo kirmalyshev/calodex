@@ -148,7 +148,7 @@ export type OnboardingPlace = OnboardingScreenId | OnboardingInterstitial;
  * (`onboarding/*` boards, fourteen `<i>` each).
  *
  * The welcome is before the count; `signup`, `country`, `referral`, `health` and `streak` sit
- * past it (the streak goal is asked after the first verdict, not inside the questions). So
+ * past it (the phone asks the streak goal after the first verdict, the web after the plan). So
  * the bar is `ONBOARDING_PLACES` minus those six, and
  * `summary` — the plan — is the last segment lit.
  */

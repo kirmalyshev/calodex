@@ -1302,6 +1302,20 @@ describe("the streak goal", () => {
     expect(await (await get("/start/streak", session)).text()).toMatch(/value="30"[^>]*checked/);
   });
 
+  it("a signed-in session that left here resumes here, and only until it answers", async () => {
+    const session = await planned();
+    expect((await get("/start", session)).headers.get("location")).toBe("/start/streak");
+    const res = await post("/start/streak", { answer: "14" }, session);
+    expect(res.headers.get("location")).toBe("/start/signup");
+    expect((await get("/start", session)).headers.get("location")).toBe("/start/country");
+  });
+
+  it("opens 24 under the top bar, as the board does", async () => {
+    const html = await (await get("/start/streak", await planned())).text();
+    expect(html).toContain(`class="wmain one q pastbar"`);
+    expect(html).toMatch(/\.ob \.wmain\.pastbar \.wcol \{ padding-top: 24px; \}/);
+  });
+
   it("waits for the plan: before the walk ends it resumes the walk", async () => {
     const session = await signIn();
     await post("/start/q", { prompt: "goal", answer: "lose" }, session);

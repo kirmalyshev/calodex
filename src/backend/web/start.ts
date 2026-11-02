@@ -339,7 +339,8 @@ const failedCallback = (pathname: string): Response => seeOther(pathname);
 async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Promise<string> {
   if (profile.onboarded_at === null) return `${START_PREFIX}/q`;
   if (await isAnonymous(ctx.deps, userId)) return `${START_PREFIX}/plan`;
-  if (profile.country === null) return `${START_PREFIX}/country`;
+  // Still in the funnel, not an account that finished without a goal: that one goes to the product.
+  if (profile.country === null) return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
   return ctx.hasWebApp ? "/" : CHAT_PATH;
 }
 
@@ -1448,13 +1449,13 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // ── The streak goal, right after the plan (#2516) ─────────────────────────────────────────
   //
   // The phone asks it after the first verdict, which the web does not have at this point; the plan
-  // is the nearest moment the goal means something. Optional in effect: a tab closed here leaves
-  // the goal null, and the phone asks it once. Past the bar, so no dash and no way back into the walk.
+  // is the nearest moment the goal means something. A session that leaves comes back here until it
+  // answers or passes the country; past that a null goal stays null, because the phone's ask
+  // follows a first verdict only its own onboarding owes. Past the bar, so no dash.
   if (pathname === STREAK_PATH) {
     const signup = `${START_PREFIX}/signup`;
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
     const content = await onboardingContent(ctx.deps, profile.lang);
-    if (disabledScreens(content).includes("streak")) return seeOther(signup);
     const prompt = promptById("streak_goal_days")!;
     const units = profile.units ?? "metric";
     const ask = (error: string | null) => html(renderQuestion(
@@ -1684,7 +1685,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       basis: full.basis,
       projection: projectGoal(full.profile, full.basis),
       content,
-      next: disabledScreens(content).includes("streak") ? `${START_PREFIX}/signup` : STREAK_PATH,
+      next: STREAK_PATH,
       back: backBefore(walkFor(full.profile, content), Infinity),
       hasWebApp: ctx.hasWebApp,
       lang: profile.lang,
