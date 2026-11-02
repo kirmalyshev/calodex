@@ -219,6 +219,11 @@ export const W3_CSS = `
 .ob .cty .opt .flag { font-size: 22px; width: 28px; flex: 0 0 28px; text-align: center; }
 .ob .cty .opt .flag.any { color: var(--muted); font-weight: 600; }
 .ob .cty .opt.hide { display: none; }
+.ob .cty .opt .ck { margin-left: auto; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
+.ob .cty .opt:has(input:checked) .ck { background: var(--accent); box-shadow: none; }
+.ob .cty .opt:has(input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .ob .cty .cta { max-width: 360px; align-self: center; }
 /* The account-split note — a small muted caption under the pick, not a paragraph block. */
 .ob .cty .note { margin: 0; font-size: 13px; color: var(--muted); }
