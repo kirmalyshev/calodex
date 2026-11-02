@@ -1273,6 +1273,16 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the question heading's type", () => {
+  // `.q` also names the page's column (`.wmain.q`), so the heading's 34px bold tight type reached
+  // every line under it and the small lines read tighter than the boards.
+  it("stays on the heading", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toContain(".ob h1.q { font-size: 34px;");
+    expect(page).not.toMatch(/\.ob \.q \{/);
+  });
+});
+
 describe("the target-weight ruler", () => {
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
