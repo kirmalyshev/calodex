@@ -1278,6 +1278,15 @@ describe("the v2 questions that write the new fields", () => {
 });
 
 describe("the option grids", () => {
+  it("stacks the activity tile: count, label, ring, as board 08 at web widths", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \{[^}]*flex-direction: column;[^}]*padding: 18px;/);
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.n \{[^}]*font-size: 17px;[^}]*font-weight: 700;/);
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.ol \{[^}]*font-size: 13px;[^}]*font-weight: 400;/);
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.box \{[^}]*align-self: flex-end;/);
+    expect(page).toContain(`<span class="box" aria-hidden="true"></span>`);
+  });
+
   it("spaces options 10 apart and marks the lists with a ring, as boards 11b, 11c, 14 and 14b draw", async () => {
     const barriers = await walkTo(await signIn(), "barriers");
     expect(barriers).toContain(".ob .opts { display: flex; flex-direction: column; gap: 10px; }");

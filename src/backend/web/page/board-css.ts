@@ -107,6 +107,9 @@ export const BOARD_CSS = `
   .ob .opts.c2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ob .opts.c4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .ob .opts.c4 .opt { flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; }
+  .ob .opts.c4 .opt .n { width: auto; height: auto; flex: none; background: none; font-size: 17px; font-weight: 700; }
+  .ob .opts.c4 .opt .ol { flex: none; font-size: 13px; font-weight: 400; color: var(--muted); }
+  .ob .opts.c4 .opt .box { margin-left: 0; align-self: flex-end; }
 }
 .ob .opt { background: var(--surface); border-radius: 20px;
            box-shadow: 0 0 0 1px var(--hair), 0 2px 6px -4px rgba(23,25,28,.12);
