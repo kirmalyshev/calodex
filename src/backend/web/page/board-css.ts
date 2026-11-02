@@ -69,12 +69,14 @@ export const BOARD_CSS = `
 .ob .say { display: block; }
 .ob .stopcard .say { display: flex; gap: 12px; align-items: flex-start; }
 .ob .qsub { margin-top: 14px; font-size: 16px; line-height: 1.4; color: var(--ink); }
-.ob .qecho { margin: -6px 0 0; }
+/* 8 under the question, as board 08 draws it: the column's 18 less 10. */
+.ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }
+.ob .burnline { align-self: center; text-align: center; margin: 14px 0 0; font-size: 15px; color: var(--muted); }
 .ob .spud { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-tint);
             display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
 .ob .spud svg { width: 78%; height: 78%; display: block; }
 /* The board's heading (CZ): 34px, left, under the bar — the question is the page's title. */
-.ob .q { font-size: 34px; font-weight: 700; letter-spacing: -.035em; line-height: 1.12; text-wrap: balance; }
+.ob h1.q { font-size: 34px; font-weight: 700; letter-spacing: -.035em; line-height: 1.12; text-wrap: balance; }
 /* Continue sits at the foot of the screen, and stays there over a list that scrolls under it. */
 .ob .qform > .cta.p:last-child, .ob .igroup > .cta.p:last-child {
   margin-top: auto; position: sticky; bottom: 24px; z-index: 1; max-width: none; align-self: stretch; }
@@ -90,17 +92,25 @@ export const BOARD_CSS = `
 .ob .cta.p[disabled] { opacity: .45; cursor: default; }
 
 /* ── the unit toggle ── */
-.ob .seg { display: flex; background: var(--hair); border-radius: 10px;
+.ob .seg { display: flex; line-height: 1.45; background: var(--hair); border-radius: 10px;
            padding: 3px; gap: 2px; width: 150px; align-self: center; }
 /* .wcol form stacks and stretches every form for the one-form screens — the toggle is a row
    the size of its two options, so the column rule is taken back where it would apply. */
 .ob .wcol .seg { flex-direction: row; flex: none; gap: 2px; }
-.ob .seg button { flex: 1; border: 0; padding: 6px 0; border-radius: 8px; font-size: 13px; font-weight: 600;
+.ob .seg button { flex: 1; border: 0; margin: 0; padding: 6px 0; border-radius: 8px; font-size: 13px; font-weight: 600;
                   text-align: center; color: var(--muted); background: none; cursor: pointer; font-family: var(--sans); }
 .ob .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 
-/* ── option rows: the board's full-width list — 68 tall, 20 round, 16 apart, picked in the accent ── */
-.ob .opts { display: flex; flex-direction: column; gap: 16px; }
+/* ── option rows: the board's full-width list — 68 tall, 20 round, 10 apart, picked in the accent ── */
+.ob .opts { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 721px) {
+  .ob .opts.c2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ob .opts.c4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ob .opts.c4 .opt { flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; }
+  .ob .opts.c4 .opt .n { width: auto; height: auto; flex: none; background: none; font-size: 17px; font-weight: 700; }
+  .ob .opts.c4 .opt .ol { flex: none; font-size: 13px; font-weight: 400; color: var(--muted); }
+  .ob .opts.c4 .opt .box { margin-left: 0; align-self: flex-end; }
+}
 .ob .opt { background: var(--surface); border-radius: 20px;
            box-shadow: 0 0 0 1px var(--hair), 0 2px 6px -4px rgba(23,25,28,.12);
            min-height: 68px; padding: 12px 22px; display: flex; align-items: center; gap: 12px; cursor: pointer;
@@ -119,12 +129,12 @@ export const BOARD_CSS = `
 /* the streak's kg on this plan */
 .ob .opt .end { margin-left: auto; font-weight: 500; color: var(--muted); }
 .ob .opt:has(input:checked) .end { color: var(--accent); }
-/* a multi-select's checkbox */
-.ob .opt .box { margin-left: auto; width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px;
-                box-shadow: inset 0 0 0 2px var(--line); position: relative; }
+/* the ring a list row carries */
+.ob .opt .box { margin-left: auto; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
+                box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
 .ob .opt:has(input:checked) .box { background: var(--accent); box-shadow: none; }
-.ob .opt:has(input:checked) .box::after { content: ""; position: absolute; left: 9px; top: 4px; width: 7px; height: 13px;
-  border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.ob .opt:has(input:checked) .box::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .ob .ico { display: inline-flex; width: 22px; height: 22px; flex: 0 0 auto; }
 
 /* ── the big number + pickers ── */
@@ -149,11 +159,11 @@ export const BOARD_CSS = `
              mask-image: linear-gradient(180deg, transparent, #000 38px, #000 calc(100% - 38px), transparent); }
 .ob .wheel::-webkit-scrollbar { display: none; }
 .ob .wheel .wr { height: 44px; display: flex; align-items: center; justify-content: center;
-                 scroll-snap-align: center; font-size: 12px; color: var(--faint); opacity: .3;
+                 scroll-snap-align: center; font-size: 12px; font-weight: 600; color: var(--faint); opacity: .3;
                  font-variant-numeric: tabular-nums; }
 .ob .wheel .wr.o1 { font-size: 19px; opacity: .75; }
 .ob .wheel .wr.o2 { font-size: 16px; opacity: .55; }
-.ob .wheel .wr.on { font-size: 22px; color: var(--ink); opacity: 1; }
+.ob .wheel .wr.on { font-size: 22px; font-weight: 700; color: var(--ink); opacity: 1; }
 
 /* the vertical ruler (height) */
 .ob .vruler { width: 88px; height: 380px; position: relative;
@@ -197,7 +207,7 @@ export const BOARD_CSS = `
 /* the live delta pill under the target ruler — clear of the tick band, not flush on it (#473) */
 .ob .live { position: relative; width: fit-content; margin: 12px auto 0; background: var(--accent-tint);
             border-radius: var(--r-card); padding: 14px 28px; font-size: 28px; font-weight: 700;
-            letter-spacing: -.02em; color: var(--ink); }
+            letter-spacing: -.02em; line-height: 1.45; color: var(--ink); }
 
 /* ── pace (10, the CZ board): "From … to …", the computed rate with the cap's pill under it, an
    accent slider with a white pill thumb, the three names under it, and the landing as a card.
@@ -436,6 +446,15 @@ export const BOARD_CSS = `
 .ob .bverdict { margin-top: 14px; padding: 14px 18px; border-radius: 16px; background: #FDF1DE; }
 .ob .bverdict b { display: block; font-size: 16px; }
 .ob .bverdict span { font-size: 14px; color: var(--muted); }
+.ob .plc { padding: 18px 22px; }
+.ob .plr { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; }
+.ob .plr span { font-size: 16px; color: var(--muted); }
+.ob .plr b { font-size: 26px; color: var(--ink); }
+.ob .plr.eat b { color: var(--accent); }
+.ob .plg { margin: 0; padding: 6px 0; border-top: 1px dashed var(--line); text-align: right; font-size: 13px; color: var(--muted); }
+.ob .plg.care { color: var(--care); }
+.ob .plg.up { color: var(--accent); }
+.ob .plu { margin: 0; text-align: right; font-size: 13px; color: var(--muted); }
 .ob .brow { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-top: 14px; }
 .ob .brow .bt { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-tint); display: grid; place-items: center; font-size: 22px; }
 .ob .brow span:not(.bt) { display: block; font-size: 13px; color: var(--muted); }

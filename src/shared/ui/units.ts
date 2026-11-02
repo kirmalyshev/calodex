@@ -24,7 +24,7 @@ export type UnitSystem = "metric" | "imperial";
 import { numbers, spellUnit, type Lang } from "../lang.ts";
 
 const CM_PER_IN = 2.54;
-const LB_PER_KG = 2.2046226218;
+export const LB_PER_KG = 2.2046226218;
 
 /** cm → feet and inches, the inch rounded first so 172cm reads 5 ft 8 in, not 5 ft 7.7 in. */
 export function cmToFtIn(cm: number): { ft: number; in: number } {

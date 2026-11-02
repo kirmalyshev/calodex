@@ -6,6 +6,7 @@
 // else. The verifier, the sign-in, the profile validation, the target arithmetic and the rendering
 // are all the real ones.
 
+import { prelimCards } from "./page/moment.ts";
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { createHash } from "node:crypto";
@@ -18,7 +19,7 @@ import {
   explainTargets, lintCopy, localDate, MAX_USER_LINE, onboardingContentFor, planCopyFor, planJourney, fill,
   projectGoal, projectionMonth, resolveCountry, suggestionFirst,
   screenForStep, screenOptions,
-  kcalNumbers, signupCopyFor, weightDisplay, wholeNumbers, type Profile,
+  kcalNumbers, minHealthyWeightKg, signupCopyFor, weightDisplay, weightToKg, wholeNumbers, type Profile,
 } from "@eait/shared";
 import { PKCS8_BEGIN, PKCS8_END, configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
@@ -33,6 +34,7 @@ import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { escape, PAGE_COPY } from "./page.ts";
 import { pageCopyFor } from "./copy.ts";
+import { targetFloor } from "./page/question.ts";
 import { createWebApp } from "../../frontend/server/index.ts";
 import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 
@@ -1272,6 +1274,93 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the option grids", () => {
+  it("stacks the activity tile: count, label, ring, as board 08 at web widths", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \{[^}]*flex-direction: column;[^}]*padding: 18px;/);
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.n \{[^}]*font-size: 17px;[^}]*font-weight: 700;/);
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.ol \{[^}]*font-size: 13px;[^}]*font-weight: 400;/);
+    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.box \{[^}]*align-self: flex-end;/);
+    expect(page).toContain(`<span class="box" aria-hidden="true"></span>`);
+  });
+
+  it("spaces options 10 apart and marks the lists with a ring, as boards 11b, 11c, 14 and 14b draw", async () => {
+    const barriers = await walkTo(await signIn(), "barriers");
+    expect(barriers).toContain(".ob .opts { display: flex; flex-direction: column; gap: 10px; }");
+    expect(barriers).toMatch(/\.ob \.opt \.box \{[^}]*width: 22px;[^}]*border-radius: 50%;/);
+    for (const id of ["barriers", "situations", "diet", "medical"]) {
+      expect(await walkTo(await signIn(), id), id).toContain(`<span class="box" aria-hidden="true"></span>`);
+    }
+  });
+
+  it("draws the boards' columns: four tiles for activity, two for the lists", async () => {
+    expect(await walkTo(await signIn(), "activity")).toContain(`<div class="opts c4">`);
+    for (const id of ["barriers", "situations", "diet", "medical"]) {
+      expect(await walkTo(await signIn(), id), id).toContain(`<div class="opts c2">`);
+    }
+    expect(await walkTo(await signIn(), "streak_goal_days")).toContain(`<div class="opts">`);
+  });
+});
+
+describe("the question heading's type", () => {
+  // `.q` also names the page's column (`.wmain.q`), so the heading's 34px bold tight type reached
+  // every line under it and the small lines read tighter than the boards.
+  it("stays on the heading", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toContain(".ob h1.q { font-size: 34px;");
+    // What `.q` used to hand down by accident, the board asks of each by name.
+    expect(page).toMatch(/\.ob \.wheel \.wr \{[^}]*font-weight: 600;/);
+    expect(page).toMatch(/\.ob \.wheel \.wr\.on \{[^}]*font-weight: 700;/);
+    expect(page).toMatch(/\.ob \.live \{[^}]*line-height: 1\.45;/);
+    expect(page).toMatch(/\.ob \.seg \{[^}]*line-height: 1\.45;/);
+    expect(page).not.toMatch(/\.ob \.q \{/);
+  });
+});
+
+describe("the country grid", () => {
+  it("lays the rows out in the board's three columns", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toContain(".ob .cty .opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }");
+  });
+});
+
+describe("the preliminary plan card", () => {
+  it("colours a surplus as the accent and drops the burn row with no burn to show (#2512)", async () => {
+    const session = await signIn();
+    await answerAll(session, ANSWERS);
+    const p = (await store.getProfile(await webUser(session)))!;
+    const surplus = prelimCards({ ...p, goal: "gain", target_weight_kg: p.weight_kg! + 6 }, "en");
+    expect(surplus).toContain(`class="plg up"`);
+    expect(surplus).toMatch(/You burn.*You eat/s);
+    const flat = prelimCards({ ...p, height_cm: null }, "en");
+    expect(flat).not.toContain("You burn");
+    expect(flat).not.toContain(`class="plg`);
+    expect(flat.match(/class="card plc"/g)?.length).toBe(1);
+  });
+});
+
+describe("the echoes under the numbers (#2514)", () => {
+  it("names the resting burn on the activity question and the day's burn on the target", async () => {
+    const session = await signIn();
+    const activity = await walkTo(session, "activity");
+    expect(activity).toMatch(/<p class="qecho">At rest: \d+kcal a day<\/p>/);
+    expect(activity).toContain(".ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }");
+    const target = await walkTo(session, "target_weight_kg");
+    expect(target).toMatch(/<p class="burnline">Your days burn \d+kcal<\/p>/);
+    expect(target.indexOf(`class="burnline"`)).toBeLessThan(target.indexOf(`class="live`));
+  });
+});
+
+describe("the unit toggle", () => {
+  // shell.ts gives every button a bottom margin; the toggle's options sit centred in their track.
+  it("takes the global button margin back", async () => {
+    const session = await signIn();
+    const html = await walkTo(session, "target_weight_kg");
+    expect(html).toContain(`class="seg"`);
+    expect(html).toMatch(/\.ob \.seg button \{[^}]*margin: 0;/);
+  });
+});
+
 describe("the streak goal", () => {
   /** A finished walk, standing on the plan. */
   const planned = async () => {
@@ -1324,6 +1413,14 @@ describe("the streak goal", () => {
 });
 
 describe("the target-weight ruler", () => {
+  it("never stops below the server's floor, at any height (#2524)", () => {
+    for (let cm = 120; cm <= 230; cm++) {
+      const floor = minHealthyWeightKg(cm)!;
+      expect(weightToKg("imperial", targetFloor(floor, "imperial")), `${cm}cm`).toBeGreaterThanOrEqual(floor);
+      expect(targetFloor(floor, "metric"), `${cm}cm`).toBe(floor);
+    }
+  });
+
   it("stops on whole pounds and half kilos, so a stored weight reads back as picked (#2517)", async () => {
     const session = await signIn();
     const metric = await walkTo(session, "target_weight_kg");
@@ -2612,6 +2709,12 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
           const href = html.match(/<a[^>]*class="cta[^"]*"[^>]*href="([^"]+)"/)?.[1]
             ?? html.match(/<a[^>]*href="([^"]+)"[^>]*class="cta[^"]*"/)?.[1];
           if (href === undefined) throw new Error("a page with neither a prompt nor a continue");
+          // Board 10b: one card, burn then the pace in care blue then eat (#2512).
+          if (lang === "en" && next.includes("show=prelim")) {
+            expect(html.match(/class="card plc"/g)?.length).toBe(1);
+            expect(html).toMatch(/You burn.*class="plg care".*You eat/s);
+            expect(html).not.toContain(`class="card brow"`);
+          }
           // The BMI band is formatted, not typed: German writes the tenth with a comma (#2518).
           if (lang === "de" && html.includes(`class="bm-w"`)) expect(html).toContain(`<div class="bm-w">25–29,9</div>`);
           next = href.replace(/&amp;/g, "&");
