@@ -181,6 +181,8 @@ export const W3_CSS = `
 .ob .eml input.codein.bad { box-shadow: inset 0 0 0 1.5px var(--bad); }
 .ob .eml .eml-note { font-size: 13px; font-weight: 600; margin: 0; }
 /* Refer a friend (#899): the invite page and the friend's-link step — ob-referral-*.html. */
+.ob .wmain.refstep { max-width: 720px; padding-top: 24px; }
+.ob .refmid { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .ob .ref { max-width: 420px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 14px; }
 .ob .ref form { display: flex; flex-direction: column; gap: 10px; }
 .ob .ref .wctas { flex-direction: column; gap: 6px; margin-top: 10px; }
@@ -214,11 +216,16 @@ export const W3_CSS = `
 .ob .cty .srch input { flex: 1; border: 0; background: none; font: inherit; color: var(--ink);
   font-size: 15px; outline: none; }
 .ob .cty form { display: flex; flex-direction: column; gap: 14px; }
-.ob .cty .opts { display: grid; grid-template-columns: repeat(3, 1fr); }
+.ob .cty .opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .ob .cty .opt { padding: 14px; font-size: 15px; }
 .ob .cty .opt .flag { font-size: 22px; width: 28px; flex: 0 0 28px; text-align: center; }
 .ob .cty .opt .flag.any { color: var(--muted); font-weight: 600; }
 .ob .cty .opt.hide { display: none; }
+.ob .cty .opt .ck { margin-left: auto; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
+.ob .cty .opt:has(input:checked) .ck { background: var(--accent); box-shadow: none; }
+.ob .cty .opt:has(input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .ob .cty .cta { max-width: 360px; align-self: center; }
 /* The account-split note — a small muted caption under the pick, not a paragraph block. */
 .ob .cty .note { margin: 0; font-size: 13px; color: var(--muted); }

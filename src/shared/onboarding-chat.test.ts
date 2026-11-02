@@ -20,10 +20,12 @@ import {
   answerLabel, askLines, askPlaceholder, capNote, chatCopyFor, checkDirection, checkNumber,
   countryLabel, dietOf, explainTargets, isAnswered, medicalOf, minHealthyKg, offerHeadline,
   pacePreview, planHeadline, planRows, promptsFor, reconcileGoalEdit, resumeAt,
-  screenForStep, screenOptionValues, screenOptions, switchedLine, weightDisplay,
+  planGoalLine, screenForStep, screenOptionValues, screenOptions, switchedLine, targetGoalLine,
+  weightDeltaDisplay, weightDisplay,
   type ChatPromptId, type Profile,
 } from "./index.ts";
 import { spudSvg } from "./mascot.ts";
+import { lbToKg } from "./ui/units.ts";
 import { onboardingContentFor } from "./onboarding-content.ts";
 
 function profile(over: Partial<Profile> = {}): Profile {
@@ -403,12 +405,40 @@ describe("the plan reveal's rows", () => {
 });
 
 describe("the units toggle", () => {
+  // The distance is the two whole figures on screen subtracted: "From 165lb to 151lb" is 14, never
+  // the 13.9 the stored kilos give (#2517).
+  it("a distance is what the two figures beside it subtract to", () => {
+    expect(weightDeltaDisplay(lbToKg(165), lbToKg(151), "imperial", "en")).toBe("14lb");
+    expect(weightDeltaDisplay(lbToKg(151), lbToKg(165), "imperial", "en")).toBe("14lb");
+    for (let from = 110; from <= 300; from += 7) {
+      for (const by of [3, 8, 14, 21, 40]) {
+        expect(weightDeltaDisplay(lbToKg(from), lbToKg(from - by), "imperial", "en")).toBe(`${by}lb`);
+      }
+    }
+    expect(weightDeltaDisplay(80, 73.5, "metric", "en")).toBe("6.5kg");
+  });
+
+  it("the goal lines read the same distance", () => {
+    const p = profile({
+      units: "imperial", goal: "lose", sex: "male", birth_year: 1990, height_cm: 175, activity: "few", pace: "steady",
+      weight_kg: lbToKg(165), target_weight_kg: lbToKg(151),
+    });
+    const today = new Date("2026-11-02T12:00:00Z");
+    expect(targetGoalLine(p, lbToKg(151), "imperial", today, "en")).toContain("14lb");
+    expect(planGoalLine(p, today, "en")).toContain("14lb");
+    expect(planHeadline(p, today, "imperial", "en")).toContain("14");
+  });
+
   it("writes the stored kilograms in the user's own spelling", () => {
     expect(weightDisplay(68, null, "en")).toBe("68kg");
     expect(weightDisplay(68, "imperial", "en")).toContain("lb");
     expect(weightDisplay(68, "imperial", "en")).not.toContain("kg");
-    // One decimal, locale-formatted — the pace screen's "0.9lb a week".
-    expect(parseFloat(weightDisplay(68, "imperial", "en"))).toBeCloseTo(149.9, 0);
+    // A rate keeps its tenth, locale-formatted — the pace screen's "0.9lb a week".
+    expect(weightDisplay(0.4, "imperial", "en")).toBe("0.9lb");
+    expect(weightDisplay(68, "imperial", "en")).toBe("150lb");
+    // 165lb is stored as 74.8kg; the whole pounds picked come back, not 164.9 (#2517).
+    expect(weightDisplay(lbToKg(165), "imperial", "en")).toBe("165lb");
+    expect(weightDisplay(lbToKg(152), "imperial", "en")).toBe("152lb");
   });
 });
 

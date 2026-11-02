@@ -10132,10 +10132,10 @@
       "StreakGoal": {
         "type": "number",
         "enum": [
-          50,
-          30,
+          7,
           14,
-          7
+          30,
+          50
         ]
       },
       "StreakMark": {
