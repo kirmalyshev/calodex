@@ -1277,6 +1277,21 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the question heading's type", () => {
+  // `.q` also names the page's column (`.wmain.q`), so the heading's 34px bold tight type reached
+  // every line under it and the small lines read tighter than the boards.
+  it("stays on the heading", async () => {
+    const page = await walkTo(await signIn(), "activity");
+    expect(page).toContain(".ob h1.q { font-size: 34px;");
+    // What `.q` used to hand down by accident, the board asks of each by name.
+    expect(page).toMatch(/\.ob \.wheel \.wr \{[^}]*font-weight: 600;/);
+    expect(page).toMatch(/\.ob \.wheel \.wr\.on \{[^}]*font-weight: 700;/);
+    expect(page).toMatch(/\.ob \.live \{[^}]*line-height: 1\.45;/);
+    expect(page).toMatch(/\.ob \.seg \{[^}]*line-height: 1\.45;/);
+    expect(page).not.toMatch(/\.ob \.q \{/);
+  });
+});
+
 describe("the country grid", () => {
   it("lays the rows out in the board's three columns", async () => {
     const page = await walkTo(await signIn(), "activity");
