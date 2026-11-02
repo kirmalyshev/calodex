@@ -1273,6 +1273,16 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the streak goal", () => {
+  it("runs 7 to 50 with 14 preselected, as the board draws it", async () => {
+    const session = await signIn();
+    const html = await walkTo(session, "streak_goal_days");
+    const rows = [...html.matchAll(/<input[^>]*name="answer"[^>]*>/g)].map((m) => m[0]);
+    expect(rows.map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["7", "14", "30", "50"]);
+    expect(rows.filter((r) => /\schecked/.test(r)).map((r) => r.match(/value="(\d+)"/)?.[1])).toEqual(["14"]);
+  });
+});
+
 describe("the target-weight ruler", () => {
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
@@ -2870,6 +2880,7 @@ describe("refer a friend", () => {
     const step = await (await get("/start/referral", `${signed}; ${ref}`)).text();
     expect(step).toContain(`value="api.eait.fit/r/${code}"`);
     expect(step).toContain(escape(PAGE_COPY.referralAsk));
+    expect(step).toContain(`class="dash"`);
 
     const applied = await post("/start/referral", { code: `api.eait.fit/r/${code}` }, `${signed}; ${ref}`);
     expect(applied.status).toBe(200);

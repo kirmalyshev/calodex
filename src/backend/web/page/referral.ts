@@ -5,7 +5,7 @@
 import type { Lang } from "@eait/shared";
 import { fill } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
-import { ctaLink, ctaSubmit, say, wtop } from "./board.ts";
+import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
 
 export interface InviteView {
@@ -66,7 +66,9 @@ export function referralStep(v: ReferralStepView): string {
   <div class="wctas">${ctaSubmit(v.notice ? c.referralTryAgain : c.continueLabel)}${ctaLink(v.next, c.referralSkip, "s")}</div>
 </form>`;
   return shell(c.titleStart, `${wtop()}
-<div class="wmain one"><div class="wcol mid"><div class="ref">
+<div class="wmain one"><div class="wcol mid">
+${dash("referral", v.lang)}
+<div class="ref">
 ${say([c.referralAsk])}
 <p class="muted-sub">${escape(c.referralLead)}</p>
 ${v.done ? notice : ""}

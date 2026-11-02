@@ -73,7 +73,9 @@ export type Units = (typeof UNITS)[number];
  * Chat's starters. Replaces the shipped eight (`struggleCard` et al.), which are retired.
  */
 /** The streak lengths the onboarding question offers, longest first as the board lists them (ieat-app#2050); Home draws progress toward the chosen one. */
-export const STREAK_GOALS = [50, 30, 14, 7] as const;
+export const STREAK_GOALS = [7, 14, 30, 50] as const;
+/** The goal the streak question opens on (board `19c-streak`). */
+export const DEFAULT_STREAK_GOAL = 14;
 export type StreakGoal = (typeof STREAK_GOALS)[number];
 
 export const STRUGGLES = ["consistency", "habits", "support", "busy", "ideas"] as const;

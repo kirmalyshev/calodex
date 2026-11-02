@@ -8,7 +8,7 @@
 // field (the walk's `?draft=` and the toggle's POST are how a typed value crosses a unit change).
 
 import {
-  BANDS, capNote, chatCopyFor, cmToFtIn, countText, fill, heightDisplayValue,
+  BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, fill, heightDisplayValue,
   minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, pacePreview, PACES, rulerLabels, RULER_TICKS,
   lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
   targetRange,
@@ -112,7 +112,8 @@ function optionControl(v: QuestionView): string {
       end: place === "streak" ? streakDelta(v.profile, Number(o), v.lang) : null,
       // A diet answers "no restriction" as `balanced` — the board draws it selected, and storing
       // it and storing nothing mean the same thing to the analyzer.
-      checked: chosen.has(o) || (place === "diet" && chosen.size === 0 && o === "balanced"),
+      checked: chosen.has(o) || (place === "diet" && chosen.size === 0 && o === "balanced")
+        || (place === "streak" && chosen.size === 0 && o === String(DEFAULT_STREAK_GOAL)),
     });
   }).join("") + `</div>`;
 }
