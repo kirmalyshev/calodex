@@ -1220,6 +1220,8 @@ describe("the v2 questions that write the new fields", () => {
     await walkTo(session, "barriers");
     const html = await (await get("/start/q", session)).text();
     expect(html).toContain('name="prompt" value="barriers"');
+    // Board 11b: the question heads the page, "Pick all that fit" sits under it (#2513).
+    expect(html).toContain(`<h1 class="q">What stopped you?</h1><p class="qsub">Pick all that fit</p>`);
     // The chips are the new vocabulary's, labelled from the content — none of the retired one.
     expect(html).toContain('value="too_long"');
     expect(html).not.toContain('value="binge"');
