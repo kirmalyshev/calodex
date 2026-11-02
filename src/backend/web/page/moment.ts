@@ -46,7 +46,7 @@ function baselineCards(profile: Profile, lang: Lang): string {
  * from, so the card reads it like every other plan surface. A flat-band profile has no burn to
  * split, and draws the plan's row only.
  */
-function prelimCards(profile: Profile, lang: Lang): string {
+export function prelimCards(profile: Profile, lang: Lang): string {
   const p = chatCopyFor(lang).prelim;
   const { targets, basis } = explainTargets(profile, new Date());
   const kn = kcalNumbers(lang);

@@ -6,6 +6,7 @@
 // else. The verifier, the sign-in, the profile validation, the target arithmetic and the rendering
 // are all the real ones.
 
+import { prelimCards } from "./page/moment.ts";
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { createHash } from "node:crypto";
@@ -1270,6 +1271,21 @@ describe("the v2 questions that write the new fields", () => {
     // gate agrees, which is `full.onboarded` on the same `onboarded_at`.
     expect((await store.getProfile(await webUser(session)))!.onboarded_at).not.toBeNull();
     expect((await get("/start/q", session)).headers.get("location")).toBe("/start/plan");
+  });
+});
+
+describe("the preliminary plan card", () => {
+  it("colours a surplus as the accent and drops the burn row with no burn to show (#2512)", async () => {
+    const session = await signIn();
+    await answerAll(session, ANSWERS);
+    const p = (await store.getProfile(await webUser(session)))!;
+    const surplus = prelimCards({ ...p, goal: "gain", target_weight_kg: p.weight_kg! + 6 }, "en");
+    expect(surplus).toContain(`class="plg up"`);
+    expect(surplus).toMatch(/You burn.*You eat/s);
+    const flat = prelimCards({ ...p, height_cm: null }, "en");
+    expect(flat).not.toContain("You burn");
+    expect(flat).not.toContain(`class="plg`);
+    expect(flat.match(/class="card plc"/g)?.length).toBe(1);
   });
 });
 
