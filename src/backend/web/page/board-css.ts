@@ -100,7 +100,7 @@ export const BOARD_CSS = `
 .ob .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 
 /* ── option rows: the board's full-width list — 68 tall, 20 round, 16 apart, picked in the accent ── */
-.ob .opts { display: flex; flex-direction: column; gap: 16px; }
+.ob .opts { display: flex; flex-direction: column; gap: 10px; }
 @media (min-width: 721px) {
   .ob .opts.c2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ob .opts.c4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -124,12 +124,12 @@ export const BOARD_CSS = `
 /* the streak's kg on this plan */
 .ob .opt .end { margin-left: auto; font-weight: 500; color: var(--muted); }
 .ob .opt:has(input:checked) .end { color: var(--accent); }
-/* a multi-select's checkbox */
-.ob .opt .box { margin-left: auto; width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px;
-                box-shadow: inset 0 0 0 2px var(--line); position: relative; }
+/* the ring a list row carries */
+.ob .opt .box { margin-left: auto; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
+                box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
 .ob .opt:has(input:checked) .box { background: var(--accent); box-shadow: none; }
-.ob .opt:has(input:checked) .box::after { content: ""; position: absolute; left: 9px; top: 4px; width: 7px; height: 13px;
-  border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.ob .opt:has(input:checked) .box::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .ob .ico { display: inline-flex; width: 22px; height: 22px; flex: 0 0 auto; }
 
 /* ── the big number + pickers ── */
