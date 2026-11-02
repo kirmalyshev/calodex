@@ -1288,6 +1288,16 @@ describe("the echoes under the numbers (#2514)", () => {
   });
 });
 
+describe("the unit toggle", () => {
+  // shell.ts gives every button a bottom margin; the toggle's options sit centred in their track.
+  it("takes the global button margin back", async () => {
+    const session = await signIn();
+    const html = await walkTo(session, "target_weight_kg");
+    expect(html).toContain(`class="seg"`);
+    expect(html).toMatch(/\.ob \.seg button \{[^}]*margin: 0;/);
+  });
+});
+
 describe("the streak goal", () => {
   it("runs 7 to 50 with 14 preselected, as the board draws it", async () => {
     const session = await signIn();
