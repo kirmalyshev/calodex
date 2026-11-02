@@ -101,6 +101,11 @@ export const BOARD_CSS = `
 
 /* ── option rows: the board's full-width list — 68 tall, 20 round, 16 apart, picked in the accent ── */
 .ob .opts { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 721px) {
+  .ob .opts.c2 { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .ob .opts.c4 { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .ob .opts.c4 .opt { flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; }
+}
 .ob .opt { background: var(--surface); border-radius: 20px;
            box-shadow: 0 0 0 1px var(--hair), 0 2px 6px -4px rgba(23,25,28,.12);
            min-height: 68px; padding: 12px 22px; display: flex; align-items: center; gap: 12px; cursor: pointer;

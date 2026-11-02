@@ -82,6 +82,9 @@ const TILE_ICON: Record<string, Record<string, string>> = {
   },
 };
 
+/** The boards' desktop columns (`.c2`, `.c4` in board-css); every other list stays one column. */
+const OPT_GRID: Partial<Record<string, string>> = { activity: " c4", barrier: " c2", situation: " c2", diet: " c2", medical: " c2" };
+
 /**
  * Every option screen is the board's list (ieat-app#2050): one full-width row per answer, the
  * picked one in the accent. Goal and sex carry the words alone, struggles and diet an icon, the
@@ -97,7 +100,7 @@ function optionControl(v: QuestionView): string {
   const multi = v.prompt.kind === "chips";
   // Nothing is preselected on the goal — the first answer is the whole plan's direction, and a
   // quiet default is an answer nobody gave.
-  return `<div class="opts">` + values.map((o) => {
+  return `<div class="opts${OPT_GRID[place] ?? ""}">` + values.map((o) => {
     const c = opts[o];
     const label = c?.label ?? optionLabel(place as OnboardingScreenId, o, v.lang);
     if (place === "activity") {

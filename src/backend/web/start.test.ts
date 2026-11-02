@@ -1273,6 +1273,16 @@ describe("the v2 questions that write the new fields", () => {
   });
 });
 
+describe("the option grids", () => {
+  it("draws the boards' columns: four tiles for activity, two for the lists", async () => {
+    expect(await walkTo(await signIn(), "activity")).toContain(`<div class="opts c4">`);
+    for (const id of ["barriers", "situations", "diet", "medical"]) {
+      expect(await walkTo(await signIn(), id), id).toContain(`<div class="opts c2">`);
+    }
+    expect(await walkTo(await signIn(), "streak_goal_days")).toContain(`<div class="opts">`);
+  });
+});
+
 describe("the target-weight ruler", () => {
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
