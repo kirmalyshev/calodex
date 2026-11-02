@@ -72,20 +72,22 @@ export interface OptSpec {
   /** A figure at the row's end — the streak's "−0.9kg". */
   end?: string | null | undefined;
   multi?: boolean;
+  /** A single choice that still draws the row's ring (the diet list). */
+  ring?: boolean;
   checked?: boolean;
 }
 export function optRow(o: OptSpec): string {
   const input = o.multi
     ? `<input type="checkbox" name="answer" value="${escape(o.value)}"${o.checked ? " checked" : ""}>`
     : `<input type="radio" name="answer" value="${escape(o.value)}"${o.checked ? " checked" : ""}>`;
-  // The board's rows: a single choice is the row itself, picked in the accent; a multi-select
-  // carries a checkbox at the end.
+  // The board's rows: a single choice is the row itself, picked in the accent; a list
+  // carries a ring at the end.
   const lead = o.badge ? `<span class="n num">${escape(o.badge)}</span>`
     : o.icon ? `<i class="ico i-${escape(o.icon)}"></i>` : "";
   const sub = o.sub ? `<small>${escape(o.sub)}</small>` : "";
   const end = o.end ? `<span class="end num">${escape(o.end)}</span>` : "";
   return `<label class="opt">${input}${lead}<span class="ol">${escape(o.label)}${sub}</span>${end}` +
-    `${o.multi ? `<span class="box" aria-hidden="true"></span>` : ""}</label>`;
+    `${o.multi || o.ring ? `<span class="box" aria-hidden="true"></span>` : ""}</label>`;
 }
 
 /**

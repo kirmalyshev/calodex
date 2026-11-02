@@ -1278,6 +1278,15 @@ describe("the v2 questions that write the new fields", () => {
 });
 
 describe("the option grids", () => {
+  it("spaces options 10 apart and marks the lists with a ring, as boards 11b, 11c, 14 and 14b draw", async () => {
+    const barriers = await walkTo(await signIn(), "barriers");
+    expect(barriers).toContain(".ob .opts { display: flex; flex-direction: column; gap: 10px; }");
+    expect(barriers).toMatch(/\.ob \.opt \.box \{[^}]*width: 22px;[^}]*border-radius: 50%;/);
+    for (const id of ["barriers", "situations", "diet", "medical"]) {
+      expect(await walkTo(await signIn(), id), id).toContain(`<span class="box" aria-hidden="true"></span>`);
+    }
+  });
+
   it("draws the boards' columns: four tiles for activity, two for the lists", async () => {
     expect(await walkTo(await signIn(), "activity")).toContain(`<div class="opts c4">`);
     for (const id of ["barriers", "situations", "diet", "medical"]) {

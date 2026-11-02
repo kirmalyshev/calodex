@@ -111,6 +111,7 @@ function optionControl(v: QuestionView): string {
       value: o,
       label,
       multi,
+      ring: place === "diet",
       icon: TILE_ICON[place]?.[o],
       end: place === "streak" ? streakDelta(v.profile, Number(o), v.lang) : null,
       // A diet answers "no restriction" as `balanced` — the board draws it selected, and storing
