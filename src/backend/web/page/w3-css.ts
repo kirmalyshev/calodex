@@ -181,6 +181,8 @@ export const W3_CSS = `
 .ob .eml input.codein.bad { box-shadow: inset 0 0 0 1.5px var(--bad); }
 .ob .eml .eml-note { font-size: 13px; font-weight: 600; margin: 0; }
 /* Refer a friend (#899): the invite page and the friend's-link step — ob-referral-*.html. */
+.ob .wmain.refstep { max-width: 720px; padding-top: 24px; }
+.ob .refmid { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .ob .ref { max-width: 420px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 14px; }
 .ob .ref form { display: flex; flex-direction: column; gap: 10px; }
 .ob .ref .wctas { flex-direction: column; gap: 6px; margin-top: 10px; }

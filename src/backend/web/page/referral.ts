@@ -66,13 +66,13 @@ export function referralStep(v: ReferralStepView): string {
   <div class="wctas">${ctaSubmit(v.notice ? c.referralTryAgain : c.continueLabel)}${ctaLink(v.next, c.referralSkip, "s")}</div>
 </form>`;
   return shell(c.titleStart, `${wtop()}
-<div class="wmain one"><div class="wcol mid">
+<div class="wmain one refstep"><div class="wcol">
 ${dash("referral", v.lang)}
-<div class="ref">
+<div class="refmid"><div class="ref">
 ${say([c.referralAsk])}
 <p class="muted-sub">${escape(c.referralLead)}</p>
 ${v.done ? notice : ""}
 ${form}
-</div></div></div>
+</div></div></div></div>
 `, v.lang, "ob");
 }

@@ -2880,7 +2880,8 @@ describe("refer a friend", () => {
     const step = await (await get("/start/referral", `${signed}; ${ref}`)).text();
     expect(step).toContain(`value="api.eait.fit/r/${code}"`);
     expect(step).toContain(escape(PAGE_COPY.referralAsk));
-    expect(step).toContain(`class="dash"`);
+    // The bar tops the plain column, and only the step below it is centred (`web/ob-referral.html`).
+    expect(step).toMatch(/<div class="wmain one refstep"><div class="wcol">\s*<div class="wbar">.*?class="dash".*?<\/div><\/div>\s*<div class="refmid"><div class="ref">/s);
 
     const applied = await post("/start/referral", { code: `api.eait.fit/r/${code}` }, `${signed}; ${ref}`);
     expect(applied.status).toBe(200);
