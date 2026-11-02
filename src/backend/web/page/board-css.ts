@@ -90,7 +90,7 @@ export const BOARD_CSS = `
 .ob .cta.p[disabled] { opacity: .45; cursor: default; }
 
 /* ── the unit toggle ── */
-.ob .seg { display: flex; background: var(--hair); border-radius: 10px;
+.ob .seg { display: flex; line-height: 1.45; background: var(--hair); border-radius: 10px;
            padding: 3px; gap: 2px; width: 150px; align-self: center; }
 /* .wcol form stacks and stretches every form for the one-form screens — the toggle is a row
    the size of its two options, so the column rule is taken back where it would apply. */
@@ -149,11 +149,11 @@ export const BOARD_CSS = `
              mask-image: linear-gradient(180deg, transparent, #000 38px, #000 calc(100% - 38px), transparent); }
 .ob .wheel::-webkit-scrollbar { display: none; }
 .ob .wheel .wr { height: 44px; display: flex; align-items: center; justify-content: center;
-                 scroll-snap-align: center; font-size: 12px; color: var(--faint); opacity: .3;
+                 scroll-snap-align: center; font-size: 12px; font-weight: 600; color: var(--faint); opacity: .3;
                  font-variant-numeric: tabular-nums; }
 .ob .wheel .wr.o1 { font-size: 19px; opacity: .75; }
 .ob .wheel .wr.o2 { font-size: 16px; opacity: .55; }
-.ob .wheel .wr.on { font-size: 22px; color: var(--ink); opacity: 1; }
+.ob .wheel .wr.on { font-size: 22px; font-weight: 700; color: var(--ink); opacity: 1; }
 
 /* the vertical ruler (height) */
 .ob .vruler { width: 88px; height: 380px; position: relative;
@@ -197,7 +197,7 @@ export const BOARD_CSS = `
 /* the live delta pill under the target ruler — clear of the tick band, not flush on it (#473) */
 .ob .live { position: relative; width: fit-content; margin: 12px auto 0; background: var(--accent-tint);
             border-radius: var(--r-card); padding: 14px 28px; font-size: 28px; font-weight: 700;
-            letter-spacing: -.02em; color: var(--ink); }
+            letter-spacing: -.02em; line-height: 1.45; color: var(--ink); }
 
 /* ── pace (10, the CZ board): "From … to …", the computed rate with the cap's pill under it, an
    accent slider with a white pill thumb, the three names under it, and the landing as a card.
