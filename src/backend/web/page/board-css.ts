@@ -97,7 +97,7 @@ export const BOARD_CSS = `
 /* .wcol form stacks and stretches every form for the one-form screens — the toggle is a row
    the size of its two options, so the column rule is taken back where it would apply. */
 .ob .wcol .seg { flex-direction: row; flex: none; gap: 2px; }
-.ob .seg button { flex: 1; border: 0; padding: 6px 0; border-radius: 8px; font-size: 13px; font-weight: 600;
+.ob .seg button { flex: 1; border: 0; margin: 0; padding: 6px 0; border-radius: 8px; font-size: 13px; font-weight: 600;
                   text-align: center; color: var(--muted); background: none; cursor: pointer; font-family: var(--sans); }
 .ob .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 
