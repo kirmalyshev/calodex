@@ -329,7 +329,8 @@ export const BOARD_CSS = `
 .ob .wcenter { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0 80px 60px; }
 .ob .wdemo { display: flex; align-items: center; justify-content: center; gap: 88px; }
 /* 01 (ieat-app#2050): the photo, the viewfinder, the shutter and scan once, then the four chips */
-.ob .whero { position: relative; width: 390px; height: 560px; flex: none; border-radius: 28px; overflow: hidden; box-shadow: var(--shadow); }
+.ob .whero { position: relative; width: 290px; aspect-ratio: 9 / 19.5; flex: none; border: 10px solid #111; border-radius: 49px; overflow: hidden;
+  background: #111; box-shadow: 0 18px 40px -18px rgba(23,25,28,.45); }
 .ob .whero .ph { position: absolute; inset: 0; background: url("/start/assets/img/hero.webp") center 48%/cover; animation: k-wzoom 1.1s cubic-bezier(.25,.8,.25,1) both; }
 @keyframes k-wzoom { from { transform: scale(1.1); } }
 .ob .whero .vf { position: absolute; left: 8%; right: 8%; top: 17%; height: 63%; animation: k-win .35s var(--ease) .15s both; }
@@ -359,7 +360,6 @@ export const BOARD_CSS = `
 .ob .wchip span { display: block; font-size: 12px; color: var(--muted); line-height: 1.2; }
 .ob .wchip b { display: block; font-size: 19px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; color: var(--ink); }
 .ob .wchip b small { font-size: 12px; font-weight: 600; color: var(--muted); margin-left: 2px; }
-.ob .wlink { align-self: center; font-size: 15px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; padding: 10px; }
 .ob .whead { max-width: 440px; display: flex; flex-direction: column; gap: 26px; }
 /* the language chip (ieat-app#2050): a white pill top-right over the photo, its list a card under it */
 .ob .wherobox { position: relative; flex: none; }
@@ -389,7 +389,7 @@ export const BOARD_CSS = `
   .ob .wcenter { padding: 0; align-items: flex-start; }
   .ob .wdemo { flex-direction: column; gap: 24px; padding: 0 0 32px !important; width: 100%; }
   .ob .wherobox { width: 100%; }
-  .ob .whero { width: 100%; height: min(560px, 60svh); border-radius: 0; box-shadow: none;
+  .ob .whero { width: 100%; height: min(560px, 60svh); aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none;
     -webkit-mask: linear-gradient(#000 78%, transparent); mask: linear-gradient(#000 78%, transparent); }
   .ob .whead { padding: 0 24px; align-items: stretch; text-align: center; max-width: none; }
   .ob .whead h1 { font-size: 30px; }
