@@ -24,6 +24,7 @@ import {
   type ChatPromptId, type Profile,
 } from "./index.ts";
 import { spudSvg } from "./mascot.ts";
+import { lbToKg } from "./ui/units.ts";
 import { onboardingContentFor } from "./onboarding-content.ts";
 
 function profile(over: Partial<Profile> = {}): Profile {
@@ -409,6 +410,9 @@ describe("the units toggle", () => {
     expect(weightDisplay(68, "imperial", "en")).not.toContain("kg");
     // One decimal, locale-formatted — the pace screen's "0.9lb a week".
     expect(parseFloat(weightDisplay(68, "imperial", "en"))).toBeCloseTo(149.9, 0);
+    // 165lb is stored as 74.8kg; the whole pounds picked come back, not 164.9 (#2517).
+    expect(weightDisplay(lbToKg(165), "imperial", "en")).toBe("165lb");
+    expect(weightDisplay(lbToKg(152), "imperial", "en")).toBe("152lb");
   });
 });
 

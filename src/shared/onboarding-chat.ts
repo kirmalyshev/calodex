@@ -707,7 +707,10 @@ const LB_PER_KG = 2.20462;
 export function weightDisplay(kg: number, units: Units | null, lang: Lang): string {
   const v = units === "imperial" ? kg * LB_PER_KG : kg;
   const u = units === "imperial" ? "lb" : "kg";
-  return `${numbers(lang)(Math.round(v * 10) / 10)}${spellUnit(lang, u)}`;
+  // A body weight is picked in whole pounds and stored to 0.1kg, so its tenth is the round trip's
+  // noise (165lb read 164.9). A rate or a delta is smaller than any body and keeps its tenth.
+  const shown = units === "imperial" && kg >= BANDS.weight_kg[0] ? kgToLb(kg) : Math.round(v * 10) / 10;
+  return `${numbers(lang)(shown)}${spellUnit(lang, u)}`;
 }
 
 /** A maintainer's goal is a band, not a point (#1694): ±2% of today's weight, CalZen's 62 → 61–63. */
