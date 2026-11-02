@@ -330,6 +330,16 @@ describe("the surface is off unless it is configured", () => {
 });
 
 describe("the front door", () => {
+  it("keeps the four chips clear of each other inside the phone frame, in every language (#2532)", async () => {
+    for (const lang of LANGS) {
+      const res = await get("/start", undefined, { "accept-language": lang });
+      const tops = [...(await res.text()).matchAll(/class="wchip" style="[^"]*top:(\d+)%/g)].map((m) => Number(m[1]));
+      expect(tops, lang).toHaveLength(4);
+      // A chip is 52 tall in a frame 565 tall inside the bezel: 10% clears it.
+      for (let i = 1; i < 4; i++) expect(tops[i]! - tops[i - 1]!, lang).toBeGreaterThanOrEqual(10);
+    }
+  });
+
   it("draws board 00: the demo in the phone frame, Start and an outlined account button", async () => {
     const html = await (await get("/start")).text();
     expect(html).toMatch(/\.ob \.whero \{[^}]*width: 290px;[^}]*aspect-ratio: 9 \/ 19\.5;[^}]*border: 10px solid #111;/);

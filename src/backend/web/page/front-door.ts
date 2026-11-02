@@ -40,8 +40,8 @@ ${wtop()}
     <div class="ph"></div><div class="vf"><i></i><i></i><i></i><i></i></div>
     <div class="sh"></div><div class="fl"></div><div class="sw"></div>
     ${chip("left:7%;top:17%", 2.15, "p", "protein", m.protein, String(WELCOME_CHIPS.protein), g)}
-    ${chip("right:6%;top:23%", 2.35, "c", "carbs", m.carbs, String(WELCOME_CHIPS.carbs), g)}
-    ${chip("left:5%;top:42%", 2.55, "f", "fat", m.fat, String(WELCOME_CHIPS.fat), g)}
+    ${chip("right:6%;top:27%", 2.35, "c", "carbs", m.carbs, String(WELCOME_CHIPS.carbs), g)}
+    ${chip("left:5%;top:39%", 2.55, "f", "fat", m.fat, String(WELCOME_CHIPS.fat), g)}
     ${chip("right:6%;top:51%", 2.75, "", "kcal", content.building.rows.calories, kcal, spellUnit(lang, "kcal"))}
   </div>
   </div>
