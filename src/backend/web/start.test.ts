@@ -1286,6 +1286,17 @@ describe("the streak goal", () => {
 });
 
 describe("the target-weight ruler", () => {
+  it("stops on whole pounds and half kilos, so a stored weight reads back as picked (#2517)", async () => {
+    const session = await signIn();
+    const metric = await walkTo(session, "target_weight_kg");
+    expect(metric).toContain(`data-step="0.5"`);
+    const action = metric.match(/action="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "/start/q";
+    await post(action, { prompt: "target_weight_kg", setunits: "imperial" }, session);
+    const imperial = await (await get("/start/q", session)).text();
+    expect(imperial).toContain(`data-step="1"`);
+    expect(imperial).not.toContain(`data-step="0.5"`);
+  });
+
   /** 80kg at 170cm → the suggested target is 73.5, the healthy floor about 53.5. */
   it("opens on the shared suggestion under the board's own ask, stopping at the floor", async () => {
     const session = await signIn();
