@@ -10,7 +10,7 @@
 import {
   BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, fill, heightDisplayValue,
   minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, pacePreview, PACES, rulerLabels, RULER_TICKS,
-  lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
+  LB_PER_KG, lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
   targetRange,
   weightDisplay, weightDisplayValue,
 } from "@eait/shared";
@@ -325,6 +325,10 @@ function targetGoals(v: QuestionView, min: number, max: number): Record<string, 
   return goals;
 }
 
+/** The ruler's lowest stop for a healthy minimum: a whole pound, up from the exact figure. */
+export const targetFloor = (minKg: number, units: UnitSystem): number =>
+  units === "imperial" ? Math.ceil(minKg * LB_PER_KG) : minKg;
+
 function targetControl(v: QuestionView): { seg: string; control: string } {
   const copy = chatCopyFor(v.lang);
   const kg = v.draft
@@ -341,9 +345,7 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
   // The ruler STOPS at the healthy minimum (ieat-app#2050, Kirill 12 Oct): no refused zone drawn
   // under it and no "lowest we set" mark — the board has neither — but nothing below the floor can
   // be picked, and the POST still refuses one typed by hand (#1610's guard is the server's).
-  const min = minHealthy !== null
-    ? Math.ceil(disp(minHealthy) * 2) / 2
-    : Math.round(disp(30));
+  const min = minHealthy !== null ? targetFloor(minHealthy, v.units) : Math.round(disp(30));
   const max = Math.round(disp(Math.max(range?.max ?? 0, (nowKg ?? 0) + 20, val + 10)));
   const now = nowKg !== null ? disp(nowKg) : undefined;
   const ctl = rulerControl(v, {
