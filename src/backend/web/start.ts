@@ -711,6 +711,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       providers: offered.map((p) => ({
         id: p as "apple" | "google", action: `${START_PREFIX}/auth/${p}`, label: providerLabel(p, lang),
       })),
+      emailHref: `${START_PREFIX}/email`,
       error: url.searchParams.get("error") === "terms" ? signupCopyFor(lang).errorTerms
         : url.searchParams.has("error") ? PAGE_COPY.errorSignIn
         : null,
