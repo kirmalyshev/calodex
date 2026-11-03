@@ -79,8 +79,9 @@ export const BOARD_CSS = `
 .ob .spud { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-tint);
             display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
 .ob .spud svg { width: 78%; height: 78%; display: block; }
-/* The board's heading (CZ): 34px, left, under the bar — the question is the page's title. */
-.ob h1.q { font-size: 34px; font-weight: 700; letter-spacing: -.035em; line-height: 1.12; text-wrap: balance; }
+/* The ask is the iOS question's own 28px, left, under the bar — the wrap falls where the
+   phone's falls, not a width the web invented. */
+.ob h1.q { font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 1.15; text-wrap: balance; }
 /* Continue sits at the foot of the screen, and stays there over a list that scrolls under it. */
 .ob .qform > .cta.p:last-child, .ob .igroup > .cta.p:last-child {
   margin-top: auto; position: sticky; bottom: 24px; z-index: 1; max-width: none; align-self: stretch; }
@@ -122,7 +123,7 @@ export const BOARD_CSS = `
            font-size: 17px; font-weight: 600; color: var(--ink); border: 0; text-align: left;
            font-family: var(--sans); width: 100%; }
 .ob .opt input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
-.ob .opt:has(input:checked) { background: var(--accent-tint); box-shadow: 0 0 0 2px var(--accent); color: var(--accent); }
+.ob .opt:has(input:checked) { background: var(--accent-tint); box-shadow: 0 0 0 1.5px var(--accent); color: var(--accent); }
 .ob .opt:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ob .opt .ol { flex: 1; min-width: 0; }
 .ob .opt > .ico { width: 24px; height: 24px; }
@@ -152,9 +153,10 @@ export const BOARD_CSS = `
    real. The board's band is a filled, rounded strip running edge to edge (the negative margin
    buys the column's own padding back), and the rows shrink and fade by distance — .on is the
    centred value, .o1/.o2 the steps beside it, everything past that the base. */
+.ob .ctl[data-ctl="wheel"] { margin-block: auto; }
 .ob .wheelbox { position: relative; margin: 0 -40px; }
-.ob .wheelbox::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 36px;
-  transform: translateY(-50%); border-radius: 18px; background: rgb(23 25 28 / .055);
+.ob .wheelbox::after { content: ""; position: absolute; left: 14px; right: 14px; top: 50%; height: 44px;
+  transform: translateY(-50%); border-radius: 12px; background: rgb(23 25 28 / .055);
   pointer-events: none; }
 .ob .wheel { height: 308px; width: 220px; margin: 0 auto; overflow-y: auto; scroll-snap-type: y mandatory;
   padding: 132px 0; box-sizing: border-box;
@@ -168,7 +170,7 @@ export const BOARD_CSS = `
                  font-variant-numeric: tabular-nums; }
 .ob .wheel .wr.o1 { font-size: 19px; opacity: .75; }
 .ob .wheel .wr.o2 { font-size: 16px; opacity: .55; }
-.ob .wheel .wr.on { font-size: 22px; font-weight: 700; color: var(--ink); opacity: 1; }
+.ob .wheel .wr.on { font-size: 18px; font-weight: 400; color: var(--ink); opacity: 1; }
 
 /* the vertical ruler (height) */
 .ob .vruler { width: 88px; height: 380px; position: relative;
@@ -191,7 +193,7 @@ export const BOARD_CSS = `
                   transform: translateX(-1px); }
 .ob .ruler .now::before { content: ""; position: absolute; left: -5px; top: -2px; width: 12px; height: 12px;
                           border-radius: 50%; background: var(--accent); }
-.ob .ruler .lbl { position: absolute; bottom: 44px; transform: translateX(-50%); font-size: 12px;
+.ob .ruler .lbl { position: absolute; bottom: 26px; transform: translateX(-50%); font-size: 12px;
                   font-weight: 500; color: var(--muted); white-space: nowrap; }
 /* #1201 — .lo/.mg/.hi position by computed box (left is the box's own edge): the
  * transforms and mark-side paddings the alignment used to live in are the
@@ -200,19 +202,19 @@ export const BOARD_CSS = `
    merged labels stay the ruler's muted ink, the zone itself the board's faint hatch. */
 .ob .ruler .lbl.lo { transform: none; }
 /* the floor label's second row, 16px under the band's own. */
-.ob .ruler .lbl.lo.r2 { bottom: 28px; }
+.ob .ruler .lbl.lo.r2 { bottom: 12px; }
 /* the merged floor/now label. */
 .ob .ruler .lbl.mg { transform: none; }
 .ob .ruler .lbl.hi { transform: none; color: var(--ink); font-weight: 600; }
-.ob .ruler .tint { position: absolute; left: 0; bottom: 0; height: 38px;
+.ob .ruler .tint { position: absolute; left: 0; bottom: 0; height: 18px;
                    background: repeating-linear-gradient(135deg,
                      color-mix(in srgb, var(--faint) 55%, transparent) 0 2px,
                      transparent 2px 8px); pointer-events: none; }
 
 /* the live delta pill under the target ruler — clear of the tick band, not flush on it (#473) */
-.ob .live { position: relative; width: fit-content; margin: 12px auto 0; background: var(--accent-tint);
-            border-radius: var(--r-card); padding: 14px 28px; font-size: 28px; font-weight: 700;
-            letter-spacing: -.02em; line-height: 1.45; color: var(--ink); }
+.ob .live { position: relative; margin: 12px 0 0; background: var(--accent-tint);
+            border-radius: var(--r-card); padding: 14px 0; font-size: 28px; font-weight: 700;
+            letter-spacing: -.02em; line-height: 1.45; color: var(--ink); text-align: center; }
 
 /* ── pace (10, the CZ board): "From … to …", the computed rate with the cap's pill under it, an
    accent slider with a white pill thumb, the three names under it, and the landing as a card.
@@ -222,7 +224,7 @@ export const BOARD_CSS = `
 .ob .pacevarbox { margin-bottom: 30px; }
 .ob .pacevar .bign { font-size: 52px; }
 .ob .slider { position: relative; height: 8px; background: var(--accent-tint); border-radius: 4px;
-              margin: 0 48px; touch-action: pan-y; }
+              margin: 0; touch-action: pan-y; }
 .ob .slider i { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); border-radius: 4px; }
 .ob .slider b { position: absolute; top: 50%; width: 52px; height: 30px; border-radius: 15px;
                 background: #fff; box-shadow: 0 1px 6px rgba(23,25,28,.25); transform: translate(-50%, -50%);
@@ -234,8 +236,8 @@ export const BOARD_CSS = `
 .ob .est { color: var(--muted); font-size: 12px; font-weight: 600; display: block; }
 .ob .paceres { text-align: center; }
 .ob .paceresbox { margin-top: 30px; }
-.ob .when { display: inline-block; padding: 14px 26px; border-radius: 18px; background: var(--surface);
-            box-shadow: 0 0 0 1px var(--hair); font-size: 16px; font-weight: 700; }
+.ob .when { display: inline-block; padding: 14px 26px; border-radius: 18px; background: var(--hair);
+            font-size: 16px; font-weight: 700; }
 .ob .when span { display: block; font-weight: 500; color: var(--muted); font-size: 15px; margin-bottom: 2px; }
 .ob .cap { text-align: center; margin-top: 10px; }
 .ob .cap summary { list-style: none; cursor: pointer; display: inline-block; }
@@ -257,11 +259,11 @@ export const BOARD_CSS = `
 /* The interstitials' own frame: the boards pad the top 24 (the wcol's 8 plus this) and centre the
    say + figure + button as ONE group, so the ask travels with the cards (#291). how runs the
    boards' 1080 — the three cards need it; ontrack keeps the question column's 720. */
-.ob .wmain.mom { padding-top: 16px; margin: 0 auto; width: 100%; }
+.ob .wmain.mom { margin: 0 auto; width: 100%; }
 .ob .wmain.pastbar .wcol { padding-top: 24px; }
 .ob .wmain.wide { max-width: 1080px; }
 .ob .igroup { flex: 1; display: flex; flex-direction: column; gap: 24px; min-height: 0; }
-.ob .card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 16px; }
+.ob .card { background: var(--surface); border-radius: var(--r-card); box-shadow: 0 0 0 1px var(--hair); padding: 16px; }
 .ob .cards { display: grid; gap: 16px; align-items: start; }
 .ob .cards.c3 { grid-template-columns: repeat(3, 1fr); }
 .ob .cards .card { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
@@ -438,14 +440,14 @@ export const BOARD_CSS = `
 /* the baseline card — the iOS 08b board: the figure beside the word, four NEUTRAL segments (the
    band's own one darker), the ink knob sliding in, the four range labels, the band's word. No
    judging colour (polish.md §9), so nothing here is tinted. */
-.ob .bmi-c { margin-top: 26px; padding: 22px 20px; }
+.ob .bmi-c { margin-top: 10px; padding: 22px 20px; }
 .ob .bmi-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 17px; font-weight: 600; }
 .ob .bmi-h b { font-size: 40px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .ob .bmi-b { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 20px; }
 .ob .bmi-b i { height: 12px; border-radius: 6px; background: #E4E2DC; }
 .ob .bmi-b i.cur { background: #B4B1A8; }
-.ob .bmi-k { position: absolute; top: 50%; width: 6px; height: 26px; margin: -13px 0 0 -3px; border-radius: 3px;
-             background: var(--ink); box-shadow: 0 0 0 3px var(--surface); animation: bmi-k 1.2s var(--ease) .5s both; }
+.ob .bmi-k { position: absolute; top: 50%; width: 2px; height: 24px; margin: -12px 0 0 -1px; border-radius: 1px;
+             background: var(--ink); box-shadow: 0 0 0 2px var(--surface); animation: bmi-k 1.2s var(--ease) .5s both; }
 @keyframes bmi-k { from { left: 0; } }
 .ob .bmi-l { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 10px; font-size: 12px;
              color: var(--faint); text-align: center; font-variant-numeric: tabular-nums; }
