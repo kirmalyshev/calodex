@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Posodobljeno — {kcal} kcal. {day}"
+#~ msgstr "Posodobljeno — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "»{note}« — upoštevano, je že v številkah."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Tabele hranilnih vrednosti ni bilo mogoče prebrati."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Upoštevano. Danes ostane še {left} kcal."
+msgstr "Upoštevano. Danes ostane še {left}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Upoštevano. Danes {over} kcal nad načrtom."
+msgstr "Upoštevano. Danes {over}kcal nad načrtom."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Prepoznavanje hrane · 2 od 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Prvi obrok zabeležen. {kcal} kcal."
+msgstr "Prvi obrok zabeležen. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "To je novi eait. Tvoji obroki in fotografije so shranjeni v tvojem raču
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Danes: {eaten} od {plan} kcal, {protein} od {proteinTarget} g beljakovin"
+msgstr "Danes: {eaten} od {plan}kcal, {protein} od {proteinTarget} g beljakovin"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

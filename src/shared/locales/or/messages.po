@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "ଅପଡେଟ୍ ହେଲା — {kcal} kcal। {day}"
+#~ msgstr "ଅପଡେଟ୍ ହେଲା — {kcal}kcal। {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "“{note}” — ନୋଟ୍ କଲି, ଏହା ସଂଖ୍ୟାର
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "ସେହି ଲେବଲ୍ ପଢ଼ିହେଲା ନାହିଁ।
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "ଗଣାଗଲା। ଆଜି {left} kcal ବାକି।"
+msgstr "ଗଣାଗଲା। ଆଜି {left}kcal ବାକି।"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "ଗଣାଗଲା। ଆଜି {over} kcal ଅଧିକ।"
+msgstr "ଗଣାଗଲା। ଆଜି {over}kcal ଅଧିକ।"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "ଖାଦ୍ୟ ଚିହ୍ନଟ କରାଯାଉଛି · 4 ମଧ�
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "ପ୍ରଥମଟି ଲଗ୍ ହେଲା। {kcal} kcal।"
+msgstr "ପ୍ରଥମଟି ଲଗ୍ ହେଲା। {kcal}kcal।"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "ଏହା ନୂଆ eait। ଆପଣଙ୍କ ଭୋଜନ ଓ ଫଟ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "ଆଜି: {plan} kcal ମଧ୍ୟରୁ {eaten}, {proteinTarget} g ପ୍ରୋଟିନ୍ ମଧ୍ୟରୁ {protein}"
+msgstr "ଆଜି: {plan}kcal ମଧ୍ୟରୁ {eaten}, {proteinTarget} g ପ୍ରୋଟିନ୍ ମଧ୍ୟରୁ {protein}"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

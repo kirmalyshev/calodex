@@ -352,8 +352,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "ప్లాన్‌తో పోలిస్తే ఈరోజు",
-    body: "ఈరోజు మీ {plan} kcalలో {eaten}. {tomorrow}",
-    emptyBody: "ఈరోజు ఏదీ నమోదు కాలేదు — మీ ప్లాన్ ఇంకా {plan} kcal. {tomorrow}",
+    body: "ఈరోజు మీ {plan}kcalలో {eaten}. {tomorrow}",
+    emptyBody: "ఈరోజు ఏదీ నమోదు కాలేదు — మీ ప్లాన్ ఇంకా {plan}kcal. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -387,8 +387,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "இன்று, திட்டத்துடன் ஒப்பிட்டு",
-    body: "இன்று உங்கள் {plan} kcal-இல் {eaten}. {tomorrow}",
-    emptyBody: "இன்று எதுவும் பதிவாகவில்லை — உங்கள் திட்டம் இன்னும் {plan} kcal தான். {tomorrow}",
+    body: "இன்று உங்கள் {plan}kcal-இல் {eaten}. {tomorrow}",
+    emptyBody: "இன்று எதுவும் பதிவாகவில்லை — உங்கள் திட்டம் இன்னும் {plan}kcal தான். {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -422,8 +422,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "ਅੱਜ ਦਾ ਦਿਨ, ਪਲਾਨ ਦੇ ਮੁਕਾਬਲੇ",
-    body: "ਅੱਜ ਤੁਹਾਡੇ {plan} kcal ਵਿੱਚੋਂ {eaten}। {tomorrow}",
-    emptyBody: "ਅੱਜ ਕੁਝ ਦਰਜ ਨਹੀਂ ਹੋਇਆ — ਤੁਹਾਡਾ ਪਲਾਨ ਹਾਲੇ ਵੀ {plan} kcal ਹੈ। {tomorrow}",
+    body: "ਅੱਜ ਤੁਹਾਡੇ {plan}kcal ਵਿੱਚੋਂ {eaten}। {tomorrow}",
+    emptyBody: "ਅੱਜ ਕੁਝ ਦਰਜ ਨਹੀਂ ਹੋਇਆ — ਤੁਹਾਡਾ ਪਲਾਨ ਹਾਲੇ ਵੀ {plan}kcal ਹੈ। {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -457,8 +457,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "ଆଜି, ପ୍ଲାନ୍ ତୁଳନାରେ",
-    body: "ଆଜି ଆପଣଙ୍କ {plan} kcal ମଧ୍ୟରୁ {eaten}। {tomorrow}",
-    emptyBody: "ଆଜି କିଛି ଲଗ୍ ହୋଇନାହିଁ — ଆପଣଙ୍କ ପ୍ଲାନ୍ ଏବେ ବି {plan} kcal। {tomorrow}",
+    body: "ଆଜି ଆପଣଙ୍କ {plan}kcal ମଧ୍ୟରୁ {eaten}। {tomorrow}",
+    emptyBody: "ଆଜି କିଛି ଲଗ୍ ହୋଇନାହିଁ — ଆପଣଙ୍କ ପ୍ଲାନ୍ ଏବେ ବି {plan}kcal। {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -492,8 +492,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "आजचा दिवस, प्लॅनच्या तुलनेत",
-    body: "आज तुमच्या {plan} kcal पैकी {eaten}. {tomorrow}",
-    emptyBody: "आज काहीही नोंदवले नाही — तुमचा प्लॅन अजूनही {plan} kcal आहे. {tomorrow}",
+    body: "आज तुमच्या {plan}kcal पैकी {eaten}. {tomorrow}",
+    emptyBody: "आज काहीही नोंदवले नाही — तुमचा प्लॅन अजूनही {plan}kcal आहे. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -527,8 +527,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "ഇന്ന്, പ്ലാനുമായി താരതമ്യം ചെയ്ത്",
-    body: "ഇന്ന് നിങ്ങളുടെ {plan} kcal-ൽ {eaten}. {tomorrow}",
-    emptyBody: "ഇന്ന് ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല — നിങ്ങളുടെ പ്ലാൻ ഇപ്പോഴും {plan} kcal ആണ്. {tomorrow}",
+    body: "ഇന്ന് നിങ്ങളുടെ {plan}kcal-ൽ {eaten}. {tomorrow}",
+    emptyBody: "ഇന്ന് ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല — നിങ്ങളുടെ പ്ലാൻ ഇപ്പോഴും {plan}kcal ആണ്. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -562,8 +562,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "ಇಂದು, ಪ್ಲಾನ್‌ಗೆ ಹೋಲಿಸಿದರೆ",
-    body: "ಇಂದು ನಿಮ್ಮ {plan} kcal ಪೈಕಿ {eaten}. {tomorrow}",
-    emptyBody: "ಇಂದು ಏನೂ ದಾಖಲಾಗಿಲ್ಲ — ನಿಮ್ಮ ಪ್ಲಾನ್ ಇನ್ನೂ {plan} kcal. {tomorrow}",
+    body: "ಇಂದು ನಿಮ್ಮ {plan}kcal ಪೈಕಿ {eaten}. {tomorrow}",
+    emptyBody: "ಇಂದು ಏನೂ ದಾಖಲಾಗಿಲ್ಲ — ನಿಮ್ಮ ಪ್ಲಾನ್ ಇನ್ನೂ {plan}kcal. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -597,8 +597,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "આજનો દિવસ, પ્લાનની સરખામણીમાં",
-    body: "આજે તમારા {plan} kcal માંથી {eaten}. {tomorrow}",
-    emptyBody: "આજે કંઈ નોંધાયું નથી — તમારો પ્લાન હજી {plan} kcal છે. {tomorrow}",
+    body: "આજે તમારા {plan}kcal માંથી {eaten}. {tomorrow}",
+    emptyBody: "આજે કંઈ નોંધાયું નથી — તમારો પ્લાન હજી {plan}kcal છે. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -632,8 +632,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "প্ল্যানের তুলনায় আজকের দিন",
-    body: "আজ আপনার {plan} kcal-এর মধ্যে {eaten}। {tomorrow}",
-    emptyBody: "আজ কিছুই লগ হয়নি — আপনার প্ল্যান এখনও {plan} kcal। {tomorrow}",
+    body: "আজ আপনার {plan}kcal-এর মধ্যে {eaten}। {tomorrow}",
+    emptyBody: "আজ কিছুই লগ হয়নি — আপনার প্ল্যান এখনও {plan}kcal। {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -667,8 +667,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Hoje face ao plano",
-    body: "{eaten} das tuas {plan} kcal hoje. {tomorrow}",
-    emptyBody: "Nada registado hoje — as tuas {plan} kcal continuam a ser o plano. {tomorrow}",
+    body: "{eaten} das tuas {plan}kcal hoje. {tomorrow}",
+    emptyBody: "Nada registado hoje — as tuas {plan}kcal continuam a ser o plano. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -702,8 +702,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Hari ini berbanding pelan",
-    body: "{eaten} daripada {plan} kcal anda hari ini. {tomorrow}",
-    emptyBody: "Tiada apa-apa dicatat hari ini — {plan} kcal anda masih pelannya. {tomorrow}",
+    body: "{eaten} daripada {plan}kcal anda hari ini. {tomorrow}",
+    emptyBody: "Tiada apa-apa dicatat hari ini — {plan}kcal anda masih pelannya. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -737,8 +737,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Avui davant el pla",
-    body: "{eaten} de les teves {plan} kcal avui. {tomorrow}",
-    emptyBody: "Res registrat avui — les teves {plan} kcal continuen sent el pla. {tomorrow}",
+    body: "{eaten} de les teves {plan}kcal avui. {tomorrow}",
+    emptyBody: "Res registrat avui — les teves {plan}kcal continuen sent el pla. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -772,8 +772,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Današnji dan v primerjavi z načrtom",
-    body: "{eaten} od tvojih {plan} kcal danes. {tomorrow}",
-    emptyBody: "Danes ni nič zabeleženo — tvoj načrt je še vedno {plan} kcal. {tomorrow}",
+    body: "{eaten} od tvojih {plan}kcal danes. {tomorrow}",
+    emptyBody: "Danes ni nič zabeleženo — tvoj načrt je še vedno {plan}kcal. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -807,8 +807,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Današnji dan u odnosu na plan",
-    body: "{eaten} od tvojih {plan} kcal danas. {tomorrow}",
-    emptyBody: "Danas ništa nije zabilježeno — tvojih {plan} kcal i dalje je plan. {tomorrow}",
+    body: "{eaten} od tvojih {plan}kcal danas. {tomorrow}",
+    emptyBody: "Danas ništa nije zabilježeno — tvojih {plan}kcal i dalje je plan. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -842,8 +842,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Dnešok v porovnaní s plánom",
-    body: "Dnes {eaten} z tvojich {plan} kcal. {tomorrow}",
-    emptyBody: "Dnes nič nezapísané — tvojich {plan} kcal zostáva plánom. {tomorrow}",
+    body: "Dnes {eaten} z tvojich {plan}kcal. {tomorrow}",
+    emptyBody: "Dnes nič nezapísané — tvojich {plan}kcal zostáva plánom. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -877,8 +877,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "I dag mot planen",
-    body: "{eaten} av dine {plan} kcal i dag. {tomorrow}",
-    emptyBody: "Ingenting logget i dag — dine {plan} kcal er fortsatt planen. {tomorrow}",
+    body: "{eaten} av dine {plan}kcal i dag. {tomorrow}",
+    emptyBody: "Ingenting logget i dag — dine {plan}kcal er fortsatt planen. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -912,8 +912,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Päivä suhteessa suunnitelmaan",
-    body: "Tänään {eaten}/{plan} kcal. {tomorrow}",
-    emptyBody: "Tänään ei kirjauksia – suunnitelmasi on yhä {plan} kcal. {tomorrow}",
+    body: "Tänään {eaten}/{plan}kcal. {tomorrow}",
+    emptyBody: "Tänään ei kirjauksia – suunnitelmasi on yhä {plan}kcal. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -947,8 +947,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "I dag i forhold til planen",
-    body: "{eaten} af dine {plan} kcal i dag. {tomorrow}",
-    emptyBody: "Intet registreret i dag — dine {plan} kcal er stadig planen. {tomorrow}",
+    body: "{eaten} af dine {plan}kcal i dag. {tomorrow}",
+    emptyBody: "Intet registreret i dag — dine {plan}kcal er stadig planen. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -982,8 +982,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "A mai nap a tervhez képest",
-    body: "Ma eddig {eaten}, a terv {plan} kcal. {tomorrow}",
-    emptyBody: "Ma semmi nincs rögzítve — a terv továbbra is {plan} kcal. {tomorrow}",
+    body: "Ma eddig {eaten}, a terv {plan}kcal. {tomorrow}",
+    emptyBody: "Ma semmi nincs rögzítve — a terv továbbra is {plan}kcal. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1017,8 +1017,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Η σημερινή μέρα σε σχέση με το πλάνο",
-    body: "{eaten} από τις {plan} kcal σου σήμερα. {tomorrow}",
-    emptyBody: "Δεν καταγράφηκε τίποτα σήμερα — οι {plan} kcal σου παραμένουν το πλάνο. {tomorrow}",
+    body: "{eaten} από τις {plan}kcal σου σήμερα. {tomorrow}",
+    emptyBody: "Δεν καταγράφηκε τίποτα σήμερα — οι {plan}kcal σου παραμένουν το πλάνο. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1052,8 +1052,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Ziua de azi față de plan",
-    body: "{eaten} din cele {plan} kcal ale tale azi. {tomorrow}",
-    emptyBody: "Nimic înregistrat azi — cele {plan} kcal rămân planul. {tomorrow}",
+    body: "{eaten} din cele {plan}kcal ale tale azi. {tomorrow}",
+    emptyBody: "Nimic înregistrat azi — cele {plan}kcal rămân planul. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1087,8 +1087,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Dnešek v porovnání s plánem",
-    body: "Dnes {eaten} z tvých {plan} kcal. {tomorrow}",
-    emptyBody: "Dnes nic nezapsáno — tvých {plan} kcal platí dál. {tomorrow}",
+    body: "Dnes {eaten} z tvých {plan}kcal. {tomorrow}",
+    emptyBody: "Dnes nic nezapsáno — tvých {plan}kcal platí dál. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1122,8 +1122,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "आज का दिन, प्लान के मुकाबले",
-    body: "आज आपके {plan} kcal में से {eaten}। {tomorrow}",
-    emptyBody: "आज कुछ दर्ज नहीं हुआ — आपका प्लान अब भी {plan} kcal है। {tomorrow}",
+    body: "आज आपके {plan}kcal में से {eaten}। {tomorrow}",
+    emptyBody: "आज कुछ दर्ज नहीं हुआ — आपका प्लान अब भी {plan}kcal है। {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1157,8 +1157,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "วันนี้เทียบกับแผน",
-    body: "วันนี้ {eaten} จาก {plan} kcal ของคุณ {tomorrow}",
-    emptyBody: "วันนี้ยังไม่ได้จดอะไร — {plan} kcal ของคุณยังเป็นแผนเหมือนเดิม {tomorrow}",
+    body: "วันนี้ {eaten} จาก {plan}kcal ของคุณ {tomorrow}",
+    emptyBody: "วันนี้ยังไม่ได้จดอะไร — {plan}kcal ของคุณยังเป็นแผนเหมือนเดิม {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1192,8 +1192,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Dagen jämfört med planen",
-    body: "{eaten} av dina {plan} kcal i dag. {tomorrow}",
-    emptyBody: "Inget loggat i dag — dina {plan} kcal är fortfarande planen. {tomorrow}",
+    body: "{eaten} av dina {plan}kcal i dag. {tomorrow}",
+    emptyBody: "Inget loggat i dag — dina {plan}kcal är fortfarande planen. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1227,8 +1227,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "День у порівнянні з планом",
-    body: "{eaten} із твоїх {plan} ккал сьогодні. {tomorrow}",
-    emptyBody: "Сьогодні нічого не записано — твої {plan} ккал усе ще в плані. {tomorrow}",
+    body: "{eaten} із твоїх {plan}ккал сьогодні. {tomorrow}",
+    emptyBody: "Сьогодні нічого не записано — твої {plan}ккал усе ще в плані. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1262,8 +1262,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Vandaag vergeleken met het plan",
-    body: "{eaten} van je {plan} kcal vandaag. {tomorrow}",
-    emptyBody: "Vandaag niets gelogd — je {plan} kcal zijn nog steeds het plan. {tomorrow}",
+    body: "{eaten} van je {plan}kcal vandaag. {tomorrow}",
+    emptyBody: "Vandaag niets gelogd — je {plan}kcal zijn nog steeds het plan. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1297,8 +1297,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Dzisiejszy dzień na tle planu",
-    body: "{eaten} z twoich {plan} kcal dzisiaj. {tomorrow}",
-    emptyBody: "Dziś nic nie zapisano — plan to nadal {plan} kcal. {tomorrow}",
+    body: "{eaten} z twoich {plan}kcal dzisiaj. {tomorrow}",
+    emptyBody: "Dziś nic nie zapisano — plan to nadal {plan}kcal. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1332,8 +1332,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Bugün, plana göre",
-    body: "Bugün {plan} kcal'nin {eaten} kadarı. {tomorrow}",
-    emptyBody: "Bugün hiçbir şey kaydedilmedi — planın hâlâ {plan} kcal. {tomorrow}",
+    body: "Bugün {plan}kcal'nin {eaten} kadarı. {tomorrow}",
+    emptyBody: "Bugün hiçbir şey kaydedilmedi — planın hâlâ {plan}kcal. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1367,8 +1367,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "今天與計畫的對照",
-    body: "你今天吃了 {eaten}，計畫是 {plan} 大卡。{tomorrow}",
-    emptyBody: "今天還沒有記錄，{plan} 大卡仍是你的計畫。{tomorrow}",
+    body: "你今天吃了 {eaten}，計畫是 {plan}大卡。{tomorrow}",
+    emptyBody: "今天還沒有記錄，{plan}大卡仍是你的計畫。{tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1507,8 +1507,8 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   evening: {
     title: "Hoje em relação ao plano",
-    body: "{eaten} das suas {plan} kcal hoje. {tomorrow}",
-    emptyBody: "Nada registrado hoje — suas {plan} kcal continuam sendo o plano. {tomorrow}",
+    body: "{eaten} das suas {plan}kcal hoje. {tomorrow}",
+    emptyBody: "Nada registrado hoje — suas {plan}kcal continuam sendo o plano. {tomorrow}",
   },
   // The free account's line (#730): no figures, because the figures read the day against the plan
   // and that reading is what a subscription buys.
@@ -1889,7 +1889,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "రేపు ఒక ఫోటో, ఆ రోజు మళ్ళీ లెక్కలోకి వస్తుంది.",
     over: "ఈరోజు {over} ఎక్కువ — రేపు మళ్ళీ {plan} నుండి మొదలు.",
     protein: "ప్రోటీన్ {gap} g తక్కువైంది — అల్పాహారంలో గుడ్లు లేదా పెరుగు దాన్ని పూరిస్తాయి.",
-    gainUnder: "ప్లాన్ కంటే {under} kcal తక్కువ — రేపు గుప్పెడు గింజలు దాన్ని పూరిస్తాయి.",
+    gainUnder: "ప్లాన్ కంటే {under}kcal తక్కువ — రేపు గుప్పెడు గింజలు దాన్ని పూరిస్తాయి.",
     under: "ప్లాన్ కంటే {under} తక్కువ — రేపు పూర్తి సంఖ్య తినడమే ప్లాన్, అది తప్పు కాదు.",
     onPlan: "ప్లాన్ ప్రకారమే. రేపు కూడా ఇలాగే.",
   },
@@ -1897,7 +1897,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "நாளை ஒரு புகைப்படம், அந்த நாள் மீண்டும் கணக்கில் சேரும்.",
     over: "இன்று {over} அதிகம் — நாளை மீண்டும் {plan} இலிருந்து தொடக்கம்.",
     protein: "புரதம் {gap} g குறைவு — காலை உணவில் முட்டை அல்லது தயிர் அதை ஈடுசெய்யும்.",
-    gainUnder: "திட்டத்தை விட {under} kcal குறைவு — நாளை ஒரு கைப்பிடி கொட்டைகள் அதை ஈடுசெய்யும்.",
+    gainUnder: "திட்டத்தை விட {under}kcal குறைவு — நாளை ஒரு கைப்பிடி கொட்டைகள் அதை ஈடுசெய்யும்.",
     under: "திட்டத்தை விட {under} குறைவு — நாளை முழு எண்ணையும் சாப்பிடுவதுதான் திட்டம், தவறு அல்ல.",
     onPlan: "திட்டப்படி. நாளையும் இதேபோல்.",
   },
@@ -1905,7 +1905,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "ਕੱਲ੍ਹ ਇੱਕ ਫ਼ੋਟੋ, ਅਤੇ ਦਿਨ ਫਿਰ ਤੋਂ ਗਿਣਤੀ ਵਿੱਚ।",
     over: "ਅੱਜ {over} ਵੱਧ — ਕੱਲ੍ਹ ਫਿਰ ਤੋਂ {plan} ਨਾਲ ਸ਼ੁਰੂਆਤ।",
     protein: "ਪ੍ਰੋਟੀਨ {gap} g ਘੱਟ ਰਿਹਾ — ਨਾਸ਼ਤੇ ਵਿੱਚ ਆਂਡੇ ਜਾਂ ਦਹੀਂ ਨਾਲ ਇਹ ਪੂਰਾ ਹੋ ਜਾਵੇਗਾ।",
-    gainUnder: "ਪਲਾਨ ਤੋਂ {under} kcal ਘੱਟ — ਕੱਲ੍ਹ ਮੁੱਠੀ ਭਰ ਮੇਵਿਆਂ ਨਾਲ ਇਹ ਪੂਰਾ ਹੋ ਜਾਵੇਗਾ।",
+    gainUnder: "ਪਲਾਨ ਤੋਂ {under}kcal ਘੱਟ — ਕੱਲ੍ਹ ਮੁੱਠੀ ਭਰ ਮੇਵਿਆਂ ਨਾਲ ਇਹ ਪੂਰਾ ਹੋ ਜਾਵੇਗਾ।",
     under: "ਪਲਾਨ ਤੋਂ {under} ਘੱਟ — ਕੱਲ੍ਹ ਪੂਰਾ ਨੰਬਰ ਖਾਣਾ ਹੀ ਪਲਾਨ ਹੈ, ਕੋਈ ਚੂਕ ਨਹੀਂ।",
     onPlan: "ਪਲਾਨ ਮੁਤਾਬਕ। ਕੱਲ੍ਹ ਵੀ ਇਸੇ ਤਰ੍ਹਾਂ।",
   },
@@ -1913,7 +1913,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "କାଲି ଗୋଟିଏ ଫଟୋ, ଆଉ ଦିନଟି ପୁଣି ବୋର୍ଡରେ।",
     over: "ଆଜି {over} ଅଧିକ — କାଲି ପୁଣି {plan} ରୁ ଆରମ୍ଭ।",
     protein: "ପ୍ରୋଟିନ୍ {gap} g କମ୍ ରହିଲା — ଜଳଖିଆରେ ଅଣ୍ଡା କିମ୍ବା ସ୍କିର୍ ଏହାକୁ ପୂରଣ କରିବ।",
-    gainUnder: "ପ୍ଲାନ୍‌ରୁ {under} kcal କମ୍ — କାଲି ମୁଠାଏ ବାଦାମ ଏହାକୁ ପୂରଣ କରିବ।",
+    gainUnder: "ପ୍ଲାନ୍‌ରୁ {under}kcal କମ୍ — କାଲି ମୁଠାଏ ବାଦାମ ଏହାକୁ ପୂରଣ କରିବ।",
     under: "ପ୍ଲାନ୍‌ରୁ {under} କମ୍ — କାଲି ପୂରା ସଂଖ୍ୟା ଖାଇବା ହିଁ ପ୍ଲାନ୍, ଭୁଲ୍ ନୁହେଁ।",
     onPlan: "ପ୍ଲାନ୍ ଅନୁସାରେ। କାଲି ବି ସେହିପରି।",
   },
@@ -1921,7 +1921,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "उद्या एक फोटो, आणि दिवस पुन्हा मोजणीत.",
     over: "आज {over} जास्त — उद्या पुन्हा {plan} पासून सुरुवात.",
     protein: "प्रोटीन {gap} g कमी पडले — नाश्त्याला अंडी किंवा दही घेतल्यास ते भरून निघेल.",
-    gainUnder: "प्लॅनपेक्षा {under} kcal कमी — उद्या मूठभर सुकामेवा घेतल्यास ते भरून निघेल.",
+    gainUnder: "प्लॅनपेक्षा {under}kcal कमी — उद्या मूठभर सुकामेवा घेतल्यास ते भरून निघेल.",
     under: "प्लॅनपेक्षा {under} कमी — उद्या पूर्ण आकडा खाणे हाच प्लॅन आहे, चूक नव्हे.",
     onPlan: "प्लॅननुसार. उद्याही असेच.",
   },
@@ -1929,7 +1929,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "നാളെ ഒരു ഫോട്ടോ, ആ ദിവസം വീണ്ടും കണക്കിൽ.",
     over: "ഇന്ന് {over} കൂടുതൽ — നാളെ വീണ്ടും {plan} മുതൽ തുടങ്ങും.",
     protein: "പ്രോട്ടീൻ {gap} g കുറവായിരുന്നു — പ്രഭാതഭക്ഷണത്തിന് മുട്ടയോ സ്കീറോ കഴിച്ചാൽ അത് നികത്താം.",
-    gainUnder: "പ്ലാനിനെക്കാൾ {under} kcal കുറവ് — നാളെ ഒരു പിടി നട്സ് കഴിച്ചാൽ അത് നികത്താം.",
+    gainUnder: "പ്ലാനിനെക്കാൾ {under}kcal കുറവ് — നാളെ ഒരു പിടി നട്സ് കഴിച്ചാൽ അത് നികത്താം.",
     under: "പ്ലാനിനെക്കാൾ {under} കുറവ് — നാളെ മുഴുവൻ സംഖ്യയും കഴിക്കുന്നതാണ് പ്ലാൻ, അതൊരു വീഴ്ചയല്ല.",
     onPlan: "പ്ലാൻ പ്രകാരം. നാളെയും ഇതുപോലെ.",
   },
@@ -1937,7 +1937,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "ನಾಳೆ ಒಂದು ಫೋಟೋ, ದಿನ ಮತ್ತೆ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ.",
     over: "ಇಂದು {over} ಹೆಚ್ಚು — ನಾಳೆ ಮತ್ತೆ ಪೂರ್ಣ {plan} ಸಿಗುತ್ತದೆ.",
     protein: "ಪ್ರೋಟೀನ್ {gap} g ಕಡಿಮೆ ಆಯಿತು — ಬೆಳಗಿನ ಉಪಾಹಾರದಲ್ಲಿ ಮೊಟ್ಟೆ ಅಥವಾ ಮೊಸರು ಅದನ್ನು ತುಂಬುತ್ತದೆ.",
-    gainUnder: "ಪ್ಲಾನ್‌ಗಿಂತ {under} kcal ಕಡಿಮೆ — ನಾಳೆ ಒಂದು ಹಿಡಿ ಬೀಜಗಳು ಅದನ್ನು ತುಂಬುತ್ತವೆ.",
+    gainUnder: "ಪ್ಲಾನ್‌ಗಿಂತ {under}kcal ಕಡಿಮೆ — ನಾಳೆ ಒಂದು ಹಿಡಿ ಬೀಜಗಳು ಅದನ್ನು ತುಂಬುತ್ತವೆ.",
     under: "ಪ್ಲಾನ್‌ಗಿಂತ {under} ಕಡಿಮೆ — ನಾಳೆ ಪೂರ್ಣ ಸಂಖ್ಯೆಯಷ್ಟು ತಿನ್ನುವುದೇ ಪ್ಲಾನ್, ತಪ್ಪಲ್ಲ.",
     onPlan: "ಪ್ಲಾನ್‌ಗೆ ತಕ್ಕಂತೆ. ನಾಳೆಯೂ ಹಾಗೆಯೇ.",
   },
@@ -1945,7 +1945,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "કાલે એક ફોટો, અને દિવસ ફરી ગણતરીમાં.",
     over: "આજે {over} વધુ — કાલે ફરી {plan} થી શરૂઆત.",
     protein: "પ્રોટીન {gap} g ઓછું રહ્યું — નાસ્તામાં ઈંડાં કે દહીંથી તે પૂરું થઈ જશે.",
-    gainUnder: "પ્લાન કરતાં {under} kcal ઓછું — કાલે મુઠ્ઠીભર સૂકો મેવો તે પૂરું કરી દેશે.",
+    gainUnder: "પ્લાન કરતાં {under}kcal ઓછું — કાલે મુઠ્ઠીભર સૂકો મેવો તે પૂરું કરી દેશે.",
     under: "પ્લાન કરતાં {under} ઓછું — કાલે પૂરો આંકડો ખાવો એ જ પ્લાન છે, કોઈ ચૂક નહીં.",
     onPlan: "પ્લાન મુજબ. કાલે પણ આવું જ.",
   },
@@ -1953,7 +1953,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "কাল একটা ছবি দিলেই দিনটা আবার হিসাবে ফিরবে।",
     over: "আজ {over} বেশি — কাল আবার {plan} থেকে শুরু।",
     protein: "প্রোটিন {gap} g কম ছিল — সকালের নাশতায় ডিম বা দই খেলে তা পূরণ হবে।",
-    gainUnder: "প্ল্যানের চেয়ে {under} kcal কম — কাল এক মুঠো বাদাম খেলেই তা পূরণ হবে।",
+    gainUnder: "প্ল্যানের চেয়ে {under}kcal কম — কাল এক মুঠো বাদাম খেলেই তা পূরণ হবে।",
     under: "প্ল্যানের চেয়ে {under} কম — কাল পুরো সংখ্যাটা খাওয়াই প্ল্যান, কোনো ভুল নয়।",
     onPlan: "প্ল্যান অনুযায়ী। কালও একই রকম।",
   },
@@ -1961,7 +1961,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Amanhã, uma foto volta a pôr o dia no registo.",
     over: "{over} acima hoje — amanhã começa de novo em {plan}.",
     protein: "Faltaram {gap} g de proteína — ovos ou skyr ao pequeno-almoço resolvem.",
-    gainUnder: "{under} kcal abaixo do plano — um punhado de frutos secos amanhã resolve.",
+    gainUnder: "{under}kcal abaixo do plano — um punhado de frutos secos amanhã resolve.",
     under: "{under} abaixo do plano — comer o número inteiro amanhã é o plano, não um deslize.",
     onPlan: "Dentro do plano. Repete amanhã.",
   },
@@ -1969,7 +1969,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Satu foto esok dan hari itu dikira semula.",
     over: "{over} terlebih hari ini — esok bermula semula pada {plan}.",
     protein: "Protein kurang {gap} g — telur atau skyr ketika sarapan boleh mencukupkannya.",
-    gainUnder: "{under} kcal kurang daripada pelan — segenggam kacang esok menampungnya.",
+    gainUnder: "{under}kcal kurang daripada pelan — segenggam kacang esok menampungnya.",
     under: "{under} di bawah pelan — makan jumlah penuh esok ialah pelannya, bukan kesilapan.",
     onPlan: "Ikut pelan. Sama lagi esok.",
   },
@@ -1977,7 +1977,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Demà, amb una sola foto el dia torna a comptar.",
     over: "{over} de més avui — demà tornes a començar amb {plan}.",
     protein: "Han faltat {gap} g de proteïna — uns ous o skyr a l'esmorzar ho compensen.",
-    gainUnder: "Han faltat {under} kcal per al pla — un grapat de fruits secs demà ho cobreix.",
+    gainUnder: "Han faltat {under}kcal per al pla — un grapat de fruits secs demà ho cobreix.",
     under: "{under} per sota del pla — demà, menjar tot el que toca és el pla, no un error.",
     onPlan: "Dins del pla. Demà, igual.",
   },
@@ -1985,7 +1985,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Ena fotografija jutri in dan spet šteje.",
     over: "Danes {over} nad načrtom — jutri spet začneš pri {plan}.",
     protein: "Beljakovin je zmanjkalo za {gap} g — jajca ali skyr za zajtrk to zapolnijo.",
-    gainUnder: "Do načrta je manjkalo {under} kcal — pest oreščkov jutri to pokrije.",
+    gainUnder: "Do načrta je manjkalo {under}kcal — pest oreščkov jutri to pokrije.",
     under: "{under} pod načrtom — če jutri poješ celotno številko, je to načrt, ne spodrsljaj.",
     onPlan: "Po načrtu. Jutri enako.",
   },
@@ -1993,7 +1993,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Jedna fotografija sutra i dan se opet računa.",
     over: "Danas {over} preko — sutra opet kreće od {plan}.",
     protein: "Nedostajalo je {gap} g proteina — jaja ili skyr za doručak pokrivaju razliku.",
-    gainUnder: "{under} kcal manje od plana — šaka orašastih plodova sutra to pokriva.",
+    gainUnder: "{under}kcal manje od plana — šaka orašastih plodova sutra to pokriva.",
     under: "{under} ispod plana — sutra pojedi cijeli iznos: to je plan, a ne posrtaj.",
     onPlan: "U planu. Sutra isto.",
   },
@@ -2001,7 +2001,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Jedna fotka zajtra a deň je znova v hre.",
     over: "Dnes {over} nad plánom — zajtra sa znova začína na {plan}.",
     protein: "Bielkovín chýbalo {gap} g — vajcia alebo skyr na raňajky to doplnia.",
-    gainUnder: "Do plánu chýbalo {under} kcal — hrsť orieškov zajtra to pokryje.",
+    gainUnder: "Do plánu chýbalo {under}kcal — hrsť orieškov zajtra to pokryje.",
     under: "Dnes {under} pod plánom — zjesť zajtra celé číslo je plán, nie zakopnutie.",
     onPlan: "Podľa plánu. Zajtra znova tak.",
   },
@@ -2009,7 +2009,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Ett bilde i morgen, så teller dagen igjen.",
     over: "{over} over i dag — i morgen begynner du på {plan} igjen.",
     protein: "Proteinet var {gap} g for lite — egg eller skyr til frokost tetter gapet.",
-    gainUnder: "{under} kcal under planen — en neve nøtter i morgen dekker det.",
+    gainUnder: "{under}kcal under planen — en neve nøtter i morgen dekker det.",
     under: "{under} under planen — å spise hele tallet i morgen er planen, ikke en glipp.",
     onPlan: "Innenfor planen. Likedan i morgen.",
   },
@@ -2017,7 +2017,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Yksi kuva huomenna, niin päivä lasketaan taas.",
     over: "Tänään {over} yli – huomenna lähtökohta on taas {plan}.",
     protein: "Proteiinia jäi {gap} g vajaaksi – kananmunat tai rahka aamiaisella paikkaavat sen.",
-    gainUnder: "{under} kcal suunnitelmasta jäi syömättä – kourallinen pähkinöitä huomenna paikkaa sen.",
+    gainUnder: "{under}kcal suunnitelmasta jäi syömättä – kourallinen pähkinöitä huomenna paikkaa sen.",
     under: "{under} alle suunnitelman – koko määrän syöminen huomenna on suunnitelma, ei lipsahdus.",
     onPlan: "Suunnitelman mukaan. Samoin huomenna.",
   },
@@ -2025,7 +2025,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Ét foto i morgen, så tæller dagen igen.",
     over: "{over} over i dag — i morgen starter vi på {plan} igen.",
     protein: "Protein manglede {gap} g — æg eller skyr til morgenmad lukker hullet.",
-    gainUnder: "{under} kcal under planen — en håndfuld nødder i morgen dækker det.",
+    gainUnder: "{under}kcal under planen — en håndfuld nødder i morgen dækker det.",
     under: "{under} under planen — at spise hele tallet i morgen er planen, ikke et fejltrin.",
     onPlan: "Inden for planen. Det samme igen i morgen.",
   },
@@ -2033,7 +2033,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Egy fotó holnap, és a nap újra számít.",
     over: "Ma {over} túllépés — holnap újra {plan} a kiindulás.",
     protein: "{gap} g fehérje hiányzott — tojás vagy skyr reggelire pótolja.",
-    gainUnder: "{under} kcal hiányzott a tervhez — holnap egy marék dió pótolja.",
+    gainUnder: "{under}kcal hiányzott a tervhez — holnap egy marék dió pótolja.",
     under: "{under} a terv alatt — holnap a teljes mennyiséget megenni maga a terv, nem botlás.",
     onPlan: "A terv szerint. Holnap ugyanígy.",
   },
@@ -2041,7 +2041,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Μια φωτογραφία αύριο και η μέρα μετράει ξανά.",
     over: "{over} πάνω σήμερα — αύριο ξεκινάς ξανά με {plan}.",
     protein: "Έλειψαν {gap} g πρωτεΐνης — αυγά ή skyr στο πρωινό καλύπτουν τη διαφορά.",
-    gainUnder: "{under} kcal κάτω από το πλάνο — μια χούφτα ξηροί καρποί αύριο το καλύπτουν.",
+    gainUnder: "{under}kcal κάτω από το πλάνο — μια χούφτα ξηροί καρποί αύριο το καλύπτουν.",
     under: "{under} κάτω από το πλάνο — αύριο τρως όλο το νούμερο: αυτό είναι το πλάνο, όχι στραβοπάτημα.",
     onPlan: "Εντός πλάνου. Αύριο πάλι τα ίδια.",
   },
@@ -2049,7 +2049,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "O fotografie mâine și ziua contează din nou.",
     over: "{over} peste azi — mâine începi din nou de la {plan}.",
     protein: "Proteinele au fost cu {gap} g sub țintă — ouă sau skyr la micul dejun acoperă diferența.",
-    gainUnder: "Cu {under} kcal sub plan — o mână de nuci mâine acoperă diferența.",
+    gainUnder: "Cu {under}kcal sub plan — o mână de nuci mâine acoperă diferența.",
     under: "{under} sub plan — să mănânci mâine tot numărul e planul, nu o abatere.",
     onPlan: "Conform planului. La fel și mâine.",
   },
@@ -2057,7 +2057,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Zítra stačí jedna fotka a den se zase počítá.",
     over: "Dnes {over} nad plánem — zítra se začíná znovu od {plan}.",
     protein: "Bílkovin chybělo {gap} g — vejce nebo skyr ke snídani to doženou.",
-    gainUnder: "Do plánu chybělo {under} kcal — hrst ořechů zítra to pokryje.",
+    gainUnder: "Do plánu chybělo {under}kcal — hrst ořechů zítra to pokryje.",
     under: "{under} pod plánem — sníst zítra celé číslo je plán, ne zakopnutí.",
     onPlan: "Podle plánu. Zítra zase tak.",
   },
@@ -2065,7 +2065,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "कल एक फ़ोटो, और दिन फिर से गिनती में।",
     over: "आज {over} ज़्यादा — कल फिर से {plan} से शुरुआत।",
     protein: "प्रोटीन {gap} g कम रहा — नाश्ते में अंडे या दही से यह पूरा हो जाएगा।",
-    gainUnder: "प्लान से {under} kcal कम — कल मुट्ठी भर मेवे से यह पूरा हो जाएगा।",
+    gainUnder: "प्लान से {under}kcal कम — कल मुट्ठी भर मेवे से यह पूरा हो जाएगा।",
     under: "प्लान से {under} कम — कल पूरा नंबर खाना ही प्लान है, कोई चूक नहीं।",
     onPlan: "प्लान के मुताबिक। कल भी ऐसा ही।",
   },
@@ -2073,7 +2073,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "รูปเดียวพรุ่งนี้ วันนั้นก็กลับมานับอีกครั้ง",
     over: "วันนี้เกิน {over} — พรุ่งนี้เริ่มที่ {plan} ใหม่",
     protein: "โปรตีนขาดไป {gap} ก. — ไข่หรือสกีร์ตอนเช้าช่วยเติมได้",
-    gainUnder: "ยังขาดอีก {under} kcal จากแผน — ถั่วสักกำมือพรุ่งนี้ก็พอ",
+    gainUnder: "ยังขาดอีก {under}kcal จากแผน — ถั่วสักกำมือพรุ่งนี้ก็พอ",
     under: "ต่ำกว่าแผน {under} — พรุ่งนี้กินให้ครบตามตัวเลขคือแผน ไม่ใช่การพลาด",
     onPlan: "ตรงตามแผน พรุ่งนี้ทำแบบเดิมอีกนะ",
   },
@@ -2081,7 +2081,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Ett foto i morgon, så räknas dagen igen.",
     over: "{over} över i dag — i morgon börjar det om på {plan}.",
     protein: "Proteinet hamnade {gap} g under — ägg eller skyr till frukost fyller luckan.",
-    gainUnder: "{under} kcal under planen — en näve nötter i morgon täcker det.",
+    gainUnder: "{under}kcal under planen — en näve nötter i morgon täcker det.",
     under: "{under} under planen — att äta hela siffran i morgon är planen, inte ett snedsteg.",
     onPlan: "Enligt planen. Samma igen i morgon.",
   },
@@ -2089,7 +2089,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Одне фото завтра — і день знову в рахунку.",
     over: "Сьогодні {over} понад план — завтра знову починаєш із {plan}.",
     protein: "Білка забракло {gap} г — яйця чи скир на сніданок це закриють.",
-    gainUnder: "До плану забракло {under} ккал — жменя горіхів завтра це покриє.",
+    gainUnder: "До плану забракло {under}ккал — жменя горіхів завтра це покриє.",
     under: "{under} нижче плану. З'їсти завтра всю цифру — це і є план, а не зрив.",
     onPlan: "За планом. Завтра — так само.",
   },
@@ -2097,7 +2097,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Eén foto morgen en de dag telt weer mee.",
     over: "Vandaag {over} erover — morgen begint weer bij {plan}.",
     protein: "Eiwit kwam {gap} g tekort — eieren of skyr bij het ontbijt vullen dat aan.",
-    gainUnder: "{under} kcal onder het plan — een handje noten morgen vult dat aan.",
+    gainUnder: "{under}kcal onder het plan — een handje noten morgen vult dat aan.",
     under: "{under} onder het plan — morgen het volledige aantal eten is het plan, geen misstap.",
     onPlan: "Volgens plan. Morgen hetzelfde.",
   },
@@ -2105,7 +2105,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Jedno zdjęcie jutro i dzień znów się liczy.",
     over: "Dziś {over} ponad plan — jutro znów zaczynasz od {plan}.",
     protein: "Białka zabrakło {gap} g — jajka lub skyr na śniadanie uzupełnią lukę.",
-    gainUnder: "{under} kcal poniżej planu — jutro garść orzechów to pokryje.",
+    gainUnder: "{under}kcal poniżej planu — jutro garść orzechów to pokryje.",
     under: "{under} poniżej planu — zjedzenie jutro pełnej liczby to plan, a nie wpadka.",
     onPlan: "Zgodnie z planem. Jutro tak samo.",
   },
@@ -2113,7 +2113,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Yarın bir fotoğraf, günü yeniden tabloya koyar.",
     over: "Bugün {over} fazla — yarın yine {plan} ile başlıyor.",
     protein: "Protein {gap} g eksik kaldı — kahvaltıda yumurta ya da skyr bunu kapatır.",
-    gainUnder: "Plana {under} kcal eksik — yarın bir avuç kuruyemiş bunu karşılar.",
+    gainUnder: "Plana {under}kcal eksik — yarın bir avuç kuruyemiş bunu karşılar.",
     under: "Planın {under} altında — yarın sayının tamamını yemek plan, kaçamak değil.",
     onPlan: "Plana uygun. Yarın da aynısı.",
   },
@@ -2121,7 +2121,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "明天拍一張照片，這一天就重新算進去了。",
     over: "今天超過 {over}，明天又從 {plan} 重新開始。",
     protein: "蛋白質少了 {gap} 公克，早餐吃蛋或優格就能補上。",
-    gainUnder: "比計畫少 {under} 大卡，明天吃一把堅果就補上了。",
+    gainUnder: "比計畫少 {under}大卡，明天吃一把堅果就補上了。",
     under: "比計畫少 {under}。明天吃足計畫的量是照計畫走，不是失誤。",
     onPlan: "符合計畫。明天照樣。",
   },
@@ -2153,7 +2153,7 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     noMeals: "Amanhã, uma foto já coloca o dia de volta no registro.",
     over: "{over} acima hoje — amanhã começa de novo em {plan}.",
     protein: "Faltaram {gap} g de proteína — ovos ou skyr no café da manhã resolvem.",
-    gainUnder: "{under} kcal abaixo do plano — um punhado de castanhas amanhã resolve.",
+    gainUnder: "{under}kcal abaixo do plano — um punhado de castanhas amanhã resolve.",
     under: "{under} abaixo do plano — comer o número inteiro amanhã é o plano, não um deslize.",
     onPlan: "Dentro do plano. Repita amanhã.",
   },

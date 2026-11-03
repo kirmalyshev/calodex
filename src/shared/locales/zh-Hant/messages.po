@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "已更新：{kcal} 大卡。{day}"
+#~ msgstr "已更新：{kcal}大卡。{day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "「{note}」——記下了，已算進數字裡。"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} 大卡"
+msgstr "{names} · {kcal}大卡"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "無法讀取這個營養標示。"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "已計入。今天還剩 {left} 大卡。"
+msgstr "已計入。今天還剩 {left}大卡。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "已計入。今天超過 {over} 大卡。"
+msgstr "已計入。今天超過 {over}大卡。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "正在辨識食物 · 2／4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "第一餐記錄好了。{kcal} 大卡。"
+msgstr "第一餐記錄好了。{kcal}大卡。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "這是新的 eait。你的餐點和照片都保存在你的 eait 帳號�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "今天：{eaten}／{plan} 大卡，蛋白質 {protein}／{proteinTarget} 公克"
+msgstr "今天：{eaten}／{plan}大卡，蛋白質 {protein}／{proteinTarget} 公克"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

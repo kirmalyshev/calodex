@@ -1498,7 +1498,7 @@ const TE: OnboardingContent = {
     rows: { calories: "కేలరీలు", protein: "ప్రోటీన్", carbs: "కార్బ్స్", fat: "కొవ్వు", diet: "డైట్" },
     limitCap: { ldl: "సంతృప్త కొవ్వు ≤ {n} g", kidneys: "సోడియం ≤ {n} mg" },
     cta: "ప్లాన్ చూపించండి",
-    floorTitle: "{floor} kcal వద్ద ఆపాము",
+    floorTitle: "{floor}kcal వద్ద ఆపాము",
     floorBody: "లెక్క ఇంకా తక్కువకు వెళ్లాలనుకుంది. వైద్య పర్యవేక్షణ లేకుండా దీని కంటే తక్కువ లక్ష్యాలను మేము పెట్టము, అందుకే మీది ఇక్కడే ఉంది. మీ డైరీలో కూడా ఇదే చెబుతుంది.",
   },
   summary: {
@@ -1780,7 +1780,7 @@ const TA: OnboardingContent = {
     rows: { calories: "கலோரிகள்", protein: "புரதம்", carbs: "கார்ப்ஸ்", fat: "கொழுப்பு", diet: "உணவுமுறை" },
     limitCap: { ldl: "நிறைவுற்ற கொழுப்பு ≤ {n} g", kidneys: "சோடியம் ≤ {n} mg" },
     cta: "திட்டத்தைக் காட்டு",
-    floorTitle: "{floor} kcal-இல் நிறுத்தினோம்",
+    floorTitle: "{floor}kcal-இல் நிறுத்தினோம்",
     floorBody: "கணக்கு இதைவிடக் குறைவாகச் செல்ல விரும்பியது. மருத்துவக் கண்காணிப்பு இல்லாமல் இதற்குக் கீழ் இலக்குகளை அமைப்பதில்லை, எனவே உங்களுடையது இங்கே உள்ளது. உங்கள் நாட்குறிப்பிலும் இது குறிப்பிடப்படும்.",
   },
   summary: {
@@ -2062,7 +2062,7 @@ const PA: OnboardingContent = {
     rows: { calories: "ਕੈਲੋਰੀ", protein: "ਪ੍ਰੋਟੀਨ", carbs: "ਕਾਰਬਸ", fat: "ਫ਼ੈਟ", diet: "ਡਾਇਟ" },
     limitCap: { ldl: "ਸੈਚੁਰੇਟਿਡ ਫ਼ੈਟ ≤ {n} g", kidneys: "ਸੋਡੀਅਮ ≤ {n} mg" },
     cta: "ਮੈਨੂੰ ਪਲਾਨ ਦਿਖਾਓ",
-    floorTitle: "{floor} kcal 'ਤੇ ਰੋਕ ਦਿੱਤਾ ਗਿਆ",
+    floorTitle: "{floor}kcal 'ਤੇ ਰੋਕ ਦਿੱਤਾ ਗਿਆ",
     floorBody: "ਹਿਸਾਬ ਇਸ ਤੋਂ ਹੇਠਾਂ ਜਾਣਾ ਚਾਹੁੰਦਾ ਸੀ। ਡਾਕਟਰ ਦੀ ਨਿਗਰਾਨੀ ਤੋਂ ਬਿਨਾਂ ਅਸੀਂ ਇਸ ਤੋਂ ਘੱਟ ਟੀਚੇ ਨਹੀਂ ਰੱਖਦੇ, ਇਸ ਲਈ ਤੁਹਾਡਾ ਟੀਚਾ ਇੱਥੇ ਹੀ ਹੈ। ਤੁਹਾਡੀ ਡਾਇਰੀ ਵਿੱਚ ਵੀ ਇਹੀ ਲਿਖਿਆ ਹੋਵੇਗਾ।",
   },
   summary: {
@@ -2344,7 +2344,7 @@ const OR: OnboardingContent = {
     rows: { calories: "କ୍ୟାଲୋରୀ", protein: "ପ୍ରୋଟିନ୍", carbs: "କାର୍ବସ୍", fat: "ଫ୍ୟାଟ୍", diet: "ଡାଏଟ୍" },
     limitCap: { ldl: "ସାଚୁରେଟେଡ୍ ଫ୍ୟାଟ୍ ≤ {n} g", kidneys: "ସୋଡିୟମ୍ ≤ {n} mg" },
     cta: "ମୋତେ ପ୍ଲାନ୍ ଦେଖାନ୍ତୁ",
-    floorTitle: "ଆମେ {floor} kcal ରେ ରହିଗଲୁ",
+    floorTitle: "ଆମେ {floor}kcal ରେ ରହିଗଲୁ",
     floorBody: "ହିସାବ ଆହୁରି କମ୍ ଯିବାକୁ ଚାହୁଁଥିଲା। ଚିକିତ୍ସକଙ୍କ ତତ୍ତ୍ୱାବଧାନ ବିନା ଆମେ ଏହାଠାରୁ କମ୍ ଲକ୍ଷ୍ୟ ସେଟ୍ କରୁନାହୁଁ, ତେଣୁ ଆପଣଙ୍କର ଏଠାରେ ରହିଲା। ଆପଣଙ୍କ ଡାଏରୀରେ ମଧ୍ୟ ଏହା ଲେଖାଥିବ।",
   },
   summary: {
@@ -2626,7 +2626,7 @@ const MR: OnboardingContent = {
     rows: { calories: "कॅलरी", protein: "प्रोटीन", carbs: "कार्ब्स", fat: "फॅट", diet: "आहार" },
     limitCap: { ldl: "सॅच्युरेटेड फॅट ≤ {n} g", kidneys: "सोडियम ≤ {n} mg" },
     cta: "मला प्लॅन दाखवा",
-    floorTitle: "आम्ही {floor} kcal वर थांबलो",
+    floorTitle: "आम्ही {floor}kcal वर थांबलो",
     floorBody: "हिशोब यापेक्षा खाली जात होता. वैद्यकीय देखरेखीशिवाय आम्ही यापेक्षा कमी लक्ष्य ठेवत नाही, म्हणून तुमचे लक्ष्य इथेच आहे. तुमच्या डायरीतही असेच लिहिलेले असेल.",
   },
   summary: {
@@ -2908,7 +2908,7 @@ const ML: OnboardingContent = {
     rows: { calories: "കലോറി", protein: "പ്രോട്ടീൻ", carbs: "കാർബ്സ്", fat: "കൊഴുപ്പ്", diet: "ഡയറ്റ്" },
     limitCap: { ldl: "പൂരിത കൊഴുപ്പ് ≤ {n} g", kidneys: "സോഡിയം ≤ {n} mg" },
     cta: "പ്ലാൻ കാണിക്കൂ",
-    floorTitle: "ഞങ്ങൾ {floor} kcal-ൽ നിർത്തി",
+    floorTitle: "ഞങ്ങൾ {floor}kcal-ൽ നിർത്തി",
     floorBody: "കണക്ക് ഇതിലും താഴേക്ക് പോകാൻ ആഗ്രഹിച്ചു. മെഡിക്കൽ മേൽനോട്ടമില്ലാതെ ഞങ്ങൾ ഇതിന് താഴെ ലക്ഷ്യം വയ്ക്കില്ല, അതിനാൽ നിങ്ങളുടേത് ഇവിടെയാണ്. നിങ്ങളുടെ ഡയറിയിലും അത് കാണിക്കും.",
   },
   summary: {
@@ -3190,7 +3190,7 @@ const KN: OnboardingContent = {
     rows: { calories: "ಕ್ಯಾಲೊರಿ", protein: "ಪ್ರೋಟೀನ್", carbs: "ಕಾರ್ಬ್ಸ್", fat: "ಕೊಬ್ಬು", diet: "ಡಯಟ್" },
     limitCap: { ldl: "ಸ್ಯಾಚುರೇಟೆಡ್ ಕೊಬ್ಬು ≤ {n} g", kidneys: "ಸೋಡಿಯಂ ≤ {n} mg" },
     cta: "ಪ್ಲಾನ್ ತೋರಿಸಿ",
-    floorTitle: "ನಾವು {floor} kcal ನಲ್ಲಿ ನಿಲ್ಲಿಸಿದ್ದೇವೆ",
+    floorTitle: "ನಾವು {floor}kcal ನಲ್ಲಿ ನಿಲ್ಲಿಸಿದ್ದೇವೆ",
     floorBody: "ಲೆಕ್ಕಾಚಾರ ಇನ್ನೂ ಕೆಳಗೆ ಹೋಗಲು ಬಯಸಿತ್ತು. ವೈದ್ಯಕೀಯ ಮೇಲ್ವಿಚಾರಣೆಯಿಲ್ಲದೆ ನಾವು ಇದಕ್ಕಿಂತ ಕಡಿಮೆ ಗುರಿಗಳನ್ನು ಹೊಂದಿಸುವುದಿಲ್ಲ, ಹಾಗಾಗಿ ನಿಮ್ಮದು ಇಲ್ಲೇ ಇದೆ. ನಿಮ್ಮ ಡೈರಿಯಲ್ಲೂ ಇದನ್ನೇ ತೋರಿಸಲಾಗುತ್ತದೆ.",
   },
   summary: {
@@ -3472,7 +3472,7 @@ const GU: OnboardingContent = {
     rows: { calories: "કેલરી", protein: "પ્રોટીન", carbs: "કાર્બ્સ", fat: "ફેટ", diet: "ડાયટ" },
     limitCap: { ldl: "સેચ્યુરેટેડ ફેટ ≤ {n} g", kidneys: "સોડિયમ ≤ {n} mg" },
     cta: "મને પ્લાન બતાવો",
-    floorTitle: "{floor} kcal પર અટકાવ્યું",
+    floorTitle: "{floor}kcal પર અટકાવ્યું",
     floorBody: "ગણતરી આનાથી નીચે જવા માંગતી હતી. તબીબી દેખરેખ વિના અમે આનાથી ઓછું લક્ષ્ય નક્કી કરતા નથી, તેથી તમારું લક્ષ્ય અહીં જ છે. તમારી ડાયરીમાં પણ આ લખેલું હશે.",
   },
   summary: {
@@ -3754,7 +3754,7 @@ const BN: OnboardingContent = {
     rows: { calories: "ক্যালরি", protein: "প্রোটিন", carbs: "কার্বস", fat: "ফ্যাট", diet: "ডায়েট" },
     limitCap: { ldl: "স্যাচু. ফ্যাট ≤ {n} g", kidneys: "সোডিয়াম ≤ {n} mg" },
     cta: "প্ল্যানটা দেখান",
-    floorTitle: "{floor} kcal-এ থামানো হয়েছে",
+    floorTitle: "{floor}kcal-এ থামানো হয়েছে",
     floorBody: "হিসাব আরও নিচে যেতে চাইছিল। চিকিৎসকের তত্ত্বাবধান ছাড়া আমরা এর নিচে লক্ষ্যমাত্রা রাখি না, তাই আপনারটা এখানেই। আপনার ডায়েরিতেও সেটা লেখা থাকবে।",
   },
   summary: {
@@ -4036,7 +4036,7 @@ const PT_PT: OnboardingContent = {
     rows: { calories: "Calorias", protein: "Proteína", carbs: "Hidratos", fat: "Gordura", diet: "Dieta" },
     limitCap: { ldl: "gordura saturada ≤ {n} g", kidneys: "sódio ≤ {n} mg" },
     cta: "Mostra-me o plano",
-    floorTitle: "Parámos em {floor} kcal",
+    floorTitle: "Parámos em {floor}kcal",
     floorBody: "As contas queriam ir mais abaixo. Não definimos alvos abaixo disto sem acompanhamento médico, por isso o teu fica aqui. Isso também vai aparecer no teu diário.",
   },
   summary: {
@@ -4318,7 +4318,7 @@ const MS: OnboardingContent = {
     rows: { calories: "Kalori", protein: "Protein", carbs: "Karbohidrat", fat: "Lemak", diet: "Diet" },
     limitCap: { ldl: "lemak tepu ≤ {n} g", kidneys: "natrium ≤ {n} mg" },
     cta: "Tunjukkan pelan",
-    floorTitle: "Kami berhenti pada {floor} kcal",
+    floorTitle: "Kami berhenti pada {floor}kcal",
     floorBody: "Kiraan mahu pergi lebih rendah. Kami tidak menetapkan sasaran di bawah ini tanpa pengawasan perubatan, jadi di sinilah sasaran anda. Ia juga dinyatakan dalam diari anda.",
   },
   summary: {
@@ -4600,7 +4600,7 @@ const CA: OnboardingContent = {
     rows: { calories: "Calories", protein: "Proteïna", carbs: "Carbohidrats", fat: "Greix", diet: "Dieta" },
     limitCap: { ldl: "greix saturat ≤ {n} g", kidneys: "sodi ≤ {n} mg" },
     cta: "Ensenya'm el pla",
-    floorTitle: "Ens hem aturat a {floor} kcal",
+    floorTitle: "Ens hem aturat a {floor}kcal",
     floorBody: "El càlcul volia baixar més. Sense supervisió mèdica no fixem objectius per sota d'aquest valor, així que el teu es queda aquí. El teu diari també ho indicarà.",
   },
   summary: {
@@ -4882,7 +4882,7 @@ const SL: OnboardingContent = {
     rows: { calories: "Kalorije", protein: "Beljakovine", carbs: "Ogljikovi hidrati", fat: "Maščobe", diet: "Dieta" },
     limitCap: { ldl: "nasičene maščobe ≤ {n} g", kidneys: "natrij ≤ {n} mg" },
     cta: "Pokaži mi načrt",
-    floorTitle: "Ustavili smo se pri {floor} kcal",
+    floorTitle: "Ustavili smo se pri {floor}kcal",
     floorBody: "Izračun bi šel nižje. Brez zdravniškega nadzora ne nastavljamo ciljnih vrednosti pod to mejo, zato je tvoja tukaj. To bo pisalo tudi v tvojem dnevniku.",
   },
   summary: {
@@ -5164,7 +5164,7 @@ const HR: OnboardingContent = {
     rows: { calories: "Kalorije", protein: "Proteini", carbs: "Ugljikohidrati", fat: "Masti", diet: "Prehrana" },
     limitCap: { ldl: "zasićene masti ≤ {n} g", kidneys: "natrij ≤ {n} mg" },
     cta: "Pokaži mi plan",
-    floorTitle: "Stali smo na {floor} kcal",
+    floorTitle: "Stali smo na {floor}kcal",
     floorBody: "Izračun je htio ići niže. Bez liječničkog nadzora ne postavljamo ciljeve ispod ovoga, pa je tvoj upravo ovdje. To će pisati i u tvom dnevniku.",
   },
   summary: {
@@ -5446,7 +5446,7 @@ const SK: OnboardingContent = {
     rows: { calories: "Kalórie", protein: "Bielkoviny", carbs: "Sacharidy", fat: "Tuky", diet: "Diéta" },
     limitCap: { ldl: "nasýtené tuky ≤ {n} g", kidneys: "sodík ≤ {n} mg" },
     cta: "Ukáž mi plán",
-    floorTitle: "Zastavili sme sa na {floor} kcal",
+    floorTitle: "Zastavili sme sa na {floor}kcal",
     floorBody: "Výpočet chcel ísť nižšie. Bez lekárskeho dohľadu nenastavujeme normy pod toto minimum, takže tvoj zostáva tu. Uvidíš to aj v denníku.",
   },
   summary: {
@@ -5728,7 +5728,7 @@ const NO: OnboardingContent = {
     rows: { calories: "Kalorier", protein: "Protein", carbs: "Karbohydrater", fat: "Fett", diet: "Kosthold" },
     limitCap: { ldl: "mettet fett ≤ {n} g", kidneys: "natrium ≤ {n} mg" },
     cta: "Vis meg planen",
-    floorTitle: "Vi stoppet på {floor} kcal",
+    floorTitle: "Vi stoppet på {floor}kcal",
     floorBody: "Regnestykket ville gå lavere. Vi setter ikke rammer under dette uten medisinsk oppfølging, så det er her din ligger. Det står også i dagboken din.",
   },
   summary: {
@@ -6010,7 +6010,7 @@ const FI: OnboardingContent = {
     rows: { calories: "Kalorit", protein: "Proteiini", carbs: "Hiilihydraatit", fat: "Rasva", diet: "Ruokavalio" },
     limitCap: { ldl: "tyydyttynyt rasva ≤ {n} g", kidneys: "natrium ≤ {n} mg" },
     cta: "Näytä suunnitelma",
-    floorTitle: "Pysähdyimme tähän: {floor} kcal",
+    floorTitle: "Pysähdyimme tähän: {floor}kcal",
     floorBody: "Laskelma olisi mennyt alemmas. Emme aseta tavoitetasoja tämän alle ilman lääkärin seurantaa, joten sinun tavoitetasosi on tässä. Se lukee myös päiväkirjassasi.",
   },
   summary: {
@@ -6292,7 +6292,7 @@ const DA: OnboardingContent = {
     rows: { calories: "Kalorier", protein: "Protein", carbs: "Kulhydrater", fat: "Fedt", diet: "Kost" },
     limitCap: { ldl: "mættet fedt ≤ {n} g", kidneys: "natrium ≤ {n} mg" },
     cta: "Vis mig planen",
-    floorTitle: "Vi stoppede ved {floor} kcal",
+    floorTitle: "Vi stoppede ved {floor}kcal",
     floorBody: "Regnestykket ville længere ned. Vi sætter ikke mål under dette uden lægelig opfølgning, så det er her, dit ligger. Det står også i din dagbog.",
   },
   summary: {
@@ -6574,7 +6574,7 @@ const HU: OnboardingContent = {
     rows: { calories: "Kalória", protein: "Fehérje", carbs: "Szénhidrát", fat: "Zsír", diet: "Étrend" },
     limitCap: { ldl: "telített zsír ≤ {n} g", kidneys: "nátrium ≤ {n} mg" },
     cta: "Mutasd a tervet",
-    floorTitle: "{floor} kcal-nál megálltunk",
+    floorTitle: "{floor}kcal-nál megálltunk",
     floorBody: "A számítás lejjebb menne. Orvosi felügyelet nélkül nem állítunk be ennél alacsonyabb célt, ezért a tiéd itt áll meg. A naplódban is ez fog szerepelni.",
   },
   summary: {
@@ -6856,7 +6856,7 @@ const EL: OnboardingContent = {
     rows: { calories: "Θερμίδες", protein: "Πρωτεΐνη", carbs: "Υδατάνθρακες", fat: "Λιπαρά", diet: "Διατροφή" },
     limitCap: { ldl: "κορεσμένα λιπαρά ≤ {n} g", kidneys: "νάτριο ≤ {n} mg" },
     cta: "Δείξε μου το πλάνο",
-    floorTitle: "Σταματήσαμε στις {floor} kcal",
+    floorTitle: "Σταματήσαμε στις {floor}kcal",
     floorBody: "Ο υπολογισμός ήθελε να πάει πιο χαμηλά. Δεν ορίζουμε στόχους κάτω από αυτό χωρίς ιατρική παρακολούθηση, οπότε εδώ μένει ο δικός σου. Θα το γράφει και στο ημερολόγιό σου.",
   },
   summary: {
@@ -7138,7 +7138,7 @@ const RO: OnboardingContent = {
     rows: { calories: "Calorii", protein: "Proteine", carbs: "Carbohidrați", fat: "Grăsimi", diet: "Dietă" },
     limitCap: { ldl: "grăsimi saturate ≤ {n} g", kidneys: "sodiu ≤ {n} mg" },
     cta: "Arată-mi planul",
-    floorTitle: "Ne-am oprit la {floor} kcal",
+    floorTitle: "Ne-am oprit la {floor}kcal",
     floorBody: "Calculul voia să coboare mai jos. Nu stabilim ținte sub acest nivel fără supraveghere medicală, așa că aici rămâne a ta. Scrie asta și în jurnalul tău.",
   },
   summary: {
@@ -7420,7 +7420,7 @@ const CS: OnboardingContent = {
     rows: { calories: "Kalorie", protein: "Bílkoviny", carbs: "Sacharidy", fat: "Tuky", diet: "Dieta" },
     limitCap: { ldl: "nasycené tuky ≤ {n} g", kidneys: "sodík ≤ {n} mg" },
     cta: "Ukaž mi plán",
-    floorTitle: "Zastavili jsme se na {floor} kcal",
+    floorTitle: "Zastavili jsme se na {floor}kcal",
     floorBody: "Výpočet chtěl jít níž. Bez lékařského dohledu cíle pod toto minimum nenastavujeme, takže tvůj zůstává tady. V deníku to bude uvedeno taky.",
   },
   summary: {
@@ -7702,7 +7702,7 @@ const HI: OnboardingContent = {
     rows: { calories: "कैलोरी", protein: "प्रोटीन", carbs: "कार्ब्स", fat: "फ़ैट", diet: "डाइट" },
     limitCap: { ldl: "सैचुरेटेड फ़ैट ≤ {n} g", kidneys: "सोडियम ≤ {n} mg" },
     cta: "मुझे प्लान दिखाएँ",
-    floorTitle: "{floor} kcal पर रोक दिया गया",
+    floorTitle: "{floor}kcal पर रोक दिया गया",
     floorBody: "हिसाब इससे नीचे जाना चाहता था। डॉक्टर की निगरानी के बिना हम इससे कम लक्ष्य नहीं रखते, इसलिए आपका लक्ष्य यहीं है। आपकी डायरी में भी यही लिखा होगा।",
   },
   summary: {
@@ -7984,7 +7984,7 @@ const TH: OnboardingContent = {
     rows: { calories: "แคลอรี", protein: "โปรตีน", carbs: "คาร์บ", fat: "ไขมัน", diet: "แนวทางอาหาร" },
     limitCap: { ldl: "ไขมันอิ่มตัว ≤ {n} ก.", kidneys: "โซเดียม ≤ {n} มก." },
     cta: "ดูแผน",
-    floorTitle: "เราหยุดไว้ที่ {floor} kcal",
+    floorTitle: "เราหยุดไว้ที่ {floor}kcal",
     floorBody: "ตัวเลขคำนวณได้ต่ำกว่านี้ แต่เราไม่ตั้งเป้าต่ำกว่าระดับนี้หากไม่มีแพทย์ดูแล เป้าของคุณจึงอยู่ตรงนี้ ในไดอารี่ของคุณก็จะแสดงไว้ด้วย",
   },
   summary: {
@@ -8266,7 +8266,7 @@ const SV: OnboardingContent = {
     rows: { calories: "Kalorier", protein: "Protein", carbs: "Kolhydrater", fat: "Fett", diet: "Kost" },
     limitCap: { ldl: "mättat fett ≤ {n} g", kidneys: "natrium ≤ {n} mg" },
     cta: "Visa mig planen",
-    floorTitle: "Vi stannade vid {floor} kcal",
+    floorTitle: "Vi stannade vid {floor}kcal",
     floorBody: "Räknestycket ville gå lägre. Vi sätter inga mål under det här utan medicinsk uppföljning, så här hamnar ditt. Det står även i din dagbok.",
   },
   summary: {
@@ -8548,7 +8548,7 @@ const UK: OnboardingContent = {
     rows: { calories: "Калорії", protein: "Білок", carbs: "Вуглеводи", fat: "Жири", diet: "Дієта" },
     limitCap: { ldl: "насичені жири ≤ {n} г", kidneys: "натрій ≤ {n} мг" },
     cta: "Показати план",
-    floorTitle: "Ми зупинилися на {floor} ккал",
+    floorTitle: "Ми зупинилися на {floor}ккал",
     floorBody: "Розрахунок хотів піти нижче. Без нагляду лікаря ми не ставимо цілей нижче цієї позначки, тож твоя — тут. У щоденнику це теж буде вказано.",
   },
   summary: {
@@ -8830,7 +8830,7 @@ const NL: OnboardingContent = {
     rows: { calories: "Calorieën", protein: "Eiwit", carbs: "Koolhydraten", fat: "Vet", diet: "Dieet" },
     limitCap: { ldl: "verzadigd vet ≤ {n} g", kidneys: "natrium ≤ {n} mg" },
     cta: "Laat het plan zien",
-    floorTitle: "We zijn gestopt bij {floor} kcal",
+    floorTitle: "We zijn gestopt bij {floor}kcal",
     floorBody: "De berekening wilde lager uitkomen. Zonder medische begeleiding stellen we geen doel onder deze grens in, dus hier ligt het jouwe. Dat staat ook in je dagboek.",
   },
   summary: {
@@ -9112,7 +9112,7 @@ const PL: OnboardingContent = {
     rows: { calories: "Kalorie", protein: "Białko", carbs: "Węglowodany", fat: "Tłuszcz", diet: "Dieta" },
     limitCap: { ldl: "tłuszcze nasycone ≤ {n} g", kidneys: "sód ≤ {n} mg" },
     cta: "Pokaż mi plan",
-    floorTitle: "Zatrzymaliśmy się na {floor} kcal",
+    floorTitle: "Zatrzymaliśmy się na {floor}kcal",
     floorBody: "Z rachunku wychodziło mniej. Bez nadzoru lekarza nie ustalamy celów poniżej tej wartości, więc twój jest właśnie tutaj. Zobaczysz to też w swoim dzienniku.",
   },
   summary: {
@@ -9394,7 +9394,7 @@ const TR: OnboardingContent = {
     rows: { calories: "Kalori", protein: "Protein", carbs: "Karbonhidrat", fat: "Yağ", diet: "Diyet" },
     limitCap: { ldl: "doymuş yağ ≤ {n} g", kidneys: "sodyum ≤ {n} mg" },
     cta: "Planı göster",
-    floorTitle: "{floor} kcal'de durduk",
+    floorTitle: "{floor}kcal'de durduk",
     floorBody: "Hesap daha aşağı inmek istedi. Tıbbi gözetim olmadan bunun altında hedef koymuyoruz, o yüzden seninki burada. Bu, günlüğünde de yazacak.",
   },
   summary: {
@@ -9676,7 +9676,7 @@ const ZH_HANT: OnboardingContent = {
     rows: { calories: "熱量", protein: "蛋白質", carbs: "碳水", fat: "脂肪", diet: "飲食" },
     limitCap: { ldl: "飽和脂肪 ≤ {n} 公克", kidneys: "鈉 ≤ {n} 毫克" },
     cta: "讓我看看計畫",
-    floorTitle: "我們停在 {floor} 大卡",
+    floorTitle: "我們停在 {floor}大卡",
     floorBody: "計算結果原本還想再往下。沒有醫療監督的情況下，我們不會設定低於這個數字的目標，所以你的目標就定在這裡。你的日記上也會註明這一點。",
   },
   summary: {
@@ -10804,7 +10804,7 @@ const PT_BR: OnboardingContent = {
     rows: { calories: "Calorias", protein: "Proteína", carbs: "Carboidratos", fat: "Gordura", diet: "Dieta" },
     limitCap: { ldl: "gordura saturada ≤ {n} g", kidneys: "sódio ≤ {n} mg" },
     cta: "Me mostra o plano",
-    floorTitle: "Paramos em {floor} kcal",
+    floorTitle: "Paramos em {floor}kcal",
     floorBody: "A conta queria ir mais baixo. Não definimos metas abaixo disso sem acompanhamento médico, então a sua fica aqui. Isso também vai aparecer no seu diário.",
   },
   summary: {

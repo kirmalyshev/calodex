@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Aktualizované — {kcal} kcal. {day}"
+#~ msgstr "Aktualizované — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "„{note}“ — beriem na vedomie, už je to v číslach."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Túto nutričnú tabuľku sa nepodarilo prečítať."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Započítané. Dnes zostáva {left} kcal."
+msgstr "Započítané. Dnes zostáva {left}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Započítané. Dnes o {over} kcal nad plánom."
+msgstr "Započítané. Dnes o {over}kcal nad plánom."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Rozpoznávam jedlo · 2 zo 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Prvé je zapísané. {kcal} kcal."
+msgstr "Prvé je zapísané. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Toto je nový eait. Tvoje jedlá a fotky sú uložené v tvojom účte e
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Dnes: {eaten} z {plan} kcal, bielkoviny {protein} z {proteinTarget} g"
+msgstr "Dnes: {eaten} z {plan}kcal, bielkoviny {protein} z {proteinTarget} g"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

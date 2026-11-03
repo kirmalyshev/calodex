@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Оновлено — {kcal} ккал. {day}"
+#~ msgstr "Оновлено — {kcal}ккал. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "«{note}» — враховано, цифри перераховано."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} ккал"
+msgstr "{names} · {kcal}ккал"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Не вдалося прочитати цю етикетку."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Враховано. На сьогодні залишилося {left} ккал."
+msgstr "Враховано. На сьогодні залишилося {left}ккал."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Враховано. Сьогодні на {over} ккал більше за план."
+msgstr "Враховано. Сьогодні на {over}ккал більше за план."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Шукаємо, що на тарілці · 2 з 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Перший прийом їжі записано. {kcal} ккал."
+msgstr "Перший прийом їжі записано. {kcal}ккал."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Це новий eait. Твої прийоми їжі та фото зб�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Сьогодні: {eaten} із {plan} ккал, білка {protein} із {proteinTarget} г"
+msgstr "Сьогодні: {eaten} із {plan}ккал, білка {protein} із {proteinTarget} г"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

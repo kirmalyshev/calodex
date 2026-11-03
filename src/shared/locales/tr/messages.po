@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Güncellendi — {kcal} kcal. {day}"
+#~ msgstr "Güncellendi — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "“{note}” — not ettim, sayılara işlendi."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Bu etiket okunamadı."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Sayıldı. Bugün {left} kcal kaldı."
+msgstr "Sayıldı. Bugün {left}kcal kaldı."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Sayıldı. Bugün {over} kcal fazla."
+msgstr "Sayıldı. Bugün {over}kcal fazla."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Yiyecekler bulunuyor · 2/4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "İlki kaydedildi. {kcal} kcal."
+msgstr "İlki kaydedildi. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Bu yeni eait. Öğünlerin ve fotoğrafların eait hesabında saklanıyo
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Bugün: {eaten} / {plan} kcal, protein {protein} / {proteinTarget} g"
+msgstr "Bugün: {eaten} / {plan}kcal, protein {protein} / {proteinTarget} g"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "અપડેટ થઈ ગયું — {kcal} kcal. {day}"
+#~ msgstr "અપડેટ થઈ ગયું — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "“{note}” — ધ્યાનમાં લીધું, તે આં
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "આ લેબલ વાંચી ન શકાયું."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "ગણી લીધું. આજે {left} kcal બાકી."
+msgstr "ગણી લીધું. આજે {left}kcal બાકી."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "ગણી લીધું. આજે {over} kcal વધુ."
+msgstr "ગણી લીધું. આજે {over}kcal વધુ."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "ખોરાક ઓળખાઈ રહ્યો છે · 4 માંથ
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "પહેલું નોંધાઈ ગયું. {kcal} kcal."
+msgstr "પહેલું નોંધાઈ ગયું. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "આ નવું eait છે. તમારાં ભોજન અને 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "આજે: {plan} kcal માંથી {eaten}, પ્રોટીન {proteinTarget} g માંથી {protein}"
+msgstr "આજે: {plan}kcal માંથી {eaten}, પ્રોટીન {proteinTarget} g માંથી {protein}"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Actualitzat — {kcal} kcal. {day}"
+#~ msgstr "Actualitzat — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "«{note}» — anotat, ja és als números."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "No s'ha pogut llegir aquesta etiqueta."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Comptat. Et queden {left} kcal avui."
+msgstr "Comptat. Et queden {left}kcal avui."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Comptat. {over} kcal per sobre avui."
+msgstr "Comptat. {over}kcal per sobre avui."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Identificant els aliments · 2 de 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Primer àpat registrat. {kcal} kcal."
+msgstr "Primer àpat registrat. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Aquest és el nou eait. Els teus àpats i fotos es conserven al teu comp
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Avui: {eaten} de {plan} kcal, {protein} de {proteinTarget} g de proteïna"
+msgstr "Avui: {eaten} de {plan}kcal, {protein} de {proteinTarget} g de proteïna"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
