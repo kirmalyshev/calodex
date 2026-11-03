@@ -37,7 +37,7 @@ function baselineCards(profile: Profile, lang: Lang): string {
     `<div class="bmi-l">${BMI_SEGMENTS.map((seg, i) => `<span${i === on ? ' class="cur"' : ""}>${escape(bmiRangeLabel(seg.id, lang))}</span>`).join("")}</div>` +
     `<div class="bmi-w">${escape(b.bands[band!])}</div></div>`;
   return `<div class="bstack">${meter}` +
-    `<p class="muted-sub cen">${escape(b.what)}</p></div>`;
+    `<p class="muted-sub">${escape(b.what)}</p></div>`;
 }
 
 /**

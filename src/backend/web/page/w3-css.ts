@@ -35,7 +35,7 @@ export const W3_CSS = `
 .ob .pln .pgraph { display: block; overflow: visible; }
 .ob .pln .pgraph .ln { stroke: var(--accent); stroke-width: 3; }
 .ob .pln .jc { padding: 20px 24px; }
-.ob .pln .jg { margin: 28px 8px 8px; }
+.ob .pln .jg { margin: 16px 8px 8px; }
 .ob .pln .ink15 { fill: var(--ink); font-size: 15px; font-weight: 700; }
 .ob .pln .pill { fill: #fff; font-size: 15px; font-weight: 700; }
 .ob .pln .ax { font-weight: 600; }
@@ -68,15 +68,15 @@ export const W3_CSS = `
 .ob .pln .brow .plan { background: var(--accent); color: #fff; border-radius: 8px; justify-content: flex-end; }
 .ob .pln .bal .tick { position: absolute; top: 20px; bottom: -4px; width: 3px; margin-left: -1px; border-radius: 2px; background: var(--ink); }
 .ob .pln .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.ob .pln .pfoot { width: 360px; max-width: 100%; align-self: flex-end; position: sticky; bottom: 24px; z-index: 1; }
+.ob .pln .pfoot { width: 100%; max-width: none; align-self: stretch; position: sticky; bottom: 24px; z-index: 1; }
 .ob .pln .cta { max-width: none; }
 .ob .pln h2 { margin-top: 24px; }
 /* ── 18 / 18b (ieat-app#2050): the tick, the goal said as a sentence, the four cards ── */
 .ob .pln.ldg, .ob .pln.ldg * { animation-delay: calc(var(--d, 0s) + var(--ld)) !important; }
 /* The fold's contents start animating when it opens, long after the loader: no offset there. */
 .ob .pln.ldg .howc * { animation-delay: var(--d, 0s) !important; }
-.ob .pln .ok { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; margin: 8px auto 0; }
-.ob .pln .ok svg { width: 22px; height: 22px; stroke: #fff; stroke-width: 3; fill: none; }
+.ob .pln .ok { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; margin: 8px auto 0; }
+.ob .pln .ok svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 3; fill: none; }
 .ob .pln h1.hd { text-align: center; font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -.03em; margin: 4px 0; text-wrap: balance; }
 .ob .pln .ct { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
 .ob .pln .cs { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
@@ -140,7 +140,8 @@ export const W3_CSS = `
 /* ── the sign-up (19): the heading, the provider buttons, the consent ── */
 /* 19 is one 400px column: heading, buttons and consent share its edges. */
 .ob .sup { max-width: 400px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 18px; }
-.ob .sup h1 { font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; margin: 0; }
+.ob .sup h1 { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin: 0; }
+.ob .sup .sub { font-size: 15px; color: var(--muted); line-height: 1.45; margin: -6px 0 4px; }
 /* With no bar above it (the returning person's sign-in) the heading keeps the bar's room. */
 .ob .sup > h1:first-child { margin-top: 40px; }
 .ob .sup form { display: flex; flex-direction: column; gap: 8px; }
@@ -148,7 +149,7 @@ export const W3_CSS = `
 .ob .sup .cta svg { width: 20px; height: 20px; }
 /* Apple's own button is black; Google's is the surface card the board draws (.cta s). */
 .ob .sup .cta.apple { background: #000; color: #fff; }
-.ob .sup .cta.s { background: var(--surface); box-shadow: 0 0 0 1px var(--line); height: 56px; }
+.ob .sup .cta.s { background: var(--surface); box-shadow: none; height: 56px; }
 .ob .sup .consent { display: flex; flex-direction: column; gap: 10px; }
 .ob .sup .consent label { display: flex; gap: 10px; align-items: flex-start; font-size: 13px;
   line-height: 1.35; color: var(--muted); font-weight: 500; cursor: pointer; }
@@ -182,11 +183,14 @@ export const W3_CSS = `
 .ob .eml .eml-note { font-size: 13px; font-weight: 600; margin: 0; }
 /* Refer a friend (#899): the invite page and the friend's-link step — ob-referral-*.html. */
 .ob .wmain.refstep { max-width: 720px; padding-top: 24px; }
-.ob .refmid { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-.ob .ref { max-width: 420px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 14px; }
-.ob .ref form { display: flex; flex-direction: column; gap: 10px; }
-.ob .ref .wctas { flex-direction: column; gap: 6px; margin-top: 10px; }
+.ob .refmid { flex: 1; display: flex; flex-direction: column; }
+.ob .ref { max-width: 720px; margin: 0; width: 100%; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.ob .ref .say .q { font-size: 20px; letter-spacing: -.01em; }
+.ob .ref form { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.ob .ref .wctas { flex-direction: column; gap: 4px; margin-top: auto; align-items: center; }
 .ob .ref .wctas .cta { width: 100%; }
+.ob .ref .cta.w { background: var(--surface); color: var(--ink); box-shadow: none; }
+.ob .ref .skiplink { color: var(--muted); font-size: 15px; font-weight: 500; padding: 10px 0; text-decoration: none; }
 .ob .ref input { font: inherit; font-size: 17px; height: 54px; padding: 0 16px; border: 1.5px solid var(--ink);
   border-radius: 14px; background: var(--surface); color: var(--ink); }
 .ob .ref .note { font-size: 13px; color: var(--muted); text-align: center; margin: 0; }
@@ -204,8 +208,11 @@ export const W3_CSS = `
   border-radius: var(--r-ctl); font-size: 14px; line-height: 1.45; }
 
 /* ── the country (16-country): search over the flag grid ── */
-.ob .cty { max-width: 720px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 18px; }
-.ob .cty .srch { display: flex; align-items: center; gap: 10px; height: 48px;
+.ob .cty { max-width: 720px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.ob .cty .say.sayi { gap: 10px; }
+.ob .cty .say.sayi .appicon { width: 24px; height: 24px; flex: 0 0 24px; }
+.ob .cty .say .q { font-size: 20px; letter-spacing: -.01em; }
+.ob .cty .srch { display: flex; align-items: center; gap: 10px; height: 44px;
   border-radius: var(--r-ctl); box-shadow: 0 0 0 1px var(--line); background: var(--surface);
   padding: 0 14px; }
 .ob .cty .srch .ico { color: var(--muted); width: 18px; height: 18px; }
@@ -217,7 +224,7 @@ export const W3_CSS = `
   font-size: 15px; outline: none; }
 .ob .cty form { display: flex; flex-direction: column; gap: 14px; }
 .ob .cty .opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.ob .cty .opt { padding: 14px; font-size: 15px; }
+.ob .cty .opt { min-height: 52px; padding: 10px 16px; font-size: 15px; font-weight: 500; border-radius: 14px; }
 .ob .cty .opt .flag { font-size: 22px; width: 28px; flex: 0 0 28px; text-align: center; }
 .ob .cty .opt .flag.any { color: var(--muted); font-weight: 600; }
 .ob .cty .opt.hide { display: none; }
@@ -230,7 +237,7 @@ export const W3_CSS = `
 .ob .cty .opt:has(input:checked) .ck { background: var(--accent); box-shadow: none; }
 .ob .cty .opt:has(input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
   border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.ob .cty .cta { max-width: 360px; align-self: center; }
+.ob .cty .cta.p { max-width: none; align-self: stretch; position: sticky; bottom: 24px; z-index: 1; }
 @media (max-width: 720px) { .ob .cty .opts { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .ob .cty .opts { grid-template-columns: 1fr; } }
 `;
