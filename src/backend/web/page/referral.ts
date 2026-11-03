@@ -63,7 +63,7 @@ export function referralStep(v: ReferralStepView): string {
 <form method="post" action="${escape(v.action)}">
   <input type="text" name="code" value="${escape(v.value)}" placeholder="eait.fit/r/…" aria-label="${escape(c.referralField)}" autocomplete="off" autocapitalize="characters" spellcheck="false">
   ${notice}
-  <div class="wctas">${ctaSubmit(v.notice ? c.referralTryAgain : c.continueLabel)}${ctaLink(v.next, c.referralSkip, "s")}</div>
+  <div class="wctas"><button class="cta w" type="submit">${escape(v.notice ? c.referralTryAgain : c.continueLabel)}</button><a class="skiplink" href="${escape(v.next)}">${escape(c.referralSkip)}</a></div>
 </form>`;
   return shell(c.titleStart, `${wtop()}
 <div class="wmain one refstep"><div class="wcol">

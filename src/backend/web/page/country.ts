@@ -43,9 +43,15 @@ export function country(v: CountryView): string {
   const q = fold(v.query.trim());
   // The GET filter narrows the rendered list to the query plus `other`, which is the choice
   // that still answers when nothing matches — a filter that hid it would dead-end a real place.
-  const options = q === "" ? v.options : v.options.filter((c) =>
+  const filtered = q === "" ? v.options : v.options.filter((c) =>
     c === "other" || fold(countryLabel(c, v.lang) ?? c).includes(q),
   );
+  // The resolved pick pins to the top, checked — iOS leads the grid with the locale's country,
+  // dark-ringed and ticked, ahead of the alphabetical rest. Never the sentinel: "Somewhere
+  // else" stays last whether it is hinted or not.
+  const options = v.selected !== null && v.selected !== "other" && filtered.includes(v.selected)
+    ? [v.selected, ...filtered.filter((c) => c !== v.selected)]
+    : filtered;
   // The pick may be filtered OUT of the grid; it then rides as a hidden input AFTER the radios,
   // so a row the user can see and check always wins, and the pick is never silently dropped.
   const held = v.selected !== null && !options.includes(v.selected)
