@@ -75,7 +75,7 @@ export const W3_CSS = `
 .ob .pln.ldg, .ob .pln.ldg * { animation-delay: calc(var(--d, 0s) + var(--ld)) !important; }
 /* The fold's contents start animating when it opens, long after the loader: no offset there. */
 .ob .pln.ldg .howc * { animation-delay: var(--d, 0s) !important; }
-.ob .pln .ok { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; margin: 8px auto 0; }
+.ob .pln .ok { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; margin: 2px auto 0; }
 .ob .pln .ok svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 3; fill: none; }
 .ob .pln h1.hd { text-align: center; font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -.03em; margin: 4px 0; text-wrap: balance; }
 .ob .pln .ct { font-size: 17px; font-weight: 700; margin: 0 0 4px; }

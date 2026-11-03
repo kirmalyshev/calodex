@@ -1336,7 +1336,7 @@ describe("the question heading's type", () => {
   // every line under it and the small lines read tighter than the boards.
   it("stays on the heading", async () => {
     const page = await walkTo(await signIn(), "activity");
-    expect(page).toContain(".ob h1.q { font-size: 28px;");
+    expect(page).toContain(".ob h1.q { font-size: 32px;");
     // What `.q` used to hand down by accident, the board asks of each by name — and the wheel's
     // centred row is iOS's regular-weight inset pill, not the old bold band.
     expect(page).toMatch(/\.ob \.wheel \.wr \{[^}]*font-weight: 600;/);
