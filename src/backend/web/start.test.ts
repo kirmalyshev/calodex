@@ -333,10 +333,15 @@ describe("the front door", () => {
   it("keeps the four chips clear of each other inside the phone frame, in every language (#2532)", async () => {
     for (const lang of LANGS) {
       const res = await get("/start", undefined, { "accept-language": lang });
-      const tops = [...(await res.text()).matchAll(/class="wchip" style="[^"]*top:(\d+)%/g)].map((m) => Number(m[1]));
-      expect(tops, lang).toHaveLength(4);
-      // A chip is 52 tall in a frame 565 tall inside the bezel: 10% clears it.
-      for (let i = 1; i < 4; i++) expect(tops[i]! - tops[i - 1]!, lang).toBeGreaterThanOrEqual(10);
+      const chips = [...(await res.text()).matchAll(/class="wchip" style="(left|right):[^;]*;top:(\d+(?:\.\d+)?)%/g)].map((m) => [m[1]!, Number(m[2])] as const);
+      expect(chips, lang).toHaveLength(4);
+      // The iOS board's own positions: chips clear each other on their OWN side of the photo —
+      // 52px in a 560px hero is about 10%, and each side's pair is wider than that.
+      for (const side of ["left", "right"] as const) {
+        const tops = chips.filter(([s]) => s === side).map(([, t]) => t).sort((a, b) => a - b);
+        expect(tops.length, `${lang} ${side}`).toBe(2);
+        expect(tops[1]! - tops[0]!, `${lang} ${side}`).toBeGreaterThanOrEqual(10);
+      }
     }
   });
 
