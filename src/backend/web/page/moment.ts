@@ -4,7 +4,7 @@
 // names (`?show=`), not POST handlers of their own: Continue is a link back into the walk.
 
 import {
-  bmi, BMI_AXIS, bmiRange, bmiRangeLabel, chatCopyFor, explainTargets, fill, kcalNumbers, numbers,
+  bmi, BMI_AXIS, BMI_SEGMENTS, bmiRange, bmiRangeLabel, chatCopyFor, explainTargets, fill, kcalNumbers, numbers,
 } from "@eait/shared";
 import type { Lang, Profile } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
@@ -21,20 +21,21 @@ function baselineCards(profile: Profile, lang: Lang): string {
   const value = bmi(profile.weight_kg, profile.height_cm);
   const band = value === null ? null
     : value < 18.5 ? "under" : value < 25 ? "healthy" : value < 30 ? "over" : "obese";
+  const range = value === null ? null : bmiRange(value);
+  const on = range === null ? -1 : BMI_SEGMENTS.findIndex((seg) => seg.id === range);
   const at = value === null ? 0 : BMI_AXIS.at(value);
-  // The badge counts up while the marker slides (1.2 s, both): the whole part through `.count`,
+  // The figure counts up while the marker slides (1.2 s, both): the whole part through `.count`,
   // the tenth after it in this language's separator.
   const shown = value === null ? "" : numbers(lang)(value);
   const whole = value === null ? 0 : Math.trunc(value);
   const tail = shown.replace(/^\d+/, "");
-  const axis = BMI_AXIS.ticks.map((t) =>
-    `<span style="left:${BMI_AXIS.at(t)}%">${escape(numbers(lang)(t))}</span>`).join("");
   const meter = value === null ? "" :
-    `<div class="card bmeter band-${band}"><div class="bm-r">${escape(b.bmi)}` +
-    `<span class="bm-v" aria-label="${escape(shown)}"><span class="count" style="--to:${whole};--d:.5s;animation-duration:1.2s"></span>${escape(tail)}</span></div>` +
-    `<div class="bm-ax num" aria-hidden="true">${axis}</div>` +
-    `<div class="bm-sc"><span class="bm-k" style="left:${at}%"></span></div>` +
-    `<div class="bm-w">${escape(bmiRangeLabel(bmiRange(value), lang))}</div></div>`;
+    `<div class="card bmi-c"><div class="bmi-h"><span>${escape(b.bmi)}</span>` +
+    `<b aria-label="${escape(shown)}"><span class="count" style="--to:${whole};--d:.5s;animation-duration:1.2s"></span>${escape(tail)}</b></div>` +
+    `<div class="bmi-b">${BMI_SEGMENTS.map((seg, i) => `<i${i === on ? ' class="cur"' : ""}></i>`).join("")}` +
+    `<span class="bmi-k" style="left:${at}%"></span></div>` +
+    `<div class="bmi-l">${BMI_SEGMENTS.map((seg, i) => `<span${i === on ? ' class="cur"' : ""}>${escape(bmiRangeLabel(seg.id, lang))}</span>`).join("")}</div>` +
+    `<div class="bmi-w">${escape(b.bands[band!])}</div></div>`;
   return `<div class="bstack">${meter}` +
     `<p class="muted-sub cen">${escape(b.what)}</p></div>`;
 }
