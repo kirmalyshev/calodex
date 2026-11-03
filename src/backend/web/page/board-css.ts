@@ -263,7 +263,7 @@ export const BOARD_CSS = `
 .ob .wmain.pastbar .wcol { padding-top: 24px; }
 .ob .wmain.wide { max-width: 1080px; }
 .ob .igroup { flex: 1; display: flex; flex-direction: column; gap: 24px; min-height: 0; }
-.ob .card { background: var(--surface); border-radius: var(--r-card); padding: 16px; }
+.ob .card { background: var(--surface); border-radius: var(--r-card); box-shadow: none; padding: 16px; }
 .ob .cards { display: grid; gap: 16px; align-items: start; }
 .ob .cards.c3 { grid-template-columns: repeat(3, 1fr); }
 .ob .cards .card { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
@@ -395,9 +395,9 @@ export const BOARD_CSS = `
 @media (max-width: 940px) {
   /* The phone's door is one green pill and a text link under it — Kirill's outlined
      button (#747) is the desktop ruling only. */
+  .ob .wctas .cta.p::after { content: " →"; }
   .ob .wctas .cta.s { background: none; box-shadow: none; height: auto; padding: 10px 4px;
-                      color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
-  .ob .wctas .cta.s::after { content: " →"; }
+                      color: var(--muted); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
   .ob .wcenter { padding: 0; align-items: flex-start; }
   .ob .wdemo { flex-direction: column; gap: 24px; padding: 0 0 32px !important; width: 100%; }
   .ob .wherobox { width: 100%; }

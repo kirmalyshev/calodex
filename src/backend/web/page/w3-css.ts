@@ -26,6 +26,9 @@ export const W3_CSS = `
   .ob .ld { display: none !important; }
 }
 .ob .wmain.pw { max-width: 1000px; }
+/* The sticky Continue rides over the list's last rows (diet) — the form keeps the space it
+   covers, so a scroll can still lift the last row clear of it. */
+.ob .qform { padding-bottom: 84px; }
 .ob .pln form { flex: none; }
 .ob .pln { width: 100%; display: flex; flex-direction: column; row-gap: 16px; }
 .ob .pln h1 { font-size: 28px; margin-top: 4px; }
@@ -68,14 +71,15 @@ export const W3_CSS = `
 .ob .pln .brow .plan { background: var(--accent); color: #fff; border-radius: 8px; justify-content: flex-end; }
 .ob .pln .bal .tick { position: absolute; top: 20px; bottom: -4px; width: 3px; margin-left: -1px; border-radius: 2px; background: var(--ink); }
 .ob .pln .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.ob .pln .pfoot { width: 100%; max-width: none; align-self: stretch; position: sticky; bottom: 24px; z-index: 1; }
+.ob .pln .pfoot { width: 100%; max-width: none; align-self: stretch; position: sticky; bottom: 0; z-index: 1;
+                    background: var(--bg); padding: 12px 0 16px; }
 .ob .pln .cta { max-width: none; }
 .ob .pln h2 { margin-top: 24px; }
 /* ── 18 / 18b (ieat-app#2050): the tick, the goal said as a sentence, the four cards ── */
 .ob .pln.ldg, .ob .pln.ldg * { animation-delay: calc(var(--d, 0s) + var(--ld)) !important; }
 /* The fold's contents start animating when it opens, long after the loader: no offset there. */
 .ob .pln.ldg .howc * { animation-delay: var(--d, 0s) !important; }
-.ob .pln .ok { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; margin: 2px auto 0; }
+.ob .pln .ok { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; margin: -30px auto 0; }
 .ob .pln .ok svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 3; fill: none; }
 .ob .pln h1.hd { text-align: center; font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -.03em; margin: 4px 0; text-wrap: balance; }
 .ob .pln .ct { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
