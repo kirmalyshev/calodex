@@ -48,7 +48,7 @@ ${wtop()}
   <div class="whead">
     <div><h1>${escape(title)}</h1>${subs.map((l) => `<p class="wsub">${escape(l)}</p>`).join("")}</div>
     <div class="wctas">
-      <a class="cta p" href="${escape(hrefs.q)}">${escape(welcome.cta)}</a>
+      <a class="cta p" href="${escape(hrefs.q)}" aria-label="${escape(welcome.cta)}">${escape(welcome.cta)}</a>
       <a class="cta s" href="${escape(hrefs.signup)}">${escape(welcome.signin)}</a>
     </div>
   </div>
