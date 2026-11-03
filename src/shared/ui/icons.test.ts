@@ -42,7 +42,7 @@ const BOARD_ICONS: IconName[] = [
 ];
 
 // The brand group: the companies' own marks, never redrawn as line icons.
-const BRAND_MARKS: BrandName[] = ["apple", "apple-badge", "google", "google-signin", "github"];
+const BRAND_MARKS: BrandName[] = ["apple", "apple-badge", "apple-health", "google", "google-signin", "github"];
 
 describe("the icon set", () => {
   test("every icon the boards use is in the set", () => {
@@ -111,6 +111,15 @@ describe("the icon set", () => {
     expect(brandSvg("apple")).toContain('fill="currentColor"');
     expect(BRAND_ICONS.google.viewBox).toBe("0 0 48 48");
     expect(BRAND_ICONS.github.viewBox).toBe("0 0 16 16");
+  });
+
+  // Kirill, 3 Nov: the Health sheet wears the current Apple Health mark (the solid heart in its
+  // pink-to-red gradient), not our line heart.
+  test("apple-health is the solid gradient heart, not a line icon", () => {
+    const h = brandSvg("apple-health");
+    expect(h).toContain("linearGradient");
+    expect(h).not.toContain('stroke="currentColor"');
+    expect(BRAND_ICONS["apple-health"].viewBox).toBe("0 0 24 24");
   });
 
   test("opts.size sets width and height", () => {
