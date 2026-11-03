@@ -833,7 +833,10 @@ export function streakDelta(p: Profile, days: number, lang: Lang): string | null
   if (proj === null) return null;
   const kg = Math.round(Math.min(proj.kgToGo, (proj.kgPerWeek * days) / 7) * 10) / 10;
   if (kg === 0) return null;
-  return `${p.goal === "gain" ? "+" : "−"}${weightDisplay(kg, p.units ?? "metric", lang)}`;
+  // A space before the unit here, unlike everywhere else (#1358): Kirill, 3 Nov, board 19c.
+  const imperial = p.units === "imperial";
+  const shown = Math.round((imperial ? kg * LB_PER_KG : kg) * 10) / 10;
+  return `${p.goal === "gain" ? "+" : "−"}${numbers(lang)(shown)} ${spellUnit(lang, imperial ? "lb" : "kg")}`;
 }
 
 /**
