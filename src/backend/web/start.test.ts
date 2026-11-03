@@ -348,7 +348,8 @@ describe("the front door", () => {
   it("draws board 00: the demo in the phone frame, Start and an outlined account button", async () => {
     const html = await (await get("/start")).text();
     expect(html).toMatch(/\.ob \.whero \{[^}]*width: 290px;[^}]*aspect-ratio: 9 \/ 19\.5;[^}]*border: 10px solid #111;/);
-    expect(html).toContain(`<a class="cta p" href="/start/q">${DEFAULT_ONBOARDING_CONTENT.welcome.cta}</a>`);
+    // The arrow the phone draws is CSS ::after — the label pins the accessible name (#2565).
+    expect(html).toContain(`<a class="cta p" href="/start/q" aria-label="${DEFAULT_ONBOARDING_CONTENT.welcome.cta}">${DEFAULT_ONBOARDING_CONTENT.welcome.cta}</a>`);
     expect(html).toContain(`<a class="cta s" href="/start/signup">${DEFAULT_ONBOARDING_CONTENT.welcome.signin}</a>`);
     expect(html).not.toContain(`class="wlink"`);
   });
