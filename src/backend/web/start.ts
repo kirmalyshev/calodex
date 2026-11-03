@@ -1449,8 +1449,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     const prompt = promptById("streak_goal_days")!;
     const units = profile.units ?? "metric";
     const ask = (error: string | null) => html(renderQuestion(
-      [prompt], 0, profile, content, error, [], undefined, currentAnswer(prompt, profile),
-      STREAK_PATH, units, `${START_PREFIX}/plan`,
+      [prompt], 0, profile, content, error, [], undefined, currentAnswer(prompt, profile), STREAK_PATH, units,
     ));
     if (req.method === "GET") return ask(null);
     if (req.method === "POST") {
@@ -1861,9 +1860,6 @@ function renderQuestion(
   current?: readonly string[],
   action = `${START_PREFIX}/q`,
   units: UnitSystem = "metric",
-  /** Back is the last field in the walk — except on the lone streak screen, whose chevron
-   *  returns to the plan it followed, matching the phone's own back out of that ask. */
-  back?: string,
 ): string {
   const prompt = walk[index]!;
   const lang = profile.lang;
@@ -1883,7 +1879,7 @@ function renderQuestion(
     segAction: action,
     current: current ?? [],
     draft: draft ?? null,
-    back: back ?? backBefore(walk, index),
+    back: backBefore(walk, index),
     today: new Date(),
   });
 }
