@@ -3,6 +3,7 @@ import {
   askLines, chatCopyFor, DEFAULT_ONBOARDING_CONTENT, explainTargets, LANGS, LANGS_READY,
   LANG_LABEL, promptById, UNIT_KCAL, lintCopy, onboardingContentFor, projectGoal,
   kcalNumbers, signupCopyFor,
+  spellUnit,
   type Lang, type Profile,
 } from "@eait/shared";
 import { blankProfile } from "../store.ts";
@@ -142,8 +143,8 @@ describe("the language picker on the plan page", () => {
     const de = plan(planView("de"));
     const content = onboardingContentFor("de");
     const { targets } = explainTargets(PERSONA);
-    // The kcal card's caption is the content's, the figure grouped for the reader.
-    expect(de).toContain(`<span>${content.summary.kcalLabel}</span>`);
+    // The kcal card's caption is iOS's bare unit — the figure grouped for the reader (#2565).
+    expect(de).toContain(`<span>${spellUnit("de", "kcal")}</span>`);
     expect(de).toContain(`--to:${targets.kcal}`);
     expect(de).not.toContain("kcal a day");
   });
@@ -212,13 +213,11 @@ describe("the plan card's two figures", () => {
     // is the language's and there is nothing else on the card to disagree with it.
     for (const lang of LANGS) {
       const html = plan(planView(lang));
-      const label = onboardingContentFor(lang).summary.kcalLabel;
-      expect(html, lang).toContain(`<span>${label}</span>`);
-      // The caption carries the unit's own spelling — "kcal" or "ккал", never the other's.
-      expect(label, lang).toContain(UNIT_KCAL[lang]);
+      // The tile's caption is iOS's bare unit, spelled in the reader's language (#2565).
+      expect(html, lang).toContain(`<span>${spellUnit(lang, "kcal")}</span>`);
     }
     const ru = content(plan(planView("ru")));
-    expect(ru).toContain("ккал в день");
+    expect(ru).toContain("ккал");
     expect(ru).not.toMatch(/>\s*kcal|kcal\s*</);
     expect(ru).not.toContain(" kcal ");
   });
