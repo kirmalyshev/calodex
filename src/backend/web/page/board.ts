@@ -72,8 +72,6 @@ export interface OptSpec {
   /** A figure at the row's end — the streak's "−0.9kg". */
   end?: string | null | undefined;
   multi?: boolean;
-  /** A single choice that still draws the row's ring (the diet list). */
-  ring?: boolean;
   checked?: boolean;
 }
 export function optRow(o: OptSpec): string {
@@ -87,7 +85,7 @@ export function optRow(o: OptSpec): string {
   const sub = o.sub ? `<small>${escape(o.sub)}</small>` : "";
   const end = o.end ? `<span class="end num">${escape(o.end)}</span>` : "";
   return `<label class="opt">${input}${lead}<span class="ol">${escape(o.label)}${sub}</span>${end}` +
-    `${o.multi || o.ring ? `<span class="box" aria-hidden="true"></span>` : ""}</label>`;
+    `${o.multi ? `<span class="box" aria-hidden="true"></span>` : ""}</label>`;
 }
 
 /**
