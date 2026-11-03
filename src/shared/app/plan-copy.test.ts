@@ -10,6 +10,7 @@ describe("PLAN_COPY", () => {
   it("joins the first step's figure to its unit in every language", () => {
     for (const lang of LANGS) {
       expect(`${lang}: ${planCopyFor(lang).firstStep}`).not.toMatch(/\{kcal\}\s/);
+      expect(`${lang}: ${planCopyFor(lang).firstStep}`).toContain("{kcal}");
     }
   });
 });
