@@ -704,13 +704,13 @@ export function targetSuggestionLine(
  * disagree about what a kilogram reads as.
  */
 const LB_PER_KG = 2.20462;
-export function weightDisplay(kg: number, units: Units | null, lang: Lang): string {
+export function weightDisplay(kg: number, units: Units | null, lang: Lang, sep = ""): string {
   const v = units === "imperial" ? kg * LB_PER_KG : kg;
   const u = units === "imperial" ? "lb" : "kg";
   // A body weight is picked in whole pounds and stored to 0.1kg, so its tenth is the round trip's
   // noise (165lb read 164.9). A rate is smaller than any body and keeps its tenth.
   const shown = units === "imperial" && kg >= BANDS.weight_kg[0] ? kgToLb(kg) : Math.round(v * 10) / 10;
-  return `${numbers(lang)(shown)}${spellUnit(lang, u)}`;
+  return `${numbers(lang)(shown)}${sep}${spellUnit(lang, u)}`;
 }
 
 /** The distance between two stored weights, as the two figures on screen subtract: 165lb to 151lb is 14lb (#2517). */
@@ -834,9 +834,7 @@ export function streakDelta(p: Profile, days: number, lang: Lang): string | null
   const kg = Math.round(Math.min(proj.kgToGo, (proj.kgPerWeek * days) / 7) * 10) / 10;
   if (kg === 0) return null;
   // A space before the unit here, unlike everywhere else (#1358): Kirill, 3 Nov, board 19c.
-  const imperial = p.units === "imperial";
-  const shown = Math.round((imperial ? kg * LB_PER_KG : kg) * 10) / 10;
-  return `${p.goal === "gain" ? "+" : "−"}${numbers(lang)(shown)} ${spellUnit(lang, imperial ? "lb" : "kg")}`;
+  return `${p.goal === "gain" ? "+" : "−"}${weightDisplay(kg, p.units ?? "metric", lang, " ")}`;
 }
 
 /**
