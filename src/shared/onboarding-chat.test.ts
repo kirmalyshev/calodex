@@ -21,7 +21,7 @@ import {
   countryLabel, dietOf, explainTargets, isAnswered, medicalOf, minHealthyKg, offerHeadline,
   pacePreview, planHeadline, planRows, promptsFor, reconcileGoalEdit, resumeAt,
   planGoalLine, screenForStep, screenOptionValues, screenOptions, switchedLine, targetGoalLine,
-  weightDeltaDisplay, weightDisplay,
+  streakDelta, weightDeltaDisplay, weightDisplay,
   type ChatPromptId, type Profile,
 } from "./index.ts";
 import { spudSvg } from "./mascot.ts";
@@ -317,6 +317,13 @@ describe("the plan's computed words", () => {
     target_weight_kg: 68, activity: "few", pace: "steady", units: null,
   });
   const SEP_24 = new Date("2026-09-24T12:00:00Z");
+
+  // Kirill, 3 Nov (board 19c after #2560): the streak's figure is "−0.9 kg", a space before the
+  // unit, an exception to the no-space rule (ieat-app#1358) for this list.
+  it("spaces the streak figure from its unit", () => {
+    expect(streakDelta(her, 14, "en")).toMatch(/^−\d+(\.\d)? kg$/);
+    expect(streakDelta({ ...her, units: "imperial" }, 14, "en")).toMatch(/^−\d+(\.\d)? lb$/);
+  });
 
   it("quotes the cap from the constant for the direction taken", () => {
     const template = content.summary.capNote;
