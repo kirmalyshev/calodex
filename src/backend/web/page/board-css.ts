@@ -81,7 +81,7 @@ export const BOARD_CSS = `
 .ob .spud svg { width: 78%; height: 78%; display: block; }
 /* The ask is the iOS question's own 28px, left, under the bar — the wrap falls where the
    phone's falls, not a width the web invented. */
-.ob h1.q { font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 1.15; text-wrap: balance; }
+.ob h1.q { font-size: 32px; font-weight: 700; letter-spacing: -.032em; line-height: 1.13; text-wrap: balance; }
 /* Continue sits at the foot of the screen, and stays there over a list that scrolls under it. */
 .ob .qform > .cta.p:last-child, .ob .igroup > .cta.p:last-child {
   margin-top: auto; position: sticky; bottom: 24px; z-index: 1; max-width: none; align-self: stretch; }
@@ -124,7 +124,7 @@ export const BOARD_CSS = `
            font-family: var(--sans); width: 100%; }
 .ob .opt input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
 .ob .opt:has(input:checked) { background: var(--accent-tint); box-shadow: 0 0 0 1.5px var(--accent); color: var(--accent); }
-.ob .opt:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ob .opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ob .opt .ol { flex: 1; min-width: 0; }
 .ob .opt > .ico { width: 24px; height: 24px; }
 .ob .opt small { display: block; font-size: 13px; color: var(--muted); font-weight: 500; margin-top: 2px; }
@@ -236,7 +236,7 @@ export const BOARD_CSS = `
 .ob .est { color: var(--muted); font-size: 12px; font-weight: 600; display: block; }
 .ob .paceres { text-align: center; }
 .ob .paceresbox { margin-top: 30px; }
-.ob .when { display: inline-block; padding: 14px 26px; border-radius: 18px; background: var(--hair);
+.ob .when { display: inline-block; padding: 14px 26px; border-radius: 18px; background: var(--surface);
             font-size: 16px; font-weight: 700; }
 .ob .when span { display: block; font-weight: 500; color: var(--muted); font-size: 15px; margin-bottom: 2px; }
 .ob .cap { text-align: center; margin-top: 10px; }
@@ -263,7 +263,7 @@ export const BOARD_CSS = `
 .ob .wmain.pastbar .wcol { padding-top: 24px; }
 .ob .wmain.wide { max-width: 1080px; }
 .ob .igroup { flex: 1; display: flex; flex-direction: column; gap: 24px; min-height: 0; }
-.ob .card { background: var(--surface); border-radius: var(--r-card); box-shadow: 0 0 0 1px var(--hair); padding: 16px; }
+.ob .card { background: var(--surface); border-radius: var(--r-card); padding: 16px; }
 .ob .cards { display: grid; gap: 16px; align-items: start; }
 .ob .cards.c3 { grid-template-columns: repeat(3, 1fr); }
 .ob .cards .card { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
@@ -393,6 +393,11 @@ export const BOARD_CSS = `
 .ob .wctas .cta.s { padding: 0 22px; height: 56px; background: var(--surface); color: var(--ink);
                     box-shadow: 0 0 0 1px var(--line); }
 @media (max-width: 940px) {
+  /* The phone's door is one green pill and a text link under it — Kirill's outlined
+     button (#747) is the desktop ruling only. */
+  .ob .wctas .cta.s { background: none; box-shadow: none; height: auto; padding: 10px 4px;
+                      color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+  .ob .wctas .cta.s::after { content: " →"; }
   .ob .wcenter { padding: 0; align-items: flex-start; }
   .ob .wdemo { flex-direction: column; gap: 24px; padding: 0 0 32px !important; width: 100%; }
   .ob .wherobox { width: 100%; }

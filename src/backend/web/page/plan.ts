@@ -71,8 +71,8 @@ ${bars ? waterfallCard(v, bars) : ""}
 </details>
 </div>
 </div>
-<div class="pfoot"><a class="cta p rise" href="${escape(v.next)}" style="--d:.9s">${escape(PAGE_COPY.continueLabel)}</a></div>
 ${v.hasWebApp ? "" : languagePicker(v.lang)}
+<div class="pfoot"><a class="cta p rise" href="${escape(v.next)}" style="--d:.9s">${escape(PAGE_COPY.continueLabel)}</a></div>
 </div>
 </div></div>
 `, v.lang, "ob");
