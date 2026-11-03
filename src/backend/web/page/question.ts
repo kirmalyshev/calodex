@@ -169,7 +169,7 @@ function rulerControl(v: QuestionView, cfg: RulerCfg): string {
     .map((lv) => {
       // iOS keeps a label wholly inside the ruler — an end value clamps in from the edge
       // rather than bleeding under the fade. 14px clears the centred glyph.
-      const px = cfg.vertical ? at(lv) : Math.min(Math.max(at(lv), 16), centre * 2 - 16);
+      const px = cfg.vertical ? at(lv) : Math.min(Math.max(at(lv), 22), centre * 2 - 22);
       const pos = cfg.vertical ? `top:${px}px` : `left:${px}px`;
       return `<span class="lbl" style="${pos}">${escape(cfg.fmt === "ftin" ? t.format(lv) : numfmt(v.lang, lv))}</span>`;
     }).join("");
