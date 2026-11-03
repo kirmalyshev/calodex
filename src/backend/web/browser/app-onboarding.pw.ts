@@ -22,7 +22,7 @@ test("the whole W3 walk: plan, sign-up, country, first meal — and back", async
   await expect(page).toHaveURL(/\/start\/plan/);
   await expect(page.locator(".pln .hd")).toContainText("Goal:");
   await expect(page.locator(".pgraph .draw1")).toBeVisible();
-  await expect(page.locator(".pln .kcb")).toContainText("kcal a day");
+  await expect(page.locator(".pln .kcb")).toContainText("kcal");
   await expect(page.locator(".pln .pib")).toContainText("Saturated fat");
 
   // ── The sign-up: terms required, marketing optional ─────────────────────────────────────
@@ -31,7 +31,7 @@ test("the whole W3 walk: plan, sign-up, country, first meal — and back", async
   await expect(page).toHaveURL(/\/start\/streak/);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page).toHaveURL(/\/start\/signup/);
-  await expect(page.getByRole("heading", { name: "Save your progress" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Save your plan" })).toBeVisible();
   await expect(page.locator('input[name="terms"]')).not.toBeChecked();
   await expect(page.locator('input[name="marketing"]')).not.toBeChecked();
   // Unticked goes nowhere.

@@ -26,6 +26,8 @@ import { escape, shell } from "./shell.ts";
 export interface SignUpView {
   /** `id` picks the provider's mark; `action` is the kickoff POST's formaction. */
   providers: readonly { id: "apple" | "google"; action: string; label: string }[];
+  /** The email code flow's page — the third provider pill is a link: it needs an address first. */
+  emailHref: string | null;
   error: string | null;
   /** The published terms, or null where the operator published none. */
   termsHref: string | null;
@@ -48,17 +50,21 @@ export function signUp(v: SignUpView): string {
     .replace("{terms}", docLink(v.termsHref, SIGNUP_COPY.termsLink))
     .replace("{privacy}", docLink(v.privacyHref, SIGNUP_COPY.privacyLink));
   const mark = (id: "apple" | "google") => brandSvg(id === "apple" ? "apple" : "google-signin");
-  return shell(v.fromPlan ? SIGNUP_COPY.saveHeading : SIGNUP_COPY.signUpHeading, `${wtop()}
+  // The third provider the board draws (#569): the email code flow is a page, not a one-tap
+  // kickoff — the address comes first — so the pill is a link where the others are submits.
+  const email = v.emailHref === null ? ""
+    : `  <a class="cta s" href="${escape(v.emailHref)}"><i class="ico i-mail" aria-hidden="true"></i>${escape(SIGNUP_COPY.continueEmail)}</a>\n`;
+  return shell(v.fromPlan ? SIGNUP_COPY.savePlanHeading : SIGNUP_COPY.signUpHeading, `${wtop()}
 <div class="wmain one"><div class="wcol">
 <div class="sup">
 ${v.fromPlan ? dash("signup", v.lang, { href: "/start/plan", label: pageCopyFor(v.lang).back }) : ""}
-<h1>${escape(v.fromPlan ? SIGNUP_COPY.saveHeading : SIGNUP_COPY.signUpHeading)}</h1>
+<h1>${escape(v.fromPlan ? SIGNUP_COPY.savePlanHeading : SIGNUP_COPY.signUpHeading)}</h1>
+${v.fromPlan ? `<p class="sub">${escape(SIGNUP_COPY.savePlanLine)}</p>` : ""}
 ${v.error ? `<p class="notice" role="alert">${escape(v.error)}</p>` : ""}
 <form id="signup" method="post">
 ${v.providers.map((p) =>
   `  <button class="cta ${p.id === "apple" ? "apple" : "s"}" type="submit" formaction="${escape(p.action)}">${mark(p.id)}${escape(p.label)}</button>`,
-).join("\n")}
-</form>
+).join("\n")}${email}</form>
 <div class="consent">
   <label><input type="checkbox" name="terms" value="yes" form="signup"><span>${termsLabel}</span></label>
   <label><input type="checkbox" name="marketing" value="yes" form="signup"><span>${escape(SIGNUP_COPY.consentMarketing)}</span></label>

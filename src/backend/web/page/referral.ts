@@ -4,6 +4,7 @@
 
 import type { Lang } from "@eait/shared";
 import { fill } from "@eait/shared";
+import { spudSvg } from "@eait/shared/mascot";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -63,13 +64,13 @@ export function referralStep(v: ReferralStepView): string {
 <form method="post" action="${escape(v.action)}">
   <input type="text" name="code" value="${escape(v.value)}" placeholder="eait.fit/r/…" aria-label="${escape(c.referralField)}" autocomplete="off" autocapitalize="characters" spellcheck="false">
   ${notice}
-  <div class="wctas">${ctaSubmit(v.notice ? c.referralTryAgain : c.continueLabel)}${ctaLink(v.next, c.referralSkip, "s")}</div>
+  <div class="wctas"><button class="cta w" type="submit">${escape(v.notice ? c.referralTryAgain : c.continueLabel)}</button><a class="skiplink" href="${escape(v.next)}">${escape(c.referralSkip)}</a></div>
 </form>`;
   return shell(c.titleStart, `${wtop()}
 <div class="wmain one refstep"><div class="wcol">
 ${dash("referral", v.lang)}
 <div class="refmid"><div class="ref">
-${say([c.referralAsk])}
+<div class="say sayi"><span class="spud">${spudSvg("wave", "spud-ref")}</span><h1 class="q">${escape(c.referralAsk)}</h1></div>
 <p class="muted-sub">${escape(c.referralLead)}</p>
 ${v.done ? notice : ""}
 ${form}

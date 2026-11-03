@@ -5,7 +5,7 @@ import {
   type FoodTargets, type GoalProjection, type Lang, type OnboardingContent, type Profile,
   type TargetBasis,
 } from "@eait/shared";
-import { dash, wtop } from "./board.ts";
+import { dash, IMG_URL_DIR, wtop } from "./board.ts";
 import { pageCopyFor } from "../copy.ts";
 import { escape, shell } from "./shell.ts";
 
@@ -71,8 +71,8 @@ ${bars ? waterfallCard(v, bars) : ""}
 </details>
 </div>
 </div>
-<div class="pfoot"><a class="cta p rise" href="${escape(v.next)}" style="--d:.9s">${escape(PAGE_COPY.continueLabel)}</a></div>
 ${v.hasWebApp ? "" : languagePicker(v.lang)}
+<div class="pfoot"><a class="cta p rise" href="${escape(v.next)}" style="--d:.9s">${escape(PAGE_COPY.continueLabel)}</a></div>
 </div>
 </div></div>
 `, v.lang, "ob");
@@ -126,7 +126,7 @@ function everyDayCard(v: PlanView, COPY: ReturnType<typeof planCopyFor>): string
   const tile = (icon: string, figure: string, label: string) =>
     `<div><i class="ico i-${icon}"></i><b class="num">${escape(figure)}</b><span>${escape(label)}</span></div>`;
   return `<div class="card ed rise" style="--d:.5s"><p class="ct">${escape(COPY.everyDay)}</p><p class="cs">${escape(COPY.changeAnytime)}</p>
-<div class="kcb"><span class="tile"><i class="ico i-kcal"></i></span><div><b class="count num" style="--to:${Math.round(v.targets.kcal)};--d:.6s;animation-duration:1.2s"></b><span>${escape(summary.kcalLabel)}</span></div></div>
+<div class="kcb"><span class="tile"><i class="ico i-kcal"></i></span><div><b class="count num" style="--to:${Math.round(v.targets.kcal)};--d:.6s;animation-duration:1.2s"></b><span>${escape(spellUnit(v.lang, "kcal"))}</span></div></div>
 <div class="mt">${tile("protein", `${n(v.targets.protein_g)}${gram}`, summary.macros.protein)}${tile("carbs", `${n(v.targets.carbs_g)}${gram}`, summary.macros.carbs)}${tile("fat", `${n(v.targets.fat_g)}${gram}`, summary.macros.fat)}</div>
 </div>`;
 }
@@ -152,7 +152,7 @@ ${row("🧈", COPY.satFatAsked, satfat !== undefined && satfat !== null ? fill(C
 /** The first step (18b): the one habit the plan opens on, carrying the day's real target. */
 function firstCard(v: PlanView, COPY: ReturnType<typeof planCopyFor>): string {
   return `<div class="card rise" style="--d:.8s"><p class="ct">${escape(COPY.firstTitle)}</p><div class="st">
-<div class="sr"><span class="ti"><i class="ico i-kcal"></i></span>${escape(fill(COPY.firstStep, { kcal: kcalNumbers(v.lang)(v.targets.kcal) }))}</div>
+<div class="sr"><span class="ti"><img src="${IMG_URL_DIR}/salmon-sq.webp" alt="" aria-hidden="true"></span>${escape(fill(COPY.firstStep, { kcal: kcalNumbers(v.lang)(v.targets.kcal) }))}</div>
 </div></div>`;
 }
 

@@ -348,7 +348,8 @@ describe("the front door", () => {
   it("draws board 00: the demo in the phone frame, Start and an outlined account button", async () => {
     const html = await (await get("/start")).text();
     expect(html).toMatch(/\.ob \.whero \{[^}]*width: 290px;[^}]*aspect-ratio: 9 \/ 19\.5;[^}]*border: 10px solid #111;/);
-    expect(html).toContain(`<a class="cta p" href="/start/q">${DEFAULT_ONBOARDING_CONTENT.welcome.cta}</a>`);
+    // The arrow the phone draws is CSS ::after — the label pins the accessible name (#2565).
+    expect(html).toContain(`<a class="cta p" href="/start/q" aria-label="${DEFAULT_ONBOARDING_CONTENT.welcome.cta}">${DEFAULT_ONBOARDING_CONTENT.welcome.cta}</a>`);
     expect(html).toContain(`<a class="cta s" href="/start/signup">${DEFAULT_ONBOARDING_CONTENT.welcome.signin}</a>`);
     expect(html).not.toContain(`class="wlink"`);
   });
@@ -447,7 +448,8 @@ describe("the sign-up screen", () => {
     const html = await (await get("/start/signup")).text();
     expect(html).toContain("Continue with Apple");
     expect(html).not.toContain("Continue with Google");
-    expect(html).not.toContain("Continue with email");
+    // The email pill is not a provider — it links the always-on /start/email code flow (#2565).
+    expect(html).toContain("Continue with email");
   });
 });
 
@@ -1335,10 +1337,11 @@ describe("the question heading's type", () => {
   // every line under it and the small lines read tighter than the boards.
   it("stays on the heading", async () => {
     const page = await walkTo(await signIn(), "activity");
-    expect(page).toContain(".ob h1.q { font-size: 34px;");
-    // What `.q` used to hand down by accident, the board asks of each by name.
+    expect(page).toContain(".ob h1.q { font-size: 32px;");
+    // What `.q` used to hand down by accident, the board asks of each by name — and the wheel's
+    // centred row is iOS's regular-weight inset pill, not the old bold band.
     expect(page).toMatch(/\.ob \.wheel \.wr \{[^}]*font-weight: 600;/);
-    expect(page).toMatch(/\.ob \.wheel \.wr\.on \{[^}]*font-weight: 700;/);
+    expect(page).toMatch(/\.ob \.wheel \.wr\.on \{[^}]*font-weight: 400;/);
     expect(page).toMatch(/\.ob \.live \{[^}]*line-height: 1\.45;/);
     expect(page).toMatch(/\.ob \.seg \{[^}]*line-height: 1\.45;/);
     expect(page).not.toMatch(/\.ob \.q \{/);
@@ -2791,8 +2794,10 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
       const signup = await get("/start/signup", cookie);
       const signupHtml = await signup.text();
       expect(signupHtml, `${lang}.signup`).toContain(`<html lang="${lang}"`);
-      // Arriving from the plan, the heading is the one that says what the account is for.
-      expect(signupHtml, `${lang}.signup heading`).toContain(escape(signupCopyFor(lang).saveHeading));
+      // Arriving from the plan, the heading is iOS's "Save your plan" (#2565).
+      expect(signupHtml, `${lang}.signup heading`).toContain(escape(signupCopyFor(lang).savePlanHeading));
+      expect(signupHtml, `${lang}.signup line`).toContain(escape(signupCopyFor(lang).savePlanLine));
+      expect(signupHtml, `${lang}.signup email`).toContain(escape(signupCopyFor(lang).continueEmail));
       // The consent line names both documents, in the language's own words — the placeholders a
       // translation could have dropped.
       expect(signupHtml, `${lang}.signup terms`).toContain(escape(signupCopyFor(lang).termsLink));
@@ -2822,12 +2827,15 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
         expect(countryHtml, `${lang}: no chip reading "${label}" (${code})`)
           .toContain(escape(label));
       }
-      // The reader's own alphabet, `other` last — the board's grid order. The hint shows up as
-      // the PRESELECTED radio, not a re-ordered list; `resolveCountry` is the same call the page
-      // made, so the two can never disagree about what was hinted.
-      const rendered = [...countryHtml.matchAll(/name="answer" value="([a-z]+)"/g)].map((m) => m[1]);
-      expect(rendered, lang).toEqual([...countryOptions(lang)]);
+      // The reader's own alphabet, `other` last — except the resolved pick, which iOS pins
+      // to the top of the grid, checked, ahead of the alphabetical rest (#2565).
+      // `resolveCountry` is the same call the page made, so the two can never disagree.
       const hinted = resolveCountry({ languages: [lang] }).country;
+      const rendered = [...countryHtml.matchAll(/name="answer" value="([a-z]+)"/g)].map((m) => m[1]);
+      const offered = [...countryOptions(lang)];
+      const pinned = hinted !== null && hinted !== "other" && offered.includes(hinted)
+        ? [hinted, ...offered.filter((c) => c !== hinted)] : offered;
+      expect(rendered, lang).toEqual(pinned);
       const checked = countryHtml.match(/name="answer" value="([a-z]+)" checked/)?.[1];
       if (hinted !== null) expect(checked, `${lang}.country hint`).toBe(hinted);
 

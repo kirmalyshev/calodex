@@ -94,6 +94,7 @@ export const CONTROL_SCRIPT = `(function () {
       for (; v <= val + size / 2 / px; v += every) {
         var at = pxAt(v, size);
         if (at < -4 || at > size + 4) continue;
+        if (!vert) at = Math.min(Math.max(at, 22), size - 22);
         out += '<span class="lbl" style="' + (vert ? "top:" : "left:") + at + 'px">' + fmtVal(fmt, v) + "</span>";
       }
       if (lbls) lbls.innerHTML = out;

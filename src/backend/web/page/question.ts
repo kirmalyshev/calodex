@@ -58,10 +58,7 @@ function page(v: QuestionView, opts: { seg?: string; control: string; foot?: str
   ).join("");
   const body = `${wtop()}
 <div class="wmain one q${v.prompt.place === "streak" ? " pastbar" : ""}"><div class="wcol">
-${v.prompt.place === "streak"
-// Past the bar, the top row is the back chevron alone — the iOS 19c board's own frame.
-? `<div class="wbar"><a class="wback" href="${escape(v.back)}" aria-label="${escape(pageCopyFor(v.lang).back)}"><i class="ico i-back" aria-hidden="true"></i></a></div>`
-: dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
+${v.prompt.place === "streak" ? "" : dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
 ${say(v.lines, opts.sub)}
 ${opts.echo ? `<p class="qecho">${escape(opts.echo)}</p>` : ""}
 ${error}
@@ -170,7 +167,10 @@ function rulerControl(v: QuestionView, cfg: RulerCfg): string {
   const at = (u: number) => Math.round(centre + (cfg.vertical ? cfg.val - u : u - cfg.val) * t.pxPerUnit);
   const labels = cfg.marks ? "" : rulerLabels(t, Math.ceil(cfg.val - halfSpan), Math.floor(cfg.val + halfSpan))
     .map((lv) => {
-      const pos = cfg.vertical ? `top:${at(lv)}px` : `left:${at(lv)}px`;
+      // iOS keeps a label wholly inside the ruler — an end value clamps in from the edge
+      // rather than bleeding under the fade. 14px clears the centred glyph.
+      const px = cfg.vertical ? at(lv) : Math.min(Math.max(at(lv), 22), centre * 2 - 22);
+      const pos = cfg.vertical ? `top:${px}px` : `left:${px}px`;
       return `<span class="lbl" style="${pos}">${escape(cfg.fmt === "ftin" ? t.format(lv) : numfmt(v.lang, lv))}</span>`;
     }).join("");
   const tint = cfg.floor && !cfg.vertical
@@ -199,11 +199,12 @@ function rulerControl(v: QuestionView, cfg: RulerCfg): string {
   // The board's tick scale: a short line per unit, a longer one per `majorEvery` — the vertical
   // ruler runs them 22/40 px deep from its right edge, the horizontal one 22/38 px up from its
   // floor. The script shifts the same two layers by the same phases when the value moves.
+  // iOS draws ONE tick row — majors are the same 18px row, only ink-dark (#2565).
   const bg = cfg.vertical
     ? `${tickMinor} 100% ${rulerTickPhase(t, centre, cfg.val)}px/22px 100% no-repeat,` +
       `${tickMajor} 100% ${rulerTickPhase(t, centre, cfg.val, true)}px/40px 100% no-repeat`
-    : `${tickMinor} ${rulerTickPhase(t, centre, cfg.val)}px 100%/100% 22px repeat-x,` +
-      `${tickMajor} ${rulerTickPhase(t, centre, cfg.val, true)}px 100%/100% 38px repeat-x`;
+    : `${tickMinor} ${rulerTickPhase(t, centre, cfg.val)}px 100%/100% 18px repeat-x,` +
+      `${tickMajor} ${rulerTickPhase(t, centre, cfg.val, true)}px 100%/100% 18px repeat-x`;
   const ruler = `<div class="${cfg.vertical ? "vruler" : "ruler"}" role="slider" tabindex="0"` +
     ` aria-label="${escape(v.lines[v.lines.length - 1] ?? "")}"` +
     ` aria-valuemin="${cfg.min}" aria-valuemax="${cfg.max}" aria-valuenow="${cfg.val}"` +
