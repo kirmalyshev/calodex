@@ -1,6 +1,7 @@
 import { countryFlag, countryLabel, type CountryCode, type Lang } from "@eait/shared";
+import { brandSvg } from "@eait/shared/ui/icons";
 import { pageCopyFor } from "../copy.ts";
-import { ctaSubmit, say, wtop } from "./board.ts";
+import { ctaSubmit, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
 
 /**
@@ -28,13 +29,6 @@ export interface CountryView {
   selected: CountryCode | "other" | null;
   /** The content's own label for the sentinel ("Somewhere else"). */
   otherLabel: string;
-  /**
-   * The account-split guard's sentence, filled — `sameAccountHint` naming the provider the
-   * sign-up used, or `sameAccountHintGeneric` when the route found no web identity to name.
-   * It lives HERE — the post-sign-up handoff — because the provider buttons sat on the plan
-   * once and the note followed them onto the last `/start` screen the account still reads.
-   */
-  accountHint: string;
   /** The live `?q=` filter — what a no-script search typed. */
   query: string;
   error: string | null;
@@ -67,9 +61,9 @@ export function country(v: CountryView): string {
   }).join("\n");
 
   return shell(PAGE_COPY.titleStart, `${wtop()}
-<div class="wmain one"><div class="wcol">
+<div class="wmain one pastbar"><div class="wcol">
 <div class="cty">
-${say([v.ask])}
+<div class="say sayi">${brandSvg("eait", { size: 28, class: "appicon" })}<h1 class="q">${escape(v.ask)}</h1></div>
 ${v.error ? `<p class="notice" role="alert">${escape(v.error)}</p>` : ""}
 <form method="post" action="${escape(v.action)}">
   <div class="srch"><button class="srchgo" type="submit" formmethod="get" aria-label="${escape(v.placeholder)}"><i class="ico i-search" aria-hidden="true"></i></button><input type="search" name="q" value="${escape(v.query)}" placeholder="${escape(v.placeholder)}" aria-label="${escape(v.placeholder)}"></div>
@@ -77,7 +71,6 @@ ${v.error ? `<p class="notice" role="alert">${escape(v.error)}</p>` : ""}
 ${rows}
   </div>
   ${held}
-  <p class="note">${escape(v.accountHint)}</p>
   ${ctaSubmit(PAGE_COPY.continueLabel)}
 </form>
 </div>

@@ -74,9 +74,7 @@ export interface PageCopy {
    * page a signed-in account sees). `{provider}` is the one they actually used; see the note in
    * the English below.
    */
-  sameAccountHint: string;
   /** No identity to name — a state `/start/country` can only reach through a device-paired run. */
-  sameAccountHintGeneric: string;
   continueLabel: string;
   answerRequired: string;
   /** `{kg}` — the lowest weight this height can be planned for. */
@@ -238,12 +236,6 @@ const EN: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Continue",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -345,8 +337,6 @@ const FR: PageCopy = {
   chatPhotoSend: "Envoyer la photo",
   chatCaption: "Quelque chose que je devrais savoir ? (facultatif)",
   errorSignIn: "Cette connexion n'a pas abouti. Réessaie.",
-  sameAccountHint: "Installe eait pour iPhone et choisis Se connecter avec {provider}. C'est le même compte — tes réponses et ton plan y sont déjà.",
-  sameAccountHintGeneric: "Installe eait pour iPhone et connecte-toi comme tu l'as fait ici. C'est le même compte — tes réponses et ton plan y sont déjà.",
   continueLabel: "Continuer",
   answerRequired: "Cette question attend une réponse.",
   belowHealthyTarget: "Pour ta taille, l'objectif le plus bas qu'on puisse fixer est de {kg}kg.",
@@ -444,8 +434,6 @@ const DE: PageCopy = {
   chatPhotoSend: "Foto senden",
   chatCaption: "Soll ich noch etwas wissen? (optional)",
   errorSignIn: "Diese Anmeldung ist nicht durchgegangen. Versuch es noch einmal.",
-  sameAccountHint: "Installier eait fürs iPhone und wähl „Anmelden mit {provider}“. Es ist dasselbe Konto — deine Antworten und dein Plan liegen schon darauf.",
-  sameAccountHintGeneric: "Installier eait fürs iPhone und melde dich so an wie hier. Es ist dasselbe Konto — deine Antworten und dein Plan liegen schon darauf.",
   continueLabel: "Weiter",
   answerRequired: "Diese Frage braucht eine Antwort.",
   belowHealthyTarget: "Das niedrigste Ziel, das wir für deine Größe planen können, sind {kg}kg.",
@@ -543,8 +531,6 @@ const IT: PageCopy = {
   chatPhotoSend: "Invia la foto",
   chatCaption: "C'è qualcosa che dovrei sapere? (facoltativo)",
   errorSignIn: "Quell'accesso non è andato a buon fine. Riprova.",
-  sameAccountHint: "Installa eait per iPhone e scegli Accedi con {provider}. È lo stesso account — le tue risposte e il tuo piano ci sono già.",
-  sameAccountHintGeneric: "Installa eait per iPhone e accedi come hai fatto qui. È lo stesso account — le tue risposte e il tuo piano ci sono già.",
   continueLabel: "Continua",
   answerRequired: "Questa ha bisogno di una risposta.",
   belowHealthyTarget: "L'obiettivo più basso che possiamo pianificare per la tua altezza è {kg}kg.",
@@ -642,8 +628,6 @@ const ES: PageCopy = {
   chatPhotoSend: "Enviar la foto",
   chatCaption: "¿Algo que deba saber? (opcional)",
   errorSignIn: "Ese inicio de sesión no se completó. Inténtalo otra vez.",
-  sameAccountHint: "Instala eait para iPhone y elige Iniciar sesión con {provider}. Es la misma cuenta — tus respuestas y tu plan ya están ahí.",
-  sameAccountHintGeneric: "Instala eait para iPhone e inicia sesión igual que aquí. Es la misma cuenta — tus respuestas y tu plan ya están ahí.",
   continueLabel: "Continuar",
   answerRequired: "Esa necesita una respuesta.",
   belowHealthyTarget: "El objetivo más bajo que podemos planificar para tu altura es {kg}kg.",
@@ -741,8 +725,6 @@ const VI: PageCopy = {
   chatPhotoSend: "Gửi ảnh",
   chatCaption: "Có gì mình nên biết không? (không bắt buộc)",
   errorSignIn: "Lần đăng nhập đó chưa hòan tất. Thử lại nhé.",
-  sameAccountHint: "Cài eait cho iPhone và chọn Đăng nhập bằng {provider}. Vẫn là tài khoản đó — câu trả lời và kế hoạch của bạn đã nằm sẵn trong đấy.",
-  sameAccountHintGeneric: "Cài eait cho iPhone và đăng nhập đúng như bạn đã làm ở đây. Vẫn là tài khoản đó — câu trả lời và kế hoạch của bạn đã nằm sẵn trong đấy.",
   continueLabel: "Tiếp tục",
   answerRequired: "Bạn cần trả lời câu này.",
   belowHealthyTarget: "Mục tiêu thấp nhất chúng mình có thể lên kế hoạch cho chiều cao của bạn là {kg}kg.",
@@ -840,8 +822,6 @@ const ID: PageCopy = {
   chatPhotoSend: "Kirim fotonya",
   chatCaption: "Ada yang perlu aku tahu? (opsional)",
   errorSignIn: "Proses masuk itu tidak selesai. Coba lagi.",
-  sameAccountHint: "Pasang eait untuk iPhone dan pilih Masuk dengan {provider}. Ini akun yang sama — jawaban dan rencanamu sudah ada di dalamnya.",
-  sameAccountHintGeneric: "Pasang eait untuk iPhone dan masuk dengan cara yang sama seperti di sini. Ini akun yang sama — jawaban dan rencanamu sudah ada di dalamnya.",
   continueLabel: "Lanjut",
   answerRequired: "Yang ini butuh jawaban.",
   belowHealthyTarget: "Target terendah yang bisa kami rencanakan untuk tinggimu adalah {kg}kg.",
@@ -939,8 +919,6 @@ const RU: PageCopy = {
   chatPhotoSend: "Отправить фото",
   chatCaption: "Есть что-то, что мне стоит знать? (необязательно)",
   errorSignIn: "Этот вход не завершился. Попробуй ещё раз.",
-  sameAccountHint: "Установи eait для iPhone и выбери «Войти через {provider}». Это тот же аккаунт — твои ответы и план уже там.",
-  sameAccountHintGeneric: "Установи eait для iPhone и войди так же, как здесь. Это тот же аккаунт — твои ответы и план уже там.",
   continueLabel: "Дальше",
   answerRequired: "На этот нужен ответ.",
   belowHealthyTarget: "Самая низкая цель, которую мы можем спланировать для твоего роста, — {kg}кг.",
@@ -1047,12 +1025,6 @@ const TE: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "కొనసాగించండి",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1163,12 +1135,6 @@ const TA: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "தொடர்க",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1279,12 +1245,6 @@ const PA: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "ਜਾਰੀ ਰੱਖੋ",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1395,12 +1355,6 @@ const OR: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "ଜାରି ରଖନ୍ତୁ",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1511,12 +1465,6 @@ const MR: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "पुढे जा",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1627,12 +1575,6 @@ const ML: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "തുടരുക",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1743,12 +1685,6 @@ const KN: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "ಮುಂದುವರಿಸಿ",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1859,12 +1795,6 @@ const GU: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "ચાલુ રાખો",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -1975,12 +1905,6 @@ const BN: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "চালিয়ে যান",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2091,12 +2015,6 @@ const PT_PT: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Continuar",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2207,12 +2125,6 @@ const MS: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Teruskan",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2323,12 +2235,6 @@ const CA: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Continua",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2439,12 +2345,6 @@ const SL: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Nadaljuj",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2555,12 +2455,6 @@ const HR: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Nastavi",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2671,12 +2565,6 @@ const SK: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Pokračovať",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2787,12 +2675,6 @@ const NO: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Fortsett",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -2903,12 +2785,6 @@ const FI: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Jatka",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3019,12 +2895,6 @@ const DA: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Fortsæt",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3135,12 +3005,6 @@ const HU: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Tovább",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3251,12 +3115,6 @@ const EL: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Συνέχεια",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3367,12 +3225,6 @@ const RO: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Continuă",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3483,12 +3335,6 @@ const CS: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Pokračovat",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3599,12 +3445,6 @@ const HI: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "जारी रखें",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3715,12 +3555,6 @@ const TH: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "ต่อไป",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3831,12 +3665,6 @@ const SV: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Fortsätt",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -3947,12 +3775,6 @@ const UK: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Продовжити",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4063,12 +3885,6 @@ const NL: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Verder",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4179,12 +3995,6 @@ const PL: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Dalej",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4295,12 +4105,6 @@ const TR: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Devam",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4411,12 +4215,6 @@ const ZH_HANT: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "繼續",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4527,12 +4325,6 @@ const ZH_HANS: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "继续",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4643,12 +4435,6 @@ const KO: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "계속",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4759,12 +4545,6 @@ const JA: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "続ける",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */
@@ -4875,12 +4655,6 @@ const PT_BR: PageCopy = {
    * do again and this plan — and anything bought from it — left behind on an account nothing can
    * merge into. Naming the right button is the only thing standing in front of that.
    */
-  sameAccountHint:
-    "Install eait for iPhone and choose Sign in with {provider}. It is the same account — your " +
-    "answers and your plan are already on it.",
-  sameAccountHintGeneric:
-    "Install eait for iPhone and sign in the same way you did here. It is the same account — " +
-    "your answers and your plan are already on it.",
   /** Three places want it and it was typed out in each. */
   continueLabel: "Continuar",
   /** The one refusal `/start` words itself — the rest come from the engine's own tables. */

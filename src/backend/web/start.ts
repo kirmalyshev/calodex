@@ -1404,15 +1404,6 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     const selected: CountryCode = asked !== null && offeredValues.includes(asked)
       ? asked as CountryCode
       : resolved.country;
-    // WHICH BUTTON TO PRESS IN THE APP — the sentence the old plan carried, re-homed on the
-    // post-sign-up handoff this screen is. The wrong provider in the install lands in a second
-    // account `identity.ts` will never merge, and nothing downstream repairs it.
-    const signedInWith = (await ctx.store.listIdentities(userId))
-      .map((i) => i.provider).find((p): p is WebProvider => p === "apple" || p === "google") ?? null;
-    const PAGE_COPY = pageCopyFor(lang);
-    const accountHint = signedInWith
-      ? fill(PAGE_COPY.sameAccountHint, { provider: signedInWith === "apple" ? "Apple" : "Google" })
-      : PAGE_COPY.sameAccountHintGeneric;
     // The board is the 16-country one (W3): the ask, the search field, the flag grid with the
     // resolved pick preselected — `country()` draws it, not the walk's `question()`. The sentinel's
     // label is the content's own — the validator requires it, so there is no English fallback.
@@ -1422,7 +1413,6 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       options: countryOptions(lang),
       selected,
       otherLabel: screenOptions(content, "country").other!.label,
-      accountHint,
       query,
       error,
       action: `${START_PREFIX}/country`,
@@ -1459,7 +1449,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     const prompt = promptById("streak_goal_days")!;
     const units = profile.units ?? "metric";
     const ask = (error: string | null) => html(renderQuestion(
-      [prompt], 0, profile, content, error, [], undefined, currentAnswer(prompt, profile), STREAK_PATH, units,
+      [prompt], 0, profile, content, error, [], undefined, currentAnswer(prompt, profile),
+      STREAK_PATH, units, `${START_PREFIX}/plan`,
     ));
     if (req.method === "GET") return ask(null);
     if (req.method === "POST") {
@@ -1870,6 +1861,9 @@ function renderQuestion(
   current?: readonly string[],
   action = `${START_PREFIX}/q`,
   units: UnitSystem = "metric",
+  /** Back is the last field in the walk — except on the lone streak screen, whose chevron
+   *  returns to the plan it followed, matching the phone's own back out of that ask. */
+  back?: string,
 ): string {
   const prompt = walk[index]!;
   const lang = profile.lang;
@@ -1889,7 +1883,7 @@ function renderQuestion(
     segAction: action,
     current: current ?? [],
     draft: draft ?? null,
-    back: backBefore(walk, index),
+    back: back ?? backBefore(walk, index),
     today: new Date(),
   });
 }
