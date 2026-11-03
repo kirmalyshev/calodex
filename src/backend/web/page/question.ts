@@ -58,10 +58,7 @@ function page(v: QuestionView, opts: { seg?: string; control: string; foot?: str
   ).join("");
   const body = `${wtop()}
 <div class="wmain one q${v.prompt.place === "streak" ? " pastbar" : ""}"><div class="wcol">
-${v.prompt.place === "streak"
-// Past the bar, the top row is the back chevron alone — the iOS 19c board's own frame.
-? `<div class="wbar"><a class="wback" href="${escape(v.back)}" aria-label="${escape(pageCopyFor(v.lang).back)}"><i class="ico i-back" aria-hidden="true"></i></a></div>`
-: dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
+${v.prompt.place === "streak" ? "" : dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
 ${say(v.lines, opts.sub)}
 ${opts.echo ? `<p class="qecho">${escape(opts.echo)}</p>` : ""}
 ${error}
