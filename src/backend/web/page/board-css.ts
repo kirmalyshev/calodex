@@ -67,6 +67,10 @@ export const BOARD_CSS = `
 
 /* ── the ask ── */
 .ob .say { display: block; }
+/* The post-payment screens (country) head with the app icon where a question's Spud sat — the
+   iOS QuestionHead appIcon, 28px beside the same 34px ask. */
+.ob .say.sayi { display: flex; align-items: center; gap: 12px; }
+.ob .say.sayi .appicon { width: 28px; height: 28px; flex: 0 0 28px; }
 .ob .stopcard .say { display: flex; gap: 12px; align-items: flex-start; }
 .ob .qsub { margin-top: 14px; font-size: 16px; line-height: 1.4; color: var(--ink); }
 /* 8 under the question, as board 08 draws it: the column's 18 less 10. */
@@ -101,15 +105,16 @@ export const BOARD_CSS = `
                   text-align: center; color: var(--muted); background: none; cursor: pointer; font-family: var(--sans); }
 .ob .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 
-/* ── option rows: the board's full-width list — 68 tall, 20 round, 10 apart, picked in the accent ── */
-.ob .opts { display: flex; flex-direction: column; gap: 10px; }
+/* ── option rows: the board's full-width list — 68 tall, 20 round, 16 apart (the barrier list,
+   under its sub-line, sits 10 apart as optsUnderSub), picked in the accent ── */
+.ob .opts { display: flex; flex-direction: column; gap: 16px; }
+.ob .opts.tight { gap: 10px; }
 @media (min-width: 721px) {
   .ob .opts.c2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ob .opts.c4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .ob .opts.c4 .opt { flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; }
   .ob .opts.c4 .opt .n { width: auto; height: auto; flex: none; background: none; font-size: 17px; font-weight: 700; }
   .ob .opts.c4 .opt .ol { flex: none; font-size: 13px; font-weight: 400; color: var(--muted); }
-  .ob .opts.c4 .opt .box { margin-left: 0; align-self: flex-end; }
 }
 .ob .opt { background: var(--surface); border-radius: 20px;
            box-shadow: 0 0 0 1px var(--hair), 0 2px 6px -4px rgba(23,25,28,.12);
@@ -129,12 +134,12 @@ export const BOARD_CSS = `
 /* the streak's kg on this plan */
 .ob .opt .end { margin-left: auto; font-weight: 500; color: var(--muted); }
 .ob .opt:has(input:checked) .end { color: var(--accent); }
-/* the ring a list row carries */
-.ob .opt .box { margin-left: auto; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
-                box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
+/* the multi-select box — the iOS the cz-box: a 26px rounded square, ticked on the pick */
+.ob .opt .box { margin-left: auto; width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px;
+                box-shadow: inset 0 0 0 2px var(--line); position: relative; }
 .ob .opt:has(input:checked) .box { background: var(--accent); box-shadow: none; }
-.ob .opt:has(input:checked) .box::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
-  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.ob .opt:has(input:checked) .box::after { content: ""; position: absolute; left: 9px; top: 4px; width: 7px; height: 13px;
+  border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
 .ob .ico { display: inline-flex; width: 22px; height: 22px; flex: 0 0 auto; }
 
 /* ── the big number + pickers ── */
@@ -389,7 +394,7 @@ export const BOARD_CSS = `
   .ob .wcenter { padding: 0; align-items: flex-start; }
   .ob .wdemo { flex-direction: column; gap: 24px; padding: 0 0 32px !important; width: 100%; }
   .ob .wherobox { width: 100%; }
-  .ob .whero { width: 100%; height: min(560px, 60svh); aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none;
+  .ob .whero { width: 100%; height: min(560px, 66.4svh); aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none;
     -webkit-mask: linear-gradient(#000 78%, transparent); mask: linear-gradient(#000 78%, transparent); }
   .ob .whead { padding: 0 24px; align-items: stretch; text-align: center; max-width: none; }
   .ob .whead h1 { font-size: 30px; }
@@ -430,19 +435,22 @@ export const BOARD_CSS = `
 .ob .twice .b .bar { height: 180px; background: var(--accent); color: #fff; font-size: 40px; font-weight: 700; }
 .ob .twice figcaption { margin-top: 14px; font-size: 17px; font-weight: 600; }
 .ob .src { margin-top: 16px; font-size: 12px; color: var(--muted); }
-.ob .bmeter { padding: 20px; }
-.ob .bm-r { display: flex; justify-content: space-between; align-items: center; font-size: 17px; font-weight: 600; }
-.ob .bm-v { padding: 4px 12px; border-radius: 12px; background: #F4C47A; color: #fff; font-weight: 700; font-feature-settings: "tnum" 1; }
-.ob .bm-sc { position: relative; height: 12px; margin-top: 18px; border-radius: 6px; background: linear-gradient(90deg, #6FA8F0 0%, #6FCB7C 14%, #6FCB7C 37%, #F2C230 43%, #F59A3E 58%, #F36464 68%, #F36464 100%); }
-.ob .bm-ax { position: relative; height: 16px; margin: 18px 0 8px; font-size: 13px; color: var(--faint); }
-.ob .bm-ax span { position: absolute; transform: translateX(-50%); }
-.ob .bm-ax span:first-child { transform: none; }
-.ob .bm-ax span:last-child { transform: translateX(-100%); }
-.ob .bm-ax + .bm-sc { margin-top: 0; }
-.ob .bm-k { animation: bmi-k 1.2s var(--ease) .5s both; }
+/* the baseline card — the iOS 08b board: the figure beside the word, four NEUTRAL segments (the
+   band's own one darker), the ink knob sliding in, the four range labels, the band's word. No
+   judging colour (polish.md §9), so nothing here is tinted. */
+.ob .bmi-c { margin-top: 26px; padding: 22px 20px; }
+.ob .bmi-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 17px; font-weight: 600; }
+.ob .bmi-h b { font-size: 40px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.ob .bmi-b { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 20px; }
+.ob .bmi-b i { height: 12px; border-radius: 6px; background: #E4E2DC; }
+.ob .bmi-b i.cur { background: #B4B1A8; }
+.ob .bmi-k { position: absolute; top: 50%; width: 6px; height: 26px; margin: -13px 0 0 -3px; border-radius: 3px;
+             background: var(--ink); box-shadow: 0 0 0 3px var(--surface); animation: bmi-k 1.2s var(--ease) .5s both; }
 @keyframes bmi-k { from { left: 0; } }
-.ob .bm-k { position: absolute; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px #F4C47A, 0 2px 6px rgb(0 0 0 / .2); }
-.ob .bm-w { margin-top: 12px; text-align: center; font-size: 14px; font-weight: 600; letter-spacing: .12em; color: var(--faint); }
+.ob .bmi-l { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 10px; font-size: 12px;
+             color: var(--faint); text-align: center; font-variant-numeric: tabular-nums; }
+.ob .bmi-l .cur { color: var(--ink); font-weight: 600; }
+.ob .bmi-w { margin-top: 12px; text-align: center; font-size: 14px; font-weight: 600; letter-spacing: .12em; color: var(--faint); }
 .ob .bverdict { margin-top: 14px; padding: 14px 18px; border-radius: 16px; background: #FDF1DE; }
 .ob .bverdict b { display: block; font-size: 16px; }
 .ob .bverdict span { font-size: 14px; color: var(--muted); }

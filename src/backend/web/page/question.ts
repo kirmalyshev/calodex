@@ -8,7 +8,7 @@
 // field (the walk's `?draft=` and the toggle's POST are how a typed value crosses a unit change).
 
 import {
-  basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, explainTargets, fill, heightDisplayValue, kcalNumbers,
+  basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, explainTargets, fill, heightDisplayValue, kcalNumbers, MIN_AGE,
   minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, pacePreview, PACES, rulerLabels, RULER_TICKS,
   LB_PER_KG, lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
   targetRange,
@@ -49,7 +49,7 @@ export interface QuestionView {
 }
 
 /** The page scaffold every question shares: dash → say → (error) → [seg] → form. */
-function page(v: QuestionView, opts: { seg?: string; control: string; foot?: string; echo?: string | null; sub?: string }): string {
+function page(v: QuestionView, opts: { seg?: string; control: string; foot?: string; echo?: string | null; sub?: string | undefined }): string {
   const copy = chatCopyFor(v.lang);
   const error = v.error
     ? `<p class="notice" id="answer-error" role="alert">${escape(v.error)}</p>` : "";
@@ -58,7 +58,10 @@ function page(v: QuestionView, opts: { seg?: string; control: string; foot?: str
   ).join("");
   const body = `${wtop()}
 <div class="wmain one q${v.prompt.place === "streak" ? " pastbar" : ""}"><div class="wcol">
-${v.prompt.place === "streak" ? "" : dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
+${v.prompt.place === "streak"
+// Past the bar, the top row is the back chevron alone — the iOS 19c board's own frame.
+? `<div class="wbar"><a class="wback" href="${escape(v.back)}" aria-label="${escape(pageCopyFor(v.lang).back)}"><i class="ico i-back" aria-hidden="true"></i></a></div>`
+: dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
 ${say(v.lines, opts.sub)}
 ${opts.echo ? `<p class="qecho">${escape(opts.echo)}</p>` : ""}
 ${error}
@@ -82,8 +85,9 @@ const TILE_ICON: Record<string, Record<string, string>> = {
   },
 };
 
-/** The boards' desktop columns (`.c2`, `.c4` in board-css); every other list stays one column. */
-const OPT_GRID: Partial<Record<string, string>> = { activity: " c4", barrier: " c2", situation: " c2", diet: " c2", medical: " c2" };
+/** The boards' desktop columns (`.c2`, `.c4` in board-css); every other list stays one column.
+ *  `tight` is the barrier list's 10px gap — the iOS `optsUnderSub` under its "Pick all that fit". */
+const OPT_GRID: Partial<Record<string, string>> = { activity: " c4", barrier: " c2 tight", situation: " c2", diet: " c2", medical: " c2" };
 
 /**
  * Every option screen is the board's list (ieat-app#2050): one full-width row per answer, the
@@ -105,13 +109,12 @@ function optionControl(v: QuestionView): string {
     const label = c?.label ?? optionLabel(place as OnboardingScreenId, o, v.lang);
     if (place === "activity") {
       // The four bands: the count is the badge, the row's words are its hint ("No workouts").
-      return optRow({ value: o, label: c?.hint ?? label, badge: label, ring: true, checked: chosen.has(o) });
+      return optRow({ value: o, label: c?.hint ?? label, badge: label, checked: chosen.has(o) });
     }
     return optRow({
       value: o,
       label,
       multi,
-      ring: place === "diet",
       icon: TILE_ICON[place]?.[o],
       end: place === "streak" ? streakDelta(v.profile, Number(o), v.lang) : null,
       // A diet answers "no restriction" as `balanced` — the board draws it selected, and storing
@@ -145,8 +148,6 @@ interface RulerCfg {
   /** The target's goal line per ruler value (display units, one decimal) — the script swaps it as
       the needle moves; a value with no honest date has no entry and draws nothing. */
   goals?: Record<string, string> | undefined;
-  /** A line between the ruler and the live delta (board 09: "Your days burn 1793kcal"). */
-  under?: string | undefined;
   settle?: boolean | undefined;
   /** `marks` draws the marker labels INSTEAD of the numbered scale — the target board, where the
       "lowest" and "now" words would overprint the numbers. */
@@ -218,7 +219,7 @@ function rulerControl(v: QuestionView, cfg: RulerCfg): string {
     (cfg.now ? ` data-now="${cfg.now.at}"` : "") +
     (cfg.delta ? ` data-dn="${escape(cfg.delta.dn)}" data-up="${escape(cfg.delta.up)}"` : "") +
     `>` +
-    (cfg.vertical ? `<div class="vpick">${bign}${ruler}</div>` : `${bign}${ruler}${cfg.under ? `<p class="burnline">${escape(cfg.under)}</p>` : ""}${live}`) +
+    (cfg.vertical ? `<div class="vpick">${bign}${ruler}</div>` : `${bign}${ruler}${live}`) +
     (cfg.goals ? `<p class="goal d d17 num" data-goals="${escape(JSON.stringify(cfg.goals))}">` +
       `${escape(cfg.goals[String(Math.round(cfg.val * 10) / 10)] ?? "")}</p>` : "") +
     `</div>`;
@@ -240,13 +241,10 @@ function ageControl(v: QuestionView): { control: string } {
   const copy = chatCopyFor(v.lang);
   const val = v.draft ?? (v.current[0] !== undefined ? Number(v.current[0]) : null)
     ?? (v.profile.birth_year ? v.today.getUTCFullYear() - v.profile.birth_year : ONBOARDING_NEUTRAL.ageYears);
-  // The wheel's range runs INTO the refusal ages on purpose: 10–15 selects the under-16 stop,
-  // which is the same door the typed fallback takes.
-  const min = 10, max = 100;
+  const min = MIN_AGE, max = 100;
   const years = countText(v.lang);
-  // The board's rows read "NN years" — `yearsCount`, the counted template, because Russian
-  // declines the word per number where the other seven do not. `on`/`o1`/`o2` are the centred
-  // row and its neighbours fading by distance; the script re-marks them on every scroll.
+  // The wheel starts at MIN_AGE, as the phone's does (polish.md §9): it cannot give an under-age
+  // answer, so the stop arrives only through a typed year the server refuses.
   const rowClass = (a: number) => {
     const d = Math.abs(a - val);
     return `wr${d === 0 ? " on" : d === 1 ? " o1" : d === 2 ? " o2" : ""}`;
@@ -354,12 +352,10 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
   const min = minHealthy !== null ? targetFloor(minHealthy, v.units) : Math.round(disp(30));
   const max = Math.round(disp(Math.max(range?.max ?? 0, (nowKg ?? 0) + 20, val + 10)));
   const now = nowKg !== null ? disp(nowKg) : undefined;
-  const burn = explainTargets(v.profile, v.today).basis.tdee;
   const ctl = rulerControl(v, {
     ticks: t, val: Math.max(val, min), min, max, step: weightStep(v.units),
     fmt: "int", vertical: false, smalls: spellUnit(v.lang, word), unitWord: spellUnit(v.lang, word), settle: true,
     marks: true,
-    under: burn === null ? undefined : fill(copy.echo.days, { burn: kcalNumbers(v.lang)(burn) }),
     now: now !== undefined
       ? { at: now, label: fill(copy.target.now, { weight: weightDisplay(nowKg!, v.units, v.lang) }) }
       : undefined,
@@ -478,7 +474,11 @@ export function question(v: QuestionView): string {
     }
     case "target": {
       const { seg, control } = targetControl(v);
-      return page(v, { seg, control });
+      const burn = explainTargets(v.profile, v.today).basis.tdee;
+      return page(v, {
+        seg, control,
+        sub: burn === null ? undefined : fill(chatCopyFor(v.lang).echo.days, { burn: kcalNumbers(v.lang)(burn) }),
+      });
     }
     case "pace":
       return page(v, { control: paceControl(v, paceEcho(v.profile, v.units, v.lang)) });
