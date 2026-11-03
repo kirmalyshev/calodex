@@ -263,7 +263,7 @@ export const BOARD_CSS = `
 .ob .wmain.pastbar .wcol { padding-top: 24px; }
 .ob .wmain.wide { max-width: 1080px; }
 .ob .igroup { flex: 1; display: flex; flex-direction: column; gap: 24px; min-height: 0; }
-.ob .card { background: var(--surface); border-radius: var(--r-card); box-shadow: none; padding: 16px; }
+.ob .card { background: var(--surface); border-radius: var(--r-card); box-shadow: none; border: 0; padding: 16px; }
 .ob .cards { display: grid; gap: 16px; align-items: start; }
 .ob .cards.c3 { grid-template-columns: repeat(3, 1fr); }
 .ob .cards .card { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
