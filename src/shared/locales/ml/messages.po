@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "അപ്ഡേറ്റ് ചെയ്തു — {kcal} kcal. {day}"
+#~ msgstr "അപ്ഡേറ്റ് ചെയ്തു — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "“{note}” — ശ്രദ്ധിച്ചു, അത് കണക�
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "ആ ലേബൽ വായിക്കാനായില്ല."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "എണ്ണി. ഇന്ന് {left} kcal ബാക്കി."
+msgstr "എണ്ണി. ഇന്ന് {left}kcal ബാക്കി."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "എണ്ണി. ഇന്ന് {over} kcal കൂടുതൽ."
+msgstr "എണ്ണി. ഇന്ന് {over}kcal കൂടുതൽ."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "ആഹാരം കണ്ടെത്തുന്നു · 2 / 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "ആദ്യത്തേത് രേഖപ്പെടുത്തി. {kcal} kcal."
+msgstr "ആദ്യത്തേത് രേഖപ്പെടുത്തി. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "ഇതാണ് പുതിയ eait. നിങ്ങളുടെ ഭക
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "ഇന്ന്: {plan} kcal-ൽ {eaten}, {proteinTarget} g പ്രോട്ടീനിൽ {protein}"
+msgstr "ഇന്ന്: {plan}kcal-ൽ {eaten}, {proteinTarget} g പ്രോട്ടീനിൽ {protein}"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

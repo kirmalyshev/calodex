@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Ενημερώθηκε — {kcal} kcal. {day}"
+#~ msgstr "Ενημερώθηκε — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "«{note}» — σημειώθηκε, είναι μέσα στους αρ
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Δεν ήταν δυνατή η ανάγνωση αυτής της ετ�
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Μετρήθηκε. Απομένουν {left} kcal σήμερα."
+msgstr "Μετρήθηκε. Απομένουν {left}kcal σήμερα."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Μετρήθηκε. {over} kcal πάνω σήμερα."
+msgstr "Μετρήθηκε. {over}kcal πάνω σήμερα."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Αναγνώριση φαγητού · 2 από 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Το πρώτο μπήκε. {kcal} kcal."
+msgstr "Το πρώτο μπήκε. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Αυτό είναι το νέο eait. Τα γεύματα και οι φ
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Σήμερα: {eaten} από {plan} kcal, {protein} από {proteinTarget} g πρωτεΐνης"
+msgstr "Σήμερα: {eaten} από {plan}kcal, {protein} από {proteinTarget} g πρωτεΐνης"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

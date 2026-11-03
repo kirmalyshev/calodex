@@ -1181,7 +1181,7 @@ const TE: ChatCopy = {
   pace: {
     rate: "వారానికి {rate}",
     rateSuffix: "వారానికి",
-    result: "సుమారు {month} నాటికి {target} · రోజుకు {kcal} kcal",
+    result: "సుమారు {month} నాటికి {target} · రోజుకు {kcal}kcal",
     capMarker: "సురక్షిత పరిమితి వద్ద ఆపబడింది",
     floorMarker: "ఎప్పుడూ {floor} కంటే తక్కువ కాదు · ఏ వేగమైనా ఇక్కడికే చేరుతుంది",
     echo: "{from} నుండి {to} వరకు.",
@@ -1199,12 +1199,12 @@ const TE: ChatCopy = {
     gap: "{delta} మీ వేగం",
     eat: "మీరు తింటారు",
     perDay: "kcal రోజుకు",
-    keepTitle: "మీరు సుమారు {burn} kcal ఖర్చు చేస్తారు",
+    keepTitle: "మీరు సుమారు {burn}kcal ఖర్చు చేస్తారు",
   },
   ageWhy: "వయసుతో పాటు మీ జీవక్రియ మారుతుంది, అందుకే దాన్ని లెక్కలోకి తీసుకుంటాం",
   echo: {
-    rest: "విశ్రాంతిలో: రోజుకు {rest} kcal",
-    days: "మీ రోజులు {burn} kcal ఖర్చు చేస్తాయి",
+    rest: "విశ్రాంతిలో: రోజుకు {rest}kcal",
+    days: "మీ రోజులు {burn}kcal ఖర్చు చేస్తాయి",
   },
   chart: {
     byEait: "eaitతో",
@@ -1300,7 +1300,7 @@ const TA: ChatCopy = {
   pace: {
     rate: "வாரத்திற்கு {rate}",
     rateSuffix: "வாரத்திற்கு",
-    result: "{month} வாக்கில் {target} · ஒரு நாளைக்கு {kcal} kcal",
+    result: "{month} வாக்கில் {target} · ஒரு நாளைக்கு {kcal}kcal",
     capMarker: "பாதுகாப்பான வரம்பில் கட்டுப்படுத்தப்பட்டது",
     floorMarker: "எப்போதும் குறைந்தது {floor} · எல்லா வேகமும் இங்கே வந்து சேரும்",
     echo: "{from} முதல் {to} வரை.",
@@ -1318,12 +1318,12 @@ const TA: ChatCopy = {
     gap: "{delta} உங்கள் வேகம்",
     eat: "நீங்கள் சாப்பிடுவது",
     perDay: "kcal ஒரு நாளைக்கு",
-    keepTitle: "நீங்கள் சுமார் {burn} kcal எரிக்கிறீர்கள்",
+    keepTitle: "நீங்கள் சுமார் {burn}kcal எரிக்கிறீர்கள்",
   },
   ageWhy: "வயதுடன் உங்கள் வளர்சிதை மாற்றம் மாறுகிறது, அதனால் அதைக் கணக்கில் கொள்கிறோம்",
   echo: {
-    rest: "ஓய்வில்: ஒரு நாளைக்கு {rest} kcal",
-    days: "உங்கள் நாட்கள் {burn} kcal எரிக்கின்றன",
+    rest: "ஓய்வில்: ஒரு நாளைக்கு {rest}kcal",
+    days: "உங்கள் நாட்கள் {burn}kcal எரிக்கின்றன",
   },
   chart: {
     byEait: "eait உடன்",
@@ -1419,7 +1419,7 @@ const PA: ChatCopy = {
   pace: {
     rate: "{rate} ਪ੍ਰਤੀ ਹਫ਼ਤਾ",
     rateSuffix: "ਪ੍ਰਤੀ ਹਫ਼ਤਾ",
-    result: "{month} ਦੇ ਆਸ-ਪਾਸ {target} · {kcal} kcal ਪ੍ਰਤੀ ਦਿਨ",
+    result: "{month} ਦੇ ਆਸ-ਪਾਸ {target} · {kcal}kcal ਪ੍ਰਤੀ ਦਿਨ",
     capMarker: "ਸੁਰੱਖਿਅਤ ਸੀਮਾ 'ਤੇ ਰੋਕਿਆ ਗਿਆ",
     floorMarker: "{floor} ਤੋਂ ਕਦੇ ਘੱਟ ਨਹੀਂ · ਹਰ ਰਫ਼ਤਾਰ ਇੱਥੇ ਹੀ ਆਉਂਦੀ ਹੈ",
     echo: "{from} ਤੋਂ {to} ਤੱਕ।",
@@ -1437,12 +1437,12 @@ const PA: ChatCopy = {
     gap: "{delta} ਤੁਹਾਡੀ ਰਫ਼ਤਾਰ",
     eat: "ਤੁਸੀਂ ਖਾਂਦੇ ਹੋ",
     perDay: "kcal ਪ੍ਰਤੀ ਦਿਨ",
-    keepTitle: "ਤੁਸੀਂ ਲਗਭਗ {burn} kcal ਖ਼ਰਚ ਕਰਦੇ ਹੋ",
+    keepTitle: "ਤੁਸੀਂ ਲਗਭਗ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹੋ",
   },
   ageWhy: "ਉਮਰ ਨਾਲ ਤੁਹਾਡਾ ਮੈਟਾਬੋਲਿਜ਼ਮ ਬਦਲਦਾ ਹੈ, ਇਸ ਲਈ ਅਸੀਂ ਇਸ ਨੂੰ ਧਿਆਨ ਵਿੱਚ ਰੱਖਦੇ ਹਾਂ",
   echo: {
-    rest: "ਆਰਾਮ ਦੀ ਹਾਲਤ ਵਿੱਚ: {rest} kcal ਪ੍ਰਤੀ ਦਿਨ",
-    days: "ਤੁਹਾਡੇ ਦਿਨ {burn} kcal ਖ਼ਰਚ ਕਰਦੇ ਹਨ",
+    rest: "ਆਰਾਮ ਦੀ ਹਾਲਤ ਵਿੱਚ: {rest}kcal ਪ੍ਰਤੀ ਦਿਨ",
+    days: "ਤੁਹਾਡੇ ਦਿਨ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹਨ",
   },
   chart: {
     byEait: "eait ਨਾਲ",
@@ -1538,7 +1538,7 @@ const OR: ChatCopy = {
   pace: {
     rate: "{rate} ପ୍ରତି ସପ୍ତାହ",
     rateSuffix: "ପ୍ରତି ସପ୍ତାହ",
-    result: "{month} ଆଖପାଖରେ {target} · {kcal} kcal ପ୍ରତିଦିନ",
+    result: "{month} ଆଖପାଖରେ {target} · {kcal}kcal ପ୍ରତିଦିନ",
     capMarker: "ସୁରକ୍ଷିତ ସୀମାରେ ସୀମିତ",
     floorMarker: "{floor} ରୁ କେବେ କମ୍ ନୁହେଁ · ସବୁ ଗତି ଏଠାରେ ପହଞ୍ଚେ",
     echo: "{from} ରୁ {to} ପର୍ଯ୍ୟନ୍ତ।",
@@ -1556,12 +1556,12 @@ const OR: ChatCopy = {
     gap: "{delta} ଆପଣଙ୍କ ଗତି",
     eat: "ଆପଣ ଖାଆନ୍ତି",
     perDay: "kcal ପ୍ରତିଦିନ",
-    keepTitle: "ଆପଣ ପ୍ରାୟ {burn} kcal ଖର୍ଚ୍ଚ କରନ୍ତି",
+    keepTitle: "ଆପଣ ପ୍ରାୟ {burn}kcal ଖର୍ଚ୍ଚ କରନ୍ତି",
   },
   ageWhy: "ବୟସ ସହ ଆପଣଙ୍କ ମେଟାବୋଲିଜମ୍ ବଦଳେ, ତେଣୁ ଆମେ ତାହା ହିସାବକୁ ନେଉ",
   echo: {
-    rest: "ବିଶ୍ରାମରେ: {rest} kcal ପ୍ରତିଦିନ",
-    days: "ଆପଣଙ୍କ ଦିନ {burn} kcal ଖର୍ଚ୍ଚ କରେ",
+    rest: "ବିଶ୍ରାମରେ: {rest}kcal ପ୍ରତିଦିନ",
+    days: "ଆପଣଙ୍କ ଦିନ {burn}kcal ଖର୍ଚ୍ଚ କରେ",
   },
   chart: {
     byEait: "eait ସହ",
@@ -1657,7 +1657,7 @@ const MR: ChatCopy = {
   pace: {
     rate: "{rate} प्रति आठवडा",
     rateSuffix: "प्रति आठवडा",
-    result: "{month} च्या सुमारास {target} · दिवसाला {kcal} kcal",
+    result: "{month} च्या सुमारास {target} · दिवसाला {kcal}kcal",
     capMarker: "सुरक्षित मर्यादेवर थांबवले",
     floorMarker: "कधीही {floor} पेक्षा कमी नाही · प्रत्येक वेग इथेच येतो",
     echo: "{from} पासून {to} पर्यंत.",
@@ -1675,12 +1675,12 @@ const MR: ChatCopy = {
     gap: "{delta} तुमचा वेग",
     eat: "तुम्ही खाता",
     perDay: "kcal दिवसाला",
-    keepTitle: "तुम्ही सुमारे {burn} kcal खर्च करता",
+    keepTitle: "तुम्ही सुमारे {burn}kcal खर्च करता",
   },
   ageWhy: "वयानुसार तुमचा मेटाबॉलिझम बदलतो, म्हणून आम्ही तेही लक्षात घेतो",
   echo: {
-    rest: "विश्रांतीत: दिवसाला {rest} kcal",
-    days: "तुमचे दिवस {burn} kcal खर्च करतात",
+    rest: "विश्रांतीत: दिवसाला {rest}kcal",
+    days: "तुमचे दिवस {burn}kcal खर्च करतात",
   },
   chart: {
     byEait: "eait सोबत",
@@ -1776,7 +1776,7 @@ const ML: ChatCopy = {
   pace: {
     rate: "ആഴ്ചയിൽ {rate}",
     rateSuffix: "ആഴ്ചയിൽ",
-    result: "{month} ആകുമ്പോഴേക്കും {target} · ദിവസം {kcal} kcal",
+    result: "{month} ആകുമ്പോഴേക്കും {target} · ദിവസം {kcal}kcal",
     capMarker: "സുരക്ഷിത പരിധിയിൽ നിർത്തി",
     floorMarker: "ഒരിക്കലും {floor} എന്നതിന് താഴെയല്ല · എല്ലാ ഗതിയും ഇവിടെയെത്തുന്നു",
     echo: "{from} മുതൽ {to} വരെ.",
@@ -1794,12 +1794,12 @@ const ML: ChatCopy = {
     gap: "{delta} നിങ്ങളുടെ ഗതി",
     eat: "നിങ്ങൾ കഴിക്കുന്നത്",
     perDay: "kcal ദിവസം",
-    keepTitle: "നിങ്ങൾ ഏകദേശം {burn} kcal ചെലവഴിക്കുന്നു",
+    keepTitle: "നിങ്ങൾ ഏകദേശം {burn}kcal ചെലവഴിക്കുന്നു",
   },
   ageWhy: "പ്രായത്തിനനുസരിച്ച് നിങ്ങളുടെ മെറ്റബോളിസം മാറുന്നു, അതിനാൽ ഞങ്ങൾ അത് കണക്കിലെടുക്കുന്നു",
   echo: {
-    rest: "വിശ്രമത്തിൽ: ദിവസം {rest} kcal",
-    days: "നിങ്ങളുടെ ദിവസങ്ങൾ {burn} kcal ചെലവഴിക്കുന്നു",
+    rest: "വിശ്രമത്തിൽ: ദിവസം {rest}kcal",
+    days: "നിങ്ങളുടെ ദിവസങ്ങൾ {burn}kcal ചെലവഴിക്കുന്നു",
   },
   chart: {
     byEait: "eait-നൊപ്പം",
@@ -1895,7 +1895,7 @@ const KN: ChatCopy = {
   pace: {
     rate: "ವಾರಕ್ಕೆ {rate}",
     rateSuffix: "ವಾರಕ್ಕೆ",
-    result: "ಸುಮಾರು {month} ವೇಳೆಗೆ {target} · ದಿನಕ್ಕೆ {kcal} kcal",
+    result: "ಸುಮಾರು {month} ವೇಳೆಗೆ {target} · ದಿನಕ್ಕೆ {kcal}kcal",
     capMarker: "ಸುರಕ್ಷಿತ ಮಿತಿಯಲ್ಲಿ ನಿಲ್ಲಿಸಲಾಗಿದೆ",
     floorMarker: "ಯಾವಾಗಲೂ ಕನಿಷ್ಠ {floor} · ಪ್ರತಿಯೊಂದು ವೇಗವೂ ಇಲ್ಲಿಗೆ ಬರುತ್ತದೆ",
     echo: "{from} ರಿಂದ {to} ವರೆಗೆ.",
@@ -1913,12 +1913,12 @@ const KN: ChatCopy = {
     gap: "{delta} ನಿಮ್ಮ ವೇಗ",
     eat: "ನೀವು ತಿನ್ನುತ್ತೀರಿ",
     perDay: "kcal ದಿನಕ್ಕೆ",
-    keepTitle: "ನೀವು ಸುಮಾರು {burn} kcal ಖರ್ಚು ಮಾಡುತ್ತೀರಿ",
+    keepTitle: "ನೀವು ಸುಮಾರು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತೀರಿ",
   },
   ageWhy: "ವಯಸ್ಸಿನೊಂದಿಗೆ ನಿಮ್ಮ ಚಯಾಪಚಯ ಬದಲಾಗುತ್ತದೆ, ಹಾಗಾಗಿ ನಾವು ಅದನ್ನು ಲೆಕ್ಕಕ್ಕೆ ತೆಗೆದುಕೊಳ್ಳುತ್ತೇವೆ",
   echo: {
-    rest: "ವಿಶ್ರಾಂತಿಯಲ್ಲಿ: ದಿನಕ್ಕೆ {rest} kcal",
-    days: "ನಿಮ್ಮ ದಿನಗಳು {burn} kcal ಖರ್ಚು ಮಾಡುತ್ತವೆ",
+    rest: "ವಿಶ್ರಾಂತಿಯಲ್ಲಿ: ದಿನಕ್ಕೆ {rest}kcal",
+    days: "ನಿಮ್ಮ ದಿನಗಳು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತವೆ",
   },
   chart: {
     byEait: "eait ಜೊತೆ",
@@ -2014,7 +2014,7 @@ const GU: ChatCopy = {
   pace: {
     rate: "{rate} પ્રતિ અઠવાડિયું",
     rateSuffix: "પ્રતિ અઠવાડિયું",
-    result: "{month} આસપાસ {target} · {kcal} kcal પ્રતિ દિવસ",
+    result: "{month} આસપાસ {target} · {kcal}kcal પ્રતિ દિવસ",
     capMarker: "સુરક્ષિત મર્યાદા પર રોક્યું",
     floorMarker: "ક્યારેય {floor} થી ઓછું નહીં · દરેક ઝડપ અહીં જ પહોંચે છે",
     echo: "{from} થી {to} સુધી.",
@@ -2032,12 +2032,12 @@ const GU: ChatCopy = {
     gap: "{delta} તમારી ઝડપ",
     eat: "તમે ખાઓ છો",
     perDay: "kcal પ્રતિ દિવસ",
-    keepTitle: "તમે લગભગ {burn} kcal ખર્ચો છો",
+    keepTitle: "તમે લગભગ {burn}kcal ખર્ચો છો",
   },
   ageWhy: "ઉંમર સાથે તમારું મેટાબોલિઝમ બદલાય છે, તેથી અમે તેને ધ્યાનમાં લઈએ છીએ",
   echo: {
-    rest: "આરામની સ્થિતિમાં: {rest} kcal પ્રતિ દિવસ",
-    days: "તમારા દિવસો {burn} kcal ખર્ચે છે",
+    rest: "આરામની સ્થિતિમાં: {rest}kcal પ્રતિ દિવસ",
+    days: "તમારા દિવસો {burn}kcal ખર્ચે છે",
   },
   chart: {
     byEait: "eait સાથે",
@@ -2133,7 +2133,7 @@ const BN: ChatCopy = {
   pace: {
     rate: "সপ্তাহে {rate}",
     rateSuffix: "প্রতি সপ্তাহে",
-    result: "{month} নাগাদ {target} · দিনে {kcal} kcal",
+    result: "{month} নাগাদ {target} · দিনে {kcal}kcal",
     capMarker: "নিরাপদ সীমায় আটকে রাখা",
     floorMarker: "কখনো {floor}-এর নিচে নয় · প্রতিটি গতি এখানেই থামে",
     echo: "{from} থেকে {to}।",
@@ -2151,12 +2151,12 @@ const BN: ChatCopy = {
     gap: "{delta} আপনার গতি",
     eat: "আপনি খান",
     perDay: "kcal দিনে",
-    keepTitle: "আপনি প্রায় {burn} kcal খরচ করেন",
+    keepTitle: "আপনি প্রায় {burn}kcal খরচ করেন",
   },
   ageWhy: "বয়সের সঙ্গে আপনার মেটাবলিজম বদলায়, তাই আমরা সেটা হিসাবে রাখি",
   echo: {
-    rest: "বিশ্রামে: দিনে {rest} kcal",
-    days: "আপনার দিনগুলো {burn} kcal খরচ করে",
+    rest: "বিশ্রামে: দিনে {rest}kcal",
+    days: "আপনার দিনগুলো {burn}kcal খরচ করে",
   },
   chart: {
     byEait: "eait-এর সঙ্গে",
@@ -2252,7 +2252,7 @@ const PT_PT: ChatCopy = {
   pace: {
     rate: "{rate} por semana",
     rateSuffix: "por semana",
-    result: "{target} por volta de {month} · {kcal} kcal por dia",
+    result: "{target} por volta de {month} · {kcal}kcal por dia",
     capMarker: "limitado ao máximo seguro",
     floorMarker: "nunca abaixo de {floor} · todos os ritmos chegam aqui",
     echo: "De {from} para {to}.",
@@ -2270,12 +2270,12 @@ const PT_PT: ChatCopy = {
     gap: "{delta} o teu ritmo",
     eat: "Comes",
     perDay: "kcal por dia",
-    keepTitle: "Gastas cerca de {burn} kcal",
+    keepTitle: "Gastas cerca de {burn}kcal",
   },
   ageWhy: "O teu metabolismo muda com a idade, por isso temos isso em conta",
   echo: {
-    rest: "Em repouso: {rest} kcal por dia",
-    days: "Os teus dias gastam {burn} kcal",
+    rest: "Em repouso: {rest}kcal por dia",
+    days: "Os teus dias gastam {burn}kcal",
   },
   chart: {
     byEait: "com o eait",
@@ -2371,7 +2371,7 @@ const MS: ChatCopy = {
   pace: {
     rate: "{rate} seminggu",
     rateSuffix: "seminggu",
-    result: "{target} sekitar {month} · {kcal} kcal sehari",
+    result: "{target} sekitar {month} · {kcal}kcal sehari",
     capMarker: "dihadkan pada had selamat",
     floorMarker: "tidak kurang daripada {floor} · setiap kadar berakhir di sini",
     echo: "Daripada {from} kepada {to}.",
@@ -2389,12 +2389,12 @@ const MS: ChatCopy = {
     gap: "{delta} kadar anda",
     eat: "Anda makan",
     perDay: "kcal sehari",
-    keepTitle: "Anda membakar kira-kira {burn} kcal",
+    keepTitle: "Anda membakar kira-kira {burn}kcal",
   },
   ageWhy: "Metabolisme anda berubah mengikut usia, jadi kami mengambil kira perkara itu",
   echo: {
-    rest: "Ketika rehat: {rest} kcal sehari",
-    days: "Hari-hari anda membakar {burn} kcal",
+    rest: "Ketika rehat: {rest}kcal sehari",
+    days: "Hari-hari anda membakar {burn}kcal",
   },
   chart: {
     byEait: "dengan eait",
@@ -2490,7 +2490,7 @@ const CA: ChatCopy = {
   pace: {
     rate: "{rate} per setmana",
     rateSuffix: "per setmana",
-    result: "{target} cap a {month} · {kcal} kcal al dia",
+    result: "{target} cap a {month} · {kcal}kcal al dia",
     capMarker: "limitat al màxim segur",
     floorMarker: "mai per sota de {floor} · tots els ritmes acaben aquí",
     echo: "De {from} a {to}.",
@@ -2508,12 +2508,12 @@ const CA: ChatCopy = {
     gap: "{delta} el teu ritme",
     eat: "Menjes",
     perDay: "kcal al dia",
-    keepTitle: "Cremes unes {burn} kcal",
+    keepTitle: "Cremes unes {burn}kcal",
   },
   ageWhy: "El metabolisme canvia amb l'edat, i ho tenim en compte",
   echo: {
-    rest: "En repòs: {rest} kcal al dia",
-    days: "Els teus dies cremen {burn} kcal",
+    rest: "En repòs: {rest}kcal al dia",
+    days: "Els teus dies cremen {burn}kcal",
   },
   chart: {
     byEait: "amb eait",
@@ -2609,7 +2609,7 @@ const SL: ChatCopy = {
   pace: {
     rate: "{rate} na teden",
     rateSuffix: "na teden",
-    result: "{target} · predvidoma {month} · {kcal} kcal na dan",
+    result: "{target} · predvidoma {month} · {kcal}kcal na dan",
     capMarker: "omejeno na varno mejo",
     floorMarker: "nikoli pod {floor} · vsak tempo pristane tu",
     echo: "Od {from} do {to}.",
@@ -2627,12 +2627,12 @@ const SL: ChatCopy = {
     gap: "{delta} tvoj tempo",
     eat: "Ješ",
     perDay: "kcal na dan",
-    keepTitle: "Porabiš približno {burn} kcal",
+    keepTitle: "Porabiš približno {burn}kcal",
   },
   ageWhy: "Presnova se s starostjo spreminja, zato to upoštevamo",
   echo: {
-    rest: "V mirovanju: {rest} kcal na dan",
-    days: "Tvoji dnevi porabijo {burn} kcal",
+    rest: "V mirovanju: {rest}kcal na dan",
+    days: "Tvoji dnevi porabijo {burn}kcal",
   },
   chart: {
     byEait: "z eait",
@@ -2728,7 +2728,7 @@ const HR: ChatCopy = {
   pace: {
     rate: "{rate} tjedno",
     rateSuffix: "tjedno",
-    result: "{target} · procjena: {month} · {kcal} kcal dnevno",
+    result: "{target} · procjena: {month} · {kcal}kcal dnevno",
     capMarker: "ograničeno na sigurnu granicu",
     floorMarker: "nikad ispod {floor} · svaki tempo završava ovdje",
     echo: "Od {from} do {to}.",
@@ -2746,12 +2746,12 @@ const HR: ChatCopy = {
     gap: "{delta} tvoj tempo",
     eat: "Jedeš",
     perDay: "kcal dnevno",
-    keepTitle: "Trošiš oko {burn} kcal",
+    keepTitle: "Trošiš oko {burn}kcal",
   },
   ageWhy: "Metabolizam se mijenja s godinama, pa to uračunavamo",
   echo: {
-    rest: "U mirovanju: {rest} kcal dnevno",
-    days: "Tvoji dani troše {burn} kcal",
+    rest: "U mirovanju: {rest}kcal dnevno",
+    days: "Tvoji dani troše {burn}kcal",
   },
   chart: {
     byEait: "uz eait",
@@ -2847,7 +2847,7 @@ const SK: ChatCopy = {
   pace: {
     rate: "{rate} za týždeň",
     rateSuffix: "za týždeň",
-    result: "{target} približne {month} · {kcal} kcal denne",
+    result: "{target} približne {month} · {kcal}kcal denne",
     capMarker: "obmedzené na bezpečnú hranicu",
     floorMarker: "nikdy pod {floor} · pri každom tempe",
     echo: "Z {from} na {to}.",
@@ -2865,12 +2865,12 @@ const SK: ChatCopy = {
     gap: "{delta} tvoje tempo",
     eat: "Ješ",
     perDay: "kcal denne",
-    keepTitle: "Spáliš asi {burn} kcal",
+    keepTitle: "Spáliš asi {burn}kcal",
   },
   ageWhy: "Metabolizmus sa s vekom mení, preto to zohľadňujeme",
   echo: {
-    rest: "V pokoji: {rest} kcal denne",
-    days: "Tvoje dni spália {burn} kcal",
+    rest: "V pokoji: {rest}kcal denne",
+    days: "Tvoje dni spália {burn}kcal",
   },
   chart: {
     byEait: "s eait",
@@ -2966,7 +2966,7 @@ const NO: ChatCopy = {
   pace: {
     rate: "{rate} i uken",
     rateSuffix: "i uken",
-    result: "{target} rundt {month} · {kcal} kcal om dagen",
+    result: "{target} rundt {month} · {kcal}kcal om dagen",
     capMarker: "begrenset til den trygge grensen",
     floorMarker: "aldri under {floor} · alle tempoer lander her",
     echo: "Fra {from} til {to}.",
@@ -2984,12 +2984,12 @@ const NO: ChatCopy = {
     gap: "{delta} tempoet ditt",
     eat: "Du spiser",
     perDay: "kcal om dagen",
-    keepTitle: "Du forbrenner rundt {burn} kcal",
+    keepTitle: "Du forbrenner rundt {burn}kcal",
   },
   ageWhy: "Stoffskiftet endrer seg med alderen, så vi regner det inn",
   echo: {
-    rest: "I hvile: {rest} kcal om dagen",
-    days: "Dagene dine forbrenner {burn} kcal",
+    rest: "I hvile: {rest}kcal om dagen",
+    days: "Dagene dine forbrenner {burn}kcal",
   },
   chart: {
     byEait: "med eait",
@@ -3085,7 +3085,7 @@ const FI: ChatCopy = {
   pace: {
     rate: "{rate} viikossa",
     rateSuffix: "viikossa",
-    result: "{target} · arvio: {month} · {kcal} kcal päivässä",
+    result: "{target} · arvio: {month} · {kcal}kcal päivässä",
     capMarker: "rajattu turvalliseen enimmäismäärään",
     floorMarker: "ei koskaan alle {floor} · tahdista riippumatta",
     echo: "Nykyisestä {from} tavoitepainoon {to}.",
@@ -3103,12 +3103,12 @@ const FI: ChatCopy = {
     gap: "{delta} tahtisi",
     eat: "Syöt",
     perDay: "kcal päivässä",
-    keepTitle: "Kulutat noin {burn} kcal",
+    keepTitle: "Kulutat noin {burn}kcal",
   },
   ageWhy: "Aineenvaihdunta muuttuu iän myötä, joten otamme sen huomioon",
   echo: {
-    rest: "Levossa: {rest} kcal päivässä",
-    days: "Päiväsi kuluttavat {burn} kcal",
+    rest: "Levossa: {rest}kcal päivässä",
+    days: "Päiväsi kuluttavat {burn}kcal",
   },
   chart: {
     byEait: "eait-sovelluksella",
@@ -3204,7 +3204,7 @@ const DA: ChatCopy = {
   pace: {
     rate: "{rate} om ugen",
     rateSuffix: "om ugen",
-    result: "{target} omkring {month} · {kcal} kcal om dagen",
+    result: "{target} omkring {month} · {kcal}kcal om dagen",
     capMarker: "begrænset til den sikre grænse",
     floorMarker: "aldrig under {floor} · alle tempi lander her",
     echo: "Fra {from} til {to}.",
@@ -3222,12 +3222,12 @@ const DA: ChatCopy = {
     gap: "{delta} dit tempo",
     eat: "Du spiser",
     perDay: "kcal om dagen",
-    keepTitle: "Du forbrænder cirka {burn} kcal",
+    keepTitle: "Du forbrænder cirka {burn}kcal",
   },
   ageWhy: "Dit stofskifte ændrer sig med alderen, så det regner vi med",
   echo: {
-    rest: "I hvile: {rest} kcal om dagen",
-    days: "Dine dage forbrænder {burn} kcal",
+    rest: "I hvile: {rest}kcal om dagen",
+    days: "Dine dage forbrænder {burn}kcal",
   },
   chart: {
     byEait: "med eait",
@@ -3323,7 +3323,7 @@ const HU: ChatCopy = {
   pace: {
     rate: "heti {rate}",
     rateSuffix: "hetente",
-    result: "{target} · kb. {month} · napi {kcal} kcal",
+    result: "{target} · kb. {month} · napi {kcal}kcal",
     capMarker: "a biztonságos határnál korlátozva",
     floorMarker: "sosem megy {floor} alá · minden tempó itt köt ki",
     echo: "{from} → {to}.",
@@ -3341,12 +3341,12 @@ const HU: ChatCopy = {
     gap: "{delta} a tempód",
     eat: "Eszel",
     perDay: "kcal naponta",
-    keepTitle: "Nagyjából {burn} kcal-t égetsz el",
+    keepTitle: "Nagyjából {burn}kcal-t égetsz el",
   },
   ageWhy: "Az anyagcseréd az életkorral változik, ezt is beszámítjuk",
   echo: {
-    rest: "Nyugalomban: napi {rest} kcal",
-    days: "A napjaid elégetnek {burn} kcal-t",
+    rest: "Nyugalomban: napi {rest}kcal",
+    days: "A napjaid elégetnek {burn}kcal-t",
   },
   chart: {
     byEait: "az eait-tel",
@@ -3442,7 +3442,7 @@ const EL: ChatCopy = {
   pace: {
     rate: "{rate} την εβδομάδα",
     rateSuffix: "την εβδομάδα",
-    result: "{target} περίπου έως {month} · {kcal} kcal την ημέρα",
+    result: "{target} περίπου έως {month} · {kcal}kcal την ημέρα",
     capMarker: "περιορισμένο στο ασφαλές όριο",
     floorMarker: "ποτέ κάτω από {floor} · κάθε ρυθμός καταλήγει εδώ",
     echo: "Από {from} σε {to}.",
@@ -3460,12 +3460,12 @@ const EL: ChatCopy = {
     gap: "{delta} ο ρυθμός σου",
     eat: "Τρως",
     perDay: "kcal την ημέρα",
-    keepTitle: "Καίς περίπου {burn} kcal",
+    keepTitle: "Καίς περίπου {burn}kcal",
   },
   ageWhy: "Ο μεταβολισμός σου αλλάζει με την ηλικία, γι' αυτό το υπολογίζουμε",
   echo: {
-    rest: "Σε ηρεμία: {rest} kcal την ημέρα",
-    days: "Οι μέρες σου καίνε {burn} kcal",
+    rest: "Σε ηρεμία: {rest}kcal την ημέρα",
+    days: "Οι μέρες σου καίνε {burn}kcal",
   },
   chart: {
     byEait: "με το eait",
@@ -3561,7 +3561,7 @@ const RO: ChatCopy = {
   pace: {
     rate: "{rate} pe săptămână",
     rateSuffix: "pe săptămână",
-    result: "{target} cam în {month} · {kcal} kcal pe zi",
+    result: "{target} cam în {month} · {kcal}kcal pe zi",
     capMarker: "plafonat la limita sigură",
     floorMarker: "niciodată sub {floor} · orice ritm ajunge aici",
     echo: "De la {from} la {to}.",
@@ -3579,12 +3579,12 @@ const RO: ChatCopy = {
     gap: "{delta} ritmul tău",
     eat: "Mănânci",
     perDay: "kcal pe zi",
-    keepTitle: "Arzi cam {burn} kcal",
+    keepTitle: "Arzi cam {burn}kcal",
   },
   ageWhy: "Metabolismul se schimbă odată cu vârsta, așa că ținem cont de asta",
   echo: {
-    rest: "În repaus: {rest} kcal pe zi",
-    days: "Zilele tale ard {burn} kcal",
+    rest: "În repaus: {rest}kcal pe zi",
+    days: "Zilele tale ard {burn}kcal",
   },
   chart: {
     byEait: "cu eait",
@@ -3680,7 +3680,7 @@ const CS: ChatCopy = {
   pace: {
     rate: "{rate} týdně",
     rateSuffix: "týdně",
-    result: "{target} · odhad: {month} · {kcal} kcal denně",
+    result: "{target} · odhad: {month} · {kcal}kcal denně",
     capMarker: "omezeno na bezpečnou mez",
     floorMarker: "nikdy pod {floor} · při každém tempu",
     echo: "Z {from} na {to}.",
@@ -3698,12 +3698,12 @@ const CS: ChatCopy = {
     gap: "{delta} tvoje tempo",
     eat: "Jíš",
     perDay: "kcal denně",
-    keepTitle: "Spálíš zhruba {burn} kcal",
+    keepTitle: "Spálíš zhruba {burn}kcal",
   },
   ageWhy: "S věkem se mění metabolismus, a tak s tím počítáme",
   echo: {
-    rest: "V klidu: {rest} kcal denně",
-    days: "Tvoje dny spálí {burn} kcal",
+    rest: "V klidu: {rest}kcal denně",
+    days: "Tvoje dny spálí {burn}kcal",
   },
   chart: {
     byEait: "s eait",
@@ -3799,7 +3799,7 @@ const HI: ChatCopy = {
   pace: {
     rate: "{rate} प्रति हफ़्ता",
     rateSuffix: "प्रति हफ़्ता",
-    result: "{month} के आसपास {target} · {kcal} kcal प्रति दिन",
+    result: "{month} के आसपास {target} · {kcal}kcal प्रति दिन",
     capMarker: "सुरक्षित सीमा पर रोका गया",
     floorMarker: "{floor} से कभी कम नहीं · हर रफ़्तार यहीं आती है",
     echo: "{from} से {to} तक।",
@@ -3817,12 +3817,12 @@ const HI: ChatCopy = {
     gap: "{delta} आपकी रफ़्तार",
     eat: "आप खाते हैं",
     perDay: "kcal प्रति दिन",
-    keepTitle: "आप लगभग {burn} kcal खर्च करते हैं",
+    keepTitle: "आप लगभग {burn}kcal खर्च करते हैं",
   },
   ageWhy: "उम्र के साथ आपका मेटाबॉलिज़्म बदलता है, इसलिए हम इसे ध्यान में रखते हैं",
   echo: {
-    rest: "आराम की स्थिति में: {rest} kcal प्रति दिन",
-    days: "आपके दिन {burn} kcal खर्च करते हैं",
+    rest: "आराम की स्थिति में: {rest}kcal प्रति दिन",
+    days: "आपके दिन {burn}kcal खर्च करते हैं",
   },
   chart: {
     byEait: "eait के साथ",
@@ -3918,7 +3918,7 @@ const TH: ChatCopy = {
   pace: {
     rate: "{rate} ต่อสัปดาห์",
     rateSuffix: "ต่อสัปดาห์",
-    result: "{target} ราว{month} · {kcal} kcal ต่อวัน",
+    result: "{target} ราว{month} · {kcal}kcal ต่อวัน",
     capMarker: "จำกัดไว้ที่ระดับปลอดภัย",
     floorMarker: "ไม่ต่ำกว่า {floor} · ทุกความเร็วจบที่นี่",
     echo: "จาก {from} เป็น {to}",
@@ -3936,12 +3936,12 @@ const TH: ChatCopy = {
     gap: "{delta} ความเร็วของคุณ",
     eat: "คุณกิน",
     perDay: "kcal ต่อวัน",
-    keepTitle: "คุณเผาผลาญประมาณ {burn} kcal",
+    keepTitle: "คุณเผาผลาญประมาณ {burn}kcal",
   },
   ageWhy: "การเผาผลาญเปลี่ยนไปตามอายุ เราจึงนำมาคำนวณด้วย",
   echo: {
-    rest: "ขณะพัก: {rest} kcal ต่อวัน",
-    days: "วันของคุณเผาผลาญ {burn} kcal",
+    rest: "ขณะพัก: {rest}kcal ต่อวัน",
+    days: "วันของคุณเผาผลาญ {burn}kcal",
   },
   chart: {
     byEait: "ใช้ eait",
@@ -4037,7 +4037,7 @@ const SV: ChatCopy = {
   pace: {
     rate: "{rate} i veckan",
     rateSuffix: "i veckan",
-    result: "{target} runt {month} · {kcal} kcal per dag",
+    result: "{target} runt {month} · {kcal}kcal per dag",
     capMarker: "begränsat till den säkra gränsen",
     floorMarker: "aldrig under {floor} · varje tempo landar här",
     echo: "Från {from} till {to}.",
@@ -4055,12 +4055,12 @@ const SV: ChatCopy = {
     gap: "{delta} ditt tempo",
     eat: "Du äter",
     perDay: "kcal per dag",
-    keepTitle: "Du förbränner cirka {burn} kcal",
+    keepTitle: "Du förbränner cirka {burn}kcal",
   },
   ageWhy: "Ämnesomsättningen förändras med åldern, så vi räknar med det",
   echo: {
-    rest: "I vila: {rest} kcal per dag",
-    days: "Dina dagar förbränner {burn} kcal",
+    rest: "I vila: {rest}kcal per dag",
+    days: "Dina dagar förbränner {burn}kcal",
   },
   chart: {
     byEait: "med eait",
@@ -4156,7 +4156,7 @@ const UK: ChatCopy = {
   pace: {
     rate: "{rate} на тиждень",
     rateSuffix: "на тиждень",
-    result: "{target} · орієнтир — {month} · {kcal} ккал на день",
+    result: "{target} · орієнтир — {month} · {kcal}ккал на день",
     capMarker: "обмежено безпечною межею",
     floorMarker: "ніколи не нижче {floor} · за будь-якого темпу",
     echo: "З {from} до {to}.",
@@ -4174,12 +4174,12 @@ const UK: ChatCopy = {
     gap: "{delta} твій темп",
     eat: "Ти їси",
     perDay: "ккал на день",
-    keepTitle: "Ти спалюєш близько {burn} ккал",
+    keepTitle: "Ти спалюєш близько {burn}ккал",
   },
   ageWhy: "З віком обмін речовин змінюється, тож ми це враховуємо",
   echo: {
-    rest: "У спокої: {rest} ккал на день",
-    days: "Твої дні спалюють {burn} ккал",
+    rest: "У спокої: {rest}ккал на день",
+    days: "Твої дні спалюють {burn}ккал",
   },
   chart: {
     byEait: "з eait",
@@ -4275,7 +4275,7 @@ const NL: ChatCopy = {
   pace: {
     rate: "{rate} per week",
     rateSuffix: "per week",
-    result: "{target} rond {month} · {kcal} kcal per dag",
+    result: "{target} rond {month} · {kcal}kcal per dag",
     capMarker: "begrensd op de veilige limiet",
     floorMarker: "nooit onder {floor} · elk tempo komt hier uit",
     echo: "Van {from} naar {to}.",
@@ -4293,12 +4293,12 @@ const NL: ChatCopy = {
     gap: "{delta} je tempo",
     eat: "Je eet",
     perDay: "kcal per dag",
-    keepTitle: "Je verbrandt ongeveer {burn} kcal",
+    keepTitle: "Je verbrandt ongeveer {burn}kcal",
   },
   ageWhy: "Je stofwisseling verandert met de leeftijd, dus daar rekenen we mee",
   echo: {
-    rest: "In rust: {rest} kcal per dag",
-    days: "Je dagen verbranden {burn} kcal",
+    rest: "In rust: {rest}kcal per dag",
+    days: "Je dagen verbranden {burn}kcal",
   },
   chart: {
     byEait: "met eait",
@@ -4394,7 +4394,7 @@ const PL: ChatCopy = {
   pace: {
     rate: "{rate} tygodniowo",
     rateSuffix: "tygodniowo",
-    result: "{target} — szacunkowo {month} · {kcal} kcal dziennie",
+    result: "{target} — szacunkowo {month} · {kcal}kcal dziennie",
     capMarker: "ograniczone do bezpiecznego limitu",
     floorMarker: "nigdy poniżej {floor} · tu kończy każde tempo",
     echo: "Od {from} do {to}.",
@@ -4412,12 +4412,12 @@ const PL: ChatCopy = {
     gap: "{delta} twoje tempo",
     eat: "Jesz",
     perDay: "kcal dziennie",
-    keepTitle: "Spalasz około {burn} kcal",
+    keepTitle: "Spalasz około {burn}kcal",
   },
   ageWhy: "Metabolizm zmienia się z wiekiem, więc to uwzględniamy",
   echo: {
-    rest: "W spoczynku: {rest} kcal dziennie",
-    days: "Twoje dni spalają {burn} kcal",
+    rest: "W spoczynku: {rest}kcal dziennie",
+    days: "Twoje dni spalają {burn}kcal",
   },
   chart: {
     byEait: "z eait",
@@ -4513,7 +4513,7 @@ const TR: ChatCopy = {
   pace: {
     rate: "haftada {rate}",
     rateSuffix: "haftada",
-    result: "{month} civarında {target} · günde {kcal} kcal",
+    result: "{month} civarında {target} · günde {kcal}kcal",
     capMarker: "güvenli sınırda tutuldu",
     floorMarker: "asla {floor} altında değil · her tempo burada kalır",
     echo: "{from} → {to}.",
@@ -4531,12 +4531,12 @@ const TR: ChatCopy = {
     gap: "{delta} tempon",
     eat: "Yersin",
     perDay: "kcal/gün",
-    keepTitle: "Yaklaşık {burn} kcal yakarsın",
+    keepTitle: "Yaklaşık {burn}kcal yakarsın",
   },
   ageWhy: "Metabolizman yaşla değişir, biz de bunu hesaba katarız",
   echo: {
-    rest: "Dinlenirken: günde {rest} kcal",
-    days: "Günlerin {burn} kcal yakar",
+    rest: "Dinlenirken: günde {rest}kcal",
+    days: "Günlerin {burn}kcal yakar",
   },
   chart: {
     byEait: "eait ile",
@@ -4632,7 +4632,7 @@ const ZH_HANT: ChatCopy = {
   pace: {
     rate: "每週 {rate}",
     rateSuffix: "每週",
-    result: "約 {month} 達到 {target} · 每天 {kcal} 大卡",
+    result: "約 {month} 達到 {target} · 每天 {kcal}大卡",
     capMarker: "已限制在安全上限",
     floorMarker: "絕不低於 {floor} · 任何步調都在此打住",
     echo: "從 {from} 到 {to}。",
@@ -4650,12 +4650,12 @@ const ZH_HANT: ChatCopy = {
     gap: "{delta} 你的步調",
     eat: "你攝取",
     perDay: "大卡/天",
-    keepTitle: "你消耗約 {burn} 大卡",
+    keepTitle: "你消耗約 {burn}大卡",
   },
   ageWhy: "你的代謝會隨年齡改變，所以我們把它納入計算",
   echo: {
-    rest: "靜止時：每天 {rest} 大卡",
-    days: "你的日子消耗 {burn} 大卡",
+    rest: "靜止時：每天 {rest}大卡",
+    days: "你的日子消耗 {burn}大卡",
   },
   chart: {
     byEait: "使用 eait",
@@ -4769,12 +4769,12 @@ const ZH_HANS: ChatCopy = {
     gap: "{delta} 你的节奏",
     eat: "你摄入",
     perDay: "千卡/天",
-    keepTitle: "你消耗约 {burn} 千卡",
+    keepTitle: "你消耗约 {burn}千卡",
   },
   ageWhy: "代谢会随年龄变化，所以我们会把它考虑进去",
   echo: {
     rest: "静息时：每天{rest}千卡",
-    days: "你的日子消耗 {burn} 千卡",
+    days: "你的日子消耗 {burn}千卡",
   },
   chart: {
     byEait: "使用 eait",
@@ -5108,7 +5108,7 @@ const PT_BR: ChatCopy = {
   pace: {
     rate: "{rate} por semana",
     rateSuffix: "por semana",
-    result: "{target} por volta de {month} · {kcal} kcal por dia",
+    result: "{target} por volta de {month} · {kcal}kcal por dia",
     capMarker: "limitado ao máximo seguro",
     floorMarker: "nunca abaixo de {floor} · todo ritmo chega aqui",
     echo: "De {from} para {to}.",
@@ -5126,12 +5126,12 @@ const PT_BR: ChatCopy = {
     gap: "{delta} seu ritmo",
     eat: "Você come",
     perDay: "kcal por dia",
-    keepTitle: "Você gasta cerca de {burn} kcal",
+    keepTitle: "Você gasta cerca de {burn}kcal",
   },
   ageWhy: "Seu metabolismo muda com a idade, por isso levamos isso em conta",
   echo: {
-    rest: "Em repouso: {rest} kcal por dia",
-    days: "Seus dias gastam {burn} kcal",
+    rest: "Em repouso: {rest}kcal por dia",
+    days: "Seus dias gastam {burn}kcal",
   },
   chart: {
     byEait: "com o eait",

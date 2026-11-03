@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Frissítve — {kcal} kcal. {day}"
+#~ msgstr "Frissítve — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "„{note}” — megjegyeztem, benne van a számokban."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Ezt a címkét nem tudtuk beolvasni."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Beszámítva. Ma még {left} kcal maradt."
+msgstr "Beszámítva. Ma még {left}kcal maradt."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Beszámítva. Ma {over} kcal a terv felett."
+msgstr "Beszámítva. Ma {over}kcal a terv felett."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Étel felismerése · 2/4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Az első bent van. {kcal} kcal."
+msgstr "Az első bent van. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Ez az új eait. Az étkezéseid és fotóid az eait-fiókodban vannak: j
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Ma: {eaten} / {plan} kcal, fehérje: {protein} / {proteinTarget} g"
+msgstr "Ma: {eaten} / {plan}kcal, fehérje: {protein} / {proteinTarget} g"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

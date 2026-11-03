@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Dikemas kini — {kcal} kcal. {day}"
+#~ msgstr "Dikemas kini — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "“{note}” — diambil kira, ia sudah ada dalam angka."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Tidak dapat membaca label itu."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Dikira. Baki {left} kcal hari ini."
+msgstr "Dikira. Baki {left}kcal hari ini."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Dikira. {over} kcal terlebih hari ini."
+msgstr "Dikira. {over}kcal terlebih hari ini."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Mengenal pasti makanan · 2 daripada 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Yang pertama sudah masuk. {kcal} kcal."
+msgstr "Yang pertama sudah masuk. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Ini eait yang baharu. Hidangan dan foto anda tersimpan dalam akaun eait 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Hari ini: {eaten} daripada {plan} kcal, {protein} daripada {proteinTarget} g protein"
+msgstr "Hari ini: {eaten} daripada {plan}kcal, {protein} daripada {proteinTarget} g protein"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

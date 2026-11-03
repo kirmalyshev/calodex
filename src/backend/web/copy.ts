@@ -1006,7 +1006,7 @@ const TE: PageCopy = {
   frontDoorLead:
     "మీ ఖాతాను ఇక్కడ సెటప్ చేసి, తర్వాత యాప్‌ను తెరవండి — అప్పటికే సైన్ ఇన్ అయి ఉంటుంది. దీనికి దాదాపు మూడు నిమిషాలు పడుతుంది.",
   welcomeDemoAlt:
-    "eait వాడుకలో: గ్రెయిన్ బౌల్ ఫోటో, మూడు పదార్థాలు వాటి kcalతో గుర్తించబడ్డాయి, మాక్రోలు: {kcal} kcal, కేలరీలు ప్లాన్ ప్రకారం",
+    "eait వాడుకలో: గ్రెయిన్ బౌల్ ఫోటో, మూడు పదార్థాలు వాటి kcalతో గుర్తించబడ్డాయి, మాక్రోలు: {kcal}kcal, కేలరీలు ప్లాన్ ప్రకారం",
   chatHeading: "మీ చాట్",
   chatEmpty: "ఇక్కడ ఇంకా ఏమీ లేదు. యాప్‌లో మీరు చెప్పేది ఇక్కడ కనిపిస్తుంది, ఇక్కడ చెప్పేది యాప్‌లో కనిపిస్తుంది.",
   chatMealGone: "ఆ భోజనం ఇప్పుడు డైరీలో లేదు.",
@@ -1122,7 +1122,7 @@ const TA: PageCopy = {
   frontDoorLead:
     "உங்கள் கணக்கை இங்கே அமைத்து, ஏற்கெனவே உள்நுழைந்த நிலையில் ஆப்பைத் திறக்கவும். சுமார் மூன்று நிமிடங்கள் ஆகும்.",
   welcomeDemoAlt:
-    "பயன்பாட்டில் eait: ஒரு தானிய பவுலின் புகைப்படம், அவற்றின் kcal உடன் படிக்கப்பட்ட மூன்று பொருட்கள், மேக்ரோக்கள்: {kcal} kcal, கலோரிகள் திட்டப்படி",
+    "பயன்பாட்டில் eait: ஒரு தானிய பவுலின் புகைப்படம், அவற்றின் kcal உடன் படிக்கப்பட்ட மூன்று பொருட்கள், மேக்ரோக்கள்: {kcal}kcal, கலோரிகள் திட்டப்படி",
   chatHeading: "உங்கள் அரட்டை",
   chatEmpty: "இங்கே இன்னும் எதுவும் இல்லை. ஆப்பில் நீங்கள் சொல்வது இங்கே தெரியும், இங்கே சொல்வது ஆப்பிலும் தெரியும்.",
   chatMealGone: "அந்த உணவு இப்போது நாட்குறிப்பில் இல்லை.",
@@ -1238,7 +1238,7 @@ const PA: PageCopy = {
   frontDoorLead:
     "ਆਪਣਾ ਅਕਾਊਂਟ ਇੱਥੇ ਸੈੱਟ ਕਰੋ, ਫਿਰ ਐਪ ਖੋਲ੍ਹੋ — ਸਾਈਨ ਇਨ ਪਹਿਲਾਂ ਤੋਂ ਹੋਇਆ ਹੋਵੇਗਾ। ਇਸ ਵਿੱਚ ਲਗਭਗ ਤਿੰਨ ਮਿੰਟ ਲੱਗਦੇ ਹਨ।",
   welcomeDemoAlt:
-    "eait ਵਰਤੋਂ ਵਿੱਚ: ਇੱਕ ਗ੍ਰੇਨ ਬਾਊਲ ਦੀ ਫ਼ੋਟੋ, ਤਿੰਨ ਸਮੱਗਰੀਆਂ ਆਪਣੀਆਂ kcal ਨਾਲ ਪੜ੍ਹੀਆਂ ਗਈਆਂ, ਅਤੇ ਮੈਕਰੋ: {kcal} kcal, ਕੈਲੋਰੀਆਂ ਪਲਾਨ ਮੁਤਾਬਕ",
+    "eait ਵਰਤੋਂ ਵਿੱਚ: ਇੱਕ ਗ੍ਰੇਨ ਬਾਊਲ ਦੀ ਫ਼ੋਟੋ, ਤਿੰਨ ਸਮੱਗਰੀਆਂ ਆਪਣੀਆਂ kcal ਨਾਲ ਪੜ੍ਹੀਆਂ ਗਈਆਂ, ਅਤੇ ਮੈਕਰੋ: {kcal}kcal, ਕੈਲੋਰੀਆਂ ਪਲਾਨ ਮੁਤਾਬਕ",
   chatHeading: "ਤੁਹਾਡੀ ਚੈਟ",
   chatEmpty: "ਇੱਥੇ ਅਜੇ ਕੁਝ ਨਹੀਂ। ਐਪ ਵਿੱਚ ਕਹੀਆਂ ਗੱਲਾਂ ਇੱਥੇ ਦਿਖਦੀਆਂ ਹਨ, ਅਤੇ ਉਲਟ ਵੀ।",
   chatMealGone: "ਉਹ ਖਾਣਾ ਹੁਣ ਡਾਇਰੀ ਵਿੱਚ ਨਹੀਂ ਹੈ।",
@@ -1354,7 +1354,7 @@ const OR: PageCopy = {
   frontDoorLead:
     "ଆପଣଙ୍କ ଆକାଉଣ୍ଟ ଏଠାରେ ସେଟ୍ ଅପ୍ କରନ୍ତୁ, ତାପରେ ଆପ୍ ଖୋଲନ୍ତୁ — ସାଇନ୍ ଇନ୍ ପୂର୍ବରୁ ହୋଇଥିବ। ପ୍ରାୟ ତିନି ମିନିଟ୍ ଲାଗେ।",
   welcomeDemoAlt:
-    "eait ବ୍ୟବହାରରେ: ଏକ ଗ୍ରେନ୍ ବୋଲ୍‌ର ଫଟୋ, ତିନୋଟି ଉପାଦାନ ସେମାନଙ୍କ kcal ସହ ପଢ଼ାଯାଇଛି, ଏବଂ ମାକ୍ରୋ: {kcal} kcal, କ୍ୟାଲୋରୀ ପ୍ଲାନ୍ ଅନୁସାରେ",
+    "eait ବ୍ୟବହାରରେ: ଏକ ଗ୍ରେନ୍ ବୋଲ୍‌ର ଫଟୋ, ତିନୋଟି ଉପାଦାନ ସେମାନଙ୍କ kcal ସହ ପଢ଼ାଯାଇଛି, ଏବଂ ମାକ୍ରୋ: {kcal}kcal, କ୍ୟାଲୋରୀ ପ୍ଲାନ୍ ଅନୁସାରେ",
   chatHeading: "ଆପଣଙ୍କ ଚାଟ୍",
   chatEmpty: "ଏଠାରେ ଏପର୍ଯ୍ୟନ୍ତ କିଛି ନାହିଁ। ଆପ୍‌ରେ ଯାହା କୁହନ୍ତି ତାହା ଏଠାରେ ଦେଖାଯାଏ, ଏବଂ ଓଲଟା ମଧ୍ୟ।",
   chatMealGone: "ସେହି ଭୋଜନ ଆଉ ଡାଏରୀରେ ନାହିଁ।",
@@ -1470,7 +1470,7 @@ const MR: PageCopy = {
   frontDoorLead:
     "तुमचे अकाउंट इथे सेट करा, मग ॲप उघडा — तुम्ही आधीच साइन इन असाल. याला सुमारे तीन मिनिटे लागतात.",
   welcomeDemoAlt:
-    "eait वापरात: ग्रेन बाऊलचा फोटो, kcal सह ओळखलेले तीन घटक, आणि मॅक्रो: {kcal} kcal, कॅलरी प्लॅननुसार",
+    "eait वापरात: ग्रेन बाऊलचा फोटो, kcal सह ओळखलेले तीन घटक, आणि मॅक्रो: {kcal}kcal, कॅलरी प्लॅननुसार",
   chatHeading: "तुमची चॅट",
   chatEmpty: "इथे अजून काही नाही. तुम्ही ॲपमध्ये जे लिहिता ते इथे दिसते, आणि उलटही.",
   chatMealGone: "ते जेवण आता डायरीत नाही.",
@@ -1586,7 +1586,7 @@ const ML: PageCopy = {
   frontDoorLead:
     "ഇവിടെ അക്കൗണ്ട് സജ്ജമാക്കൂ, എന്നിട്ട് സൈൻ ഇൻ ചെയ്ത നിലയിൽ ആപ്പ് തുറക്കൂ. ഏകദേശം മൂന്ന് മിനിറ്റ് മതി.",
   welcomeDemoAlt:
-    "eait ഉപയോഗത്തിൽ: ഒരു ഗ്രെയിൻ ബൗളിന്റെ ഫോട്ടോ, kcal സഹിതം വായിച്ചെടുത്ത മൂന്ന് ചേരുവകൾ, മാക്രോകൾ: {kcal} kcal, കലോറി പ്ലാൻ അനുസരിച്ച്",
+    "eait ഉപയോഗത്തിൽ: ഒരു ഗ്രെയിൻ ബൗളിന്റെ ഫോട്ടോ, kcal സഹിതം വായിച്ചെടുത്ത മൂന്ന് ചേരുവകൾ, മാക്രോകൾ: {kcal}kcal, കലോറി പ്ലാൻ അനുസരിച്ച്",
   chatHeading: "നിങ്ങളുടെ ചാറ്റ്",
   chatEmpty: "ഇവിടെ ഇതുവരെ ഒന്നുമില്ല. ആപ്പിൽ നിങ്ങൾ പറയുന്നത് ഇവിടെ കാണാം, ഇവിടെ പറയുന്നത് ആപ്പിലും.",
   chatMealGone: "ആ ഭക്ഷണം ഇപ്പോൾ ഡയറിയിൽ ഇല്ല.",
@@ -1702,7 +1702,7 @@ const KN: PageCopy = {
   frontDoorLead:
     "ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಇಲ್ಲಿ ಸೆಟ್ ಅಪ್ ಮಾಡಿ, ನಂತರ ಈಗಾಗಲೇ ಸೈನ್ ಇನ್ ಆಗಿರುವ ಆ್ಯಪ್ ತೆರೆಯಿರಿ. ಸುಮಾರು ಮೂರು ನಿಮಿಷ ಸಾಕು.",
   welcomeDemoAlt:
-    "eait ಬಳಕೆಯಲ್ಲಿ: ಧಾನ್ಯದ ಬೌಲ್‌ನ ಫೋಟೋ, kcal ಸಹಿತ ಓದಿದ ಮೂರು ಪದಾರ್ಥಗಳು, ಮತ್ತು ಮ್ಯಾಕ್ರೋಗಳು: {kcal} kcal, ಕ್ಯಾಲೊರಿ ಪ್ಲಾನ್‌ಗೆ ತಕ್ಕಂತೆ",
+    "eait ಬಳಕೆಯಲ್ಲಿ: ಧಾನ್ಯದ ಬೌಲ್‌ನ ಫೋಟೋ, kcal ಸಹಿತ ಓದಿದ ಮೂರು ಪದಾರ್ಥಗಳು, ಮತ್ತು ಮ್ಯಾಕ್ರೋಗಳು: {kcal}kcal, ಕ್ಯಾಲೊರಿ ಪ್ಲಾನ್‌ಗೆ ತಕ್ಕಂತೆ",
   chatHeading: "ನಿಮ್ಮ ಚಾಟ್",
   chatEmpty: "ಇಲ್ಲಿ ಇನ್ನೂ ಏನೂ ಇಲ್ಲ. ಆ್ಯಪ್‌ನಲ್ಲಿ ನೀವು ಹೇಳಿದ್ದು ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತದೆ, ಇಲ್ಲಿ ಹೇಳಿದ್ದು ಅಲ್ಲಿ.",
   chatMealGone: "ಆ ಊಟ ಈಗ ಡೈರಿಯಲ್ಲಿ ಇಲ್ಲ.",
@@ -1818,7 +1818,7 @@ const GU: PageCopy = {
   frontDoorLead:
     "તમારું એકાઉન્ટ અહીં સેટ કરો, પછી ઍપ ખોલો — સાઇન ઇન પહેલેથી થયેલું હશે. તેમાં લગભગ ત્રણ મિનિટ લાગે છે.",
   welcomeDemoAlt:
-    "eait ઉપયોગમાં: ગ્રેન બાઉલનો ફોટો, ત્રણ સામગ્રીઓ તેમની kcal સાથે વાંચેલી, અને મૅક્રો: {kcal} kcal, કેલરી પ્લાન મુજબ",
+    "eait ઉપયોગમાં: ગ્રેન બાઉલનો ફોટો, ત્રણ સામગ્રીઓ તેમની kcal સાથે વાંચેલી, અને મૅક્રો: {kcal}kcal, કેલરી પ્લાન મુજબ",
   chatHeading: "તમારી ચેટ",
   chatEmpty: "અહીં હજી કંઈ નથી. ઍપમાં તમે જે કહો તે અહીં દેખાય છે, અને ઊલટું પણ.",
   chatMealGone: "તે ભોજન હવે ડાયરીમાં નથી.",
@@ -1934,7 +1934,7 @@ const BN: PageCopy = {
   frontDoorLead:
     "এখানে আপনার অ্যাকাউন্ট সেট আপ করুন, তারপর অ্যাপ খুলুন — সাইন ইন আগে থেকেই করা থাকবে। প্রায় তিন মিনিট লাগে।",
   welcomeDemoAlt:
-    "eait ব্যবহারে: একটি গ্রেইন বোলের ছবি, kcal সহ পড়া তিনটি উপাদান, আর ম্যাক্রো: {kcal} kcal, ক্যালরি প্ল্যান অনুযায়ী",
+    "eait ব্যবহারে: একটি গ্রেইন বোলের ছবি, kcal সহ পড়া তিনটি উপাদান, আর ম্যাক্রো: {kcal}kcal, ক্যালরি প্ল্যান অনুযায়ী",
   chatHeading: "আপনার চ্যাট",
   chatEmpty: "এখানে এখনও কিছু নেই। অ্যাপে যা বলবেন তা এখানে দেখা যাবে, আর উল্টোটাও।",
   chatMealGone: "সেই খাবারটি আর ডায়েরিতে নেই।",
@@ -2050,7 +2050,7 @@ const PT_PT: PageCopy = {
   frontDoorLead:
     "Cria a tua conta aqui e depois abre a app já com sessão iniciada. Demora cerca de três minutos.",
   welcomeDemoAlt:
-    "eait em uso: foto de uma taça de cereais, três ingredientes lidos com as respetivas kcal e os macros: {kcal} kcal, calorias dentro do plano",
+    "eait em uso: foto de uma taça de cereais, três ingredientes lidos com as respetivas kcal e os macros: {kcal}kcal, calorias dentro do plano",
   chatHeading: "O teu chat",
   chatEmpty: "Ainda nada aqui. O que dizes na app aparece aqui, e vice-versa.",
   chatMealGone: "Essa refeição já não está no diário.",
@@ -2166,7 +2166,7 @@ const MS: PageCopy = {
   frontDoorLead:
     "Sediakan akaun anda di sini, kemudian buka aplikasi dalam keadaan sudah didaftar masuk. Ia mengambil kira-kira tiga minit.",
   welcomeDemoAlt:
-    "eait digunakan: foto semangkuk bijirin, tiga bahan dibaca bersama kcal masing-masing, dan makro: {kcal} kcal, kalori mengikut pelan",
+    "eait digunakan: foto semangkuk bijirin, tiga bahan dibaca bersama kcal masing-masing, dan makro: {kcal}kcal, kalori mengikut pelan",
   chatHeading: "Sembang anda",
   chatEmpty: "Belum ada apa-apa di sini. Apa yang anda katakan dalam aplikasi muncul di sini, dan sebaliknya.",
   chatMealGone: "Hidangan itu tiada lagi dalam diari.",
@@ -2282,7 +2282,7 @@ const CA: PageCopy = {
   frontDoorLead:
     "Configura el compte aquí i després obre l'app amb la sessió ja iniciada. Triga uns tres minuts.",
   welcomeDemoAlt:
-    "eait en acció: una foto d'un bol de cereals, tres ingredients llegits amb les seves kcal i els macros: {kcal} kcal, calories dins del pla",
+    "eait en acció: una foto d'un bol de cereals, tres ingredients llegits amb les seves kcal i els macros: {kcal}kcal, calories dins del pla",
   chatHeading: "El teu xat",
   chatEmpty: "Encara no hi ha res. El que dius a l'app apareix aquí, i a l'inrevés.",
   chatMealGone: "Aquest àpat ja no és al diari.",
@@ -2398,7 +2398,7 @@ const SL: PageCopy = {
   frontDoorLead:
     "Tukaj nastavi svoj račun, nato odpri aplikacijo — prijava bo že opravljena. Traja približno tri minute.",
   welcomeDemoAlt:
-    "eait v uporabi: fotografija sklede z žitaricami, tri prepoznane sestavine z njihovimi kcal in makrohranila: {kcal} kcal, kalorije v skladu z načrtom",
+    "eait v uporabi: fotografija sklede z žitaricami, tri prepoznane sestavine z njihovimi kcal in makrohranila: {kcal}kcal, kalorije v skladu z načrtom",
   chatHeading: "Tvoj klepet",
   chatEmpty: "Tu še ni ničesar. Kar napišeš v aplikaciji, se prikaže tukaj, in obratno.",
   chatMealGone: "Tega obroka ni več v dnevniku.",
@@ -2514,7 +2514,7 @@ const HR: PageCopy = {
   frontDoorLead:
     "Postavi račun ovdje, a aplikacija će se otvoriti s već obavljenom prijavom. Traje oko tri minute.",
   welcomeDemoAlt:
-    "eait u radu: fotografija zdjelice sa žitaricama, tri prepoznata sastojka s kcal i makronutrijenti: {kcal} kcal, kalorije u planu",
+    "eait u radu: fotografija zdjelice sa žitaricama, tri prepoznata sastojka s kcal i makronutrijenti: {kcal}kcal, kalorije u planu",
   chatHeading: "Tvoj chat",
   chatEmpty: "Ovdje još nema ničega. Ono što napišeš u aplikaciji pojavljuje se ovdje, i obrnuto.",
   chatMealGone: "Taj obrok više nije u dnevniku.",
@@ -2630,7 +2630,7 @@ const SK: PageCopy = {
   frontDoorLead:
     "Nastav si účet tu a potom otvor aplikáciu — prihlásenie už bude hotové. Trvá to asi tri minúty.",
   welcomeDemoAlt:
-    "eait v akcii: fotka misky s obilninami, tri rozpoznané ingrediencie s ich kcal a makrá: {kcal} kcal, kalórie v rámci plánu",
+    "eait v akcii: fotka misky s obilninami, tri rozpoznané ingrediencie s ich kcal a makrá: {kcal}kcal, kalórie v rámci plánu",
   chatHeading: "Tvoj chat",
   chatEmpty: "Zatiaľ tu nič nie je. Čo napíšeš v aplikácii, objaví sa tu, a naopak.",
   chatMealGone: "Toto jedlo už v denníku nie je.",
@@ -2746,7 +2746,7 @@ const NO: PageCopy = {
   frontDoorLead:
     "Sett opp kontoen din her, og åpne appen allerede pålogget. Det tar rundt tre minutter.",
   welcomeDemoAlt:
-    "eait i bruk: et bilde av en kornbolle, tre ingredienser med kcal for hver, og makroene: {kcal} kcal, kalorier innenfor planen",
+    "eait i bruk: et bilde av en kornbolle, tre ingredienser med kcal for hver, og makroene: {kcal}kcal, kalorier innenfor planen",
   chatHeading: "Chatten din",
   chatEmpty: "Ingenting her ennå. Det du sier i appen, dukker opp her, og omvendt.",
   chatMealGone: "Det måltidet er ikke lenger i dagboken.",
@@ -2862,7 +2862,7 @@ const FI: PageCopy = {
   frontDoorLead:
     "Luo tilisi täällä ja avaa sitten sovellus valmiiksi kirjautuneena. Se vie noin kolme minuuttia.",
   welcomeDemoAlt:
-    "eait käytössä: kuva viljakulhosta, kolme tunnistettua ainesosaa kaloreineen ja makrot: {kcal} kcal, kalorit suunnitelman mukaiset",
+    "eait käytössä: kuva viljakulhosta, kolme tunnistettua ainesosaa kaloreineen ja makrot: {kcal}kcal, kalorit suunnitelman mukaiset",
   chatHeading: "Keskustelusi",
   chatEmpty: "Täällä ei ole vielä mitään. Mitä sanot sovelluksessa, näkyy täällä – ja toisin päin.",
   chatMealGone: "Ateria ei ole enää päiväkirjassa.",
@@ -2978,7 +2978,7 @@ const DA: PageCopy = {
   frontDoorLead:
     "Opret din konto her, og åbn derefter appen, hvor du allerede er logget ind. Det tager omkring tre minutter.",
   welcomeDemoAlt:
-    "eait i brug: et foto af en kornbowl, tre ingredienser aflæst med deres kcal, og makroerne: {kcal} kcal, kalorier inden for planen",
+    "eait i brug: et foto af en kornbowl, tre ingredienser aflæst med deres kcal, og makroerne: {kcal}kcal, kalorier inden for planen",
   chatHeading: "Din chat",
   chatEmpty: "Intet her endnu. Det, du siger i appen, dukker op her, og omvendt.",
   chatMealGone: "Det måltid er ikke længere i dagbogen.",
@@ -3094,7 +3094,7 @@ const HU: PageCopy = {
   frontDoorLead:
     "Itt hozd létre a fiókodat, aztán nyisd meg az appot már bejelentkezve. Nagyjából három perc.",
   welcomeDemoAlt:
-    "Az eait használat közben: egy gabonás tál fotója, három felismert hozzávaló a kcal-értékükkel, és a makrók: {kcal} kcal, a kalória a terven belül",
+    "Az eait használat közben: egy gabonás tál fotója, három felismert hozzávaló a kcal-értékükkel, és a makrók: {kcal}kcal, a kalória a terven belül",
   chatHeading: "A csevegésed",
   chatEmpty: "Itt még nincs semmi. Amit az appban mondasz, itt is megjelenik, és fordítva.",
   chatMealGone: "Ez az étkezés már nincs a naplóban.",
@@ -3210,7 +3210,7 @@ const EL: PageCopy = {
   frontDoorLead:
     "Φτιάξε τον λογαριασμό σου εδώ και μετά άνοιξε την εφαρμογή με τη σύνδεση ήδη έτοιμη. Θέλει περίπου τρία λεπτά.",
   welcomeDemoAlt:
-    "Το eait σε χρήση: φωτογραφία ενός μπολ με δημητριακά, τρία συστατικά αναγνωρισμένα με τις kcal τους και τα μακροθρεπτικά: {kcal} kcal, θερμίδες εντός πλάνου",
+    "Το eait σε χρήση: φωτογραφία ενός μπολ με δημητριακά, τρία συστατικά αναγνωρισμένα με τις kcal τους και τα μακροθρεπτικά: {kcal}kcal, θερμίδες εντός πλάνου",
   chatHeading: "Η συνομιλία σου",
   chatEmpty: "Τίποτα εδώ ακόμη. Ό,τι λες στην εφαρμογή εμφανίζεται εδώ, και αντίστροφα.",
   chatMealGone: "Αυτό το γεύμα δεν είναι πια στο ημερολόγιο.",
@@ -3326,7 +3326,7 @@ const RO: PageCopy = {
   frontDoorLead:
     "Creează-ți contul aici, apoi deschide aplicația cu contul deja conectat. Durează cam trei minute.",
   welcomeDemoAlt:
-    "eait în acțiune: fotografia unui bol cu cereale, trei ingrediente citite cu kcal-urile lor și macronutrienții: {kcal} kcal, calorii în plan",
+    "eait în acțiune: fotografia unui bol cu cereale, trei ingrediente citite cu kcal-urile lor și macronutrienții: {kcal}kcal, calorii în plan",
   chatHeading: "Chatul tău",
   chatEmpty: "Nimic aici încă. Ce spui în aplicație apare aici și invers.",
   chatMealGone: "Masa aceea nu mai e în jurnal.",
@@ -3442,7 +3442,7 @@ const CS: PageCopy = {
   frontDoorLead:
     "Nastav si účet tady a pak otevři aplikaci — přihlášení už bude hotové. Zabere to asi tři minuty.",
   welcomeDemoAlt:
-    "eait v akci: fotka misky s obilovinami, tři rozpoznané ingredience s jejich kcal a makra: {kcal} kcal, kalorie v rámci plánu",
+    "eait v akci: fotka misky s obilovinami, tři rozpoznané ingredience s jejich kcal a makra: {kcal}kcal, kalorie v rámci plánu",
   chatHeading: "Tvůj chat",
   chatEmpty: "Zatím tu nic není. Co napíšeš v aplikaci, objeví se tady, a naopak.",
   chatMealGone: "Toto jídlo už v deníku není.",
@@ -3558,7 +3558,7 @@ const HI: PageCopy = {
   frontDoorLead:
     "अपना अकाउंट यहाँ सेट करें, फिर ऐप खोलें — साइन इन पहले से हो चुका होगा। इसमें लगभग तीन मिनट लगते हैं।",
   welcomeDemoAlt:
-    "eait इस्तेमाल में: एक ग्रेन बाउल की फ़ोटो, तीन सामग्रियाँ अपनी kcal के साथ पढ़ी गईं, और मैक्रो: {kcal} kcal, कैलोरी प्लान के अनुसार",
+    "eait इस्तेमाल में: एक ग्रेन बाउल की फ़ोटो, तीन सामग्रियाँ अपनी kcal के साथ पढ़ी गईं, और मैक्रो: {kcal}kcal, कैलोरी प्लान के अनुसार",
   chatHeading: "आपकी चैट",
   chatEmpty: "यहाँ अभी कुछ नहीं है। ऐप में कही गई बातें यहाँ दिखती हैं, और उल्टा भी।",
   chatMealGone: "वह भोजन अब डायरी में नहीं है।",
@@ -3674,7 +3674,7 @@ const TH: PageCopy = {
   frontDoorLead:
     "ตั้งค่าบัญชีที่นี่ แล้วเปิดแอปโดยลงชื่อเข้าใช้ไว้แล้ว ใช้เวลาประมาณสามนาที",
   welcomeDemoAlt:
-    "eait ขณะใช้งาน: รูปชามธัญพืช อ่านส่วนผสมได้สามอย่างพร้อม kcal และมาโคร: {kcal} kcal แคลอรีตามแผน",
+    "eait ขณะใช้งาน: รูปชามธัญพืช อ่านส่วนผสมได้สามอย่างพร้อม kcal และมาโคร: {kcal}kcal แคลอรีตามแผน",
   chatHeading: "แชทของคุณ",
   chatEmpty: "ยังไม่มีอะไรที่นี่ สิ่งที่คุณพูดในแอปจะแสดงที่นี่ และในทางกลับกัน",
   chatMealGone: "มื้อนั้นไม่อยู่ในไดอารี่แล้ว",
@@ -3790,7 +3790,7 @@ const SV: PageCopy = {
   frontDoorLead:
     "Skapa ditt konto här och öppna sedan appen redan inloggad. Det tar ungefär tre minuter.",
   welcomeDemoAlt:
-    "eait i bruk: ett foto av en bowl med fullkorn, tre ingredienser avlästa med sina kcal, och makrona: {kcal} kcal, kalorier enligt plan",
+    "eait i bruk: ett foto av en bowl med fullkorn, tre ingredienser avlästa med sina kcal, och makrona: {kcal}kcal, kalorier enligt plan",
   chatHeading: "Din chatt",
   chatEmpty: "Inget här än. Det du säger i appen syns här, och tvärtom.",
   chatMealGone: "Den måltiden finns inte längre i dagboken.",
@@ -3906,7 +3906,7 @@ const UK: PageCopy = {
   frontDoorLead:
     "Створи акаунт тут, а потім відкрий програму — вхід уже буде виконано. Це займе близько трьох хвилин.",
   welcomeDemoAlt:
-    "eait у дії: фото боулу зі злаками, три інгредієнти розпізнано з їхніми ккал, і макроси: {kcal} ккал, калорії в межах плану",
+    "eait у дії: фото боулу зі злаками, три інгредієнти розпізнано з їхніми ккал, і макроси: {kcal}ккал, калорії в межах плану",
   chatHeading: "Твій чат",
   chatEmpty: "Тут поки порожньо. Що ти пишеш у програмі, з'являється тут, і навпаки.",
   chatMealGone: "Цього прийому їжі вже немає в щоденнику.",
@@ -4022,7 +4022,7 @@ const NL: PageCopy = {
   frontDoorLead:
     "Stel hier je account in en open daarna de app, al ingelogd. Het duurt zo'n drie minuten.",
   welcomeDemoAlt:
-    "eait in gebruik: een foto van een graanbowl, drie ingrediënten herkend met hun kcal, en de macro's: {kcal} kcal, calorieën binnen plan",
+    "eait in gebruik: een foto van een graanbowl, drie ingrediënten herkend met hun kcal, en de macro's: {kcal}kcal, calorieën binnen plan",
   chatHeading: "Je chat",
   chatEmpty: "Hier staat nog niets. Wat je in de app zegt, verschijnt hier, en andersom.",
   chatMealGone: "Die maaltijd staat niet meer in het dagboek.",
@@ -4138,7 +4138,7 @@ const PL: PageCopy = {
   frontDoorLead:
     "Załóż konto tutaj, a potem otwórz aplikację już zalogowaną. Zajmie to około trzech minut.",
   welcomeDemoAlt:
-    "eait w użyciu: zdjęcie miski z kaszą, trzy rozpoznane składniki z kcal i makroskładniki: {kcal} kcal, kalorie zgodne z planem",
+    "eait w użyciu: zdjęcie miski z kaszą, trzy rozpoznane składniki z kcal i makroskładniki: {kcal}kcal, kalorie zgodne z planem",
   chatHeading: "Twój czat",
   chatEmpty: "Jeszcze nic tu nie ma. To, co piszesz w aplikacji, pojawia się tutaj, i na odwrót.",
   chatMealGone: "Tego posiłku nie ma już w dzienniku.",
@@ -4254,7 +4254,7 @@ const TR: PageCopy = {
   frontDoorLead:
     "Hesabını burada kur, sonra uygulamayı giriş yapmış olarak aç. Yaklaşık üç dakika sürer.",
   welcomeDemoAlt:
-    "eait kullanımda: bir tahıl kâsesinin fotoğrafı, kcal değerleriyle okunan üç malzeme ve makrolar: {kcal} kcal, kaloriler planda",
+    "eait kullanımda: bir tahıl kâsesinin fotoğrafı, kcal değerleriyle okunan üç malzeme ve makrolar: {kcal}kcal, kaloriler planda",
   chatHeading: "Sohbetin",
   chatEmpty: "Burada henüz bir şey yok. Uygulamada söylediklerin burada görünür, buradakiler de orada.",
   chatMealGone: "Bu öğün artık günlükte yok.",
@@ -4370,7 +4370,7 @@ const ZH_HANT: PageCopy = {
   frontDoorLead:
     "在這裡設定好帳號，打開 App 時就已經登入了。大約需要三分鐘。",
   welcomeDemoAlt:
-    "eait 使用畫面：一張穀物碗的照片，辨識出三種食材及其熱量，以及營養素：{kcal} 大卡，熱量符合計畫",
+    "eait 使用畫面：一張穀物碗的照片，辨識出三種食材及其熱量，以及營養素：{kcal}大卡，熱量符合計畫",
   chatHeading: "你的聊天",
   chatEmpty: "這裡還沒有內容。你在 App 裡說的話會出現在這裡，反之亦然。",
   chatMealGone: "這份餐點已不在日記中。",
@@ -4834,7 +4834,7 @@ const PT_BR: PageCopy = {
   frontDoorLead:
     "Crie sua conta aqui e depois abra o app já com login feito. Leva uns três minutos.",
   welcomeDemoAlt:
-    "eait em uso: foto de um bowl de grãos, três ingredientes lidos com suas kcal e os macros: {kcal} kcal, calorias dentro do plano",
+    "eait em uso: foto de um bowl de grãos, três ingredientes lidos com suas kcal e os macros: {kcal}kcal, calorias dentro do plano",
   chatHeading: "Seu chat",
   chatEmpty: "Nada aqui ainda. O que você diz no app aparece aqui, e vice-versa.",
   chatMealGone: "Essa refeição não está mais no diário.",

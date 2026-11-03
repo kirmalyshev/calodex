@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Actualizat — {kcal} kcal. {day}"
+#~ msgstr "Actualizat — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "„{note}” — notat, e inclus în cifre."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Eticheta asta nu a putut fi citită."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Numărat. Îți mai rămân azi {left} kcal."
+msgstr "Numărat. Îți mai rămân azi {left}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Numărat. Azi ești cu {over} kcal peste plan."
+msgstr "Numărat. Azi ești cu {over}kcal peste plan."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Se identifică mâncarea · 2 din 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Prima masă a intrat. {kcal} kcal."
+msgstr "Prima masă a intrat. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Acesta e noul eait. Mesele și fotografiile tale sunt păstrate în cont
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Azi: {eaten} din {plan} kcal, {protein} din {proteinTarget} g proteine"
+msgstr "Azi: {eaten} din {plan}kcal, {protein} din {proteinTarget} g proteine"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

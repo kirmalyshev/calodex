@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Atualizado — {kcal} kcal. {day}"
+#~ msgstr "Atualizado — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "“{note}” — anotado, já está nos números."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Não foi possível ler este rótulo."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Contabilizado. Restam {left} kcal hoje."
+msgstr "Contabilizado. Restam {left}kcal hoje."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Contabilizado. {over} kcal acima hoje."
+msgstr "Contabilizado. {over}kcal acima hoje."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "A identificar os alimentos · 2 de 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Primeira refeição registada. {kcal} kcal."
+msgstr "Primeira refeição registada. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Este é o novo eait. As tuas refeições e fotos ficam na tua conta eait
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Hoje: {eaten} de {plan} kcal, {protein} de {proteinTarget} g de proteína"
+msgstr "Hoje: {eaten} de {plan}kcal, {protein} de {proteinTarget} g de proteína"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

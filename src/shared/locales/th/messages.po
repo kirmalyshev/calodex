@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "อัปเดตแล้ว — {kcal} kcal {day}"
+#~ msgstr "อัปเดตแล้ว — {kcal}kcal {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "“{note}” — รับทราบ รวมไว้ในตัว
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "อ่านฉลากนั้นไม่ได้"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "นับแล้ว วันนี้เหลือ {left} kcal"
+msgstr "นับแล้ว วันนี้เหลือ {left}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "นับแล้ว วันนี้เกิน {over} kcal"
+msgstr "นับแล้ว วันนี้เกิน {over}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "กำลังหาว่าเป็นอาหารอะไร ·
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "มื้อแรกเข้ามาแล้ว {kcal} kcal"
+msgstr "มื้อแรกเข้ามาแล้ว {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "นี่คือ eait ใหม่ มื้ออาหารแล�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "วันนี้: {eaten} จาก {plan} kcal โปรตีน {protein} จาก {proteinTarget} ก."
+msgstr "วันนี้: {eaten} จาก {plan}kcal โปรตีน {protein} จาก {proteinTarget} ก."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

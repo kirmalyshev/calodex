@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Päivitetty – {kcal} kcal. {day}"
+#~ msgstr "Päivitetty – {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "”{note}” – huomioitu, se on luvuissa."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Ravintoarvomerkintöjen lukeminen ei onnistunut."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Laskettu. Tänään jäljellä {left} kcal."
+msgstr "Laskettu. Tänään jäljellä {left}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Laskettu. Tänään {over} kcal yli."
+msgstr "Laskettu. Tänään {over}kcal yli."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Tunnistetaan ruokaa · 2/4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Ensimmäinen kirjattu. {kcal} kcal."
+msgstr "Ensimmäinen kirjattu. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Tämä on uusi eait. Ateriasi ja kuvasi säilytetään eait-tililläsi: 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "Tänään: {eaten}/{plan} kcal, proteiinia {protein}/{proteinTarget} g"
+msgstr "Tänään: {eaten}/{plan}kcal, proteiinia {protein}/{proteinTarget} g"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

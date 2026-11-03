@@ -25,7 +25,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 #~ msgid "thread.correction"
-#~ msgstr "Uppdaterat — {kcal} kcal. {day}"
+#~ msgstr "Uppdaterat — {kcal}kcal. {day}"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -115,7 +115,7 @@ msgstr "”{note}” — noterat, det är med i siffrorna."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.title"
-msgstr "{names} · {kcal} kcal"
+msgstr "{names} · {kcal}kcal"
 
 #. js-lingui-explicit-id
 #: src/shared/verdicts.ts
@@ -205,12 +205,12 @@ msgstr "Det gick inte att läsa etiketten."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.left"
-msgstr "Räknat. {left} kcal kvar i dag."
+msgstr "Räknat. {left}kcal kvar i dag."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "stream.push.over"
-msgstr "Räknat. {over} kcal över i dag."
+msgstr "Räknat. {over}kcal över i dag."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -240,7 +240,7 @@ msgstr "Hittar maten · 2 av 4"
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.firstIn"
-msgstr "Den första är inne. {kcal} kcal."
+msgstr "Den första är inne. {kcal}kcal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -540,7 +540,7 @@ msgstr "Det här är nya eait. Dina måltider och foton finns i ditt eait-konto:
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.todayHead"
-msgstr "I dag: {eaten} av {plan} kcal, {protein} av {proteinTarget} g protein"
+msgstr "I dag: {eaten} av {plan}kcal, {protein} av {proteinTarget} g protein"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
