@@ -333,10 +333,15 @@ describe("the front door", () => {
   it("keeps the four chips clear of each other inside the phone frame, in every language (#2532)", async () => {
     for (const lang of LANGS) {
       const res = await get("/start", undefined, { "accept-language": lang });
-      const tops = [...(await res.text()).matchAll(/class="wchip" style="[^"]*top:(\d+)%/g)].map((m) => Number(m[1]));
-      expect(tops, lang).toHaveLength(4);
-      // A chip is 52 tall in a frame 565 tall inside the bezel: 10% clears it.
-      for (let i = 1; i < 4; i++) expect(tops[i]! - tops[i - 1]!, lang).toBeGreaterThanOrEqual(10);
+      const chips = [...(await res.text()).matchAll(/class="wchip" style="(left|right):[^;]*;top:(\d+(?:\.\d+)?)%/g)].map((m) => [m[1]!, Number(m[2])] as const);
+      expect(chips, lang).toHaveLength(4);
+      // The iOS board's own positions: chips clear each other on their OWN side of the photo —
+      // 52px in a 560px hero is about 10%, and each side's pair is wider than that.
+      for (const side of ["left", "right"] as const) {
+        const tops = chips.filter(([s]) => s === side).map(([, t]) => t).sort((a, b) => a - b);
+        expect(tops.length, `${lang} ${side}`).toBe(2);
+        expect(tops[1]! - tops[0]!, `${lang} ${side}`).toBeGreaterThanOrEqual(10);
+      }
     }
   });
 
@@ -1293,27 +1298,32 @@ describe("the v2 questions that write the new fields", () => {
 });
 
 describe("the option grids", () => {
-  it("stacks the activity tile: count, label, ring, as board 08 at web widths", async () => {
+  it("stacks the activity tile: count, label, as board 08 at web widths", async () => {
     const page = await walkTo(await signIn(), "activity");
     expect(page).toMatch(/\.ob \.opts\.c4 \.opt \{[^}]*flex-direction: column;[^}]*padding: 18px;/);
     expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.n \{[^}]*font-size: 17px;[^}]*font-weight: 700;/);
     expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.ol \{[^}]*font-size: 13px;[^}]*font-weight: 400;/);
-    expect(page).toMatch(/\.ob \.opts\.c4 \.opt \.box \{[^}]*align-self: flex-end;/);
-    expect(page).toContain(`<span class="box" aria-hidden="true"></span>`);
+    // iOS's own row draws no ring on a single choice — the tint alone is the pick (#2565).
+    expect(page).not.toContain(`<span class="box" aria-hidden="true"></span>`);
   });
 
-  it("spaces options 10 apart and marks the lists with a ring, as boards 11b, 11c, 14 and 14b draw", async () => {
+  it("spaces options 16 apart and marks the multi lists with the iOS square box", async () => {
     const barriers = await walkTo(await signIn(), "barriers");
-    expect(barriers).toContain(".ob .opts { display: flex; flex-direction: column; gap: 10px; }");
-    expect(barriers).toMatch(/\.ob \.opt \.box \{[^}]*width: 22px;[^}]*border-radius: 50%;/);
-    for (const id of ["barriers", "situations", "diet", "medical"]) {
-      expect(await walkTo(await signIn(), id), id).toContain(`<span class="box" aria-hidden="true"></span>`);
+    expect(barriers).toContain(".ob .opts { display: flex; flex-direction: column; gap: 16px; }");
+    // The barrier list, under its sub-line, sits 10 apart — the app's optsUnderSub.
+    expect(barriers).toContain(".ob .opts.tight { gap: 10px; }");
+    expect(barriers).toMatch(/\.ob \.opt \.box \{[^}]*width: 26px;[^}]*border-radius: 8px;/);
+    for (const id of ["barriers", "situations", "medical"]) {
+      expect(await walkTo(await signIn(`u-${id}`), id), id).toContain(`<span class="box" aria-hidden="true"></span>`);
     }
+    // A single choice marks no box at all, as the app's OptionRow draws it (#2565).
+    expect(await walkTo(await signIn("u-diet"), "diet")).not.toContain(`<span class="box" aria-hidden="true"></span>`);
   });
 
   it("draws the boards' columns: four tiles for activity, two for the lists", async () => {
     expect(await walkTo(await signIn(), "activity")).toContain(`<div class="opts c4">`);
-    for (const id of ["barriers", "situations", "diet", "medical"]) {
+    expect(await walkTo(await signIn(), "barriers")).toContain(`<div class="opts c2 tight">`);
+    for (const id of ["situations", "diet", "medical"]) {
       expect(await walkTo(await signIn(), id), id).toContain(`<div class="opts c2">`);
     }
     expect(await walkTo(await signIn(), "streak_goal_days")).toContain(`<div class="opts">`);
@@ -1364,8 +1374,9 @@ describe("the echoes under the numbers (#2514)", () => {
     expect(activity).toMatch(/<p class="qecho">At rest: \d+kcal a day<\/p>/);
     expect(activity).toContain(".ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }");
     const target = await walkTo(session, "target_weight_kg");
-    expect(target).toMatch(/<p class="burnline">Your days burn \d+kcal<\/p>/);
-    expect(target.indexOf(`class="burnline"`)).toBeLessThan(target.indexOf(`class="live`));
+    expect(target).toMatch(/<p class="qsub">Your days burn \d+kcal<\/p>/);
+    // Under the heading, as the iOS target step draws it — not under the ruler.
+    expect(target.indexOf(`class="qsub"`)).toBeLessThan(target.indexOf(`class="ctl"`));
   });
 });
 
@@ -1955,8 +1966,9 @@ describe("the session account, before and after sign-up (S8)", () => {
     // The hint comes from the browser's own languages — so this GET says German.
     const html = await (await get("/start/country", signed, { "accept-language": "de" })).text();
 
-    // The ask is a say-line and the search is on top of the grid — the board's order.
-    expect(html).toContain('class="say"');
+    // The ask heads the page beside the app icon, as the iOS screen's QuestionHead draws it,
+    // and the search is on top of the grid — the board's order.
+    expect(html).toContain('class="say sayi"');
     expect(html.indexOf('class="srch"')).toBeLessThan(html.indexOf('class="opts"'));
     // Flags are drawn for real codes; the sentinel carries none.
     expect(html).toContain("🇩🇪");
@@ -1979,21 +1991,18 @@ describe("the session account, before and after sign-up (S8)", () => {
     expect(rendered.at(-1)).toBe("other");
   });
 
-  // THE SENTENCE THE PROVIDER PAIR EXISTS FOR — re-homed from the plan to this screen, the
-  // post-sign-up handoff: the app offers both buttons and the wrong one does not find this
-  // account — it attaches to the anonymous one the install already has, so onboarding runs
-  // again and this plan, plus anything bought from it, stays on an account nothing can merge
-  // into. `engine/identity.ts` never merges two real identities, so there is no repair
-  // downstream of getting this wrong.
+  // The account-split sentence this screen used to carry is gone (#2565): the iOS country step
+  // asks the country and nothing else — no line under the list. The pick is the ink outline, not
+  // a walk answer's accent tint.
   it.each(["apple", "google"] as const)(
-    "tells a %s signup to press that same button in the app, not the other one",
+    "asks only the country after a %s signup, with the pick ringed in ink",
     async (name) => {
       const session = await answerAll(undefined, ANSWERS);
       const signed = await signIn(`sub-${name}`, name, undefined, session);
       const html = await (await get("/start/country", signed)).text();
-      const [used, other] = name === "apple" ? ["Apple", "Google"] : ["Google", "Apple"];
-      expect(html).toContain(`Sign in with ${used}`);
-      expect(html).not.toContain(`Sign in with ${other}`);
+      expect(html).not.toContain("Sign in with");
+      expect(html).not.toContain('class="note"');
+      expect(html).toContain(".ob .cty .opt:has(input:checked) { background: var(--surface); box-shadow: 0 0 0 2px var(--ink);");
     },
   );
 });
