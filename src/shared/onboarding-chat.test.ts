@@ -99,6 +99,13 @@ describe("where a killed run picks up", () => {
     expect(resumeAt(prompts(), profile())).toBe(0);
   });
 
+  it("starts on the front door when an older server omits a field the app asks (ieat-app#2643)", () => {
+    // A shipped app outlives its server: a backend from before `counted_before`/`barriers`/
+    // `situations` sends no such keys, and a missing key is "never asked", not an answer.
+    const { counted_before: _c, barriers: _b, situations: _s, ...older } = profile();
+    expect(resumeAt(prompts(), older as Profile)).toBe(0);
+  });
+
   it("resumes at the first unanswered field, never past it", () => {
     const p = profile({ goal: "lose", sex: "male", birth_year: 1990, height_cm: 183 });
     const list = promptsFor(p, ["country"], { health: false });

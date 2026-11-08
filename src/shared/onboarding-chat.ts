@@ -228,11 +228,14 @@ export function resumeAt(prompts: readonly ChatPrompt[], p: Profile): number {
  */
 export function isAnswered(prompt: ChatPrompt, p: Profile): boolean {
   if (!prompt.field) return false;
-  if (prompt.field === "barriers") return p.barriers !== null;
-  if (prompt.field === "situations") return p.situations !== null;
-  if (prompt.field === "diet") return dietOf(p.restrictions) !== "balanced" || p.onboarded_at !== null;
-  if (prompt.field === "medical") return p.onboarded_at !== null;
-  return p[prompt.field] !== null;
+  // `!= null`, not `!== null`: a server older than the app omits a field it has never heard of,
+  // and a missing key is "never asked" — counted as an answer, every fresh install skipped the
+  // welcome (ieat-app#2643).
+  if (prompt.field === "barriers") return p.barriers != null;
+  if (prompt.field === "situations") return p.situations != null;
+  if (prompt.field === "diet") return dietOf(p.restrictions) !== "balanced" || p.onboarded_at != null;
+  if (prompt.field === "medical") return p.onboarded_at != null;
+  return p[prompt.field] != null;
 }
 
 // ── The questions Spud asks ──────────────────────────────────────────────────────────────────
