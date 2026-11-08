@@ -188,6 +188,13 @@ export function baselineApplies(p: Profile): boolean {
 }
 
 /**
+ * A profile field a device answers FOR the user rather than the user answering — today only
+ * `country`, which the phone writes from its region at boot, before onboarding opens. `resumeAt`
+ * must not count one: a boot-filled country is not a step the user took (ieat-app#2643).
+ */
+const DEVICE_FILLED_FIELDS: ReadonlySet<OnboardingStep> = new Set(["country"]);
+
+/**
  * Where a run picks up, as an index into `promptsFor`.
  *
  * ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -213,7 +220,9 @@ export function resumeAt(prompts: readonly ChatPrompt[], p: Profile): number {
   // Nothing answered at all is a fresh install, and a fresh install starts at the front door rather
   // than at the first question — which is also the gate that keeps a returning user from reading
   // the introduction twice.
-  return prompts.some((prompt) => isAnswered(prompt, p)) ? first : 0;
+  return prompts.some(
+    (prompt) => prompt.field !== undefined && !DEVICE_FILLED_FIELDS.has(prompt.field) && isAnswered(prompt, p),
+  ) ? first : 0;
 }
 
 /**
