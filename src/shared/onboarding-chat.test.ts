@@ -99,6 +99,19 @@ describe("where a killed run picks up", () => {
     expect(resumeAt(prompts(), profile())).toBe(0);
   });
 
+  it("a device-filled country is not an answer: the front door still opens (ieat-app#2643)", () => {
+    const withCountry = profile({ country: "de" });
+    const list = promptsFor(withCountry, [], { health: false });
+    expect(list.some((q) => q.id === "country")).toBe(true);
+    expect(resumeAt(list, withCountry)).toBe(0);
+  });
+
+  it("control: country plus one real answer resumes at the first unanswered field", () => {
+    const p = profile({ country: "de", goal: "lose" });
+    const list = promptsFor(p, [], { health: false });
+    expect(list[resumeAt(list, p)]!.id).toBe("sex");
+  });
+
   it("resumes at the first unanswered field, never past it", () => {
     const p = profile({ goal: "lose", sex: "male", birth_year: 1990, height_cm: 183 });
     const list = promptsFor(p, ["country"], { health: false });
