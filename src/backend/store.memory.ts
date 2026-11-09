@@ -1687,10 +1687,19 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async putOnboardingExperiment(experiment) {
-      // The freeze the Postgres upsert encodes in its WHERE: a row that left draft ignores the write.
       const existing = onboardingExperiments.get(experiment.id);
-      if (existing && existing.status !== "draft") return false;
-      onboardingExperiments.set(experiment.id, clone(experiment));
+      if (existing) {
+        // The freeze the Postgres upsert encodes in its WHERE — a row that left draft ignores the
+        // write — and its same field set: lang, rules, variants. Status, creator and the stamps
+        // are not a draft's to rewrite.
+        if (existing.status !== "draft") return false;
+        existing.lang = experiment.lang;
+        existing.rules = clone(experiment.rules);
+        existing.variants = clone(experiment.variants);
+        return true;
+      }
+      // Born draft, like the Postgres insert: a row born running would skip the guard.
+      onboardingExperiments.set(experiment.id, { ...clone(experiment), status: "draft" });
       return true;
     },
 

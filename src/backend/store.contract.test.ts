@@ -2950,13 +2950,50 @@ function contract(name: string, make: () => Promise<Store>) {
         expect((await s.listOnboardingExperiments()).find((e) => e.id === a.id)?.status).toBe("stopped");
       });
 
+      it("admits only one of two starts raced for the same language", async () => {
+        // READ COMMITTED's answer to two concurrent starts is a shared snapshot: both read "nothing
+        // running". What decides is the partial unique index on (lang) where running — the loser
+        // violates it and answers false off the violation. The memory store is sequential, so
+        // there the loser simply sees the row the winner wrote.
+        const s = await open();
+        const a = exp({ id: `race-a-${RUN}` });
+        const b = exp({ id: `race-b-${RUN}` });
+        for (const e of [a, b]) { await s.putOnboardingExperiment(e); created.push(e.id); }
+        const [ra, rb] = await Promise.all([
+          s.startOnboardingExperiment(a.id), s.startOnboardingExperiment(b.id),
+        ]);
+        expect([ra, rb].filter(Boolean)).toHaveLength(1);
+        const winner = ra ? a.id : b.id;
+        const running = (await s.listOnboardingExperiments()).filter((e) => e.lang === "en" && e.status === "running");
+        expect(running.map((e) => e.id)).toEqual([winner]);
+        // A `running` experiment is global and persists past this test: leave the language free
+        // for the tests after it, the same way the afterAll leaves it for the next run.
+        await s.stopOnboardingExperiment(winner);
+      });
+
+      it("stores a put as a draft, whatever status the caller asked for", async () => {
+        // A row born running would skip the start guard entirely — the one-per-language rule is
+        // only as strong as the fact that 'running' is a state the guarded statement reaches.
+        const s = await open();
+        const e = exp({ id: `born-${RUN}`, status: "running" });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const stored = (await s.listOnboardingExperiments()).find((x) => x.id === e.id);
+        expect(stored?.status).toBe("draft");
+      });
+
       it("freezes an experiment once it leaves draft", async () => {
         const s = await open();
         const e = exp({ id: `frozen-${RUN}`, rules: { countries: ["de"] } });
         expect(await s.putOnboardingExperiment(e)).toBe(true); created.push(e.id);
-        // While a draft, the edit lands.
-        expect(await s.putOnboardingExperiment({ ...e, rules: { countries: ["fr"] } })).toBe(true);
-        expect((await s.listOnboardingExperiments()).find((x) => x.id === e.id)?.rules).toEqual({ countries: ["fr"] });
+        // While a draft, the edit lands — and only lang, rules and variants are a draft's to
+        // rewrite: the identity fields came with the row, a put does not carry them again.
+        expect(await s.putOnboardingExperiment({
+          ...e, rules: { countries: ["fr"] }, created_by: crypto.randomUUID(), created_at: "2000-01-01T00:00:00Z",
+        })).toBe(true);
+        const edited = (await s.listOnboardingExperiments()).find((x) => x.id === e.id);
+        expect(edited?.rules).toEqual({ countries: ["fr"] });
+        expect(edited?.created_by).toBe(e.created_by);
+        expect(edited?.created_at).toBe(e.created_at);
         // Running: refused — one version never holds two sets of words.
         expect(await s.startOnboardingExperiment(e.id)).toBe(true);
         expect(await s.putOnboardingExperiment({ ...e, rules: { countries: ["de"] } })).toBe(false);
@@ -2983,6 +3020,20 @@ function contract(name: string, make: () => Promise<Store>) {
         await s.putOnboardingAssignment(other, e.id, 9);
         const all = (await s.onboardingAssignments(e.id)).map((a) => a.user_id).sort();
         expect(all).toEqual([other, u].sort());
+      });
+
+      it("lets only the first of two raced puts stand", async () => {
+        // The PK upsert is the answer to a concurrent first request: whichever write lands second
+        // meets the conflict and returns the row that won — both callers agree on the variant.
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const e = exp({ id: `concur-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const [r1, r2] = await Promise.all([
+          s.putOnboardingAssignment(u, e.id, 7), s.putOnboardingAssignment(u, e.id, 9),
+        ]);
+        expect(r1.variant_id).toBe(r2.variant_id);
+        expect((await s.onboardingAssignment(u, e.id))?.variant_id).toBe(r1.variant_id);
       });
 
       it("erases the assignment with the account", async () => {

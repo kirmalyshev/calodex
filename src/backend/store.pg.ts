@@ -1095,6 +1095,11 @@ create table if not exists onboarding_experiments (
   started_at  timestamptz,
   stopped_at  timestamptz
 );
+-- One running experiment per language, enforced by the INDEX, not by a read: two starts on two
+-- connections both pass a not-exists check under read committed. The second one violates this and
+-- startOnboardingExperiment answers false off the violation.
+create unique index if not exists onboarding_experiments_one_running
+  on onboarding_experiments(lang) where status = 'running';
 
 -- The ASSIGNMENT is one user's: the first variant they were eligible for, kept and never
 -- recomputed — the targeting inputs drift (local hour, region, a language switch), so a row is
@@ -3489,11 +3494,12 @@ export async function postgresStore(
 
     async putOnboardingExperiment(experiment) {
       // The WHERE on the update is the freeze: a row that left draft ignores the write and this
-      // answers false — a running variant never holds two sets of words.
+      // answers false — a running variant never holds two sets of words. The insert writes
+      // 'draft' LITERALLY: a row born running would skip the one-per-language guard entirely.
       const rows = await sql`
         insert into onboarding_experiments
           (id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at)
-        values (${experiment.id}, ${experiment.lang}, ${experiment.status},
+        values (${experiment.id}, ${experiment.lang}, 'draft',
           ${experiment.rules}::jsonb, ${experiment.variants}::jsonb, ${experiment.created_by},
           ${experiment.created_at}, ${experiment.started_at}, ${experiment.stopped_at})
         on conflict (id) do update
@@ -3507,16 +3513,26 @@ export async function postgresStore(
       // ONE statement, because the "no other experiment runs for this language" check is a state
       // condition and those live in the store's own guarded statements — an engine that read it
       // first would be deciding on a snapshot two starts could share. A status predicate on the
-      // same row says only a draft may start.
-      const rows = await sql`
-        update onboarding_experiments e
-        set status = 'running', started_at = now()
-        where e.id = ${id} and e.status = 'draft'
-          and not exists (
-            select 1 from onboarding_experiments o
-            where o.lang = e.lang and o.status = 'running')
-        returning e.id`;
-      return rows.length > 0;
+      // same row says only a draft may start, and the unique index on (lang) where running is what
+      // makes the answer true under two concurrent starts: the second violates it and answers
+      // false off the violation rather than off a snapshot it shared with the first.
+      try {
+        const rows = await sql`
+          update onboarding_experiments e
+          set status = 'running', started_at = now()
+          where e.id = ${id} and e.status = 'draft'
+            and not exists (
+              select 1 from onboarding_experiments o
+              where o.lang = e.lang and o.status = 'running')
+          returning e.id`;
+        return rows.length > 0;
+      } catch (e) {
+        // Bun wraps Postgres errors — the sqlstate is not exposed, the index name is.
+        if ((e as { constraint?: string }).constraint === "onboarding_experiments_one_running") {
+          return false;
+        }
+        throw e;
+      }
     },
 
     async stopOnboardingExperiment(id) {

@@ -455,6 +455,23 @@ describe("experiments (ieat-app#2669)", () => {
     expect((await onboardingContentFor(deps, userId, signals)).welcome.cta).not.toBe("Variant");
   });
 
+  it("serves control when the experiment read fails, logging a line", async () => {
+    // An experiment must never stop onboarding: a store that throws answers control, like
+    // `switchOn` answering the default when the switch row cannot be read.
+    await startExperiment();
+    const failing = {
+      ...deps,
+      store: {
+        ...store,
+        runningOnboardingExperiment: async () => { throw new Error("down"); },
+        onboardingAssignment: async () => { throw new Error("down"); },
+        putOnboardingAssignment: async () => { throw new Error("down"); },
+      },
+    };
+    expect(await assignVariant(failing, userId, signals)).toBeNull();
+    expect((await onboardingContentFor(failing, userId, signals)).welcome.cta).not.toBe("Variant");
+  });
+
   it("a stopped experiment hands everybody control — the assignment rows are kept", async () => {
     const e = await startExperiment();
     await assignVariant(deps, userId, signals);
