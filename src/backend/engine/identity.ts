@@ -118,12 +118,14 @@ export async function completeSignIn(
     // finished its own onboarding, the session's answers are the person's CURRENT intent — the
     // questions they answered a minute ago — so each answered field overwrites, while a field
     // only the stale account has stays. An ONBOARDED existing account wins wholesale instead
-    // (§F 8): its answers are complete and the session's are dropped.
+    // (§F 8): its answers are complete and the session's are dropped. The overlay is applied by
+    // `mergeUsers` inside its own transaction, so a merge that is refused overlays nothing.
+    let overlay: ProfilePatch | undefined;
     const stale = await deps.store.getProfile(existing);
     if (stale !== null && stale.onboarded_at === null) {
       const answered = await deps.store.getProfile(currentUserId);
       if (answered !== null) {
-        const patch: ProfilePatch = {};
+        overlay = {};
         for (const [k, v] of Object.entries(answered)) {
           // `user_id` is not a field, `lang` is never re-decided by a sign-in (above), and null
           // is "never answered", not an answer — the field only the stale account filled survives.
@@ -131,19 +133,32 @@ export async function completeSignIn(
           // itself is provenance, not a field (ieat-app#2676).
           if (k !== "user_id" && k !== "lang" && k !== "filled_fields" && v !== null
             && !(answered.filled_fields ?? []).includes(k)) {
-            (patch as Record<string, unknown>)[k] = v;
+            (overlay as Record<string, unknown>)[k] = v;
           }
         }
         // What the stale account filled stays filled, unless an answer just overwrote it.
         const staleFilled = stale.filled_fields ?? [];
-        const kept = staleFilled.filter((f) => !(f in patch));
-        if (kept.length !== staleFilled.length) patch.filled_fields = kept;
-        await deps.store.patchProfile(existing, patch);
+        const kept = staleFilled.filter((f) => !(f in overlay!));
+        if (kept.length !== staleFilled.length) overlay.filled_fields = kept;
       }
     }
-    mergedMeals = await deps.store.mergeUsers(currentUserId, existing);
+    const moved = await deps.store.mergeUsers(currentUserId, existing, overlay);
     userId = existing;
-    outcome = "merged";
+    if (moved === "not-anonymous") {
+      // The session gained a real identity between the read above and the merge (a link raced
+      // it): two real accounts, so nothing is merged — the other branch's rule.
+      outcome = "switched";
+    } else if (moved === "gone") {
+      // The anonymous account is already gone: a parallel sign-in from this session merged it
+      // first, or an earlier attempt merged it and then failed after the merge (a retry). Either
+      // way this one reports the same outcome. `merged` and not `switched`: the phone retags its outbox on `merged` and CLEARS
+      // it on `switched`, and the second handler must not wipe the first one's unsent turns.
+      outcome = "merged";
+      mergedMeals = 0;
+    } else {
+      outcome = "merged";
+      mergedMeals = moved;
+    }
   } else {
     // Two accounts that both have real identities. Merging them is a decision with no safe
     // default — whose profile wins? whose targets? — so we sign into the one being presented and

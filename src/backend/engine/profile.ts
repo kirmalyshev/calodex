@@ -363,13 +363,37 @@ export async function patchProfile(
     patch[f] = req[f];
   }
 
+  const merged = { ...current, ...patch } as Profile;
+  // Goal and bodyweight are the minimum for any target at all. Everything else degrades to the
+  // flat band, which is safe; missing these two makes the number meaningless. Held for an
+  // onboarded account too, not only on the completing PATCH: the meal gates run `explainTargets`
+  // on whatever is stored, so a later `{ weight_kg: null }` would hand them a profile completion
+  // itself refuses.
   if (req.complete_onboarding) {
-    const merged = { ...current, ...patch } as Profile;
-    // Goal and bodyweight are the minimum for any target at all. Everything else degrades to the
-    // flat band, which is safe; missing these two makes the number meaningless.
-    if (merged.goal === null || merged.weight_kg === null) {
-      return reject("complete_onboarding", "out-of-range");
-    }
+    if (merged.goal === null || merged.weight_kg === null) return reject("complete_onboarding", "out-of-range");
+  } else if (current.onboarded_at !== null) {
+    // Only what THIS request touches: an account that onboarded before this rule with a null goal
+    // or weight must still be able to change an unrelated field.
+    if (req.goal === null) return reject("goal", "out-of-range");
+    if (req.weight_kg === null) return reject("weight_kg", "out-of-range");
+  }
+  // A maintainer is asked neither a target nor a pace (`stepApplies`). Leaving maintain after
+  // onboarding brings both into scope. The target is NOT required with the goal: the web walk asks
+  // one field per PATCH and the target question does not exist while the goal is `maintain`, so a
+  // refusal would leave the goal unchangeable there. A null target degrades to the flat band
+  // (`explainTargets`), and the walk or the editor asks for it next.
+  let paceDefaulted = false;
+  if (current.onboarded_at !== null && current.goal === "maintain" && merged.goal !== "maintain"
+      && merged.pace === null) {
+    // The profile editor has no pace row. The middle option stands in until it is asked, and is
+    // recorded as system-filled below, not as the person's answer.
+    patch.pace = "steady";
+    paceDefaulted = true;
+  }
+  // Once, and only once: a retried patch, a re-answered medical or a web /start run on an
+  // onboarded account carries `complete_onboarding` again, and the stamp anchors the push cadence,
+  // the weigh-in slot floor and the admin's per-day counts.
+  if (req.complete_onboarding && current.onboarded_at === null) {
     patch.onboarded_at = new Date().toISOString();
   }
 
@@ -392,6 +416,10 @@ export async function patchProfile(
       ? [...new Set([...was, ...written])]
       : was.filter((f) => !written.includes(f));
     if (next.length !== was.length || next.some((f, i) => f !== was[i])) patch.filled_fields = next;
+  }
+
+  if (paceDefaulted) {
+    patch.filled_fields = [...new Set([...(patch.filled_fields ?? current.filled_fields ?? []), "pace"])];
   }
 
   const profile = await deps.store.patchProfile(userId, patch);

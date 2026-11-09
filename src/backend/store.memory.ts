@@ -885,7 +885,20 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .sort((a, b) => a.linkedAt.localeCompare(b.linkedAt))[0]?.email ?? null;
     },
 
-    async mergeUsers(fromUserId, intoUserId) {
+    async mergeUsers(fromUserId, intoUserId, overlay) {
+      if (!users.has(fromUserId)) return "gone";
+      // Anonymity, re-checked at the merge itself the way store.pg.ts re-checks it under its lock.
+      if (identities.some((i) => i.userId === fromUserId && i.provider !== "device" && signsIn(i.provider))) {
+        return "not-anonymous";
+      }
+      const into = users.get(intoUserId);
+      if (overlay !== undefined && into) {
+        const next: Profile = { ...into };
+        for (const [k, v] of Object.entries(overlay)) {
+          if (v !== undefined && k in into) (next as unknown as Record<string, unknown>)[k] = v;
+        }
+        users.set(intoUserId, next);
+      }
       let moved = 0;
       for (const [id, m] of meals) {
         if (m.user_id !== fromUserId) continue;
@@ -925,7 +938,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         if (t.userId !== fromUserId) continue;
         turns.delete(k);
         const into = `${intoUserId}\n${t.clientId}`;
-        if (!turns.has(into)) turns.set(into, { ...t, userId: intoUserId });
+        const held = turns.get(into);
+        if (!held) turns.set(into, { ...t, userId: intoUserId });
+        else if (held.outcome == null && t.outcome != null) held.outcome = t.outcome;
       }
       for (const [k, j] of jobs) {
         if (j.userId !== fromUserId) continue;
@@ -2058,14 +2073,25 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const row = [...emailCodes.values()]
         .filter((c) => c.email === email && c.usedAt === null && c.expiresAt > now())
         .sort((a, b) => b.createdAt - a.createdAt)[0];
-      if (row === undefined) return "dead";
+      if (row === undefined || row.attempts >= maxAttempts) return "dead";
+      // The attempt is claimed BEFORE the compare, as store.pg.ts does, so a correct code costs one
+      // too and `restoreEmailCode` gives back exactly that.
+      row.attempts += 1;
       if (!timingSafeEqual(row.codeHash, codeHash)) {
-        row.attempts += 1;
         if (row.attempts >= maxAttempts) row.usedAt = now();
         return "wrong";
       }
       row.usedAt = now();
       return "ok";
+    },
+
+    async restoreEmailCode(email, codeHash) {
+      const row = [...emailCodes.values()]
+        .filter((c) => c.email === email && c.codeHash === codeHash && c.usedAt !== null && c.expiresAt > now())
+        .sort((a, b) => b.usedAt! - a.usedAt!)[0];
+      if (row === undefined) return;
+      row.usedAt = null;
+      row.attempts = Math.max(0, row.attempts - 1);
     },
 
     async appendChat(userId, lines) {

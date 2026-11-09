@@ -1768,6 +1768,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // no user to scope them by. The address itself is the row's only scope, in the predicate.
   putEmailCode: "unscoped",
   spendEmailCode: "unscoped",
+  restoreEmailCode: "unscoped",
   // A token is revoked by the token. The holder of a session is signing it out and the row is the
   // only thing naming the account.
   revokeToken: "unscoped",
@@ -2088,6 +2089,55 @@ export async function postgresStore(
     if (max === null) return null;
     const n = await sql`select count(*)::int as n from push_claim where user_id = ${userId} and local_date = ${localDate}`;
     return num(n[0].n) >= max ? "account-cap" : null;
+  };
+
+  const applyProfilePatch = async (userId: string, patch: ProfilePatch): Promise<Profile> => {
+      // `restrictions` is written by its OWN tagged-template statement, not through the dynamic
+      // one below.
+      //
+      // A `text[]` parameter in an `unsafe` statement has no type context, so the driver flattens
+      // the JS array to the text `ldl,kidneys` and Postgres rejects it — `malformed array literal`.
+      // Adding `::text[]` does not help: the cast sees the already-flattened string. Hand-building
+      // `{"ldl","kidneys"}` would work but puts quoting and escaping in our hands for a value that
+      // reaches us from a request, and getting that wrong is an injection, not a bug.
+      //
+      // The tagged template infers the array type properly, so it is used instead. Found only by
+      // running against real Postgres: the memory store accepted the array happily, so onboarding
+      // with ANY restriction would have 500ed in production while every test passed.
+      //
+      // `struggles` is the same `text[]` shape and takes the same path — NULL, not '{}', when the
+      // patch asks to clear it, because null is the never-asked marker resume reads.
+      if (patch.restrictions !== undefined) {
+        await sql`update users set restrictions = ${toPgTextArray(patch.restrictions)} where id = ${userId}`;
+      }
+      if (patch.filled_fields !== undefined) {
+        await sql`update users set filled_fields = ${toPgTextArray(patch.filled_fields)} where id = ${userId}`;
+      }
+      if (patch.struggles !== undefined) {
+        await sql`update users set struggles = ${patch.struggles === null ? null : toPgTextArray(patch.struggles)} where id = ${userId}`;
+      }
+      if (patch.barriers !== undefined) {
+        await sql`update users set barriers = ${patch.barriers === null ? null : toPgTextArray(patch.barriers)} where id = ${userId}`;
+      }
+      if (patch.situations !== undefined) {
+        await sql`update users set situations = ${patch.situations === null ? null : toPgTextArray(patch.situations)} where id = ${userId}`;
+      }
+
+      const entries = PROFILE_COLUMNS
+        .filter((c) => c !== "restrictions" && c !== "struggles" && c !== "barriers" && c !== "situations" && (patch as Record<string, unknown>)[c] !== undefined)
+        .map((c) => [c, (patch as Record<string, unknown>)[c]] as const);
+      if (entries.length > 0) {
+        // Column names come from the frozen list above, never from the patch's own keys, so no
+        // caller-supplied string is ever interpolated into SQL. Values stay parameterised.
+        const assignments = entries.map(([c], i) => `${c} = $${i + 2}`).join(", ");
+        await sql.unsafe(
+          `update users set ${assignments} where id = $1`,
+          [userId, ...entries.map(([, v]) => v)],
+        );
+      }
+      const rows = await sql`select * from users where id = ${userId}`;
+      if (rows.length === 0) throw new Error("no such user");
+      return toProfile(rows[0]);
   };
 
   /**
@@ -2805,10 +2855,37 @@ export async function postgresStore(
       return (rows[0]?.email as string | undefined) ?? null;
     },
 
-    async mergeUsers(fromUserId, intoUserId) {
+    async mergeUsers(fromUserId, intoUserId, overlay) {
       // One transaction. A half-applied merge leaves meals owned by a user row that is about to be
       // deleted, and `on delete cascade` would then destroy the data this operation exists to save.
       return await inTx(async (tx) => {
+        // THE ANONYMOUS ACCOUNT IS LOCKED BEFORE ANYTHING IS READ. Two sign-ins from one session
+        // (a double tap, Apple and an email code in parallel) both pass the engine's "is this
+        // anonymous" read; the second waits on the locks below, finds the users row deleted, and
+        // returns "gone".
+        // ONE ADVISORY LOCK PER ACCOUNT, FIRST. A job enqueued after the next statement runs is not
+        // in its lock set, and a worker could claim it and charge (job row, then users row) while
+        // this holds the users row and wants that job row — a cycle. `chargeAnalysis` with a job
+        // takes the same lock first, so the two never interleave on one account.
+        await tx`select pg_advisory_xact_lock(hashtext(${"account:" + fromUserId}))`;
+        // JOB ROWS BEFORE THE USER ROW — `chargeAnalysis` takes `pgboss.job` and then `users`, and a
+        // merge that took them the other way round is half of a deadlock (40P01) against a charge
+        // made while the anonymous session taps Sign in.
+        await tx`select id from pgboss.job where data->>'userId' = ${fromUserId} for update`;
+        const locked = await tx`select id from users where id = ${fromUserId} for update`;
+        if (locked.length === 0) return "gone" as const;
+        // ANONYMITY IS RE-CHECKED UNDER THE LOCK. The engine read it before the transaction, and an
+        // `addIdentity` on this account in between (its insert takes a key-share on this row, so it
+        // either committed before the lock above or waits for this transaction to commit and then
+        // fails its foreign key against the deleted row) would have its identity dropped by the
+        // `delete from identities` below.
+        const real = await tx`
+          select 1 from identities
+          where user_id = ${fromUserId} and provider <> 'device' and provider = any(${SIGN_IN_PROVIDERS}::text[])
+          limit 1`;
+        if (real.length > 0) return "not-anonymous" as const;
+        // The sign-in's profile overlay rides this transaction, so a refused merge overlays nothing.
+        if (overlay !== undefined && Object.keys(overlay).length > 0) await applyProfilePatch(intoUserId, overlay);
         const moved = await tx`
           update meals set user_id = ${intoUserId} where user_id = ${fromUserId} returning id`;
         await tx`update meal_photos set user_id = ${intoUserId} where user_id = ${fromUserId}`;
@@ -2826,6 +2903,12 @@ export async function postgresStore(
         await tx`
           update turns set user_id = ${intoUserId} where user_id = ${fromUserId}
             and client_id not in (select client_id from turns where user_id = ${intoUserId})`;
+        // A client id claimed on both sides keeps the survivor's row, but not at the price of the
+        // settled answer: the phone replays that id and must get the logged outcome if EITHER had one.
+        await tx`
+          update turns t set outcome = f.outcome from turns f
+          where f.user_id = ${fromUserId} and t.user_id = ${intoUserId}
+            and f.client_id = t.client_id and t.outcome is null and f.outcome is not null`;
         // What the app has learned about this person's portions is learned before they sign in.
         await tx`update portion_corrections set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         // A source meal the real account already saved keeps ITS row; the other goes with the account.
@@ -2994,52 +3077,7 @@ export async function postgresStore(
     },
 
     async patchProfile(userId, patch: ProfilePatch) {
-      // `restrictions` is written by its OWN tagged-template statement, not through the dynamic
-      // one below.
-      //
-      // A `text[]` parameter in an `unsafe` statement has no type context, so the driver flattens
-      // the JS array to the text `ldl,kidneys` and Postgres rejects it — `malformed array literal`.
-      // Adding `::text[]` does not help: the cast sees the already-flattened string. Hand-building
-      // `{"ldl","kidneys"}` would work but puts quoting and escaping in our hands for a value that
-      // reaches us from a request, and getting that wrong is an injection, not a bug.
-      //
-      // The tagged template infers the array type properly, so it is used instead. Found only by
-      // running against real Postgres: the memory store accepted the array happily, so onboarding
-      // with ANY restriction would have 500ed in production while every test passed.
-      //
-      // `struggles` is the same `text[]` shape and takes the same path — NULL, not '{}', when the
-      // patch asks to clear it, because null is the never-asked marker resume reads.
-      if (patch.restrictions !== undefined) {
-        await sql`update users set restrictions = ${toPgTextArray(patch.restrictions)} where id = ${userId}`;
-      }
-      if (patch.filled_fields !== undefined) {
-        await sql`update users set filled_fields = ${toPgTextArray(patch.filled_fields)} where id = ${userId}`;
-      }
-      if (patch.struggles !== undefined) {
-        await sql`update users set struggles = ${patch.struggles === null ? null : toPgTextArray(patch.struggles)} where id = ${userId}`;
-      }
-      if (patch.barriers !== undefined) {
-        await sql`update users set barriers = ${patch.barriers === null ? null : toPgTextArray(patch.barriers)} where id = ${userId}`;
-      }
-      if (patch.situations !== undefined) {
-        await sql`update users set situations = ${patch.situations === null ? null : toPgTextArray(patch.situations)} where id = ${userId}`;
-      }
-
-      const entries = PROFILE_COLUMNS
-        .filter((c) => c !== "restrictions" && c !== "struggles" && c !== "barriers" && c !== "situations" && (patch as Record<string, unknown>)[c] !== undefined)
-        .map((c) => [c, (patch as Record<string, unknown>)[c]] as const);
-      if (entries.length > 0) {
-        // Column names come from the frozen list above, never from the patch's own keys, so no
-        // caller-supplied string is ever interpolated into SQL. Values stay parameterised.
-        const assignments = entries.map(([c], i) => `${c} = $${i + 2}`).join(", ");
-        await sql.unsafe(
-          `update users set ${assignments} where id = $1`,
-          [userId, ...entries.map(([, v]) => v)],
-        );
-      }
-      const rows = await sql`select * from users where id = ${userId}`;
-      if (rows.length === 0) throw new Error("no such user");
-      return toProfile(rows[0]);
+      return await applyProfilePatch(userId, patch);
     },
 
     async bonusUntil(userId) {
@@ -4235,6 +4273,15 @@ export async function postgresStore(
       return consumed.length > 0 ? "ok" : "dead";
     },
 
+    async restoreEmailCode(email, codeHash) {
+      await sql`
+        update email_codes set used_at = null, attempts = greatest(attempts - 1, 0)
+         where id = (select id from email_codes
+                      where email = ${email} and code_hash = ${codeHash}
+                        and used_at is not null and expires_at > now()
+                      order by used_at desc limit 1)`;
+    },
+
     async putPushToken(userId, token, platform) {
       // The token is the key, so a device that signs into another account MOVES rather than
       // duplicating. `updated_at` is what a future sweep of dead installations would read.
@@ -4838,14 +4885,15 @@ export async function postgresStore(
 
     async chargeAnalysis(userId, date, scope, opts = {}) {
       // ONE transaction for the fence, the lock, the count and the insert (#2679). The job row is
-      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers`'s first users
-      // lock is only the key-share its meals update's FK puts on the into-account row — its
-      // `update pgboss.job` comes after that and the user-row writes last, so job-before-users is
-      // the order that path's own writes take, and this hot one must match — the charge would
+      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers` locks the
+      // anonymous account's `pgboss.job` rows `for update` and then its users row `for update`, so
+      // job-before-users is that path's order and this hot one must match — the charge would
       // otherwise be one half of a lock cycle against it.
       return await inTx(async (tx) => {
         let stamped: string | null = null;
         if (opts.job) {
+          // The per-account lock `mergeUsers` takes first: see there.
+          await tx`select pg_advisory_xact_lock(hashtext(${"account:" + userId}))`;
           const j = await tx`
             select data->>'analysisId' as analysis_id from pgboss.job
             where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}

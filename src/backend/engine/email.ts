@@ -164,8 +164,23 @@ export async function verifyEmailCode(
   }
   // The address IS the verified subject, and `identities.email` gets it too — `recordEmail`
   // inside `completeSignIn` stores it exactly as a provider-vouched address, which this one is.
-  return completeSignIn(
-    deps, "email", { provider: "email", subject: email, email },
-    currentUserId, lang, consent,
-  );
+  // The code is spent, and a throw after this point (consent write, merge) would strand the user
+  // behind the resend window with a code that proved the address. Give it back and rethrow.
+  // The restore is its own statement after the throw, not part of the failed work: if the process
+  // dies between the two, the code stays spent (the old behaviour); and a request replayed while it
+  // is restored simply signs the same address in again, which is what a retry is.
+  try {
+    return await completeSignIn(
+      deps, "email", { provider: "email", subject: email, email },
+      currentUserId, lang, consent,
+    );
+  } catch (e) {
+    if (!isStoreReviewer(deps.config, email)) {
+      // Logged by name only: the error text can carry the address.
+      await deps.store.restoreEmailCode(email, await hashToken(rawCode.trim())).catch((r: unknown) => {
+        console.error(`[eait] email code not restored after a failed sign-in: ${(r as Error)?.name ?? "error"}`);
+      });
+    }
+    throw e;
+  }
 }

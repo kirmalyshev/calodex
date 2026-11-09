@@ -55,6 +55,52 @@ function jobs(name: string, make: () => Promise<Store>) {
       expect((await s.jobPhotos(userId, j.clientId)).map((p) => [...p.bytes])).toEqual([[0xff, 0xd8, 0xff, 1]]);
     });
 
+    it("a charge made under a running job and a merge of that account never deadlock", async () => {
+      // `chargeAnalysis` locks the job row and then the account; `mergeUsers` must take them in the
+      // same order. Ten rounds, because a lock cycle is a race and one round may pass by luck.
+      const s = await open();
+      for (let i = 0; i < 10; i++) {
+        await drain(s, `drain-${RUN}`);
+        const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+        const real = (await s.upsertDeviceUser(device(), "en")).userId;
+        const j = job();
+        await s.enqueueJob(anon, j);
+        const claimed = await s.claimJob(`owner-${RUN}`, REGISTRY, LEASE_MS);
+        expect(claimed?.clientId).toBe(j.clientId);
+        const results = await Promise.allSettled([
+          s.chargeAnalysis(anon, "2026-11-09", "photo", { job: { clientId: j.clientId, owner: `owner-${RUN}` } }),
+          s.mergeUsers(anon, real),
+        ]);
+        expect(results.map((r) => r.status)).toEqual(["fulfilled", "fulfilled"]);
+        await drain(s, `drain-${RUN}`);
+      }
+    });
+
+    it("a job enqueued, claimed and charged while the account is merged never deadlocks", async () => {
+      // The job does not exist when the merge starts, so no statement-order trick covers it: only
+      // the per-account lock both sides take first does.
+      const s = await open();
+      for (let i = 0; i < 10; i++) {
+        await drain(s, `drain-${RUN}`);
+        const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+        const real = (await s.upsertDeviceUser(device(), "en")).userId;
+        const j = job();
+        const owner = `late-${RUN}-${i}`;
+        const results = await Promise.allSettled([
+          (async () => {
+            await s.enqueueJob(anon, j);
+            const c = await s.claimJob(owner, REGISTRY, LEASE_MS);
+            if (c) await s.chargeAnalysis(anon, "2026-11-09", "photo", { job: { clientId: c.clientId, owner } });
+          })(),
+          s.mergeUsers(anon, real),
+        ]);
+        for (const r of results) {
+          if (r.status === "rejected") expect(String(r.reason)).not.toMatch(/deadlock|40P01/);
+        }
+        await drain(s, `drain-${RUN}`);
+      }
+    });
+
     it("never shows one user's job to another", async () => {
       const { s, userId } = await fresh();
       const other = (await s.upsertDeviceUser(device(), "en")).userId;
