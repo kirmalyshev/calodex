@@ -166,7 +166,8 @@ refused = false;
   await banana.getByRole("button", { name: "Resend" }).click({ force: true });
   await expect(waiting(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Resend" })).toHaveCount(0);
-  await expect.poll(() => userLines(page)).toEqual(["text:a banana", "text:and an apple", "text:and some toast"]);
+  // The held banana stepped aside, so its resend lands after the turns that went on without it.
+  await expect.poll(() => userLines(page)).toEqual(["text:and an apple", "text:and some toast", "text:a banana"]);
 });
 
 test("a kept turn can be discarded, and nothing is sent for it", async ({ inWebApp: page }) => {
