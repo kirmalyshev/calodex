@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { OUTCOME_UNKNOWN } from "./contract.ts";
-import { attemptOf, createOutbox, heldAhead, joinsQueue, type OutboxEvent, type OutboxPorts, type Queued } from "./outbox.ts";
-import { UNANSWERED, type RefusedTurn } from "./results.ts";
+import { attemptOf, createOutbox, joinsQueue, type OutboxEvent, type OutboxPorts, type Queued } from "./outbox.ts";
+import { LOST, UNANSWERED, type RefusedTurn } from "./results.ts";
 
 /** Thrown by the fake transport, carrying what the client's extractor would have read off it. */
 class Failed extends Error { constructor(readonly turn: RefusedTurn) { super(turn.kind); } }
@@ -86,7 +86,7 @@ describe("the outbox", () => {
     expect(h.sent).toEqual(["a", "a", "b"]);
   });
 
-  it("holds a refused turn where it is, with the refusal, and waits behind it", async () => {
+  it("holds a refused turn where it is, with the refusal, and the turn behind it goes on", async () => {
     const h = harness([text("a", "a banana"), photo("b")]);
     await h.box.ready;
     h.answer(async () => { throw new Failed({ kind: "cap-exceeded", scope: "user" }); });
@@ -95,8 +95,28 @@ describe("the outbox", () => {
     expect(h.disk()[0]!.held).toEqual({ kind: "cap-exceeded", scope: "user" });
     h.answer(async () => ({ kind: "logged" }));
     await h.box.drain("u1");
-    // Nothing jumped the queue.
-    expect(h.sent).toEqual(["a"]);
+    // Each held turn steps aside and is never sent again; the one behind it is tried, not stopped (#2686).
+    expect(h.sent).toEqual(["a", "b"]);
+    expect(h.box.entries.map((e) => e.id)).toEqual(["a", "b"]);
+  });
+
+  it("sends the unheld turns behind a held head, in order, and never the held one again", async () => {
+    const h = harness([photo("a"), photo("b"), photo("c")]);
+    await h.box.ready;
+    h.answer(async (e) => { if (e.id === "a") throw new Failed({ kind: "cap-exceeded", scope: "user" }); return { kind: "logged" }; });
+    await h.box.drain("u1");
+    expect(h.sent).toEqual(["a", "b", "c"]);
+    expect(h.box.entries.map((e) => e.id)).toEqual(["a"]);
+    expect(h.box.entries[0]!.held).toBeDefined();
+  });
+
+  it("holds a photo whose file is gone as lost, and goes on to the turns behind it", async () => {
+    const h = harness([photo("a"), photo("b")]);
+    await h.box.ready;
+    h.answer(async (e) => { if (e.id === "a") throw new Failed({ kind: LOST }); return { kind: "logged" }; });
+    await h.box.drain("u1");
+    expect(h.sent).toEqual(["a", "b"]);
+    expect(h.box.entries).toMatchObject([{ id: "a", held: { kind: LOST } }]);
   });
 
   it("asks again after a hold under a NEW id — the old one is the turn that was refused", async () => {
@@ -108,8 +128,8 @@ describe("the outbox", () => {
     // Not awaited by `resend` — a caller holding its controls must not hold them for a whole drain.
     await h.box.resend("a", "u1");
     await h.box.drain("u1");
-    expect(h.sent).toEqual(["a", "new-1", "b"]);
-    expect(h.box.entries).toEqual([]);
+    expect(h.sent).toEqual(["a", "b", "new-1"]);
+    expect(h.box.entries.map((e) => e.id)).toEqual(["b"]);
   });
 
   it("discards a turn and its photos", async () => {
@@ -226,9 +246,6 @@ describe("the outbox", () => {
     expect(joinsQueue([held], "u1")).toBe(false);
     expect(joinsQueue([photo("a", "other")], "u1")).toBe(false);
     expect(joinsQueue([], "u1")).toBe(false);
-    // And whether a turn at the end waits on somebody's decision rather than on a connection.
-    expect(heldAhead([held, photo("b")], "u1")).toBe(true);
-    expect(heldAhead([photo("b")], "u1")).toBe(false);
   });
 
   it("will not discard the turn on its way, and says it is on its way until it is gone", async () => {

@@ -29,7 +29,7 @@ import { homeCopyFor } from "../shared/app/home-copy.ts";
 import { spudSvg, type MascotMood } from "../shared/mascot.ts";
 import { brandSvg } from "../shared/ui/icons.ts";
 import { ico } from "../shared/ui/kit.ts";
-import { heldAhead, joinsQueue } from "../shared/outbox.ts";
+import { joinsQueue } from "../shared/outbox.ts";
 import { keptState, outcomeUnknown } from "../shared/results.ts";
 import { LANG_TAG, UNIT_KCAL, kcalNumbers, narrowLang, wholeNumbers } from "../shared/lang.ts";
 import { DIARY_RANGE_MAX_DAYS } from "../shared/contract.ts";
@@ -783,12 +783,12 @@ export const notSaved = (): string => COPY.notSaved;
 export const waitingFor = (uid: string | null): boolean => uid !== null && joinsQueue(outbox.entries, uid);
 
 /**
- * A kept turn's notice, from the queue AS IT IS NOW — never the moment the turn was kept: a turn ahead
- * held since makes it BEHIND, and nothing left waiting means it went. One decision for the notice a
+ * A kept turn's notice, from the queue AS IT IS NOW — never the moment the turn was kept: nothing
+ * left waiting means it went (a held turn ahead steps aside, #2686). One decision for the notice a
  * turn reports and the one a redraw corrects, so the two cannot disagree.
  */
 export const keptNotice = (uid: string | null): string | null =>
-  !waitingFor(uid) ? null : heldAhead(outbox.entries, uid!) ? behind() : kept();
+  !waitingFor(uid) ? null : kept();
 
 /** The screen's own redraw while it is up, so a queued turn answered in the background shows. */
 let redraw: (() => Promise<void>) | null = null;
@@ -864,7 +864,7 @@ export async function sendOrKeep(
   // At once, and NOT awaited: `turn()` holds every control until its write settles, and a drain can
   // be minutes of other turns.
   void flush();
-  return heldAhead(outbox.entries, entry.userId) ? behind() : kept();
+  return kept();
 }
 
 /**

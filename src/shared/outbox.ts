@@ -35,8 +35,8 @@ export interface Queued<Photo> {
   /**
    * The server answered, and not with a result: a refusal, a failed analysis, a turn it could not
    * finish. Worded against this entry the way a live refusal is, kept until the person sends it
-   * again or discards it — never retried on its own, because the same id is answered the same way —
-   * and the entries behind it wait.
+   * again or discards it — never retried on its own, because the same id is answered the same way.
+   * It steps aside: the drain skips it and the entries behind it go on (#2686).
    */
   held?: RefusedTurn;
 }
@@ -63,16 +63,12 @@ const SEND_DEADLINE = Symbol("send-deadline");
 
 /**
  * Whether a turn said now joins the END of `userId`'s queue rather than going out live: whenever
- * anything of the account's is WAITING anywhere in it, held head or not. Sent live, it would reach the
- * server first, and the waiting turn's estimate would later replace the one just asked for. With only
- * held turns there, nothing goes on its own before a decision, so a new turn goes now.
+ * anything of the account's is WAITING (not held) in it. Sent live, it would reach the server first,
+ * and the waiting turn's estimate would later replace the one just asked for. With only held turns
+ * there, nothing goes on its own before a decision, so a new turn goes now.
  */
 export const joinsQueue = (entries: readonly Queued<unknown>[], userId: string): boolean =>
   entries.some((e) => e.userId === userId && e.held === undefined);
-
-/** Whether `userId`'s queue is stopped on a held turn: a turn at its end waits on a decision, not a connection. */
-export const heldAhead = (entries: readonly Queued<unknown>[], userId: string): boolean =>
-  entries.find((e) => e.userId === userId)?.held !== undefined;
 
 export type OutboxEvent<Photo> =
   | { kind: "sent"; entry: Queued<Photo>; result: { kind: string } }
@@ -120,7 +116,7 @@ export interface Outbox<Photo> {
   subscribe(listener: (event?: OutboxEvent<Photo>) => void): () => void;
   /** Throws when it could not be kept, and then nothing of it is. */
   add(entry: Queued<Photo>): Promise<void>;
-  /** Send `userId`'s entries in order until one cannot get through or is held. One drain at a time. */
+  /** Send `userId`'s unheld entries in order until one cannot get through; a held one is skipped. One drain at a time. */
   drain(userId: string): Promise<void>;
   /**
    * Ask again after a hold, under a NEW id — the old one is the turn that was refused — and start a
@@ -170,8 +166,8 @@ export function createOutbox<Photo>(ports: OutboxPorts<Photo>): Outbox<Photo> {
    */
   const pick = (userId: string): Promise<Queued<Photo> | undefined> => {
     const run = writes.then(() => (ports.exclusive ?? ((fn) => fn()))(async () => {
-      const next = (await ports.load()).find((e) => e.userId === userId);
-      if (next && !next.held) sendingNow(next.id);
+      const next = (await ports.load()).find((e) => e.userId === userId && !e.held);
+      if (next) sendingNow(next.id);
       return next;
     }));
     writes = run.catch(() => {});
@@ -191,7 +187,7 @@ export function createOutbox<Photo>(ports: OutboxPorts<Photo>): Outbox<Photo> {
       for (;;) {
         // What storage holds now: a turn another tab kept goes too, and one it sent does not go twice.
         const next = await pick(userId);
-        if (!next || next.held) return;
+        if (!next) return;
         // BOUNDED (#327): a fetch that neither resolves nor rejects — a request a proxy or a
         // stalled connection left hanging — used to wait here forever, wedging every turn behind
         // it for the rest of the session. The deadline makes it the honest unknown instead:
@@ -217,7 +213,7 @@ export function createOutbox<Photo>(ports: OutboxPorts<Photo>): Outbox<Photo> {
             return { next: prev.map((x) => (x.id === next.id ? held : x)), out: undefined, ...(now ? { event: { kind: "held", entry: held } as const } : {}) };
           });
           sendingNow(null);
-          return;
+          continue;
         }
         // Answered: the entry goes, then its photos. A save that fails here keeps the entry, and the
         // next drain sends it again under the same id, which the server answers from this turn.
