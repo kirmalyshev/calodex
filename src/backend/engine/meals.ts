@@ -548,12 +548,15 @@ export async function editMeal(
     // chips again over an answer already given.
     question: null,
   }, opts.readVersion ?? existing.version);
-  // A write got in between this read and ours (#2695): read again and merge again, never overwrite.
-  // Three tries is a bound on a livelock, not a tuning knob; past it the turn fails loudly.
+  // Another write landed between our read and ours (#2695). An unpinned edit re-reads and re-merges,
+  // up to three attempts. An edit pinned to a caller's `readVersion` cannot be re-merged without
+  // becoming last-write-wins, and a third lost race is a livelock: both return `meal-changed`.
+  // Nothing is overwritten.
   if (updated === "conflict") {
-    // A write held to an earlier read cannot be re-merged (that is last-write-wins again), and
-    // three lost races in a row is a livelock: both are refused, nothing overwritten.
-    if (opts.readVersion !== undefined || (opts.attempt ?? 0) >= 2) return { kind: "meal-changed" };
+    if (opts.readVersion !== undefined || (opts.attempt ?? 0) >= 2) {
+      if (opts.readVersion === undefined) console.error(`[eait] meal edit lost three races in a row: ${mealId}`);
+      return { kind: "meal-changed" };
+    }
     return editMeal(deps, userId, mealId, request, { ...opts, attempt: (opts.attempt ?? 0) + 1 });
   }
   // Not redundant with the read above: the row can vanish between the two (a concurrent account
@@ -912,7 +915,7 @@ export async function rewriteMeal(
     fat_g: analysis.fat_g, satfat_g: analysis.satfat_g, fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g,
     sodium_mg: analysis.sodium_mg, notes: analysis.notes,
     verdicts: await gatedVerdicts(deps, userId, analysis),
-    // corrected=false and question=null are true here: a re-read replaces the values with a fresh machine estimate (#2695).
+    // A re-read replaces the values with a fresh machine estimate, so `corrected` resets to false and `question` clears.
     confidence: analysis.confidence, corrected: false, model: deps.config.llmModel, question: null,
   }, existing.version);
   // The numbers changed while the re-read ran (#2695): the read is refused, never silently dropped
@@ -1013,8 +1016,16 @@ export async function confirmPendingMeal(
   // dropped it, so a retry meets "expired" rather than being offered the same nothing again.
   if (!pending.analysis.isFood || pending.analysis.items.length === 0) return { kind: "analysis-failed" };
 
-  let record!: MealRecord;
-  let inserted: boolean;
+  // Hands the proposal back, so the retry the screen offers can log it instead of meeting "expired"
+  // for a sentence already billed. `putPending` refuses a row whose meal exists, which closes the
+  // window between a check that found no meal and this restore; an insert still in flight on the
+  // server can commit after it, and only the id guard below catches that. Logged if even this
+  // fails: the symptom is a later "expired".
+  const restore = () => deps.store.putPending(pending).catch((err) => {
+    console.error(`[eait] pending restore failed: ${(err as Error)?.message ?? err}`);
+  });
+
+  let record: MealRecord;
   try {
     const verdicts = await gatedVerdicts(deps, userId, pending.analysis);
     const restrictions = (await deps.store.getProfile(userId))?.restrictions ?? [];
@@ -1031,19 +1042,24 @@ export async function confirmPendingMeal(
       corrected: false,
       model: deps.config.llmModel,
     };
+  } catch (e) {
+    // Nothing was written: the claim was taken and the meal never built.
+    await restore();
+    throw e;
+  }
+  let inserted: boolean;
+  try {
     inserted = await deps.store.insertMeal(record);
   } catch (e) {
     // The insert can commit and still throw (a statement timeout, a deadline abort, #2695). A meal
     // under this id means the proposal must NOT come back, or a later "no" answers "cancelled" over
-    // a meal that stays logged; and the confirm is then finished like any other, below.
-    if ((await deps.store.getMeal(userId, pendingId).catch(() => null)) === null) {
-      // The claim was taken and nothing was written: hand the proposal back, so the retry the screen
-      // offers on this failure can log it instead of meeting "expired" for a sentence already billed.
-      // `putPending` refuses a row whose meal exists, so even an insert that commits after the check
-      // above cannot leave both. Logged if even that fails: the symptom is a later "expired".
-      await deps.store.putPending(pending).catch((err) => {
-        console.error(`[eait] pending restore failed: ${(err as Error)?.message ?? err}`);
-      });
+    // a meal that stays logged; the confirm is then finished like any other, below.
+    const exists = await deps.store.getMeal(userId, pendingId).then((m) => m !== null, () => null);
+    console.error(`[eait] insertMeal threw (meal ${exists === null ? "unknown" : exists ? "exists" : "absent"}): ${(e as Error)?.message ?? e}`);
+    if (exists !== true) {
+      // Absent: restore. Unknown (the check failed too, most likely the same outage): restoring could
+      // leave a proposal beside a meal that did commit, so the proposal is not put back.
+      if (exists === false) await restore();
       throw e;
     }
     inserted = true;

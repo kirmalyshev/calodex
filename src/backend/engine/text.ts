@@ -331,11 +331,20 @@ export async function textTurn(
         // The same gate a fresh meal takes (#248): a correction that comes back not-food or with no
         // items is a failed estimate, and writing it would zero the meal it claims to fix.
         if (!reconciled.isFood || emptyEstimate(reconciled)) return { kind: "analysis-failed" };
-        const target = focus ?? contextTarget;
-        return target !== null
-          // The version the correction was READ at: the model call between that read and the write
-          // is the window a PATCH can land in (#2695), so the write must be held to it.
-          ? applyCorrection(deps, userId, target.id, reconciled, target === focus ? focus.version : undefined)
+        if (focus === null && contextTarget !== null) {
+          // The router picked this meal from the list read at turn start, so the correction was
+          // computed from THAT snapshot (#2695). Read it again with its version: if the numbers moved
+          // during the model call the correction is refused, otherwise the write is held to the
+          // version just read.
+          const fresh = await deps.store.getMealVersioned(userId, contextTarget.id);
+          if (!fresh) return { kind: "target-gone", on: "correction" };
+          if (!sameNumbers(fresh, contextTarget)) return { kind: "meal-changed" };
+          return applyCorrection(deps, userId, fresh.id, reconciled, fresh.version);
+        }
+        return focus !== null
+          // The version the focus was READ at: the model call between that read and the write is
+          // the window a PATCH can land in (#2695), so the write must be held to it.
+          ? applyCorrection(deps, userId, focus.id, reconciled, focus.version)
           : amendPending(deps, userId, focusPending!, reconciled, profile);
       }
 
@@ -353,7 +362,7 @@ export async function textTurn(
         // A column write (#2695): the turn's own read of the offer may predate an amend, and
         // writing that read back whole would undo the correction.
         if (await deps.store.setPendingDate(userId, focusPending!.id, date)) {
-          const now = (await deps.store.getPending(userId, focusPending!.id)) ?? focusPending!;
+          const now = (await deps.store.getPending(userId, focusPending!.id)) ?? { ...focusPending!, date };
           // Verdicts recomputed, never the stored ones: the card must describe today's targets.
           const verdicts = await gatedVerdicts(deps, userId, now.analysis);
           return {
@@ -372,6 +381,12 @@ export async function textTurn(
       }
     }
   }
+}
+
+/** Whether two reads of one meal carry the same numbers: what a correction is computed from. */
+function sameNumbers(a: MealRecord, b: MealRecord): boolean {
+  return a.kcal === b.kcal && a.protein_g === b.protein_g && a.carbs_g === b.carbs_g && a.fat_g === b.fat_g &&
+    JSON.stringify(a.items) === JSON.stringify(b.items);
 }
 
 /**
@@ -398,7 +413,9 @@ async function amendPending(
     // the correction — or expired or cancelled, which is the gone it honestly is.
     const meal = await deps.store.getMeal(userId, held.id);
     return meal !== null
-      ? applyCorrection(deps, userId, held.id, reconciled)
+      // Pinned to 0: the confirm's insert created the meal at version 0, and a manual edit since
+      // moved it, which makes this correction stale (#2695).
+      ? applyCorrection(deps, userId, held.id, reconciled, 0)
       : { kind: "target-gone", on: "correction" };
   }
   // The day is whatever the row holds NOW: `updatePending` never writes it, so a redate that landed
@@ -428,9 +445,9 @@ async function keep(
   // its language and declared restrictions.
   before: MealRecord | null, amended: PendingMeal | null, profile: Profile,
 ): Promise<void> {
-  // A refusal never was a turn; a correction whose meal is gone changed nothing, and the app says
-  // so in a notice that is not a line.
-  if (result.kind === "target-gone" || isRefusal(result)) return;
+  // A refusal never was a turn; a correction whose meal is gone, or that lost to another write,
+  // changed nothing, and the app says so in a notice that is not a line.
+  if (result.kind === "target-gone" || result.kind === "meal-changed" || isRefusal(result)) return;
   // An answer that came back empty is no turn: a sentence with nothing in it is not kept.
   if (result.kind === "answered" && result.text === "") return;
   await remember(deps, userId, async () => {

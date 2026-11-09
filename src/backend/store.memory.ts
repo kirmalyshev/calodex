@@ -269,8 +269,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   // the same thing in a nullable column, so both implementations answer the same question.
   const tokens = new Map<string, { userId: string; lastUsedAt: number; ttlMs?: number }>();
   const meals = new Map<string, MealRecord>(); // mealId -> record
+  // Must match `NUMBER_COLUMNS` in store.pg.ts: the writes that move a meal's version.
   const NUMBER_KEYS = new Set(["items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
-  const versions = new Map<string, number>(); // mealId -> write count (#2695), absent = 0
+  const versions = new Map<string, number>(); // mealId -> count of number-changing writes (#2695), absent = 0
   const writeMeal = (userId: string, mealId: string, patch: MealPatch, ifVersion: number | null): MealRecord | "conflict" | null => {
     const m = meals.get(mealId);
     if (!m || m.user_id !== userId) return null;

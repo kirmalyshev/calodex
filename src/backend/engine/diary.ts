@@ -71,13 +71,13 @@ export async function day(
     .map((m) => ({ ...m, verdictInline: verdictInlineText(m.verdicts, profile.lang), verdictLabels: verdictLabels(m.verdicts, profile.lang) }));
   // The day's own goal (#911): the plan plus what that day's Apple Health burn adds, when the
   // account has it on. `explainTargets` applies the cap and the floor; nothing here touches either.
+  const reading = await dayReading(deps, userId, on);
   // A question is a chip that, tapped, is a billed correction. `mayAsk` judged that once, when the
-  // meal was logged (#2695); it is judged again when the row is served, so a lapsed account is not
+  // meal was logged; it is judged again when the row is served (#2695), so a lapsed account is not
   // offered a chip that answers 402.
   if (meals.some((m) => m.question) && (await checkCaps(deps, userId, localDate(deps.config.timezone), "text"))) {
     for (const m of meals) m.question = null;
   }
-  const reading = await dayReading(deps, userId, on);
   const { targets, basis } = explainTargets(profile, new Date(), reading);
   return {
     date: on, meals, totals: sumTotals(meals), targets, goals: microGoals(profile, targets),

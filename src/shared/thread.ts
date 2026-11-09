@@ -335,8 +335,8 @@ export const pendingIdOf = (e: ThreadEntry): string | null =>
 /**
  * Whether a proposal may still be confirmed, as far as the CLIENT can tell (#367).
  *
- * A COURTESY, NOT THE GUARANTEE. The server stays the authority: `getPending` deletes an expired
- * row lazily and `POST /confirm` answers 410, and that path is untouched. What this stops is the
+ * A COURTESY, NOT THE GUARANTEE. The server stays the authority: `getPending` refuses an expired
+ * row and `POST /confirm` answers 410, and that path is untouched. What this stops is the
  * app offering a button that was never going to work — a proposal nobody supersedes keeps its
  * "Log it" until somebody presses it, and the way they find out is the refusal.
  *

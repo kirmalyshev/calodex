@@ -106,8 +106,8 @@ export interface MealProposed {
    * its own copy of the number eventually disagrees with the one doing the refusing.
    *
    * A surface reads it to stop OFFERING a confirm it cannot honour (`proposalLive`, #367). It is a
-   * courtesy and never the guarantee: the row is swept on the next proposal and deleted lazily on
-   * read, and `POST /confirm` answers 410 either way.
+   * courtesy and never the guarantee: the row is swept on the next proposal and refused on read,
+   * and `POST /confirm` answers 410 either way.
    */
   expiresAt: string;
   /**
@@ -210,7 +210,9 @@ export interface MealRedated {
  * meantime (ieat-app#2695): a chat correction, a re-read or an edit that lost three races. Nothing
  * was overwritten. Like `TargetGone` it is NOT a `Refusal` — it has no per-language copy of its own
  * to add to every transport; the surface words it as "that meal just changed, look again", and the
- * retry reads the new numbers. HTTP 409 `{ error: "meal-changed" }`.
+ * retry reads the new numbers. HTTP 409 `{ error: "meal-changed" }`, on the streamed routes too
+ * (`streamEnd`). A billed turn that ends here (a chat correction, a re-read) stays charged: the model
+ * call had already run when the conflict was found.
  */
 export interface MealChanged {
   kind: "meal-changed";

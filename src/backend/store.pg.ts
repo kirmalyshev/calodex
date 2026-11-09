@@ -1660,7 +1660,7 @@ const PROFILE_COLUMNS = [
   "food_allergies", "product_limitations", "onboarded_at",
 ] as const;
 
-/** The columns whose write moves `meals.version` (#2695): what an edit or a re-read overwrites. */
+/** The columns whose write moves `meals.version` (#2695): the numbers and what describes them. A write touching any of these invalidates a read taken before it. Must match `NUMBER_KEYS` in `store.memory.ts`. */
 const NUMBER_COLUMNS = new Set(["items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
 
 /** The meal columns an update may write. Same rule, same reason. */
@@ -2114,7 +2114,7 @@ export async function postgresStore(
   };
 
   /**
-   * The one meal write (#2695). Every write bumps `version`; with `ifVersion` it also lands only at
+   * The one meal write (#2695). A write that touches the numbers bumps `version`; with `ifVersion` it also lands only at
    * that version, so a read-merge-write that lost a race gets "conflict" instead of overwriting.
    */
   const writeMeal = async (

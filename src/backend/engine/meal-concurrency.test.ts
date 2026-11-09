@@ -10,7 +10,9 @@ import { logMail } from "../mail/log.ts";
 import { day } from "./diary.ts";
 import { confirmPendingMeal, editMeal, gatedVerdicts, logPhotoMeal, pendingMeals, reanalyzeMeal } from "./meals.ts";
 import { handleText } from "./text.ts";
-import type { MealLogged } from "@eait/shared";
+import { chatHistory } from "./chat.ts";
+import { streamEnd } from "../../shared/stream.ts";
+import { localDate, type MealLogged } from "@eait/shared";
 import { patchProfile, type EngineDeps } from "./index.ts";
 import type { PendingMeal } from "../store.ts";
 
@@ -20,6 +22,7 @@ const CONFIG: Config = {
   llmProvider: "demo", llmModel: "demo", llmApiKey: "unused",
   appleAudiences: ["com.eait.fit.ios"], googleAudiences: ["test.apps.googleusercontent.com"],
 };
+const TODAY = localDate(CONFIG.timezone);
 let deps: EngineDeps;
 let userId: string;
 
@@ -43,7 +46,7 @@ const analysis = (kcal = 300) => ({
 }) as never;
 
 const pending = (over: Partial<PendingMeal> = {}): PendingMeal => ({
-  id: crypto.randomUUID(), userId, analysis: analysis(), date: "2026-11-09", expiresAt: Date.now() + 600_000, ...over,
+  id: crypto.randomUUID(), userId, analysis: analysis(), date: TODAY, expiresAt: Date.now() + 600_000, ...over,
 });
 
 describe("#2695", () => {
@@ -127,9 +130,9 @@ describe("#2695", () => {
     await deps.store.updateMeal(userId, id, { question: { text: "Oil?", options: ["Yes", "No"] } });
     const paid: EngineDeps = { ...deps, config: { ...CONFIG, paywall: true } };
     await deps.store.setFreeAnalyses(userId, 5);
-    expect((await day(paid, userId, "2026-11-09"))!.meals[0]!.question).not.toBeNull();
+    expect((await day(paid, userId, TODAY))!.meals[0]!.question).not.toBeNull();
     await deps.store.setFreeAnalyses(userId, null);
-    expect((await day(paid, userId, "2026-11-09"))!.meals[0]!.question).toBeNull();
+    expect((await day(paid, userId, TODAY))!.meals[0]!.question).toBeNull();
   });
 
   // Runs `once` before the turn's FIRST model call: the window a PATCH or a second turn can land in.
@@ -203,5 +206,54 @@ describe("#2695", () => {
     const id = await logged();
     await deps.store.putPending(pending({ id }));
     expect(await deps.store.getPending(userId, id)).toBeNull();
+  });
+
+  it("an edit that keeps losing is refused after three attempts, and a pinned one after one", async () => {
+    const id = await logged();
+    let calls = 0;
+    const always: EngineDeps = { ...deps, store: { ...deps.store, updateMealIfVersion: async () => { calls++; return "conflict"; } } };
+    expect((await editMeal(always, userId, id, { protein_g: 9 })).kind).toBe("meal-changed");
+    expect(calls).toBe(3);
+    calls = 0;
+    expect((await editMeal(always, userId, id, { protein_g: 9 }, { readVersion: 0 })).kind).toBe("meal-changed");
+    expect(calls).toBe(1);
+  });
+
+  it("a turn that lost to another write adds no line to the thread", async () => {
+    const id = await logged();
+    let mid = -1;
+    const d = duringModelCall(async () => {
+      await editMeal(deps, userId, id, { kcal: 777 });
+      mid = (await chatHistory(deps, userId, {})).entries.length;
+    });
+    expect((await handleText(d, userId, { text: "only half of it", focusMealId: id })).kind).toBe("meal-changed");
+    const after = (await chatHistory(deps, userId, {})).entries;
+    expect(after.length).toBe(mid);
+    expect(after.some((e) => e.role === "user")).toBe(false);
+  });
+
+  it("a streamed meal-changed ends as the 409 the JSON route sends", () => {
+    expect(streamEnd({ kind: "meal-changed" })).toEqual({ status: 409, body: { error: "meal-changed" } });
+  });
+
+  it("a correction on a meal the router picked is held to the numbers it was computed from", async () => {
+    const id = await logged();
+    const d = duringModelCall(() => editMeal(deps, userId, id, { kcal: 777 }));
+    expect((await handleText(d, userId, { text: "only half of it" })).kind).toBe("meal-changed");
+    expect((await deps.store.getMeal(userId, id))!.kcal).toBe(777);
+    // Nothing moved during the turn: it lands.
+    const id2 = await logged();
+    expect((await handleText(deps, userId, { text: "only half of it", focusMealId: id2 })).kind).toBe("updated");
+  });
+
+  it("a correction after a mid-turn confirm is refused when a manual edit came in between", async () => {
+    const p = pending();
+    await deps.store.putPending(p);
+    const d = duringModelCall(async () => {
+      await confirmPendingMeal(deps, userId, p.id);
+      await editMeal(deps, userId, p.id, { kcal: 777 });
+    });
+    expect((await handleText(d, userId, { text: "only half of it", focusMealId: p.id })).kind).toBe("meal-changed");
+    expect((await deps.store.getMeal(userId, p.id))!.kcal).toBe(777);
   });
 });
