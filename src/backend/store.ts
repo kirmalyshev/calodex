@@ -437,7 +437,7 @@ export interface PortionCorrection {
  * per key — `SWITCH_DEFAULT` in `engine/switches.ts` — because `prompt.photo-lean` ships off
  * where the grounding switches shipped on.
  */
-export const SWITCH_KEYS = ["grounding.photo", "grounding.text", "prompt.photo-lean"] as const;
+export const SWITCH_KEYS = ["grounding.photo", "grounding.text", "prompt.photo-lean", "onboarding.experiments"] as const;
 export type SwitchKey = (typeof SWITCH_KEYS)[number];
 
 /** One flip of one switch: the append-only row, `set_at` an ISO string on both stores. */
@@ -544,6 +544,65 @@ export interface FunnelAggregate {
     /** Median time on screen before an answer, in ms. Null when nothing was answered. */
     medianMs: number | null;
   }[];
+}
+
+// ── Onboarding experiments (ieat-app#2669) ─────────────────────────────────────────────────────
+
+/** The targeting rules an experiment row carries — every absent rule means "everyone". */
+export interface OnboardingExperimentRules {
+  /** ISO alpha-2 lowercase, the same codes `countryFromRegion` answers with. Empty/absent: any. */
+  countries?: string[];
+  /**
+   * A `[from, to)` window in the user's LOCAL hour (0–23), which may wrap past midnight —
+   * `[22, 6)` means ten at night to six in the morning. Present only with `surfaces: ["app"]`:
+   * the web's first render has no `tz` to check it against.
+   */
+  hours?: [number, number];
+  /** Which surfaces may enroll. Empty/absent: both. */
+  surfaces?: ("app" | "web")[];
+}
+
+/**
+ * One arm of an experiment: a whole `OnboardingContent` revision and an integer weight, control
+ * included. There is no separate variant id — the revision's `version` IS it, drawn from the same
+ * counter `putOnboardingContent` uses, so the `content_version` every funnel event already carries
+ * names the variant that produced it. Frozen once the experiment starts.
+ */
+export interface OnboardingVariant {
+  /** True on exactly one arm — the clone of the copy that was live when the experiment was made. */
+  control?: boolean;
+  weight: number;
+  content: OnboardingContent;
+}
+
+export type OnboardingExperimentStatus = "draft" | "running" | "stopped";
+
+export interface OnboardingExperiment {
+  id: string;
+  /** Exactly one — two concurrent experiments in a language would edit the same served object. */
+  lang: Lang;
+  status: OnboardingExperimentStatus;
+  rules: OnboardingExperimentRules;
+  variants: OnboardingVariant[];
+  created_by: string;
+  created_at: string;
+  started_at: string | null;
+  stopped_at: string | null;
+}
+
+/**
+ * Who was enrolled in what — one row per (user, experiment), written on first eligibility and
+ * never recomputed: the targeting inputs drift (local hour, region, a language switch), and a user
+ * who opened onboarding at 23:00 keeps their variant at 09:00. `variant_id` is the assigned
+ * revision's `version` — so a funnel join on `content_version` can say "assigned X, actually saw Y"
+ * (the fell-back-to-compiled-copy count) rather than hiding it.
+ */
+export interface OnboardingAssignment {
+  user_id: string;
+  experiment_id: string;
+  /** The assigned variant's content `version`. */
+  variant_id: number;
+  assigned_at: string;
 }
 
 /**
@@ -1415,6 +1474,44 @@ export interface Store {
    * answer, nothing a client could tell one person by.
    */
   countOnboardedSince(hours: number): Promise<number>;
+
+  // ── Onboarding experiments (ieat-app#2669) ──────────────────────────────────────────────────
+  //
+  // An experiment is one language's worth of alternative revisions, plus the rules that say who
+  // sees them. The experiment row belongs to NOBODY — it is the admin's definition, like
+  // `onboarding_content` beside it — so every method here but the two assignment ones is
+  // `unscoped` in SCOPE. The ASSIGNMENT is one user's, which is why the table is in RLS_TABLES and
+  // erased with the account, and why those two take a `userId` like the funnel's writer does.
+
+  /** Every experiment, newest first. The admin's list. */
+  listOnboardingExperiments(): Promise<OnboardingExperiment[]>;
+  /** The one experiment currently running for a language, or null. At most one runs per lang —
+   * `startOnboardingExperiment` is what keeps that true. */
+  runningOnboardingExperiment(lang: Lang): Promise<OnboardingExperiment | null>;
+  /**
+   * Create an experiment, or update its rules and variants while it is still a draft.
+   * Answers false when the row exists and is no longer a draft: a running variant is FROZEN, so
+   * one version never holds two sets of words — the admin stops it and starts a new one.
+   */
+  putOnboardingExperiment(experiment: OnboardingExperiment): Promise<boolean>;
+  /**
+   * draft → running, in one guarded statement: refuses (false) unless the row is a draft AND no
+   * other experiment is running for its language — v1 runs one experiment per language, because
+   * two concurrent ones would edit the same served object and mix their effects.
+   */
+  startOnboardingExperiment(id: string): Promise<boolean>;
+  /** running → stopped, the per-experiment kill switch. False when the row was not running. */
+  stopOnboardingExperiment(id: string): Promise<boolean>;
+  /** This user's stored assignment to an experiment, or null when never enrolled. */
+  onboardingAssignment(userId: string, experimentId: string): Promise<OnboardingAssignment | null>;
+  /**
+   * Write the FIRST assignment and return what is actually stored. `assigned` is sticky — a second
+   * call with a different `variantId` does NOT overwrite, it returns the earlier row, so two
+   * concurrent first requests can never split one user across two variants.
+   */
+  putOnboardingAssignment(userId: string, experimentId: string, variantId: number): Promise<OnboardingAssignment>;
+  /** Every assignment to one experiment — the results table's read, by assignment (intention to treat). */
+  onboardingAssignments(experimentId: string): Promise<OnboardingAssignment[]>;
   /**
    * The numbers past the funnel (#377), over a window. Reads every user, like `onboardingFunnel`.
    *
