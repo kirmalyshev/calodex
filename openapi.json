@@ -8524,6 +8524,10 @@
           "signin": {
             "type": "string",
             "description": "The second door — \"I already have an account\"."
+          },
+          "image": {
+            "$ref": "#/components/schemas/WelcomeImageKey",
+            "description": "Which bundled hero the screen draws — a `WELCOME_IMAGE_KEYS` member. Absent: the app's default."
           }
         },
         "required": [
@@ -10574,6 +10578,13 @@
         ],
         "additionalProperties": false,
         "description": "`GET /v1/weights` — the merged weigh-in log the Progress chart draws, and its goal arc."
+      },
+      "WelcomeImageKey": {
+        "type": "string",
+        "enum": [
+          "french-toast",
+          "grain-bowl"
+        ]
       },
       "YearlyPlan": {
         "type": "object",

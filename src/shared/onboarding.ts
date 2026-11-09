@@ -332,6 +332,17 @@ export interface OnboardingScreenContent {
 
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
+export interface OnboardingWelcomeContent {
+  /** The headline, then its subtitle (ieat-app#2050): "A plan built around you" / "Your goal, your day, your meals". */
+  lines: string[];
+  /** The primary button — "Start". */
+  cta: string;
+  /** The second door — "I already have an account". */
+  signin: string;
+  /** Which bundled hero the screen draws — a `WELCOME_IMAGE_KEYS` member. Absent: the app's default. */
+  image?: WelcomeImageKey;
+}
+
 /**
  * The welcome heroes an experiment may name (ieat-app#2669).
  *
@@ -343,17 +354,6 @@ export interface OnboardingScreenContent {
  */
 export const WELCOME_IMAGE_KEYS = ["french-toast", "grain-bowl"] as const;
 export type WelcomeImageKey = (typeof WELCOME_IMAGE_KEYS)[number];
-
-export interface OnboardingWelcomeContent {
-  /** The headline, then its subtitle (ieat-app#2050): "A plan built around you" / "Your goal, your day, your meals". */
-  lines: string[];
-  /** The primary button — "Start". */
-  cta: string;
-  /** The second door — "I already have an account". */
-  signin: string;
-  /** Which bundled hero the screen draws — a `WELCOME_IMAGE_KEYS` member. Absent: the app's default. */
-  image?: WelcomeImageKey;
-}
 
 /**
  * The arithmetic being done, as a card in the conversation.
