@@ -470,7 +470,7 @@ msgstr "ती लिंक कालबाह्य झाली आहे. व
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.meal-changed"
-msgstr "हे जेवण नुकतेच बदलले आहे। पुन्हा एकदा पाहा, मग पुन्हा सांगा."
+msgstr "हे जेवण नुकतेच बदलले आहे. पुन्हा एकदा पाहा, मग पुन्हा सांगा."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

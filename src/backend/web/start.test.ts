@@ -33,6 +33,7 @@ import { createRouter } from "../api/routes.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { escape, PAGE_COPY } from "./page.ts";
+import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
 import { pageCopyFor } from "./copy.ts";
 import { targetFloor } from "./page/question.ts";
 import { createWebApp } from "../../frontend/server/index.ts";
@@ -1809,7 +1810,7 @@ describe("chat on the web: saying something", () => {
 });
 
 describe("chat on the web: a correction that lost to another write (ieat-app#2695)", () => {
-  it("shows the try-again notice instead of redrawing with nothing", async () => {
+  it("shows its own notice instead of redrawing with nothing", async () => {
     router(CONFIG);
     const { session, userId } = await onboarded();
     const id = crypto.randomUUID();
@@ -1822,8 +1823,9 @@ describe("chat on the web: a correction that lost to another write (ieat-app#269
     const read = store.getMealVersioned.bind(store);
     store.getMealVersioned = async (u, m) => { const x = await read(u, m); return x && { ...x, kcal: x.kcal + 1 }; };
     const res = await post("/start/chat/say", { text: "only half of it" }, session);
-    expect(res.headers.get("location")).toBe("/start/chat?notice=analysis-failed");
-    expect(await (await get("/start/chat?notice=analysis-failed", session)).text()).toContain(escape(PAGE_COPY.chatRefusalFailed));
+    expect(res.headers.get("location")).toBe("/start/chat?notice=meal-changed");
+    expect(await (await get("/start/chat?notice=meal-changed", session)).text())
+      .toContain(escape(chatScreenCopyFor("en").phone.refusals.changedNote));
     expect((await store.getMeal(userId, id))!.kcal).toBe(300);
   });
 });

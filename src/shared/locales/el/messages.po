@@ -470,7 +470,7 @@ msgstr "Αυτός ο σύνδεσμος έληξε. Άνοιξε το πλάν�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.meal-changed"
-msgstr "Αυτό το γεύμα μόλις άλλαξε. Ρίξτε μια ματιά ξανά και πείτε το πάλι."
+msgstr "Αυτό το γεύμα μόλις άλλαξε. Ρίξε μια ματιά ξανά και πες το πάλι."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

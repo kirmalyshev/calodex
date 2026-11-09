@@ -13,6 +13,7 @@
 // builds this bundle with neither. `@eait/shared` stays TYPES ONLY in this workspace.
 
 import { logCopyFor } from "../shared/app/log-copy.ts";
+import { chatScreenCopyFor } from "../shared/app/chat-copy.ts";
 import { MAX_USER_LINE } from "../shared/contract.ts";
 import { t, wholeNumbers, type CountForms, type Localized } from "../shared/lang.ts";
 import type { Lang } from "../shared/types.ts";
@@ -4275,6 +4276,8 @@ export const fillCopy = (template: string, params: Record<string, string>): stri
 const sharedRefusals = (lang: Lang): Record<string, string> => {
   const L = logCopyFor(lang).phone;
   return {
+    // The same sentence the app shows when a correction lost to another write (#2695).
+    "meal-changed": chatScreenCopyFor(lang).phone.refusals.changedNote,
     "cap-user": L.capUserNote,
     "cap-global": L.capGlobalNote,
     "cap-address": L.capAddressNote,

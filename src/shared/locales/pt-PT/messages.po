@@ -470,7 +470,7 @@ msgstr "Essa ligação expirou. Abre o teu plano na web e toca em Ligar Telegram
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.meal-changed"
-msgstr "Esta refeição acabou de mudar. Veja outra vez e diga de novo."
+msgstr "Esta refeição acabou de mudar. Vê outra vez e diz de novo."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
