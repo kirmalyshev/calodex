@@ -41,17 +41,69 @@ describe("filled_fields", () => {
     expect(await filledOf(id)).toEqual(["country"]);
   });
 
-  it("a merge copies answered fields only, and keeps the stale account's filled marks", async () => {
+  it("a merge does not copy a field the session only filled", async () => {
     const real = await store.createUser("en");
     await store.addIdentity(real, "apple", "sub");
     const anon = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
-    await patchProfile(deps, anon, { goal: "lose", country: "fr", filled: false });
+    await patchProfile(deps, anon, { goal: "lose" });
     await patchProfile(deps, anon, { country: "us", filled: true });
     const out = await signInWithProvider(deps, verifier, "apple", "sub", undefined, anon, "en", { terms: true, marketing: false });
     expect(out.outcome).toBe("merged");
     const p = (await store.getProfile(real))!;
     expect(p.goal).toBe("lose");
     expect(p.country).toBeNull();
-    expect(p.filled_fields ?? []).toEqual([]);
+  });
+
+  it("refuses `filled` beside an answer-field, and beside complete_onboarding", async () => {
+    const id = await store.createUser("en");
+    const a = await patchProfile(deps, id, { goal: "gain", filled: true });
+    expect(a && !a.ok && a.rejected.field).toBe("filled");
+    expect((await store.getProfile(id))!.goal).toBeNull();
+    await patchProfile(deps, id, { weight_kg: 80 });
+    await patchProfile(deps, id, { goal: "lose" });
+    const b = await patchProfile(deps, id, { country: "de", complete_onboarding: true, filled: true });
+    expect(b && !b.ok && b.rejected.field).toBe("filled");
+    expect((await store.getProfile(id))!.onboarded_at).toBeNull();
+    expect(await filledOf(id)).toEqual([]);
+  });
+
+  it("never lets a filled write replace an answer the user gave", async () => {
+    const id = await store.createUser("en");
+    await patchProfile(deps, id, { country: "gb" });
+    await patchProfile(deps, id, { country: "de", filled: true });
+    expect((await store.getProfile(id))!.country).toBe("gb");
+    expect(await filledOf(id)).toEqual([]);
+  });
+
+  it("keeps a filled mark through complete_onboarding", async () => {
+    const id = await store.createUser("en");
+    await patchProfile(deps, id, { country: "de", filled: true });
+    const done = await patchProfile(deps, id, { goal: "lose", weight_kg: 80, complete_onboarding: true });
+    expect(done?.ok).toBe(true);
+    expect(await filledOf(id)).toEqual(["country"]);
+  });
+
+  it("a merge keeps the stale account's filled mark when the session sends no country", async () => {
+    const real = await store.createUser("en");
+    await store.addIdentity(real, "apple", "sub2");
+    await patchProfile(deps, real, { country: "de", filled: true });
+    const anon = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    await patchProfile(deps, anon, { goal: "lose" });
+    await signInWithProvider(deps, verifier, "apple", "sub2", undefined, anon, "en", { terms: true, marketing: false });
+    const p = (await store.getProfile(real))!;
+    expect(p.country).toBe("de");
+    expect(p.filled_fields).toEqual(["country"]);
+  });
+
+  it("a merge clears the stale account's filled mark when the session answered the field", async () => {
+    const real = await store.createUser("en");
+    await store.addIdentity(real, "apple", "sub3");
+    await patchProfile(deps, real, { country: "de", filled: true });
+    const anon = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    await patchProfile(deps, anon, { country: "fr" });
+    await signInWithProvider(deps, verifier, "apple", "sub3", undefined, anon, "en", { terms: true, marketing: false });
+    const p = (await store.getProfile(real))!;
+    expect(p.country).toBe("fr");
+    expect(p.filled_fields).toEqual([]);
   });
 });

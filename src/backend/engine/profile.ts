@@ -15,7 +15,7 @@ import { MAX_PROFILE_TEXT,
   type Limits, type ProfileRejected, type ProfileResponse, type WebPaywall,
   ROUTES,
 } from "@eait/shared";
-import { MICRO_GOAL_MAX, MIN_AGE, microGoals } from "@eait/shared";
+import { FILLABLE_FIELDS, MICRO_GOAL_MAX, MIN_AGE, microGoals } from "@eait/shared";
 import type { ProfilePatch } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
 import { emailSignInEnabled } from "../mail/choose.ts";
@@ -375,9 +375,19 @@ export async function patchProfile(
 
   // PROVENANCE (ieat-app#2676): a `filled` write marks the fields it carries as system-filled; any
   // other write to a field makes it the user's, so it leaves the list.
+  const was = current.filled_fields ?? [];
+  if (req.filled === true) {
+    // `filled` is for what the system can know without asking, and it never replaces an answer.
+    const fillable = FILLABLE_FIELDS as readonly string[];
+    if (req.complete_onboarding || Object.keys(patch).some((k) => !fillable.includes(k))) {
+      return reject("filled", "out-of-range");
+    }
+    for (const k of Object.keys(patch)) {
+      if (current[k as keyof Profile] != null && !was.includes(k)) delete (patch as Record<string, unknown>)[k];
+    }
+  }
   const written = Object.keys(patch).filter((k) => k !== "onboarded_at");
   if (written.length > 0) {
-    const was = current.filled_fields ?? [];
     const next = req.filled === true
       ? [...new Set([...was, ...written])]
       : was.filter((f) => !written.includes(f));

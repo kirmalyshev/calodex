@@ -104,6 +104,9 @@ describe("where a killed run picks up", () => {
     expect(resumeAt(prompts(), filled)).toBe(0);
     const answered = profile({ goal: "lose" });
     expect(resumeAt(prompts(), answered)).toBeGreaterThan(0);
+    // An older server omits the key: that reads as "nothing filled", so the value is an answer.
+    const { filled_fields: _f, ...older } = profile({ goal: "lose" });
+    expect(resumeAt(prompts(), older as Profile)).toBeGreaterThan(0);
   });
 
   it("starts on the front door when an older server omits a field the app asks (ieat-app#2643)", () => {

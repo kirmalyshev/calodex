@@ -1491,7 +1491,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     const handoff = ctx.hasWebApp ? "/" : CHAT_PATH;
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
     if (await isAnonymous(ctx.deps, userId)) return seeOther(`${START_PREFIX}/signup`);
-    if (profile.country === null) return seeOther(`${START_PREFIX}/country`);
+    if (!countryAnswered(profile)) return seeOther(`${START_PREFIX}/country`);
     const lang = profile.lang;
     const copy = pageCopyFor(lang);
     const ref = normalizeReferralCode(cookies[REF_COOKIE] ?? "");

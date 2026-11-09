@@ -2104,6 +2104,15 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(p.restrictions).toEqual([]);
     });
 
+    it("stores filled_fields as an array, replaces it whole, and starts it empty (ieat-app#2676)", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      expect((await s.getProfile(u))!.filled_fields).toEqual([]);
+      expect((await s.patchProfile(u, { country: "de", filled_fields: ["country"] })).filled_fields).toEqual(["country"]);
+      expect((await s.patchProfile(u, { goal: "lose" })).filled_fields).toEqual(["country"]);
+      expect((await s.patchProfile(u, { filled_fields: [] })).filled_fields).toEqual([]);
+    });
+
     it("round-trips every profile shape, including nulls and arrays", async () => {
       const s = await open();
       const u = (await s.upsertDeviceUser(device(), "en")).userId;
