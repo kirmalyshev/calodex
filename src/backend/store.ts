@@ -85,8 +85,8 @@ export interface PushAudienceRow {
    * account that onboards on day 2 restarts the 1/3/7 count from there. Before onboarding it can
    * get up to three `onboarding-start` pushes (counted from creation), after it up to three
    * `onboarding-photo` pushes; only the photo ones stop at the first meal. So the ceiling is SIX
-   * (four when it onboards on day 2). Kirill accepted "up to four" on 2026-11-09 without that
-   * ceiling in front of him; the stamp is not moved to avoid it (ieat-app#2696).
+   * (four when it onboards on day 2). Kept as is: Kirill ruled on 2026-11-09, with that ceiling
+   * in front of him, that the stamp is not moved to avoid it (ieat-app#2696).
    */
   createdAt: string;
   onboardedAt: string | null;
