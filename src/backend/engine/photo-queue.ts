@@ -120,20 +120,29 @@ const HANDLERS: Record<JobKind, JobHandler> = {
         case "note": {
           // For an unbound send, the turn's first `updateMeal` IS the router's answer landing —
           // bind the job to that meal and keep the pre-write row for the push's "was → is".
+          const bind = async (u: string, m: string) => {
+            if (was === null) {
+              const before = await deps.store.getMeal(u, m);
+              if (!(await deps.store.bindJobMeal(u, clientId, owner, m))) throw lost();
+              was = before;
+            }
+          };
+          // Both writes: a correction goes through the versioned one (#2695), a redate or a focus
+          // through the plain one, and either may be the first.
           const noteStore = boundId !== undefined ? deps.store : {
             ...deps.store,
             updateMeal: async (u: string, m: string, patch: Parameters<typeof deps.store.updateMeal>[2]) => {
-              if (was === null) {
-                const before = await deps.store.getMeal(u, m);
-                if (!(await deps.store.bindJobMeal(u, clientId, owner, m))) throw lost();
-                was = before;
-              }
+              await bind(u, m);
               return deps.store.updateMeal(u, m, patch);
+            },
+            updateMealIfVersion: async (u: string, m: string, patch: Parameters<typeof deps.store.updateMeal>[2], v: number) => {
+              await bind(u, m);
+              return deps.store.updateMealIfVersion(u, m, patch, v);
             },
           };
           // The router's answer is step 2's start, the stored write step 3's.
           result = await textTurn({
-            ...deps, llm: after(deps.llm, "routeText", to(2)), store: after(noteStore, "updateMeal", to(3)),
+            ...deps, llm: after(deps.llm, "routeText", to(2)), store: after(after(noteStore, "updateMeal", to(3)), "updateMealIfVersion", to(3)),
           }, userId, { text: input.text, ...(boundId !== undefined ? { focusMealId: boundId } : {}), clientId,
             ...(input.capturedAt ? { capturedAt: input.capturedAt } : {}), job: { owner, lost } });
           break;

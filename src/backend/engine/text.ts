@@ -346,12 +346,15 @@ export async function textTurn(
         // Same move on an offer still standing: the pending's day shifts, nothing else. Settled
         // mid-turn, the row's meal carries the correction the way `amendPending`'s race does.
         const date = dateMinus(today, clampDayOffset(routed.dayOffset));
-        if (await deps.store.updatePending(userId, { ...focusPending!, date })) {
+        // A column write (#2695): the turn's own read of the offer may predate an amend, and
+        // writing that read back whole would undo the correction.
+        if (await deps.store.setPendingDate(userId, focusPending!.id, date)) {
+          const now = (await deps.store.getPending(userId, focusPending!.id)) ?? focusPending!;
           return {
-            kind: "proposed", pendingId: focusPending!.id, analysis: focusPending!.analysis, date,
-            expiresAt: new Date(focusPending!.expiresAt).toISOString(),
-            verdictInline: verdictInlineText(focusPending!.analysis.verdicts, profile.lang),
-            verdictLabels: verdictLabels(focusPending!.analysis.verdicts, profile.lang),
+            kind: "proposed", pendingId: now.id, analysis: now.analysis, date,
+            expiresAt: new Date(now.expiresAt).toISOString(),
+            verdictInline: verdictInlineText(now.analysis.verdicts, profile.lang),
+            verdictLabels: verdictLabels(now.analysis.verdicts, profile.lang),
           } satisfies MealProposed;
         }
         const meal = await deps.store.getMeal(userId, focusPending!.id);

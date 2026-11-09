@@ -1709,6 +1709,49 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.pruneExpiredPendings()).toBe(0);
     });
 
+    it("a read never deletes an expired proposal (#2695)", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const dead = { id: crypto.randomUUID(), userId: u, analysis: meal(u), date: "2026-08-01", expiresAt: Date.now() - 1_000 };
+      await s.putPending(dead);
+      expect(await s.getPending(u, dead.id)).toBeNull();
+      expect(await s.pruneExpiredPendings()).toBeGreaterThanOrEqual(1);
+    });
+
+    it("moves a live proposal's day as a column write, leaving an amended analysis alone (#2695)", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const other = (await s.upsertDeviceUser(device(), "en")).userId;
+      const p = { id: crypto.randomUUID(), userId: u, analysis: meal(u), date: "2026-08-01", expiresAt: Date.now() + 60_000 };
+      await s.putPending(p);
+      await s.updatePending(u, { ...p, analysis: meal(u, { kcal: 999 }) });
+      expect(await s.setPendingDate(other, p.id, "2026-07-31")).toBe(false);
+      expect(await s.setPendingDate(u, p.id, "2026-07-31")).toBe(true);
+      const got = (await s.getPending(u, p.id))!;
+      expect([got.date, got.analysis.kcal]).toEqual(["2026-07-31", 999]);
+      const dead = { ...p, id: crypto.randomUUID(), expiresAt: Date.now() - 1_000 };
+      await s.putPending(dead);
+      expect(await s.setPendingDate(u, dead.id, "2026-07-30")).toBe(false);
+    });
+
+    it("a meal write from a stale read is a conflict and changes nothing (#2695)", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const other = (await s.upsertDeviceUser(device(), "en")).userId;
+      const m = meal(u);
+      await s.insertMeal(m);
+      const read = (await s.getMealVersioned(u, m.id))!;
+      expect(await s.getMealVersioned(other, m.id)).toBeNull();
+      expect(await s.updateMealIfVersion(u, m.id, { kcal: 111 }, read.version)).toMatchObject({ kcal: 111 });
+      expect(await s.updateMealIfVersion(u, m.id, { kcal: 222 }, read.version)).toBe("conflict");
+      expect((await s.getMeal(u, m.id))!.kcal).toBe(111);
+      // Any write moves the version, the unconditional one included.
+      const mid = (await s.getMealVersioned(u, m.id))!.version;
+      await s.updateMeal(u, m.id, { kcal: 333 });
+      expect((await s.getMealVersioned(u, m.id))!.version).toBe(mid + 1);
+      expect(await s.updateMealIfVersion(other, m.id, { kcal: 1 }, mid + 1)).toBeNull();
+    });
+
     it("counts the thread per account", async () => {
       const s = await open();
       const a = (await s.upsertDeviceUser(device(), "en")).userId;

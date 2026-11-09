@@ -86,7 +86,7 @@ export async function editLine(
   if (!line) return GONE;
   if (line.role !== "user" || line.kind !== "photo") return { kind: "bad-request" };
   if (line.mealId === null) return GONE;
-  const existing = await deps.store.getMeal(userId, line.mealId);
+  const existing = await deps.store.getMealVersioned(userId, line.mealId);
   if (!existing) return GONE;
   const limit = deps.config.maxPhotosPerMeal;
   if ((existing.photos ?? 0) + input.images.length > limit) return { kind: "too-many", limit };

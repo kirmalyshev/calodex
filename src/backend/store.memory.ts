@@ -269,6 +269,19 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   // the same thing in a nullable column, so both implementations answer the same question.
   const tokens = new Map<string, { userId: string; lastUsedAt: number; ttlMs?: number }>();
   const meals = new Map<string, MealRecord>(); // mealId -> record
+  const versions = new Map<string, number>(); // mealId -> write count (#2695), absent = 0
+  const writeMeal = (userId: string, mealId: string, patch: MealPatch, ifVersion: number | null): MealRecord | "conflict" | null => {
+    const m = meals.get(mealId);
+    if (!m || m.user_id !== userId) return null;
+    if (ifVersion !== null && (versions.get(mealId) ?? 0) !== ifVersion) return "conflict";
+    const next: MealRecord = { ...m };
+    for (const [k, v] of Object.entries(patch)) {
+      if (v !== undefined) (next as unknown as Record<string, unknown>)[k] = v;
+    }
+    meals.set(mealId, clone(next));
+    versions.set(mealId, (versions.get(mealId) ?? 0) + 1);
+    return scored(clone(next));
+  };
   /**
    * `healthScore` is computed at READ (#118), like the Postgres `toMeal`: from the meal's own
    * numbers and stored verdicts plus the account's declared restrictions. Never trusted off the
@@ -1687,14 +1700,17 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async updateMeal(userId, mealId, patch: MealPatch) {
+      const out = writeMeal(userId, mealId, patch, null);
+      return out === "conflict" ? null : out;
+    },
+
+    async updateMealIfVersion(userId, mealId, patch: MealPatch, version: number) {
+      return writeMeal(userId, mealId, patch, version);
+    },
+
+    async getMealVersioned(userId, mealId) {
       const m = meals.get(mealId);
-      if (!m || m.user_id !== userId) return null;
-      const next: MealRecord = { ...m };
-      for (const [k, v] of Object.entries(patch)) {
-        if (v !== undefined) (next as unknown as Record<string, unknown>)[k] = v;
-      }
-      meals.set(mealId, clone(next));
-      return scored(clone(next));
+      return !m || m.user_id !== userId ? null : { ...scored(clone(m)), version: versions.get(mealId) ?? 0 };
     },
 
     async mealsForDate(userId, date) {
@@ -1852,12 +1868,16 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async getPending(userId, pendingId) {
       const p = pendings.get(pendingId);
-      if (!p || p.userId !== userId) return null;
-      if (p.expiresAt <= now()) {
-        pendings.delete(pendingId);
-        return null;
-      }
+      // A read never deletes (#2695): expiry is a filter here, `pruneExpiredPendings` the sweep.
+      if (!p || p.userId !== userId || p.expiresAt <= now()) return null;
       return clone(p);
+    },
+
+    async setPendingDate(userId, pendingId, date) {
+      const p = pendings.get(pendingId);
+      if (!p || p.userId !== userId || p.expiresAt <= now()) return false;
+      p.date = date;
+      return true;
     },
 
     async pendingsFor(userId) {

@@ -23,6 +23,7 @@ import {
   kcalNumbers, verdictLabels, verdictNoun, wholeNumbers, windowStart,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
+import type { VersionedMeal } from "../store.ts";
 import { MAX_OPTION, MAX_QUESTION, normalizePromptText } from "../llm/prompt.ts";
 import { isCookingFat, prepareAnalysis } from "./analysis.ts";
 import { catalogMicros, groundWhenOn, mealFromFood, recomputeFromSnapshot } from "./ground.ts";
@@ -451,9 +452,9 @@ export async function editMeal(
   // in this same turn, so their `ref`/`food` are ours rather than a client's claim, and reconciling
   // them against the stored meal would strip the provenance of every new or renamed item. Set by
   // `applyCorrection` only; the PATCH route and the meal-update job never do.
-  opts: { thread?: boolean; measure?: boolean; serverItems?: boolean } = {},
+  opts: { thread?: boolean; measure?: boolean; serverItems?: boolean; attempt?: number } = {},
 ): Promise<MealUpdated | TargetGone> {
-  const existing = await deps.store.getMeal(userId, mealId);
+  const existing = await deps.store.getMealVersioned(userId, mealId);
   // Scoped read: another user's meal id resolves to null here, indistinguishable from a deleted one.
   if (!existing) return { kind: "target-gone", on: "correction" };
   // Every item at 0g is no meal, whichever path sent it (ieat-app#1224): those items are ignored
@@ -531,7 +532,7 @@ export async function editMeal(
     sodium_mg: scaled(patch.sodium_mg, existing.sodium_mg, micros.sodium_mg),
   };
 
-  const updated = await deps.store.updateMeal(userId, mealId, {
+  const updated = await deps.store.updateMealIfVersion(userId, mealId, {
     ...merged,
     verdicts: await gatedVerdicts(deps, userId, merged),
     ...(atN ? { label: atN.label } : {}),
@@ -541,7 +542,13 @@ export async function editMeal(
     // question is about a plate that no longer exists, and the next `GET /day` would offer the
     // chips again over an answer already given.
     question: null,
-  });
+  }, existing.version);
+  // A write got in between this read and ours (#2695): read again and merge again, never overwrite.
+  // Three tries is a bound on a livelock, not a tuning knob; past it the turn fails loudly.
+  if (updated === "conflict") {
+    if ((opts.attempt ?? 0) >= 2) throw new Error("meal edit lost three races in a row");
+    return editMeal(deps, userId, mealId, request, { ...opts, attempt: (opts.attempt ?? 0) + 1 });
+  }
   // Not redundant with the read above: the row can vanish between the two (a concurrent account
   // delete). A correction that silently succeeded against nothing is worse than one that says so.
   if (!updated) return { kind: "target-gone", on: "correction" };
@@ -848,7 +855,7 @@ export async function reanalyzeMeal(
   /** A queued job's charge record — `analyzePhotos`'s own `onCharged`, forwarded (ieat-app#1347). */
   onCharged?: (analysisId: string) => Promise<void>,
 ): Promise<MealUpdated | TargetGone | Refusal> {
-  const existing = await deps.store.getMeal(userId, mealId);
+  const existing = await deps.store.getMealVersioned(userId, mealId);
   if (!existing) return { kind: "target-gone", on: "correction" };
   if ((existing.photos ?? 0) === 0) return { kind: "no-photo" };
   const profile = await deps.store.getProfile(userId);
@@ -872,7 +879,7 @@ export async function reanalyzeMeal(
  * nobody is going to keep. `editLine`'s bytes therefore sit unread in the caller until this point.
  */
 export async function rewriteMeal(
-  deps: EngineDeps, userId: string, existing: MealRecord, profile: Profile,
+  deps: EngineDeps, userId: string, existing: VersionedMeal, profile: Profile,
   caption: string | undefined, added: () => Promise<Uint8Array[]>, onEvent: ((event: PhotoEvent) => void) | undefined,
   onCounting?: () => void,
   onCharged?: (analysisId: string) => Promise<void>,
@@ -891,13 +898,24 @@ export async function rewriteMeal(
   if (read.kind !== "read") return read;
   onCounting?.();
   const { analysis } = read;
-  const updated = await deps.store.updateMeal(userId, existing.id, {
+  const updated = await deps.store.updateMealIfVersion(userId, existing.id, {
     items: analysis.items, kcal: analysis.kcal, protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
     fat_g: analysis.fat_g, satfat_g: analysis.satfat_g, fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g,
     sodium_mg: analysis.sodium_mg, notes: analysis.notes,
     verdicts: await gatedVerdicts(deps, userId, analysis),
     confidence: analysis.confidence, corrected: false, model: deps.config.llmModel, question: null,
-  });
+  }, existing.version);
+  // The meal was edited while the re-read ran (#2695): the person's edit outranks a machine
+  // estimate, so the re-read is dropped and the meal as it now stands is what comes back.
+  if (updated === "conflict") {
+    const current = await deps.store.getMeal(userId, existing.id);
+    if (!current) return { kind: "target-gone", on: "correction" };
+    return {
+      kind: "updated", mealId: current.id, analysis: toAnalysis(current),
+      totals: sumTotals(await deps.store.mealsForDate(userId, current.date)), date: current.date,
+      via: "reanalysis", line: null, ...verdictWordsFor(current.verdicts, profile.lang),
+    };
+  }
   if (!updated) return { kind: "target-gone", on: "correction" };
   await evaluateMilestones(deps, userId);
   // Stored AFTER the numbers that describe them, never for a refused turn. A store failure is a
@@ -1012,6 +1030,11 @@ export async function confirmPendingMeal(
     };
     inserted = await deps.store.insertMeal(record);
   } catch (e) {
+    // The insert can commit and still throw (a statement timeout, a deadline abort, #2695): a meal
+    // under this id means the proposal must NOT come back, or a later "no" answers "cancelled"
+    // over a meal that stays logged.
+    const logged = await alreadyLogged().catch(() => null);
+    if (logged) return logged;
     // The claim was taken and nothing was written: hand the proposal back, so the retry the screen
     // offers on this failure can log it instead of meeting "expired" for a sentence already billed.
     // Logged if even that fails: the symptom is a later "expired" on a sentence already billed.
@@ -1084,16 +1107,20 @@ export async function pendingMeals(deps: EngineDeps, userId: string): Promise<Me
   const profile = await deps.store.getProfile(userId);
   const restrictions = profile?.restrictions ?? [];
   const lang = profile?.lang ?? "en";
-  return (await deps.store.pendingsFor(userId)).map((p) => ({
-    kind: "proposed", pendingId: p.id,
-    // Recomputed, not read off the row — a pending written before #118 has none, and a restriction
-    // the user has since ticked should shape the card being re-shown.
-    analysis: { ...p.analysis, healthScore: healthScore(p.analysis, restrictions) },
-    date: p.date, expiresAt: new Date(p.expiresAt).toISOString(),
-    // The card's words recomputed with it — a language change between proposal and read-back shows.
-    verdictInline: verdictInlineText(p.analysis.verdicts, lang),
-    verdictLabels: verdictLabels(p.analysis.verdicts, lang),
-  } satisfies MealProposed));
+  return Promise.all((await deps.store.pendingsFor(userId)).map(async (p) => {
+    // Verdicts and score are recomputed, not read off the row (#2695): a target or restriction that
+    // changed since the proposal must not leave the card describing numbers that no longer hold,
+    // and confirm recomputes them the same way.
+    const verdicts = await gatedVerdicts(deps, userId, p.analysis);
+    return {
+      kind: "proposed", pendingId: p.id,
+      analysis: { ...p.analysis, verdicts, healthScore: healthScore({ ...p.analysis, verdicts }, restrictions) },
+      date: p.date, expiresAt: new Date(p.expiresAt).toISOString(),
+      // The card's words recomputed with it — a language change between proposal and read-back shows.
+      verdictInline: verdictInlineText(verdicts, lang),
+      verdictLabels: verdictLabels(verdicts, lang),
+    } satisfies MealProposed;
+  }));
 }
 
 /** Days of the user's own history the identification prior is built from, counting today. */

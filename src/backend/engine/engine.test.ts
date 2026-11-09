@@ -1860,7 +1860,7 @@ describe("the thread", () => {
     const meal = await logPhotoMeal(deps, userId, photo());
     if (meal.kind !== "logged") throw new Error("expected logged");
     const before = (await thread(userId)).length;
-    const gone: Store = { ...store, updateMeal: async () => null };
+    const gone: Store = { ...store, updateMeal: async () => null, updateMealIfVersion: async () => null };
     const res = await handleText({ ...deps, store: gone }, userId, { text: "half that", focusMealId: meal.mealId });
     expect(res.kind).toBe("target-gone");
     expect(await thread(userId)).toHaveLength(before);
