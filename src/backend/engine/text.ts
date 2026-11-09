@@ -19,7 +19,7 @@ import { itemScanner } from "../llm/partial.ts";
 import { clampDayOffset, emptyEstimate, type AnalyzedMeal } from "../llm/port.ts";
 import { prepareAnalysis } from "./analysis.ts";
 import { groundWhenOn } from "./ground.ts";
-import { charge, checkCaps, refundGatewayRefusal } from "./caps.ts";
+import { charge, checkCaps, refundGatewayRefusal, type JobCharge } from "./caps.ts";
 import { applyCorrection, changeLine, dropOtherPendings, gatedVerdicts, redateMeal, sumTotals, toAnalysis } from "./meals.ts";
 import { afterCorrection, remember } from "./chat.ts";
 import { ROUTER_RECENT_LINES, coachTurn, recentLines } from "./coach.ts";
@@ -60,8 +60,8 @@ export interface HandleTextInput {
   clientId?: string;
   /** When the words were sent. A queued turn reads "yesterday" against the day it was typed. */
   capturedAt?: string;
-  /** A queued job's run: its charge is written under `owner`'s lease, and `lost()` ends it when the lease is gone. */
-  job?: { owner: string; lost: () => Error };
+  /** A queued job's run: its charge is written under `owner`'s lease, reused across attempts, and `lost()` ends it when the lease is gone. */
+  job?: JobCharge;
 }
 
 export async function handleText(
@@ -91,10 +91,11 @@ export async function textTurn(
   const today = localDate(zone, eatenAt(input.capturedAt));
   const chargeDay = localDate(zone);
 
-  const refusal = await checkCaps(deps, userId, chargeDay, "text");
+  const refusal = await checkCaps(deps, userId, chargeDay, "text", input.job?.analysisId != null);
   if (refusal) return refusal;
-  const { analysisId, onCost, onCall } = await charge(deps, userId, chargeDay, "text");
-  if (input.job && !(await deps.store.chargeJob(userId, input.clientId!, input.job.owner, analysisId))) throw input.job.lost();
+  const charged = await charge(deps, userId, chargeDay, "text", "photo", input.job);
+  if (!("analysisId" in charged)) return charged;
+  const { analysisId, fresh, onCost, onCall } = charged;
 
   const focus = input.focusMealId
     ? await deps.store.getMealVersioned(userId, input.focusMealId)
@@ -200,8 +201,9 @@ export async function textTurn(
       onCost, onCall,
     });
   } catch (e) {
-    // Given back when the gateway refused before generating anything — the same rule as the photo path.
-    const refunded = await refundGatewayRefusal(deps, userId, analysisId, e);
+    // Given back when the gateway refused before generating anything — the same rule as the photo
+    // path, and the same `fresh` bound: a charge a dead attempt left stays on the ledger (#2679).
+    const refunded = fresh && await refundGatewayRefusal(deps, userId, analysisId, e);
     console.error(`[eait] text routing failed: ${(e as Error).message}${refunded ? " (analysis refunded)" : ""}`);
     reportTiming();
     return { kind: "analysis-failed" };

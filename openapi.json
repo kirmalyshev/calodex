@@ -8524,6 +8524,10 @@
           "signin": {
             "type": "string",
             "description": "The second door — \"I already have an account\"."
+          },
+          "image": {
+            "$ref": "#/components/schemas/WelcomeImageKey",
+            "description": "Which bundled hero the screen draws — a `WELCOME_IMAGE_KEYS` member. Absent: the app's default."
           }
         },
         "required": [
@@ -8546,13 +8550,16 @@
           },
           "text": {
             "type": "string"
+          },
+          "mealId": {
+            "type": "string"
           }
         },
         "required": [
           "kind"
         ],
         "additionalProperties": false,
-        "description": "`text` is a failed NOTE's own words, handed back so the client can restore the composer."
+        "description": "`text` is a failed NOTE's own words, handed back so the client can restore the composer. `mealId` (ieat-app#2674) is the meal a PHOTO job wrote before it ended unknown: set only on a job snapshot, by the job's own record, so a client resolves the row by job id and never by matching the day's meals. Absent when the job wrote none, and on an older server."
       },
       "Pace": {
         "type": "string",
@@ -8583,6 +8590,10 @@
       "PatchProfileRequest": {
         "type": "object",
         "properties": {
+          "filled": {
+            "type": "boolean",
+            "description": "True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device country). They are recorded in `Profile.filled_fields` and do not count as answers. Absent or false is a user write, which removes the fields it carries from that list."
+          },
           "lang": {
             "$ref": "#/components/schemas/Lang"
           },
@@ -9374,6 +9385,13 @@
               "null"
             ],
             "description": "Set once the user has cleared onboarding and consented. Nothing is analyzed before this."
+          },
+          "filled_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Profile fields the SYSTEM filled (a boot-time device country), not fields the user answered. A filled field is non-null and still unanswered: `isAnswered` and every resume point read this, so a fill cannot move the resume point or skip a question (ieat-app#2676, the #2643 class). Empty by default, which keeps every pre-existing row reading as answered. A user write to a field removes it from the list. Older servers omit the key — read it as `?? []`."
           }
         },
         "required": [
@@ -9422,6 +9440,7 @@
           "field": {
             "type": "string",
             "enum": [
+              "filled",
               "lang",
               "goal",
               "sex",
@@ -10574,6 +10593,13 @@
         ],
         "additionalProperties": false,
         "description": "`GET /v1/weights` — the merged weigh-in log the Progress chart draws, and its goal arc."
+      },
+      "WelcomeImageKey": {
+        "type": "string",
+        "enum": [
+          "french-toast",
+          "grain-bowl"
+        ]
       },
       "YearlyPlan": {
         "type": "object",

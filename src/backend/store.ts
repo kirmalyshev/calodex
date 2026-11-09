@@ -42,6 +42,16 @@ export interface NewJob {
    */
   group?: string;
 }
+/**
+ * The allowance a `chargeAnalysis` write enforces, resolved by the engine per request:
+ * `day` is this scope's rows on the charge's `date` (the paid daily photo cap); `lifetime` is every
+ * analyses row the account holds against `free_analyses`, which the write reads off the account row
+ * it has locked — the number and the count are decided inside the same transaction.
+ */
+export type SpendLimit = { over: "day"; max: number } | { over: "lifetime" };
+/** `chargeAnalysis`'s answer: the charge's id and whether this call took it, `"cap"` on the limit, `"lost"` on a gone lease. */
+export type ChargeOutcome = { analysisId: string; fresh: boolean } | "cap" | "lost";
+
 export interface JobRecord {
   userId: string;
   clientId: string;
@@ -440,7 +450,7 @@ export interface PortionCorrection {
  * per key — `SWITCH_DEFAULT` in `engine/switches.ts` — because `prompt.photo-lean` ships off
  * where the grounding switches shipped on.
  */
-export const SWITCH_KEYS = ["grounding.photo", "grounding.text", "prompt.photo-lean"] as const;
+export const SWITCH_KEYS = ["grounding.photo", "grounding.text", "prompt.photo-lean", "onboarding.experiments"] as const;
 export type SwitchKey = (typeof SWITCH_KEYS)[number];
 
 /** One flip of one switch: the append-only row, `set_at` an ISO string on both stores. */
@@ -547,6 +557,65 @@ export interface FunnelAggregate {
     /** Median time on screen before an answer, in ms. Null when nothing was answered. */
     medianMs: number | null;
   }[];
+}
+
+// ── Onboarding experiments (ieat-app#2669) ─────────────────────────────────────────────────────
+
+/** The targeting rules an experiment row carries — every absent rule means "everyone". */
+export interface OnboardingExperimentRules {
+  /** ISO alpha-2 lowercase, the same codes `countryFromRegion` answers with. Empty/absent: any. */
+  countries?: string[];
+  /**
+   * A `[from, to)` window in the user's LOCAL hour (0–23), which may wrap past midnight —
+   * `[22, 6)` means ten at night to six in the morning. Present only with `surfaces: ["app"]`:
+   * the web's first render has no `tz` to check it against.
+   */
+  hours?: [number, number];
+  /** Which surfaces may enroll. Empty/absent: both. */
+  surfaces?: ("app" | "web")[];
+}
+
+/**
+ * One arm of an experiment: a whole `OnboardingContent` revision and an integer weight, control
+ * included. There is no separate variant id — the revision's `version` IS it, drawn from the same
+ * counter `putOnboardingContent` uses, so the `content_version` every funnel event already carries
+ * names the variant that produced it. Frozen once the experiment starts.
+ */
+export interface OnboardingVariant {
+  /** True on exactly one arm — the clone of the copy that was live when the experiment was made. */
+  control?: boolean;
+  weight: number;
+  content: OnboardingContent;
+}
+
+export type OnboardingExperimentStatus = "draft" | "running" | "stopped";
+
+export interface OnboardingExperiment {
+  id: string;
+  /** Exactly one — two concurrent experiments in a language would edit the same served object. */
+  lang: Lang;
+  status: OnboardingExperimentStatus;
+  rules: OnboardingExperimentRules;
+  variants: OnboardingVariant[];
+  created_by: string;
+  created_at: string;
+  started_at: string | null;
+  stopped_at: string | null;
+}
+
+/**
+ * Who was enrolled in what — one row per (user, experiment), written on first eligibility and
+ * never recomputed: the targeting inputs drift (local hour, region, a language switch), and a user
+ * who opened onboarding at 23:00 keeps their variant at 09:00. `variant_id` is the assigned
+ * revision's `version` — so a funnel join on `content_version` can say "assigned X, actually saw Y"
+ * (the fell-back-to-compiled-copy count) rather than hiding it.
+ */
+export interface OnboardingAssignment {
+  user_id: string;
+  experiment_id: string;
+  /** The assigned variant's content `version`. */
+  variant_id: number;
+  assigned_at: string;
 }
 
 /**
@@ -1107,6 +1176,14 @@ export interface Store {
    */
   putEntitlement(userId: string, patch: EntitlementPatch): Promise<boolean>;
 
+  /**
+   * A RevenueCat TRANSFER (#687): move the grants `fromUserId` holds onto `intoUserId` by
+   * `planTransfer`, the one rule both stores apply. The source keeps its record (it did buy).
+   * False, and nothing written, when either account does not exist or nothing moves. Never
+   * creates a user.
+   */
+  moveEntitlement(fromUserId: string, intoUserId: string, eventAt: string): Promise<boolean>;
+
   // ── Referrals (#899) ───────────────────────────────────────────────────────────────────────
   //
   // `users.referral_code` (unique, made with the account), `users.referred_by` (set ONCE),
@@ -1418,6 +1495,44 @@ export interface Store {
    * answer, nothing a client could tell one person by.
    */
   countOnboardedSince(hours: number): Promise<number>;
+
+  // ── Onboarding experiments (ieat-app#2669) ──────────────────────────────────────────────────
+  //
+  // An experiment is one language's worth of alternative revisions, plus the rules that say who
+  // sees them. The experiment row belongs to NOBODY — it is the admin's definition, like
+  // `onboarding_content` beside it — so every method here but the two assignment ones is
+  // `unscoped` in SCOPE. The ASSIGNMENT is one user's, which is why the table is in RLS_TABLES and
+  // erased with the account, and why those two take a `userId` like the funnel's writer does.
+
+  /** Every experiment, newest first. The admin's list. */
+  listOnboardingExperiments(): Promise<OnboardingExperiment[]>;
+  /** The one experiment currently running for a language, or null. At most one runs per lang —
+   * `startOnboardingExperiment` is what keeps that true. */
+  runningOnboardingExperiment(lang: Lang): Promise<OnboardingExperiment | null>;
+  /**
+   * Create an experiment, or update its rules and variants while it is still a draft.
+   * Answers false when the row exists and is no longer a draft: a running variant is FROZEN, so
+   * one version never holds two sets of words — the admin stops it and starts a new one.
+   */
+  putOnboardingExperiment(experiment: OnboardingExperiment): Promise<boolean>;
+  /**
+   * draft → running, in one guarded statement: refuses (false) unless the row is a draft AND no
+   * other experiment is running for its language — v1 runs one experiment per language, because
+   * two concurrent ones would edit the same served object and mix their effects.
+   */
+  startOnboardingExperiment(id: string): Promise<boolean>;
+  /** running → stopped, the per-experiment kill switch. False when the row was not running. */
+  stopOnboardingExperiment(id: string): Promise<boolean>;
+  /** This user's stored assignment to an experiment, or null when never enrolled. */
+  onboardingAssignment(userId: string, experimentId: string): Promise<OnboardingAssignment | null>;
+  /**
+   * Write the FIRST assignment and return what is actually stored. `assigned` is sticky — a second
+   * call with a different `variantId` does NOT overwrite, it returns the earlier row, so two
+   * concurrent first requests can never split one user across two variants.
+   */
+  putOnboardingAssignment(userId: string, experimentId: string, variantId: number): Promise<OnboardingAssignment>;
+  /** Every assignment to one experiment — the results table's read, by assignment (intention to treat). */
+  onboardingAssignments(experimentId: string): Promise<OnboardingAssignment[]>;
   /**
    * The numbers past the funnel (#377), over a window. Reads every user, like `onboardingFunnel`.
    *
@@ -1698,8 +1813,31 @@ export interface Store {
   getFreeAnalyses(userId: string): Promise<number | null>;
   /** Set this account's grant, or take it away with null. False when there is no such user. */
   setFreeAnalyses(userId: string, n: number | null): Promise<boolean>;
-  /** Recorded BEFORE the model is called: a failed call still costs money. Returns the row's id. */
+  /**
+   * Recorded BEFORE the model is called: a failed call still costs money. Returns the row's id.
+   *
+   * THE RAW ROW, for fixtures — the engine never charges through here. A charged turn goes through
+   * `chargeAnalysis`, which carries the cap and the job fence this method deliberately lacks.
+   */
   recordAnalysis(userId: string, date: string, scope: "photo" | "text"): Promise<string>;
+  /**
+   * The turn's charge as ONE guarded write (ieat-app#2679).
+   *
+   * `limit` is the allowance the engine resolved for this account and scope, enforced inside the
+   * write: the count and the insert share one transaction that holds the account row's lock, so two
+   * turns racing for the last analysis cannot both pass — `countUserPhotos` ahead of it is the early
+   * answer, this is the binding one. `"cap"` is the refusal; no `limit`, no count.
+   *
+   * `job` binds the charge to a queued job, fenced by the lease's owner like every job write —
+   * `"lost"` is answered BEFORE anything is inserted, so a lost attempt orphans no charge. A job
+   * already carrying a charge whose row is still live is handed that id back (`fresh: false`): a
+   * retried attempt runs on its dead predecessor's charge rather than charging a second time. One
+   * whose row was given back (`undoAnalysis`) is charged fresh and stamped again.
+   */
+  chargeAnalysis(
+    userId: string, date: string, scope: "photo" | "text",
+    opts?: { limit?: SpendLimit; job?: { clientId: string; owner: string } },
+  ): Promise<ChargeOutcome>;
   /**
    * ONE ROW PER PROVIDER CALL — the call's metrics, never its content (#602). No prompt text, no
    * image bytes, no reply: `images` and `imageBytes` are counts and sums. Written after the call
@@ -1789,8 +1927,6 @@ export interface Store {
   settleJob(userId: string, clientId: string, owner: string, outcome: object): Promise<boolean>;
   /** The one push, claimed: true for exactly one caller, and only while nobody follows and the job is not removed. */
   claimPush(userId: string, clientId: string): Promise<boolean>;
-  /** The attempt's charge, fenced, so a retry can find a dead attempt's charge. */
-  chargeJob(userId: string, clientId: string, owner: string, analysisId: string): Promise<boolean>;
   /**
    * One transaction, fenced: record `meal.id` on the job, insert the meal, and adopt the job's
    * unadopted photos. False, and nothing written, when `owner` no longer holds the lease or the job
@@ -1922,6 +2058,59 @@ export interface Store {
 
 /** A blank profile for a freshly created user. Every answerable field starts null — onboarding is
  *  field-derived, so "never asked" must be distinguishable from "answered". */
+/** An entitlement record with both grant clocks, as `moveEntitlement` reads it in either store. */
+export interface ClockedEntitlement extends StoredEntitlement {
+  expiresEventAt: string | null;
+  lifetimeEventAt: string | null;
+}
+
+/**
+ * The ONE rule both stores apply to a TRANSFER (#687), pure so the two cannot drift. Per grant:
+ * the source must HOLD it under a clock older than the transfer, and the destination takes it
+ * unless it holds a LIVE grant of that kind that wins: for a subscription the later-ending one, for
+ * a lifetime the newer clock. A lapsed grant never blocks a live one. A grant the destination does not take stays on the source. A grant that moves goes whole
+ * (date, trial flag, product) and is stamped with the transfer clock on BOTH sides. That orders
+ * A→B→A correctly and fences a delivery generated before the transfer off the source. Null when
+ * nothing moves, which is what a duplicate delivery finds.
+ */
+export function planTransfer(
+  from: ClockedEntitlement, into: ClockedEntitlement | null, at: string, now: number,
+): { from: ClockedEntitlement; into: ClockedEntitlement } | null {
+  const t = Date.parse(at);
+  const before = (c: string | null) => c !== null && Date.parse(c) < t;
+  const newer = (a: string | null, b: string | null) => a !== null && (b === null || Date.parse(a) > Date.parse(b));
+  const stamp = (c: string | null | undefined) => (c != null && Date.parse(c) > t ? c : at);
+  const subLive = into?.expiresAt != null && Date.parse(into.expiresAt) > now;
+  // Two LIVE subscriptions: the later end wins, not the newer clock. A monthly bought last week must
+  // not push out an annual that still runs for ten months.
+  const takeSub = from.expiresAt !== null && before(from.expiresEventAt) &&
+    (!subLive || Date.parse(from.expiresAt) > Date.parse(into!.expiresAt!));
+  const takeLife = from.lifetimeProductId !== null && before(from.lifetimeEventAt) &&
+    (into?.lifetimeProductId == null || newer(from.lifetimeEventAt, into.lifetimeEventAt));
+  if (!takeSub && !takeLife) return null;
+  const base: ClockedEntitlement = into ?? {
+    expiresAt: null, expiresEventAt: null, trial: false, lifetimeProductId: null, lifetimeEventAt: null,
+    productId: "", eventAt: at,
+  };
+  return {
+    into: {
+      ...base,
+      ...(takeSub ? {
+        expiresAt: from.expiresAt, expiresEventAt: stamp(into?.expiresEventAt), trial: from.trial === true,
+        productId: from.productId,
+      } : {}),
+      ...(takeLife ? { lifetimeProductId: from.lifetimeProductId, lifetimeEventAt: stamp(into?.lifetimeEventAt) } : {}),
+      eventAt: stamp(into?.eventAt),
+    },
+    from: {
+      ...from,
+      ...(takeSub ? { expiresAt: null, expiresEventAt: at, trial: false } : {}),
+      ...(takeLife ? { lifetimeProductId: null, lifetimeEventAt: at } : {}),
+      eventAt: stamp(from.eventAt),
+    },
+  };
+}
+
 export function blankProfile(userId: string, lang: Lang): Profile {
   return {
     user_id: userId, lang, goal: null, sex: null, birth_year: null, height_cm: null,
@@ -1929,5 +2118,6 @@ export function blankProfile(userId: string, lang: Lang): Profile {
     units: null, struggles: null, counted_before: null, barriers: null, situations: null, streak_goal_days: null, fiber_goal_g: null, sugar_goal_g: null, sodium_goal_mg: null, milestone_celebrations: true, streak_on_home: true, addback_burned: true, addback_rollover: true, meal_focus_offer: true, country: null,
     restrictions: [], medical_limitations: null, food_allergies: null, product_limitations: null,
     onboarded_at: null,
+    filled_fields: [],
   };
 }

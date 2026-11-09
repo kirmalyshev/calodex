@@ -9,13 +9,15 @@
 
 import {
   DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
-  ONBOARDING_PLACES, isReportableField, localDate, onboardingContentFor, storedContentSet,
-  usableContentFor, validateOnboardingContent,
+  ONBOARDING_PLACES, countryFromRegion, isReportableField, isTimezone, localDate, localTime,
+  onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
+  validateOnboardingContent,
   type ContentValidation, type FunnelRow, type Lang, type OnboardingContent, type OnboardingEvent,
   type OnboardingFunnel, type OnboardingPlace,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
-import type { AdminMetrics } from "../store.ts";
+import { switchOn } from "./switches.ts";
+import type { AdminMetrics, OnboardingExperiment, OnboardingVariant } from "../store.ts";
 
 /** Every place an event may name — the questions, and the three places that are not questions. */
 const PLACES: readonly string[] = ONBOARDING_PLACES;
@@ -40,6 +42,144 @@ const PLACES: readonly string[] = ONBOARDING_PLACES;
  */
 export async function onboardingContent(deps: EngineDeps, lang: Lang): Promise<OnboardingContent> {
   return usableContentFor(lang, await deps.store.getOnboardingContent());
+}
+
+// ── Experiments (ieat-app#2669) ───────────────────────────────────────────────────────────────
+//
+// A variant is a whole OnboardingContent revision for one language, stored on an experiment row
+// and picked server-side — the `content_version` every funnel event already carries IS the
+// variant id, so nothing in the event table had to change.
+
+/** What a caller can say about the person asking for onboarding copy. */
+export interface OnboardingSignals {
+  lang: Lang;
+  /** Where the words will render — an experiment may rule a surface out. */
+  surface: "app" | "web";
+  /** The device locale region (or the browser's Accept-Language one): an ISO alpha-2 code. */
+  region?: string | null;
+  /** The device's IANA zone, for a local-hours rule. Unknown or absent means "not eligible". */
+  tz?: string | null;
+}
+
+/**
+ * FNV-1a over `userId:experimentId` — the pick inside the weights.
+ *
+ * Deterministic by spec, so a test can reproduce an assignment without reaching into the store,
+ * and so two concurrent first requests compute the same roll for the same person. It seeds a pick,
+ * it is not the assignment: the stored row is.
+ */
+function hashPick(userId: string, experimentId: string): number {
+  let h = 0x811c9dc5;
+  const s = `${userId}:${experimentId}`;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+/** Whether the signals pass every rule the experiment set. A missing needed signal is a no. */
+function eligible(rules: OnboardingExperiment["rules"], signals: OnboardingSignals, at: Date): boolean {
+  const surfaces = rules.surfaces ?? [];
+  if (surfaces.length > 0 && !surfaces.includes(signals.surface)) return false;
+
+  const countries = rules.countries ?? [];
+  if (countries.length > 0) {
+    if (typeof signals.region !== "string" || signals.region.trim() === "") return false;
+    if (!countries.includes(countryFromRegion(signals.region))) return false;
+  }
+
+  if (rules.hours) {
+    // The zone is checked against the runtime's own list: a name Intl cannot date is "not
+    // eligible", not an exception.
+    if (typeof signals.tz !== "string" || !isTimezone(signals.tz)) return false;
+    const hour = Number(localTime(signals.tz, at).slice(0, 2));
+    const [from, to] = rules.hours;
+    if (!(from <= to ? hour >= from && hour < to : hour >= from || hour < to)) return false;
+  }
+
+  return true;
+}
+
+/** The arm `seed` rolls into, by integer weight. Null when no arm carries weight. */
+function pickVariant(variants: readonly OnboardingVariant[], seed: number): OnboardingVariant | null {
+  const total = variants.reduce((s, v) => s + Math.max(0, v.weight), 0);
+  if (total <= 0) return null;
+  let roll = seed % total;
+  for (const v of variants) {
+    roll -= Math.max(0, v.weight);
+    if (roll < 0) return v;
+  }
+  return variants[variants.length - 1] ?? null;
+}
+
+/**
+ * The variant this user serves, or null for control.
+ *
+ * STICKY BY THE STORED ROW, assigned on first eligibility and never recomputed: the targeting
+ * inputs drift (local hour, region, a language switch), so a user who opened onboarding at 23:00
+ * keeps their variant at 09:00. `putOnboardingAssignment` returns the row that WON — under a
+ * concurrent first request the answer is what is stored, not what was picked here.
+ *
+ * Not eligible means no row: a later request that HAS the missing signal can still enroll them.
+ * A user whose language changed since assignment gets control in the new language — the row keys
+ * on the experiment, which is per language.
+ *
+ * Never throws for a store problem: an experiment must never stop onboarding, so a failed read
+ * logs one line and serves control — `switchOn`'s rule, applied to the tables behind it too.
+ */
+export async function assignVariant(
+  deps: EngineDeps,
+  userId: string,
+  signals: OnboardingSignals,
+  at: Date = new Date(),
+): Promise<{ experiment: OnboardingExperiment; variant: OnboardingVariant } | null> {
+  // OFF means invisible: no reads, no writes, every request control.
+  if (!(await switchOn(deps, "onboarding.experiments"))) return null;
+  try {
+    const experiment = await deps.store.runningOnboardingExperiment(signals.lang);
+    if (!experiment) return null;
+
+    const stored = await deps.store.onboardingAssignment(userId, experiment.id);
+    if (stored) {
+      const variant = experiment.variants.find((v) => v.content.version === stored.variant_id);
+      return variant ? { experiment, variant } : null;
+    }
+
+    if (!eligible(experiment.rules, signals, at)) return null;
+    const picked = pickVariant(experiment.variants, hashPick(userId, experiment.id));
+    if (!picked) return null;
+
+    const row = await deps.store.putOnboardingAssignment(userId, experiment.id, picked.content.version);
+    const variant = experiment.variants.find((v) => v.content.version === row.variant_id);
+    return variant ? { experiment, variant } : null;
+  } catch {
+    console.error(`[eait] onboarding experiment read failed for ${signals.lang}`);
+    return null;
+  }
+}
+
+/**
+ * The copy this server serves — the assigned variant when one applies, control otherwise.
+ *
+ * `onboardingContent` with the experiment layer on top; the callers are `GET /v1/onboarding`,
+ * `web/start.ts` and `chat.ts` (ieat-app#2669). A variant that fails the shape check the app runs
+ * falls back BLOCK BY BLOCK to control, through the same `usableContent` — an experiment that was
+ * not saved for every field cannot produce a flow that skips a question.
+ *
+ * `userId` may be null: `/start`'s front door and pre-account question walk render before an
+ * account exists, and a visitor nobody can assign is control by definition.
+ */
+export async function onboardingContentFor(
+  deps: EngineDeps,
+  userId: string | null,
+  signals: OnboardingSignals,
+): Promise<OnboardingContent> {
+  const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
+  if (userId === null) return control;
+  const assigned = await assignVariant(deps, userId, signals);
+  if (!assigned) return control;
+  return usableContent(assigned.variant.content, control);
 }
 
 /**
@@ -70,7 +210,7 @@ export async function saveOnboardingContent(
   // is the lowest number a save may land on. The store decides the real one against the row it is
   // writing, under its lock, and hands it back; that number is what goes to the admin, because a
   // concurrent save in another language may legitimately have taken the one asked for.
-  const floor = onboardingContentFor(lang).version + 1;
+  const floor = compiledContentFor(lang).version + 1;
   const withVersion =
     typeof input === "object" && input !== null
       ? { ...(input as Record<string, unknown>), version: floor }
@@ -84,8 +224,8 @@ export async function saveOnboardingContent(
 
 /** Restore the shipped copy for one language. The undo button for an edit that went wrong. */
 export async function resetOnboardingContent(deps: EngineDeps, lang: Lang): Promise<OnboardingContent> {
-  const floor = onboardingContentFor(lang).version + 1;
-  const restored = { ...onboardingContentFor(lang), version: floor };
+  const floor = compiledContentFor(lang).version + 1;
+  const restored = { ...compiledContentFor(lang), version: floor };
   return { ...restored, version: await deps.store.putOnboardingContent(lang, restored, floor) };
 }
 

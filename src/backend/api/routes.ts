@@ -37,7 +37,7 @@ import type { Store } from "../store.ts";
 import {
   MAX_WINDOW_DAYS, appendLines, cancelPendingMeal, logFoodMeal, logNumbersMeal, chatHistory, confirmPendingMeal, day, days, average, deleteLine, deleteMealById, editLine,
   editMeal, handleText,
-  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, onboardingContent, patchProfile, pendingMeals, profileView,
+  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, onboardingContentFor, patchProfile, pendingMeals, profileView,
   sendEmailCode, unlinkIdentity, verifyEmailCode,
   EMAIL_ADDRESS, normalizeEmail,
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
@@ -815,8 +815,16 @@ export function createRouter(
         const lang = asked !== null
           ? toLang(asked)
           : (await deps.store.getProfile(userId))?.lang ?? "en";
+        // `?tz=` (IANA) and `?region=` (the device's locale region) are the experiment signals
+        // (ieat-app#2669): a request without them is still answered — missing means "not
+        // eligible", never an error.
         return json({
-          content: await onboardingContent(deps, lang), lang,
+          content: await onboardingContentFor(deps, userId, {
+            lang, surface: "app",
+            region: url.searchParams.get("region"),
+            tz: url.searchParams.get("tz"),
+          }),
+          lang,
         } satisfies OnboardingContentResponse);
       }
 
@@ -906,9 +914,10 @@ export function createRouter(
       const jobMatch = PHOTO_JOB_PATH.exec(pathname);
       if (jobMatch && (req.method === "GET" || req.method === "DELETE")) {
         const jobId = decodeURIComponent(jobMatch[1]!);
+        // A remove may precede its job (the upload is still streaming): it is remembered, never a 404 (#2684).
+        if (req.method === "DELETE") return json(await removePhotoJob(deps, userId, jobId));
         const job = await photoJob(deps, userId, jobId);
         if (!job) return json({ error: "not found" }, 404);
-        if (req.method === "DELETE") return json(await removePhotoJob(deps, userId, jobId));
         if (wantsStream(req)) return stream(req, pathname, (line) => followPhotoJob(deps, userId, jobId, line, req.signal));
         return json(job);
       }

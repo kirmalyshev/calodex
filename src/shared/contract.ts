@@ -104,8 +104,12 @@ export const OUTCOME_UNKNOWN = "outcome-unknown";
  * `expired` was never claimed. The wording is the client's.
  */
 export type FailWhy = "timeout" | "error" | "worker-lost" | "expired";
-/** `text` is a failed NOTE's own words, handed back so the client can restore the composer. */
-export type OutcomeUnknown = { kind: typeof OUTCOME_UNKNOWN; why?: FailWhy; text?: string };
+/**
+ * `text` is a failed NOTE's own words, handed back so the client can restore the composer.
+ * `mealId` (ieat-app#2674) is the meal a PHOTO job wrote before it ended unknown: set only on a job snapshot, by
+ * the job's own record, so a client resolves the row by job id and never by matching the day's meals. Absent when the job wrote none, and on an older server.
+ */
+export type OutcomeUnknown = { kind: typeof OUTCOME_UNKNOWN; why?: FailWhy; text?: string; mealId?: string };
 
 /**
  * The server's effective limits, as told to the client.
@@ -911,6 +915,12 @@ export interface ReferralSharedRequest {
  * app mid-flow resumes where they actually are.
  */
 export interface PatchProfileRequest {
+  /**
+   * True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device
+   * country). They are recorded in `Profile.filled_fields` and do not count as answers. Absent or
+   * false is a user write, which removes the fields it carries from that list.
+   */
+  filled?: boolean;
   lang?: Lang;
   goal?: Goal | null;
   sex?: Sex | null;

@@ -19,9 +19,9 @@ import { buildFoodIndex } from "./food-index.ts";
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
-  type CampaignRow, type JobRecord, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
 } from "./store.ts";
 
@@ -334,6 +334,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     userId: string; provider: Provider; subject: string; linkedAt: string; email: string | null;
   }[] = [];
   const onboardingEvents = new Map<string, StoredEvent>(); // event id -> event
+  // Experiments by id; assignments by `${userId}\n${experimentId}`, the primary key in Postgres.
+  const onboardingExperiments = new Map<string, OnboardingExperiment>();
+  const onboardingAssignments = new Map<string, OnboardingAssignment>();
   // `${userId}\n${date}` -> the day. One row per user per date, exactly as in Postgres, so the
   // upsert semantics the tests assert are the semantics production has.
   const healthDays = new Map<string, HealthDay & { userId: string }>();
@@ -477,6 +480,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     // And the funnel rows. See the note on `deleteUser` in the port: onboarding promises erasure
     // while asking about the user's kidneys, so the analytics table is not an exception to it.
     for (const [id, e] of onboardingEvents) if (e.userId === userId) onboardingEvents.delete(id);
+    // Nor are the experiment assignments — `on delete cascade` in Postgres, this loop here.
+    for (const [k, a] of onboardingAssignments) if (a.user_id === userId) onboardingAssignments.delete(k);
     // A device the account no longer has is a device this server would still push to. In here
     // rather than in `deleteUser`, so the Apple server-to-server revocation path erases it too.
     for (const [token, row] of pushTokens) if (row.userId === userId) pushTokens.delete(token);
@@ -970,6 +975,18 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // to do, and a run split across two user ids reads as two abandoned runs.
       for (const e of onboardingEvents.values()) if (e.userId === fromUserId) e.userId = intoUserId;
 
+      // Assignments move by the same gap rule as health days: the account's own row wins, the
+      // anonymous session's fills what is missing. Matches `store.pg.ts`; a test asserts both.
+      for (const a of [...onboardingAssignments.values()]) {
+        if (a.user_id !== fromUserId) continue;
+        if (onboardingAssignments.has(`${intoUserId}\n${a.experiment_id}`)) {
+          onboardingAssignments.delete(`${fromUserId}\n${a.experiment_id}`);
+        } else {
+          onboardingAssignments.delete(`${fromUserId}\n${a.experiment_id}`);
+          onboardingAssignments.set(`${intoUserId}\n${a.experiment_id}`, { ...a, user_id: intoUserId });
+        }
+      }
+
       // The merged-away account's identities are DROPPED, not repointed. It is anonymous by the
       // time we get here, so those are the device identity and, since #205, possibly a `telegram`
       // row — and repointing either would mean that after signing out, plain device auth silently
@@ -1226,6 +1243,16 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // port is a field somebody will branch on. `storedEntitlement` is that projection, shared
       // with the admin list so the two cannot disagree about which fields leave.
       return storedEntitlement(userId);
+    },
+
+    async moveEntitlement(fromUserId, intoUserId, eventAt) {
+      const from = entitlements.get(fromUserId);
+      if (!from || fromUserId === intoUserId || !users.has(intoUserId)) return false;
+      const plan = planTransfer(from, entitlements.get(intoUserId) ?? null, eventAt, now());
+      if (plan === null) return false;
+      entitlements.set(intoUserId, plan.into);
+      entitlements.set(fromUserId, plan.from);
+      return true;
     },
 
     async putEntitlement(userId, patch) {
@@ -1669,6 +1696,78 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async onboardingFunnel(days) {
       const since = now() - days * 24 * 60 * 60 * 1000;
       return aggregateFunnel([...onboardingEvents.values()].filter((e) => e.receivedAt >= since));
+    },
+
+    async listOnboardingExperiments() {
+      return [...onboardingExperiments.values()]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .map(clone);
+    },
+
+    async runningOnboardingExperiment(lang) {
+      const e = [...onboardingExperiments.values()]
+        .find((x) => x.lang === lang && x.status === "running");
+      return e ? clone(e) : null;
+    },
+
+    async putOnboardingExperiment(experiment) {
+      const existing = onboardingExperiments.get(experiment.id);
+      if (existing) {
+        // The freeze the Postgres upsert encodes in its WHERE — a row that left draft ignores the
+        // write — and its same field set: lang, rules, variants. Status, creator and the stamps
+        // are not a draft's to rewrite.
+        if (existing.status !== "draft") return false;
+        existing.lang = experiment.lang;
+        existing.rules = clone(experiment.rules);
+        existing.variants = clone(experiment.variants);
+        return true;
+      }
+      // Born draft, like the Postgres insert: a row born running would skip the guard.
+      onboardingExperiments.set(experiment.id, { ...clone(experiment), status: "draft" });
+      return true;
+    },
+
+    async startOnboardingExperiment(id) {
+      const e = onboardingExperiments.get(id);
+      if (!e || e.status !== "draft") return false;
+      if ([...onboardingExperiments.values()].some((o) => o.lang === e.lang && o.status === "running")) {
+        return false;
+      }
+      e.status = "running";
+      e.started_at = new Date(now()).toISOString();
+      return true;
+    },
+
+    async stopOnboardingExperiment(id) {
+      const e = onboardingExperiments.get(id);
+      if (!e || e.status !== "running") return false;
+      e.status = "stopped";
+      e.stopped_at = new Date(now()).toISOString();
+      return true;
+    },
+
+    async onboardingAssignment(userId, experimentId) {
+      const a = onboardingAssignments.get(`${userId}\n${experimentId}`);
+      return a ? clone(a) : null;
+    },
+
+    async putOnboardingAssignment(userId, experimentId, variantId) {
+      // Sticky like the Postgres upsert: the first row wins and is what comes back.
+      const key = `${userId}\n${experimentId}`;
+      const existing = onboardingAssignments.get(key);
+      if (existing) return clone(existing);
+      const row: OnboardingAssignment = {
+        user_id: userId, experiment_id: experimentId, variant_id: variantId,
+        assigned_at: new Date(now()).toISOString(),
+      };
+      onboardingAssignments.set(key, row);
+      return clone(row);
+    },
+
+    async onboardingAssignments(experimentId) {
+      return [...onboardingAssignments.values()]
+        .filter((a) => a.experiment_id === experimentId)
+        .map(clone);
     },
 
     async insertMeal(record) {
@@ -2225,11 +2324,24 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return true;
     },
 
-    async chargeJob(userId, clientId, owner, analysisId) {
-      const j = jobs.get(`${userId}\n${clientId}`);
-      if (!j || j.leaseOwner !== owner || j.state !== "running") return false;
-      j.analysisId = analysisId;
-      return true;
+    async chargeAnalysis(userId, date, scope, opts = {}) {
+      const j = opts.job && jobs.get(`${userId}\n${opts.job.clientId}`);
+      if (opts.job && (!j || j.leaseOwner !== opts.job.owner || j.state !== "running")) return "lost";
+      if (j?.analysisId !== null && j?.analysisId !== undefined
+        && analyses.some((a) => a.id === j.analysisId && a.userId === userId)) {
+        return { analysisId: j.analysisId, fresh: false };
+      }
+      if (opts.limit) {
+        const max = opts.limit.over === "day" ? opts.limit.max : (freeAnalyses.get(userId) ?? 0);
+        const n = opts.limit.over === "day"
+          ? analyses.filter((a) => a.userId === userId && a.date === date && a.scope === scope).length
+          : analyses.filter((a) => a.userId === userId).length;
+        if (n >= max) return "cap";
+      }
+      const id = String(++analysisSeq);
+      analyses.push({ id, userId, date, scope, costUsd: null, unpricedCalls: 0 });
+      if (j) j.analysisId = id;
+      return { analysisId: id, fresh: true };
     },
 
     async landJobMeal(userId, clientId, owner, meal) {

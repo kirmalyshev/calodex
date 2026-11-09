@@ -44,7 +44,7 @@ import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
-  onboardingContent, mintPairingCode, patchProfile, profileView,
+  onboardingContentFor, mintPairingCode, patchProfile, profileView,
   sendEmailCode, signInWithProvider, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail,
   type EngineDeps,
@@ -149,6 +149,14 @@ const browserLang = (req: Request): Lang => {
     ? picked as Lang
     : acceptLang(req.headers.get("accept-language"));
 };
+
+/**
+ * The region a browser asks in (ieat-app#2669): the first Accept-Language tag's region subtag,
+ * which `countryFromRegion` narrows the same way the app's `?region=` is. There is no `tz` to send
+ * — the front door's first render has none — which is why an `hours` rule is app-only.
+ */
+const browserRegion = (req: Request): string | null =>
+  acceptLanguageTags(req.headers.get("accept-language"))[0]?.split("-")[1] ?? null;
 
 /**
  * The welcome's language chip (ieat-app#2050): the code picked there, before any account exists.
@@ -336,11 +344,15 @@ const failedCallback = (pathname: string): Response => seeOther(pathname);
  *
  * The sign-in routes and the front door both call this; it is the single place the order lives.
  */
+/** A country the app filled from the device is not an answer (ieat-app#2676). */
+const countryAnswered = (p: Profile): boolean =>
+  p.country !== null && !(p.filled_fields ?? []).includes("country");
+
 async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Promise<string> {
   if (profile.onboarded_at === null) return `${START_PREFIX}/q`;
   if (await isAnonymous(ctx.deps, userId)) return `${START_PREFIX}/plan`;
   // Still in the funnel, not an account that finished without a goal: that one goes to the product.
-  if (profile.country === null) return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
+  if (!countryAnswered(profile)) return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
   return ctx.hasWebApp ? "/" : CHAT_PATH;
 }
 
@@ -590,7 +602,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // one page that runs before there is an account to ask. Everything past it reads
     // `profile.lang`, which the first answer's account seeds from this same signal.
     const lang = browserLang(req);
-    const content = await onboardingContent(ctx.deps, lang);
+    const content = await onboardingContentFor(ctx.deps, userId, { lang, surface: "web", region: browserRegion(req) });
     return html(frontDoor(content, {
       q: `${START_PREFIX}/q`,
       signup: `${START_PREFIX}/signup`,
@@ -1031,7 +1043,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // runs before an account exists: the pre-account `/q` renders the blank profile in
   // `browserLang(req)`, which is also the language the first answer's account is born into.
   const view = async (): Promise<{ profile: Profile; content: OnboardingContent }> => ({
-    profile, content: await onboardingContent(ctx.deps, profile.lang),
+    profile, content: await onboardingContentFor(ctx.deps, userId, {
+      lang: profile.lang, surface: "web", region: browserRegion(req),
+    }),
   });
 
   if (pathname === `${START_PREFIX}/q`) {
@@ -1378,7 +1392,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // has not signed up yet goes to the step this one comes after.
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
     if (await isAnonymous(ctx.deps, userId)) return seeOther(`${START_PREFIX}/signup`);
-    if (profile.country !== null) return seeOther(await resumeTo(ctx, userId, profile));
+    if (countryAnswered(profile)) return seeOther(await resumeTo(ctx, userId, profile));
     // `enabled` is still the admin's switch, here as it was in the walk: a screen switched off is
     // a question this deployment does not put to anybody, and the step collapses to the handoff.
     if (disabledScreens(content).includes("country")) {
@@ -1446,7 +1460,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   if (pathname === STREAK_PATH) {
     const signup = `${START_PREFIX}/signup`;
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
-    const content = await onboardingContent(ctx.deps, profile.lang);
+    const content = await onboardingContentFor(ctx.deps, userId, {
+      lang: profile.lang, surface: "web", region: browserRegion(req),
+    });
     const prompt = promptById("streak_goal_days")!;
     const units = profile.units ?? "metric";
     const ask = (error: string | null) => html(renderQuestion(
@@ -1668,7 +1684,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // The page's every figure is the engine's: `profileView` already ran `explainTargets`, and the
     // headline is the plan card's own — `planHeadline`, the S6-exempt sentence, which the renderer
     // computes over that same basis rather than retyping a number.
-    const content = await onboardingContent(ctx.deps, profile.lang);
+    const content = await onboardingContentFor(ctx.deps, userId, {
+      lang: profile.lang, surface: "web", region: browserRegion(req),
+    });
     // The plan's own dash is `dash("summary")` inside the renderer — the walk's last segment.
     return html(plan({
       profile: full.profile,

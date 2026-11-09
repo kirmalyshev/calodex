@@ -228,6 +228,8 @@ export function resumeAt(prompts: readonly ChatPrompt[], p: Profile): number {
  */
 export function isAnswered(prompt: ChatPrompt, p: Profile): boolean {
   if (!prompt.field) return false;
+  // A value the system filled (ieat-app#2676) is not an answer, whatever it holds.
+  if (p.filled_fields?.includes(prompt.field)) return false;
   // `!= null`, not `!== null`: a server older than the app omits a field it has never heard of,
   // and a missing key is "never asked" — counted as an answer, every fresh install skipped the
   // welcome (ieat-app#2643).

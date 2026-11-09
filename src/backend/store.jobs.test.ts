@@ -89,12 +89,57 @@ function jobs(name: string, make: () => Promise<Store>) {
       await s.enqueueJob(userId, j);
       await s.claimJob("a", REGISTRY, LEASE_MS);
       expect(await s.jobProgress(userId, j.clientId, "b", 3, [{ name: "x" }])).toBe(false);
-      expect(await s.chargeJob(userId, j.clientId, "b", crypto.randomUUID())).toBe(false);
+      expect(await s.chargeAnalysis(userId, "2026-10-10", "photo", { job: { clientId: j.clientId, owner: "b" } })).toBe("lost");
       expect(await s.settleJob(userId, j.clientId, "b", { kind: "done" })).toBe(false);
       expect(await s.jobProgress(userId, j.clientId, "a", 3, [{ name: "x" }])).toBe(true);
-      const analysisId = "1"; // analyses.id is a bigserial: a numeric id, never a uuid
-      expect(await s.chargeJob(userId, j.clientId, "a", analysisId)).toBe(true);
-      expect(await s.getJob(userId, j.clientId)).toMatchObject({ step: 3, items: [{ name: "x" }], analysisId, state: "running" });
+      const charged = await s.chargeAnalysis(userId, "2026-10-10", "photo", { job: { clientId: j.clientId, owner: "a" } });
+      expect(charged).toMatchObject({ fresh: true });
+      expect(await s.getJob(userId, j.clientId)).toMatchObject({
+        step: 3, items: [{ name: "x" }], analysisId: (charged as { analysisId: string }).analysisId, state: "running",
+      });
+    });
+
+    it("charges once per job: a retried attempt is handed the dead one's charge, not a second row (#2679)", async () => {
+      const { s, userId } = await fresh();
+      const j = job();
+      await s.enqueueJob(userId, j);
+      await s.claimJob("w1", REGISTRY, LEASE_MS);
+      const first = await s.chargeAnalysis(userId, "2026-10-10", "photo", { job: { clientId: j.clientId, owner: "w1" } });
+      expect(first).toMatchObject({ fresh: true });
+      const analysisId = (first as { analysisId: string }).analysisId;
+      // The worker dies mid-run; another claims the retry. The charge it stamped comes back,
+      // not a second analyses row.
+      await s.releaseJobs("w1");
+      await s.claimJob("w2", REGISTRY, LEASE_MS);
+      const again = await s.chargeAnalysis(userId, "2026-10-10", "photo", { job: { clientId: j.clientId, owner: "w2" } });
+      expect(again).toEqual({ analysisId, fresh: false });
+      expect(await s.countUserPhotos(userId, "2026-10-10")).toBe(1);
+      // A charge whose row was given back (undoAnalysis) is taken fresh and stamped again.
+      await s.undoAnalysis(userId, analysisId);
+      const recharged = await s.chargeAnalysis(userId, "2026-10-10", "photo", { job: { clientId: j.clientId, owner: "w2" } });
+      expect(recharged).toMatchObject({ fresh: true });
+      expect((recharged as { analysisId: string }).analysisId).not.toBe(analysisId);
+      expect((await s.getJob(userId, j.clientId))!.analysisId).toBe((recharged as { analysisId: string }).analysisId);
+      expect(await s.countUserPhotos(userId, "2026-10-10")).toBe(1);
+    });
+
+    it("enforces the cap inside the write: two racing charges cannot both pass (#2679)", async () => {
+      const { s, userId } = await fresh();
+      const [a, b] = await Promise.all([
+        s.chargeAnalysis(userId, "2026-10-10", "photo", { limit: { over: "day", max: 1 } }),
+        s.chargeAnalysis(userId, "2026-10-10", "photo", { limit: { over: "day", max: 1 } }),
+      ]);
+      expect([a, b].filter((r) => typeof r === "object")).toHaveLength(1);
+      expect([a, b]).toContain("cap");
+      expect(await s.countUserPhotos(userId, "2026-10-10")).toBe(1);
+      // A capped refusal wrote nothing, so the next charge is free to try.
+      expect(await s.chargeAnalysis(userId, "2026-10-10", "photo", { limit: { over: "day", max: 2 } }))
+        .toMatchObject({ fresh: true });
+      // And the lifetime limit reads the grant off the account's own row.
+      expect(await s.chargeAnalysis(userId, "2026-10-10", "text", { limit: { over: "lifetime" } })).toBe("cap");
+      await s.setFreeAnalyses(userId, 5);
+      expect(await s.chargeAnalysis(userId, "2026-10-10", "text", { limit: { over: "lifetime" } }))
+        .toMatchObject({ fresh: true });
     });
 
     it("settles once: the turn keeps the outcome and the unadopted photos go", async () => {
