@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
+import { OUTCOME_UNKNOWN } from "../../shared/contract.ts";
 import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
@@ -16,7 +17,7 @@ import { LANGS, LANGS_READY } from "@eait/shared";
 import { charge } from "./caps.ts";
 import {
   appendLines, applyCorrection, attachPhotos, cancelPendingMeal, chatHistory, confirmPendingMeal, day, drainJobs, editMeal, handleText,
-  logPhotoMeal, patchProfile, photoJob, profileView, queueMealUpdate, reanalyzeMeal, redateMeal, startJobs, stepApplies, week, type EngineDeps,
+  logPhotoMeal, patchProfile, photoJob, profileView, queuePhoto, queueMealUpdate, reanalyzeMeal, redateMeal, startJobs, stepApplies, week, type EngineDeps,
 } from "./index.ts";
 import { MAX_DAY_OFFSET } from "../llm/port.ts";
 
@@ -2860,5 +2861,31 @@ describe("a note job that names no meal (#1347)", () => {
     // CLIENT's reading of `proposed` against the meal it named, not a different result.
     expect(j).toMatchObject({ kind: "settled", result: { kind: "proposed" } });
     await drainJobs(deps, 1000);
+  });
+});
+
+// A photo job that ended unknown after it wrote its meal names that meal, so a client resolves it by the job's id and never by guessing from the day's meals.
+describe("a settled-unknown photo job names its meal (ieat-app#2674)", () => {
+  const unknownJob = async (bindMeal: boolean) => {
+    const userId = await onboard();
+    const clientId = crypto.randomUUID();
+    await queuePhoto(deps, userId, { ...photo(1), clientId });
+    const registry = [{ kind: "photo", version: 1, grouped: false }];
+    expect((await store.claimJob("w1", registry, 30_000))?.clientId).toBe(clientId);
+    const mealId = crypto.randomUUID();
+    if (bindMeal) expect(await store.bindJobMeal(userId, clientId, "w1", mealId)).toBe(true);
+    expect(await store.settleJob(userId, clientId, "w1", { kind: OUTCOME_UNKNOWN, why: "error" })).toBe(true);
+    return { job: await photoJob(deps, userId, clientId), mealId };
+  };
+
+  it("carries mealId when the job wrote one", async () => {
+    const { job, mealId } = await unknownJob(true);
+    expect(job).toMatchObject({ kind: "settled", result: { kind: OUTCOME_UNKNOWN, why: "error", mealId } });
+  });
+
+  it("carries none when the job never wrote a meal", async () => {
+    const { job } = await unknownJob(false);
+    expect(job).toMatchObject({ kind: "settled", result: { kind: OUTCOME_UNKNOWN } });
+    expect((job as { result: object }).result).not.toHaveProperty("mealId");
   });
 });

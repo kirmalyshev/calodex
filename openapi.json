@@ -8546,13 +8546,16 @@
           },
           "text": {
             "type": "string"
+          },
+          "mealId": {
+            "type": "string"
           }
         },
         "required": [
           "kind"
         ],
         "additionalProperties": false,
-        "description": "`text` is a failed NOTE's own words, handed back so the client can restore the composer."
+        "description": "`text` is a failed NOTE's own words, handed back so the client can restore the composer. `mealId` (ieat-app#2674) is the meal a PHOTO job wrote before it ended unknown: set only on a job snapshot, by the job's own record, so a client resolves the row by job id and never by matching the day's meals. Absent when the job wrote none, and on an older server."
       },
       "Pace": {
         "type": "string",
