@@ -50,9 +50,11 @@ export {
   newEmailCode, normalizeEmail, sendEmailCode, verifyEmailCode,
 } from "./email.ts";
 export {
-  onboardingContent, saveOnboardingContent, resetOnboardingContent, recordOnboardingEvents,
+  assignVariant, onboardingContent, onboardingContentFor, saveOnboardingContent,
+  resetOnboardingContent, recordOnboardingEvents,
   adminMetrics,
   onboardingFunnel,
+  type OnboardingSignals,
 } from "./onboarding.ts";
 export { adminSwitches, saveSwitch, type FlipView, type SwitchView } from "./switches.ts";
 export { livePrompts, promptHistory, savePrompt, type PromptView, type PromptSave } from "./prompts.ts";

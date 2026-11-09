@@ -472,6 +472,14 @@ describe("experiments (ieat-app#2669)", () => {
     expect((await onboardingContentFor(failing, userId, signals)).welcome.cta).not.toBe("Variant");
   });
 
+  it("a visitor nobody can assign is control — /start's pre-account paths send no user", async () => {
+    const e = await startExperiment();
+    expect(await assignVariant(deps, "anything", signals)).not.toBeNull();
+    // A null userId: the front door and the pre-account walk render before an account exists.
+    expect((await onboardingContentFor(deps, null, signals)).welcome.cta).not.toBe("Variant");
+    expect(await store.onboardingAssignments(e.id)).toHaveLength(1);
+  });
+
   it("a stopped experiment hands everybody control — the assignment rows are kept", async () => {
     const e = await startExperiment();
     await assignVariant(deps, userId, signals);

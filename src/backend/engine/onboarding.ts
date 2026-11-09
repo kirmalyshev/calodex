@@ -162,17 +162,21 @@ export async function assignVariant(
 /**
  * The copy this server serves — the assigned variant when one applies, control otherwise.
  *
- * `onboardingContent` with the experiment layer on top; the callers move over to it with the
- * signals they can send (ieat-app#2669, PR 2). A variant that fails the shape check the app runs
+ * `onboardingContent` with the experiment layer on top; the callers are `GET /v1/onboarding`,
+ * `web/start.ts` and `chat.ts` (ieat-app#2669). A variant that fails the shape check the app runs
  * falls back BLOCK BY BLOCK to control, through the same `usableContent` — an experiment that was
  * not saved for every field cannot produce a flow that skips a question.
+ *
+ * `userId` may be null: `/start`'s front door and pre-account question walk render before an
+ * account exists, and a visitor nobody can assign is control by definition.
  */
 export async function onboardingContentFor(
   deps: EngineDeps,
-  userId: string,
+  userId: string | null,
   signals: OnboardingSignals,
 ): Promise<OnboardingContent> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
+  if (userId === null) return control;
   const assigned = await assignVariant(deps, userId, signals);
   if (!assigned) return control;
   return usableContent(assigned.variant.content, control);
