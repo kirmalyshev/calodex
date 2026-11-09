@@ -3271,7 +3271,7 @@ details.how p { margin-top: 8px; }
     return bits.length ? bits.join(" · ") : "everyone";
   }
 
-  function pct(x) { return x === null || x === undefined ? "—" : Math.round(x * 100) + "%"; }
+  function expPct(x) { return x === null || x === undefined ? "—" : Math.round(x * 100) + "%"; }
 
   function renderExperiments() {
     var host = $("exp-list");
@@ -3289,14 +3289,14 @@ details.how p { margin-top: 8px; }
         + '<th class="r">rate</th><th class="r">95% CI</th><th class="r">fell back</th><th></th></tr></thead><tbody>';
       view.arms.forEach(function (arm, i) {
         var st = arm.stats;
-        var ci = st.ci ? pct(st.ci.lo) + "–" + pct(st.ci.hi) : "—";
+        var ci = st.ci ? expPct(st.ci.lo) + "–" + expPct(st.ci.hi) : "—";
         arms += '<tr><td>' + (arm.variant.control ? "control" : "variant " + (i + 1)) + '</td>'
           + '<td class="r">' + arm.variant.weight + '</td>'
           + '<td class="r">' + arm.variant.content.version + '</td>'
           + '<td class="r">' + st.assigned + '</td>'
           + '<td class="r">' + st.sessions + '</td>'
           + '<td class="r">' + st.completed + '</td>'
-          + '<td class="r">' + pct(st.rate) + '</td>'
+          + '<td class="r">' + expPct(st.rate) + '</td>'
           + '<td class="r">' + ci + '</td>'
           + '<td class="r">' + st.fell_back + '</td>'
           + (e.status === "draft"
