@@ -29,10 +29,10 @@ import { syncShippedPrompts } from "./llm/prompt.ts";
 import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
-  type StoreOptions, type StoredPhoto,
+  type ClockedEntitlement, type StoreOptions, type StoredPhoto,
 } from "./store.ts";
 
 /**
@@ -1771,6 +1771,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // ── Operations that span TWO accounts, and would refuse half their own work under either one.
   mergeUsers: "unscoped",
   moveIdentity: "unscoped",
+  moveEntitlement: "unscoped",
   // One Expo push token is one INSTALLATION, and the upsert deliberately MOVES it between accounts
   // when a phone signs into a different one — the invariant on `push_tokens`. Scoped to the new
   // owner, the policy would hide the existing row and the move would become a duplicate.
@@ -1974,7 +1975,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   removeJob: 0,
   settleJob: 0,
   claimPush: 0,
-  chargeJob: 0,
+  chargeAnalysis: 0,
   landJobMeal: 0,
   bindJobMeal: 0,
   // They choose whose job runs, or sweep every account's, and read no content: the lease is the
@@ -3256,6 +3257,47 @@ export async function postgresStore(
         eventAt: new Date(r.entitlement_event_at as string).toISOString(),
         trial: r.entitlement_trial === true,
       };
+    },
+
+    async moveEntitlement(fromUserId, intoUserId, eventAtIso) {
+      if (fromUserId === intoUserId) return false;
+      // Both rows locked, the shared rule applied, both written back, all in one transaction: the
+      // decision reads only rows this transaction holds, so a concurrent delivery waits for it.
+      return await inTx(async (tx) => {
+        const rows = await tx`
+          select id, entitlement_expires_at, entitlement_expires_event_at, entitlement_trial,
+                 entitlement_product_id, entitlement_lifetime_product_id, entitlement_lifetime_event_at,
+                 entitlement_event_at
+          from users where id in (${fromUserId}, ${intoUserId}) for update`;
+        const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
+        const read = (id: string): ClockedEntitlement | null | undefined => {
+          const r = rows.find((x: { id: string }) => x.id === id);
+          if (!r) return undefined;
+          if (!r.entitlement_event_at) return null;
+          return {
+            expiresAt: iso(r.entitlement_expires_at), expiresEventAt: iso(r.entitlement_expires_event_at),
+            trial: r.entitlement_trial === true, productId: (r.entitlement_product_id as string | null) ?? "",
+            lifetimeProductId: (r.entitlement_lifetime_product_id as string | null) ?? null,
+            lifetimeEventAt: iso(r.entitlement_lifetime_event_at), eventAt: iso(r.entitlement_event_at)!,
+          };
+        };
+        const from = read(fromUserId);
+        const into = read(intoUserId);
+        if (!from || into === undefined) return false;
+        const plan = planTransfer(from, into, eventAtIso, now());
+        if (plan === null) return false;
+        const at = (v: string | null) => (v === null ? null : new Date(v));
+        for (const [id, e] of [[intoUserId, plan.into], [fromUserId, plan.from]] as const) {
+          await tx`
+            update users set
+              entitlement_expires_at = ${at(e.expiresAt)}, entitlement_expires_event_at = ${at(e.expiresEventAt)},
+              entitlement_trial = ${e.trial === true}, entitlement_product_id = ${e.productId},
+              entitlement_lifetime_product_id = ${e.lifetimeProductId},
+              entitlement_lifetime_event_at = ${at(e.lifetimeEventAt)}, entitlement_event_at = ${new Date(e.eventAt)}
+            where id = ${id}`;
+        }
+        return true;
+      });
     },
 
     async putEntitlement(userId, patch) {
@@ -4749,12 +4791,61 @@ export async function postgresStore(
       return rows.length > 0;
     },
 
-    async chargeJob(userId, clientId, owner, analysisId) {
-      const rows = await sql`
-        update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
-        where data->>'userId' = ${userId} and data->>'clientId' = ${clientId} and state = 'active' and data->>'owner' = ${owner}
-        returning id`;
-      return rows.length > 0;
+    async chargeAnalysis(userId, date, scope, opts = {}) {
+      // ONE transaction for the fence, the lock, the count and the insert (#2679). The job row is
+      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers`'s first users
+      // lock is only the key-share its meals update's FK puts on the into-account row — its
+      // `update pgboss.job` comes after that and the user-row writes last, so job-before-users is
+      // the order that path's own writes take, and this hot one must match — the charge would
+      // otherwise be one half of a lock cycle against it.
+      return await inTx(async (tx) => {
+        let stamped: string | null = null;
+        if (opts.job) {
+          const j = await tx`
+            select data->>'analysisId' as analysis_id from pgboss.job
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}
+            for update`;
+          // Lost BEFORE anything is written: a dead attempt orphans no charge.
+          if (j.length === 0) return "lost" as const;
+          stamped = j[0].analysis_id as string | null;
+          if (stamped !== null) {
+            // The dead attempt's charge, still on the ledger: the retry runs on it rather than
+            // charging a second time. A row given back (`undoAnalysis`) falls through to a fresh one.
+            const live = await tx`select 1 from analyses where id = ${stamped}::bigint and user_id = ${userId}`;
+            if (live.length > 0) return { analysisId: stamped, fresh: false };
+          }
+        }
+        const acct = await tx`select free_analyses from users where id = ${userId} for update`;
+        // The account row's lock is the cap serializer, `claimPushSlot`'s own trick: this
+        // account's charges serialize, and a count racing another charge's insert cannot happen.
+        if (acct.length === 0) {
+          // A job can outlive its account — no foreign key reaches pgboss.job — and then `lost`
+          // is what the empty users row above answers, not the job's own row being gone.
+          if (opts.job) return "lost" as const;
+          throw new Error("chargeAnalysis: no such user");
+        }
+        if (opts.limit) {
+          const own = acct[0].free_analyses;
+          const max = opts.limit.over === "day" ? opts.limit.max
+            : (own === null || own === undefined ? 0 : num(own));
+          const rows = opts.limit.over === "day"
+            ? await tx`select count(*)::int as n from analyses where user_id = ${userId} and date = ${date} and scope = ${scope}`
+            : await tx`select count(*)::int as n from analyses where user_id = ${userId}`;
+          if (num(rows[0].n) >= max) return "cap" as const;
+        }
+        const ins = await tx`
+          insert into analyses (user_id, date, scope) values (${userId}, ${date}, ${scope}) returning id`;
+        const analysisId = String(ins[0].id);
+        if (opts.job) {
+          // Same statement shape the read fenced with: the row is locked to this transaction, so
+          // the stamp cannot lose the lease the read already won.
+          await tx`update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}`;
+        }
+        return { analysisId, fresh: true };
+      });
     },
 
     async landJobMeal(userId, clientId, owner, meal) {

@@ -17,7 +17,7 @@ import { LANGS, LANGS_READY } from "@eait/shared";
 import { charge } from "./caps.ts";
 import {
   appendLines, applyCorrection, attachPhotos, cancelPendingMeal, chatHistory, confirmPendingMeal, day, drainJobs, editMeal, handleText,
-  logPhotoMeal, patchProfile, photoJob, profileView, queuePhoto, queueMealUpdate, reanalyzeMeal, redateMeal, startJobs, stepApplies, week, type EngineDeps,
+  logPhotoMeal, patchProfile, photoJob, profileView, queuePhoto, queueMealUpdate, removePhotoJob, reanalyzeMeal, redateMeal, startJobs, stepApplies, week, type EngineDeps,
 } from "./index.ts";
 import { MAX_DAY_OFFSET } from "../llm/port.ts";
 
@@ -2332,7 +2332,9 @@ describe("what each analysis cost", () => {
   it("says so in the log when a cost finds no analysis left to land on", async () => {
     const userId = await onboard();
     const today = localDate(deps.config.timezone);
-    const { analysisId, onCost } = await charge(deps, userId, today, "photo");
+    const charged = await charge(deps, userId, today, "photo");
+    if (!("analysisId" in charged)) throw new Error(`expected a charge, got ${charged.kind}`);
+    const { analysisId, onCost } = charged;
     // Refunded while a call was still out — a schema retry beside a refunded analysis, or a merge.
     await store.undoAnalysis(userId, analysisId);
     const errors = spyOn(console, "error").mockImplementation(() => {});
@@ -2887,5 +2889,30 @@ describe("a settled-unknown photo job names its meal (ieat-app#2674)", () => {
     const { job } = await unknownJob(false);
     expect(job).toMatchObject({ kind: "settled", result: { kind: OUTCOME_UNKNOWN } });
     expect((job as { result: object }).result).not.toHaveProperty("mealId");
+  });
+});
+
+// A remove can reach the server before the job exists (the upload is still streaming): it is remembered, and the enqueue that follows logs nothing (ieat-app#2684).
+describe("a remove that arrives before its job (ieat-app#2684)", () => {
+  it("tombstones the id: the later enqueue never logs a meal", async () => {
+    const userId = await onboard();
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    expect(await removePhotoJob(deps, userId, clientId)).toEqual({ kind: "removed", jobId: clientId });
+    await queuePhoto(deps, userId, { ...photo(1), clientId });
+    await drainJobs(deps, 1000);
+    expect(await photoJob(deps, userId, clientId)).toEqual({ kind: "removed", jobId: clientId });
+    expect(await store.getJob(userId, clientId)).toBeNull();
+    expect(await store.mealsForDate(userId, localDate(deps.config.timezone))).toEqual([]);
+  });
+
+  it("is per account: another user's remove of the id tombstones nothing of mine", async () => {
+    const mine = await onboard(), theirs = await onboard();
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await removePhotoJob(deps, theirs, clientId);
+    await queuePhoto(deps, mine, { ...photo(1), clientId });
+    expect((await store.getJob(mine, clientId))).not.toBeNull();
+    await drainJobs(deps, 5000);
   });
 });

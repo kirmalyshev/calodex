@@ -914,9 +914,10 @@ export function createRouter(
       const jobMatch = PHOTO_JOB_PATH.exec(pathname);
       if (jobMatch && (req.method === "GET" || req.method === "DELETE")) {
         const jobId = decodeURIComponent(jobMatch[1]!);
+        // A remove may precede its job (the upload is still streaming): it is remembered, never a 404 (#2684).
+        if (req.method === "DELETE") return json(await removePhotoJob(deps, userId, jobId));
         const job = await photoJob(deps, userId, jobId);
         if (!job) return json({ error: "not found" }, 404);
-        if (req.method === "DELETE") return json(await removePhotoJob(deps, userId, jobId));
         if (wantsStream(req)) return stream(req, pathname, (line) => followPhotoJob(deps, userId, jobId, line, req.signal));
         return json(job);
       }

@@ -543,6 +543,92 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.getEntitlement(other)).toBeNull();
     });
 
+    // A TRANSFER (#687): the grants move per grant, newer clock wins; the source keeps its record
+    // with both cleared and stamped at the transfer, so an older delivery cannot write them back.
+    it("moves both grants on a transfer, and fences the source at the transfer's clock", async () => {
+      const s = await open();
+      const { userId: from } = await s.upsertDeviceUser(device(), "en");
+      const { userId: into } = await s.upsertDeviceUser(device(), "en");
+      await s.putEntitlement(from, { expiresAt: "2026-09-24T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-14T10:00:00.000Z" });
+      await s.putEntitlement(from, { lifetimeProductId: "lifetime", productId: "lifetime", eventAt: "2026-08-15T10:00:00.000Z" });
+      expect(await s.moveEntitlement(from, crypto.randomUUID(), "2026-08-20T10:00:00.000Z")).toBe(false);
+      expect(await s.moveEntitlement(from, into, "2026-08-20T10:00:00.000Z")).toBe(true);
+      expect(await s.getEntitlement(into)).toEqual({
+        expiresAt: "2026-09-24T10:00:00.000Z", lifetimeProductId: "lifetime", productId: "monthly",
+        eventAt: "2026-08-20T10:00:00.000Z", trial: false,
+      });
+      expect(await s.getEntitlement(from)).toMatchObject({ expiresAt: null, lifetimeProductId: null });
+      expect(await s.putEntitlement(from, { expiresAt: "2026-09-24T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-19T10:00:00.000Z" })).toBe(false);
+      expect(await s.moveEntitlement(from, into, "2026-08-21T10:00:00.000Z")).toBe(false);
+    });
+
+    // Review of eait#761: a sign-out and sign-back on one device is A→B→A, and it must leave the
+    // tier on A, not on neither. Delivered twice, a transfer moves nothing the second time.
+    it("survives a round trip A→B→A and a duplicate delivery", async () => {
+      const s = await open();
+      const { userId: a } = await s.upsertDeviceUser(device(), "en");
+      const { userId: b } = await s.upsertDeviceUser(device(), "en");
+      const live = "2027-09-24T10:00:00.000Z";
+      await s.putEntitlement(a, { expiresAt: live, productId: "yearly", eventAt: "2026-08-14T10:00:00.000Z" });
+      expect(await s.moveEntitlement(a, b, "2026-08-20T10:00:00.000Z")).toBe(true);
+      expect(await s.moveEntitlement(a, b, "2026-08-20T10:00:00.000Z")).toBe(false);
+      expect((await s.getEntitlement(b))?.expiresAt).toBe(live);
+      expect(await s.moveEntitlement(b, a, "2026-08-21T10:00:00.000Z")).toBe(true);
+      expect((await s.getEntitlement(a))?.expiresAt).toBe(live);
+      expect((await s.getEntitlement(b))?.expiresAt).toBeNull();
+    });
+
+    // A lapsed grant on the destination, however new its clock, never blocks a live one; a LIVE
+    // newer one does, and then the source keeps what it holds.
+    it("moves a live grant over a lapsed newer one, and leaves the source alone when it does not move", async () => {
+      const s = await open();
+      const { userId: a } = await s.upsertDeviceUser(device(), "en");
+      const { userId: b } = await s.upsertDeviceUser(device(), "en");
+      const { userId: c } = await s.upsertDeviceUser(device(), "en");
+      const live = "2027-09-24T10:00:00.000Z";
+      await s.putEntitlement(a, { expiresAt: live, productId: "yearly", eventAt: "2026-08-14T10:00:00.000Z" });
+      await s.putEntitlement(b, { expiresAt: "2026-08-15T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-16T10:00:00.000Z" });
+      expect(await s.moveEntitlement(a, b, "2026-08-20T10:00:00.000Z")).toBe(true);
+      expect(await s.getEntitlement(b)).toMatchObject({ expiresAt: live, productId: "yearly" });
+      await s.putEntitlement(c, { expiresAt: "2028-01-01T10:00:00.000Z", productId: "yearly", eventAt: "2026-08-13T10:00:00.000Z" });
+      expect(await s.moveEntitlement(b, c, "2026-08-26T10:00:00.000Z")).toBe(false);
+      expect((await s.getEntitlement(b))?.expiresAt).toBe(live);
+      expect((await s.getEntitlement(c))?.expiresAt).toBe("2028-01-01T10:00:00.000Z");
+    });
+
+    // Both LIVE: the later end wins, whatever the clocks say. A monthly bought last week must not
+    // push out an annual that runs another ten months.
+    it("keeps the later-ending of two live subscriptions, not the newer clock", async () => {
+      const s = await open();
+      const { userId: a } = await s.upsertDeviceUser(device(), "en");
+      const { userId: b } = await s.upsertDeviceUser(device(), "en");
+      const annual = "2027-09-24T10:00:00.000Z";
+      const monthly = "2026-12-01T10:00:00.000Z";
+      await s.putEntitlement(a, { expiresAt: annual, productId: "yearly", eventAt: "2026-08-14T10:00:00.000Z" });
+      await s.putEntitlement(b, { expiresAt: monthly, productId: "monthly", eventAt: "2026-08-25T10:00:00.000Z" });
+      expect(await s.moveEntitlement(a, b, "2026-08-26T10:00:00.000Z")).toBe(true);
+      expect(await s.getEntitlement(b)).toMatchObject({ expiresAt: annual, productId: "yearly" });
+      expect(await s.moveEntitlement(b, a, "2026-08-27T10:00:00.000Z")).toBe(true);
+      await s.putEntitlement(b, { expiresAt: monthly, productId: "monthly", eventAt: "2026-08-28T10:00:00.000Z" });
+      expect(await s.moveEntitlement(a, b, "2026-08-29T10:00:00.000Z")).toBe(true);
+      expect((await s.getEntitlement(b))?.expiresAt).toBe(annual);
+    });
+
+    // The subscription's product travels with the subscription only: moving a lifetime alone
+    // leaves the destination's product, in both stores.
+    it("moves a lifetime alone without touching the destination's subscription product", async () => {
+      const s = await open();
+      const { userId: a } = await s.upsertDeviceUser(device(), "en");
+      const { userId: b } = await s.upsertDeviceUser(device(), "en");
+      await s.putEntitlement(a, { lifetimeProductId: "lifetime", productId: "lifetime", eventAt: "2026-08-14T10:00:00.000Z" });
+      await s.putEntitlement(b, { expiresAt: "2027-01-01T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-15T10:00:00.000Z" });
+      expect(await s.moveEntitlement(a, b, "2026-08-20T10:00:00.000Z")).toBe(true);
+      expect(await s.getEntitlement(b)).toMatchObject({
+        expiresAt: "2027-01-01T10:00:00.000Z", lifetimeProductId: "lifetime", productId: "monthly",
+      });
+      expect(await s.getEntitlement(a)).toMatchObject({ expiresAt: null, lifetimeProductId: null, productId: "" });
+    });
+
     it("keeps a subscription's end date when the lifetime unlock is granted, and vice versa", async () => {
       const s = await open();
       const { userId } = await s.upsertDeviceUser(device(), "en");
@@ -4929,7 +5015,10 @@ if (PG_URL) {
         // each of these touches a second account's row by design.
         "grantReferralWeek",
         "hasAdmin", "heartbeatJobs", "identityFor", "listCampaigns", "listOnboardingExperiments", "listPushTemplates",
-        "markCampaignRunning", "mergeUsers", "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingFunnel",
+        "markCampaignRunning", "mergeUsers",
+        // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
+        "moveEntitlement",
+        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingFunnel",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,
