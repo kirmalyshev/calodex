@@ -299,7 +299,12 @@ const langOf = async (deps: EngineDeps, userId: string): Promise<Lang> => (await
 function snapshotOf(job: JobRecord, lang: Lang): PhotoJob {
   const jobId = job.clientId;
   if (job.removedAt !== null) return { kind: "removed", jobId };
-  if (job.state === "settled") return { kind: "settled", jobId, result: (job.outcome ?? { kind: OUTCOME_UNKNOWN }) as Outcome };
+  if (job.state === "settled") {
+    const result = (job.outcome ?? { kind: OUTCOME_UNKNOWN }) as Outcome;
+    // A photo job that wrote its meal and then ended unknown names it: the client resolves by job id, never by the day's meals (#2674).
+    if (result.kind === OUTCOME_UNKNOWN && job.kind === "photo" && job.mealId !== null) return { kind: "settled", jobId, result: { ...result, mealId: job.mealId } as Outcome };
+    return { kind: "settled", jobId, result };
+  }
   const step = job.step as PhotoJobStep;
   const r = job.request as MealUpdateRequest;
   // A chat-sent note arrives unbound: the row reports the meal the router bound mid-run.
