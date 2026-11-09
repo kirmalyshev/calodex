@@ -349,6 +349,250 @@ export async function onboardingFunnel(deps: EngineDeps, days: number): Promise<
   };
 }
 
+
+// ── The admin's experiments (ieat-app#2669, PR 3) ─────────────────────────────────────────────
+
+/**
+ * The 95% Wilson score interval around a completion rate.
+ *
+ * A funnel's honest error bars: the normal approximation lies badly near 0 and 1, and an
+ * experiment that "wins" 3/3 and loses 900/1000 means nothing without them.
+ */
+export function wilsonInterval(completed: number, sessions: number): { lo: number; hi: number } {
+  if (sessions === 0) return { lo: 0, hi: 1 };
+  const z = 1.96;
+  const p = completed / sessions;
+  const zz = z * z;
+  const denom = 1 + zz / sessions;
+  const centre = p + zz / (2 * sessions);
+  const span = z * Math.sqrt((p * (1 - p) + zz / (4 * sessions)) / sessions);
+  return { lo: Math.max(0, (centre - span) / denom), hi: Math.min(1, (centre + span) / denom) };
+}
+
+export interface OnboardingExperimentView {
+  experiment: OnboardingExperiment;
+  /** One row per arm, in the experiment's own order. `stats` is null until results exist. */
+  arms: {
+    variant: OnboardingVariant;
+    stats: { assigned: number; sessions: number; completed: number; fell_back: number;
+             rate: number | null; ci: { lo: number; hi: number } | null };
+  }[];
+}
+
+/** Every experiment with its per-variant funnel — the admin's list. */
+export async function onboardingExperiments(deps: EngineDeps): Promise<OnboardingExperimentView[]> {
+  const list = await deps.store.listOnboardingExperiments();
+  const out: OnboardingExperimentView[] = [];
+  for (const experiment of list) {
+    const funnel = await deps.store.onboardingExperimentFunnel(experiment.id);
+    const arms = experiment.variants.map((variant) => {
+      const row = funnel.find((r) => r.variant_id === variant.content.version);
+      const stats = row === undefined || row.sessions === 0
+        ? {
+            assigned: row?.assigned ?? 0, sessions: row?.sessions ?? 0,
+            completed: row?.completed ?? 0, fell_back: row?.fell_back ?? 0,
+            rate: null, ci: null,
+          }
+        : {
+            assigned: row.assigned, sessions: row.sessions, completed: row.completed,
+            fell_back: row.fell_back, rate: row.completed / row.sessions,
+            ci: wilsonInterval(row.completed, row.sessions),
+          };
+      return { variant, stats };
+    });
+    out.push({ experiment, arms });
+  }
+  return out;
+}
+
+/**
+ * A new draft for a language: the control arm is a clone of the copy that serves now, at weight 1 —
+ * the editor's "Clone current copy" button (ieat-app#2669). The draft holds no variant until the
+ * admin adds one; control alone is a save nobody has to make to have something to compare.
+ */
+export async function createOnboardingExperiment(
+  deps: EngineDeps, adminId: string, lang: Lang,
+): Promise<OnboardingExperiment> {
+  const control = await onboardingContent(deps, lang);
+  const experiment: OnboardingExperiment = {
+    id: crypto.randomUUID(),
+    lang,
+    status: "draft",
+    rules: {},
+    variants: [{ control: true, weight: 1, content: control }],
+    created_by: adminId,
+    created_at: new Date().toISOString(),
+    started_at: null,
+    stopped_at: null,
+  };
+  await deps.store.putOnboardingExperiment(experiment);
+  return experiment;
+}
+
+/**
+ * Sanitize the rules an admin sent. Answers {ok, rules} or {ok:false, errors} — never stores a
+ * shape the engine would not read. An `hours` window is app-only, enforced HERE as well as in the
+ * editor (ieat-app#2669): the web's first render has no `tz` to check one against.
+ */
+export function sanitizeExperimentRules(raw: unknown):
+  { ok: true; rules: OnboardingExperiment["rules"] } | { ok: false; errors: string[] } {
+  const errors: string[] = [];
+  const out: OnboardingExperiment["rules"] = {};
+  const body = typeof raw === "object" && raw !== null ? raw as Record<string, unknown> : {};
+
+  if (body.countries !== undefined) {
+    if (!Array.isArray(body.countries) || body.countries.some((c) => typeof c !== "string")) {
+      errors.push("countries must be an array of codes");
+    } else {
+      const codes = body.countries
+        .map((c) => String(c).trim().toLowerCase())
+        .filter((c) => /^[a-z]{2}$/.test(c));
+      if (codes.length > 0) out.countries = codes;
+    }
+  }
+
+  if (body.hours !== undefined && body.hours !== null) {
+    const h = body.hours;
+    const ok = Array.isArray(h) && h.length === 2
+      && h.every((n) => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 23);
+    if (!ok) errors.push("hours must be [from, to) with whole hours 0–23");
+    else out.hours = [h[0] as number, h[1] as number];
+  }
+
+  if (body.surfaces !== undefined) {
+    if (!Array.isArray(body.surfaces)
+        || body.surfaces.some((s) => s !== "app" && s !== "web")) {
+      errors.push("surfaces may only name 'app' and 'web'");
+    } else if (body.surfaces.length > 0) {
+      out.surfaces = [...new Set(body.surfaces)] as ("app" | "web")[];
+    }
+  }
+
+  if (out.hours && out.surfaces?.includes("web")) {
+    errors.push("an hours rule is app-only: the web's first render has no timezone to check");
+  }
+
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, rules: out };
+}
+
+/**
+ * Update a draft's rules and weights — the one put the editor's targeting form maps to. Read,
+ * shape, write: the store's own draft guard is what freezes a running row, so this answers false
+ * for anything that is not a draft.
+ */
+export async function setOnboardingExperiment(
+  deps: EngineDeps, id: string,
+  input: { rules?: unknown; weights?: unknown },
+): Promise<{ ok: true } | { ok: false; errors: string[] }> {
+  const experiment = (await deps.store.listOnboardingExperiments()).find((e) => e.id === id);
+  if (!experiment) return { ok: false, errors: ["experiment not found"] };
+
+  if (input.rules !== undefined) {
+    const rules = sanitizeExperimentRules(input.rules);
+    if (!rules.ok) return rules;
+    experiment.rules = rules.rules;
+  }
+
+  if (input.weights !== undefined) {
+    if (!Array.isArray(input.weights) || input.weights.length !== experiment.variants.length
+        || input.weights.some((w) => !Number.isInteger(w) || (w as number) < 0)) {
+      return { ok: false, errors: ["weights must be a non-negative integer per variant"] };
+    }
+    experiment.variants = experiment.variants.map((v, i) => ({ ...v, weight: (input.weights as number[])[i]! }));
+  }
+
+  // An hours window is app-only, so a surfaces edit that re-admits the web refuses here, not in
+  // the editor alone.
+  if (experiment.rules.hours && experiment.rules.surfaces?.includes("web")) {
+    return { ok: false, errors: ["an hours rule is app-only: the web's first render has no timezone to check"] };
+  }
+
+  const wrote = await deps.store.putOnboardingExperiment(experiment);
+  return wrote ? { ok: true } : { ok: false, errors: ["the experiment has left draft: a running variant is frozen"] };
+}
+
+/**
+ * Write a variant's copy: the same validator a normal save goes through, a version off the shared
+ * counter — never a number a live revision already carries — and a draft-only write, because a
+ * running variant is frozen (ieat-app#2669).
+ */
+export async function saveOnboardingVariant(
+  deps: EngineDeps, id: string, index: number, input: unknown,
+): Promise<{ ok: true; version: number } | { ok: false; errors: string[] }> {
+  const experiment = (await deps.store.listOnboardingExperiments()).find((e) => e.id === id);
+  if (!experiment) return { ok: false, errors: ["experiment not found"] };
+  if (!Number.isInteger(index) || index < 0 || index >= experiment.variants.length) {
+    return { ok: false, errors: ["no such variant"] };
+  }
+
+  // The validator wants a version, so it gets the FLOOR — the compiled-in revision plus one, the
+  // same floor a normal save validates against. The counter hands back the real one.
+  const floor = compiledContentFor(experiment.lang).version + 1;
+  const withVersion =
+    typeof input === "object" && input !== null
+      ? { ...(input as Record<string, unknown>), version: floor }
+      : input;
+  const result = validateOnboardingContent(withVersion);
+  if (!result.ok) return { ok: false, errors: result.errors };
+
+  const version = await deps.store.bumpOnboardingContentVersion(floor);
+  experiment.variants = experiment.variants.map((v, i) =>
+    i === index ? { ...v, content: { ...result.content, version } } : v);
+  const wrote = await deps.store.putOnboardingExperiment(experiment);
+  return wrote
+    ? { ok: true, version }
+    : { ok: false, errors: ["the experiment has left draft: a running variant is frozen"] };
+}
+
+/** Clone the control arm — the editor's "add a variant" is a copy of the copy that serves. */
+export async function addOnboardingVariant(
+  deps: EngineDeps, id: string,
+): Promise<{ ok: true; index: number } | { ok: false; errors: string[] }> {
+  const experiment = (await deps.store.listOnboardingExperiments()).find((e) => e.id === id);
+  if (!experiment) return { ok: false, errors: ["experiment not found"] };
+  const control = experiment.variants.find((v) => v.control) ?? experiment.variants[0];
+  if (!control) return { ok: false, errors: ["the experiment has no control to clone"] };
+  // A clone gets its own version: two arms naming one revision would be indistinguishable in the
+  // funnel, where content_version IS the variant's name.
+  const floor = compiledContentFor(experiment.lang).version + 1;
+  const version = await deps.store.bumpOnboardingContentVersion(floor);
+  experiment.variants = [
+    ...experiment.variants,
+    { weight: control.weight, content: { ...structuredClone(control.content), version } },
+  ];
+  const wrote = await deps.store.putOnboardingExperiment(experiment);
+  return wrote
+    ? { ok: true, index: experiment.variants.length - 1 }
+    : { ok: false, errors: ["the experiment has left draft"] };
+}
+
+/**
+ * draft → running, through the store's guarded statement. An experiment with no weighted arm is
+ * refused HERE — a running experiment that assigns nothing is a bug the funnel cannot show.
+ */
+export async function startOnboardingExperiment(
+  deps: EngineDeps, id: string,
+): Promise<{ ok: true } | { ok: false; errors: string[] }> {
+  const experiment = (await deps.store.listOnboardingExperiments()).find((e) => e.id === id);
+  if (!experiment) return { ok: false, errors: ["experiment not found"] };
+  if (experiment.status !== "draft") return { ok: false, errors: ["only a draft can start"] };
+  if (experiment.variants.every((v) => v.weight <= 0)) {
+    return { ok: false, errors: ["no variant carries weight"] };
+  }
+  const started = await deps.store.startOnboardingExperiment(id);
+  return started
+    ? { ok: true }
+    : { ok: false, errors: ["another experiment is already running for this language"] };
+}
+
+/** running → stopped, the per-experiment kill switch. Stops serving variants on the next fetch. */
+export async function stopOnboardingExperiment(
+  deps: EngineDeps, id: string,
+): Promise<{ ok: true } | { ok: false; errors: string[] }> {
+  const stopped = await deps.store.stopOnboardingExperiment(id);
+  return stopped ? { ok: true } : { ok: false, errors: ["the experiment is not running"] };
+}
+
 /** A bounded string, or "" for anything that is not one. */
 function str(v: unknown, max: number): string {
   return typeof v === "string" ? v.slice(0, max) : "";

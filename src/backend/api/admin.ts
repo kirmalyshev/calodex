@@ -42,11 +42,13 @@
 
 import {
   CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, ENTITLEMENT_STATES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
-  SCREEN_OPTIONS, isCalendarDate, optionLabelIsData, screenIsOptional, type Lang,
+  SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
   adminMetrics, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, livePrompts,
-  onboardingContent,
+  addOnboardingVariant, createOnboardingExperiment, onboardingContent,
+  onboardingExperiments, saveOnboardingVariant, setOnboardingExperiment,
+  startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, promptHistory, referralAdminView, savePrompt,
   sendTestPush, pushOpenView, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
@@ -338,6 +340,49 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     const body = await req.json().catch(() => null) as { enabled?: unknown } | null;
     const result = await saveSwitch(deps, sw[1], body?.enabled, adminId);
     return result.ok ? json(await adminSwitches(deps)) : json({ errors: result.errors }, 422);
+  }
+
+  // ── Experiments (ieat-app#2669) ─────────────────────────────────────────────────────────
+  //
+  // One experiment is a language, its targeting rules and its arms. create gives the draft its
+  // control — a clone of the copy that serves now — and the editor edits arms and rules while the
+  // row is a draft; a running experiment is frozen by the store's own guard, so every write here
+  // that answers false is a write against a running experiment, shown as the refusal it is.
+  if (req.method === "GET" && pathname === "/admin/api/experiments") {
+    return json({ experiments: await onboardingExperiments(deps) });
+  }
+  if (req.method === "POST" && pathname === "/admin/api/experiments") {
+    const body = await req.json() as { lang?: unknown };
+    const lang = narrowLang(typeof body?.lang === "string" ? body.lang : null);
+    return json({ experiment: await createOnboardingExperiment(deps, adminId, lang) });
+  }
+  const expMatch = /^\/admin\/api\/experiments\/([^/]+)(?:\/(variants)\/(\d+)|\/(start|stop))?$/.exec(pathname);
+  if (expMatch !== null) {
+    const id = expMatch[1]!;
+    const sub = expMatch[2] ?? expMatch[4];
+    if (req.method === "PUT" && sub === undefined) {
+      const body = await req.json().catch(() => ({})) as { rules?: unknown; weights?: unknown };
+      const result = await setOnboardingExperiment(deps, id, { rules: body.rules, weights: body.weights });
+      return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+    }
+    if (req.method === "PUT" && sub === "variants") {
+      const body = await req.json().catch(() => ({})) as { content?: unknown };
+      const result = await saveOnboardingVariant(deps, id, Number(expMatch[3]), body?.content);
+      return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, 422);
+    }
+    if (req.method === "POST" && sub === "variants") {
+      const result = await addOnboardingVariant(deps, id);
+      return result.ok ? json({ index: result.index }) : json({ errors: result.errors }, 422);
+    }
+    if (req.method === "POST" && sub === "start") {
+      const result = await startOnboardingExperiment(deps, id);
+      return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+    }
+    if (req.method === "POST" && sub === "stop") {
+      const result = await stopOnboardingExperiment(deps, id);
+      return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+    }
+    return notFound();
   }
 
   if (req.method === "GET" && pathname === "/admin/api/funnel") {

@@ -482,6 +482,7 @@ details.how p { margin-top: 8px; }
     <a href="#numbers" data-nav="numbers">Numbers</a>
     <a href="#pushes" data-nav="pushes">Pushes</a>
     <a href="#funnel" data-nav="funnel">Funnel</a>
+    <a href="#experiments" data-nav="experiments">Experiments</a>
     <a href="#campaigns" data-nav="campaigns">Campaigns</a>
     <a href="#referrals" data-nav="referrals">Referrals</a>
     <a href="#accounts" data-nav="accounts">Accounts</a>
@@ -598,6 +599,32 @@ details.how p { margin-top: 8px; }
     </div>
     <p class="muted"><strong>Counts only.</strong> A share is the share sheet finishing, on the app or the web (a cancel counts nothing; Copy link counts). An open is a request to /r/&lt;code&gt;, served by the backend; no IP or device stored, link previews not counted. Joined is an invite that applied; paid is the friend's first payment, which gives the referrer a week on monthly and two on yearly.</p>
   </div></div>
+</section>
+
+<section class="view hidden" id="view-experiments">
+  <div id="state-experiments"></div>
+  <div class="vbody hidden" id="body-experiments">
+    <div class="acol">
+      <details class="how">
+        <summary>How experiments work</summary>
+        <p class="muted">
+          One experiment per language, running at once. New gives the draft its control — a clone of
+          the copy that serves now — and the same editor edits each arm's words. Targeting is
+          optional: countries as comma codes, an hours window in the reader's local time (app only —
+          the web's first render has no timezone), and the surfaces it may enroll. A running
+          experiment is frozen; Stop returns everyone to control and keeps the assignment rows.
+        </p>
+      </details>
+      <div class="card">
+        <div class="row" style="gap:8px;align-items:center">
+          <strong>New experiment</strong>
+          <select id="exp-lang"></select>
+          <button class="primary" id="exp-new">Create draft</button>
+        </div>
+      </div>
+      <div id="exp-list"></div>
+    </div>
+  </div>
 </section>
 
 <section class="view hidden" id="view-campaigns">
@@ -3115,6 +3142,9 @@ details.how p { margin-top: 8px; }
   // The onboarding copy, and nothing else: every other view loads its own data.
   function loadOnboarding(which) {
     asked = which || lang;
+    // A variant's words live on the experiment row, not in the store's copy — the load for them
+    // is already done (editVariant set it) and a fetch here would write live copy over the arm.
+    if (variantEdit) { renderLangs(); render(true); return Promise.resolve(); }
     return api("GET", atLang("/admin/api/content")).then(function (res) {
       content = res.content;
       meta = res.meta;
@@ -3188,6 +3218,155 @@ details.how p { margin-top: 8px; }
     }
   }
 
+
+  // ── Experiments (ieat-app#2669) ────────────────────────────────────────────────────────────
+  //
+  // The draft is edited HERE; its variants' words are edited in the onboarding editor, which
+  // variantEdit points at instead of the live copy. A running experiment is frozen — every write
+  // a stale page makes answers 422 and the card re-renders.
+  var experiments = [];
+  var variantEdit = null;
+
+  function esc(v) {
+    return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function loadExperiments() {
+    return api("GET", "/admin/api/experiments").then(function (res) {
+      experiments = res.experiments || [];
+      var select = $("exp-lang");
+      if (select.options.length === 0 && typeof LANGS !== "undefined") {
+        (langs.length ? langs : []).forEach(function (code) {
+          var o = document.createElement("option");
+          o.value = code; o.textContent = (labels[code] || code);
+          select.appendChild(o);
+        });
+        if (select.options.length === 0) {
+          ["en"].forEach(function (code) { var o = document.createElement("option"); o.value = code; o.textContent = code; select.appendChild(o); });
+        }
+      }
+      renderExperiments();
+    });
+  }
+
+  function ruleText(rules) {
+    var bits = [];
+    if (rules.countries && rules.countries.length) bits.push("countries: " + rules.countries.join(", "));
+    if (rules.hours) bits.push("local hours " + rules.hours[0] + "–" + rules.hours[1]);
+    if (rules.surfaces && rules.surfaces.length) bits.push("surfaces: " + rules.surfaces.join("+"));
+    return bits.length ? bits.join(" · ") : "everyone";
+  }
+
+  function pct(x) { return x === null || x === undefined ? "—" : Math.round(x * 100) + "%"; }
+
+  function renderExperiments() {
+    var host = $("exp-list");
+    host.textContent = "";
+    experiments.forEach(function (view) {
+      var e = view.experiment;
+      var card = document.createElement("div");
+      card.className = "card";
+      var head = '<div class="row" style="justify-content:space-between;align-items:center">'
+        + '<strong>' + esc(e.lang) + ' · ' + esc(e.status) + '</strong>'
+        + '<span class="muted">' + esc(e.id.slice(0, 8)) + '</span></div>'
+        + '<p class="muted">' + esc(ruleText(e.rules)) + '</p>';
+      var arms = '<table><thead><tr><th>arm</th><th class="r">weight</th><th class="r">version</th>'
+        + '<th class="r">assigned</th><th class="r">sessions</th><th class="r">completed</th>'
+        + '<th class="r">rate</th><th class="r">95% CI</th><th class="r">fell back</th><th></th></tr></thead><tbody>';
+      view.arms.forEach(function (arm, i) {
+        var st = arm.stats;
+        var ci = st.ci ? pct(st.ci.lo) + "–" + pct(st.ci.hi) : "—";
+        arms += '<tr><td>' + (arm.variant.control ? "control" : "variant " + (i + 1)) + '</td>'
+          + '<td class="r">' + arm.variant.weight + '</td>'
+          + '<td class="r">' + arm.variant.content.version + '</td>'
+          + '<td class="r">' + st.assigned + '</td>'
+          + '<td class="r">' + st.sessions + '</td>'
+          + '<td class="r">' + st.completed + '</td>'
+          + '<td class="r">' + pct(st.rate) + '</td>'
+          + '<td class="r">' + ci + '</td>'
+          + '<td class="r">' + st.fell_back + '</td>'
+          + (e.status === "draft"
+              ? '<td><button class="small" data-edit="' + i + '">Edit copy</button></td>'
+              : '<td></td>')
+          + '</tr>';
+      });
+      arms += '</tbody></table>';
+      var actions = '';
+      if (e.status === "draft") {
+        actions = '<div class="row" style="gap:8px;margin-top:8px">'
+          + '<input id="exp-rules-' + esc(e.id) + '" placeholder=\'{"countries":["de"],"hours":[22,6],"surfaces":["app"]}\' style="flex:1;min-width:0" '
+          + 'value="' + esc(JSON.stringify(e.rules)) + '">'
+          + '<input id="exp-weights-' + esc(e.id) + '" placeholder="weights, e.g. 1,1" style="width:130px" '
+          + 'value="' + esc(view.arms.map(function (a) { return a.variant.weight; }).join(",")) + '">'
+          + '<button class="small" data-save="' + esc(e.id) + '">Save targeting</button>'
+          + '<button class="small" data-clone="' + esc(e.id) + '">Clone arm</button>'
+          + '<button class="primary" data-start="' + esc(e.id) + '">Start</button></div>';
+      } else if (e.status === "running") {
+        actions = '<div class="row" style="gap:8px;margin-top:8px">'
+          + '<button class="warn" data-stop="' + esc(e.id) + '">Stop</button></div>';
+      }
+      card.innerHTML = head + arms + actions;
+      card.querySelectorAll("[data-edit]").forEach(function (b) {
+        b.addEventListener("click", function () { editVariant(e.id, Number(b.getAttribute("data-edit"))); });
+      });
+      var save = card.querySelector("[data-save]");
+      if (save) save.addEventListener("click", function () { saveTargeting(e.id); });
+      var cloneB = card.querySelector("[data-clone]");
+      if (cloneB) cloneB.addEventListener("click", function () {
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/variants", {}).then(loadExperiments);
+      });
+      var start = card.querySelector("[data-start]");
+      if (start) start.addEventListener("click", function () {
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/start", {}).then(loadExperiments, showErrors);
+      });
+      var stop = card.querySelector("[data-stop]");
+      if (stop) stop.addEventListener("click", function () {
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/stop", {}).then(loadExperiments, showErrors);
+      });
+      host.appendChild(card);
+    });
+  }
+
+  function showErrors(e) {
+    var box = $("errors");
+    box.classList.remove("hidden");
+    box.querySelector("ul").textContent = "";
+    (e && e.errors ? e.errors : [String(e && e.message || e)]).forEach(function (m) {
+      var li = document.createElement("li"); li.textContent = m; box.querySelector("ul").appendChild(li);
+    });
+  }
+
+  function saveTargeting(id) {
+    var rules;
+    try { rules = JSON.parse($("exp-rules-" + id).value || "{}"); }
+    catch (x) { showErrors({ errors: ["rules must be JSON"] }); return; }
+    var weights = ($("exp-weights-" + id).value || "").split(",").map(function (w) {
+      return w.trim() === "" ? NaN : Number(w.trim());
+    });
+    api("PUT", "/admin/api/experiments/" + encodeURIComponent(id), { rules: rules, weights: weights })
+      .then(loadExperiments, showErrors);
+  }
+
+  $("exp-new").addEventListener("click", function () {
+    api("POST", "/admin/api/experiments", { lang: $("exp-lang").value }).then(loadExperiments, showErrors);
+  });
+
+  // The variant's words edit in the SAME editor the live copy uses: variantEdit points the load
+  // at the arm and the save at the variant endpoint, and the nav stays on the onboarding view so
+  // the whole save path is the one that already exists.
+  function editVariant(id, index) {
+    var view = experiments.find(function (v) { return v.experiment.id === id; });
+    if (!view) return;
+    variantEdit = { id: id, index: index };
+    content = view.arms[index].variant.content;
+    lang = view.experiment.lang;
+    location.hash = "onboarding";
+    show("onboarding");
+    status("editing variant " + (index + 1) + " of " + id.slice(0, 8) + " — Save writes the arm, not the live copy");
+    $("reset").classList.add("hidden");
+    render(true);
+  }
+
   // ── The shell ──────────────────────────────────────────────────────────────────────────────
   //
   // One view at a time, chosen by the hash. A view fetches its own data the first time it is
@@ -3197,6 +3376,7 @@ details.how p { margin-top: 8px; }
 
   var VIEWS = {
     numbers: { title: "Numbers", load: loadMetrics, kpis: true },
+    experiments: { title: "Experiments", load: loadExperiments },
     pushes: { title: "Pushes", load: loadPushes },
     funnel: { title: "Funnel", load: loadFunnel },
     campaigns: { title: "Campaigns", load: loadCampaigns },
@@ -3369,6 +3549,23 @@ details.how p { margin-top: 8px; }
 
   $("save").addEventListener("click", function () {
     status("saving…");
+    if (variantEdit) {
+      api("PUT", "/admin/api/experiments/" + encodeURIComponent(variantEdit.id) + "/variants/" + variantEdit.index,
+          { content: content }).then(function () {
+        variantEdit = null;
+        $("reset").classList.remove("hidden");
+        status("variant saved");
+        location.hash = "experiments";
+        loadExperiments();
+      }, function (e) {
+        var errs = e && e.errors ? e.errors : [String(e && e.message || e)];
+        var ul = $("errors").querySelector("ul");
+        ul.textContent = "";
+        errs.forEach(function (m) { var li = document.createElement("li"); li.textContent = m; ul.appendChild(li); });
+        $("errors").classList.remove("hidden");
+      });
+      return;
+    }
     api("PUT", atLang("/admin/api/content"), { content: content }).then(function (res) {
       content = res.content;
       showErrors(null);

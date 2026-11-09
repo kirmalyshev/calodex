@@ -51,11 +51,13 @@ export {
   newEmailCode, normalizeEmail, sendEmailCode, verifyEmailCode,
 } from "./email.ts";
 export {
-  assignVariant, onboardingContent, onboardingContentFor, saveOnboardingContent,
-  resetOnboardingContent, recordOnboardingEvents,
+  addOnboardingVariant, assignVariant, createOnboardingExperiment, onboardingContent,
+  onboardingContentFor, onboardingExperiments, saveOnboardingContent, saveOnboardingVariant,
+  resetOnboardingContent, recordOnboardingEvents, sanitizeExperimentRules, setOnboardingExperiment,
+  startOnboardingExperiment, stopOnboardingExperiment, wilsonInterval,
   adminMetrics,
   onboardingFunnel,
-  type OnboardingSignals,
+  type OnboardingExperimentView, type OnboardingSignals,
 } from "./onboarding.ts";
 export { adminSwitches, saveSwitch, type FlipView, type SwitchView } from "./switches.ts";
 export { livePrompts, promptHistory, savePrompt, type PromptView, type PromptSave } from "./prompts.ts";

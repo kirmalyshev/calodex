@@ -480,6 +480,68 @@ describe("experiments (ieat-app#2669)", () => {
     expect(await store.onboardingAssignments(e.id)).toHaveLength(1);
   });
 
+  it("admin: create clones control, rules sanitize, start/stop guard", async () => {
+    const { createOnboardingExperiment, sanitizeExperimentRules, setOnboardingExperiment,
+      startOnboardingExperiment: startExp, stopOnboardingExperiment: stopExp,
+      saveOnboardingVariant, addOnboardingVariant, onboardingExperiments } = await import("./onboarding.ts");
+    const e = await createOnboardingExperiment(deps, userId, "en");
+    expect(e.status).toBe("draft");
+    expect(e.variants).toHaveLength(1);
+    expect(e.variants[0]!.control).toBe(true);
+
+    // Rules: bad shapes and hours-on-web are refused, never stored.
+    expect(sanitizeExperimentRules({ hours: [9, 17], surfaces: ["web"] }).ok).toBe(false);
+    expect(sanitizeExperimentRules({ countries: "de" }).ok).toBe(false);
+    expect(sanitizeExperimentRules({ countries: ["DE"], surfaces: ["app"], hours: [22, 6] })).toEqual({
+      ok: true, rules: { countries: ["de"], surfaces: ["app"], hours: [22, 6] },
+    });
+    expect((await setOnboardingExperiment(deps, e.id, { rules: { hours: [22, 6] } })).ok).toBe(true);
+    // The rules replace wholesale, and the final state is what is checked: hours on web refuses.
+    expect((await setOnboardingExperiment(deps, e.id, { rules: { hours: [9, 17], surfaces: ["web"] } })).ok).toBe(false);
+
+    // A clone arm gets its OWN version off the shared counter.
+    const added = await addOnboardingVariant(deps, e.id);
+    expect(added.ok).toBe(true);
+    const updated = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
+    expect(updated.arms.map((a) => a.variant.content.version)).toHaveLength(2);
+    expect(new Set(updated.arms.map((a) => a.variant.content.version)).size).toBe(2);
+
+    // A variant save validates and takes a fresh version.
+    const bad = await saveOnboardingVariant(deps, e.id, 1, { version: 1 });
+    expect(bad.ok).toBe(false);
+    const good = await saveOnboardingVariant(deps, e.id, 1, structuredClone(DEFAULT_ONBOARDING_CONTENT));
+    expect(good.ok).toBe(true);
+
+    // Start needs a weighted arm and a draft; stop hands control back.
+    expect((await setOnboardingExperiment(deps, e.id, { weights: [1, 0] })).ok).toBe(true);
+    expect((await startExp(deps, e.id)).ok).toBe(true);
+    expect((await saveOnboardingVariant(deps, e.id, 0, structuredClone(DEFAULT_ONBOARDING_CONTENT))).ok).toBe(false);
+    expect((await stopExp(deps, e.id)).ok).toBe(true);
+    expect((await stopExp(deps, e.id)).ok).toBe(false);
+  });
+
+  it("results read by assignment: rate and Wilson interval per arm", async () => {
+    const { wilsonInterval, onboardingExperiments } = await import("./onboarding.ts");
+    const ci = wilsonInterval(3, 10);
+    expect(ci.lo).toBeLessThan(0.3);
+    expect(ci.hi).toBeGreaterThan(0.3);
+    expect(wilsonInterval(0, 0)).toEqual({ lo: 0, hi: 1 });
+
+    const e = await startExperiment();
+    const assigned = await assignVariant(deps, userId, signals);
+    expect(assigned).not.toBeNull();
+    await store.recordOnboardingEvents(userId, [
+      event({ contentVersion: 42 }),
+      event({ action: "complete", contentVersion: 42 }),
+    ] as never);
+    const view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
+    const arm = view.arms.find((a) => a.variant.content.version === 42)!;
+    expect(arm.stats.assigned).toBe(1);
+    expect(arm.stats.sessions).toBe(1);
+    expect(arm.stats.completed).toBe(1);
+    expect(arm.stats.rate).toBe(1);
+  });
+
   it("a stopped experiment hands everybody control — the assignment rows are kept", async () => {
     const e = await startExperiment();
     await assignVariant(deps, userId, signals);
