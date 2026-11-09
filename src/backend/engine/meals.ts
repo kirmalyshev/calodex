@@ -12,7 +12,7 @@
 
 import {
   type DailyTotals, type EditMealRequest, type LogPhotoResult, type MealAnalysis, type MealHint,
-  type Lang, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
+  type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
   type MealRedated, type MealUpdated, type PhotoEvent,
   type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_SAVED_MEALS, mealNames,
   explainTargets, verdictsFromTargets, visibleVerdicts,
@@ -25,8 +25,6 @@ import {
 import type { EngineDeps } from "./deps.ts";
 import type { VersionedMeal } from "../store.ts";
 
-/** A write that lost to another and was refused rather than overwritten (#2695). */
-export type MealChanged = { kind: "meal-changed" };
 import { MAX_OPTION, MAX_QUESTION, normalizePromptText } from "../llm/prompt.ts";
 import { isCookingFat, prepareAnalysis } from "./analysis.ts";
 import { catalogMicros, groundWhenOn, mealFromFood, recomputeFromSnapshot } from "./ground.ts";
@@ -865,7 +863,7 @@ export async function reanalyzeMeal(
   onCounting?: () => void,
   /** A queued job's charge binding — `analyzePhotos`'s own `job`, forwarded (ieat-app#1347). */
   job?: JobCharge,
-): Promise<MealUpdated | TargetGone | Refusal> {
+): Promise<MealUpdated | TargetGone | MealChanged | Refusal> {
   const existing = await deps.store.getMealVersioned(userId, mealId);
   if (!existing) return { kind: "target-gone", on: "correction" };
   if ((existing.photos ?? 0) === 0) return { kind: "no-photo" };
@@ -894,7 +892,7 @@ export async function rewriteMeal(
   caption: string | undefined, added: () => Promise<Uint8Array[]>, onEvent: ((event: PhotoEvent) => void) | undefined,
   onCounting?: () => void,
   job?: JobCharge,
-): Promise<MealUpdated | TargetGone | Refusal> {
+): Promise<MealUpdated | TargetGone | MealChanged | Refusal> {
   const today = localDate(deps.config.timezone);
   // Captured here rather than trusted from `read.images`: the stored count can be stale (another
   // request mutated it since `existing` was read), so slicing `read.images` by it would risk

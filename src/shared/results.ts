@@ -88,8 +88,7 @@ export type Refusal =
    */
   | { kind: "unreadable-label" }
   /** A re-analysis of a meal that has no stored photo. */
-  | { kind: "no-photo" }
-  | { kind: "meal-changed" };
+  | { kind: "no-photo" };
 
 export type LogPhotoResult = MealLogged | Refusal;
 
@@ -206,12 +205,24 @@ export interface MealRedated {
   date: string;
 }
 
+/**
+ * A write computed from an older read of a meal, refused because the meal's numbers changed in the
+ * meantime (ieat-app#2695): a chat correction, a re-read or an edit that lost three races. Nothing
+ * was overwritten. Like `TargetGone` it is NOT a `Refusal` — it has no per-language copy of its own
+ * to add to every transport; the surface words it as "that meal just changed, look again", and the
+ * retry reads the new numbers. HTTP 409 `{ error: "meal-changed" }`.
+ */
+export interface MealChanged {
+  kind: "meal-changed";
+}
+
 export type HandleTextResult =
   | Answered
   | MealProposed
   | MealUpdated
   | MealRedated
   | TargetGone
+  | MealChanged
   | Refusal;
 
 export type ConfirmMealResult = MealLogged | { kind: "expired" } | Refusal;

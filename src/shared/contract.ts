@@ -12,7 +12,7 @@ import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
 import type { OnboardingContent, OnboardingEvent } from "./onboarding.ts";
 import type { TargetBasis } from "./targets.ts";
-import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
+import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
 import type { BmiRange } from "./scores.ts";
 import { WEIGHT_RANGES, type ChartDay, type WeightRange } from "./ui/charts.ts";
@@ -51,12 +51,6 @@ export const REFUSAL_STATUS = {
   /** A label scan that read no label (ieat-app#2087): refused unbilled, the same 422 as `not-food`. */
   "unreadable-label": 422,
   "no-photo": 404,
-  /**
-   * The meal changed under a write that was computed from an older read (ieat-app#2695): a correction
-   * from chat, a re-read, or an edit that lost three races. Nothing was overwritten. 409, and the
-   * client words it as "that meal just changed, try again" — the retry reads the new numbers.
-   */
-  "meal-changed": 409,
   /**
    * Email sign-in (#569): the code typed did not match the live one, and it may be tried again —
    * five wrong tries burn it, which is when `code-dead` takes over. 401 like `sign-in-failed`,
@@ -1257,7 +1251,7 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
   return true;
 }
 
-export type EditMealResponse = MealUpdated | TargetGone;
+export type EditMealResponse = MealUpdated | TargetGone | MealChanged;
 
 /**
  * `POST /v1/meals/:id/redate` — "Move to yesterday", as an offset: `1` is yesterday, `0` a no-op,
@@ -2058,7 +2052,7 @@ export interface JobsResponse { jobs: JobEntry[]; cursor: string | null }
  * server counts against what is already stored.
  */
 export type EditLineLast =
-  | MealUpdated | TargetGone | Refusal
+  | MealUpdated | TargetGone | MealChanged | Refusal
   | { kind: "bad-request" } | { kind: "too-many"; limit: number }
   | { kind: typeof OUTCOME_UNKNOWN };
 /**
