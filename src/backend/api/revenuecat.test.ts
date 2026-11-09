@@ -227,32 +227,103 @@ describe("deliveries this server ignores", () => {
 
 // ── A transfer ────────────────────────────────────────────────────────────────────────────────
 //
-// `Purchases.logIn` fires a TRANSFER on every sign-in that follows a purchase. It carries no
-// `app_user_id`, so the parser refuses it — correctly, since the payload names no product and no
-// expiry either. What it must not do is look like a malformed body in the log (#682).
+// `Purchases.logIn` fires a TRANSFER when the purchases on one app user id move to another: a
+// second device, or a sign-in into an account that already had a real identity, where nothing
+// merges (#687). It names no product and no expiry, so it moves the grant this server already
+// recorded for the source — the app identifies the SDK with OUR id before any purchase.
 describe("a transfer between accounts", () => {
   const transfer = (over: Record<string, unknown> = {}) => ({
     type: "TRANSFER",
     transferred_from: [crypto.randomUUID()],
     transferred_to: [crypto.randomUUID()],
-    event_timestamp_ms: Date.now(),
+    event_timestamp_ms: Date.now() + 1000,
     ...over,
   });
 
-  it("is still refused, and still answers 200", async () => {
-    const res = await deliver(transfer());
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, applied: false });
+  it("moves the paid tier to the account the purchases moved to", async () => {
+    const buyer = await account();
+    const other = await account();
+    await deliver(purchase(buyer.userId));
+    const res = await deliver(transfer({ transferred_from: [buyer.userId], transferred_to: [other.userId] }));
+    expect(await res.json()).toEqual({ ok: true, applied: true });
+    expect((await profile(other.token)).entitlement.active).toBe(true);
+    const left = (await profile(buyer.token)).entitlement;
+    expect(left.active).toBe(false);
+    expect(left.lapsed).toBe(true);
   });
 
-  // The accounts are the whole point: they are the ids somebody repairing a stranded entitlement
-  // by hand needs, and without them a transfer is a timestamp beside a sign-in.
-  it("says a transfer was refused and names the accounts, rather than 'unreadable'", async () => {
+  it("moves a lifetime unlock with its product, so its refund still finds it", async () => {
+    const buyer = await account();
+    const other = await account();
+    await deliver(purchase(buyer.userId, { type: "NON_RENEWING_PURCHASE", product_id: "lifetime", expiration_at_ms: null }));
+    await deliver(transfer({ transferred_from: [buyer.userId], transferred_to: [other.userId] }));
+    expect((await profile(other.token)).entitlement.active).toBe(true);
+    await deliver(purchase(other.userId, {
+      type: "CANCELLATION", product_id: "lifetime", expiration_at_ms: null, event_timestamp_ms: Date.now() + 2000,
+    }));
+    expect((await profile(other.token)).entitlement.active).toBe(false);
+  });
+
+  it("does not let a late delivery from before the transfer re-grant the source", async () => {
+    const buyer = await account();
+    const other = await account();
+    const boughtAt = Date.now();
+    await deliver(purchase(buyer.userId, { event_timestamp_ms: boughtAt }));
+    await deliver(transfer({ transferred_from: [buyer.userId], transferred_to: [other.userId] }));
+    await deliver(purchase(buyer.userId, { type: "RENEWAL", event_timestamp_ms: boughtAt + 500 }));
+    expect((await profile(buyer.token)).entitlement.active).toBe(false);
+    expect((await profile(other.token)).entitlement.active).toBe(true);
+  });
+
+  it("never moves a grant over the destination's newer one", async () => {
+    const buyer = await account();
+    const other = await account();
+    await deliver(purchase(buyer.userId, { expiration_at_ms: Date.now() + 60_000 }));
+    await deliver(purchase(other.userId, { event_timestamp_ms: Date.now() + 500 }));
+    const before = (await profile(other.token)).entitlement.expiresAt;
+    await deliver(transfer({ transferred_from: [buyer.userId], transferred_to: [other.userId] }));
+    expect((await profile(other.token)).entitlement.expiresAt).toBe(before);
+  });
+
+  // The merge already moved the grant and deleted the source; the TRANSFER `logIn` fires after it
+  // names an account that no longer exists, and is an ordinary no-op.
+  it("is a no-op for a source a sign-in already merged away", async () => {
+    const anon = await account();
+    const real = await account();
+    await deliver(purchase(anon.userId));
+    await store.mergeUsers(anon.userId, real.userId);
+    const res = await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [real.userId] }));
+    expect(res.status).toBe(200);
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+
+  // A deleted destination is no destination: like `putEntitlement`, the move never writes paid
+  // state for an account that is not one, and the grant stays where it was recorded.
+  it("leaves the grant on the source when the destination does not exist", async () => {
+    const buyer = await account();
+    await deliver(purchase(buyer.userId));
+    const res = await deliver(transfer({ transferred_from: [buyer.userId], transferred_to: [crypto.randomUUID()] }));
+    expect(await res.json()).toEqual({ ok: true, applied: false });
+    expect((await profile(buyer.token)).entitlement.active).toBe(true);
+  });
+
+  it("moves nothing from sandbox unless sandbox is accepted", async () => {
+    const buyer = await account();
+    const other = await account();
+    await deliver(purchase(buyer.userId));
+    await deliver(transfer({ environment: "SANDBOX", transferred_from: [buyer.userId], transferred_to: [other.userId] }));
+    expect((await profile(other.token)).entitlement.active).toBe(false);
+    expect((await profile(buyer.token)).entitlement.active).toBe(true);
+  });
+
+  // The accounts are what a person repairing a stranded entitlement by hand needs (#682).
+  it("says when a transfer moved nothing and names the accounts, rather than 'unreadable'", async () => {
     const warn = spyOn(console, "warn").mockImplementation(() => {});
     try {
       const from = crypto.randomUUID();
       const to = crypto.randomUUID();
-      await deliver(transfer({ transferred_from: [from], transferred_to: [to] }));
+      const res = await deliver(transfer({ transferred_from: [from], transferred_to: [to] }));
+      expect(await res.json()).toEqual({ ok: true, applied: false });
       const said = warn.mock.calls.flat().join(" ");
       expect(said).toContain("transfer");
       expect(said).toContain(from);

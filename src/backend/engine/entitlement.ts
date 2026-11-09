@@ -334,6 +334,33 @@ export async function applyRevenueCatEvent(
   return written ? { applied: true } : { applied: false, reason: "not-applied" };
 }
 
+/** A TRANSFER (#687): RevenueCat moved one app user id's purchases onto another. Our ids only. */
+export interface RevenueCatTransfer {
+  from: string[];
+  to: string[];
+  eventTimestampMs: number;
+  sandbox: boolean;
+}
+
+/**
+ * Move the grant this server recorded for the source onto the destination. The payload names no
+ * product and no expiry, but the app configures the SDK with OUR id before any purchase, so the
+ * purchase being moved arrived as an ordinary event and is already on the source's record.
+ *
+ * KNOWN CEILING: a TRANSFER delivered before the purchase it moves finds nothing to move, and a
+ * purchase this server never recorded (another store account) is not here at all. Both need
+ * RevenueCat's REST API (#687, option A).
+ */
+export async function applyRevenueCatTransfer(deps: EngineDeps, t: RevenueCatTransfer): Promise<ApplyOutcome> {
+  if (t.sandbox && !deps.config.revenueCatAcceptSandbox) return { applied: false, reason: "sandbox" };
+  const into = t.to[0];
+  if (into === undefined) return { applied: false, reason: "not-applied" };
+  const eventAt = new Date(t.eventTimestampMs).toISOString();
+  let moved = false;
+  for (const from of t.from) moved = (await deps.store.moveEntitlement(from, into, eventAt)) || moved;
+  return moved ? { applied: true } : { applied: false, reason: "not-applied" };
+}
+
 /** The deliveries that mean money changed hands for a subscription period. */
 const PAYMENTS = new Set(["INITIAL_PURCHASE", "RENEWAL"]);
 

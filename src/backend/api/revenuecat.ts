@@ -17,7 +17,9 @@
 // told the same irrelevant thing all day.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-import { applyRevenueCatEvent, type EngineDeps, type RevenueCatEvent } from "../engine/index.ts";
+import {
+  applyRevenueCatEvent, applyRevenueCatTransfer, type EngineDeps, type RevenueCatEvent, type RevenueCatTransfer,
+} from "../engine/index.ts";
 import { timingSafeEqual } from "../auth/timingsafe.ts";
 
 /** How long the misconfiguration warning stays quiet after a delivery matched. */
@@ -70,12 +72,24 @@ function accounts(v: unknown): string {
 }
 
 /**
- * A TRANSFER named for the log, or null if this delivery is not one.
- *
- * A transfer is refused for a STRUCTURAL reason — no `app_user_id`, and no product or expiry to
- * grant from either — and logging that as "unreadable" made it indistinguishable from a malformed
- * body, which is how it went unnoticed beside a sign-in (#682). The accounts are what a person
- * repairing a stranded entitlement by hand needs; ours are the only ids printed.
+ * A TRANSFER (#687), narrowed to our own ids, or null if this delivery is not one. It carries no
+ * `app_user_id`, so it is read here rather than by `parseRevenueCatEvent`. Both arrays are plural;
+ * an id RevenueCat minted (`$RCAnonymousID:…`) never names a row of ours and is dropped.
+ */
+export function parseRevenueCatTransfer(body: unknown): RevenueCatTransfer | null {
+  const e = eventOf(body);
+  if (e === null || e.type !== "TRANSFER") return null;
+  const eventTimestampMs = epochMs(e.event_timestamp_ms);
+  if (eventTimestampMs === null) return null;
+  const ours = (v: unknown) => Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && UUID.test(x)) : [];
+  return {
+    from: ours(e.transferred_from), to: ours(e.transferred_to), eventTimestampMs, sandbox: e.environment === "SANDBOX",
+  };
+}
+
+/**
+ * A TRANSFER named for the log, or null if this delivery is not one. The accounts are what a person
+ * repairing a stranded entitlement by hand needs (#682); ours are the only ids printed.
  */
 export function describeTransfer(body: unknown): string | null {
   const e = eventOf(body);
@@ -214,15 +228,18 @@ export async function revenueCatWebhook(
   if (declared > MAX_BODY_BYTES) return json({ error: "too large" }, 413);
 
   const body = await req.json().catch(() => null);
+  const transfer = parseRevenueCatTransfer(body);
+  if (transfer) {
+    const moved = await applyRevenueCatTransfer(deps, transfer);
+    if (moved.applied) console.log("[eait] revenuecat: entitlement transferred");
+    else console.warn(`[eait] revenuecat: a transfer moved no entitlement, ${describeTransfer(body)} (#687)`);
+    return json({ ok: true, applied: moved.applied });
+  }
   const event = parseRevenueCatEvent(body);
   // A delivery this server cannot read is still a delivery it should stop being sent. 200, because
   // a 400 buys retries of a message that will never parse any differently.
   if (!event) {
-    const transfer = describeTransfer(body);
-    console.warn(transfer === null
-      ? "[eait] revenuecat: unreadable delivery ignored"
-      : `[eait] revenuecat: a transfer was refused, ${transfer} — the payload carries no product ` +
-        `or expiry, so no entitlement moved (#682)`);
+    console.warn("[eait] revenuecat: unreadable delivery ignored");
     return json({ ok: true, applied: false });
   }
 
