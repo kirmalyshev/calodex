@@ -339,7 +339,21 @@ export interface OnboardingWelcomeContent {
   cta: string;
   /** The second door — "I already have an account". */
   signin: string;
+  /** Which bundled hero the screen draws — a `WELCOME_IMAGE_KEYS` member. Absent: the app's default. */
+  image?: WelcomeImageKey;
 }
+
+/**
+ * The welcome heroes an experiment may name (ieat-app#2669).
+ *
+ * A KEY, never a URL: the images are bundled in the app (`lib/hero.ts` → `WELCOME_IMAGES`, which
+ * also carries each one's chip figures — nutrient numbers shown as fact, so they live in code a
+ * reviewer reads, not in an admin field). An absent `image` means the app's default, and an app
+ * that does not know a key draws its default too. A new image is a new entry here plus its asset
+ * in the app repo — both ship through a PR.
+ */
+export const WELCOME_IMAGE_KEYS = ["french-toast", "grain-bowl"] as const;
+export type WelcomeImageKey = (typeof WELCOME_IMAGE_KEYS)[number];
 
 /**
  * The arithmetic being done, as a card in the conversation.
@@ -1295,6 +1309,11 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     bubbles(wel.lines, "welcome.lines", MAX_WELCOME_LINES);
     str(wel.cta, "welcome.cta", MAX_LABEL);
     str(wel.signin, "welcome.signin", MAX_LABEL);
+    // The image is a key into the app's bundled registry, never a URL — an admin cannot point the
+    // welcome at an upload (#2669). An app that does not know a newer key draws its default.
+    if (wel.image !== undefined && !(WELCOME_IMAGE_KEYS as readonly string[]).includes(wel.image as string)) {
+      push("welcome.image is not a bundled key");
+    }
   }
 
   const strTable = (v: unknown, at: string, keys: readonly string[], max: number) => {

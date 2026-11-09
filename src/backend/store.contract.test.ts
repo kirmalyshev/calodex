@@ -2993,6 +2993,165 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await views()).toBe(before);
     });
 
+    // ── Onboarding experiments (ieat-app#2669) ───────────────────────────────────────────────
+    //
+    // The experiment row is global, like the switches above it — a `running` one left behind would
+    // be served to every later test in this database, so each is stopped when its test is done.
+    describe("onboarding experiments", () => {
+      const exp = (over: Record<string, unknown> = {}) => ({
+        id: `exp-${crypto.randomUUID()}`,
+        lang: "en" as const,
+        status: "draft" as const,
+        rules: {},
+        variants: [],
+        created_by: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        started_at: null,
+        stopped_at: null,
+        ...over,
+      });
+      const created: string[] = [];
+      afterAll(async () => {
+        if (store) for (const id of created) await store.stopOnboardingExperiment(id);
+      });
+
+      it("keeps one experiment running per language, never two", async () => {
+        const s = await open();
+        const a = exp({ id: `one-${RUN}` });
+        const b = exp({ id: `two-${RUN}` });
+        const other = exp({ id: `de-${RUN}`, lang: "de" });
+        for (const e of [a, b, other]) { expect(await s.putOnboardingExperiment(e)).toBe(true); created.push(e.id); }
+
+        expect(await s.runningOnboardingExperiment("en")).toBeNull();
+        expect(await s.startOnboardingExperiment(a.id)).toBe(true);
+        expect((await s.runningOnboardingExperiment("en"))?.id).toBe(a.id);
+        // The guarded statement, not a read: a second start for the SAME language refuses.
+        expect(await s.startOnboardingExperiment(b.id)).toBe(false);
+        // A different language answers on its own.
+        expect(await s.startOnboardingExperiment(other.id)).toBe(true);
+        // A draft cannot start twice, and a stopped one stays stopped.
+        expect(await s.startOnboardingExperiment(a.id)).toBe(false);
+        expect(await s.stopOnboardingExperiment(a.id)).toBe(true);
+        expect(await s.stopOnboardingExperiment(a.id)).toBe(false);
+        expect((await s.listOnboardingExperiments()).find((e) => e.id === a.id)?.status).toBe("stopped");
+      });
+
+      it("admits only one of two starts raced for the same language", async () => {
+        // READ COMMITTED's answer to two concurrent starts is a shared snapshot: both read "nothing
+        // running". What decides is the partial unique index on (lang) where running — the loser
+        // violates it and answers false off the violation. The memory store is sequential, so
+        // there the loser simply sees the row the winner wrote.
+        const s = await open();
+        const a = exp({ id: `race-a-${RUN}` });
+        const b = exp({ id: `race-b-${RUN}` });
+        for (const e of [a, b]) { await s.putOnboardingExperiment(e); created.push(e.id); }
+        const [ra, rb] = await Promise.all([
+          s.startOnboardingExperiment(a.id), s.startOnboardingExperiment(b.id),
+        ]);
+        expect([ra, rb].filter(Boolean)).toHaveLength(1);
+        const winner = ra ? a.id : b.id;
+        const running = (await s.listOnboardingExperiments()).filter((e) => e.lang === "en" && e.status === "running");
+        expect(running.map((e) => e.id)).toEqual([winner]);
+        // A `running` experiment is global and persists past this test: leave the language free
+        // for the tests after it, the same way the afterAll leaves it for the next run.
+        await s.stopOnboardingExperiment(winner);
+      });
+
+      it("stores a put as a draft, whatever status the caller asked for", async () => {
+        // A row born running would skip the start guard entirely — the one-per-language rule is
+        // only as strong as the fact that 'running' is a state the guarded statement reaches.
+        const s = await open();
+        const e = exp({ id: `born-${RUN}`, status: "running" });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const stored = (await s.listOnboardingExperiments()).find((x) => x.id === e.id);
+        expect(stored?.status).toBe("draft");
+      });
+
+      it("freezes an experiment once it leaves draft", async () => {
+        const s = await open();
+        const e = exp({ id: `frozen-${RUN}`, rules: { countries: ["de"] } });
+        expect(await s.putOnboardingExperiment(e)).toBe(true); created.push(e.id);
+        // While a draft, the edit lands — and only lang, rules and variants are a draft's to
+        // rewrite: the identity fields came with the row, a put does not carry them again.
+        expect(await s.putOnboardingExperiment({
+          ...e, rules: { countries: ["fr"] }, created_by: crypto.randomUUID(), created_at: "2000-01-01T00:00:00Z",
+        })).toBe(true);
+        const edited = (await s.listOnboardingExperiments()).find((x) => x.id === e.id);
+        expect(edited?.rules).toEqual({ countries: ["fr"] });
+        expect(edited?.created_by).toBe(e.created_by);
+        expect(edited?.created_at).toBe(e.created_at);
+        // Running: refused — one version never holds two sets of words.
+        expect(await s.startOnboardingExperiment(e.id)).toBe(true);
+        expect(await s.putOnboardingExperiment({ ...e, rules: { countries: ["de"] } })).toBe(false);
+        // Stopped too.
+        expect(await s.stopOnboardingExperiment(e.id)).toBe(true);
+        expect(await s.putOnboardingExperiment(e)).toBe(false);
+      });
+
+      it("writes the first assignment once and reads it back, sticky across a second put", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const e = exp({ id: `asg-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+
+        expect(await s.onboardingAssignment(u, e.id)).toBeNull();
+        const first = await s.putOnboardingAssignment(u, e.id, 7);
+        expect(first).toMatchObject({ user_id: u, experiment_id: e.id, variant_id: 7 });
+        // The conflict arm: a later put does NOT move the user — it returns the row already there.
+        const second = await s.putOnboardingAssignment(u, e.id, 9);
+        expect(second.variant_id).toBe(7);
+        expect((await s.onboardingAssignment(u, e.id))?.variant_id).toBe(7);
+        // The admin's read, over every enrolled user.
+        const other = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.putOnboardingAssignment(other, e.id, 9);
+        const all = (await s.onboardingAssignments(e.id)).map((a) => a.user_id).sort();
+        expect(all).toEqual([other, u].sort());
+      });
+
+      it("lets only the first of two raced puts stand", async () => {
+        // The PK upsert is the answer to a concurrent first request: whichever write lands second
+        // meets the conflict and returns the row that won — both callers agree on the variant.
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const e = exp({ id: `concur-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const [r1, r2] = await Promise.all([
+          s.putOnboardingAssignment(u, e.id, 7), s.putOnboardingAssignment(u, e.id, 9),
+        ]);
+        expect(r1.variant_id).toBe(r2.variant_id);
+        expect((await s.onboardingAssignment(u, e.id))?.variant_id).toBe(r1.variant_id);
+      });
+
+      it("erases the assignment with the account", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const e = exp({ id: `del-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        await s.putOnboardingAssignment(u, e.id, 7);
+        await s.deleteUser(u);
+        expect(await s.onboardingAssignments(e.id)).toEqual([]);
+      });
+
+      it("moves assignments on merge, keeping the account's own row on a collision", async () => {
+        const s = await open();
+        const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+        const real = (await s.upsertDeviceUser(device(), "en")).userId;
+        const shared = exp({ id: `both-${RUN}` });
+        const gap = exp({ id: `gap-${RUN}` });
+        for (const e of [shared, gap]) { await s.putOnboardingExperiment(e); created.push(e.id); }
+        await s.putOnboardingAssignment(anon, shared.id, 7);
+        await s.putOnboardingAssignment(anon, gap.id, 8);
+        await s.putOnboardingAssignment(real, shared.id, 3);
+
+        await s.mergeUsers(anon, real);
+
+        // The gap is a gift: the experiment only the anonymous session held moves over.
+        expect((await s.onboardingAssignment(real, gap.id))?.variant_id).toBe(8);
+        // The collision is the account's own: its row is not overwritten by the session's.
+        expect((await s.onboardingAssignment(real, shared.id))?.variant_id).toBe(3);
+      });
+    });
+
     it("prunes health rows dated before a day, for every account, and keeps that day (#562)", async () => {
       const s = await open();
       const a = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -4846,23 +5005,23 @@ if (PG_URL) {
         // #899: the referrer is found by code, rewarded from a webhook, and its friends counted —
         // each of these touches a second account's row by design.
         "grantReferralWeek",
-        "hasAdmin", "heartbeatJobs", "identityFor", "listCampaigns", "listPushTemplates",
+        "hasAdmin", "heartbeatJobs", "identityFor", "listCampaigns", "listOnboardingExperiments", "listPushTemplates",
         "markCampaignRunning", "mergeUsers",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
-        "moveIdentity", "offProductByBarcode", "onboardingFunnel",
+        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingFunnel",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putPrompt", "putPushTemplate", "putPushToken", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "revokeReferralWeek",
-        "revokeToken", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
-        "setSwitch", "spendEmailCode", "switchEnabled", "switchHistory", "updateCampaign",
+        "revokeToken", "runningOnboardingExperiment", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
+        "setSwitch", "spendEmailCode", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "updateCampaign",
         "upsertDeviceUser", "userIdForIdentity", "userIdForToken",
       ]);
     });
