@@ -340,11 +340,7 @@ async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Pr
   if (profile.onboarded_at === null) return `${START_PREFIX}/q`;
   if (await isAnonymous(ctx.deps, userId)) return `${START_PREFIX}/plan`;
   // Still in the funnel, not an account that finished without a goal: that one goes to the product.
-  // Country is the one deferred question and may be skipped, so a RETURNING session is not sent
-  // to it: an app user who finished streak with country unanswered would otherwise land on
-  // /start/country at every web sign-in. The streak POST redirects there itself, which is how a
-  // walk in progress still reaches it.
-  if (profile.country === null && profile.streak_goal_days === null) return STREAK_PATH;
+  if (profile.country === null) return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
   return ctx.hasWebApp ? "/" : CHAT_PATH;
 }
 
