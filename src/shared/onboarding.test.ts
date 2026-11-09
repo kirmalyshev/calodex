@@ -174,6 +174,18 @@ describe("validation refuses what would break the app", () => {
     expect(validateOnboardingContent(c).ok).toBe(true);
   });
 
+  it("a welcome line carrying a claim the scoped set does not cover (ieat-app#2669)", () => {
+    // The welcome is the one block that runs the FULL claim set — the copy it shares a revision
+    // with opts into the scoped list because its own legitimate answers are "Lose weight" and
+    // "Diabetes". A stranger's first sentence has no such answer, so "lose weight fast" in a
+    // welcome line is refused where the same words in a question's ask are not.
+    const errors = bad((c) => { c.welcome.lines = ["Lose weight fast", "Your plan"]; return c; });
+    expect(errors.join(" ")).toContain("welcome");
+    // And the button is the same block.
+    const cta = bad((c) => { c.welcome.cta = "Lose weight now"; return c; });
+    expect(cta.join(" ")).toContain("welcome");
+  });
+
   it("a missing screen", () => {
     const errors = bad((c) => {
       c.screens = c.screens.filter((s) => s.id !== "sex");

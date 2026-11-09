@@ -1356,6 +1356,15 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     errors.push(`${v.field} contains a ${v.pattern} claim: "${v.span}"`);
   }
 
+  // THE WELCOME GETS THE FULL SET (ieat-app#2669). The rest of the copy opts into the scoped list
+  // because its own legitimate answers are "Lose weight" and "Diabetes" — the welcome has no such
+  // answers, and it is the first marketing-shaped sentence a stranger reads, so every rule runs
+  // against its lines and its button.
+  const welFull = typeof wel === "object" && wel !== null ? claimFields({ lines: wel.lines, cta: wel.cta }) : {};
+  for (const v of lintCopy(welFull)) {
+    errors.push(`welcome.${v.field} contains a ${v.pattern} claim: "${v.span}"`);
+  }
+
   if (errors.length > 0) return { ok: false, errors };
   return {
     ok: true,
