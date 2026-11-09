@@ -8583,6 +8583,10 @@
       "PatchProfileRequest": {
         "type": "object",
         "properties": {
+          "filled": {
+            "type": "boolean",
+            "description": "True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device country). They are recorded in `Profile.filled_fields` and do not count as answers. Absent or false is a user write, which removes the fields it carries from that list."
+          },
           "lang": {
             "$ref": "#/components/schemas/Lang"
           },
@@ -9374,6 +9378,13 @@
               "null"
             ],
             "description": "Set once the user has cleared onboarding and consented. Nothing is analyzed before this."
+          },
+          "filled_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Profile fields the SYSTEM filled (a boot-time device country), not fields the user answered. A filled field is non-null and still unanswered: `isAnswered` and every resume point read this, so a fill cannot move the resume point or skip a question (ieat-app#2676, the #2643 class). Empty by default, which keeps every pre-existing row reading as answered. A user write to a field removes it from the list. Older servers omit the key — read it as `?? []`."
           }
         },
         "required": [
@@ -9422,6 +9433,7 @@
           "field": {
             "type": "string",
             "enum": [
+              "filled",
               "lang",
               "goal",
               "sex",
