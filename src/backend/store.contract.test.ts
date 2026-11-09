@@ -3003,11 +3003,14 @@ function contract(name: string, make: () => Promise<Store>) {
         lang: "en" as const,
         status: "draft" as const,
         rules: {},
-        variants: [],
+        // One weighted arm — the store's own start guard requires it, and the tests exercising
+        // the start mechanics are testing it, not the weight rule.
+        variants: [{ weight: 1, content: { version: 1 } }],
         created_by: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         started_at: null,
         stopped_at: null,
+        revision: 1,
         ...over,
       });
       const created: string[] = [];
@@ -3165,6 +3168,10 @@ function contract(name: string, make: () => Promise<Store>) {
         const u4 = (await s.upsertDeviceUser(device(), "en")).userId;
         await s.putOnboardingAssignment(u4, e.id, 41);
         await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-old", at: "2000-01-01T00:00:00Z" }) as never);
+        // And one after the experiment stopped — also outside the window.
+        await s.startOnboardingExperiment(e.id);
+        await s.stopOnboardingExperiment(e.id);
+        await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-late", at: "2999-01-01T00:00:00Z" }) as never);
         const rows = await s.onboardingExperimentFunnel(e.id);
         const v41 = rows.find((r) => r.variant_id === 41);
         const v42 = rows.find((r) => r.variant_id === 42);

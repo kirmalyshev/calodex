@@ -367,6 +367,7 @@ describe("experiments (ieat-app#2669)", () => {
     created_at: new Date().toISOString(),
     started_at: null,
     stopped_at: null,
+    revision: 1,
     ...over,
   });
   const signals = { lang: "en" as const, surface: "app" as const, region: "DE", tz: "Europe/Berlin" };
@@ -518,8 +519,11 @@ describe("experiments (ieat-app#2669)", () => {
     const good = await saveOnboardingVariant(deps, e.id, 1, structuredClone(DEFAULT_ONBOARDING_CONTENT));
     expect(good.ok).toBe(true);
 
-    // Start needs a weighted arm and a draft; stop hands control back.
+    // Start needs a weighted arm and a draft; stop hands control back. And the switch on — a
+    // running card enrolling nobody is refused before it is ever a lie.
     expect((await setOnboardingExperiment(deps, e.id, { weights: [1, 0] })).ok).toBe(true);
+    expect((await startExp(deps, e.id)).ok).toBe(false);
+    await store.setSwitch("onboarding.experiments", true, userId);
     expect((await startExp(deps, e.id)).ok).toBe(true);
     expect((await saveOnboardingVariant(deps, e.id, 0, structuredClone(DEFAULT_ONBOARDING_CONTENT))).ok).toBe(false);
     expect((await stopExp(deps, e.id)).ok).toBe(true);
@@ -529,8 +533,8 @@ describe("experiments (ieat-app#2669)", () => {
   it("results read by assignment: rate and Wilson interval per arm", async () => {
     const { wilsonInterval, onboardingExperiments } = await import("./onboarding.ts");
     const ci = wilsonInterval(3, 10);
-    expect(ci.lo).toBeLessThan(0.3);
-    expect(ci.hi).toBeGreaterThan(0.3);
+    expect(ci.lo).toBeCloseTo(0.1078, 3);
+    expect(ci.hi).toBeCloseTo(0.6032, 3);
     expect(wilsonInterval(0, 0)).toEqual({ lo: 0, hi: 1 });
 
     const e = await startExperiment();

@@ -623,6 +623,7 @@ details.how p { margin-top: 8px; }
           experiment is frozen; Stop returns everyone to control and keeps the assignment rows.
         </p>
       </details>
+      <div id="exp-errors" class="errors hidden"><strong>Refused.</strong><ul></ul></div>
       <div class="card">
         <div class="exp-row first">
           <strong>New experiment</strong>
@@ -3245,7 +3246,7 @@ details.how p { margin-top: 8px; }
     // labels — primes it. A server that predates the list still gets "en".
     var prime = langs.length ? Promise.resolve()
       : api("GET", "/admin/api/content").then(function (res) {
-          langs = res.langs || []; labels = res.labels || {};
+          langs = res.langs || []; labels = res.labels || {}; meta = res.meta;
         }, function () {});
     return prime.then(function () {
       return api("GET", "/admin/api/experiments");
@@ -3299,7 +3300,7 @@ details.how p { margin-top: 8px; }
           + '<td class="r">' + expPct(st.rate) + '</td>'
           + '<td class="r">' + ci + '</td>'
           + '<td class="r">' + st.fell_back + '</td>'
-          + (e.status === "draft"
+          + (e.status === "draft" && !arm.variant.control
               ? '<td><button class="small" data-edit="' + i + '">Edit copy</button></td>'
               : '<td></td>')
           + '</tr>';
@@ -3350,13 +3351,16 @@ details.how p { margin-top: 8px; }
   }
 
   function expErrors(e) {
-    var box = $("errors");
+    // Its own box inside THIS view — the editor's #errors lives inside #view-onboarding, hidden
+    // while this view is up. And a refresh either way: a refusal can mean the row moved.
+    var box = $("exp-errors");
     box.classList.remove("hidden");
     box.querySelector("ul").textContent = "";
     var list = e && e.body && e.body.errors ? e.body.errors : [String(e && e.message || e)];
     list.forEach(function (m) {
       var li = document.createElement("li"); li.textContent = m; box.querySelector("ul").appendChild(li);
     });
+    loadExperiments();
   }
 
   function saveTargeting(id) {
@@ -3382,6 +3386,9 @@ details.how p { margin-top: 8px; }
     if (!view) return;
     variantEdit = { id: id, index: index };
     content = view.arms[index].variant.content;
+    // asked is what atLang() puts in the URL — without it the next live save would carry these
+    // words at the PICKER's language, not the arm's.
+    asked = view.experiment.lang;
     lang = view.experiment.lang;
     // replaceState, not location.hash: a hash assignment fires route(), which reads a nav into
     // onboarding as "show me the LIVE editor" — and a variantEdit that survived it would write an
@@ -3519,7 +3526,11 @@ details.how p { margin-top: 8px; }
     var id = location.hash.replace("#", "");
     // A nav into the onboarding view asks for the LIVE copy — the arm editor only opens from its
     // own "Edit copy" button. variantEdit surviving a nav would point the next Save at the arm.
-    if (id === "onboarding" && variantEdit) { variantEdit = null; $("reset").classList.remove("hidden"); }
+    if (id === "onboarding" && variantEdit) {
+      variantEdit = null;
+      $("reset").classList.remove("hidden");
+      delete state.onboarding;
+    }
     show(VIEWS[id] ? id : "numbers");
   }
 
@@ -3583,6 +3594,7 @@ details.how p { margin-top: 8px; }
           { content: content }).then(function () {
         variantEdit = null;
         $("reset").classList.remove("hidden");
+        delete state.onboarding;
         status("variant saved");
         location.hash = "experiments";
         loadExperiments();

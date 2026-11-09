@@ -1452,6 +1452,7 @@ const toPromptRevision = (r: Record<string, unknown>): PromptRevision => ({
 });
 
 const toOnboardingExperiment = (r: Record<string, unknown>): OnboardingExperiment => ({
+  revision: num(r.revision),
   id: String(r.id),
   lang: String(r.lang) as Lang,
   status: String(r.status) as OnboardingExperiment["status"],
@@ -3636,6 +3637,8 @@ export async function postgresStore(
                count(distinct e.session_id)                                      as sessions,
                count(distinct e.session_id)
                  filter (where e.action = 'complete')                            as completed,
+               count(distinct e.user_id)
+                 filter (where e.action = 'complete')                            as completed_users,
                count(distinct e.session_id)
                  filter (where e.content_version is distinct from a.variant_id)  as fell_back
         from onboarding_assignments a
@@ -3647,7 +3650,7 @@ export async function postgresStore(
         group by a.variant_id`;
       return rows.map((r: Record<string, unknown>) => ({
         variant_id: num(r.variant_id), assigned: num(r.assigned), sessions: num(r.sessions),
-        completed: num(r.completed), fell_back: num(r.fell_back),
+        completed: num(r.completed), completed_users: num(r.completed_users), fell_back: num(r.fell_back),
       }));
     },
 

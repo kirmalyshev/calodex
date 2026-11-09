@@ -1701,16 +1701,19 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return e ? clone(e) : null;
     },
 
-    async putOnboardingExperiment(experiment) {
+    async putOnboardingExperiment(experiment: OnboardingExperiment, expectedRevision?: number) {
       const existing = onboardingExperiments.get(experiment.id);
       if (existing) {
         // The freeze the Postgres upsert encodes in its WHERE — a row that left draft ignores the
         // write — and its same field set: lang, rules, variants. Status, creator and the stamps
-        // are not a draft's to rewrite.
+        // are not a draft's to rewrite. And the same optimistic guard: a put that read an older
+        // revision loses, rather than overwriting the draft a second writer already moved.
         if (existing.status !== "draft") return false;
+        if (expectedRevision !== undefined && existing.revision !== expectedRevision) return false;
         existing.lang = experiment.lang;
         existing.rules = clone(experiment.rules);
         existing.variants = clone(experiment.variants);
+        if (expectedRevision !== undefined) existing.revision += 1;
         return true;
       }
       // Born draft, like the Postgres insert: a row born running would skip the guard.
@@ -1721,6 +1724,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async startOnboardingExperiment(id) {
       const e = onboardingExperiments.get(id);
       if (!e || e.status !== "draft") return false;
+      // The weighted-arm rule lives in the same check the draft guard is in — pg's EXISTS does
+      // both inside one UPDATE; the same statement-shaped decision here.
+      if (!e.variants.some((v) => v.weight > 0)) return false;
       if ([...onboardingExperiments.values()].some((o) => o.lang === e.lang && o.status === "running")) {
         return false;
       }
@@ -1768,7 +1774,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       for (const a of onboardingAssignments.values()) {
         if (a.experiment_id !== experimentId) continue;
         const row = out.get(a.variant_id)
-          ?? { variant_id: a.variant_id, assigned: 0, sessions: 0, completed: 0, fell_back: 0 };
+          ?? { variant_id: a.variant_id, assigned: 0, sessions: 0, completed: 0, completed_users: 0, fell_back: 0 };
         row.assigned += 1;
         // One session's verdicts: a run is completed if ANY of its events completes, and fell
         // back if ANY event names a revision other than the assigned one. The window is the
@@ -1785,6 +1791,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           runs.set(e.sessionId, r);
         }
         row.sessions += runs.size;
+        if ([...runs.values()].some((r) => r.completed)) row.completed_users += 1;
         for (const r of runs.values()) {
           if (r.completed) row.completed += 1;
           if (r.fell) row.fell_back += 1;
@@ -1795,7 +1802,12 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async bumpOnboardingContentVersion(floorVersion) {
-      onboardingVersionHighwater = Math.max(floorVersion, onboardingVersionHighwater + 1);
+      // The counter counts the SET's versions too — seeded content at version 42 means the next
+      // number off the counter is 43, not 1 (the pg column never forgets it; neither may this).
+      const highest = Math.max(onboardingVersionHighwater, ...Object.values(legacyLanguageMap(onboardingContent))
+        .map((c) => (c as { version?: number })?.version)
+        .filter((v): v is number => typeof v === "number"));
+      onboardingVersionHighwater = Math.max(floorVersion, highest + 1);
       return onboardingVersionHighwater;
     },
 

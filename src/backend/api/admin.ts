@@ -354,10 +354,14 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   if (req.method === "POST" && pathname === "/admin/api/experiments") {
     const body = await req.json().catch(() => null) as { lang?: unknown } | null;
     if (body === null) return json({ errors: ["body must be JSON"] }, 422);
-    const lang = narrowLang(typeof body.lang === "string" ? body.lang : null);
-    return json({ experiment: await createOnboardingExperiment(deps, adminId, lang) });
+    // The draft is FOR a language — an unknown code silently making an English one is a
+    // targeting mistake nobody asked for.
+    if (typeof body.lang !== "string" || !(LANGS as readonly string[]).includes(body.lang)) {
+      return json({ errors: ["lang must be a language the app knows"] }, 422);
+    }
+    return json({ experiment: await createOnboardingExperiment(deps, adminId, body.lang as Lang) });
   }
-  const expMatch = /^\/admin\/api\/experiments\/([^/]+)(?:\/(variants)\/(\d+)|\/(start|stop))?$/.exec(pathname);
+  const expMatch = /^\/admin\/api\/experiments\/([^/]+)(?:\/(variants)(?:\/(\d+))?|\/(start|stop))?$/.exec(pathname);
   if (expMatch !== null) {
     const id = expMatch[1]!;
     const sub = expMatch[2] ?? expMatch[4];

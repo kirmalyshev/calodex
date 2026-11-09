@@ -598,6 +598,9 @@ export interface OnboardingExperiment {
   created_at: string;
   started_at: string | null;
   stopped_at: string | null;
+  /** The optimistic-write revision: every draft update carries the value it read, and a second
+   * writer between that read and the put gets false rather than silently winning the row. */
+  revision: number;
 }
 
 /**
@@ -624,6 +627,9 @@ export interface OnboardingExperimentFunnelRow {
   sessions: number;
   /** Runs that reached the end. */
   completed: number;
+  /** Users whose run completed — the intention-to-treat numerator, counted per assignment and
+   *  not per session, so a restart cannot inflate it. */
+  completed_users: number;
   /** Runs that rendered a different revision than assigned — the fell-back count. */
   fell_back: number;
 }
@@ -1523,8 +1529,10 @@ export interface Store {
    * Create an experiment, or update its rules and variants while it is still a draft.
    * Answers false when the row exists and is no longer a draft: a running variant is FROZEN, so
    * one version never holds two sets of words — the admin stops it and starts a new one.
+   * `expectedRevision` is the optimistic-write check: a caller that read the row first puts back
+   * against the revision it read, and a stale put loses rather than overwriting a newer draft.
    */
-  putOnboardingExperiment(experiment: OnboardingExperiment): Promise<boolean>;
+  putOnboardingExperiment(experiment: OnboardingExperiment, expectedRevision?: number): Promise<boolean>;
   /**
    * draft → running, in one guarded statement: refuses (false) unless the row is a draft AND no
    * other experiment is running for its language — v1 runs one experiment per language, because

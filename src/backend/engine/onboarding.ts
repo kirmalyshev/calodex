@@ -8,12 +8,12 @@
 // derives the same "what comes next" without asking. This module owns storage and aggregation only.
 
 import {
-  DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
+  COUNTRY_CODES, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
   ONBOARDING_PLACES, countryFromRegion, isReportableField, isTimezone, localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   validateOnboardingContent,
-  type ContentValidation, type FunnelRow, type Lang, type OnboardingContent, type OnboardingEvent,
-  type OnboardingFunnel, type OnboardingPlace,
+  type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
+  type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
@@ -374,8 +374,8 @@ export interface OnboardingExperimentView {
   /** One row per arm, in the experiment's own order. `stats` is null until results exist. */
   arms: {
     variant: OnboardingVariant;
-    stats: { assigned: number; sessions: number; completed: number; fell_back: number;
-             rate: number | null; ci: { lo: number; hi: number } | null };
+    stats: { assigned: number; sessions: number; completed: number; completed_users: number;
+             fell_back: number; rate: number | null; ci: { lo: number; hi: number } | null };
   }[];
 }
 
@@ -387,16 +387,20 @@ export async function onboardingExperiments(deps: EngineDeps): Promise<Onboardin
     const funnel = await deps.store.onboardingExperimentFunnel(experiment.id);
     const arms = experiment.variants.map((variant) => {
       const row = funnel.find((r) => r.variant_id === variant.content.version);
-      const stats = row === undefined || row.sessions === 0
+      // INTENTION TO TREAT: the rate is per ASSIGNED user — completed_users / assigned — not per
+      // session, or a restart would inflate the denominator.
+      const stats = row === undefined || row.assigned === 0
         ? {
             assigned: row?.assigned ?? 0, sessions: row?.sessions ?? 0,
-            completed: row?.completed ?? 0, fell_back: row?.fell_back ?? 0,
+            completed: row?.completed ?? 0, completed_users: row?.completed_users ?? 0,
+            fell_back: row?.fell_back ?? 0,
             rate: null, ci: null,
           }
         : {
             assigned: row.assigned, sessions: row.sessions, completed: row.completed,
-            fell_back: row.fell_back, rate: row.completed / row.sessions,
-            ci: wilsonInterval(row.completed, row.sessions),
+            completed_users: row.completed_users, fell_back: row.fell_back,
+            rate: row.completed_users / row.assigned,
+            ci: wilsonInterval(row.completed_users, row.assigned),
           };
       return { variant, stats };
     });
@@ -424,6 +428,7 @@ export async function createOnboardingExperiment(
     created_at: new Date().toISOString(),
     started_at: null,
     stopped_at: null,
+    revision: 1,
   };
   await deps.store.putOnboardingExperiment(experiment);
   return experiment;
@@ -440,14 +445,22 @@ export function sanitizeExperimentRules(raw: unknown):
   const out: OnboardingExperiment["rules"] = {};
   const body = typeof raw === "object" && raw !== null ? raw as Record<string, unknown> : {};
 
+  // REFUSE, never filter: an admin typo silently dropped is a rule the experiment quietly
+  // stops enforcing — "countries: ['xx']" saved as "everyone" is worse than a refused save.
+  for (const key of Object.keys(body)) {
+    if (!["countries", "hours", "surfaces"].includes(key)) errors.push(`unknown rule: ${key}`);
+  }
+
   if (body.countries !== undefined) {
     if (!Array.isArray(body.countries) || body.countries.some((c) => typeof c !== "string")) {
       errors.push("countries must be an array of codes");
     } else {
-      const codes = body.countries
-        .map((c) => String(c).trim().toLowerCase())
-        .filter((c) => /^[a-z]{2}$/.test(c));
-      if (codes.length > 0) out.countries = codes;
+      const codes = body.countries.map((c) => String(c).trim().toLowerCase());
+      // Only the codes the country question itself knows — eligible() maps the region through
+      // countryFromRegion, so a code outside COUNTRY_CODES could never match anyone.
+      const bad = codes.filter((c) => !(COUNTRY_CODES as readonly string[]).includes(c) || c === "other");
+      if (bad.length > 0) errors.push(`countries has codes the app does not know: ${bad.join(", ")}`);
+      else if (codes.length > 0) out.countries = [...new Set(codes)] as CountryCode[];
     }
   }
 
@@ -456,6 +469,7 @@ export function sanitizeExperimentRules(raw: unknown):
     const ok = Array.isArray(h) && h.length === 2
       && h.every((n) => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 23);
     if (!ok) errors.push("hours must be [from, to) with whole hours 0–23");
+    else if (h[0] === h[1]) errors.push("hours [h, h) matches nobody");
     else out.hours = [h[0] as number, h[1] as number];
   }
 
@@ -507,8 +521,8 @@ export async function setOnboardingExperiment(
     return { ok: false, errors: ["an hours rule is app-only: the web's first render has no timezone to check"] };
   }
 
-  const wrote = await deps.store.putOnboardingExperiment(experiment);
-  return wrote ? { ok: true } : { ok: false, errors: ["the experiment has left draft: a running variant is frozen"] };
+  const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
+  return wrote ? { ok: true } : { ok: false, errors: ["the experiment changed under you — reload the page"] };
 }
 
 /**
@@ -524,6 +538,11 @@ export async function saveOnboardingVariant(
   if (!Number.isInteger(index) || index < 0 || index >= experiment.variants.length) {
     return { ok: false, errors: ["no such variant"] };
   }
+  // The control IS the live copy's clone — an edited control is a variant wearing the name, and
+  // the funnel would compare "the copy that serves" to something else.
+  if (experiment.variants[index]!.control) {
+    return { ok: false, errors: ["the control arm is the live copy's clone — it is not editable"] };
+  }
 
   // The validator wants a version, so it gets the FLOOR — the compiled-in revision plus one, the
   // same floor a normal save validates against. The counter hands back the real one.
@@ -538,10 +557,10 @@ export async function saveOnboardingVariant(
   const version = await deps.store.bumpOnboardingContentVersion(floor);
   experiment.variants = experiment.variants.map((v, i) =>
     i === index ? { ...v, content: { ...result.content, version } } : v);
-  const wrote = await deps.store.putOnboardingExperiment(experiment);
+  const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
   return wrote
     ? { ok: true, version }
-    : { ok: false, errors: ["the experiment has left draft: a running variant is frozen"] };
+    : { ok: false, errors: ["the experiment changed under you — reload the page"] };
 }
 
 /** Clone the control arm — the editor's "add a variant" is a copy of the copy that serves. */
@@ -560,10 +579,10 @@ export async function addOnboardingVariant(
     ...experiment.variants,
     { weight: control.weight, content: { ...structuredClone(control.content), version } },
   ];
-  const wrote = await deps.store.putOnboardingExperiment(experiment);
+  const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
   return wrote
     ? { ok: true, index: experiment.variants.length - 1 }
-    : { ok: false, errors: ["the experiment has left draft"] };
+    : { ok: false, errors: ["the experiment changed under you — reload the page"] };
 }
 
 /**
@@ -578,6 +597,11 @@ export async function startOnboardingExperiment(
   if (experiment.status !== "draft") return { ok: false, errors: ["only a draft can start"] };
   if (experiment.variants.every((v) => v.weight <= 0)) {
     return { ok: false, errors: ["no variant carries weight"] };
+  }
+  // A running card that enrolls nobody is worse than a refused start: the switch is the gate the
+  // enrolment reads, so start only once it is on.
+  if (!(await switchOn(deps, "onboarding.experiments"))) {
+    return { ok: false, errors: ["the onboarding.experiments switch is off — turn it on first"] };
   }
   const started = await deps.store.startOnboardingExperiment(id);
   return started
