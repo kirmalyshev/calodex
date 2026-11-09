@@ -1472,8 +1472,12 @@ function usableWelcome(w: OnboardingWelcomeContent | undefined): w is Onboarding
  * conversation is corrected by saying the next thing rather than by rewinding. Rows already
  * recorded against it are still readable, which is the reason to keep the word rather than to
  * rewrite history.
+ *
+ * `leave` is the app going to the background while a place is on screen — the drop-off signal the
+ * funnel had no word for: a run that never answers has no `back` to blame. Its `ms` is the dwell
+ * on that place since its `view` (ieat-app#2652).
  */
-export const ONBOARDING_ACTIONS = ["view", "answer", "back", "reject", "complete"] as const;
+export const ONBOARDING_ACTIONS = ["view", "answer", "back", "reject", "complete", "leave"] as const;
 export type OnboardingAction = (typeof ONBOARDING_ACTIONS)[number];
 
 /**
