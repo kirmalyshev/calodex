@@ -2300,11 +2300,24 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return true;
     },
 
-    async chargeJob(userId, clientId, owner, analysisId) {
-      const j = jobs.get(`${userId}\n${clientId}`);
-      if (!j || j.leaseOwner !== owner || j.state !== "running") return false;
-      j.analysisId = analysisId;
-      return true;
+    async chargeAnalysis(userId, date, scope, opts = {}) {
+      const j = opts.job && jobs.get(`${userId}\n${opts.job.clientId}`);
+      if (opts.job && (!j || j.leaseOwner !== opts.job.owner || j.state !== "running")) return "lost";
+      if (j?.analysisId !== null && j?.analysisId !== undefined
+        && analyses.some((a) => a.id === j.analysisId && a.userId === userId)) {
+        return { analysisId: j.analysisId, fresh: false };
+      }
+      if (opts.limit) {
+        const max = opts.limit.over === "day" ? opts.limit.max : (freeAnalyses.get(userId) ?? 0);
+        const n = opts.limit.over === "day"
+          ? analyses.filter((a) => a.userId === userId && a.date === date && a.scope === scope).length
+          : analyses.filter((a) => a.userId === userId).length;
+        if (n >= max) return "cap";
+      }
+      const id = String(++analysisSeq);
+      analyses.push({ id, userId, date, scope, costUsd: null, unpricedCalls: 0 });
+      if (j) j.analysisId = id;
+      return { analysisId: id, fresh: true };
     },
 
     async landJobMeal(userId, clientId, owner, meal) {

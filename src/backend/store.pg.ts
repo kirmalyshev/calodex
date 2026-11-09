@@ -1975,7 +1975,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   removeJob: 0,
   settleJob: 0,
   claimPush: 0,
-  chargeJob: 0,
+  chargeAnalysis: 0,
   landJobMeal: 0,
   bindJobMeal: 0,
   // They choose whose job runs, or sweep every account's, and read no content: the lease is the
@@ -4791,12 +4791,61 @@ export async function postgresStore(
       return rows.length > 0;
     },
 
-    async chargeJob(userId, clientId, owner, analysisId) {
-      const rows = await sql`
-        update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
-        where data->>'userId' = ${userId} and data->>'clientId' = ${clientId} and state = 'active' and data->>'owner' = ${owner}
-        returning id`;
-      return rows.length > 0;
+    async chargeAnalysis(userId, date, scope, opts = {}) {
+      // ONE transaction for the fence, the lock, the count and the insert (#2679). The job row is
+      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers` locks the
+      // from-account's job rows (its `update pgboss.job`) well before it locks the `users` rows
+      // (the into-account update, then the delete), so job-before-users is the order that path
+      // already honours and this hot one must match — the charge would otherwise be one half of a
+      // lock cycle against it.
+      return await inTx(async (tx) => {
+        let stamped: string | null = null;
+        if (opts.job) {
+          const j = await tx`
+            select data->>'analysisId' as analysis_id from pgboss.job
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}
+            for update`;
+          // Lost BEFORE anything is written: a dead attempt orphans no charge.
+          if (j.length === 0) return "lost" as const;
+          stamped = j[0].analysis_id as string | null;
+          if (stamped !== null) {
+            // The dead attempt's charge, still on the ledger: the retry runs on it rather than
+            // charging a second time. A row given back (`undoAnalysis`) falls through to a fresh one.
+            const live = await tx`select 1 from analyses where id = ${stamped}::bigint and user_id = ${userId}`;
+            if (live.length > 0) return { analysisId: stamped, fresh: false };
+          }
+        }
+        const acct = await tx`select free_analyses from users where id = ${userId} for update`;
+        // The account row's lock is the cap serializer, `claimPushSlot`'s own trick: this
+        // account's charges serialize, and a count racing another charge's insert cannot happen.
+        if (acct.length === 0) {
+          // Unreachable for a real job — a deleted account's jobs go with it, and a merged one's
+          // userId moved — but `lost` is still the honest answer for one.
+          if (opts.job) return "lost" as const;
+          throw new Error("chargeAnalysis: no such user");
+        }
+        if (opts.limit) {
+          const own = acct[0].free_analyses;
+          const max = opts.limit.over === "day" ? opts.limit.max
+            : (own === null || own === undefined ? 0 : num(own));
+          const rows = opts.limit.over === "day"
+            ? await tx`select count(*)::int as n from analyses where user_id = ${userId} and date = ${date} and scope = ${scope}`
+            : await tx`select count(*)::int as n from analyses where user_id = ${userId}`;
+          if (num(rows[0].n) >= max) return "cap" as const;
+        }
+        const ins = await tx`
+          insert into analyses (user_id, date, scope) values (${userId}, ${date}, ${scope}) returning id`;
+        const analysisId = String(ins[0].id);
+        if (opts.job) {
+          // Same statement shape the read fenced with: the row is locked to this transaction, so
+          // the stamp cannot lose the lease the read already won.
+          await tx`update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}`;
+        }
+        return { analysisId, fresh: true };
+      });
     },
 
     async landJobMeal(userId, clientId, owner, meal) {

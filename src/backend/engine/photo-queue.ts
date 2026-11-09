@@ -73,7 +73,8 @@ const HANDLERS: Record<JobKind, JobHandler> = {
       let items: MealItem[] = [];
       const result = await logPhotoTurn(deps, userId, {
         ...(job.request as PhotoRequest),
-        images: photos.map((p) => async () => p.bytes), clientId, job: { owner, lost },
+        images: photos.map((p) => async () => p.bytes), clientId,
+        job: { clientId, owner, lost, analysisId: job.analysisId },
       }, (e) => {
         if (e.kind !== "item") return;
         // An `index: 0` after others is the analyzer starting over.
@@ -107,7 +108,7 @@ const HANDLERS: Record<JobKind, JobHandler> = {
       const boundId = "mealId" in input ? input.mealId : undefined;
       let was = boundId !== undefined ? await deps.store.getMeal(userId, boundId) : null;
       const to = (step: PhotoJobStep) => () => progress(step);
-      const onCharged = async (id: string) => { if (!(await deps.store.chargeJob(userId, clientId, owner, id))) throw lost(); };
+      const charge = { clientId, owner, lost, analysisId: job.analysisId };
       let result: MealUpdateLast;
       switch (input.kind) {
         case "ingredients":
@@ -115,7 +116,7 @@ const HANDLERS: Record<JobKind, JobHandler> = {
           result = await editMeal(deps, userId, input.mealId, input.edit);
           break;
         case "reread":
-          result = await reanalyzeMeal(deps, userId, input.mealId, (e) => { if (e.kind === "item") to(2)(); }, to(3), onCharged);
+          result = await reanalyzeMeal(deps, userId, input.mealId, (e) => { if (e.kind === "item") to(2)(); }, to(3), charge);
           break;
         case "note": {
           // For an unbound send, the turn's first `updateMeal` IS the router's answer landing —
@@ -135,7 +136,7 @@ const HANDLERS: Record<JobKind, JobHandler> = {
           result = await textTurn({
             ...deps, llm: after(deps.llm, "routeText", to(2)), store: after(noteStore, "updateMeal", to(3)),
           }, userId, { text: input.text, ...(boundId !== undefined ? { focusMealId: boundId } : {}), clientId,
-            ...(input.capturedAt ? { capturedAt: input.capturedAt } : {}), job: { owner, lost } });
+            ...(input.capturedAt ? { capturedAt: input.capturedAt } : {}), job: charge });
           break;
         }
       }

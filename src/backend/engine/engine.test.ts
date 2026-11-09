@@ -2332,7 +2332,9 @@ describe("what each analysis cost", () => {
   it("says so in the log when a cost finds no analysis left to land on", async () => {
     const userId = await onboard();
     const today = localDate(deps.config.timezone);
-    const { analysisId, onCost } = await charge(deps, userId, today, "photo");
+    const charged = await charge(deps, userId, today, "photo");
+    if (!("analysisId" in charged)) throw new Error(`expected a charge, got ${charged.kind}`);
+    const { analysisId, onCost } = charged;
     // Refunded while a call was still out — a schema retry beside a refunded analysis, or a merge.
     await store.undoAnalysis(userId, analysisId);
     const errors = spyOn(console, "error").mockImplementation(() => {});

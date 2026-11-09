@@ -28,7 +28,7 @@ import { isCookingFat, prepareAnalysis } from "./analysis.ts";
 import { catalogMicros, groundWhenOn, mealFromFood, recomputeFromSnapshot } from "./ground.ts";
 import { switchOn } from "./switches.ts";
 import { RAW_STATE, words } from "../food-index.ts";
-import { charge, checkCaps, checkFreeLog, refundGatewayRefusal } from "./caps.ts";
+import { charge, checkCaps, checkFreeLog, refundGatewayRefusal, type JobCharge } from "./caps.ts";
 import { afterCorrection, afterLog, firstVerdict, remember } from "./chat.ts";
 import { scriptedLine } from "@eait/shared";
 import { GatewayRefusal, clampDayOffset, emptyEstimate, imageMime, type AnalyzedMeal } from "../llm/port.ts";
@@ -50,7 +50,7 @@ export interface LogPhotoInput {
   /** When the request carrying the turn arrived; the queue leg's zero. Absent on calls whose turn came another way. */
   receivedAt?: number;
   /** A queued job's run: its charge and its meal are written under `owner`'s lease, and `lost()` ends it when the lease is gone. */
-  job?: { owner: string; lost: () => Error };
+  job?: JobCharge;
 }
 
 /** Sum a day's meals. The single place totals are produced, so two views cannot disagree. */
@@ -133,7 +133,8 @@ export async function analyzePhotos(
   eaten: Date = new Date(),
   /** When the request arrived — the queue leg's zero: `eaten` is hours old on a kept turn (#220). */
   receivedAt: number = Date.now(),
-  onCharged?: (analysisId: string) => Promise<void>,
+  /** A queued job's charge binding (#2679): the lease it is fenced by and the charge a dead attempt left. */
+  job?: JobCharge,
   /** The `kind` the turn's `meal_analysis` calls record — `reread` is `rewriteMeal`'s (#602). */
   callKind?: "photo" | "reread",
   /** The capture is a nutrition-facts label (ieat-app#2087). */
@@ -143,7 +144,7 @@ export async function analyzePhotos(
   // The stream's first word — "Reading the plate…", already in the account's language. A client
   // prints it; it never composes it: the web bundle holds no i18n catalog.
   onEvent?.({ kind: "reading", line: streamCopyFor(profile.lang).reading });
-  const refusal = await checkCaps(deps, userId, date, "photo");
+  const refusal = await checkCaps(deps, userId, date, "photo", job?.analysisId != null);
   if (refusal) return refusal;
 
   // Sniffed AFTER the cap (a refused account never has its bytes read) and BEFORE the charge: the
@@ -156,8 +157,9 @@ export async function analyzePhotos(
 
   // Recorded BEFORE the call. A failed model call still costs money, so a cap that only counts
   // successes is a cap a retry loop walks straight through.
-  const { analysisId, onCost, onCall } = await charge(deps, userId, date, "photo", callKind);
-  await onCharged?.(analysisId);
+  const charged = await charge(deps, userId, date, "photo", callKind, job);
+  if (!("analysisId" in charged)) return charged;
+  const { analysisId, fresh, onCost, onCall } = charged;
 
   const { targets } = explainTargets(profile);
 
@@ -209,8 +211,9 @@ export async function analyzePhotos(
     // only the survivors would flatter the model. The write lands or logs; the refusal is unchanged.
     reportTiming();
     // A gateway refusal generated nothing and was billed nothing, so the analysis charged above is
-    // given back. Every other failure may have cost real money and stays charged.
-    const refunded = await refundGatewayRefusal(deps, userId, analysisId, e);
+    // given back — but only when THIS attempt took it: a charge a dead attempt left behind carries
+    // its billed calls already and stays on the ledger either way (#2679).
+    const refunded = fresh && await refundGatewayRefusal(deps, userId, analysisId, e);
     // Logged, never returned: the message can carry the prompt, and the prompt carries the user's
     // medical free text.
     console.error(`[eait] photo analysis failed: ${(e as Error).message}${refunded ? " (analysis refunded)" : ""}`);
@@ -241,9 +244,10 @@ export async function analyzePhotos(
   analysis = prepared.analysis;
 
   // A label that is a label and says nothing legible is not a meal and not a charge: the row is
-  // DELETED (`undoAnalysis`): the paid daily cap counts rows (ieat-app#2087).
+  // DELETED (`undoAnalysis`): the paid daily cap counts rows (ieat-app#2087). Only a fresh charge
+  // may go back — a dead attempt's has billed calls in it and stays (#2679).
   if (label !== false && (labelMark === "unreadable" || (label && !analysis.isFood))) {
-    await deps.store.undoAnalysis(userId, analysisId).catch((x: unknown) => {
+    if (fresh) await deps.store.undoAnalysis(userId, analysisId).catch((x: unknown) => {
       console.error(`[eait] label refund failed: ${(x as Error)?.message ?? x}`);
     });
     return { kind: "unreadable-label" };
@@ -294,9 +298,7 @@ export async function logPhotoTurn(
 
   const read = await analyzePhotos(deps, userId, profile, today,
     () => Promise.all(input.images.map((r) => r())), input.caption, onEvent, eaten,
-    input.receivedAt, job && (async (id) => {
-      if (!(await deps.store.chargeJob(userId, input.clientId!, job.owner, id))) throw job.lost();
-    }), undefined, input.label);
+    input.receivedAt, job, undefined, input.label);
   if (read.kind !== "read") return read;
   onCounting?.();
   const { analysis, images, analysisId } = read;
@@ -845,8 +847,8 @@ export async function reanalyzeMeal(
   onEvent?: (event: PhotoEvent) => void,
   /** The read is in and the meal is being written: the queued re-read's last step (ieat-app#1347). */
   onCounting?: () => void,
-  /** A queued job's charge record — `analyzePhotos`'s own `onCharged`, forwarded (ieat-app#1347). */
-  onCharged?: (analysisId: string) => Promise<void>,
+  /** A queued job's charge binding — `analyzePhotos`'s own `job`, forwarded (ieat-app#1347). */
+  job?: JobCharge,
 ): Promise<MealUpdated | TargetGone | Refusal> {
   const existing = await deps.store.getMeal(userId, mealId);
   if (!existing) return { kind: "target-gone", on: "correction" };
@@ -857,7 +859,7 @@ export async function reanalyzeMeal(
   // The words that went with the photos, as the analyzer first saw them (#608): a re-read is an
   // edit that changed nothing, so it reads the same caption the edit path would.
   const line = await deps.store.photoLineFor(userId, mealId);
-  return rewriteMeal(deps, userId, existing, profile, line?.text ?? undefined, async () => [], onEvent, onCounting, onCharged);
+  return rewriteMeal(deps, userId, existing, profile, line?.text ?? undefined, async () => [], onEvent, onCounting, job);
 }
 
 /**
@@ -875,7 +877,7 @@ export async function rewriteMeal(
   deps: EngineDeps, userId: string, existing: MealRecord, profile: Profile,
   caption: string | undefined, added: () => Promise<Uint8Array[]>, onEvent: ((event: PhotoEvent) => void) | undefined,
   onCounting?: () => void,
-  onCharged?: (analysisId: string) => Promise<void>,
+  job?: JobCharge,
 ): Promise<MealUpdated | TargetGone | Refusal> {
   const today = localDate(deps.config.timezone);
   // Captured here rather than trusted from `read.images`: the stored count can be stale (another
@@ -887,7 +889,7 @@ export async function rewriteMeal(
       addedBytes = await added();
       return [...(await deps.store.getPhotos(userId, existing.id)).map((p) => p.bytes), ...addedBytes];
     },
-    caption, onEvent, new Date(), Date.now(), onCharged, "reread");
+    caption, onEvent, new Date(), Date.now(), job, "reread");
   if (read.kind !== "read") return read;
   onCounting?.();
   const { analysis } = read;
