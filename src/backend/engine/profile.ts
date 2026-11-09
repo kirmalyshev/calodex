@@ -378,12 +378,17 @@ export async function patchProfile(
     if (req.weight_kg === null) return reject("weight_kg", "out-of-range");
   }
   // A maintainer is asked neither a target nor a pace (`stepApplies`). Leaving maintain after
-  // onboarding brings both into scope, and they arrive with the goal or the change is refused.
-  if (current.onboarded_at !== null && current.goal === "maintain" && merged.goal !== "maintain") {
-    if (merged.target_weight_kg === null) return reject("target_weight_kg", "out-of-range");
-    // The profile editor has a target row and no pace row, so a maintainer's pace is null and a
-    // goal change from there could never be saved. The middle option stands in until it is asked.
-    if (merged.pace === null) patch.pace = "steady";
+  // onboarding brings both into scope. The target is NOT required with the goal: the web walk asks
+  // one field per PATCH and the target question does not exist while the goal is `maintain`, so a
+  // refusal would leave the goal unchangeable there. A null target degrades to the flat band
+  // (`explainTargets`), and the walk or the editor asks for it next.
+  let paceDefaulted = false;
+  if (current.onboarded_at !== null && current.goal === "maintain" && merged.goal !== "maintain"
+      && merged.pace === null) {
+    // The profile editor has no pace row. The middle option stands in until it is asked, and is
+    // recorded as system-filled below, not as the person's answer.
+    patch.pace = "steady";
+    paceDefaulted = true;
   }
   // Once, and only once: a retried patch, a re-answered medical or a web /start run on an
   // onboarded account carries `complete_onboarding` again, and the stamp anchors the push cadence,
@@ -401,6 +406,10 @@ export async function patchProfile(
       ? [...new Set([...was, ...written])]
       : was.filter((f) => !written.includes(f));
     if (next.length !== was.length || next.some((f, i) => f !== was[i])) patch.filled_fields = next;
+  }
+
+  if (paceDefaulted) {
+    patch.filled_fields = [...new Set([...(patch.filled_fields ?? current.filled_fields ?? []), "pace"])];
   }
 
   const profile = await deps.store.patchProfile(userId, patch);

@@ -7,6 +7,7 @@ import { demoPorts } from "../llm/demo.ts";
 import { fakePush } from "../push/fake.ts";
 import type { MailPort } from "../mail/port.ts";
 import { memoryStore } from "../store.memory.ts";
+import type { MealRecord } from "@eait/shared";
 import type { Store } from "../store.ts";
 import { completeSignIn, patchProfile, sendEmailCode, verifyEmailCode, type EngineDeps } from "./index.ts";
 
@@ -22,6 +23,30 @@ let codes: string[];
 const mail: MailPort = { async sendSignInCode(_to, code) { codes.push(code); } };
 const depsFor = (s: Store): EngineDeps => ({ store: s, config: CONFIG, llm: demoPorts(), push: fakePush(), mail });
 beforeEach(() => { store = memoryStore(); codes = []; });
+
+const device = () => crypto.randomUUID() + crypto.randomUUID();
+const anonymous = async () => (await store.upsertDeviceUser(device(), "en")).userId;
+const meal = (userId: string): MealRecord => ({
+  id: crypto.randomUUID(), user_id: userId, ts: new Date().toISOString(), date: "2026-08-01",
+  isFood: true, items: [{ name: "Rice", grams: 200, name_en: "rice" }], kcal: 260, protein_g: 5,
+  carbs_g: 56, fat_g: 1, satfat_g: 0.2, fiber_g: 1, sugar_g: 0.1, sodium_mg: 5,
+  verdicts: { weight: "good" }, confidence: "high", notes: "", corrected: false, model: "test", healthScore: null,
+});
+const mealCount = async (userId: string) => (await store.mealsSince(userId, "2026-01-01", "2026-12-31", 100)).length;
+
+/** Wraps one store method: `before` runs first, then the real call. */
+function around(inner: Store, method: keyof Store, before: () => Promise<void>): Store {
+  return new Proxy(inner, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (prop !== method || typeof value !== "function") return value;
+      return async (...args: unknown[]) => {
+        await before();
+        return (value as (...a: unknown[]) => unknown).apply(target, args);
+      };
+    },
+  }) as Store;
+}
 
 const onboarded = async () => {
   const id = await store.createUser("en");
@@ -40,74 +65,105 @@ describe("complete_onboarding", () => {
     expect((await store.getProfile(id))!.onboarded_at).toBe(first);
   });
 
-  it("refuses to null goal or weight on an onboarded account", async () => {
+  it("refuses to null goal or weight on an onboarded account, naming the field", async () => {
     const id = await onboarded();
-    for (const req of [{ goal: null }, { weight_kg: null }] as const) {
-      const r = await patchProfile(depsFor(store), id, req);
-      expect(r?.ok).toBe(false);
-    }
+    const goal = await patchProfile(depsFor(store), id, { goal: null });
+    const weight = await patchProfile(depsFor(store), id, { weight_kg: null });
+    expect(goal).toMatchObject({ ok: false, rejected: { field: "goal" } });
+    expect(weight).toMatchObject({ ok: false, rejected: { field: "weight_kg" } });
     const p = (await store.getProfile(id))!;
-    expect(p.goal).toBe("lose");
-    expect(p.weight_kg).toBe(90);
+    expect([p.goal, p.weight_kg]).toEqual(["lose", 90]);
   });
 
-  it("refuses maintain -> lose without a target weight and pace in the same PATCH", async () => {
+  it("lets an account still onboarding change its answers freely", async () => {
     const id = await store.createUser("en");
-    await patchProfile(depsFor(store), id, { goal: "maintain", weight_kg: 80, complete_onboarding: true });
-    expect((await patchProfile(depsFor(store), id, { goal: "lose" }))?.ok).toBe(false);
-    expect((await store.getProfile(id))!.goal).toBe("maintain");
-    const ok = await patchProfile(depsFor(store), id, { goal: "lose", target_weight_kg: 72, pace: "easy" });
-    expect(ok?.ok).toBe(true);
+    const d = depsFor(store);
+    expect((await patchProfile(d, id, { goal: "maintain" }))?.ok).toBe(true);
+    expect((await patchProfile(d, id, { goal: "lose" }))?.ok).toBe(true);
+    expect((await patchProfile(d, id, { weight_kg: 80 }))?.ok).toBe(true);
+    expect((await patchProfile(d, id, { weight_kg: null }))?.ok).toBe(true);
   });
-});
 
-describe("complete_onboarding, legacy and editor cases", () => {
   it("lets an onboarded account with a null goal change an unrelated field", async () => {
     const id = await store.createUser("en");
     await store.patchProfile(id, { onboarded_at: new Date().toISOString(), goal: null, weight_kg: null });
-    const r = await patchProfile(depsFor(store), id, { country: "DE" });
-    expect(r?.ok).toBe(true);
+    expect((await patchProfile(depsFor(store), id, { country: "DE" }))?.ok).toBe(true);
   });
 
-  it("defaults a maintainer's missing pace when the goal leaves maintain with a target", async () => {
+  it("lets a maintainer leave maintain on the web's one-field PATCH, defaulting pace as system-filled", async () => {
     const id = await store.createUser("en");
     await patchProfile(depsFor(store), id, { goal: "maintain", weight_kg: 80, complete_onboarding: true });
-    const r = await patchProfile(depsFor(store), id, { goal: "lose", target_weight_kg: 72 });
+    const r = await patchProfile(depsFor(store), id, { goal: "lose" });
     expect(r?.ok).toBe(true);
-    expect((await store.getProfile(id))!.pace).toBe("steady");
+    const p = (await store.getProfile(id))!;
+    expect([p.goal, p.pace, p.target_weight_kg]).toEqual(["lose", "steady", null]);
+    expect(p.filled_fields).toContain("pace");
+  });
+
+  it("keeps a pace the request carries when the goal leaves maintain", async () => {
+    const id = await store.createUser("en");
+    await patchProfile(depsFor(store), id, { goal: "maintain", weight_kg: 80, complete_onboarding: true });
+    const r = await patchProfile(depsFor(store), id, { goal: "lose", target_weight_kg: 72, pace: "easy" });
+    expect(r?.ok).toBe(true);
+    const p = (await store.getProfile(id))!;
+    expect([p.pace, p.target_weight_kg]).toEqual(["easy", 72]);
+    expect(p.filled_fields ?? []).not.toContain("pace");
   });
 });
 
 describe("the sign-in merge", () => {
-  it("runs once when two sign-ins race from one anonymous session", async () => {
-    const { userId: anon } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+  const target = async () => {
     const real = await store.createUser("en");
     await store.addIdentity(real, "apple", "racer");
+    return real;
+  };
+  const verified = { provider: "apple" as const, subject: "racer" };
+
+  it("runs once when two sign-ins race from one anonymous session", async () => {
+    const anon = await anonymous();
+    const real = await target();
+    await store.insertMeal(meal(anon));
     const deps = depsFor(store);
-    const v = { provider: "apple" as const, subject: "racer" };
     const [a, b] = await Promise.all([
-      completeSignIn(deps, "apple", v, anon, "en", CONSENT),
-      completeSignIn(deps, "apple", v, anon, "en", CONSENT),
+      completeSignIn(deps, "apple", verified, anon, "en", CONSENT),
+      completeSignIn(deps, "apple", verified, anon, "en", CONSENT),
     ]);
-    expect(a.userId).toBe(real);
-    expect(b.userId).toBe(real);
+    expect([a.userId, b.userId]).toEqual([real, real]);
     // Both say `merged`: the phone retags its outbox on `merged` and clears it on `switched`.
     expect([a.outcome, b.outcome]).toEqual(["merged", "merged"]);
-    expect([a.mergedMeals, b.mergedMeals].sort()).toEqual([0, 0]);
+    expect([a.mergedMeals, b.mergedMeals].sort()).toEqual([0, 1]);
+    expect(await mealCount(real)).toBe(1);
   });
 
-  it("refuses the merge when the session gained a real identity first, and keeps both accounts", async () => {
-    const { userId: anon } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
-    const real = await store.createUser("en");
-    await store.addIdentity(real, "apple", "target");
-    await store.addIdentity(anon, "google", "linked-meanwhile");
-    const out = await completeSignIn(depsFor(store), "apple", { provider: "apple", subject: "target" }, anon, "en", CONSENT);
+  it("answers `merged` with 0 meals when the anonymous account is already gone", async () => {
+    const anon = await anonymous();
+    const real = await target();
+    await store.insertMeal(meal(anon));
+    await store.mergeUsers(anon, real);
+    const out = await completeSignIn(depsFor(store), "apple", verified, anon, "en", CONSENT);
+    expect([out.outcome, out.mergedMeals, out.userId]).toEqual(["merged", 0, real]);
+    expect(await mealCount(real)).toBe(1);
+  });
+
+  it("refuses the merge when the session gains a real identity between the read and the merge", async () => {
+    const anon = await anonymous();
+    const real = await target();
+    await store.patchProfile(anon, { goal: "gain" });
+    await store.insertMeal(meal(anon));
+    const racing = around(store, "mergeUsers", async () => {
+      await store.addIdentity(anon, "google", "linked-meanwhile");
+    });
+    const out = await completeSignIn(depsFor(racing), "apple", verified, anon, "en", CONSENT);
     expect(out.outcome).toBe("switched");
+    expect(out.mergedMeals).toBeUndefined();
     expect(await store.userIdForIdentity("google", "linked-meanwhile")).toBe(anon);
+    expect(await mealCount(anon)).toBe(1);
+    expect(await mealCount(real)).toBe(0);
+    expect((await store.getProfile(real))!.goal).toBeNull();
   });
 
   it("keeps the turn row that has an outcome when both sides claimed one client id", async () => {
-    const { userId: anon } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    const anon = await anonymous();
     const real = await store.createUser("en");
     await store.claimTurn(real, "c1");
     await store.claimTurn(anon, "c1");
@@ -118,16 +174,30 @@ describe("the sign-in merge", () => {
 });
 
 describe("the email code", () => {
+  const failingConsent = (inner: Store): Store => new Proxy(inner, {
+    get(t, p, r) {
+      const v = Reflect.get(t, p, r);
+      return p === "recordConsent" ? async () => { throw new Error("connection reset"); } : v;
+    },
+  });
+
   it("is still usable when the sign-in that spent it failed", async () => {
     await sendEmailCode(depsFor(store), "a@example.com", "en");
-    const flaky: Store = new Proxy(store, {
-      get(t, p, r) {
-        const v = Reflect.get(t, p, r);
-        return p === "recordConsent" ? async () => { throw new Error("connection reset"); } : v;
-      },
-    });
-    await expect(verifyEmailCode(depsFor(flaky), "a@example.com", codes[0]!, null, "en", CONSENT)).rejects.toThrow();
+    await expect(verifyEmailCode(depsFor(failingConsent(store)), "a@example.com", codes[0]!, null, "en", CONSENT)).rejects.toThrow();
     const again = await verifyEmailCode(depsFor(store), "a@example.com", codes[0]!, null, "en", CONSENT);
     expect("token" in again).toBe(true);
+  });
+
+  it("is still usable when the sign-in failed AFTER the merge, and the retry lands on `merged`", async () => {
+    const email = "b@example.com";
+    const real = await store.createUser("en");
+    await store.addIdentity(real, "email", email);
+    const anon = await anonymous();
+    await store.insertMeal(meal(anon));
+    await sendEmailCode(depsFor(store), email, "en");
+    await expect(verifyEmailCode(depsFor(failingConsent(store)), email, codes[0]!, anon, "en", CONSENT)).rejects.toThrow();
+    expect(await mealCount(real)).toBe(1);
+    const again = await verifyEmailCode(depsFor(store), email, codes[0]!, anon, "en", CONSENT);
+    expect(again).toMatchObject({ userId: real, outcome: "merged", mergedMeals: 0 });
   });
 });

@@ -1060,11 +1060,15 @@ export interface Store {
   spendEmailCode(email: string, codeHash: string, maxAttempts: number): Promise<"ok" | "wrong" | "dead">;
   /**
    * Move everything owned by `fromUserId` onto `intoUserId`, then delete the empty account.
-   * Returns the number of meals moved. Photos move with their meals.
+   * Returns the number of meals moved (photos move with their meals), `"gone"` when
+   * `fromUserId` no longer exists (a parallel merge won, or an earlier attempt merged and then
+   * failed after it), or `"not-anonymous"` when it gained a sign-in identity since the caller's
+   * check, in which case nothing is written. `overlay` is applied to `intoUserId` in the same
+   * transaction, and only when the merge goes ahead.
    *
    * Called in exactly one situation: an ANONYMOUS session signs in with an identity that already
    * has an account. Merging two real accounts is a different problem and is not attempted — the
-   * caller checks that before getting here.
+   * engine checks that first and the store re-checks it under the row lock.
    */
   mergeUsers(
     fromUserId: string, intoUserId: string, overlay?: ProfilePatch,
@@ -1072,7 +1076,8 @@ export interface Store {
   /**
    * Un-spend the code `spendEmailCode` just consumed, because the sign-in it was spent for failed
    * before it landed. Only a code that is used, unexpired, and whose hash matches; the attempt it
-   * cost is given back. A code that was burnt by wrong guesses is never revived.
+   * cost is given back. CALL IT ONLY AFTER `spendEmailCode` returned "ok" for the same hash: the
+   * store cannot tell a spent code from one burnt by wrong guesses, and would revive either.
    */
   restoreEmailCode(email: string, codeHash: string): Promise<void>;
 

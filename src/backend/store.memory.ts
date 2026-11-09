@@ -2048,9 +2048,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const row = [...emailCodes.values()]
         .filter((c) => c.email === email && c.usedAt === null && c.expiresAt > now())
         .sort((a, b) => b.createdAt - a.createdAt)[0];
-      if (row === undefined) return "dead";
+      if (row === undefined || row.attempts >= maxAttempts) return "dead";
+      // The attempt is claimed BEFORE the compare, as store.pg.ts does, so a correct code costs one
+      // too and `restoreEmailCode` gives back exactly that.
+      row.attempts += 1;
       if (!timingSafeEqual(row.codeHash, codeHash)) {
-        row.attempts += 1;
         if (row.attempts >= maxAttempts) row.usedAt = now();
         return "wrong";
       }

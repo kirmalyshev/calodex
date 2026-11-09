@@ -118,6 +118,15 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(await s.mergeUsers(anon, real)).toBe("gone");
       });
 
+      it("merges once when two merges of one account run at the same time", async () => {
+        const s = await open();
+        const { anon, real } = await anonAndReal(s);
+        await s.insertMeal(meal(anon));
+        const results = await Promise.all([s.mergeUsers(anon, real), s.mergeUsers(anon, real)]);
+        expect(results.map(String).sort()).toEqual(["1", "gone"]);
+        expect((await s.mealsSince(real, "2026-01-01", "2026-12-31", 100)).length).toBe(1);
+      });
+
       it("refuses to merge an account that gained a real identity, and keeps that identity", async () => {
         const s = await open();
         const { anon, real } = await anonAndReal(s);
@@ -131,9 +140,12 @@ function contract(name: string, make: () => Promise<Store>) {
       it("applies the profile overlay with the merge, and not when the merge is refused", async () => {
         const s = await open();
         const { anon, real } = await anonAndReal(s);
-        await s.mergeUsers(anon, real, { goal: "gain", weight_kg: 71 });
+        await s.mergeUsers(anon, real, {
+          goal: "gain", weight_kg: 71, restrictions: ["ldl"], struggles: ["habits"], filled_fields: ["sex"],
+        });
         const p = (await s.getProfile(real))!;
         expect([p.goal, p.weight_kg]).toEqual(["gain", 71]);
+        expect([p.restrictions, p.struggles, p.filled_fields]).toEqual([["ldl"], ["habits"], ["sex"]]);
 
         const { anon: a2, real: r2 } = await anonAndReal(s);
         await s.addIdentity(a2, "google", `linked-${crypto.randomUUID()}`);
@@ -159,7 +171,7 @@ function contract(name: string, make: () => Promise<Store>) {
         expect((await s.getTurn(r2, "c2"))?.outcome).toEqual({ kind: "survivor" });
       });
 
-      it("restores a spent email code, once, and never revives a burnt one", async () => {
+      it("restores a spent email code once, and gives back exactly the attempt the spend cost", async () => {
         const s = await open();
         const email = `restore-${crypto.randomUUID()}@example.com`;
         const limits = { perHour: 100, perDay: 100, resendSec: 0 };
@@ -169,11 +181,15 @@ function contract(name: string, make: () => Promise<Store>) {
         await s.restoreEmailCode(email, "hash-a");
         expect(await s.spendEmailCode(email, "hash-a", 5)).toBe("ok");
 
-        const burnt = `burnt-${crypto.randomUUID()}@example.com`;
-        await s.putEmailCode(burnt, "hash-b", Date.now() + 600_000, limits);
-        for (let i = 0; i < 5; i++) await s.spendEmailCode(burnt, "wrong", 5);
-        await s.restoreEmailCode(burnt, "wrong");
-        expect(await s.spendEmailCode(burnt, "hash-b", 5)).toBe("dead");
+        // Four wrong guesses, the right code, a restore: four attempts used, so ONE more wrong guess
+        // burns it. Both stores count the correct spend, or this differs between them.
+        const counted = `counted-${crypto.randomUUID()}@example.com`;
+        await s.putEmailCode(counted, "hash-c", Date.now() + 600_000, limits);
+        for (let i = 0; i < 4; i++) expect(await s.spendEmailCode(counted, "wrong", 5)).toBe("wrong");
+        expect(await s.spendEmailCode(counted, "hash-c", 5)).toBe("ok");
+        await s.restoreEmailCode(counted, "hash-c");
+        expect(await s.spendEmailCode(counted, "wrong", 5)).toBe("wrong");
+        expect(await s.spendEmailCode(counted, "hash-c", 5)).toBe("dead");
       });
     });
     // Set once a test below flips a switch: the table is global and persists, so they go back ON.

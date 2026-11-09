@@ -76,6 +76,31 @@ function jobs(name: string, make: () => Promise<Store>) {
       }
     });
 
+    it("a job enqueued, claimed and charged while the account is merged never deadlocks", async () => {
+      // The job does not exist when the merge starts, so no statement-order trick covers it: only
+      // the per-account lock both sides take first does.
+      const s = await open();
+      for (let i = 0; i < 10; i++) {
+        await drain(s, `drain-${RUN}`);
+        const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+        const real = (await s.upsertDeviceUser(device(), "en")).userId;
+        const j = job();
+        const owner = `late-${RUN}-${i}`;
+        const results = await Promise.allSettled([
+          (async () => {
+            await s.enqueueJob(anon, j);
+            const c = await s.claimJob(owner, REGISTRY, LEASE_MS);
+            if (c) await s.chargeAnalysis(anon, "2026-11-09", "photo", { job: { clientId: c.clientId, owner } });
+          })(),
+          s.mergeUsers(anon, real),
+        ]);
+        for (const r of results) {
+          if (r.status === "rejected") expect(String(r.reason)).not.toMatch(/deadlock|40P01/);
+        }
+        await drain(s, `drain-${RUN}`);
+      }
+    });
+
     it("never shows one user's job to another", async () => {
       const { s, userId } = await fresh();
       const other = (await s.upsertDeviceUser(device(), "en")).userId;

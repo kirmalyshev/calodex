@@ -2820,9 +2820,15 @@ export async function postgresStore(
       // One transaction. A half-applied merge leaves meals owned by a user row that is about to be
       // deleted, and `on delete cascade` would then destroy the data this operation exists to save.
       return await inTx(async (tx) => {
-        // THE ANONYMOUS ROW IS LOCKED FIRST. Two sign-ins from one session (a double tap, Apple and
-        // an email code in parallel) both pass the engine's "is this anonymous" read; the second
-        // waits here, finds the row gone, and learns the merge already happened (null).
+        // THE ANONYMOUS ACCOUNT IS LOCKED BEFORE ANYTHING IS READ. Two sign-ins from one session
+        // (a double tap, Apple and an email code in parallel) both pass the engine's "is this
+        // anonymous" read; the second waits on the locks below, finds the users row deleted, and
+        // returns "gone".
+        // ONE ADVISORY LOCK PER ACCOUNT, FIRST. A job enqueued after the next statement runs is not
+        // in its lock set, and a worker could claim it and charge (job row, then users row) while
+        // this holds the users row and wants that job row — a cycle. `chargeAnalysis` with a job
+        // takes the same lock first, so the two never interleave on one account.
+        await tx`select pg_advisory_xact_lock(hashtext(${"account:" + fromUserId}))`;
         // JOB ROWS BEFORE THE USER ROW — `chargeAnalysis` takes `pgboss.job` and then `users`, and a
         // merge that took them the other way round is half of a deadlock (40P01) against a charge
         // made while the anonymous session taps Sign in.
@@ -2831,8 +2837,9 @@ export async function postgresStore(
         if (locked.length === 0) return "gone" as const;
         // ANONYMITY IS RE-CHECKED UNDER THE LOCK. The engine read it before the transaction, and an
         // `addIdentity` on this account in between (its insert takes a key-share on this row, so it
-        // either committed before the lock above or waits until after the delete) would have its
-        // identity dropped by the `delete from identities` below.
+        // either committed before the lock above or waits for this transaction to commit and then
+        // fails its foreign key against the deleted row) would have its identity dropped by the
+        // `delete from identities` below.
         const real = await tx`
           select 1 from identities
           where user_id = ${fromUserId} and provider <> 'device' and provider = any(${SIGN_IN_PROVIDERS}::text[])
@@ -4833,14 +4840,15 @@ export async function postgresStore(
 
     async chargeAnalysis(userId, date, scope, opts = {}) {
       // ONE transaction for the fence, the lock, the count and the insert (#2679). The job row is
-      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers`'s first users
-      // lock is only the key-share its meals update's FK puts on the into-account row — its
-      // `update pgboss.job` comes after that and the user-row writes last, so job-before-users is
-      // the order that path's own writes take, and this hot one must match — the charge would
+      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers` locks the
+      // anonymous account's `pgboss.job` rows `for update` and then its users row `for update`, so
+      // job-before-users is that path's order and this hot one must match — the charge would
       // otherwise be one half of a lock cycle against it.
       return await inTx(async (tx) => {
         let stamped: string | null = null;
         if (opts.job) {
+          // The per-account lock `mergeUsers` takes first: see there.
+          await tx`select pg_advisory_xact_lock(hashtext(${"account:" + userId}))`;
           const j = await tx`
             select data->>'analysisId' as analysis_id from pgboss.job
             where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}

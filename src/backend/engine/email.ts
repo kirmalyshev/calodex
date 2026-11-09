@@ -176,7 +176,10 @@ export async function verifyEmailCode(
     );
   } catch (e) {
     if (!isStoreReviewer(deps.config, email)) {
-      await deps.store.restoreEmailCode(email, await hashToken(rawCode.trim())).catch(() => undefined);
+      // Logged by name only: the error text can carry the address.
+      await deps.store.restoreEmailCode(email, await hashToken(rawCode.trim())).catch((r: unknown) => {
+        console.error(`[eait] email code not restored after a failed sign-in: ${(r as Error)?.name ?? "error"}`);
+      });
     }
     throw e;
   }

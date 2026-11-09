@@ -149,8 +149,9 @@ export async function completeSignIn(
       // it): two real accounts, so nothing is merged — the other branch's rule.
       outcome = "switched";
     } else if (moved === "gone") {
-      // A parallel sign-in from this same session merged first, so this one reports the same
-      // outcome. `merged` and not `switched`: the phone retags its outbox on `merged` and CLEARS
+      // The anonymous account is already gone: a parallel sign-in from this session merged it
+      // first, or an earlier attempt merged it and then failed after the merge (a retry). Either
+      // way this one reports the same outcome. `merged` and not `switched`: the phone retags its outbox on `merged` and CLEARS
       // it on `switched`, and the second handler must not wipe the first one's unsent turns.
       outcome = "merged";
       mergedMeals = 0;
