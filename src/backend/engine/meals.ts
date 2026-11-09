@@ -903,6 +903,7 @@ export async function rewriteMeal(
     fat_g: analysis.fat_g, satfat_g: analysis.satfat_g, fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g,
     sodium_mg: analysis.sodium_mg, notes: analysis.notes,
     verdicts: await gatedVerdicts(deps, userId, analysis),
+    // corrected=false and question=null are true here: a re-read replaces the values with a fresh machine estimate (#2695).
     confidence: analysis.confidence, corrected: false, model: deps.config.llmModel, question: null,
   }, existing.version);
   // The meal was edited while the re-read ran (#2695): the person's edit outranks a machine
