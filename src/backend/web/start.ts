@@ -44,7 +44,7 @@ import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
-  onboardingContent, mintPairingCode, patchProfile, profileView,
+  onboardingContentFor, mintPairingCode, patchProfile, profileView,
   sendEmailCode, signInWithProvider, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail,
   type EngineDeps,
@@ -149,6 +149,14 @@ const browserLang = (req: Request): Lang => {
     ? picked as Lang
     : acceptLang(req.headers.get("accept-language"));
 };
+
+/**
+ * The region a browser asks in (ieat-app#2669): the first Accept-Language tag's region subtag,
+ * which `countryFromRegion` narrows the same way the app's `?region=` is. There is no `tz` to send
+ * — the front door's first render has none — which is why an `hours` rule is app-only.
+ */
+const browserRegion = (req: Request): string | null =>
+  acceptLanguageTags(req.headers.get("accept-language"))[0]?.split("-")[1] ?? null;
 
 /**
  * The welcome's language chip (ieat-app#2050): the code picked there, before any account exists.
@@ -590,7 +598,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // one page that runs before there is an account to ask. Everything past it reads
     // `profile.lang`, which the first answer's account seeds from this same signal.
     const lang = browserLang(req);
-    const content = await onboardingContent(ctx.deps, lang);
+    const content = await onboardingContentFor(ctx.deps, userId, { lang, surface: "web", region: browserRegion(req) });
     return html(frontDoor(content, {
       q: `${START_PREFIX}/q`,
       signup: `${START_PREFIX}/signup`,
@@ -1031,7 +1039,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // runs before an account exists: the pre-account `/q` renders the blank profile in
   // `browserLang(req)`, which is also the language the first answer's account is born into.
   const view = async (): Promise<{ profile: Profile; content: OnboardingContent }> => ({
-    profile, content: await onboardingContent(ctx.deps, profile.lang),
+    profile, content: await onboardingContentFor(ctx.deps, userId, {
+      lang: profile.lang, surface: "web", region: browserRegion(req),
+    }),
   });
 
   if (pathname === `${START_PREFIX}/q`) {
@@ -1446,7 +1456,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   if (pathname === STREAK_PATH) {
     const signup = `${START_PREFIX}/signup`;
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
-    const content = await onboardingContent(ctx.deps, profile.lang);
+    const content = await onboardingContentFor(ctx.deps, userId, {
+      lang: profile.lang, surface: "web", region: browserRegion(req),
+    });
     const prompt = promptById("streak_goal_days")!;
     const units = profile.units ?? "metric";
     const ask = (error: string | null) => html(renderQuestion(
@@ -1668,7 +1680,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // The page's every figure is the engine's: `profileView` already ran `explainTargets`, and the
     // headline is the plan card's own — `planHeadline`, the S6-exempt sentence, which the renderer
     // computes over that same basis rather than retyping a number.
-    const content = await onboardingContent(ctx.deps, profile.lang);
+    const content = await onboardingContentFor(ctx.deps, userId, {
+      lang: profile.lang, surface: "web", region: browserRegion(req),
+    });
     // The plan's own dash is `dash("summary")` inside the renderer — the walk's last segment.
     return html(plan({
       profile: full.profile,

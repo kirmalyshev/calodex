@@ -13,7 +13,7 @@ import {
 } from "@eait/shared";
 import type { ChatAppend, ChatIntent, ChatMessage } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
-import { onboardingContent } from "./onboarding.ts";
+import { onboardingContentFor } from "./onboarding.ts";
 
 const PAGE_DEFAULT = 50;
 const PAGE_MAX = 100;
@@ -179,7 +179,7 @@ export async function appendLines(deps: EngineDeps, userId: string, lines: Appen
   const needsAsk = said.some((l) => "ask" in l);
   const profile = needsAsk || said.some((l) => "scripted" in l) ? await deps.store.getProfile(userId) : null;
   const lang: Lang = profile?.lang ?? "en";
-  const asked = needsAsk ? await askResolver(deps, profile) : null;
+  const asked = needsAsk ? await askResolver(deps, userId, profile) : null;
 
   const out: ChatAppend[] = [];
   for (const l of lines) {
@@ -226,11 +226,14 @@ export async function appendLines(deps: EngineDeps, userId: string, lines: Appen
  */
 async function askResolver(
   deps: EngineDeps,
+  userId: string,
   profile: Profile | null,
 ): Promise<(ref: { prompt: string; line: number }) => string | null> {
   // The PROFILE is the caller's, and the content is fetched in ITS language: the thread must hold
   // the question in the language the account is being asked in, not in the server's default.
-  const content = await onboardingContent(deps, profile?.lang ?? "en");
+  // The chat has no `tz`/`region` of its own to send — experiments that need them do not enroll
+  // here, which is exactly what "unknown means not eligible" is for.
+  const content = await onboardingContentFor(deps, userId, { lang: profile?.lang ?? "en", surface: "app" });
   return (ref) => {
     if (!profile) return null;
     if (typeof ref !== "object" || ref === null) return null;
