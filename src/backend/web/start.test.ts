@@ -1961,6 +1961,28 @@ describe("the session account, before and after sign-up (S8)", () => {
     expect((await get("/start/country", earlier)).status).toBe(303);
   });
 
+  it("resumes an account that has logged a meal at the product, country unanswered (ieat-app#2696)", async () => {
+    // An app user finishes streak AFTER the first meal and may never have answered country. The web
+    // walk in progress (no meal yet) still goes to /start/country; past the first meal it does not.
+    const earlier = await signIn("meal-no-country", "apple");
+    const real = await webUser(earlier);
+    await store.patchProfile(real, { onboarded_at: new Date().toISOString(), goal: "lose", streak_goal_days: 14 });
+    expect((await get("/start", earlier)).headers.get("location")).toBe("/start/country");
+    await store.insertMeal({
+      id: crypto.randomUUID(), user_id: real, ts: new Date().toISOString(), date: localDate(CONFIG.timezone), isFood: true,
+      items: [{ name: "Rice", grams: 200 }], kcal: 300, protein_g: 5, carbs_g: 60, fat_g: 2, satfat_g: 1, fiber_g: 1,
+      sugar_g: 1, sodium_mg: 100, verdicts: {}, healthScore: null, confidence: "high", notes: "", corrected: false, model: "test",
+    });
+    const product = (await get("/start", earlier)).headers.get("location");
+    expect(product).not.toBe("/start/country");
+    expect(product).not.toBe("/start/streak");
+    // A country the app only FILLED is no different once a meal exists.
+    await store.patchProfile(real, { country: "de", filled_fields: ["country"] });
+    expect((await get("/start", earlier)).headers.get("location")).toBe(product);
+    // Typing the URL still lets a person answer it.
+    expect((await get("/start/country", earlier)).status).toBe(200);
+  });
+
   it("stamps the marketing box only when it was ticked", async () => {
     const plain = await answerAll(undefined, ANSWERS);
     const plainSigned = await signIn("no-marketing", "google", undefined, plain);

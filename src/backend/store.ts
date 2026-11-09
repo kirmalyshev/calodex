@@ -79,7 +79,12 @@ export interface JobRecord {
 export interface PushAudienceRow {
   userId: string;
   timezone: string | null;
-  /** When the account was made and when it finished onboarding (ISO), for the day-1/3/7 schedule. */
+  /**
+   * When the account was made and when it finished onboarding (ISO), for the day-1/3/7 schedule.
+   * Days are counted from `onboardedAt` when it exists and from `createdAt` until then, so an
+   * account that onboards on day 2 is counted again from there: up to FOUR onboarding pushes, not
+   * three. Accepted (Kirill, 2026-11-09); the stamp is not moved to avoid it (ieat-app#2696).
+   */
   createdAt: string;
   onboardedAt: string | null;
 }

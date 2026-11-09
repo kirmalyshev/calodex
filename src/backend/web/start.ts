@@ -44,7 +44,7 @@ import { emailSignInEnabled } from "../mail/choose.ts";
 import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
-  cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
+  cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
   onboardingContentFor, mintPairingCode, patchProfile, profileView,
   sendEmailCode, signInWithProvider, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail,
@@ -353,7 +353,16 @@ async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Pr
   if (profile.onboarded_at === null) return `${START_PREFIX}/q`;
   if (await isAnonymous(ctx.deps, userId)) return `${START_PREFIX}/plan`;
   // Still in the funnel, not an account that finished without a goal: that one goes to the product.
-  if (!countryAnswered(profile)) return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
+  //
+  // PAST THE FIRST MEAL IT IS NOT THE FUNNEL. The app asks streak and country AFTER the first meal
+  // and lets either go unanswered, so an account that has logged one and has no country is a
+  // finished app run, not a web walk in progress (ieat-app#2696). Sent to /start/country on every
+  // sign-in it had no exit but answering. The walk in progress has no meal yet and still resumes
+  // here; typing /start/country still renders it. If the app ever moves streak before the first
+  // meal this stops catching a finished app run, and the test named after it says where to look.
+  if (!countryAnswered(profile) && !(await hasLoggedMeal(ctx.deps, userId))) {
+    return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
+  }
   return ctx.hasWebApp ? "/" : CHAT_PATH;
 }
 
