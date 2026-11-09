@@ -1763,6 +1763,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async onboardingExperimentFunnel(experimentId) {
       const events = [...onboardingEvents.values()];
+      const experiment = onboardingExperiments.get(experimentId);
       const out = new Map<number, OnboardingExperimentFunnelRow>();
       for (const a of onboardingAssignments.values()) {
         if (a.experiment_id !== experimentId) continue;
@@ -1770,10 +1771,14 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           ?? { variant_id: a.variant_id, assigned: 0, sessions: 0, completed: 0, fell_back: 0 };
         row.assigned += 1;
         // One session's verdicts: a run is completed if ANY of its events completes, and fell
-        // back if ANY event names a revision other than the assigned one.
+        // back if ANY event names a revision other than the assigned one. The window is the
+        // experiment's: events before the assignment — or after a stop — are the user's history,
+        // not this arm's result.
         const runs = new Map<string, { completed: boolean; fell: boolean }>();
         for (const e of events) {
           if (e.userId !== a.user_id) continue;
+          if (e.at < a.assigned_at) continue;
+          if (experiment?.stopped_at != null && e.at > experiment.stopped_at) continue;
           const r = runs.get(e.sessionId) ?? { completed: false, fell: false };
           if (e.action === "complete") r.completed = true;
           if (e.contentVersion !== a.variant_id) r.fell = true;

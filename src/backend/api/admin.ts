@@ -352,8 +352,9 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     return json({ experiments: await onboardingExperiments(deps) });
   }
   if (req.method === "POST" && pathname === "/admin/api/experiments") {
-    const body = await req.json() as { lang?: unknown };
-    const lang = narrowLang(typeof body?.lang === "string" ? body.lang : null);
+    const body = await req.json().catch(() => null) as { lang?: unknown } | null;
+    if (body === null) return json({ errors: ["body must be JSON"] }, 422);
+    const lang = narrowLang(typeof body.lang === "string" ? body.lang : null);
     return json({ experiment: await createOnboardingExperiment(deps, adminId, lang) });
   }
   const expMatch = /^\/admin\/api\/experiments\/([^/]+)(?:\/(variants)\/(\d+)|\/(start|stop))?$/.exec(pathname);

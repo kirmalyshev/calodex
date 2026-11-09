@@ -3232,18 +3232,24 @@ details.how p { margin-top: 8px; }
   }
 
   function loadExperiments() {
-    return api("GET", "/admin/api/experiments").then(function (res) {
+    // The picker reads the same language list the onboarding editor does; an admin who opened
+    // this view first has not fetched it yet, so one content load — which carries langs and
+    // labels — primes it. A server that predates the list still gets "en".
+    var prime = langs.length ? Promise.resolve()
+      : api("GET", "/admin/api/content").then(function (res) {
+          langs = res.langs || []; labels = res.labels || {};
+        }, function () {});
+    return prime.then(function () {
+      return api("GET", "/admin/api/experiments");
+    }).then(function (res) {
       experiments = res.experiments || [];
       var select = $("exp-lang");
-      if (select.options.length === 0 && typeof LANGS !== "undefined") {
-        (langs.length ? langs : []).forEach(function (code) {
+      if (select.options.length === 0) {
+        (langs.length ? langs : ["en"]).forEach(function (code) {
           var o = document.createElement("option");
           o.value = code; o.textContent = (labels[code] || code);
           select.appendChild(o);
         });
-        if (select.options.length === 0) {
-          ["en"].forEach(function (code) { var o = document.createElement("option"); o.value = code; o.textContent = code; select.appendChild(o); });
-        }
       }
       renderExperiments();
     });
@@ -3291,10 +3297,18 @@ details.how p { margin-top: 8px; }
           + '</tr>';
       });
       arms += '</tbody></table>';
+      var measured = view.arms.filter(function (a) { return a.stats.ci !== null; });
+      if (measured.length >= 2) {
+        var overlap = measured.every(function (a) {
+          return measured.every(function (b) { return a.stats.ci.lo <= b.stats.ci.hi && b.stats.ci.lo <= a.stats.ci.hi; });
+        });
+        var n = measured.reduce(function (t, a) { return t + a.stats.sessions; }, 0);
+        arms += '<p class="muted">n=' + n + (overlap ? ", intervals overlap: no conclusion" : ", intervals separated") + '</p>';
+      }
       var actions = '';
       if (e.status === "draft") {
         actions = '<div class="row" style="gap:8px;margin-top:8px">'
-          + '<input id="exp-rules-' + esc(e.id) + '" placeholder=\'{"countries":["de"],"hours":[22,6],"surfaces":["app"]}\' style="flex:1;min-width:0" '
+          + '<input id="exp-rules-' + esc(e.id) + '" placeholder="rules JSON: countries, hours [from,to), surfaces" style="flex:1;min-width:0" '
           + 'value="' + esc(JSON.stringify(e.rules)) + '">'
           + '<input id="exp-weights-' + esc(e.id) + '" placeholder="weights, e.g. 1,1" style="width:130px" '
           + 'value="' + esc(view.arms.map(function (a) { return a.variant.weight; }).join(",")) + '">'
@@ -3317,21 +3331,22 @@ details.how p { margin-top: 8px; }
       });
       var start = card.querySelector("[data-start]");
       if (start) start.addEventListener("click", function () {
-        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/start", {}).then(loadExperiments, showErrors);
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/start", {}).then(loadExperiments, expErrors);
       });
       var stop = card.querySelector("[data-stop]");
       if (stop) stop.addEventListener("click", function () {
-        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/stop", {}).then(loadExperiments, showErrors);
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/stop", {}).then(loadExperiments, expErrors);
       });
       host.appendChild(card);
     });
   }
 
-  function showErrors(e) {
+  function expErrors(e) {
     var box = $("errors");
     box.classList.remove("hidden");
     box.querySelector("ul").textContent = "";
-    (e && e.errors ? e.errors : [String(e && e.message || e)]).forEach(function (m) {
+    var list = e && e.body && e.body.errors ? e.body.errors : [String(e && e.message || e)];
+    list.forEach(function (m) {
       var li = document.createElement("li"); li.textContent = m; box.querySelector("ul").appendChild(li);
     });
   }
@@ -3339,16 +3354,16 @@ details.how p { margin-top: 8px; }
   function saveTargeting(id) {
     var rules;
     try { rules = JSON.parse($("exp-rules-" + id).value || "{}"); }
-    catch (x) { showErrors({ errors: ["rules must be JSON"] }); return; }
+    catch (x) { expErrors({ body: { errors: ["rules must be JSON"] } }); return; }
     var weights = ($("exp-weights-" + id).value || "").split(",").map(function (w) {
       return w.trim() === "" ? NaN : Number(w.trim());
     });
     api("PUT", "/admin/api/experiments/" + encodeURIComponent(id), { rules: rules, weights: weights })
-      .then(loadExperiments, showErrors);
+      .then(loadExperiments, expErrors);
   }
 
   $("exp-new").addEventListener("click", function () {
-    api("POST", "/admin/api/experiments", { lang: $("exp-lang").value }).then(loadExperiments, showErrors);
+    api("POST", "/admin/api/experiments", { lang: $("exp-lang").value }).then(loadExperiments, expErrors);
   });
 
   // The variant's words edit in the SAME editor the live copy uses: variantEdit points the load

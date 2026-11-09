@@ -3627,6 +3627,9 @@ export async function postgresStore(
     async onboardingExperimentFunnel(experimentId) {
       // By ASSIGNMENT, not by the version an event carries — intention to treat. A run whose
       // events name a different revision is "fell back", its own number beside the rate.
+      // And only the events inside the experiment's own window count: a run from before the
+      // assignment — or, for a stopped experiment, after the stop — is the same user's history,
+      // not this arm's result.
       const rows = await sql`
         select a.variant_id,
                count(distinct a.user_id)                                         as assigned,
@@ -3636,7 +3639,10 @@ export async function postgresStore(
                count(distinct e.session_id)
                  filter (where e.content_version is distinct from a.variant_id)  as fell_back
         from onboarding_assignments a
+        join onboarding_experiments x on x.id = a.experiment_id
         left join onboarding_events e on e.user_id = a.user_id
+          and e.at >= a.assigned_at
+          and (x.stopped_at is null or e.at <= x.stopped_at)
         where a.experiment_id = ${experimentId}
         group by a.variant_id`;
       return rows.map((r: Record<string, unknown>) => ({

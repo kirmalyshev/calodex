@@ -506,9 +506,15 @@ describe("experiments (ieat-app#2669)", () => {
     expect(updated.arms.map((a) => a.variant.content.version)).toHaveLength(2);
     expect(new Set(updated.arms.map((a) => a.variant.content.version)).size).toBe(2);
 
-    // A variant save validates and takes a fresh version.
+    // A variant save validates and takes a fresh version — and the WELCOME answers to the full
+    // claims set (PR2): a health claim a question may carry is refused in a stranger's first line.
     const bad = await saveOnboardingVariant(deps, e.id, 1, { version: 1 });
     expect(bad.ok).toBe(false);
+    const claimed = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    claimed.welcome.lines = ["Lose weight fast"];
+    const refused = await saveOnboardingVariant(deps, e.id, 1, claimed);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.errors.join(" ")).toContain("welcome");
     const good = await saveOnboardingVariant(deps, e.id, 1, structuredClone(DEFAULT_ONBOARDING_CONTENT));
     expect(good.ok).toBe(true);
 

@@ -3160,10 +3160,15 @@ function contract(name: string, make: () => Promise<Store>) {
         await s.recordOnboardingEvents(u1, ev(u1) as never);
         await s.recordOnboardingEvents(u1, ev(u1, { action: "complete" }) as never);
         await s.recordOnboardingEvents(u2, ev(u2) as never);
+        // A run from BEFORE the assignment is the user's history, not this arm's result —
+        // and so is a run after the experiment stopped.
+        const u4 = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.putOnboardingAssignment(u4, e.id, 41);
+        await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-old", at: "2000-01-01T00:00:00Z" }) as never);
         const rows = await s.onboardingExperimentFunnel(e.id);
         const v41 = rows.find((r) => r.variant_id === 41);
         const v42 = rows.find((r) => r.variant_id === 42);
-        expect(v41).toMatchObject({ assigned: 1, sessions: 1, completed: 1, fell_back: 0 });
+        expect(v41).toMatchObject({ assigned: 2, sessions: 1, completed: 1, fell_back: 0 });
         expect(v42).toMatchObject({ assigned: 2, sessions: 1, completed: 0, fell_back: 1 });
       });
 
