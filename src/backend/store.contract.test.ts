@@ -543,6 +543,25 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.getEntitlement(other)).toBeNull();
     });
 
+    // A TRANSFER (#687): the grants move per grant, newer clock wins; the source keeps its record
+    // with both cleared and stamped at the transfer, so an older delivery cannot write them back.
+    it("moves both grants on a transfer, and fences the source at the transfer's clock", async () => {
+      const s = await open();
+      const { userId: from } = await s.upsertDeviceUser(device(), "en");
+      const { userId: into } = await s.upsertDeviceUser(device(), "en");
+      await s.putEntitlement(from, { expiresAt: "2026-09-24T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-14T10:00:00.000Z" });
+      await s.putEntitlement(from, { lifetimeProductId: "lifetime", productId: "lifetime", eventAt: "2026-08-15T10:00:00.000Z" });
+      expect(await s.moveEntitlement(from, crypto.randomUUID(), "2026-08-20T10:00:00.000Z")).toBe(false);
+      expect(await s.moveEntitlement(from, into, "2026-08-20T10:00:00.000Z")).toBe(true);
+      expect(await s.getEntitlement(into)).toEqual({
+        expiresAt: "2026-09-24T10:00:00.000Z", lifetimeProductId: "lifetime", productId: "monthly",
+        eventAt: "2026-08-15T10:00:00.000Z", trial: false,
+      });
+      expect(await s.getEntitlement(from)).toMatchObject({ expiresAt: null, lifetimeProductId: null });
+      expect(await s.putEntitlement(from, { expiresAt: "2026-09-24T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-19T10:00:00.000Z" })).toBe(false);
+      expect(await s.moveEntitlement(from, into, "2026-08-21T10:00:00.000Z")).toBe(false);
+    });
+
     it("keeps a subscription's end date when the lifetime unlock is granted, and vice versa", async () => {
       const s = await open();
       const { userId } = await s.upsertDeviceUser(device(), "en");
@@ -4761,7 +4780,10 @@ if (PG_URL) {
         // each of these touches a second account's row by design.
         "grantReferralWeek",
         "hasAdmin", "heartbeatJobs", "identityFor", "listCampaigns", "listPushTemplates",
-        "markCampaignRunning", "mergeUsers", "moveIdentity", "offProductByBarcode", "onboardingFunnel",
+        "markCampaignRunning", "mergeUsers",
+        // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
+        "moveEntitlement",
+        "moveIdentity", "offProductByBarcode", "onboardingFunnel",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,

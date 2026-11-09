@@ -1707,6 +1707,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // ── Operations that span TWO accounts, and would refuse half their own work under either one.
   mergeUsers: "unscoped",
   moveIdentity: "unscoped",
+  moveEntitlement: "unscoped",
   // One Expo push token is one INSTALLATION, and the upsert deliberately MOVES it between accounts
   // when a phone signs into a different one — the invariant on `push_tokens`. Scoped to the new
   // owner, the policy would hide the existing row and the move would become a duplicate.
@@ -3168,6 +3169,56 @@ export async function postgresStore(
         eventAt: new Date(r.entitlement_event_at as string).toISOString(),
         trial: r.entitlement_trial === true,
       };
+    },
+
+    async moveEntitlement(fromUserId, intoUserId, eventAtIso) {
+      if (fromUserId === intoUserId) return false;
+      const at = new Date(eventAtIso);
+      // `mergeUsers`' two grant statements, plus one condition each: only a grant the transfer could
+      // have carried, one whose clock precedes it. The source is cleared LAST, because the moves
+      // read its values; the whole thing is one transaction for the reason the merge is.
+      return await inTx(async (tx) => {
+        await tx`
+          update users into_u set
+            entitlement_expires_at       = from_u.entitlement_expires_at,
+            entitlement_expires_event_at = from_u.entitlement_expires_event_at,
+            entitlement_trial            = from_u.entitlement_trial,
+            entitlement_product_id       = from_u.entitlement_product_id
+          from users from_u
+          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
+            and (from_u.entitlement_expires_at is not null and from_u.entitlement_expires_event_at < ${at})
+            and (into_u.entitlement_expires_event_at is null
+                 or into_u.entitlement_expires_event_at < from_u.entitlement_expires_event_at)`;
+        await tx`
+          update users into_u set
+            entitlement_lifetime_product_id = from_u.entitlement_lifetime_product_id,
+            entitlement_lifetime_event_at   = from_u.entitlement_lifetime_event_at
+          from users from_u
+          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
+            and (from_u.entitlement_lifetime_product_id is not null and from_u.entitlement_lifetime_event_at < ${at})
+            and (into_u.entitlement_lifetime_event_at is null
+                 or into_u.entitlement_lifetime_event_at < from_u.entitlement_lifetime_event_at)`;
+        await tx`
+          update users into_u set
+            entitlement_event_at = greatest(into_u.entitlement_event_at, from_u.entitlement_event_at)
+          from users from_u
+          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
+            and ((from_u.entitlement_expires_at is not null and from_u.entitlement_expires_event_at < ${at}) or (from_u.entitlement_lifetime_product_id is not null and from_u.entitlement_lifetime_event_at < ${at}))`;
+        const cleared = await tx`
+          update users set
+            entitlement_expires_at = case when entitlement_expires_at is not null and entitlement_expires_event_at < ${at} then null else entitlement_expires_at end,
+            entitlement_trial = case when entitlement_expires_at is not null and entitlement_expires_event_at < ${at} then false else entitlement_trial end,
+            entitlement_expires_event_at = case when entitlement_expires_at is not null and entitlement_expires_event_at < ${at} then ${at} else entitlement_expires_event_at end,
+            entitlement_lifetime_product_id = case when entitlement_lifetime_product_id is not null and entitlement_lifetime_event_at < ${at} then null else entitlement_lifetime_product_id end,
+            entitlement_lifetime_event_at = case when entitlement_lifetime_product_id is not null and entitlement_lifetime_event_at < ${at} then ${at} else entitlement_lifetime_event_at end,
+            entitlement_event_at = greatest(entitlement_event_at, ${at})
+          where id = ${fromUserId}
+            and exists (select 1 from users where id = ${intoUserId})
+            and ((entitlement_expires_at is not null and entitlement_expires_event_at < ${at})
+                 or (entitlement_lifetime_product_id is not null and entitlement_lifetime_event_at < ${at}))
+          returning id`;
+        return cleared.length > 0;
+      });
     },
 
     async putEntitlement(userId, patch) {

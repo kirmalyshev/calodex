@@ -1104,6 +1104,16 @@ export interface Store {
    */
   putEntitlement(userId: string, patch: EntitlementPatch): Promise<boolean>;
 
+  /**
+   * A RevenueCat TRANSFER (#687): move the grants `fromUserId` held before `eventAt` onto
+   * `intoUserId`, per grant, newer clock wins — `mergeUsers`' rule, without the rest of the merge.
+   * The source keeps its record (it did buy) with both grants cleared and their clocks stamped
+   * `eventAt`, so a delivery generated before the transfer cannot write the grant back onto it.
+   * False, and nothing written, when either account does not exist or the source held no grant
+   * older than the transfer. Never creates a user.
+   */
+  moveEntitlement(fromUserId: string, intoUserId: string, eventAt: string): Promise<boolean>;
+
   // ── Referrals (#899) ───────────────────────────────────────────────────────────────────────
   //
   // `users.referral_code` (unique, made with the account), `users.referred_by` (set ONCE),
