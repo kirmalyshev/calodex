@@ -29,10 +29,10 @@ import { syncShippedPrompts } from "./llm/prompt.ts";
 import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
-  type StoreOptions, type StoredPhoto,
+  type ClockedEntitlement, type StoreOptions, type StoredPhoto,
 } from "./store.ts";
 
 /**
@@ -1771,6 +1771,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // ── Operations that span TWO accounts, and would refuse half their own work under either one.
   mergeUsers: "unscoped",
   moveIdentity: "unscoped",
+  moveEntitlement: "unscoped",
   // One Expo push token is one INSTALLATION, and the upsert deliberately MOVES it between accounts
   // when a phone signs into a different one — the invariant on `push_tokens`. Scoped to the new
   // owner, the policy would hide the existing row and the move would become a duplicate.
@@ -3256,6 +3257,47 @@ export async function postgresStore(
         eventAt: new Date(r.entitlement_event_at as string).toISOString(),
         trial: r.entitlement_trial === true,
       };
+    },
+
+    async moveEntitlement(fromUserId, intoUserId, eventAtIso) {
+      if (fromUserId === intoUserId) return false;
+      // Both rows locked, the shared rule applied, both written back, all in one transaction: the
+      // decision reads only rows this transaction holds, so a concurrent delivery waits for it.
+      return await inTx(async (tx) => {
+        const rows = await tx`
+          select id, entitlement_expires_at, entitlement_expires_event_at, entitlement_trial,
+                 entitlement_product_id, entitlement_lifetime_product_id, entitlement_lifetime_event_at,
+                 entitlement_event_at
+          from users where id in (${fromUserId}, ${intoUserId}) for update`;
+        const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
+        const read = (id: string): ClockedEntitlement | null | undefined => {
+          const r = rows.find((x: { id: string }) => x.id === id);
+          if (!r) return undefined;
+          if (!r.entitlement_event_at) return null;
+          return {
+            expiresAt: iso(r.entitlement_expires_at), expiresEventAt: iso(r.entitlement_expires_event_at),
+            trial: r.entitlement_trial === true, productId: (r.entitlement_product_id as string | null) ?? "",
+            lifetimeProductId: (r.entitlement_lifetime_product_id as string | null) ?? null,
+            lifetimeEventAt: iso(r.entitlement_lifetime_event_at), eventAt: iso(r.entitlement_event_at)!,
+          };
+        };
+        const from = read(fromUserId);
+        const into = read(intoUserId);
+        if (!from || into === undefined) return false;
+        const plan = planTransfer(from, into, eventAtIso, now());
+        if (plan === null) return false;
+        const at = (v: string | null) => (v === null ? null : new Date(v));
+        for (const [id, e] of [[intoUserId, plan.into], [fromUserId, plan.from]] as const) {
+          await tx`
+            update users set
+              entitlement_expires_at = ${at(e.expiresAt)}, entitlement_expires_event_at = ${at(e.expiresEventAt)},
+              entitlement_trial = ${e.trial === true}, entitlement_product_id = ${e.productId},
+              entitlement_lifetime_product_id = ${e.lifetimeProductId},
+              entitlement_lifetime_event_at = ${at(e.lifetimeEventAt)}, entitlement_event_at = ${new Date(e.eventAt)}
+            where id = ${id}`;
+        }
+        return true;
+      });
     },
 
     async putEntitlement(userId, patch) {

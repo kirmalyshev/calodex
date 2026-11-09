@@ -19,7 +19,7 @@ import { buildFoodIndex } from "./food-index.ts";
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
@@ -1229,6 +1229,16 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // port is a field somebody will branch on. `storedEntitlement` is that projection, shared
       // with the admin list so the two cannot disagree about which fields leave.
       return storedEntitlement(userId);
+    },
+
+    async moveEntitlement(fromUserId, intoUserId, eventAt) {
+      const from = entitlements.get(fromUserId);
+      if (!from || fromUserId === intoUserId || !users.has(intoUserId)) return false;
+      const plan = planTransfer(from, entitlements.get(intoUserId) ?? null, eventAt, now());
+      if (plan === null) return false;
+      entitlements.set(intoUserId, plan.into);
+      entitlements.set(fromUserId, plan.from);
+      return true;
     },
 
     async putEntitlement(userId, patch) {
