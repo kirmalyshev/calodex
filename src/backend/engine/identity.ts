@@ -134,9 +134,16 @@ export async function completeSignIn(
         await deps.store.patchProfile(existing, patch);
       }
     }
-    mergedMeals = await deps.store.mergeUsers(currentUserId, existing);
+    const moved = await deps.store.mergeUsers(currentUserId, existing);
     userId = existing;
-    outcome = "merged";
+    // Null: a parallel sign-in from the same session merged first and the anonymous account is
+    // gone. Its work is done, so this one lands where it landed — a plain return to `existing`.
+    if (moved === null) {
+      outcome = "switched";
+    } else {
+      mergedMeals = moved;
+      outcome = "merged";
+    }
   } else {
     // Two accounts that both have real identities. Merging them is a decision with no safe
     // default — whose profile wins? whose targets? — so we sign into the one being presented and

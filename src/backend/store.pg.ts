@@ -1700,6 +1700,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // no user to scope them by. The address itself is the row's only scope, in the predicate.
   putEmailCode: "unscoped",
   spendEmailCode: "unscoped",
+  restoreEmailCode: "unscoped",
   // A token is revoked by the token. The holder of a session is signing it out and the row is the
   // only thing naming the account.
   revokeToken: "unscoped",
@@ -2694,6 +2695,11 @@ export async function postgresStore(
       // One transaction. A half-applied merge leaves meals owned by a user row that is about to be
       // deleted, and `on delete cascade` would then destroy the data this operation exists to save.
       return await inTx(async (tx) => {
+        // THE ANONYMOUS ROW IS LOCKED FIRST. Two sign-ins from one session (a double tap, Apple and
+        // an email code in parallel) both pass the engine's "is this anonymous" read; the second
+        // waits here, finds the row gone, and learns the merge already happened (null).
+        const locked = await tx`select id from users where id = ${fromUserId} for update`;
+        if (locked.length === 0) return null;
         const moved = await tx`
           update meals set user_id = ${intoUserId} where user_id = ${fromUserId} returning id`;
         await tx`update meal_photos set user_id = ${intoUserId} where user_id = ${fromUserId}`;
@@ -2711,6 +2717,12 @@ export async function postgresStore(
         await tx`
           update turns set user_id = ${intoUserId} where user_id = ${fromUserId}
             and client_id not in (select client_id from turns where user_id = ${intoUserId})`;
+        // A client id claimed on both sides keeps the survivor's row, but not at the price of the
+        // settled answer: the phone replays that id and must get the logged outcome if EITHER had one.
+        await tx`
+          update turns t set outcome = f.outcome from turns f
+          where f.user_id = ${fromUserId} and t.user_id = ${intoUserId}
+            and f.client_id = t.client_id and t.outcome is null and f.outcome is not null`;
         // What the app has learned about this person's portions is learned before they sign in.
         await tx`update portion_corrections set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         // A source meal the real account already saved keeps ITS row; the other goes with the account.
@@ -3962,6 +3974,15 @@ export async function postgresStore(
       const consumed = await sql`update email_codes set used_at = now()
         where id = ${row.id} and used_at is null returning id`;
       return consumed.length > 0 ? "ok" : "dead";
+    },
+
+    async restoreEmailCode(email, codeHash) {
+      await sql`
+        update email_codes set used_at = null, attempts = greatest(attempts - 1, 0)
+         where id = (select id from email_codes
+                      where email = ${email} and code_hash = ${codeHash}
+                        and used_at is not null and expires_at > now()
+                      order by used_at desc limit 1)`;
     },
 
     async putPushToken(userId, token, platform) {

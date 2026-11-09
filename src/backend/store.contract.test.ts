@@ -4771,7 +4771,7 @@ if (PG_URL) {
         "putOffProducts", "putOnboardingContent", "putPrompt", "putPushTemplate", "putPushToken", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
-        "releaseJobs", "revokeReferralWeek",
+        "releaseJobs", "restoreEmailCode", "revokeReferralWeek",
         "revokeToken", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
         "setSwitch", "spendEmailCode", "switchEnabled", "switchHistory", "updateCampaign",
         "upsertDeviceUser", "userIdForIdentity", "userIdForToken",

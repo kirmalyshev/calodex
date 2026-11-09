@@ -997,7 +997,13 @@ export interface Store {
    * has an account. Merging two real accounts is a different problem and is not attempted — the
    * caller checks that before getting here.
    */
-  mergeUsers(fromUserId: string, intoUserId: string): Promise<number>;
+  mergeUsers(fromUserId: string, intoUserId: string): Promise<number | null>;
+  /**
+   * Un-spend the code `spendEmailCode` just consumed, because the sign-in it was spent for failed
+   * before it landed. Only a code that is used, unexpired, and whose hash matches; the attempt it
+   * cost is given back. A code that was burnt by wrong guesses is never revived.
+   */
+  restoreEmailCode(email: string, codeHash: string): Promise<void>;
 
   // ── The role ───────────────────────────────────────────────────────────────────────────────
   //

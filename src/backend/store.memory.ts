@@ -866,6 +866,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async mergeUsers(fromUserId, intoUserId) {
+      if (!users.has(fromUserId)) return null;
       let moved = 0;
       for (const [id, m] of meals) {
         if (m.user_id !== fromUserId) continue;
@@ -905,7 +906,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         if (t.userId !== fromUserId) continue;
         turns.delete(k);
         const into = `${intoUserId}\n${t.clientId}`;
-        if (!turns.has(into)) turns.set(into, { ...t, userId: intoUserId });
+        const held = turns.get(into);
+        if (!held) turns.set(into, { ...t, userId: intoUserId });
+        else if (held.outcome == null && t.outcome != null) held.outcome = t.outcome;
       }
       for (const [k, j] of jobs) {
         if (j.userId !== fromUserId) continue;
@@ -1942,6 +1945,15 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       }
       row.usedAt = now();
       return "ok";
+    },
+
+    async restoreEmailCode(email, codeHash) {
+      const row = [...emailCodes.values()]
+        .filter((c) => c.email === email && c.codeHash === codeHash && c.usedAt !== null && c.expiresAt > now())
+        .sort((a, b) => b.usedAt! - a.usedAt!)[0];
+      if (row === undefined) return;
+      row.usedAt = null;
+      row.attempts = Math.max(0, row.attempts - 1);
     },
 
     async appendChat(userId, lines) {

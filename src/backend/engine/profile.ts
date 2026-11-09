@@ -363,13 +363,26 @@ export async function patchProfile(
     patch[f] = req[f];
   }
 
-  if (req.complete_onboarding) {
-    const merged = { ...current, ...patch } as Profile;
-    // Goal and bodyweight are the minimum for any target at all. Everything else degrades to the
-    // flat band, which is safe; missing these two makes the number meaningless.
-    if (merged.goal === null || merged.weight_kg === null) {
-      return reject("complete_onboarding", "out-of-range");
-    }
+  const merged = { ...current, ...patch } as Profile;
+  // Goal and bodyweight are the minimum for any target at all. Everything else degrades to the
+  // flat band, which is safe; missing these two makes the number meaningless. Held for an
+  // onboarded account too, not only on the completing PATCH: the meal gates run `explainTargets`
+  // on whatever is stored, so a later `{ weight_kg: null }` would hand them a profile completion
+  // itself refuses.
+  if (req.complete_onboarding || current.onboarded_at !== null) {
+    if (merged.goal === null) return reject(req.goal === null ? "goal" : "complete_onboarding", "out-of-range");
+    if (merged.weight_kg === null) return reject(req.weight_kg === null ? "weight_kg" : "complete_onboarding", "out-of-range");
+  }
+  // A maintainer is asked neither a target nor a pace (`stepApplies`). Leaving maintain after
+  // onboarding brings both into scope, and they arrive with the goal or the change is refused.
+  if (current.onboarded_at !== null && current.goal === "maintain" && merged.goal !== "maintain"
+      && (merged.target_weight_kg === null || merged.pace === null)) {
+    return reject(merged.target_weight_kg === null ? "target_weight_kg" : "pace", "out-of-range");
+  }
+  // Once, and only once: a retried patch, a re-answered medical or a web /start run on an
+  // onboarded account carries `complete_onboarding` again, and the stamp anchors the push cadence,
+  // the weigh-in slot floor and the admin's per-day counts.
+  if (req.complete_onboarding && current.onboarded_at === null) {
     patch.onboarded_at = new Date().toISOString();
   }
 
