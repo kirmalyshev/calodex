@@ -1920,6 +1920,21 @@ describe("the session account, before and after sign-up (S8)", () => {
     expect((await get("/start/country", signed)).status).toBe(303);
   });
 
+  it("still asks country when the app only FILLED it from the device (ieat-app#2676)", async () => {
+    const earlier = await signIn("filled-country", "apple");
+    const real = await webUser(earlier);
+    await store.patchProfile(real, {
+      onboarded_at: new Date().toISOString(), goal: "lose", country: "de", filled_fields: ["country"],
+    });
+    expect((await get("/start/country", earlier)).status).toBe(200);
+    const referral = await get("/start/referral", earlier);
+    expect(referral.status).toBe(303);
+    expect(referral.headers.get("location")).toBe("/start/country");
+    // An ANSWERED country is the control: the handoff skips the question.
+    await store.patchProfile(real, { filled_fields: [] });
+    expect((await get("/start/country", earlier)).status).toBe(303);
+  });
+
   it("stamps the marketing box only when it was ticked", async () => {
     const plain = await answerAll(undefined, ANSWERS);
     const plainSigned = await signIn("no-marketing", "google", undefined, plain);

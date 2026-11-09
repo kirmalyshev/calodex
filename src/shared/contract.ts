@@ -908,11 +908,18 @@ export interface ReferralSharedRequest {
  * fields are still null rather than trusting a client-side step counter, so a user who kills the
  * app mid-flow resumes where they actually are.
  */
+/**
+ * The only profile fields the SYSTEM may fill on a user's behalf (`PatchProfileRequest.filled`).
+ * Anything else a request writes is an answer, so `filled` is refused beside it.
+ */
+export const FILLABLE_FIELDS = ["country"] as const;
+
 export interface PatchProfileRequest {
   /**
    * True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device
-   * country). They are recorded in `Profile.filled_fields` and do not count as answers. Absent or
-   * false is a user write, which removes the fields it carries from that list.
+   * country). They are recorded in `Profile.filled_fields` and do not count as answers. Only the
+   * `FILLABLE_FIELDS` may be written this way, and never over a field the user already answered.
+   * Absent or false is a user write, which removes the fields it carries from that list.
    */
   filled?: boolean;
   lang?: Lang;

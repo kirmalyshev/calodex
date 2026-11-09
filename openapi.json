@@ -8592,7 +8592,7 @@
         "properties": {
           "filled": {
             "type": "boolean",
-            "description": "True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device country). They are recorded in `Profile.filled_fields` and do not count as answers. Absent or false is a user write, which removes the fields it carries from that list."
+            "description": "True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device country). They are recorded in `Profile.filled_fields` and do not count as answers. Only the `FILLABLE_FIELDS` may be written this way, and never over a field the user already answered. Absent or false is a user write, which removes the fields it carries from that list."
           },
           "lang": {
             "$ref": "#/components/schemas/Lang"
@@ -8838,8 +8838,7 @@
             "description": "Set true exactly once, by the last onboarding screen, after consent."
           }
         },
-        "additionalProperties": false,
-        "description": "A partial profile update. Every field optional; absent means \"leave alone\", explicit `null` means \"clear\". Onboarding is just a sequence of these — the server derives the next step from which fields are still null rather than trusting a client-side step counter, so a user who kills the app mid-flow resumes where they actually are."
+        "additionalProperties": false
       },
       "PaywallPlan": {
         "type": "object",
