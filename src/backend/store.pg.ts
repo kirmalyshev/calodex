@@ -1096,8 +1096,10 @@ create table if not exists onboarding_experiments (
   created_by  uuid not null,
   created_at  timestamptz not null default now(),
   started_at  timestamptz,
-  stopped_at  timestamptz
+  stopped_at  timestamptz,
+  revision    integer not null default 1
 );
+alter table onboarding_experiments add column if not exists revision integer not null default 1;
 -- One running experiment per language, enforced by the INDEX, not by a read: two starts on two
 -- connections both pass a not-exists check under read committed. The second one violates this and
 -- startOnboardingExperiment answers false off the violation.
@@ -1453,6 +1455,7 @@ const toPromptRevision = (r: Record<string, unknown>): PromptRevision => ({
 });
 
 const toOnboardingExperiment = (r: Record<string, unknown>): OnboardingExperiment => ({
+  revision: num(r.revision),
   id: String(r.id),
   lang: String(r.lang) as Lang,
   status: String(r.status) as OnboardingExperiment["status"],
@@ -1822,6 +1825,9 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   onboardingAssignment: 0,
   putOnboardingAssignment: 0,
   onboardingAssignments: "unscoped",
+  onboardingExperimentFunnel: "unscoped",
+  // The counter the admin saves and the experiment variants share — global, like the row it bumps.
+  bumpOnboardingContentVersion: "unscoped",
   // The six system prompts. One set for the whole instance, admin-edited, no account anywhere.
   getPrompts: "unscoped",
   putPrompt: "unscoped",
@@ -3606,22 +3612,25 @@ export async function postgresStore(
 
     async listOnboardingExperiments() {
       const rows = await sql`
-        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at,
+               revision
         from onboarding_experiments order by created_at desc`;
       return rows.map(toOnboardingExperiment);
     },
 
     async runningOnboardingExperiment(lang) {
       const rows = await sql`
-        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at,
+               revision
         from onboarding_experiments where lang = ${lang} and status = 'running' limit 1`;
       return rows.length === 0 ? null : toOnboardingExperiment(rows[0]!);
     },
 
-    async putOnboardingExperiment(experiment) {
-      // The WHERE on the update is the freeze: a row that left draft ignores the write and this
-      // answers false — a running variant never holds two sets of words. The insert writes
-      // 'draft' LITERALLY: a row born running would skip the one-per-language guard entirely.
+    async putOnboardingExperiment(experiment, expectedRevision) {
+      // The WHERE on the update is the freeze AND the optimistic guard: a row that left draft —
+      // or one a second writer already moved past the revision this put read — ignores the write,
+      // and this answers false rather than overwriting it. The insert writes 'draft' LITERALLY:
+      // a row born running would skip the one-per-language guard entirely.
       const rows = await sql`
         insert into onboarding_experiments
           (id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at)
@@ -3629,8 +3638,12 @@ export async function postgresStore(
           ${experiment.rules}::jsonb, ${experiment.variants}::jsonb, ${experiment.created_by},
           ${experiment.created_at}, ${experiment.started_at}, ${experiment.stopped_at})
         on conflict (id) do update
-          set lang = excluded.lang, rules = excluded.rules, variants = excluded.variants
+          set lang = excluded.lang, rules = excluded.rules, variants = excluded.variants,
+              revision = onboarding_experiments.revision + 1
           where onboarding_experiments.status = 'draft'
+            ${expectedRevision === undefined
+              ? sql``
+              : sql`and onboarding_experiments.revision = ${expectedRevision}`}
         returning id`;
       return rows.length > 0;
     },
@@ -3650,6 +3663,9 @@ export async function postgresStore(
             and not exists (
               select 1 from onboarding_experiments o
               where o.lang = e.lang and o.status = 'running')
+            and exists (
+              select 1 from jsonb_array_elements(e.variants) v
+              where (v->>'weight')::int > 0)
           returning e.id`;
         return rows.length > 0;
       } catch (e) {
@@ -3696,6 +3712,48 @@ export async function postgresStore(
         select user_id, experiment_id, variant_id, assigned_at
         from onboarding_assignments where experiment_id = ${experimentId}`;
       return rows.map(toOnboardingAssignment);
+    },
+
+    async onboardingExperimentFunnel(experimentId) {
+      // By ASSIGNMENT, not by the version an event carries — intention to treat. A run whose
+      // events name a different revision is "fell back", its own number beside the rate.
+      // And only the events inside the experiment's own window count: a run from before the
+      // assignment — or, for a stopped experiment, after the stop — is the same user's history,
+      // not this arm's result.
+      const rows = await sql`
+        select a.variant_id,
+               count(distinct a.user_id)                                         as assigned,
+               count(distinct e.session_id)                                      as sessions,
+               count(distinct e.session_id)
+                 filter (where e.action = 'complete')                            as completed,
+               count(distinct e.user_id)
+                 filter (where e.action = 'complete')                            as completed_users,
+               count(distinct e.session_id)
+                 filter (where e.content_version is distinct from a.variant_id)  as fell_back
+        from onboarding_assignments a
+        join onboarding_experiments x on x.id = a.experiment_id
+        left join onboarding_events e on e.user_id = a.user_id
+          and e.at >= a.assigned_at
+          and (x.stopped_at is null or e.at <= x.stopped_at)
+        where a.experiment_id = ${experimentId}
+        group by a.variant_id`;
+      return rows.map((r: Record<string, unknown>) => ({
+        variant_id: num(r.variant_id), assigned: num(r.assigned), sessions: num(r.sessions),
+        completed: num(r.completed), completed_users: num(r.completed_users), fell_back: num(r.fell_back),
+      }));
+    },
+
+    async bumpOnboardingContentVersion(floorVersion) {
+      // The same counter `putOnboardingContent` writes, with no language attached: an insert that
+      // creates the row carries an empty document, which `storedContentSet` reads as "nothing
+      // saved" — every language falls back exactly as before the row existed.
+      const rows = await sql`
+        insert into onboarding_content (id, version, content, updated_at)
+        values (1, ${floorVersion}, '{}'::jsonb, now())
+        on conflict (id) do update
+          set version = greatest(${floorVersion}, onboarding_content.version + 1)
+        returning version`;
+      return Number(rows[0]!.version);
     },
 
     // ── The food catalog ────────────────────────────────────────────────────────────────────

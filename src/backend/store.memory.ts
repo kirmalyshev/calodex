@@ -21,7 +21,7 @@ import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
-  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
 } from "./store.ts";
 
@@ -358,6 +358,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   // `opts.seed` is how a test starts from a row an OLDER server wrote — see `StoreOptions`. Cast
   // rather than validated, because the whole point of those shapes is that no current type fits.
   let onboardingContent = (opts.seed?.onboardingContent ?? null) as OnboardingContentSet | null;
+  // The high-water mark the shared version counter has reached — Postgres's `version` column, here.
+  // A variant bump moves it without touching the document, so a live save and a variant can never
+  // hand the same number to two different sets of words.
+  let onboardingVersionHighwater = 0;
   /**
    * Every prompt revision ever written, exactly as Postgres keeps them: nothing is overwritten and
    * the newest version per key is the live one. A flat list rather than a map by key, because the
@@ -1563,10 +1567,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // repaired them, so `--demo` and every engine test ran against behaviour the real store does
       // not have — which is worse than a bug, because it is a bug that proves things.
       const set = { ...legacyLanguageMap(onboardingContent) } as Record<string, { version?: number }>;
-      const highest = Math.max(0, ...Object.values(set)
+      const highest = Math.max(onboardingVersionHighwater, ...Object.values(set)
         .map((c) => c?.version)
         .filter((v): v is number => typeof v === "number"));
       const version = Math.max(floorVersion, highest + 1);
+      onboardingVersionHighwater = version;
       onboardingContent = clone({ ...set, [lang]: { ...content, version } }) as typeof onboardingContent;
       return version;
     },
@@ -1726,16 +1731,19 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return e ? clone(e) : null;
     },
 
-    async putOnboardingExperiment(experiment) {
+    async putOnboardingExperiment(experiment: OnboardingExperiment, expectedRevision?: number) {
       const existing = onboardingExperiments.get(experiment.id);
       if (existing) {
         // The freeze the Postgres upsert encodes in its WHERE — a row that left draft ignores the
         // write — and its same field set: lang, rules, variants. Status, creator and the stamps
-        // are not a draft's to rewrite.
+        // are not a draft's to rewrite. And the same optimistic guard: a put that read an older
+        // revision loses, rather than overwriting the draft a second writer already moved.
         if (existing.status !== "draft") return false;
+        if (expectedRevision !== undefined && existing.revision !== expectedRevision) return false;
         existing.lang = experiment.lang;
         existing.rules = clone(experiment.rules);
         existing.variants = clone(experiment.variants);
+        if (expectedRevision !== undefined) existing.revision += 1;
         return true;
       }
       // Born draft, like the Postgres insert: a row born running would skip the guard.
@@ -1746,6 +1754,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async startOnboardingExperiment(id) {
       const e = onboardingExperiments.get(id);
       if (!e || e.status !== "draft") return false;
+      // The weighted-arm rule lives in the same check the draft guard is in — pg's EXISTS does
+      // both inside one UPDATE; the same statement-shaped decision here.
+      if (!e.variants.some((v) => v.weight > 0)) return false;
       if ([...onboardingExperiments.values()].some((o) => o.lang === e.lang && o.status === "running")) {
         return false;
       }
@@ -1784,6 +1795,50 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return [...onboardingAssignments.values()]
         .filter((a) => a.experiment_id === experimentId)
         .map(clone);
+    },
+
+    async onboardingExperimentFunnel(experimentId) {
+      const events = [...onboardingEvents.values()];
+      const experiment = onboardingExperiments.get(experimentId);
+      const out = new Map<number, OnboardingExperimentFunnelRow>();
+      for (const a of onboardingAssignments.values()) {
+        if (a.experiment_id !== experimentId) continue;
+        const row = out.get(a.variant_id)
+          ?? { variant_id: a.variant_id, assigned: 0, sessions: 0, completed: 0, completed_users: 0, fell_back: 0 };
+        row.assigned += 1;
+        // One session's verdicts: a run is completed if ANY of its events completes, and fell
+        // back if ANY event names a revision other than the assigned one. The window is the
+        // experiment's: events before the assignment — or after a stop — are the user's history,
+        // not this arm's result.
+        const runs = new Map<string, { completed: boolean; fell: boolean }>();
+        for (const e of events) {
+          if (e.userId !== a.user_id) continue;
+          if (e.at < a.assigned_at) continue;
+          if (experiment?.stopped_at != null && e.at > experiment.stopped_at) continue;
+          const r = runs.get(e.sessionId) ?? { completed: false, fell: false };
+          if (e.action === "complete") r.completed = true;
+          if (e.contentVersion !== a.variant_id) r.fell = true;
+          runs.set(e.sessionId, r);
+        }
+        row.sessions += runs.size;
+        if ([...runs.values()].some((r) => r.completed)) row.completed_users += 1;
+        for (const r of runs.values()) {
+          if (r.completed) row.completed += 1;
+          if (r.fell) row.fell_back += 1;
+        }
+        out.set(a.variant_id, row);
+      }
+      return [...out.values()];
+    },
+
+    async bumpOnboardingContentVersion(floorVersion) {
+      // The counter counts the SET's versions too — seeded content at version 42 means the next
+      // number off the counter is 43, not 1 (the pg column never forgets it; neither may this).
+      const highest = Math.max(onboardingVersionHighwater, ...Object.values(legacyLanguageMap(onboardingContent))
+        .map((c) => (c as { version?: number })?.version)
+        .filter((v): v is number => typeof v === "number"));
+      onboardingVersionHighwater = Math.max(floorVersion, highest + 1);
+      return onboardingVersionHighwater;
     },
 
     async insertMeal(record) {

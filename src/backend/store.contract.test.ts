@@ -3196,11 +3196,14 @@ function contract(name: string, make: () => Promise<Store>) {
         lang: "en" as const,
         status: "draft" as const,
         rules: {},
-        variants: [],
+        // One weighted arm — the store's own start guard requires it, and the tests exercising
+        // the start mechanics are testing it, not the weight rule.
+        variants: [{ weight: 1, content: { version: 1 } as never }],
         created_by: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         started_at: null,
         stopped_at: null,
+        revision: 1,
         ...over,
       });
       const created: string[] = [];
@@ -3325,6 +3328,50 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(await s.onboardingAssignments(e.id)).toEqual([]);
       });
 
+      it("numbers a variant save off the shared counter, never colliding with a live revision", async () => {
+        const s = await open();
+        // A bump takes a number without installing copy; the next live save must take the one
+        // after it — two different sets of words can never wear one version.
+        const bumped = await s.bumpOnboardingContentVersion(0);
+        const live = await s.putOnboardingContent("de", structuredClone(DEFAULT_ONBOARDING_CONTENT), 0);
+        expect(live).toBeGreaterThan(bumped);
+      });
+
+      it("counts each arm by assignment, with fell-back as its own number", async () => {
+        const s = await open();
+        const e = exp({ id: `fun-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const u1 = (await s.upsertDeviceUser(device(), "en")).userId;
+        const u2 = (await s.upsertDeviceUser(device(), "en")).userId;
+        const u3 = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.putOnboardingAssignment(u1, e.id, 41);
+        await s.putOnboardingAssignment(u2, e.id, 42);
+        await s.putOnboardingAssignment(u3, e.id, 42);
+        const ev = (userId: string, over: Record<string, unknown> = {}) => ([{
+          id: crypto.randomUUID(), sessionId: "s-" + userId.slice(0, 4), place: "goal",
+          action: "view", contentVersion: 41, at: new Date().toISOString(), ...over,
+        }]);
+        // u1's run renders its assigned 41 and completes; u2's renders 41 — fell back off 42;
+        // u3 never opens onboarding at all.
+        await s.recordOnboardingEvents(u1, ev(u1) as never);
+        await s.recordOnboardingEvents(u1, ev(u1, { action: "complete" }) as never);
+        await s.recordOnboardingEvents(u2, ev(u2) as never);
+        // A run from BEFORE the assignment is the user's history, not this arm's result —
+        // and so is a run after the experiment stopped.
+        const u4 = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.putOnboardingAssignment(u4, e.id, 41);
+        await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-old", at: "2000-01-01T00:00:00Z" }) as never);
+        // And one after the experiment stopped — also outside the window.
+        await s.startOnboardingExperiment(e.id);
+        await s.stopOnboardingExperiment(e.id);
+        await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-late", at: "2999-01-01T00:00:00Z" }) as never);
+        const rows = await s.onboardingExperimentFunnel(e.id);
+        const v41 = rows.find((r) => r.variant_id === 41);
+        const v42 = rows.find((r) => r.variant_id === 42);
+        expect(v41).toMatchObject({ assigned: 2, sessions: 1, completed: 1, fell_back: 0 });
+        expect(v42).toMatchObject({ assigned: 2, sessions: 1, completed: 0, fell_back: 1 });
+      });
+
       it("moves assignments on merge, keeping the account's own row on a collision", async () => {
         const s = await open();
         const anon = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -3342,6 +3389,54 @@ function contract(name: string, make: () => Promise<Store>) {
         expect((await s.onboardingAssignment(real, gap.id))?.variant_id).toBe(8);
         // The collision is the account's own: its row is not overwritten by the session's.
         expect((await s.onboardingAssignment(real, shared.id))?.variant_id).toBe(3);
+      });
+
+      it("refuses a stale revision and accepts the fresh one", async () => {
+        // The optimistic guard turns each draft edit's read-modify-write into "last writer loses
+        // politely": a put carrying an old revision matches no row and answers false, rather than
+        // overwriting the draft a second admin already moved. On Postgres this is the WHERE of
+        // the guarded UPDATE — which the selects feeding it must read, or the guard compares 0.
+        const s = await open();
+        const e = exp({ id: `rev-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const read = (await s.listOnboardingExperiments()).find((x) => x.id === e.id)!;
+        expect(read.revision).toBe(1);
+        expect(await s.putOnboardingExperiment({ ...read, rules: { countries: ["de"] } }, read.revision)).toBe(true);
+        const moved = (await s.listOnboardingExperiments()).find((x) => x.id === e.id)!;
+        expect(moved.revision).toBe(2);
+        // The stale write — still carrying revision 1 — is refused instead of clobbering rules.
+        expect(await s.putOnboardingExperiment({ ...read, rules: { countries: ["fr"] } }, read.revision)).toBe(false);
+        const still = (await s.listOnboardingExperiments()).find((x) => x.id === e.id)!;
+        expect(still.rules).toEqual({ countries: ["de"] });
+        // And the fresh revision writes again.
+        expect(await s.putOnboardingExperiment({ ...moved, rules: { countries: ["at"] } }, moved.revision)).toBe(true);
+      });
+
+      it("runs a whole draft-edit cycle under the guard: create, set, clone, save", async () => {
+        // The engine's edit path is read → mutate → put-at-that-revision at every step; the
+        // routes run exactly these statements, so this is the guard working end to end.
+        const s = await open();
+        const e = exp({ id: `cycle-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const read = () => s.listOnboardingExperiments().then((l) => l.find((x) => x.id === e.id)!);
+        // set: rules land.
+        const first = await read();
+        expect(await s.putOnboardingExperiment({ ...first, rules: { surfaces: ["app"] } }, first.revision)).toBe(true);
+        // clone: a second arm appears — still at the fresh revision.
+        const second = await read();
+        expect(await s.putOnboardingExperiment({
+          ...second,
+          variants: [...second.variants, { weight: 1, content: { version: 2 } as never }],
+        }, second.revision)).toBe(true);
+        // save: the arm's copy is written — each put reads its own revision or loses.
+        const third = await read();
+        expect(await s.putOnboardingExperiment({
+          ...third,
+          variants: third.variants.map((v, i) => i === 1 ? { ...v, content: { version: 3 } as never } : v),
+        }, third.revision)).toBe(true);
+        const final = await read();
+        expect(final.variants).toHaveLength(2);
+        expect(final.variants[1]!.content.version).toBe(3);
       });
     });
 
@@ -5191,7 +5286,7 @@ if (PG_URL) {
         .map(([name]) => name)
         .sort();
       expect(unscoped).toEqual([
-        "adminListUsers", "adminMetrics", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
+        "adminListUsers", "adminMetrics", "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
         "countOnboardedSince", "createCampaign", "createUser", "expireJobs", "foodById",
         "forgetJobs", "forgetTurnOutcomes", "getCampaign", "getNotificationCopy", "getOnboardingContent",
         "getPrompts",
@@ -5202,7 +5297,7 @@ if (PG_URL) {
         "markCampaignRunning", "mergeUsers",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
-        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingFunnel",
+        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel", "onboardingFunnel",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,

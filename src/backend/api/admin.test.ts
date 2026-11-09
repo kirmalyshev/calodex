@@ -86,6 +86,75 @@ async function session(): Promise<string> {
   return (await res.json() as { token: string }).token;
 }
 
+describe("experiments (ieat-app#2669)", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  it("lists nothing at first, and drafts are born with the control cloned", async () => {
+    expect(await (await admin("GET", "/admin/api/experiments")).json()).toEqual({ experiments: [] });
+    const created = await admin("POST", "/admin/api/experiments", { lang: "de" });
+    expect(created.status).toBe(200);
+    const { experiment } = await created.json() as { experiment: { lang: string; status: string; variants: { control?: boolean }[] } };
+    expect(experiment.lang).toBe("de");
+    expect(experiment.status).toBe("draft");
+    expect(experiment.variants).toHaveLength(1);
+    expect(experiment.variants[0]?.control).toBe(true);
+    const list = await (await admin("GET", "/admin/api/experiments")).json() as { experiments: unknown[] };
+    expect(list.experiments).toHaveLength(1);
+  });
+
+  it("refuses a bad body, an unknown language, and a non-admin", async () => {
+    const bad = await handle(new Request(url("/admin/api/experiments"), {
+      method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${adminBearer}` },
+      body: "not json",
+    }));
+    expect(bad.status).toBe(422);
+    expect((await admin("POST", "/admin/api/experiments", { lang: "xx" })).status).toBe(422);
+    const ordinary = await session();
+    expect((await admin("GET", "/admin/api/experiments", undefined, ordinary)).status).toBe(404);
+    expect((await admin("POST", "/admin/api/experiments", { lang: "en" }, ordinary)).status).toBe(404);
+    expect((await admin("PUT", "/admin/api/experiments/whatever", { rules: {} }, ordinary)).status).toBe(404);
+  });
+
+  it("targeting sanitizes instead of silently widening", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    const put = (body: unknown) => admin("PUT", `/admin/api/experiments/${experiment.id}`, body);
+    expect((await put({ rules: { countries: ["xx"] } })).status).toBe(422);
+    expect((await put({ rules: { hours: [8, 8] } })).status).toBe(422);
+    expect((await put({ rules: { hours: [9, 17], surfaces: ["web"] } })).status).toBe(422);
+    expect((await put({ rules: { bogus: true } })).status).toBe(422);
+    expect((await put({ rules: { countries: ["de"], surfaces: ["app"] }, weights: [1] })).status).toBe(200);
+  });
+
+  it("clones an arm, refuses a control edit, and freezes at start", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    // POST /variants (no index) is the clone — the route that had silently 404ed.
+    const clone = await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    expect(clone.status).toBe(200);
+    expect((await clone.json() as { index: number }).index).toBe(1);
+    // The control arm is not editable — the live copy's clone must stay it.
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/0`, {
+      content: structuredClone(DEFAULT_ONBOARDING_CONTENT),
+    })).status).toBe(422);
+    // The variant arm edits like any copy save.
+    const good = await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, {
+      content: structuredClone(DEFAULT_ONBOARDING_CONTENT),
+    });
+    expect(good.status).toBe(200);
+    // Start wants the switch on — a running card enrolling nobody is a lie.
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(422);
+    const putSw = await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect(putSw.status).toBe(200);
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+    // Running is frozen: rules, arms and a second start all answer 422.
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { rules: {} })).status).toBe(422);
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(422);
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/stop`, {})).status).toBe(200);
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/stop`, {})).status).toBe(422);
+  });
+});
+
 describe("the admin is off unless somebody holds the role", () => {
   beforeEach(() => { mount(base); });
 

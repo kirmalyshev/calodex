@@ -413,6 +413,14 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .ahead select { width: auto; margin-left: auto; }
 #copy-new { margin-left: auto; }
 
+/* Experiments: the draft's two inputs and its action row — classes, never style=, which the
+   page's own CSP has no unsafe-inline for. */
+#view-experiments .exp-head { display: flex; justify-content: space-between; align-items: center; }
+#view-experiments .exp-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+#view-experiments .exp-row.first { margin-top: 0; }
+#view-experiments .exp-rules { flex: 1; min-width: 0; }
+#view-experiments .exp-weights { width: 130px; }
+
 /* Onboarding copy: a sub-nav across its four sections, one section at a time. */
 .obsplit { display: flex; gap: 16px; align-items: flex-start; }
 .obsplit > .acol { flex: 1; min-width: 0; }
@@ -482,6 +490,7 @@ details.how p { margin-top: 8px; }
     <a href="#numbers" data-nav="numbers">Numbers</a>
     <a href="#pushes" data-nav="pushes">Pushes</a>
     <a href="#funnel" data-nav="funnel">Funnel</a>
+    <a href="#experiments" data-nav="experiments">Experiments</a>
     <a href="#campaigns" data-nav="campaigns">Campaigns</a>
     <a href="#referrals" data-nav="referrals">Referrals</a>
     <a href="#accounts" data-nav="accounts">Accounts</a>
@@ -598,6 +607,33 @@ details.how p { margin-top: 8px; }
     </div>
     <p class="muted"><strong>Counts only.</strong> A share is the share sheet finishing, on the app or the web (a cancel counts nothing; Copy link counts). An open is a request to /r/&lt;code&gt;, served by the backend; no IP or device stored, link previews not counted. Joined is an invite that applied; paid is the friend's first payment, which gives the referrer a week on monthly and two on yearly.</p>
   </div></div>
+</section>
+
+<section class="view hidden" id="view-experiments">
+  <div id="state-experiments"></div>
+  <div class="vbody hidden" id="body-experiments">
+    <div class="acol">
+      <details class="how">
+        <summary>How experiments work</summary>
+        <p class="muted">
+          One experiment per language, running at once. New gives the draft its control — a clone of
+          the copy that serves now — and the same editor edits each arm's words. Targeting is
+          optional: countries as comma codes, an hours window in the reader's local time (app only —
+          the web's first render has no timezone), and the surfaces it may enroll. A running
+          experiment is frozen; Stop returns everyone to control and keeps the assignment rows.
+        </p>
+      </details>
+      <div id="exp-errors" class="errors hidden"><strong>Refused.</strong><ul></ul></div>
+      <div class="card">
+        <div class="exp-row first">
+          <strong>New experiment</strong>
+          <select id="exp-lang"></select>
+          <button class="primary" id="exp-new">Create draft</button>
+        </div>
+      </div>
+      <div id="exp-list"></div>
+    </div>
+  </div>
 </section>
 
 <section class="view hidden" id="view-campaigns">
@@ -3115,6 +3151,9 @@ details.how p { margin-top: 8px; }
   // The onboarding copy, and nothing else: every other view loads its own data.
   function loadOnboarding(which) {
     asked = which || lang;
+    // A variant's words live on the experiment row, not in the store's copy — the load for them
+    // is already done (editVariant set it) and a fetch here would write live copy over the arm.
+    if (variantEdit) { renderLangs(); render(true); return Promise.resolve(); }
     return api("GET", atLang("/admin/api/content")).then(function (res) {
       content = res.content;
       meta = res.meta;
@@ -3188,6 +3227,179 @@ details.how p { margin-top: 8px; }
     }
   }
 
+
+  // ── Experiments (ieat-app#2669) ────────────────────────────────────────────────────────────
+  //
+  // The draft is edited HERE; its variants' words are edited in the onboarding editor, which
+  // variantEdit points at instead of the live copy. A running experiment is frozen — every write
+  // a stale page makes answers 422 and the card re-renders.
+  var experiments = [];
+  var variantEdit = null;
+
+  function esc(v) {
+    return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function loadExperiments() {
+    // The picker reads the same language list the onboarding editor does; an admin who opened
+    // this view first has not fetched it yet, so one content load — which carries langs and
+    // labels — primes it. A server that predates the list still gets "en".
+    var prime = langs.length ? Promise.resolve()
+      : api("GET", "/admin/api/content").then(function (res) {
+          langs = res.langs || []; labels = res.labels || {}; meta = res.meta;
+        }, function () {});
+    return prime.then(function () {
+      return api("GET", "/admin/api/experiments");
+    }).then(function (res) {
+      experiments = res.experiments || [];
+      var select = $("exp-lang");
+      if (select.options.length === 0) {
+        (langs.length ? langs : ["en"]).forEach(function (code) {
+          var o = document.createElement("option");
+          o.value = code; o.textContent = (labels[code] || code);
+          select.appendChild(o);
+        });
+      }
+      renderExperiments();
+    });
+  }
+
+  function ruleText(rules) {
+    var bits = [];
+    if (rules.countries && rules.countries.length) bits.push("countries: " + rules.countries.join(", "));
+    if (rules.hours) bits.push("local hours " + rules.hours[0] + "–" + rules.hours[1]);
+    if (rules.surfaces && rules.surfaces.length) bits.push("surfaces: " + rules.surfaces.join("+"));
+    return bits.length ? bits.join(" · ") : "everyone";
+  }
+
+  function expPct(x) { return x === null || x === undefined ? "—" : Math.round(x * 100) + "%"; }
+
+  function renderExperiments() {
+    var host = $("exp-list");
+    host.textContent = "";
+    experiments.forEach(function (view) {
+      var e = view.experiment;
+      var card = document.createElement("div");
+      card.className = "card";
+      var head = '<div class="exp-head">'
+        + '<strong>' + esc(e.lang) + ' · ' + esc(e.status) + '</strong>'
+        + '<span class="muted">' + esc(e.id.slice(0, 8)) + '</span></div>'
+        + '<p class="muted">' + esc(ruleText(e.rules)) + '</p>';
+      var arms = '<table><thead><tr><th>arm</th><th class="r">weight</th><th class="r">version</th>'
+        + '<th class="r">assigned</th><th class="r">sessions</th><th class="r">completed</th>'
+        + '<th class="r">rate</th><th class="r">95% CI</th><th class="r">fell back</th><th></th></tr></thead><tbody>';
+      view.arms.forEach(function (arm, i) {
+        var st = arm.stats;
+        var ci = st.ci ? expPct(st.ci.lo) + "–" + expPct(st.ci.hi) : "—";
+        arms += '<tr><td>' + (arm.variant.control ? "control" : "variant " + (i + 1)) + '</td>'
+          + '<td class="r">' + arm.variant.weight + '</td>'
+          + '<td class="r">' + arm.variant.content.version + '</td>'
+          + '<td class="r">' + st.assigned + '</td>'
+          + '<td class="r">' + st.sessions + '</td>'
+          + '<td class="r">' + st.completed + '</td>'
+          + '<td class="r">' + expPct(st.rate) + '</td>'
+          + '<td class="r">' + ci + '</td>'
+          + '<td class="r">' + st.fell_back + '</td>'
+          + (e.status === "draft" && !arm.variant.control
+              ? '<td><button class="small" data-edit="' + i + '">Edit copy</button></td>'
+              : '<td></td>')
+          + '</tr>';
+      });
+      arms += '</tbody></table>';
+      var measured = view.arms.filter(function (a) { return a.stats.ci !== null; });
+      if (measured.length >= 2) {
+        var overlap = measured.every(function (a) {
+          return measured.every(function (b) { return a.stats.ci.lo <= b.stats.ci.hi && b.stats.ci.lo <= a.stats.ci.hi; });
+        });
+        var n = measured.reduce(function (t, a) { return t + a.stats.sessions; }, 0);
+        arms += '<p class="muted">n=' + n + (overlap ? ", intervals overlap: no conclusion" : ", intervals separated") + '</p>';
+      }
+      var actions = '';
+      if (e.status === "draft") {
+        actions = '<div class="exp-row">'
+          + '<input id="exp-rules-' + esc(e.id) + '" class="exp-rules" placeholder="rules JSON: countries, hours [from,to), surfaces" '
+          + 'value="' + esc(JSON.stringify(e.rules)) + '">'
+          + '<input id="exp-weights-' + esc(e.id) + '" class="exp-weights" placeholder="weights, e.g. 1,1" '
+          + 'value="' + esc(view.arms.map(function (a) { return a.variant.weight; }).join(",")) + '">'
+          + '<button class="small" data-save="' + esc(e.id) + '">Save targeting</button>'
+          + '<button class="small" data-clone="' + esc(e.id) + '">Clone arm</button>'
+          + '<button class="primary" data-start="' + esc(e.id) + '">Start</button></div>';
+      } else if (e.status === "running") {
+        actions = '<div class="exp-row">'
+          + '<button class="warn" data-stop="' + esc(e.id) + '">Stop</button></div>';
+      }
+      card.innerHTML = head + arms + actions;
+      card.querySelectorAll("[data-edit]").forEach(function (b) {
+        b.addEventListener("click", function () { editVariant(e.id, Number(b.getAttribute("data-edit"))); });
+      });
+      var save = card.querySelector("[data-save]");
+      if (save) save.addEventListener("click", function () { saveTargeting(e.id); });
+      var cloneB = card.querySelector("[data-clone]");
+      if (cloneB) cloneB.addEventListener("click", function () {
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/variants", {}).then(loadExperiments, expErrors);
+      });
+      var start = card.querySelector("[data-start]");
+      if (start) start.addEventListener("click", function () {
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/start", {}).then(loadExperiments, expErrors);
+      });
+      var stop = card.querySelector("[data-stop]");
+      if (stop) stop.addEventListener("click", function () {
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/stop", {}).then(loadExperiments, expErrors);
+      });
+      host.appendChild(card);
+    });
+  }
+
+  function expErrors(e) {
+    // Its own box inside THIS view — the editor's #errors lives inside #view-onboarding, hidden
+    // while this view is up. And a refresh either way: a refusal can mean the row moved.
+    var box = $("exp-errors");
+    box.classList.remove("hidden");
+    box.querySelector("ul").textContent = "";
+    var list = e && e.body && e.body.errors ? e.body.errors : [String(e && e.message || e)];
+    list.forEach(function (m) {
+      var li = document.createElement("li"); li.textContent = m; box.querySelector("ul").appendChild(li);
+    });
+    loadExperiments();
+  }
+
+  function saveTargeting(id) {
+    var rules;
+    try { rules = JSON.parse($("exp-rules-" + id).value || "{}"); }
+    catch (x) { expErrors({ body: { errors: ["rules must be JSON"] } }); return; }
+    var weights = ($("exp-weights-" + id).value || "").split(",").map(function (w) {
+      return w.trim() === "" ? NaN : Number(w.trim());
+    });
+    api("PUT", "/admin/api/experiments/" + encodeURIComponent(id), { rules: rules, weights: weights })
+      .then(loadExperiments, expErrors);
+  }
+
+  $("exp-new").addEventListener("click", function () {
+    api("POST", "/admin/api/experiments", { lang: $("exp-lang").value }).then(loadExperiments, expErrors);
+  });
+
+  // The variant's words edit in the SAME editor the live copy uses: variantEdit points the load
+  // at the arm and the save at the variant endpoint, and the nav stays on the onboarding view so
+  // the whole save path is the one that already exists.
+  function editVariant(id, index) {
+    var view = experiments.find(function (v) { return v.experiment.id === id; });
+    if (!view) return;
+    variantEdit = { id: id, index: index };
+    content = view.arms[index].variant.content;
+    // asked is what atLang() puts in the URL — without it the next live save would carry these
+    // words at the PICKER's language, not the arm's.
+    asked = view.experiment.lang;
+    lang = view.experiment.lang;
+    // replaceState, not location.hash: a hash assignment fires route(), which reads a nav into
+    // onboarding as "show me the LIVE editor" — and a variantEdit that survived it would write an
+    // arm's words to live copy on Save.
+    history.replaceState(null, "", "#onboarding");
+    show("onboarding");
+    status("editing variant " + (index + 1) + " of " + id.slice(0, 8) + " — Save writes the arm, not the live copy");
+    $("reset").classList.add("hidden");
+    render(true);
+  }
+
   // ── The shell ──────────────────────────────────────────────────────────────────────────────
   //
   // One view at a time, chosen by the hash. A view fetches its own data the first time it is
@@ -3197,6 +3409,7 @@ details.how p { margin-top: 8px; }
 
   var VIEWS = {
     numbers: { title: "Numbers", load: loadMetrics, kpis: true },
+    experiments: { title: "Experiments", load: loadExperiments },
     pushes: { title: "Pushes", load: loadPushes },
     funnel: { title: "Funnel", load: loadFunnel },
     campaigns: { title: "Campaigns", load: loadCampaigns },
@@ -3311,6 +3524,13 @@ details.how p { margin-top: 8px; }
 
   function route() {
     var id = location.hash.replace("#", "");
+    // A nav into the onboarding view asks for the LIVE copy — the arm editor only opens from its
+    // own "Edit copy" button. variantEdit surviving a nav would point the next Save at the arm.
+    if (id === "onboarding" && variantEdit) {
+      variantEdit = null;
+      $("reset").classList.remove("hidden");
+      delete state.onboarding;
+    }
     show(VIEWS[id] ? id : "numbers");
   }
 
@@ -3369,6 +3589,24 @@ details.how p { margin-top: 8px; }
 
   $("save").addEventListener("click", function () {
     status("saving…");
+    if (variantEdit) {
+      api("PUT", "/admin/api/experiments/" + encodeURIComponent(variantEdit.id) + "/variants/" + variantEdit.index,
+          { content: content }).then(function () {
+        variantEdit = null;
+        $("reset").classList.remove("hidden");
+        delete state.onboarding;
+        status("variant saved");
+        location.hash = "experiments";
+        loadExperiments();
+      }, function (e) {
+        var errs = e && e.body && e.body.errors ? e.body.errors : [String(e && e.message || e)];
+        var ul = $("errors").querySelector("ul");
+        ul.textContent = "";
+        errs.forEach(function (m) { var li = document.createElement("li"); li.textContent = m; ul.appendChild(li); });
+        $("errors").classList.remove("hidden");
+      });
+      return;
+    }
     api("PUT", atLang("/admin/api/content"), { content: content }).then(function (res) {
       content = res.content;
       showErrors(null);
