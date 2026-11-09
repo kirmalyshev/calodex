@@ -5,9 +5,10 @@ export type { EngineDeps } from "./deps.ts";
 export { checkCaps, type CapScope } from "./caps.ts";
 export { adminUserChat, adminUserDiary, ADMIN_MEAL_ROWS, type AdminDiary } from "./admin.ts";
 export {
-  adminUsers, adminUserSummary, applyRevenueCatEvent, dailyPhotoCap, entitlementFor, freeAnalysesFor, setUserCap,
-  userCap,
-  type AdminUser, type AdminUserSummary, type AdminUsers, type ApplyOutcome, type RevenueCatEvent, type UserCap,
+  adminUsers, adminUserSummary, applyRevenueCatEvent, applyRevenueCatTransfer, dailyPhotoCap, entitlementFor,
+  freeAnalysesFor, setUserCap, userCap,
+  type AdminUser, type AdminUserSummary, type AdminUsers, type ApplyOutcome, type RevenueCatEvent,
+  type RevenueCatTransfer, type UserCap,
 } from "./entitlement.ts";
 export {
   logPhotoMeal, logFoodMeal, logNumbersMeal, editMeal, applyCorrection, attachPhotos, changeLine, confirmPendingMeal, cancelPendingMeal, pendingMeals, reanalyzeMeal, redateMeal, focusMeal, logSavedMeal, saveMealFromLog, sumTotals,
@@ -50,9 +51,11 @@ export {
   newEmailCode, normalizeEmail, sendEmailCode, verifyEmailCode,
 } from "./email.ts";
 export {
-  onboardingContent, saveOnboardingContent, resetOnboardingContent, recordOnboardingEvents,
+  assignVariant, onboardingContent, onboardingContentFor, saveOnboardingContent,
+  resetOnboardingContent, recordOnboardingEvents,
   adminMetrics,
   onboardingFunnel,
+  type OnboardingSignals,
 } from "./onboarding.ts";
 export { adminSwitches, saveSwitch, type FlipView, type SwitchView } from "./switches.ts";
 export { livePrompts, promptHistory, savePrompt, type PromptView, type PromptSave } from "./prompts.ts";

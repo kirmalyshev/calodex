@@ -34,7 +34,7 @@ function profile(over: Partial<Profile> = {}): Profile {
     weight_kg: null, weight_measured_at: null, target_weight_kg: null, activity: null, pace: null,
     units: null, struggles: null, counted_before: null, barriers: null, situations: null, streak_goal_days: null, fiber_goal_g: null, sugar_goal_g: null, sodium_goal_mg: null, milestone_celebrations: true, streak_on_home: true, addback_burned: true, addback_rollover: true, meal_focus_offer: true, country: null,
     restrictions: [], medical_limitations: null, food_allergies: null, product_limitations: null,
-    onboarded_at: null,
+    onboarded_at: null, filled_fields: [],
     ...over,
   };
 }
@@ -97,6 +97,13 @@ describe("where a killed run picks up", () => {
 
   it("starts on the front door when nothing has been answered", () => {
     expect(resumeAt(prompts(), profile())).toBe(0);
+  });
+
+  it("does not count a FILLED field as an answer, so a boot-fill cannot skip the front door", () => {
+    const filled = profile({ goal: "lose", filled_fields: ["goal"] });
+    expect(resumeAt(prompts(), filled)).toBe(0);
+    const answered = profile({ goal: "lose" });
+    expect(resumeAt(prompts(), answered)).toBeGreaterThan(0);
   });
 
   it("starts on the front door when an older server omits a field the app asks (ieat-app#2643)", () => {

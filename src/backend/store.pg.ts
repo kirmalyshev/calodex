@@ -29,10 +29,10 @@ import { syncShippedPrompts } from "./llm/prompt.ts";
 import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
   type MealPatch,
-  type CampaignRow, type JobRecord, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
-  type StoreOptions, type StoredPhoto,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
+  type ClockedEntitlement, type StoreOptions, type StoredPhoto,
 } from "./store.ts";
 
 /**
@@ -100,6 +100,7 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   analyses: "user_id",
   llm_calls: "user_id",
   onboarding_events: "user_id",
+  onboarding_assignments: "user_id",
   chat_messages: "user_id",
   push_tokens: "user_id",
   push_slot: "user_id",
@@ -221,6 +222,9 @@ create table if not exists users (
   onboarded_at        timestamptz,
   created_at          timestamptz not null default now()
 );
+-- Fields the SYSTEM filled rather than the user answered (ieat-app#2676). Empty by default, so every
+-- existing row reads as answered. Read by isAnswered/resume on every client and by the merge.
+alter table users add column if not exists filled_fields text[] not null default '{}';
 -- When weight_kg was MEASURED, not when the row was written. Settles the race between a manual
 -- edit and an Apple Health import: whichever measurement is newer wins, so a sync cannot revert a
 -- number the user just typed and a stale import cannot overwrite a deliberate correction.
@@ -1074,6 +1078,46 @@ create index if not exists onboarding_events_received_idx on onboarding_events(r
 create index if not exists onboarding_events_session_idx on onboarding_events(session_id);
 create index if not exists onboarding_events_user_idx on onboarding_events(user_id);
 
+-- Onboarding experiments (ieat-app#2669).
+--
+-- The EXPERIMENT belongs to nobody — it is the admin's definition of an A/B, like the
+-- onboarding_content row beside it, so it carries no user_id and stays out of RLS_TABLES. One row
+-- per experiment: rules is the targeting (countries, a local-hours window, surfaces), variants
+-- the arms, control included — each a whole OnboardingContent revision whose version is its id,
+-- drawn from the same counter putOnboardingContent uses. Status is draft|running|stopped and only
+-- start/stop may move it once running, because a running variant is frozen: one version never
+-- holds two sets of words. created_by is an admin's user id recorded for the audit, not a scope.
+create table if not exists onboarding_experiments (
+  id          text primary key,
+  lang        text not null,
+  status      text not null check (status in ('draft', 'running', 'stopped')),
+  rules       jsonb not null,
+  variants    jsonb not null,
+  created_by  uuid not null,
+  created_at  timestamptz not null default now(),
+  started_at  timestamptz,
+  stopped_at  timestamptz
+);
+-- One running experiment per language, enforced by the INDEX, not by a read: two starts on two
+-- connections both pass a not-exists check under read committed. The second one violates this and
+-- startOnboardingExperiment answers false off the violation.
+create unique index if not exists onboarding_experiments_one_running
+  on onboarding_experiments(lang) where status = 'running';
+
+-- The ASSIGNMENT is one user's: the first variant they were eligible for, kept and never
+-- recomputed — the targeting inputs drift (local hour, region, a language switch), so a row is
+-- stored rather than a hash re-derived. variant_id is the variant's content version, the same
+-- number onboarding_events.content_version carries, which is what makes "assigned vs actually
+-- served" a comparison. In RLS_TABLES and erased with the account, like the funnel itself.
+create table if not exists onboarding_assignments (
+  user_id       uuid not null references users(id) on delete cascade,
+  experiment_id text not null references onboarding_experiments(id),
+  variant_id    integer not null,
+  assigned_at   timestamptz not null default now(),
+  primary key (user_id, experiment_id)
+);
+create index if not exists onboarding_assignments_experiment_idx on onboarding_assignments(experiment_id);
+
 -- The thread. One row per line of the conversation, in the order it happened. meal_id is a
 -- reference, not a copy: the card is read from meals on request, so it always shows the meal as
 -- it is now, and goes null (not missing) if the meal ever goes. Erased with the user — it holds
@@ -1229,7 +1273,7 @@ create table if not exists admin_switches (
 );
 alter table admin_switches drop constraint if exists admin_switches_key_check;
 alter table admin_switches add constraint admin_switches_key_check
-  check (key in ('grounding.photo', 'grounding.text', 'prompt.photo-lean'));
+  check (key in ('grounding.photo', 'grounding.text', 'prompt.photo-lean', 'onboarding.experiments'));
 
 -- Daily health aggregates read off the user's phone. NEVER raw samples: this product uses a handful
 -- of numbers per day, and a per-second heart rate series would be a large pile of special-category
@@ -1407,6 +1451,25 @@ const toPromptRevision = (r: Record<string, unknown>): PromptRevision => ({
   updated_at: new Date(r.updated_at as string).toISOString(),
 });
 
+const toOnboardingExperiment = (r: Record<string, unknown>): OnboardingExperiment => ({
+  id: String(r.id),
+  lang: String(r.lang) as Lang,
+  status: String(r.status) as OnboardingExperiment["status"],
+  rules: json<OnboardingExperimentRules>(r.rules, {}),
+  variants: json<OnboardingVariant[]>(r.variants, []),
+  created_by: String(r.created_by),
+  created_at: new Date(r.created_at as string).toISOString(),
+  started_at: r.started_at ? new Date(r.started_at as string).toISOString() : null,
+  stopped_at: r.stopped_at ? new Date(r.stopped_at as string).toISOString() : null,
+});
+
+const toOnboardingAssignment = (r: Record<string, unknown>): OnboardingAssignment => ({
+  user_id: String(r.user_id),
+  experiment_id: String(r.experiment_id),
+  variant_id: Number(r.variant_id),
+  assigned_at: new Date(r.assigned_at as string).toISOString(),
+});
+
 /** A `food_ref` row as the wire shape — column names are already the field names. */
 const toFoodRef = (r: Record<string, unknown>): FoodRef => ({
   id: String(r.id),
@@ -1521,6 +1584,7 @@ function toProfile(r: UserRow): Profile {
     food_allergies: (r.food_allergies ?? null) as string | null,
     product_limitations: (r.product_limitations ?? null) as string | null,
     onboarded_at: r.onboarded_at ? new Date(r.onboarded_at as string).toISOString() : null,
+    filled_fields: (r.filled_fields ?? []) as string[],
   };
 }
 
@@ -1708,6 +1772,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // ── Operations that span TWO accounts, and would refuse half their own work under either one.
   mergeUsers: "unscoped",
   moveIdentity: "unscoped",
+  moveEntitlement: "unscoped",
   // One Expo push token is one INSTALLATION, and the upsert deliberately MOVES it between accounts
   // when a phone signs into a different one — the invariant on `push_tokens`. Scoped to the new
   // owner, the policy would hide the existing row and the move would become a duplicate.
@@ -1742,6 +1807,17 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // ── Rows belonging to nobody: the single-row admin copy.
   getOnboardingContent: "unscoped",
   putOnboardingContent: "unscoped",
+  // The experiment rows belong to nobody either — the admin's definitions. The ASSIGNMENTS do:
+  // `onboardingAssignment` and `putOnboardingAssignment` take the user id, `onboardingAssignments`
+  // (plural) is the admin's per-experiment results read, unscoped like `onboardingFunnel`.
+  listOnboardingExperiments: "unscoped",
+  runningOnboardingExperiment: "unscoped",
+  putOnboardingExperiment: "unscoped",
+  startOnboardingExperiment: "unscoped",
+  stopOnboardingExperiment: "unscoped",
+  onboardingAssignment: 0,
+  putOnboardingAssignment: 0,
+  onboardingAssignments: "unscoped",
   // The six system prompts. One set for the whole instance, admin-edited, no account anywhere.
   getPrompts: "unscoped",
   putPrompt: "unscoped",
@@ -1900,7 +1976,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   removeJob: 0,
   settleJob: 0,
   claimPush: 0,
-  chargeJob: 0,
+  chargeAnalysis: 0,
   landJobMeal: 0,
   bindJobMeal: 0,
   // They choose whose job runs, or sweep every account's, and read no content: the lease is the
@@ -2779,6 +2855,16 @@ export async function postgresStore(
         // Funnel rows move too: signing in halfway through onboarding is normal, and a run split
         // across two user ids reads as two abandoned runs.
         await tx`update onboarding_events set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        // Experiment assignments move by the gap rule below: the account that already holds one
+        // keeps it, the anonymous session's fills what is missing. An assignment is what makes a
+        // variant sticky, and a run split across two ids would assign the same person twice.
+        await tx`
+          delete from onboarding_assignments a
+          where a.user_id = ${fromUserId}
+            and exists (
+              select 1 from onboarding_assignments t
+              where t.user_id = ${intoUserId} and t.experiment_id = a.experiment_id)`;
+        await tx`update onboarding_assignments set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         // Health days move, but NEVER over a day the real account already has. The direction is
         // anonymous -> real, and the real account's history is the one with deliberate corrections
         // in it. Filling a gap is a gift; overwriting is data loss with no undo. Matches
@@ -2898,6 +2984,9 @@ export async function postgresStore(
       // patch asks to clear it, because null is the never-asked marker resume reads.
       if (patch.restrictions !== undefined) {
         await sql`update users set restrictions = ${toPgTextArray(patch.restrictions)} where id = ${userId}`;
+      }
+      if (patch.filled_fields !== undefined) {
+        await sql`update users set filled_fields = ${toPgTextArray(patch.filled_fields)} where id = ${userId}`;
       }
       if (patch.struggles !== undefined) {
         await sql`update users set struggles = ${patch.struggles === null ? null : toPgTextArray(patch.struggles)} where id = ${userId}`;
@@ -3182,6 +3271,47 @@ export async function postgresStore(
       };
     },
 
+    async moveEntitlement(fromUserId, intoUserId, eventAtIso) {
+      if (fromUserId === intoUserId) return false;
+      // Both rows locked, the shared rule applied, both written back, all in one transaction: the
+      // decision reads only rows this transaction holds, so a concurrent delivery waits for it.
+      return await inTx(async (tx) => {
+        const rows = await tx`
+          select id, entitlement_expires_at, entitlement_expires_event_at, entitlement_trial,
+                 entitlement_product_id, entitlement_lifetime_product_id, entitlement_lifetime_event_at,
+                 entitlement_event_at
+          from users where id in (${fromUserId}, ${intoUserId}) for update`;
+        const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
+        const read = (id: string): ClockedEntitlement | null | undefined => {
+          const r = rows.find((x: { id: string }) => x.id === id);
+          if (!r) return undefined;
+          if (!r.entitlement_event_at) return null;
+          return {
+            expiresAt: iso(r.entitlement_expires_at), expiresEventAt: iso(r.entitlement_expires_event_at),
+            trial: r.entitlement_trial === true, productId: (r.entitlement_product_id as string | null) ?? "",
+            lifetimeProductId: (r.entitlement_lifetime_product_id as string | null) ?? null,
+            lifetimeEventAt: iso(r.entitlement_lifetime_event_at), eventAt: iso(r.entitlement_event_at)!,
+          };
+        };
+        const from = read(fromUserId);
+        const into = read(intoUserId);
+        if (!from || into === undefined) return false;
+        const plan = planTransfer(from, into, eventAtIso, now());
+        if (plan === null) return false;
+        const at = (v: string | null) => (v === null ? null : new Date(v));
+        for (const [id, e] of [[intoUserId, plan.into], [fromUserId, plan.from]] as const) {
+          await tx`
+            update users set
+              entitlement_expires_at = ${at(e.expiresAt)}, entitlement_expires_event_at = ${at(e.expiresEventAt)},
+              entitlement_trial = ${e.trial === true}, entitlement_product_id = ${e.productId},
+              entitlement_lifetime_product_id = ${e.lifetimeProductId},
+              entitlement_lifetime_event_at = ${at(e.lifetimeEventAt)}, entitlement_event_at = ${new Date(e.eventAt)}
+            where id = ${id}`;
+        }
+        return true;
+      });
+    },
+
     async putEntitlement(userId, patch) {
       const eventAt = new Date(patch.eventAt);
       // EACH GRANT IS GUARDED BY ITS OWN CLOCK. A patch speaks for exactly one of them, so this is
@@ -3405,6 +3535,102 @@ export async function postgresStore(
               updated_at = now()
         returning version`;
       return Number(rows[0]!.version);
+    },
+
+    // ── Onboarding experiments (ieat-app#2669) ──────────────────────────────────────────────
+
+    async listOnboardingExperiments() {
+      const rows = await sql`
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        from onboarding_experiments order by created_at desc`;
+      return rows.map(toOnboardingExperiment);
+    },
+
+    async runningOnboardingExperiment(lang) {
+      const rows = await sql`
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        from onboarding_experiments where lang = ${lang} and status = 'running' limit 1`;
+      return rows.length === 0 ? null : toOnboardingExperiment(rows[0]!);
+    },
+
+    async putOnboardingExperiment(experiment) {
+      // The WHERE on the update is the freeze: a row that left draft ignores the write and this
+      // answers false — a running variant never holds two sets of words. The insert writes
+      // 'draft' LITERALLY: a row born running would skip the one-per-language guard entirely.
+      const rows = await sql`
+        insert into onboarding_experiments
+          (id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at)
+        values (${experiment.id}, ${experiment.lang}, 'draft',
+          ${experiment.rules}::jsonb, ${experiment.variants}::jsonb, ${experiment.created_by},
+          ${experiment.created_at}, ${experiment.started_at}, ${experiment.stopped_at})
+        on conflict (id) do update
+          set lang = excluded.lang, rules = excluded.rules, variants = excluded.variants
+          where onboarding_experiments.status = 'draft'
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async startOnboardingExperiment(id) {
+      // ONE statement, because the "no other experiment runs for this language" check is a state
+      // condition and those live in the store's own guarded statements — an engine that read it
+      // first would be deciding on a snapshot two starts could share. A status predicate on the
+      // same row says only a draft may start, and the unique index on (lang) where running is what
+      // makes the answer true under two concurrent starts: the second violates it and answers
+      // false off the violation rather than off a snapshot it shared with the first.
+      try {
+        const rows = await sql`
+          update onboarding_experiments e
+          set status = 'running', started_at = now()
+          where e.id = ${id} and e.status = 'draft'
+            and not exists (
+              select 1 from onboarding_experiments o
+              where o.lang = e.lang and o.status = 'running')
+          returning e.id`;
+        return rows.length > 0;
+      } catch (e) {
+        // Bun wraps Postgres errors — the sqlstate is not exposed, the index name is.
+        if ((e as { constraint?: string }).constraint === "onboarding_experiments_one_running") {
+          return false;
+        }
+        throw e;
+      }
+    },
+
+    async stopOnboardingExperiment(id) {
+      const rows = await sql`
+        update onboarding_experiments
+        set status = 'stopped', stopped_at = now()
+        where id = ${id} and status = 'running'
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async onboardingAssignment(userId, experimentId) {
+      const rows = await sql`
+        select user_id, experiment_id, variant_id, assigned_at
+        from onboarding_assignments
+        where user_id = ${userId} and experiment_id = ${experimentId}`;
+      return rows.length === 0 ? null : toOnboardingAssignment(rows[0]!);
+    },
+
+    async putOnboardingAssignment(userId, experimentId, variantId) {
+      // STICKY BY THE PRIMARY KEY. The second write to (user, experiment) does not overwrite — it
+      // returns the row already there, so two concurrent first requests can never split one user
+      // across two variants. The update-then-return shape keeps the answer to one statement.
+      const rows = await sql`
+        insert into onboarding_assignments (user_id, experiment_id, variant_id)
+        values (${userId}, ${experimentId}, ${variantId})
+        on conflict (user_id, experiment_id) do update
+          set variant_id = onboarding_assignments.variant_id
+        returning user_id, experiment_id, variant_id, assigned_at`;
+      return toOnboardingAssignment(rows[0]!);
+    },
+
+    async onboardingAssignments(experimentId) {
+      const rows = await sql`
+        select user_id, experiment_id, variant_id, assigned_at
+        from onboarding_assignments where experiment_id = ${experimentId}`;
+      return rows.map(toOnboardingAssignment);
     },
 
     // ── The food catalog ────────────────────────────────────────────────────────────────────
@@ -4586,12 +4812,61 @@ export async function postgresStore(
       return rows.length > 0;
     },
 
-    async chargeJob(userId, clientId, owner, analysisId) {
-      const rows = await sql`
-        update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
-        where data->>'userId' = ${userId} and data->>'clientId' = ${clientId} and state = 'active' and data->>'owner' = ${owner}
-        returning id`;
-      return rows.length > 0;
+    async chargeAnalysis(userId, date, scope, opts = {}) {
+      // ONE transaction for the fence, the lock, the count and the insert (#2679). The job row is
+      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers`'s first users
+      // lock is only the key-share its meals update's FK puts on the into-account row — its
+      // `update pgboss.job` comes after that and the user-row writes last, so job-before-users is
+      // the order that path's own writes take, and this hot one must match — the charge would
+      // otherwise be one half of a lock cycle against it.
+      return await inTx(async (tx) => {
+        let stamped: string | null = null;
+        if (opts.job) {
+          const j = await tx`
+            select data->>'analysisId' as analysis_id from pgboss.job
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}
+            for update`;
+          // Lost BEFORE anything is written: a dead attempt orphans no charge.
+          if (j.length === 0) return "lost" as const;
+          stamped = j[0].analysis_id as string | null;
+          if (stamped !== null) {
+            // The dead attempt's charge, still on the ledger: the retry runs on it rather than
+            // charging a second time. A row given back (`undoAnalysis`) falls through to a fresh one.
+            const live = await tx`select 1 from analyses where id = ${stamped}::bigint and user_id = ${userId}`;
+            if (live.length > 0) return { analysisId: stamped, fresh: false };
+          }
+        }
+        const acct = await tx`select free_analyses from users where id = ${userId} for update`;
+        // The account row's lock is the cap serializer, `claimPushSlot`'s own trick: this
+        // account's charges serialize, and a count racing another charge's insert cannot happen.
+        if (acct.length === 0) {
+          // A job can outlive its account — no foreign key reaches pgboss.job — and then `lost`
+          // is what the empty users row above answers, not the job's own row being gone.
+          if (opts.job) return "lost" as const;
+          throw new Error("chargeAnalysis: no such user");
+        }
+        if (opts.limit) {
+          const own = acct[0].free_analyses;
+          const max = opts.limit.over === "day" ? opts.limit.max
+            : (own === null || own === undefined ? 0 : num(own));
+          const rows = opts.limit.over === "day"
+            ? await tx`select count(*)::int as n from analyses where user_id = ${userId} and date = ${date} and scope = ${scope}`
+            : await tx`select count(*)::int as n from analyses where user_id = ${userId}`;
+          if (num(rows[0].n) >= max) return "cap" as const;
+        }
+        const ins = await tx`
+          insert into analyses (user_id, date, scope) values (${userId}, ${date}, ${scope}) returning id`;
+        const analysisId = String(ins[0].id);
+        if (opts.job) {
+          // Same statement shape the read fenced with: the row is locked to this transaction, so
+          // the stamp cannot lose the lease the read already won.
+          await tx`update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}`;
+        }
+        return { analysisId, fresh: true };
+      });
     },
 
     async landJobMeal(userId, clientId, owner, meal) {
