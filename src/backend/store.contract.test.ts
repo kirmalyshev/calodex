@@ -590,10 +590,28 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.putEntitlement(b, { expiresAt: "2026-08-15T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-16T10:00:00.000Z" });
       expect(await s.moveEntitlement(a, b, "2026-08-20T10:00:00.000Z")).toBe(true);
       expect(await s.getEntitlement(b)).toMatchObject({ expiresAt: live, productId: "yearly" });
-      await s.putEntitlement(c, { expiresAt: "2027-01-01T10:00:00.000Z", productId: "monthly", eventAt: "2026-08-25T10:00:00.000Z" });
+      await s.putEntitlement(c, { expiresAt: "2028-01-01T10:00:00.000Z", productId: "yearly", eventAt: "2026-08-13T10:00:00.000Z" });
       expect(await s.moveEntitlement(b, c, "2026-08-26T10:00:00.000Z")).toBe(false);
       expect((await s.getEntitlement(b))?.expiresAt).toBe(live);
-      expect((await s.getEntitlement(c))?.expiresAt).toBe("2027-01-01T10:00:00.000Z");
+      expect((await s.getEntitlement(c))?.expiresAt).toBe("2028-01-01T10:00:00.000Z");
+    });
+
+    // Both LIVE: the later end wins, whatever the clocks say. A monthly bought last week must not
+    // push out an annual that runs another ten months.
+    it("keeps the later-ending of two live subscriptions, not the newer clock", async () => {
+      const s = await open();
+      const { userId: a } = await s.upsertDeviceUser(device(), "en");
+      const { userId: b } = await s.upsertDeviceUser(device(), "en");
+      const annual = "2027-09-24T10:00:00.000Z";
+      const monthly = "2026-12-01T10:00:00.000Z";
+      await s.putEntitlement(a, { expiresAt: annual, productId: "yearly", eventAt: "2026-08-14T10:00:00.000Z" });
+      await s.putEntitlement(b, { expiresAt: monthly, productId: "monthly", eventAt: "2026-08-25T10:00:00.000Z" });
+      expect(await s.moveEntitlement(a, b, "2026-08-26T10:00:00.000Z")).toBe(true);
+      expect(await s.getEntitlement(b)).toMatchObject({ expiresAt: annual, productId: "yearly" });
+      expect(await s.moveEntitlement(b, a, "2026-08-27T10:00:00.000Z")).toBe(true);
+      await s.putEntitlement(b, { expiresAt: monthly, productId: "monthly", eventAt: "2026-08-28T10:00:00.000Z" });
+      expect(await s.moveEntitlement(a, b, "2026-08-29T10:00:00.000Z")).toBe(true);
+      expect((await s.getEntitlement(b))?.expiresAt).toBe(annual);
     });
 
     // The subscription's product travels with the subscription only: moving a lifetime alone

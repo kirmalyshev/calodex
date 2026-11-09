@@ -1918,8 +1918,8 @@ export interface ClockedEntitlement extends StoredEntitlement {
 /**
  * The ONE rule both stores apply to a TRANSFER (#687), pure so the two cannot drift. Per grant:
  * the source must HOLD it under a clock older than the transfer, and the destination takes it
- * unless it holds a LIVE grant of that kind under a newer clock. A lapsed grant never blocks a live
- * one. A grant the destination does not take stays on the source. A grant that moves goes whole
+ * unless it holds a LIVE grant of that kind that wins: for a subscription the later-ending one, for
+ * a lifetime the newer clock. A lapsed grant never blocks a live one. A grant the destination does not take stays on the source. A grant that moves goes whole
  * (date, trial flag, product) and is stamped with the transfer clock on BOTH sides. That orders
  * A→B→A correctly and fences a delivery generated before the transfer off the source. Null when
  * nothing moves, which is what a duplicate delivery finds.
@@ -1932,8 +1932,10 @@ export function planTransfer(
   const newer = (a: string | null, b: string | null) => a !== null && (b === null || Date.parse(a) > Date.parse(b));
   const stamp = (c: string | null | undefined) => (c != null && Date.parse(c) > t ? c : at);
   const subLive = into?.expiresAt != null && Date.parse(into.expiresAt) > now;
+  // Two LIVE subscriptions: the later end wins, not the newer clock. A monthly bought last week must
+  // not push out an annual that still runs for ten months.
   const takeSub = from.expiresAt !== null && before(from.expiresEventAt) &&
-    (!subLive || newer(from.expiresEventAt, into?.expiresEventAt ?? null));
+    (!subLive || Date.parse(from.expiresAt) > Date.parse(into!.expiresAt!));
   const takeLife = from.lifetimeProductId !== null && before(from.lifetimeEventAt) &&
     (into?.lifetimeProductId == null || newer(from.lifetimeEventAt, into.lifetimeEventAt));
   if (!takeSub && !takeLife) return null;
