@@ -7,6 +7,7 @@
 
 import type { Refusal } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
+import type { SpendLimit } from "../store.ts";
 import { GatewayRefusal, type OnCall, type OnCost } from "../llm/port.ts";
 import { dailyPhotoCap, entitlementFor, freeAnalysesFor } from "./entitlement.ts";
 import { isAnonymous } from "./identity.ts";
@@ -58,14 +59,22 @@ export async function checkCaps(
   userId: string,
   date: string,
   scope: CapScope,
+  /**
+   * A queued job whose charge a dead attempt already stamped (#2679): the spend gates do not
+   * apply — its charge exists and `chargeAnalysis` reuses it — while the identity rule still does.
+   * Set from the job record's own `analysisId`; a pointer whose row was given back reads the same,
+   * and the guarded write charges it fresh under the limit then.
+   */
+  charged = false,
 ): Promise<Refusal | null> {
   const { store, config } = deps;
 
   // No identity, no analysis (S8): sign-up comes before the first meal, so an account carrying no
   // Apple or Google identity is refused here — ahead of every cap and therefore ahead of the
   // charge. `charge` writes
-  // `recordAnalysis` below this, so a refusal returned now has spent nothing.
+  // `chargeAnalysis` below this, so a refusal returned now has spent nothing.
   if (await isAnonymous(deps, userId)) return { kind: "identity-required" };
+  if (charged) return null;
 
   // Read from the store on every request rather than carried in the session, and that is the
   // point: a subscription that lapsed an hour ago must stop working an hour ago. An entitlement
@@ -100,6 +109,34 @@ const LLM_CALL_KIND: Record<string, string> = {
 };
 
 /**
+ * What this account's charge may still spend, resolved per request — an entitlement lapsed an hour
+ * ago stops working an hour ago. The paid tier's limit is the daily photo allowance; an unpaid
+ * one's is the admin grant counted over a lifetime of rows (`unpaidRefused`'s same rule, which the
+ * guarded write then enforces rather than repeats); and the paywall being off, or a scope the caps
+ * do not meter, is no limit at all.
+ */
+async function chargeLimit(deps: EngineDeps, userId: string, scope: CapScope): Promise<SpendLimit | null> {
+  if ((await entitlementFor(deps, userId)).active) {
+    const cap = scope === "photo" ? dailyPhotoCap(deps.config) : 0;
+    return cap > 0 ? { over: "day", max: cap } : null;
+  }
+  return deps.config.paywall ? { over: "lifetime" } : null;
+}
+
+export type ChargedAnalysis = { analysisId: string; fresh: boolean; onCost: OnCost; onCall: OnCall };
+
+/**
+ * A queued job's charge binding (#2679): the lease it is fenced by (`lost()` ends the attempt when
+ * the lease is gone) and the charge a dead attempt stamped — a retry reuses it, never re-charges.
+ */
+export interface JobCharge {
+  clientId: string;
+  owner: string;
+  lost: () => Error;
+  analysisId?: string | null;
+}
+
+/**
  * Charge one analysis, BEFORE the model is asked, and return its id — the line that opens the turn
  * names it (#525) — and where its calls report their cost.
  *
@@ -111,13 +148,30 @@ const LLM_CALL_KIND: Record<string, string> = {
  * only, fired and forgotten like the cost — a row that cannot land is a log line, never a failed
  * turn. `photoKind` is what a `meal_analysis` call is FOR at this callsite — the photo turn
  * or a meal's re-read.
+ *
+ * The write itself is `chargeAnalysis` (#2679): the cap's count and the insert are one guarded
+ * statement under the account row's lock — `checkCaps`' earlier answer was advisory, this one is
+ * binding — and a `job` makes it the job's own: fenced by the lease, found again by a retried
+ * attempt rather than charged a second time. `fresh` says whether THIS call took the charge, which
+ * is how the caller knows a refund may touch it — a charge a dead attempt left behind carries
+ * billed calls already and is never given back by this one.
  */
 export async function charge(
   deps: EngineDeps, userId: string, date: string, scope: CapScope,
   photoKind: "photo" | "reread" = "photo",
-): Promise<{ analysisId: string; onCost: OnCost; onCall: OnCall }> {
-  const id = await deps.store.recordAnalysis(userId, date, scope);
-  return { analysisId: id, onCost: (usd) => {
+  /** A queued job the charge belongs to: fenced by its lease — `lost()` answers a gone one — and reused by a retry. */
+  job?: JobCharge,
+): Promise<ChargedAnalysis | Refusal> {
+  const limit = await chargeLimit(deps, userId, scope);
+  const res = await deps.store.chargeAnalysis(userId, date, scope, {
+    ...(limit !== null ? { limit } : {}),
+    ...(job !== undefined ? { job: { clientId: job.clientId, owner: job.owner } } : {}),
+  });
+  // `"lost"` is only ever a job's answer: the attempt ends where the lease did.
+  if (res === "lost") throw job!.lost();
+  if (res === "cap") return limit?.over === "day" ? { kind: "cap-exceeded", scope: "user" } : { kind: "subscription-required" };
+  const id = res.analysisId;
+  return { analysisId: id, fresh: res.fresh, onCost: (usd) => {
     void deps.store.addCost(userId, id, usd).then(
       // Refunded or merged away while a call was still out — a schema retry beside a refund, or a merge.
       (landed) => { if (!landed) console.error(`[eait] cost not recorded: analysis ${id} is gone (${usd ?? "unpriced"})`); },

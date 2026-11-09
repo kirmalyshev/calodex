@@ -42,6 +42,16 @@ export interface NewJob {
    */
   group?: string;
 }
+/**
+ * The allowance a `chargeAnalysis` write enforces, resolved by the engine per request:
+ * `day` is this scope's rows on the charge's `date` (the paid daily photo cap); `lifetime` is every
+ * analyses row the account holds against `free_analyses`, which the write reads off the account row
+ * it has locked — the number and the count are decided inside the same transaction.
+ */
+export type SpendLimit = { over: "day"; max: number } | { over: "lifetime" };
+/** `chargeAnalysis`'s answer: the charge's id and whether this call took it, `"cap"` on the limit, `"lost"` on a gone lease. */
+export type ChargeOutcome = { analysisId: string; fresh: boolean } | "cap" | "lost";
+
 export interface JobRecord {
   userId: string;
   clientId: string;
@@ -1677,8 +1687,31 @@ export interface Store {
   getFreeAnalyses(userId: string): Promise<number | null>;
   /** Set this account's grant, or take it away with null. False when there is no such user. */
   setFreeAnalyses(userId: string, n: number | null): Promise<boolean>;
-  /** Recorded BEFORE the model is called: a failed call still costs money. Returns the row's id. */
+  /**
+   * Recorded BEFORE the model is called: a failed call still costs money. Returns the row's id.
+   *
+   * THE RAW ROW, for fixtures — the engine never charges through here. A charged turn goes through
+   * `chargeAnalysis`, which carries the cap and the job fence this method deliberately lacks.
+   */
   recordAnalysis(userId: string, date: string, scope: "photo" | "text"): Promise<string>;
+  /**
+   * The turn's charge as ONE guarded write (ieat-app#2679).
+   *
+   * `limit` is the allowance the engine resolved for this account and scope, enforced inside the
+   * write: the count and the insert share one transaction that holds the account row's lock, so two
+   * turns racing for the last analysis cannot both pass — `countUserPhotos` ahead of it is the early
+   * answer, this is the binding one. `"cap"` is the refusal; no `limit`, no count.
+   *
+   * `job` binds the charge to a queued job, fenced by the lease's owner like every job write —
+   * `"lost"` is answered BEFORE anything is inserted, so a lost attempt orphans no charge. A job
+   * already carrying a charge whose row is still live is handed that id back (`fresh: false`): a
+   * retried attempt runs on its dead predecessor's charge rather than charging a second time. One
+   * whose row was given back (`undoAnalysis`) is charged fresh and stamped again.
+   */
+  chargeAnalysis(
+    userId: string, date: string, scope: "photo" | "text",
+    opts?: { limit?: SpendLimit; job?: { clientId: string; owner: string } },
+  ): Promise<ChargeOutcome>;
   /**
    * ONE ROW PER PROVIDER CALL — the call's metrics, never its content (#602). No prompt text, no
    * image bytes, no reply: `images` and `imageBytes` are counts and sums. Written after the call
@@ -1768,8 +1801,6 @@ export interface Store {
   settleJob(userId: string, clientId: string, owner: string, outcome: object): Promise<boolean>;
   /** The one push, claimed: true for exactly one caller, and only while nobody follows and the job is not removed. */
   claimPush(userId: string, clientId: string): Promise<boolean>;
-  /** The attempt's charge, fenced, so a retry can find a dead attempt's charge. */
-  chargeJob(userId: string, clientId: string, owner: string, analysisId: string): Promise<boolean>;
   /**
    * One transaction, fenced: record `meal.id` on the job, insert the meal, and adopt the job's
    * unadopted photos. False, and nothing written, when `owner` no longer holds the lease or the job

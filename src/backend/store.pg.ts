@@ -1899,7 +1899,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   removeJob: 0,
   settleJob: 0,
   claimPush: 0,
-  chargeJob: 0,
+  chargeAnalysis: 0,
   landJobMeal: 0,
   bindJobMeal: 0,
   // They choose whose job runs, or sweep every account's, and read no content: the lease is the
@@ -4565,12 +4565,57 @@ export async function postgresStore(
       return rows.length > 0;
     },
 
-    async chargeJob(userId, clientId, owner, analysisId) {
-      const rows = await sql`
-        update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
-        where data->>'userId' = ${userId} and data->>'clientId' = ${clientId} and state = 'active' and data->>'owner' = ${owner}
-        returning id`;
-      return rows.length > 0;
+    async chargeAnalysis(userId, date, scope, opts = {}) {
+      // ONE transaction for the lock, the fence, the count and the insert (#2679). The account row
+      // is locked FIRST — the same trick `claimPushSlot` uses for the push cap — and ahead of the
+      // job row rather than after it, because `mergeUsers` takes the account's rows and then its
+      // jobs: holding the job while waiting on `users` would be one half of a deadlock, and
+      // `users` first is the order that path already honours.
+      return await inTx(async (tx) => {
+        const acct = await tx`select free_analyses from users where id = ${userId} for update`;
+        // A job whose account is gone has no charge to find and no write that could still land —
+        // the lease fencing elsewhere answers for a moved job the same way.
+        if (acct.length === 0) {
+          if (opts.job) return "lost" as const;
+          throw new Error("chargeAnalysis: no such user");
+        }
+        if (opts.job) {
+          const j = await tx`
+            select data->>'analysisId' as analysis_id from pgboss.job
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}
+            for update`;
+          // Lost BEFORE anything is written: a dead attempt orphans no charge.
+          if (j.length === 0) return "lost" as const;
+          const stamped = j[0].analysis_id as string | null;
+          if (stamped !== null) {
+            // The dead attempt's charge, still on the ledger: the retry runs on it rather than
+            // charging a second time. A row given back (`undoAnalysis`) falls through to a fresh one.
+            const live = await tx`select 1 from analyses where id = ${stamped}::bigint and user_id = ${userId}`;
+            if (live.length > 0) return { analysisId: stamped, fresh: false };
+          }
+        }
+        if (opts.limit) {
+          const own = acct[0].free_analyses;
+          const max = opts.limit.over === "day" ? opts.limit.max
+            : (own === null || own === undefined ? 0 : num(own));
+          const rows = opts.limit.over === "day"
+            ? await tx`select count(*)::int as n from analyses where user_id = ${userId} and date = ${date} and scope = ${scope}`
+            : await tx`select count(*)::int as n from analyses where user_id = ${userId}`;
+          if (num(rows[0].n) >= max) return "cap" as const;
+        }
+        const ins = await tx`
+          insert into analyses (user_id, date, scope) values (${userId}, ${date}, ${scope}) returning id`;
+        const analysisId = String(ins[0].id);
+        if (opts.job) {
+          // Same statement shape the read fenced with: the row is locked to this transaction, so
+          // the stamp cannot lose the lease the read already won.
+          await tx`update pgboss.job set data = data || jsonb_build_object('analysisId', ${analysisId}::text)
+            where data->>'userId' = ${userId} and data->>'clientId' = ${opts.job.clientId}
+              and state = 'active' and data->>'owner' = ${opts.job.owner}`;
+        }
+        return { analysisId, fresh: true };
+      });
     },
 
     async landJobMeal(userId, clientId, owner, meal) {
