@@ -8838,7 +8838,8 @@
             "description": "Set true exactly once, by the last onboarding screen, after consent."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A partial profile update. Every field optional; absent means \"leave alone\", explicit `null` means \"clear\". Onboarding is just a sequence of these — the server derives the next step from which fields are still null rather than trusting a client-side step counter, so a user who kills the app mid-flow resumes where they actually are."
       },
       "PaywallPlan": {
         "type": "object",

@@ -903,17 +903,17 @@ export interface ReferralSharedRequest {
 }
 
 /**
- * A partial profile update. Every field optional; absent means "leave alone", explicit `null` means
- * "clear". Onboarding is just a sequence of these — the server derives the next step from which
- * fields are still null rather than trusting a client-side step counter, so a user who kills the
- * app mid-flow resumes where they actually are.
- */
-/**
  * The only profile fields the SYSTEM may fill on a user's behalf (`PatchProfileRequest.filled`).
  * Anything else a request writes is an answer, so `filled` is refused beside it.
  */
 export const FILLABLE_FIELDS = ["country"] as const;
 
+/**
+ * A partial profile update. Every field optional; absent means "leave alone", explicit `null` means
+ * "clear". Onboarding is just a sequence of these — the server derives the next step from which
+ * fields are still null rather than trusting a client-side step counter, so a user who kills the
+ * app mid-flow resumes where they actually are.
+ */
 export interface PatchProfileRequest {
   /**
    * True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device
