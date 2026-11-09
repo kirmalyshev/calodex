@@ -4793,11 +4793,11 @@ export async function postgresStore(
 
     async chargeAnalysis(userId, date, scope, opts = {}) {
       // ONE transaction for the fence, the lock, the count and the insert (#2679). The job row is
-      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers` locks the
-      // from-account's job rows (its `update pgboss.job`) well before it locks the `users` rows
-      // (the into-account update, then the delete), so job-before-users is the order that path
-      // already honours and this hot one must match — the charge would otherwise be one half of a
-      // lock cycle against it.
+      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers`'s first users
+      // lock is only the key-share its meals update's FK puts on the into-account row — its
+      // `update pgboss.job` comes after that and the user-row writes last, so job-before-users is
+      // the order that path's own writes take, and this hot one must match — the charge would
+      // otherwise be one half of a lock cycle against it.
       return await inTx(async (tx) => {
         let stamped: string | null = null;
         if (opts.job) {
@@ -4820,8 +4820,8 @@ export async function postgresStore(
         // The account row's lock is the cap serializer, `claimPushSlot`'s own trick: this
         // account's charges serialize, and a count racing another charge's insert cannot happen.
         if (acct.length === 0) {
-          // Unreachable for a real job — a deleted account's jobs go with it, and a merged one's
-          // userId moved — but `lost` is still the honest answer for one.
+          // A job can outlive its account — no foreign key reaches pgboss.job — and then `lost`
+          // is what the empty users row above answers, not the job's own row being gone.
           if (opts.job) return "lost" as const;
           throw new Error("chargeAnalysis: no such user");
         }
