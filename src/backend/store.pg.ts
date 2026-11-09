@@ -31,7 +31,7 @@ import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
   type MealPatch,
-  type CampaignRow, type JobRecord, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
   type StoreOptions, type StoredPhoto,
 } from "./store.ts";
 
@@ -100,6 +100,7 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   analyses: "user_id",
   llm_calls: "user_id",
   onboarding_events: "user_id",
+  onboarding_assignments: "user_id",
   chat_messages: "user_id",
   push_tokens: "user_id",
   push_slot: "user_id",
@@ -1074,6 +1075,46 @@ create index if not exists onboarding_events_received_idx on onboarding_events(r
 create index if not exists onboarding_events_session_idx on onboarding_events(session_id);
 create index if not exists onboarding_events_user_idx on onboarding_events(user_id);
 
+-- Onboarding experiments (ieat-app#2669).
+--
+-- The EXPERIMENT belongs to nobody — it is the admin's definition of an A/B, like the
+-- onboarding_content row beside it, so it carries no user_id and stays out of RLS_TABLES. One row
+-- per experiment: rules is the targeting (countries, a local-hours window, surfaces), variants
+-- the arms, control included — each a whole OnboardingContent revision whose version is its id,
+-- drawn from the same counter putOnboardingContent uses. Status is draft|running|stopped and only
+-- start/stop may move it once running, because a running variant is frozen: one version never
+-- holds two sets of words. created_by is an admin's user id recorded for the audit, not a scope.
+create table if not exists onboarding_experiments (
+  id          text primary key,
+  lang        text not null,
+  status      text not null check (status in ('draft', 'running', 'stopped')),
+  rules       jsonb not null,
+  variants    jsonb not null,
+  created_by  uuid not null,
+  created_at  timestamptz not null default now(),
+  started_at  timestamptz,
+  stopped_at  timestamptz
+);
+-- One running experiment per language, enforced by the INDEX, not by a read: two starts on two
+-- connections both pass a not-exists check under read committed. The second one violates this and
+-- startOnboardingExperiment answers false off the violation.
+create unique index if not exists onboarding_experiments_one_running
+  on onboarding_experiments(lang) where status = 'running';
+
+-- The ASSIGNMENT is one user's: the first variant they were eligible for, kept and never
+-- recomputed — the targeting inputs drift (local hour, region, a language switch), so a row is
+-- stored rather than a hash re-derived. variant_id is the variant's content version, the same
+-- number onboarding_events.content_version carries, which is what makes "assigned vs actually
+-- served" a comparison. In RLS_TABLES and erased with the account, like the funnel itself.
+create table if not exists onboarding_assignments (
+  user_id       uuid not null references users(id) on delete cascade,
+  experiment_id text not null references onboarding_experiments(id),
+  variant_id    integer not null,
+  assigned_at   timestamptz not null default now(),
+  primary key (user_id, experiment_id)
+);
+create index if not exists onboarding_assignments_experiment_idx on onboarding_assignments(experiment_id);
+
 -- The thread. One row per line of the conversation, in the order it happened. meal_id is a
 -- reference, not a copy: the card is read from meals on request, so it always shows the meal as
 -- it is now, and goes null (not missing) if the meal ever goes. Erased with the user — it holds
@@ -1229,7 +1270,7 @@ create table if not exists admin_switches (
 );
 alter table admin_switches drop constraint if exists admin_switches_key_check;
 alter table admin_switches add constraint admin_switches_key_check
-  check (key in ('grounding.photo', 'grounding.text', 'prompt.photo-lean'));
+  check (key in ('grounding.photo', 'grounding.text', 'prompt.photo-lean', 'onboarding.experiments'));
 
 -- Daily health aggregates read off the user's phone. NEVER raw samples: this product uses a handful
 -- of numbers per day, and a per-second heart rate series would be a large pile of special-category
@@ -1405,6 +1446,25 @@ const toPromptRevision = (r: Record<string, unknown>): PromptRevision => ({
   text: String(r.text),
   source: (r.source === "admin" ? "admin" : "shipped"),
   updated_at: new Date(r.updated_at as string).toISOString(),
+});
+
+const toOnboardingExperiment = (r: Record<string, unknown>): OnboardingExperiment => ({
+  id: String(r.id),
+  lang: String(r.lang) as Lang,
+  status: String(r.status) as OnboardingExperiment["status"],
+  rules: json<OnboardingExperimentRules>(r.rules, {}),
+  variants: json<OnboardingVariant[]>(r.variants, []),
+  created_by: String(r.created_by),
+  created_at: new Date(r.created_at as string).toISOString(),
+  started_at: r.started_at ? new Date(r.started_at as string).toISOString() : null,
+  stopped_at: r.stopped_at ? new Date(r.stopped_at as string).toISOString() : null,
+});
+
+const toOnboardingAssignment = (r: Record<string, unknown>): OnboardingAssignment => ({
+  user_id: String(r.user_id),
+  experiment_id: String(r.experiment_id),
+  variant_id: Number(r.variant_id),
+  assigned_at: new Date(r.assigned_at as string).toISOString(),
 });
 
 /** A `food_ref` row as the wire shape — column names are already the field names. */
@@ -1741,6 +1801,17 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // ── Rows belonging to nobody: the single-row admin copy.
   getOnboardingContent: "unscoped",
   putOnboardingContent: "unscoped",
+  // The experiment rows belong to nobody either — the admin's definitions. The ASSIGNMENTS do:
+  // `onboardingAssignment` and `putOnboardingAssignment` take the user id, `onboardingAssignments`
+  // (plural) is the admin's per-experiment results read, unscoped like `onboardingFunnel`.
+  listOnboardingExperiments: "unscoped",
+  runningOnboardingExperiment: "unscoped",
+  putOnboardingExperiment: "unscoped",
+  startOnboardingExperiment: "unscoped",
+  stopOnboardingExperiment: "unscoped",
+  onboardingAssignment: 0,
+  putOnboardingAssignment: 0,
+  onboardingAssignments: "unscoped",
   // The six system prompts. One set for the whole instance, admin-edited, no account anywhere.
   getPrompts: "unscoped",
   putPrompt: "unscoped",
@@ -2767,6 +2838,16 @@ export async function postgresStore(
         // Funnel rows move too: signing in halfway through onboarding is normal, and a run split
         // across two user ids reads as two abandoned runs.
         await tx`update onboarding_events set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        // Experiment assignments move by the gap rule below: the account that already holds one
+        // keeps it, the anonymous session's fills what is missing. An assignment is what makes a
+        // variant sticky, and a run split across two ids would assign the same person twice.
+        await tx`
+          delete from onboarding_assignments a
+          where a.user_id = ${fromUserId}
+            and exists (
+              select 1 from onboarding_assignments t
+              where t.user_id = ${intoUserId} and t.experiment_id = a.experiment_id)`;
+        await tx`update onboarding_assignments set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         // Health days move, but NEVER over a day the real account already has. The direction is
         // anonymous -> real, and the real account's history is the one with deliberate corrections
         // in it. Filling a gap is a gift; overwriting is data loss with no undo. Matches
@@ -3393,6 +3474,102 @@ export async function postgresStore(
               updated_at = now()
         returning version`;
       return Number(rows[0]!.version);
+    },
+
+    // ── Onboarding experiments (ieat-app#2669) ──────────────────────────────────────────────
+
+    async listOnboardingExperiments() {
+      const rows = await sql`
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        from onboarding_experiments order by created_at desc`;
+      return rows.map(toOnboardingExperiment);
+    },
+
+    async runningOnboardingExperiment(lang) {
+      const rows = await sql`
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        from onboarding_experiments where lang = ${lang} and status = 'running' limit 1`;
+      return rows.length === 0 ? null : toOnboardingExperiment(rows[0]!);
+    },
+
+    async putOnboardingExperiment(experiment) {
+      // The WHERE on the update is the freeze: a row that left draft ignores the write and this
+      // answers false — a running variant never holds two sets of words. The insert writes
+      // 'draft' LITERALLY: a row born running would skip the one-per-language guard entirely.
+      const rows = await sql`
+        insert into onboarding_experiments
+          (id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at)
+        values (${experiment.id}, ${experiment.lang}, 'draft',
+          ${experiment.rules}::jsonb, ${experiment.variants}::jsonb, ${experiment.created_by},
+          ${experiment.created_at}, ${experiment.started_at}, ${experiment.stopped_at})
+        on conflict (id) do update
+          set lang = excluded.lang, rules = excluded.rules, variants = excluded.variants
+          where onboarding_experiments.status = 'draft'
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async startOnboardingExperiment(id) {
+      // ONE statement, because the "no other experiment runs for this language" check is a state
+      // condition and those live in the store's own guarded statements — an engine that read it
+      // first would be deciding on a snapshot two starts could share. A status predicate on the
+      // same row says only a draft may start, and the unique index on (lang) where running is what
+      // makes the answer true under two concurrent starts: the second violates it and answers
+      // false off the violation rather than off a snapshot it shared with the first.
+      try {
+        const rows = await sql`
+          update onboarding_experiments e
+          set status = 'running', started_at = now()
+          where e.id = ${id} and e.status = 'draft'
+            and not exists (
+              select 1 from onboarding_experiments o
+              where o.lang = e.lang and o.status = 'running')
+          returning e.id`;
+        return rows.length > 0;
+      } catch (e) {
+        // Bun wraps Postgres errors — the sqlstate is not exposed, the index name is.
+        if ((e as { constraint?: string }).constraint === "onboarding_experiments_one_running") {
+          return false;
+        }
+        throw e;
+      }
+    },
+
+    async stopOnboardingExperiment(id) {
+      const rows = await sql`
+        update onboarding_experiments
+        set status = 'stopped', stopped_at = now()
+        where id = ${id} and status = 'running'
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async onboardingAssignment(userId, experimentId) {
+      const rows = await sql`
+        select user_id, experiment_id, variant_id, assigned_at
+        from onboarding_assignments
+        where user_id = ${userId} and experiment_id = ${experimentId}`;
+      return rows.length === 0 ? null : toOnboardingAssignment(rows[0]!);
+    },
+
+    async putOnboardingAssignment(userId, experimentId, variantId) {
+      // STICKY BY THE PRIMARY KEY. The second write to (user, experiment) does not overwrite — it
+      // returns the row already there, so two concurrent first requests can never split one user
+      // across two variants. The update-then-return shape keeps the answer to one statement.
+      const rows = await sql`
+        insert into onboarding_assignments (user_id, experiment_id, variant_id)
+        values (${userId}, ${experimentId}, ${variantId})
+        on conflict (user_id, experiment_id) do update
+          set variant_id = onboarding_assignments.variant_id
+        returning user_id, experiment_id, variant_id, assigned_at`;
+      return toOnboardingAssignment(rows[0]!);
+    },
+
+    async onboardingAssignments(experimentId) {
+      const rows = await sql`
+        select user_id, experiment_id, variant_id, assigned_at
+        from onboarding_assignments where experiment_id = ${experimentId}`;
+      return rows.map(toOnboardingAssignment);
     },
 
     // ── The food catalog ────────────────────────────────────────────────────────────────────

@@ -15,8 +15,8 @@ import { memoryStore } from "../store.memory.ts";
 import type { Store } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
 import {
-  onboardingContent, onboardingFunnel, recordOnboardingEvents, resetOnboardingContent,
-  saveOnboardingContent,
+  assignVariant, onboardingContent, onboardingContentFor, onboardingFunnel, recordOnboardingEvents,
+  resetOnboardingContent, saveOnboardingContent,
 } from "./onboarding.ts";
 
 const CONFIG: Config = {
@@ -344,6 +344,140 @@ describe("a row an older build left behind", () => {
     expect((await onboardingContent(deps, "de")).welcome.cta).toBe("Los geht's");
     expect((await onboardingContent(deps, "en")).welcome.cta).toBe("Onwards");
     expect(Object.keys((await store.getOnboardingContent())!).sort()).toEqual(["de", "en"]);
+  });
+});
+
+describe("experiments (ieat-app#2669)", () => {
+  const variantContent = (version: number, cta = "Variant"): OnboardingContent => {
+    const c = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    c.version = version;
+    c.welcome.cta = cta;
+    return c;
+  };
+  const experiment = (over: Record<string, unknown> = {}) => ({
+    id: crypto.randomUUID(),
+    lang: "en" as const,
+    status: "draft" as const,
+    rules: {},
+    variants: [
+      { control: true, weight: 0, content: variantContent(41, "Control") },
+      { weight: 1, content: variantContent(42) },
+    ],
+    created_by: userId,
+    created_at: new Date().toISOString(),
+    started_at: null,
+    stopped_at: null,
+    ...over,
+  });
+  const signals = { lang: "en" as const, surface: "app" as const, region: "DE", tz: "Europe/Berlin" };
+  const startExperiment = async (e = experiment()) => {
+    await store.putOnboardingExperiment(e as never);
+    await store.startOnboardingExperiment(e.id as string);
+    await store.setSwitch("onboarding.experiments", true, userId);
+    return e;
+  };
+
+  it("serves control and writes nothing while the switch is off", async () => {
+    const e = experiment();
+    await store.putOnboardingExperiment(e as never);
+    await store.startOnboardingExperiment(e.id);
+    expect(await assignVariant(deps, userId, signals)).toBeNull();
+    expect(await store.onboardingAssignments(e.id)).toEqual([]);
+    expect((await onboardingContentFor(deps, userId, signals)).welcome.cta).not.toBe("Variant");
+  });
+
+  it("serves control when no experiment runs for the language", async () => {
+    await store.setSwitch("onboarding.experiments", true, userId);
+    expect(await assignVariant(deps, userId, signals)).toBeNull();
+    expect(await assignVariant(deps, userId, { ...signals, lang: "de" })).toBeNull();
+  });
+
+  it("enrolls an eligible user once and serves the same variant on every later call", async () => {
+    const e = await startExperiment();
+    const first = await assignVariant(deps, userId, signals);
+    expect(first?.variant.content.version).toBe(42);
+    expect((await store.onboardingAssignment(userId, e.id))?.variant_id).toBe(42);
+
+    // Sticky by the stored row, not by recomputing: the signals that enrolled the user can all
+    // change and the variant does not move.
+    const again = await assignVariant(deps, userId, { ...signals, region: "BR", tz: "Asia/Tokyo" });
+    expect(again?.variant.content.version).toBe(42);
+    expect((await onboardingContentFor(deps, userId, signals)).welcome.cta).toBe("Variant");
+  });
+
+  it("does not enroll a user missing a signal the experiment needs — and writes no row", async () => {
+    const e = await startExperiment(experiment({ rules: { countries: ["de"], hours: [22, 6] } }));
+    // No region, no tz: control, and NO row, so a later request that has them can still enroll.
+    expect(await assignVariant(deps, userId, { ...signals, region: null, tz: null })).toBeNull();
+    expect(await store.onboardingAssignment(userId, e.id)).toBeNull();
+    // An unknown zone is "not eligible", not an exception.
+    expect(await assignVariant(deps, userId, { ...signals, tz: "Mars/Olympus" })).toBeNull();
+    expect(await store.onboardingAssignment(userId, e.id)).toBeNull();
+  });
+
+  it("enforces the countries, hours and surfaces rules", async () => {
+    const e = await startExperiment(experiment({ rules: { countries: ["de"], surfaces: ["app"] } }));
+    // The device region maps through countryFromRegion: a region outside the curated list is
+    // "other" and matches nothing; a web surface is ruled out outright.
+    expect(await assignVariant(deps, userId, { ...signals, region: "JP" })).toBeNull();
+    expect(await assignVariant(deps, userId, { ...signals, surface: "web" })).toBeNull();
+    expect((await assignVariant(deps, userId, signals))?.variant.content.version).toBe(42);
+
+    // The hour window is the user's LOCAL hour — here [22,6): 23:00 eligible, 09:00 not, and a
+    // stored assignment outlives the window passing. On `de`, because one experiment per language.
+    const night = await startExperiment(experiment({ lang: "de", rules: { hours: [22, 6] } }));
+    const deSignals = { ...signals, lang: "de" as const };
+    const other = await store.createUser("de");
+    expect(await assignVariant(deps, other, deSignals, new Date("2026-11-09T22:30:00Z"))).not.toBeNull();
+    const third = await store.createUser("de");
+    expect(await assignVariant(deps, third, deSignals, new Date("2026-11-10T08:00:00Z"))).toBeNull();
+    expect(await store.onboardingAssignment(third, night.id)).toBeNull();
+  });
+
+  it("serves control in a language the experiment is not for — the assignment stays, unread", async () => {
+    const e = await startExperiment();
+    await assignVariant(deps, userId, signals);
+    expect(await assignVariant(deps, userId, { ...signals, lang: "de" })).toBeNull();
+    // The row is kept: back in the experiment's language the same variant returns.
+    expect((await assignVariant(deps, userId, signals))?.variant.content.version).toBe(42);
+    expect((await store.onboardingAssignment(userId, e.id))?.variant_id).toBe(42);
+  });
+
+  it("serves control through usableContent when a variant revision is missing a question", async () => {
+    const broken = variantContent(43, "Variant");
+    broken.screens = broken.screens.filter((s) => s.id !== "goal");
+    await startExperiment(experiment({
+      variants: [
+        { control: true, weight: 0, content: variantContent(41, "Control") },
+        { weight: 1, content: broken },
+      ],
+    }));
+    expect((await onboardingContentFor(deps, userId, signals)).welcome.cta).not.toBe("Variant");
+  });
+
+  it("serves control when the experiment read fails, logging a line", async () => {
+    // An experiment must never stop onboarding: a store that throws answers control, like
+    // `switchOn` answering the default when the switch row cannot be read.
+    await startExperiment();
+    const failing = {
+      ...deps,
+      store: {
+        ...store,
+        runningOnboardingExperiment: async () => { throw new Error("down"); },
+        onboardingAssignment: async () => { throw new Error("down"); },
+        putOnboardingAssignment: async () => { throw new Error("down"); },
+      },
+    };
+    expect(await assignVariant(failing, userId, signals)).toBeNull();
+    expect((await onboardingContentFor(failing, userId, signals)).welcome.cta).not.toBe("Variant");
+  });
+
+  it("a stopped experiment hands everybody control — the assignment rows are kept", async () => {
+    const e = await startExperiment();
+    await assignVariant(deps, userId, signals);
+    await store.stopOnboardingExperiment(e.id);
+    expect(await assignVariant(deps, userId, signals)).toBeNull();
+    expect((await store.onboardingAssignment(userId, e.id))?.variant_id).toBe(42);
   });
 });
 

@@ -13,7 +13,7 @@ import {
   suggestionFirst, LANGS, type CountryCode,
   type CountrySignals,
   REPORTABLE_FIELDS, SCREEN_FIELDS, disabledScreens,
-  onboardingContentFor, screenForStep, usableContent, validateOnboardingContent,
+  WELCOME_IMAGE_KEYS, onboardingContentFor, screenForStep, usableContent, validateOnboardingContent,
   type OnboardingContent, type Profile,
 } from "./index.ts";
 
@@ -158,6 +158,21 @@ describe("validation refuses what would break the app", () => {
     expect(result.ok).toBe(false);
     return result.ok ? [] : result.errors;
   };
+
+  it("a welcome image that is no bundled key (ieat-app#2669)", () => {
+    // Never a URL: the image is a key into the app's WELCOME_IMAGES registry, so an admin cannot
+    // point the welcome at an upload. A key nobody bundled is refused the same way.
+    for (const image of ["https://example.com/x.webp", "no-such-hero", 7, {}]) {
+      const errors = bad((c) => { (c.welcome as { image?: unknown }).image = image; return c; });
+      expect(errors.join(" ")).toContain("welcome.image");
+    }
+  });
+
+  it("a welcome image that IS a bundled key is fine", () => {
+    const c = clone(DEFAULT_ONBOARDING_CONTENT);
+    c.welcome.image = WELCOME_IMAGE_KEYS[0];
+    expect(validateOnboardingContent(c).ok).toBe(true);
+  });
 
   it("a missing screen", () => {
     const errors = bad((c) => {
