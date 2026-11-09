@@ -19,7 +19,7 @@ import { buildFoodIndex } from "./food-index.ts";
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
@@ -1217,31 +1217,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async moveEntitlement(fromUserId, intoUserId, eventAt) {
       const from = entitlements.get(fromUserId);
       if (!from || fromUserId === intoUserId || !users.has(intoUserId)) return false;
-      // Only a grant the source HOLDS and the transfer could have carried: one written after it is
-      // a new purchase, and a cleared one (an earlier transfer) must not overwrite a live one.
-      const before = (c: string | null, held: boolean) =>
-        (held && c !== null && Date.parse(c) < Date.parse(eventAt) ? c : null);
-      const sub = before(from.expiresEventAt, from.expiresAt !== null);
-      const life = before(from.lifetimeEventAt, from.lifetimeProductId !== null);
-      if (sub === null && life === null) return false;
-      const into = entitlements.get(intoUserId);
-      const takeSub = beats(sub, into?.expiresEventAt ?? null);
-      const takeLife = beats(life, into?.lifetimeEventAt ?? null);
-      entitlements.set(intoUserId, {
-        expiresAt: takeSub ? from.expiresAt : into?.expiresAt ?? null,
-        expiresEventAt: takeSub ? from.expiresEventAt : into?.expiresEventAt ?? null,
-        trial: takeSub ? from.trial === true : into?.trial === true,
-        lifetimeProductId: takeLife ? from.lifetimeProductId : into?.lifetimeProductId ?? null,
-        lifetimeEventAt: takeLife ? from.lifetimeEventAt : into?.lifetimeEventAt ?? null,
-        productId: takeSub ? from.productId : into?.productId ?? "",
-        eventAt: newest(into?.eventAt, from.eventAt),
-      });
-      entitlements.set(fromUserId, {
-        ...from,
-        ...(sub !== null ? { expiresAt: null, expiresEventAt: eventAt, trial: false } : {}),
-        ...(life !== null ? { lifetimeProductId: null, lifetimeEventAt: eventAt } : {}),
-        eventAt: newest(from.eventAt, eventAt),
-      });
+      const plan = planTransfer(from, entitlements.get(intoUserId) ?? null, eventAt, now());
+      if (plan === null) return false;
+      entitlements.set(intoUserId, plan.into);
+      entitlements.set(fromUserId, plan.from);
       return true;
     },
 

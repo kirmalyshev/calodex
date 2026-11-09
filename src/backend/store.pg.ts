@@ -29,10 +29,10 @@ import { syncShippedPrompts } from "./llm/prompt.ts";
 import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
   type MealPatch,
   type CampaignRow, type JobRecord, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
-  type StoreOptions, type StoredPhoto,
+  type ClockedEntitlement, type StoreOptions, type StoredPhoto,
 } from "./store.ts";
 
 /**
@@ -3173,51 +3173,42 @@ export async function postgresStore(
 
     async moveEntitlement(fromUserId, intoUserId, eventAtIso) {
       if (fromUserId === intoUserId) return false;
-      const at = new Date(eventAtIso);
-      // `mergeUsers`' two grant statements, plus one condition each: only a grant the transfer could
-      // have carried, one whose clock precedes it. The source is cleared LAST, because the moves
-      // read its values; the whole thing is one transaction for the reason the merge is.
+      // Both rows locked, the shared rule applied, both written back, all in one transaction: the
+      // decision reads only rows this transaction holds, so a concurrent delivery waits for it.
       return await inTx(async (tx) => {
-        await tx`
-          update users into_u set
-            entitlement_expires_at       = from_u.entitlement_expires_at,
-            entitlement_expires_event_at = from_u.entitlement_expires_event_at,
-            entitlement_trial            = from_u.entitlement_trial,
-            entitlement_product_id       = from_u.entitlement_product_id
-          from users from_u
-          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
-            and (from_u.entitlement_expires_at is not null and from_u.entitlement_expires_event_at < ${at})
-            and (into_u.entitlement_expires_event_at is null
-                 or into_u.entitlement_expires_event_at < from_u.entitlement_expires_event_at)`;
-        await tx`
-          update users into_u set
-            entitlement_lifetime_product_id = from_u.entitlement_lifetime_product_id,
-            entitlement_lifetime_event_at   = from_u.entitlement_lifetime_event_at
-          from users from_u
-          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
-            and (from_u.entitlement_lifetime_product_id is not null and from_u.entitlement_lifetime_event_at < ${at})
-            and (into_u.entitlement_lifetime_event_at is null
-                 or into_u.entitlement_lifetime_event_at < from_u.entitlement_lifetime_event_at)`;
-        await tx`
-          update users into_u set
-            entitlement_event_at = greatest(into_u.entitlement_event_at, from_u.entitlement_event_at)
-          from users from_u
-          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
-            and ((from_u.entitlement_expires_at is not null and from_u.entitlement_expires_event_at < ${at}) or (from_u.entitlement_lifetime_product_id is not null and from_u.entitlement_lifetime_event_at < ${at}))`;
-        const cleared = await tx`
-          update users set
-            entitlement_expires_at = case when entitlement_expires_at is not null and entitlement_expires_event_at < ${at} then null else entitlement_expires_at end,
-            entitlement_trial = case when entitlement_expires_at is not null and entitlement_expires_event_at < ${at} then false else entitlement_trial end,
-            entitlement_expires_event_at = case when entitlement_expires_at is not null and entitlement_expires_event_at < ${at} then ${at} else entitlement_expires_event_at end,
-            entitlement_lifetime_product_id = case when entitlement_lifetime_product_id is not null and entitlement_lifetime_event_at < ${at} then null else entitlement_lifetime_product_id end,
-            entitlement_lifetime_event_at = case when entitlement_lifetime_product_id is not null and entitlement_lifetime_event_at < ${at} then ${at} else entitlement_lifetime_event_at end,
-            entitlement_event_at = greatest(entitlement_event_at, ${at})
-          where id = ${fromUserId}
-            and exists (select 1 from users where id = ${intoUserId})
-            and ((entitlement_expires_at is not null and entitlement_expires_event_at < ${at})
-                 or (entitlement_lifetime_product_id is not null and entitlement_lifetime_event_at < ${at}))
-          returning id`;
-        return cleared.length > 0;
+        const rows = await tx`
+          select id, entitlement_expires_at, entitlement_expires_event_at, entitlement_trial,
+                 entitlement_product_id, entitlement_lifetime_product_id, entitlement_lifetime_event_at,
+                 entitlement_event_at
+          from users where id in (${fromUserId}, ${intoUserId}) for update`;
+        const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
+        const read = (id: string): ClockedEntitlement | null | undefined => {
+          const r = rows.find((x: { id: string }) => x.id === id);
+          if (!r) return undefined;
+          if (!r.entitlement_event_at) return null;
+          return {
+            expiresAt: iso(r.entitlement_expires_at), expiresEventAt: iso(r.entitlement_expires_event_at),
+            trial: r.entitlement_trial === true, productId: (r.entitlement_product_id as string | null) ?? "",
+            lifetimeProductId: (r.entitlement_lifetime_product_id as string | null) ?? null,
+            lifetimeEventAt: iso(r.entitlement_lifetime_event_at), eventAt: iso(r.entitlement_event_at)!,
+          };
+        };
+        const from = read(fromUserId);
+        const into = read(intoUserId);
+        if (!from || into === undefined) return false;
+        const plan = planTransfer(from, into, eventAtIso, now());
+        if (plan === null) return false;
+        const at = (v: string | null) => (v === null ? null : new Date(v));
+        for (const [id, e] of [[intoUserId, plan.into], [fromUserId, plan.from]] as const) {
+          await tx`
+            update users set
+              entitlement_expires_at = ${at(e.expiresAt)}, entitlement_expires_event_at = ${at(e.expiresEventAt)},
+              entitlement_trial = ${e.trial === true}, entitlement_product_id = ${e.productId},
+              entitlement_lifetime_product_id = ${e.lifetimeProductId},
+              entitlement_lifetime_event_at = ${at(e.lifetimeEventAt)}, entitlement_event_at = ${new Date(e.eventAt)}
+            where id = ${id}`;
+        }
+        return true;
       });
     },
 

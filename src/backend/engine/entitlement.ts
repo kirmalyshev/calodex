@@ -348,8 +348,10 @@ export interface RevenueCatTransfer {
  * purchase being moved arrived as an ordinary event and is already on the source's record.
  *
  * KNOWN CEILING: a TRANSFER delivered before the purchase it moves finds nothing to move, and a
- * purchase this server never recorded (another store account) is not here at all. Both need
- * RevenueCat's REST API (#687, option A).
+ * purchase this server never recorded (another store account) is not here at all. And a refund or
+ * CANCELLATION generated before the transfer but delivered after it names the source, which the
+ * transfer fenced, so the destination keeps a refunded grant. All three need RevenueCat's REST API
+ * (#687, option A).
  */
 export async function applyRevenueCatTransfer(deps: EngineDeps, t: RevenueCatTransfer): Promise<ApplyOutcome> {
   if (t.sandbox && !deps.config.revenueCatAcceptSandbox) return { applied: false, reason: "sandbox" };
