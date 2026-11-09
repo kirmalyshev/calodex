@@ -157,11 +157,12 @@ test("a refusal that comes back when the queue drains is worded against the kept
   await expect(page.locator(".thread li.me.refused", { hasText: "a banana" })).toHaveCount(1);
   // Held, not retried on its own — and the turn behind it is not stopped by it: the apple goes.
   await expect(waiting(page)).toHaveCount(0);
+  await expect(banana.getByRole("button", { name: "Resend" })).toBeVisible();
   // With only a held turn left, a turn said now goes now rather than joining a queue.
   await say(page, "and some toast");
   await expect(waiting(page)).toHaveCount(0);
 
-refused = false;
+  refused = false;
   // force: see app-chat's Send-again spec — the rising node is swapped under the pointer.
   await banana.getByRole("button", { name: "Resend" }).click({ force: true });
   await expect(waiting(page)).toHaveCount(0);

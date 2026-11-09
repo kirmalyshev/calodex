@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { OUTCOME_UNKNOWN } from "./contract.ts";
 import { attemptOf, createOutbox, joinsQueue, type OutboxEvent, type OutboxPorts, type Queued } from "./outbox.ts";
-import { LOST, UNANSWERED, type RefusedTurn } from "./results.ts";
+import { LOST, UNANSWERED, keptState, type RefusedTurn } from "./results.ts";
 
 /** Thrown by the fake transport, carrying what the client's extractor would have read off it. */
 class Failed extends Error { constructor(readonly turn: RefusedTurn) { super(turn.kind); } }
@@ -108,6 +108,29 @@ describe("the outbox", () => {
     expect(h.sent).toEqual(["a", "b", "c"]);
     expect(h.box.entries.map((e) => e.id)).toEqual(["a"]);
     expect(h.box.entries[0]!.held).toBeDefined();
+  });
+
+  it("steps over a held turn in the middle, and a queue that is all held sends nothing more", async () => {
+    const h = harness([photo("a"), photo("b"), photo("c")]);
+    await h.box.ready;
+    h.answer(async (e) => { if (e.id === "b") throw new Failed({ kind: "cap-exceeded", scope: "user" }); return { kind: "logged" }; });
+    await h.box.drain("u1");
+    expect(h.sent).toEqual(["a", "b", "c"]);
+    expect(h.box.entries.map((e) => e.id)).toEqual(["b"]);
+    h.sent.length = 0;
+    await h.box.drain("u1");
+    expect(h.sent).toEqual([]);
+    expect(h.box.sending).toBeNull();
+  });
+
+  it("holds another account's turns apart from this one's held turn", async () => {
+    const h = harness([photo("a"), photo("x", "u2")]);
+    await h.box.ready;
+    h.answer(async (e) => { if (e.id === "a") throw new Failed({ kind: "cap-exceeded", scope: "user" }); return { kind: "logged" }; });
+    await h.box.drain("u1");
+    await h.box.drain("u2");
+    expect(h.sent).toEqual(["a", "x"]);
+    expect(h.box.entries.map((e) => e.id)).toEqual(["a"]);
   });
 
   it("holds a photo whose file is gone as lost, and goes on to the turns behind it", async () => {
@@ -234,6 +257,11 @@ describe("the outbox", () => {
     release();
     await draining;
     expect(h.disk()[0]).toMatchObject({ id: "a", userId: "real", held: { kind: "subscription-required" } });
+  });
+
+  it("reads a lost photo as a hold, shown as refused, never retried", () => {
+    expect(attemptOf({ kind: LOST })).toBe("hold");
+    expect(keptState({ kind: LOST })).toBe("refused");
   });
 
   it("takes a new turn at the end whenever something of the account's is waiting anywhere in it", () => {

@@ -120,7 +120,7 @@ export interface Outbox<Photo> {
   drain(userId: string): Promise<void>;
   /**
    * Ask again after a hold, under a NEW id — the old one is the turn that was refused — and start a
-   * drain, NOT awaited: a caller holding its controls must not hold them for every turn behind it.
+   * drain, NOT awaited: a caller holding its controls must not hold them for a whole drain. The turn keeps its place in the list, so it goes before turns still waiting and lands after ones that already went.
    */
   resend(id: string, userId: string): Promise<void>;
   /** False, and nothing done, for the turn on its way: its upload runs on, and it would be logged anyway. */
@@ -226,8 +226,10 @@ export function createOutbox<Photo>(ports: OutboxPorts<Photo>): Outbox<Photo> {
         sendingNow(null);
         await ports.release(next);
       }
-    } catch {
-      // Storage failed under the drain: the next one starts from what is saved.
+    } catch (e) {
+      // Storage failed under the drain: the next one starts from what is saved. Said, not swallowed: a
+      // hold that could not be saved is re-sent on the next pass, and nobody would know why.
+      console.warn("[outbox] drain stopped:", e);
     } finally {
       if (sending !== null) sendingNow(null);
       draining = null;

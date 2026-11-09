@@ -301,7 +301,7 @@ export function takeTurn(
   const report = (words: string): void => {
     // A kept turn's notice is decided NOW, from what is still waiting: a replay that answered while
     // this turn was redrawing already took the turn away, and the notice would outlive it.
-    if (words === kept() || words === behind()) {
+    if (words === kept()) {
       const now = keptNotice(uid);
       if (now === null) return;
       words = now;
@@ -506,8 +506,8 @@ export function failBadge(id: string, resend: () => void, drop?: () => void): HT
 /**
  * KEPT FOR LATER as HER line (#708, #1520): what is happening to her send drawn ON her bubble —
  * pending (a clock: the outbox sends it on its own), failed (the red !, Resend; nothing will
- * send it again by itself) or refused (the server's reason inside, and Delete so the queue
- * behind it can go). Spud never speaks for her send, and her words never go back to the field.
+ * send it again by itself) or refused (the server's reason inside, and Resend or Delete; the
+ * turns behind it go on without it). Spud never speaks for her send, and her words never go back to the field.
  * The chat draws these inside its thread (`li`); Home draws them above the composer (`div`,
  * ieat-app#1546 — `web-today-composer-failed`).
  */
@@ -545,7 +545,7 @@ export function keptLineEl(
       refusalWords(new ApiError(0, { error: e.held!.kind, ...(e.held!.scope ? { scope: e.held!.scope } : {}) }, "held")));
     const row = el("div", "act");
     // A held 402 goes again on its own once she has subscribed (`flush`), and keeps Resend; every
-    // other refusal is final, and Delete lets the queue behind it go.
+    // other refusal is final; Delete drops it, and the turns behind it are not waiting on it.
     if (e.held!.kind === "subscription-required") row.append(smallCta(copy.resend, act.resend));
     row.append(plainCta(copy.phone.delete, act.drop), ts);
     li.append(dl, row);
@@ -774,8 +774,6 @@ export function mealLine(meal: MealRecord | null): string {
 
 /** What a turn kept for later says, once, under the composer (#708). No cause: offline and an edge are both this. */
 export const kept = (): string => COPY.kept;
-/** The same, when what is ahead of it waits on a DECISION rather than on a connection. */
-export const behind = (): string => COPY.keptBehind;
 /** A turn that joined the queue without being tried, and could not be saved: nothing went anywhere. */
 export const notSaved = (): string => COPY.notSaved;
 
@@ -798,8 +796,8 @@ export const redrawScreen = (): void => { void redraw?.().catch(() => {}); };
 
 /**
  * What a turn's answer changes on this page: a proposal is held until it is logged or dropped. A
- * kept turn cannot answer after a newer one — a turn said while kept ones wait joins their end
- * (`sendOrKeep`) — so the newest to arrive is the newest asked for, a COPY.sendAgain included.
+ * kept turn does not answer after a newer one — a turn said while kept ones wait joins their end
+ * (`sendOrKeep`) — except a held turn she sends again, which is her explicit tap and answers last.
  */
 export function answered(r: { kind: string }): void {
   if (r.kind !== "proposed") return;
