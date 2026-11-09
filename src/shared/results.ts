@@ -88,7 +88,8 @@ export type Refusal =
    */
   | { kind: "unreadable-label" }
   /** A re-analysis of a meal that has no stored photo. */
-  | { kind: "no-photo" };
+  | { kind: "no-photo" }
+  | { kind: "meal-changed" };
 
 export type LogPhotoResult = MealLogged | Refusal;
 

@@ -1660,6 +1660,7 @@ export interface Store {
    * the caller's cue to answer that race honestly.
    */
   updatePending(userId: string, pending: PendingMeal): Promise<boolean>;
+  // ^ writes `analysis` and `expiresAt` ONLY; `pending.date` is ignored (see `setPendingDate`).
   /**
    * Move a live proposal to another day and touch nothing else (#2695): a column write, so a
    * redate cannot put back the analysis a turn read before an amend landed. Live-only, like

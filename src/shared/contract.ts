@@ -52,6 +52,12 @@ export const REFUSAL_STATUS = {
   "unreadable-label": 422,
   "no-photo": 404,
   /**
+   * The meal changed under a write that was computed from an older read (ieat-app#2695): a correction
+   * from chat, a re-read, or an edit that lost three races. Nothing was overwritten. 409, and the
+   * client words it as "that meal just changed, try again" — the retry reads the new numbers.
+   */
+  "meal-changed": 409,
+  /**
    * Email sign-in (#569): the code typed did not match the live one, and it may be tried again —
    * five wrong tries burn it, which is when `code-dead` takes over. 401 like `sign-in-failed`,
    * because a wrong credential is not a malformed request.

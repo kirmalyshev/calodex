@@ -269,6 +269,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   // the same thing in a nullable column, so both implementations answer the same question.
   const tokens = new Map<string, { userId: string; lastUsedAt: number; ttlMs?: number }>();
   const meals = new Map<string, MealRecord>(); // mealId -> record
+  const NUMBER_KEYS = new Set(["items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
   const versions = new Map<string, number>(); // mealId -> write count (#2695), absent = 0
   const writeMeal = (userId: string, mealId: string, patch: MealPatch, ifVersion: number | null): MealRecord | "conflict" | null => {
     const m = meals.get(mealId);
@@ -279,7 +280,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (v !== undefined) (next as unknown as Record<string, unknown>)[k] = v;
     }
     meals.set(mealId, clone(next));
-    versions.set(mealId, (versions.get(mealId) ?? 0) + 1);
+    if (Object.keys(patch).some((k) => NUMBER_KEYS.has(k) && (patch as Record<string, unknown>)[k] !== undefined)) versions.set(mealId, (versions.get(mealId) ?? 0) + 1);
     return scored(clone(next));
   };
   /**
@@ -1863,6 +1864,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async putPending(pending) {
+      // Never a proposal for a meal that is already logged under its id (#2695).
+      if (meals.get(pending.id)?.user_id === pending.userId) return;
       pendings.set(pending.id, clone(pending));
     },
 
@@ -1901,7 +1904,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async updatePending(userId, pending) {
       const p = pendings.get(pending.id);
       if (!p || p.userId !== userId || p.expiresAt <= now()) return false;
-      pendings.set(pending.id, clone(pending));
+      // Analysis and expiry only — the day belongs to `setPendingDate` (#2695).
+      pendings.set(pending.id, clone({ ...pending, date: p.date }));
       return true;
     },
 

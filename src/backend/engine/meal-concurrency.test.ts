@@ -8,7 +8,9 @@ import { memoryStore } from "../store.memory.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { day } from "./diary.ts";
-import { confirmPendingMeal, editMeal, gatedVerdicts, pendingMeals } from "./meals.ts";
+import { confirmPendingMeal, editMeal, gatedVerdicts, logPhotoMeal, pendingMeals, reanalyzeMeal } from "./meals.ts";
+import { handleText } from "./text.ts";
+import type { MealLogged } from "@eait/shared";
 import { patchProfile, type EngineDeps } from "./index.ts";
 import type { PendingMeal } from "../store.ts";
 
@@ -31,6 +33,7 @@ beforeEach(async () => {
     restrictions: [], complete_onboarding: true,
   });
   if (!out || !out.ok) throw new Error("onboarding failed");
+  await deps.store.setFreeAnalyses(userId, 50);
 });
 
 const analysis = (kcal = 300) => ({
@@ -127,5 +130,78 @@ describe("#2695", () => {
     expect((await day(paid, userId, "2026-11-09"))!.meals[0]!.question).not.toBeNull();
     await deps.store.setFreeAnalyses(userId, null);
     expect((await day(paid, userId, "2026-11-09"))!.meals[0]!.question).toBeNull();
+  });
+
+  // Runs `once` before the turn's FIRST model call: the window a PATCH or a second turn can land in.
+  const duringModelCall = (once: () => Promise<unknown>): EngineDeps => {
+    let fired = false;
+    return {
+      ...deps,
+      llm: new Proxy(deps.llm, {
+        get: (t, k) => {
+          const v = (t as never as Record<string | symbol, unknown>)[k];
+          return typeof v !== "function" ? v : async (...a: unknown[]) => {
+            if (!fired) { fired = true; await once(); }
+            return (v as (...x: unknown[]) => unknown).apply(t, a);
+          };
+        },
+      }),
+    };
+  };
+  const logged = async (): Promise<string> => {
+    const id = crypto.randomUUID();
+    await deps.store.putPending(pending({ id }));
+    await confirmPendingMeal(deps, userId, id);
+    return id;
+  };
+
+  it("hole 1: a chat correction computed from an older read is refused, not laid over a PATCH", async () => {
+    const id = await logged();
+    const d = duringModelCall(() => editMeal(deps, userId, id, { kcal: 777 }));
+    const out = await handleText(d, userId, { text: "only half of it", focusMealId: id });
+    expect(out.kind).toBe("meal-changed");
+    expect((await deps.store.getMeal(userId, id))!.kcal).toBe(777);
+  });
+
+  it("hole 1: a re-read that lost to an edit is refused and nothing is overwritten", async () => {
+    const out0 = (await logPhotoMeal(deps, userId, { images: [async () => { const b = new Uint8Array(10).fill(1); b[0] = 0xff; b[1] = 0xd8; return b; }] })) as MealLogged;
+    const d = duringModelCall(() => editMeal(deps, userId, out0.mealId, { kcal: 777 }));
+    const out = await reanalyzeMeal(d, userId, out0.mealId);
+    expect(out.kind).toBe("meal-changed");
+    expect((await deps.store.getMeal(userId, out0.mealId))!.kcal).toBe(777);
+  });
+
+  it("a redate does not move the version, so it does not turn an edit into a conflict", async () => {
+    const id = await logged();
+    const read = (await deps.store.getMealVersioned(userId, id))!;
+    await deps.store.updateMeal(userId, id, { date: "2026-11-01" });
+    expect(await deps.store.updateMealIfVersion(userId, id, { kcal: 5 }, read.version)).not.toBe("conflict");
+  });
+
+  it("hole 4: an amend whose turn read the offer before a redate keeps the redate", async () => {
+    const p = pending();
+    await deps.store.putPending(p);
+    const d = duringModelCall(() => deps.store.setPendingDate(userId, p.id, "2026-11-08"));
+    const out = await handleText(d, userId, { text: "only half of it", focusMealId: p.id });
+    expect(out.kind).toBe("proposed");
+    expect((out as { date: string }).date).toBe("2026-11-08");
+    expect((await deps.store.getPending(userId, p.id))!.date).toBe("2026-11-08");
+  });
+
+  it("hole 4: a redate whose turn read the offer before an amend keeps the amend, with today's verdicts", async () => {
+    const p = pending({ analysis: { ...(analysis() as object), verdicts: { kcal: "over" } } as never });
+    await deps.store.putPending(p);
+    const d = duringModelCall(() => deps.store.updatePending(userId, { ...p, analysis: analysis(500) }));
+    const out = await handleText(d, userId, { text: "that was yesterday", focusMealId: p.id });
+    expect(out.kind).toBe("proposed");
+    const shown = out as { analysis: { kcal: number; verdicts: unknown } };
+    expect(shown.analysis.kcal).toBe(500);
+    expect(shown.analysis.verdicts).toEqual(await gatedVerdicts(deps, userId, shown.analysis as never));
+  });
+
+  it("hole 5: a proposal for a meal that is already logged cannot be stored", async () => {
+    const id = await logged();
+    await deps.store.putPending(pending({ id }));
+    expect(await deps.store.getPending(userId, id)).toBeNull();
   });
 });

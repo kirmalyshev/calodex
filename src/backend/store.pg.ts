@@ -1596,6 +1596,9 @@ const PROFILE_COLUMNS = [
   "food_allergies", "product_limitations", "onboarded_at",
 ] as const;
 
+/** The columns whose write moves `meals.version` (#2695): what an edit or a re-read overwrites. */
+const NUMBER_COLUMNS = new Set(["items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
+
 /** The meal columns an update may write. Same rule, same reason. */
 const MEAL_COLUMNS: Record<string, string> = {
   items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
@@ -2045,16 +2048,24 @@ export async function postgresStore(
     const entries = Object.keys(MEAL_COLUMNS)
       .filter((k) => (patch as Record<string, unknown>)[k] !== undefined)
       .map((k) => [MEAL_COLUMNS[k]!, (patch as Record<string, unknown>)[k]] as const);
-    // Values bound as-is: Postgres types each parameter from its column, so no `::jsonb` and no `JSON.stringify` (which stored text).
-    const assignments = [...entries.map(([c], i) => `${c} = $${i + 3}`), "version = version + 1"].join(", ");
+    // Only a write that changes the numbers moves the version: a redate, a focus or a question
+    // must not turn the edit that read the meal before it into a "conflict".
+    const sets = [
+      ...entries.map(([c], i) => `${c} = $${i + 3}`),
+      ...(entries.some(([c]) => NUMBER_COLUMNS.has(c)) ? ["version = version + 1"] : []),
+    ];
     const guard = ifVersion === null ? "" : ` and version = $${entries.length + 3}`;
-    const updated = await sql.unsafe(
-      `update meals set ${assignments} where id = $1 and user_id = $2${guard} returning id`,
-      [mealId, userId, ...entries.map(([, v]) => v), ...(ifVersion === null ? [] : [ifVersion])],
-    );
+    let landed = true;
+    if (sets.length > 0) {
+      // Values bound as-is: Postgres types each parameter from its column, so no `::jsonb` and no `JSON.stringify` (which stored text).
+      landed = (await sql.unsafe(
+        `update meals set ${sets.join(", ")} where id = $1 and user_id = $2${guard} returning id`,
+        [mealId, userId, ...entries.map(([, v]) => v), ...(ifVersion === null ? [] : [ifVersion])],
+      )).length > 0;
+    }
     const rows = await sql`select * from meals where id = ${mealId} and user_id = ${userId}`;
     if (rows.length === 0) return null;
-    if (updated.length === 0) return "conflict";
+    if (!landed || (sets.length === 0 && ifVersion !== null && num(rows[0].version) !== ifVersion)) return "conflict";
     return toMeal(rows[0], await restrictionsOf(userId));
   };
 
@@ -3831,15 +3842,14 @@ export async function postgresStore(
       // `analysis` bound as the object — see `insertMeal` for why `JSON.stringify` stored text.
       await sql`
         insert into pendings (id, user_id, analysis, date, expires_at)
-        values (${p.id}, ${p.userId}, ${p.analysis}, ${p.date},
-                ${new Date(p.expiresAt).toISOString()})`;
+        select ${p.id}, ${p.userId}, ${p.analysis}, ${p.date}, ${new Date(p.expiresAt).toISOString()}
+        where not exists (select 1 from meals where id = ${p.id} and user_id = ${p.userId})`;
     },
 
     async updatePending(userId, p: PendingMeal) {
       const rows = await sql`
         update pendings
-        set analysis = ${p.analysis},
-            date = ${p.date}, expires_at = ${new Date(p.expiresAt).toISOString()}
+        set analysis = ${p.analysis}, expires_at = ${new Date(p.expiresAt).toISOString()}
         where id = ${p.id} and user_id = ${userId} and expires_at > ${new Date(now())}
         returning id`;
       return rows.length > 0;

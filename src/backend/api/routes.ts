@@ -1144,7 +1144,7 @@ export function createRouter(
         const result = await editMeal(deps, userId, decodeURIComponent(mealMatch[1]!), body);
         return result.kind === "target-gone"
           ? json({ error: "target-gone", on: result.on }, 409)
-          : json(result);
+          : result.kind === "meal-changed" ? json({ error: "meal-changed" }, 409) : json(result);
       }
 
       const messageMatch = MESSAGE_PATH.exec(pathname);

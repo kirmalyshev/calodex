@@ -24,6 +24,9 @@ import {
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import type { VersionedMeal } from "../store.ts";
+
+/** A write that lost to another and was refused rather than overwritten (#2695). */
+export type MealChanged = { kind: "meal-changed" };
 import { MAX_OPTION, MAX_QUESTION, normalizePromptText } from "../llm/prompt.ts";
 import { isCookingFat, prepareAnalysis } from "./analysis.ts";
 import { catalogMicros, groundWhenOn, mealFromFood, recomputeFromSnapshot } from "./ground.ts";
@@ -452,8 +455,8 @@ export async function editMeal(
   // in this same turn, so their `ref`/`food` are ours rather than a client's claim, and reconciling
   // them against the stored meal would strip the provenance of every new or renamed item. Set by
   // `applyCorrection` only; the PATCH route and the meal-update job never do.
-  opts: { thread?: boolean; measure?: boolean; serverItems?: boolean; attempt?: number } = {},
-): Promise<MealUpdated | TargetGone> {
+  opts: { thread?: boolean; measure?: boolean; serverItems?: boolean; attempt?: number; readVersion?: number } = {},
+): Promise<MealUpdated | TargetGone | MealChanged> {
   const existing = await deps.store.getMealVersioned(userId, mealId);
   // Scoped read: another user's meal id resolves to null here, indistinguishable from a deleted one.
   if (!existing) return { kind: "target-gone", on: "correction" };
@@ -532,6 +535,8 @@ export async function editMeal(
     sodium_mg: scaled(patch.sodium_mg, existing.sodium_mg, micros.sodium_mg),
   };
 
+  // A caller that computed its edit from an earlier read holds the write to THAT version; a refetch
+  // here would let the stale edit through.
   const updated = await deps.store.updateMealIfVersion(userId, mealId, {
     ...merged,
     verdicts: await gatedVerdicts(deps, userId, merged),
@@ -542,11 +547,13 @@ export async function editMeal(
     // question is about a plate that no longer exists, and the next `GET /day` would offer the
     // chips again over an answer already given.
     question: null,
-  }, existing.version);
+  }, opts.readVersion ?? existing.version);
   // A write got in between this read and ours (#2695): read again and merge again, never overwrite.
   // Three tries is a bound on a livelock, not a tuning knob; past it the turn fails loudly.
   if (updated === "conflict") {
-    if ((opts.attempt ?? 0) >= 2) throw new Error("meal edit lost three races in a row");
+    // A write held to an earlier read cannot be re-merged (that is last-write-wins again), and
+    // three lost races in a row is a livelock: both are refused, nothing overwritten.
+    if (opts.readVersion !== undefined || (opts.attempt ?? 0) >= 2) return { kind: "meal-changed" };
     return editMeal(deps, userId, mealId, request, { ...opts, attempt: (opts.attempt ?? 0) + 1 });
   }
   // Not redundant with the read above: the row can vanish between the two (a concurrent account
@@ -781,13 +788,15 @@ export async function applyCorrection(
   userId: string,
   mealId: string,
   analysis: AnalyzedMeal,
-): Promise<MealUpdated | TargetGone> {
+  /** The version of the meal the correction was computed from; the write lands only at it (#2695). */
+  readVersion?: number,
+): Promise<MealUpdated | TargetGone | MealChanged> {
   const res = await editMeal(deps, userId, mealId, {
     items: analysis.items, kcal: analysis.kcal, protein_g: analysis.protein_g,
     carbs_g: analysis.carbs_g, fat_g: analysis.fat_g, satfat_g: analysis.satfat_g,
     fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g, sodium_mg: analysis.sodium_mg,
     // These items are the server's own grounded analysis, so their ref/food are kept, not audited.
-  }, { thread: false, measure: false, serverItems: true });
+  }, { thread: false, measure: false, serverItems: true, ...(readVersion !== undefined ? { readVersion } : {}) });
   return res.kind === "updated" ? { ...res, via: "nl" } : res;
 }
 
@@ -906,17 +915,10 @@ export async function rewriteMeal(
     // corrected=false and question=null are true here: a re-read replaces the values with a fresh machine estimate (#2695).
     confidence: analysis.confidence, corrected: false, model: deps.config.llmModel, question: null,
   }, existing.version);
-  // The meal was edited while the re-read ran (#2695): the person's edit outranks a machine
-  // estimate, so the re-read is dropped and the meal as it now stands is what comes back.
-  if (updated === "conflict") {
-    const current = await deps.store.getMeal(userId, existing.id);
-    if (!current) return { kind: "target-gone", on: "correction" };
-    return {
-      kind: "updated", mealId: current.id, analysis: toAnalysis(current),
-      totals: sumTotals(await deps.store.mealsForDate(userId, current.date)), date: current.date,
-      via: "reanalysis", line: null, ...verdictWordsFor(current.verdicts, profile.lang),
-    };
-  }
+  // The numbers changed while the re-read ran (#2695): the read is refused, never silently dropped
+  // or laid over the edit. The photos a caller added are not stored and the caption line is not
+  // rewritten (`editLine` returns before it), so a retry starts from the meal as it now stands.
+  if (updated === "conflict") return { kind: "meal-changed" };
   if (!updated) return { kind: "target-gone", on: "correction" };
   await evaluateMilestones(deps, userId);
   // Stored AFTER the numbers that describe them, never for a refused turn. A store failure is a
@@ -1011,7 +1013,7 @@ export async function confirmPendingMeal(
   // dropped it, so a retry meets "expired" rather than being offered the same nothing again.
   if (!pending.analysis.isFood || pending.analysis.items.length === 0) return { kind: "analysis-failed" };
 
-  let record: MealRecord;
+  let record!: MealRecord;
   let inserted: boolean;
   try {
     const verdicts = await gatedVerdicts(deps, userId, pending.analysis);
@@ -1031,18 +1033,20 @@ export async function confirmPendingMeal(
     };
     inserted = await deps.store.insertMeal(record);
   } catch (e) {
-    // The insert can commit and still throw (a statement timeout, a deadline abort, #2695): a meal
-    // under this id means the proposal must NOT come back, or a later "no" answers "cancelled"
-    // over a meal that stays logged.
-    const logged = await alreadyLogged().catch(() => null);
-    if (logged) return logged;
-    // The claim was taken and nothing was written: hand the proposal back, so the retry the screen
-    // offers on this failure can log it instead of meeting "expired" for a sentence already billed.
-    // Logged if even that fails: the symptom is a later "expired" on a sentence already billed.
-    await deps.store.putPending(pending).catch((err) => {
-      console.error(`[eait] pending restore failed: ${(err as Error)?.message ?? err}`);
-    });
-    throw e;
+    // The insert can commit and still throw (a statement timeout, a deadline abort, #2695). A meal
+    // under this id means the proposal must NOT come back, or a later "no" answers "cancelled" over
+    // a meal that stays logged; and the confirm is then finished like any other, below.
+    if ((await deps.store.getMeal(userId, pendingId).catch(() => null)) === null) {
+      // The claim was taken and nothing was written: hand the proposal back, so the retry the screen
+      // offers on this failure can log it instead of meeting "expired" for a sentence already billed.
+      // `putPending` refuses a row whose meal exists, so even an insert that commits after the check
+      // above cannot leave both. Logged if even that fails: the symptom is a later "expired".
+      await deps.store.putPending(pending).catch((err) => {
+        console.error(`[eait] pending restore failed: ${(err as Error)?.message ?? err}`);
+      });
+      throw e;
+    }
+    inserted = true;
   }
   // Cannot lose to another confirm now (the claim above is exclusive); kept as the last guard on
   // the one id two rows may never share. Answered OUTSIDE the restore's reach: the meal is there,

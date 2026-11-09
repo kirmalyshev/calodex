@@ -97,7 +97,7 @@ export async function textTurn(
   if (input.job && !(await deps.store.chargeJob(userId, input.clientId!, input.job.owner, analysisId))) throw input.job.lost();
 
   const focus = input.focusMealId
-    ? await deps.store.getMeal(userId, input.focusMealId)
+    ? await deps.store.getMealVersioned(userId, input.focusMealId)
     : null;
   // A proposal is a meal that has not logged yet: its id is the id the meal is written under, so
   // a client naming it means this row — and when nothing was named, the offer still standing is
@@ -331,7 +331,9 @@ export async function textTurn(
         if (!reconciled.isFood || emptyEstimate(reconciled)) return { kind: "analysis-failed" };
         const target = focus ?? contextTarget;
         return target !== null
-          ? applyCorrection(deps, userId, target.id, reconciled)
+          // The version the correction was READ at: the model call between that read and the write
+          // is the window a PATCH can land in (#2695), so the write must be held to it.
+          ? applyCorrection(deps, userId, target.id, reconciled, target === focus ? focus.version : undefined)
           : amendPending(deps, userId, focusPending!, reconciled, profile);
       }
 
@@ -350,11 +352,15 @@ export async function textTurn(
         // writing that read back whole would undo the correction.
         if (await deps.store.setPendingDate(userId, focusPending!.id, date)) {
           const now = (await deps.store.getPending(userId, focusPending!.id)) ?? focusPending!;
+          // Verdicts recomputed, never the stored ones: the card must describe today's targets.
+          const verdicts = await gatedVerdicts(deps, userId, now.analysis);
           return {
-            kind: "proposed", pendingId: now.id, analysis: now.analysis, date,
+            kind: "proposed", pendingId: now.id,
+            analysis: { ...now.analysis, verdicts, healthScore: healthScore({ ...now.analysis, verdicts }, profile.restrictions) },
+            date: now.date,
             expiresAt: new Date(now.expiresAt).toISOString(),
-            verdictInline: verdictInlineText(now.analysis.verdicts, profile.lang),
-            verdictLabels: verdictLabels(now.analysis.verdicts, profile.lang),
+            verdictInline: verdictInlineText(verdicts, profile.lang),
+            verdictLabels: verdictLabels(verdicts, profile.lang),
           } satisfies MealProposed;
         }
         const meal = await deps.store.getMeal(userId, focusPending!.id);
@@ -393,8 +399,11 @@ async function amendPending(
       ? applyCorrection(deps, userId, held.id, reconciled)
       : { kind: "target-gone", on: "correction" };
   }
+  // The day is whatever the row holds NOW: `updatePending` never writes it, so a redate that landed
+  // while this turn ran stands (#2695).
+  const date = (await deps.store.getPending(userId, held.id))?.date ?? held.date;
   return {
-    kind: "proposed", pendingId: held.id, analysis, date: held.date,
+    kind: "proposed", pendingId: held.id, analysis, date,
     expiresAt: new Date(expiresAt).toISOString(),
     verdictInline: verdictInlineText(analysis.verdicts, profile.lang),
     verdictLabels: verdictLabels(analysis.verdicts, profile.lang),
