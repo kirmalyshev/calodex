@@ -13,6 +13,9 @@ export const SWITCH_DEFAULT: Record<SwitchKey, boolean> = {
   "grounding.photo": true,
   "grounding.text": true,
   "prompt.photo-lean": false,
+  // Ships OFF (ieat-app#2669): while it is, every onboarding request gets control and no
+  // assignment is written. Flipping it takes effect on the next fetch, no deploy.
+  "onboarding.experiments": false,
 };
 
 export async function switchOn(deps: EngineDeps, key: SwitchKey): Promise<boolean> {
