@@ -3005,7 +3005,7 @@ function contract(name: string, make: () => Promise<Store>) {
         rules: {},
         // One weighted arm — the store's own start guard requires it, and the tests exercising
         // the start mechanics are testing it, not the weight rule.
-        variants: [{ weight: 1, content: { version: 1 } }],
+        variants: [{ weight: 1, content: { version: 1 } as never }],
         created_by: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         started_at: null,

@@ -3336,7 +3336,7 @@ details.how p { margin-top: 8px; }
       if (save) save.addEventListener("click", function () { saveTargeting(e.id); });
       var cloneB = card.querySelector("[data-clone]");
       if (cloneB) cloneB.addEventListener("click", function () {
-        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/variants", {}).then(loadExperiments);
+        api("POST", "/admin/api/experiments/" + encodeURIComponent(e.id) + "/variants", {}).then(loadExperiments, expErrors);
       });
       var start = card.querySelector("[data-start]");
       if (start) start.addEventListener("click", function () {

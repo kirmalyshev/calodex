@@ -97,7 +97,7 @@ describe("experiments (ieat-app#2669)", () => {
     expect(experiment.lang).toBe("de");
     expect(experiment.status).toBe("draft");
     expect(experiment.variants).toHaveLength(1);
-    expect(experiment.variants[0].control).toBe(true);
+    expect(experiment.variants[0]?.control).toBe(true);
     const list = await (await admin("GET", "/admin/api/experiments")).json() as { experiments: unknown[] };
     expect(list.experiments).toHaveLength(1);
   });
@@ -111,6 +111,8 @@ describe("experiments (ieat-app#2669)", () => {
     expect((await admin("POST", "/admin/api/experiments", { lang: "xx" })).status).toBe(422);
     const ordinary = await session();
     expect((await admin("GET", "/admin/api/experiments", undefined, ordinary)).status).toBe(404);
+    expect((await admin("POST", "/admin/api/experiments", { lang: "en" }, ordinary)).status).toBe(404);
+    expect((await admin("PUT", "/admin/api/experiments/whatever", { rules: {} }, ordinary)).status).toBe(404);
   });
 
   it("targeting sanitizes instead of silently widening", async () => {

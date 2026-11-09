@@ -1096,8 +1096,10 @@ create table if not exists onboarding_experiments (
   created_by  uuid not null,
   created_at  timestamptz not null default now(),
   started_at  timestamptz,
-  stopped_at  timestamptz
+  stopped_at  timestamptz,
+  revision    integer not null default 1
 );
+alter table onboarding_experiments add column if not exists revision integer not null default 1;
 -- One running experiment per language, enforced by the INDEX, not by a read: two starts on two
 -- connections both pass a not-exists check under read committed. The second one violates this and
 -- startOnboardingExperiment answers false off the violation.
@@ -3545,10 +3547,11 @@ export async function postgresStore(
       return rows.length === 0 ? null : toOnboardingExperiment(rows[0]!);
     },
 
-    async putOnboardingExperiment(experiment) {
-      // The WHERE on the update is the freeze: a row that left draft ignores the write and this
-      // answers false — a running variant never holds two sets of words. The insert writes
-      // 'draft' LITERALLY: a row born running would skip the one-per-language guard entirely.
+    async putOnboardingExperiment(experiment, expectedRevision) {
+      // The WHERE on the update is the freeze AND the optimistic guard: a row that left draft —
+      // or one a second writer already moved past the revision this put read — ignores the write,
+      // and this answers false rather than overwriting it. The insert writes 'draft' LITERALLY:
+      // a row born running would skip the one-per-language guard entirely.
       const rows = await sql`
         insert into onboarding_experiments
           (id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at)
@@ -3556,8 +3559,12 @@ export async function postgresStore(
           ${experiment.rules}::jsonb, ${experiment.variants}::jsonb, ${experiment.created_by},
           ${experiment.created_at}, ${experiment.started_at}, ${experiment.stopped_at})
         on conflict (id) do update
-          set lang = excluded.lang, rules = excluded.rules, variants = excluded.variants
+          set lang = excluded.lang, rules = excluded.rules, variants = excluded.variants,
+              revision = onboarding_experiments.revision + 1
           where onboarding_experiments.status = 'draft'
+            ${expectedRevision === undefined
+              ? sql``
+              : sql`and onboarding_experiments.revision = ${expectedRevision}`}
         returning id`;
       return rows.length > 0;
     },
@@ -3577,6 +3584,9 @@ export async function postgresStore(
             and not exists (
               select 1 from onboarding_experiments o
               where o.lang = e.lang and o.status = 'running')
+            and exists (
+              select 1 from jsonb_array_elements(e.variants) v
+              where (v->>'weight')::int > 0)
           returning e.id`;
         return rows.length > 0;
       } catch (e) {

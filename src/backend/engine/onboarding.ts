@@ -443,7 +443,8 @@ export function sanitizeExperimentRules(raw: unknown):
   { ok: true; rules: OnboardingExperiment["rules"] } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   const out: OnboardingExperiment["rules"] = {};
-  const body = typeof raw === "object" && raw !== null ? raw as Record<string, unknown> : {};
+  const body = typeof raw === "object" && raw !== null && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
+  if (body === null) return { ok: false, errors: ["rules must be an object"] };
 
   // REFUSE, never filter: an admin typo silently dropped is a rule the experiment quietly
   // stops enforcing — "countries: ['xx']" saved as "everyone" is worse than a refused save.
