@@ -4566,19 +4566,14 @@ export async function postgresStore(
     },
 
     async chargeAnalysis(userId, date, scope, opts = {}) {
-      // ONE transaction for the lock, the fence, the count and the insert (#2679). The account row
-      // is locked FIRST — the same trick `claimPushSlot` uses for the push cap — and ahead of the
-      // job row rather than after it, because `mergeUsers` takes the account's rows and then its
-      // jobs: holding the job while waiting on `users` would be one half of a deadlock, and
-      // `users` first is the order that path already honours.
+      // ONE transaction for the fence, the lock, the count and the insert (#2679). The job row is
+      // taken BEFORE the account row, and that order is load-bearing: `mergeUsers` locks the
+      // from-account's job rows (its `update pgboss.job`) well before it locks the `users` rows
+      // (the into-account update, then the delete), so job-before-users is the order that path
+      // already honours and this hot one must match — the charge would otherwise be one half of a
+      // lock cycle against it.
       return await inTx(async (tx) => {
-        const acct = await tx`select free_analyses from users where id = ${userId} for update`;
-        // A job whose account is gone has no charge to find and no write that could still land —
-        // the lease fencing elsewhere answers for a moved job the same way.
-        if (acct.length === 0) {
-          if (opts.job) return "lost" as const;
-          throw new Error("chargeAnalysis: no such user");
-        }
+        let stamped: string | null = null;
         if (opts.job) {
           const j = await tx`
             select data->>'analysisId' as analysis_id from pgboss.job
@@ -4587,13 +4582,22 @@ export async function postgresStore(
             for update`;
           // Lost BEFORE anything is written: a dead attempt orphans no charge.
           if (j.length === 0) return "lost" as const;
-          const stamped = j[0].analysis_id as string | null;
+          stamped = j[0].analysis_id as string | null;
           if (stamped !== null) {
             // The dead attempt's charge, still on the ledger: the retry runs on it rather than
             // charging a second time. A row given back (`undoAnalysis`) falls through to a fresh one.
             const live = await tx`select 1 from analyses where id = ${stamped}::bigint and user_id = ${userId}`;
             if (live.length > 0) return { analysisId: stamped, fresh: false };
           }
+        }
+        const acct = await tx`select free_analyses from users where id = ${userId} for update`;
+        // The account row's lock is the cap serializer, `claimPushSlot`'s own trick: this
+        // account's charges serialize, and a count racing another charge's insert cannot happen.
+        if (acct.length === 0) {
+          // Unreachable for a real job — a deleted account's jobs go with it, and a merged one's
+          // userId moved — but `lost` is still the honest answer for one.
+          if (opts.job) return "lost" as const;
+          throw new Error("chargeAnalysis: no such user");
         }
         if (opts.limit) {
           const own = acct[0].free_analyses;
