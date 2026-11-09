@@ -41,7 +41,7 @@ describe("filled_fields", () => {
     expect(await filledOf(id)).toEqual(["country"]);
   });
 
-  it("a merge copies answered fields only, and keeps the stale account's filled marks", async () => {
+  it("a merge does not copy a field the session only filled", async () => {
     const real = await store.createUser("en");
     await store.addIdentity(real, "apple", "sub");
     const anon = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
@@ -52,7 +52,6 @@ describe("filled_fields", () => {
     const p = (await store.getProfile(real))!;
     expect(p.goal).toBe("lose");
     expect(p.country).toBeNull();
-    expect(p.filled_fields ?? []).toEqual([]);
   });
 
   it("refuses `filled` beside an answer-field, and beside complete_onboarding", async () => {

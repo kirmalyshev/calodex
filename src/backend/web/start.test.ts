@@ -1930,8 +1930,12 @@ describe("the session account, before and after sign-up (S8)", () => {
     const referral = await get("/start/referral", earlier);
     expect(referral.status).toBe(303);
     expect(referral.headers.get("location")).toBe("/start/country");
-    // An ANSWERED country is the control: the handoff skips the question.
-    await store.patchProfile(real, { filled_fields: [] });
+    // The front door resumes at the country question, with the streak goal set or not.
+    await store.patchProfile(real, { streak_goal_days: 7 });
+    expect((await get("/start", earlier)).headers.get("location")).toBe("/start/country");
+    // Confirming it is an ANSWER: the mark clears and the question is not asked again.
+    expect((await post("/start/country", { answer: "de" }, earlier)).status).toBe(303);
+    expect((await store.getProfile(real))!.filled_fields).toEqual([]);
     expect((await get("/start/country", earlier)).status).toBe(303);
   });
 
