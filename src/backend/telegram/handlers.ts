@@ -233,10 +233,6 @@ export function telegramHandlers(deps: EngineDeps) {
           return chat.send(`${copy.moved}\n${card(r.analysis, lang)}`);
         case "target-gone":
           return chat.send(copy.targetGone);
-        // The meal changed under this correction (#2695): nothing was written, and saying it again
-        // reads the new numbers. The existing "try it again" sentence is true of that, in every language.
-        case "meal-changed":
-          return chat.send(refusalText(config, { kind: "analysis-failed" }, lang));
         default:
           return chat.send(refusalText(config, r, lang));
       }

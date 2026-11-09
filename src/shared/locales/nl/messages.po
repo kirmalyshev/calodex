@@ -469,6 +469,11 @@ msgstr "Die link is verlopen. Open je plan op het web en druk opnieuw op Koppel 
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Deze maaltijd is net veranderd. Kijk er nog eens naar en zeg het dan opnieuw."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Dat bericht is te lang om te versturen."
 

@@ -475,6 +475,11 @@ msgstr "Tautan itu sudah kedaluwarsa. Buka halaman rencanamu di web lalu tekan H
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Makanan itu baru saja berubah. Lihat lagi, lalu katakan sekali lagi."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Pesan ini terlalu panjang untuk dikirim."
 

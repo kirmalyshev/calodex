@@ -35,8 +35,6 @@ export function streamEnd<T extends { kind: string }>(
   last: T | Refusal | { kind: typeof OUTCOME_UNKNOWN } | null,
 ): { answer: T } | { status: number; body: ErrorResponse } {
   if (last === null || last.kind === OUTCOME_UNKNOWN) return { status: 500, body: { error: OUTCOME_UNKNOWN } };
-  // Not a Refusal, but the same on the wire as the JSON path: 409 `meal-changed` (#2695).
-  if (last.kind === "meal-changed") return { status: 409, body: { error: "meal-changed" } };
   if (isRefusal(last)) {
     return { status: REFUSAL_STATUS[last.kind], body: { error: last.kind, ...("scope" in last ? { scope: last.scope } : {}) } };
   }

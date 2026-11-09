@@ -475,6 +475,11 @@ msgstr "Liên kết đó đã hết hạn. Mở trang kế hoạch trên web r�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Bữa ăn này vừa thay đổi. Hãy xem lại, rồi nói lại một lần nữa."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Tin nhắn này dài quá, không gửi được."
 

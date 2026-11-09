@@ -469,6 +469,11 @@ msgstr "Platnosť odkazu vypršala. Otvor svoj plán na webe a znova stlač Prip
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Toto jedlo sa práve zmenilo. Pozrite si ho znova a povedzte to ešte raz."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Táto správa je na odoslanie príliš dlhá."
 

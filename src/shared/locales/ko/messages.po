@@ -469,6 +469,11 @@ msgstr "링크가 만료됐어요. 웹에서 플랜을 열고 Telegram 연결을
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "이 식사가 방금 변경되었어요. 다시 확인한 뒤 한 번 더 말씀해 주세요."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "메시지가 너무 길어서 보낼 수 없어요."
 

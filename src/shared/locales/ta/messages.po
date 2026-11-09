@@ -469,6 +469,11 @@ msgstr "அந்த இணைப்பு காலாவதியாகிவ�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "இந்த உணவு இப்போது தான் மாறியது. மீண்டும் ஒருமுறை பாருங்கள், பிறகு மறுபடி சொல்லுங்கள்."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "அந்தச் செய்தி அனுப்ப மிக நீளமானது."
 

@@ -469,6 +469,11 @@ msgstr "Ez a link lejárt. Nyisd meg a tervedet a weben, és nyomd meg újra a T
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Ez az étkezés éppen megváltozott. Nézd meg újra, aztán mondd el még egyszer."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Ez az üzenet túl hosszú a küldéshez."
 

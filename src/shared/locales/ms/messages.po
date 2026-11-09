@@ -469,6 +469,11 @@ msgstr "Pautan itu sudah tamat tempoh. Buka pelan anda di web dan tekan Sambungk
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Hidangan itu baru sahaja berubah. Lihat sekali lagi, kemudian sebutkan semula."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Mesej itu terlalu panjang untuk dihantar."
 

@@ -469,6 +469,11 @@ msgstr "ওই লিংকের মেয়াদ শেষ। ওয়ে�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "এই খাবারটি এইমাত্র বদলেছে। আরেকবার দেখে নিন, তারপর আবার বলুন।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "এই মেসেজ পাঠানোর জন্য খুব লম্বা।"
 

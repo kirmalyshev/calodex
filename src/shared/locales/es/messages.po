@@ -475,6 +475,11 @@ msgstr "Ese enlace ha caducado. Abre tu plan en la web y pulsa Conectar Telegram
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Esa comida acaba de cambiar. Échale otro vistazo y vuelve a decirlo."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Ese mensaje es demasiado largo para enviarlo."
 

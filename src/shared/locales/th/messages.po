@@ -469,6 +469,11 @@ msgstr "ลิงก์นั้นหมดอายุแล้ว เปิ�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "มื้ออาหารนี้เพิ่งมีการเปลี่ยนแปลง ลองดูอีกครั้ง แล้วพูดอีกรอบ"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "ข้อความยาวเกินกว่าจะส่งได้"
 

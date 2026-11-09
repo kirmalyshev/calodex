@@ -469,6 +469,11 @@ msgstr "Det link er udløbet. Åbn din plan på nettet, og tryk på Forbind Tele
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Det måltid blev lige ændret. Se på det igen, og sig det så en gang til."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Den besked er for lang til at blive sendt."
 

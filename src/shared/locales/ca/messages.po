@@ -469,6 +469,11 @@ msgstr "Aquest enllaç ha caducat. Obre el teu pla al web i torna a prémer Conn
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Aquest àpat acaba de canviar. Fes-hi una altra ullada i torna-ho a dir."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Aquest missatge és massa llarg per enviar-lo."
 
