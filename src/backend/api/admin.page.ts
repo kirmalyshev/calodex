@@ -3375,7 +3375,10 @@ details.how p { margin-top: 8px; }
     variantEdit = { id: id, index: index };
     content = view.arms[index].variant.content;
     lang = view.experiment.lang;
-    location.hash = "onboarding";
+    // replaceState, not location.hash: a hash assignment fires route(), which reads a nav into
+    // onboarding as "show me the LIVE editor" — and a variantEdit that survived it would write an
+    // arm's words to live copy on Save.
+    history.replaceState(null, "", "#onboarding");
     show("onboarding");
     status("editing variant " + (index + 1) + " of " + id.slice(0, 8) + " — Save writes the arm, not the live copy");
     $("reset").classList.add("hidden");
@@ -3506,6 +3509,9 @@ details.how p { margin-top: 8px; }
 
   function route() {
     var id = location.hash.replace("#", "");
+    // A nav into the onboarding view asks for the LIVE copy — the arm editor only opens from its
+    // own "Edit copy" button. variantEdit surviving a nav would point the next Save at the arm.
+    if (id === "onboarding" && variantEdit) { variantEdit = null; $("reset").classList.remove("hidden"); }
     show(VIEWS[id] ? id : "numbers");
   }
 
@@ -3573,7 +3579,7 @@ details.how p { margin-top: 8px; }
         location.hash = "experiments";
         loadExperiments();
       }, function (e) {
-        var errs = e && e.errors ? e.errors : [String(e && e.message || e)];
+        var errs = e && e.body && e.body.errors ? e.body.errors : [String(e && e.message || e)];
         var ul = $("errors").querySelector("ul");
         ul.textContent = "";
         errs.forEach(function (m) { var li = document.createElement("li"); li.textContent = m; ul.appendChild(li); });
