@@ -1908,5 +1908,6 @@ export function blankProfile(userId: string, lang: Lang): Profile {
     units: null, struggles: null, counted_before: null, barriers: null, situations: null, streak_goal_days: null, fiber_goal_g: null, sugar_goal_g: null, sodium_goal_mg: null, milestone_celebrations: true, streak_on_home: true, addback_burned: true, addback_rollover: true, meal_focus_offer: true, country: null,
     restrictions: [], medical_limitations: null, food_allergies: null, product_limitations: null,
     onboarded_at: null,
+    filled_fields: [],
   };
 }
