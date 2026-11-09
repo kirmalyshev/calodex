@@ -129,10 +129,17 @@ export async function completeSignIn(
         for (const [k, v] of Object.entries(answered)) {
           // `user_id` is not a field, `lang` is never re-decided by a sign-in (above), and null
           // is "never answered", not an answer — the field only the stale account filled survives.
-          if (k !== "user_id" && k !== "lang" && v !== null) {
+          // A field the SYSTEM filled is not an answer, so it is not copied, and `filled_fields`
+          // itself is provenance, not a field (ieat-app#2676).
+          if (k !== "user_id" && k !== "lang" && k !== "filled_fields" && v !== null
+            && !(answered.filled_fields ?? []).includes(k)) {
             (overlay as Record<string, unknown>)[k] = v;
           }
         }
+        // What the stale account filled stays filled, unless an answer just overwrote it.
+        const staleFilled = stale.filled_fields ?? [];
+        const kept = staleFilled.filter((f) => !(f in overlay!));
+        if (kept.length !== staleFilled.length) overlay.filled_fields = kept;
       }
     }
     const moved = await deps.store.mergeUsers(currentUserId, existing, overlay);
