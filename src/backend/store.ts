@@ -615,6 +615,19 @@ export interface OnboardingAssignment {
   assigned_at: string;
 }
 
+/** One arm's numbers in an experiment's funnel, grouped by the assigned variant. */
+export interface OnboardingExperimentFunnelRow {
+  variant_id: number;
+  /** Users holding this assignment — the intention-to-treat denominator. */
+  assigned: number;
+  /** Onboarding runs those users started. */
+  sessions: number;
+  /** Runs that reached the end. */
+  completed: number;
+  /** Runs that rendered a different revision than assigned — the fell-back count. */
+  fell_back: number;
+}
+
 /**
  * What a store may be built with. Both implementations take the same options and mean the same
  * thing by them, because a lifetime that differs between them is a lifetime the tests do not cover.
@@ -1530,6 +1543,19 @@ export interface Store {
   putOnboardingAssignment(userId: string, experimentId: string, variantId: number): Promise<OnboardingAssignment>;
   /** Every assignment to one experiment — the results table's read, by assignment (intention to treat). */
   onboardingAssignments(experimentId: string): Promise<OnboardingAssignment[]>;
+  /**
+   * The per-variant funnel for one experiment: users, sessions and completions grouped by the
+   * assigned variant, plus the sessions that rendered a DIFFERENT revision than assigned — the
+   * fell-back-to-compiled-copy count, read as its own number rather than hidden in a rate.
+   */
+  onboardingExperimentFunnel(experimentId: string): Promise<OnboardingExperimentFunnelRow[]>;
+  /**
+   * Take the next revision number off the shared counter WITHOUT installing copy — a variant's
+   * version comes off the same counter the admin saves do, so a content_version always names ONE
+   * set of words across live revisions and experiment arms. Same rule as `putOnboardingContent`:
+   * the answer is the highest of the floor asked for and the counter's own next.
+   */
+  bumpOnboardingContentVersion(floorVersion: number): Promise<number>;
   /**
    * The numbers past the funnel (#377), over a window. Reads every user, like `onboardingFunnel`.
    *

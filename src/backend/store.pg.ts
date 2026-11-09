@@ -1817,6 +1817,9 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   onboardingAssignment: 0,
   putOnboardingAssignment: 0,
   onboardingAssignments: "unscoped",
+  onboardingExperimentFunnel: "unscoped",
+  // The counter the admin saves and the experiment variants share — global, like the row it bumps.
+  bumpOnboardingContentVersion: "unscoped",
   // The six system prompts. One set for the whole instance, admin-edited, no account anywhere.
   getPrompts: "unscoped",
   putPrompt: "unscoped",
@@ -3619,6 +3622,40 @@ export async function postgresStore(
         select user_id, experiment_id, variant_id, assigned_at
         from onboarding_assignments where experiment_id = ${experimentId}`;
       return rows.map(toOnboardingAssignment);
+    },
+
+    async onboardingExperimentFunnel(experimentId) {
+      // By ASSIGNMENT, not by the version an event carries — intention to treat. A run whose
+      // events name a different revision is "fell back", its own number beside the rate.
+      const rows = await sql`
+        select a.variant_id,
+               count(distinct a.user_id)                                         as assigned,
+               count(distinct e.session_id)                                      as sessions,
+               count(distinct e.session_id)
+                 filter (where e.action = 'complete')                            as completed,
+               count(distinct e.session_id)
+                 filter (where e.content_version is distinct from a.variant_id)  as fell_back
+        from onboarding_assignments a
+        left join onboarding_events e on e.user_id = a.user_id
+        where a.experiment_id = ${experimentId}
+        group by a.variant_id`;
+      return rows.map((r: Record<string, unknown>) => ({
+        variant_id: num(r.variant_id), assigned: num(r.assigned), sessions: num(r.sessions),
+        completed: num(r.completed), fell_back: num(r.fell_back),
+      }));
+    },
+
+    async bumpOnboardingContentVersion(floorVersion) {
+      // The same counter `putOnboardingContent` writes, with no language attached: an insert that
+      // creates the row carries an empty document, which `storedContentSet` reads as "nothing
+      // saved" — every language falls back exactly as before the row existed.
+      const rows = await sql`
+        insert into onboarding_content (id, version, content, updated_at)
+        values (1, ${floorVersion}, '{}'::jsonb, now())
+        on conflict (id) do update
+          set version = greatest(${floorVersion}, onboarding_content.version + 1)
+        returning version`;
+      return Number(rows[0]!.version);
     },
 
     // ── The food catalog ────────────────────────────────────────────────────────────────────

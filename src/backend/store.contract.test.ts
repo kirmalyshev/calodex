@@ -3132,6 +3132,41 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(await s.onboardingAssignments(e.id)).toEqual([]);
       });
 
+      it("numbers a variant save off the shared counter, never colliding with a live revision", async () => {
+        const s = await open();
+        // A bump takes a number without installing copy; the next live save must take the one
+        // after it — two different sets of words can never wear one version.
+        const bumped = await s.bumpOnboardingContentVersion(0);
+        const live = await s.putOnboardingContent("de", structuredClone(DEFAULT_ONBOARDING_CONTENT), 0);
+        expect(live).toBeGreaterThan(bumped);
+      });
+
+      it("counts each arm by assignment, with fell-back as its own number", async () => {
+        const s = await open();
+        const e = exp({ id: `fun-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const u1 = (await s.upsertDeviceUser(device(), "en")).userId;
+        const u2 = (await s.upsertDeviceUser(device(), "en")).userId;
+        const u3 = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.putOnboardingAssignment(u1, e.id, 41);
+        await s.putOnboardingAssignment(u2, e.id, 42);
+        await s.putOnboardingAssignment(u3, e.id, 42);
+        const ev = (userId: string, over: Record<string, unknown> = {}) => ([{
+          id: crypto.randomUUID(), sessionId: "s-" + userId.slice(0, 4), place: "goal",
+          action: "view", contentVersion: 41, at: new Date().toISOString(), ...over,
+        }]);
+        // u1's run renders its assigned 41 and completes; u2's renders 41 — fell back off 42;
+        // u3 never opens onboarding at all.
+        await s.recordOnboardingEvents(u1, ev(u1) as never);
+        await s.recordOnboardingEvents(u1, ev(u1, { action: "complete" }) as never);
+        await s.recordOnboardingEvents(u2, ev(u2) as never);
+        const rows = await s.onboardingExperimentFunnel(e.id);
+        const v41 = rows.find((r) => r.variant_id === 41);
+        const v42 = rows.find((r) => r.variant_id === 42);
+        expect(v41).toMatchObject({ assigned: 1, sessions: 1, completed: 1, fell_back: 0 });
+        expect(v42).toMatchObject({ assigned: 2, sessions: 1, completed: 0, fell_back: 1 });
+      });
+
       it("moves assignments on merge, keeping the account's own row on a collision", async () => {
         const s = await open();
         const anon = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -4998,7 +5033,7 @@ if (PG_URL) {
         .map(([name]) => name)
         .sort();
       expect(unscoped).toEqual([
-        "adminListUsers", "adminMetrics", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
+        "adminListUsers", "adminMetrics", "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
         "countOnboardedSince", "createCampaign", "createUser", "expireJobs", "foodById",
         "forgetJobs", "forgetTurnOutcomes", "getCampaign", "getNotificationCopy", "getOnboardingContent",
         "getPrompts",
@@ -5009,7 +5044,7 @@ if (PG_URL) {
         "markCampaignRunning", "mergeUsers",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
-        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingFunnel",
+        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel", "onboardingFunnel",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,
