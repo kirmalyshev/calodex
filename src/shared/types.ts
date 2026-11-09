@@ -226,6 +226,14 @@ export interface Profile {
   product_limitations: string | null;
   /** Set once the user has cleared onboarding and consented. Nothing is analyzed before this. */
   onboarded_at: string | null;
+  /**
+   * Profile fields the SYSTEM filled (a boot-time device country), not fields the user answered.
+   * A filled field is non-null and still unanswered: `isAnswered` and every resume point read this,
+   * so a fill cannot move the resume point or skip a question (ieat-app#2676, the #2643 class).
+   * Empty by default, which keeps every pre-existing row reading as answered. A user write to a
+   * field removes it from the list. Older servers omit the key — read it as `?? []`.
+   */
+  filled_fields?: string[];
 }
 
 export type FoodTextField = "medical_limitations" | "food_allergies" | "product_limitations";

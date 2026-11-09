@@ -373,6 +373,17 @@ export async function patchProfile(
     patch.onboarded_at = new Date().toISOString();
   }
 
+  // PROVENANCE (ieat-app#2676): a `filled` write marks the fields it carries as system-filled; any
+  // other write to a field makes it the user's, so it leaves the list.
+  const written = Object.keys(patch).filter((k) => k !== "onboarded_at");
+  if (written.length > 0) {
+    const was = current.filled_fields ?? [];
+    const next = req.filled === true
+      ? [...new Set([...was, ...written])]
+      : was.filter((f) => !written.includes(f));
+    if (next.length !== was.length || next.some((f, i) => f !== was[i])) patch.filled_fields = next;
+  }
+
   const profile = await deps.store.patchProfile(userId, patch);
 
   // A typed weight is also a weigh-in (#84): the log the Progress chart draws has a manual half,

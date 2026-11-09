@@ -222,6 +222,9 @@ create table if not exists users (
   onboarded_at        timestamptz,
   created_at          timestamptz not null default now()
 );
+-- Fields the SYSTEM filled rather than the user answered (ieat-app#2676). Empty by default, so every
+-- existing row reads as answered. Read by isAnswered/resume on every client and by the merge.
+alter table users add column if not exists filled_fields text[] not null default '{}';
 -- When weight_kg was MEASURED, not when the row was written. Settles the race between a manual
 -- edit and an Apple Health import: whichever measurement is newer wins, so a sync cannot revert a
 -- number the user just typed and a stale import cannot overwrite a deliberate correction.
@@ -1581,6 +1584,7 @@ function toProfile(r: UserRow): Profile {
     food_allergies: (r.food_allergies ?? null) as string | null,
     product_limitations: (r.product_limitations ?? null) as string | null,
     onboarded_at: r.onboarded_at ? new Date(r.onboarded_at as string).toISOString() : null,
+    filled_fields: (r.filled_fields ?? []) as string[],
   };
 }
 
@@ -2967,6 +2971,9 @@ export async function postgresStore(
       // patch asks to clear it, because null is the never-asked marker resume reads.
       if (patch.restrictions !== undefined) {
         await sql`update users set restrictions = ${toPgTextArray(patch.restrictions)} where id = ${userId}`;
+      }
+      if (patch.filled_fields !== undefined) {
+        await sql`update users set filled_fields = ${toPgTextArray(patch.filled_fields)} where id = ${userId}`;
       }
       if (patch.struggles !== undefined) {
         await sql`update users set struggles = ${patch.struggles === null ? null : toPgTextArray(patch.struggles)} where id = ${userId}`;

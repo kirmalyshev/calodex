@@ -909,6 +909,12 @@ export interface ReferralSharedRequest {
  * app mid-flow resumes where they actually are.
  */
 export interface PatchProfileRequest {
+  /**
+   * True when the SYSTEM, not the user, is writing the fields in this request (the boot-time device
+   * country). They are recorded in `Profile.filled_fields` and do not count as answers. Absent or
+   * false is a user write, which removes the fields it carries from that list.
+   */
+  filled?: boolean;
   lang?: Lang;
   goal?: Goal | null;
   sex?: Sex | null;

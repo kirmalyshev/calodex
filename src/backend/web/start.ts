@@ -344,11 +344,15 @@ const failedCallback = (pathname: string): Response => seeOther(pathname);
  *
  * The sign-in routes and the front door both call this; it is the single place the order lives.
  */
+/** A country the app filled from the device is not an answer (ieat-app#2676). */
+const countryAnswered = (p: Profile): boolean =>
+  p.country !== null && !(p.filled_fields ?? []).includes("country");
+
 async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Promise<string> {
   if (profile.onboarded_at === null) return `${START_PREFIX}/q`;
   if (await isAnonymous(ctx.deps, userId)) return `${START_PREFIX}/plan`;
   // Still in the funnel, not an account that finished without a goal: that one goes to the product.
-  if (profile.country === null) return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
+  if (!countryAnswered(profile)) return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
   return ctx.hasWebApp ? "/" : CHAT_PATH;
 }
 
@@ -1388,7 +1392,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // has not signed up yet goes to the step this one comes after.
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
     if (await isAnonymous(ctx.deps, userId)) return seeOther(`${START_PREFIX}/signup`);
-    if (profile.country !== null) return seeOther(await resumeTo(ctx, userId, profile));
+    if (countryAnswered(profile)) return seeOther(await resumeTo(ctx, userId, profile));
     // `enabled` is still the admin's switch, here as it was in the walk: a screen switched off is
     // a question this deployment does not put to anybody, and the step collapses to the handoff.
     if (disabledScreens(content).includes("country")) {
