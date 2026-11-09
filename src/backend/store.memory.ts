@@ -870,8 +870,20 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .sort((a, b) => a.linkedAt.localeCompare(b.linkedAt))[0]?.email ?? null;
     },
 
-    async mergeUsers(fromUserId, intoUserId) {
-      if (!users.has(fromUserId)) return null;
+    async mergeUsers(fromUserId, intoUserId, overlay) {
+      if (!users.has(fromUserId)) return "gone";
+      // Anonymity, re-checked at the merge itself the way store.pg.ts re-checks it under its lock.
+      if (identities.some((i) => i.userId === fromUserId && i.provider !== "device" && signsIn(i.provider))) {
+        return "not-anonymous";
+      }
+      const into = users.get(intoUserId);
+      if (overlay !== undefined && into) {
+        const next: Profile = { ...into };
+        for (const [k, v] of Object.entries(overlay)) {
+          if (v !== undefined && k in into) (next as unknown as Record<string, unknown>)[k] = v;
+        }
+        users.set(intoUserId, next);
+      }
       let moved = 0;
       for (const [id, m] of meals) {
         if (m.user_id !== fromUserId) continue;

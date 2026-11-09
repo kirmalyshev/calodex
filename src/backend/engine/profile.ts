@@ -369,15 +369,21 @@ export async function patchProfile(
   // onboarded account too, not only on the completing PATCH: the meal gates run `explainTargets`
   // on whatever is stored, so a later `{ weight_kg: null }` would hand them a profile completion
   // itself refuses.
-  if (req.complete_onboarding || current.onboarded_at !== null) {
-    if (merged.goal === null) return reject(req.goal === null ? "goal" : "complete_onboarding", "out-of-range");
-    if (merged.weight_kg === null) return reject(req.weight_kg === null ? "weight_kg" : "complete_onboarding", "out-of-range");
+  if (req.complete_onboarding) {
+    if (merged.goal === null || merged.weight_kg === null) return reject("complete_onboarding", "out-of-range");
+  } else if (current.onboarded_at !== null) {
+    // Only what THIS request touches: an account that onboarded before this rule with a null goal
+    // or weight must still be able to change an unrelated field.
+    if (req.goal === null) return reject("goal", "out-of-range");
+    if (req.weight_kg === null) return reject("weight_kg", "out-of-range");
   }
   // A maintainer is asked neither a target nor a pace (`stepApplies`). Leaving maintain after
   // onboarding brings both into scope, and they arrive with the goal or the change is refused.
-  if (current.onboarded_at !== null && current.goal === "maintain" && merged.goal !== "maintain"
-      && (merged.target_weight_kg === null || merged.pace === null)) {
-    return reject(merged.target_weight_kg === null ? "target_weight_kg" : "pace", "out-of-range");
+  if (current.onboarded_at !== null && current.goal === "maintain" && merged.goal !== "maintain") {
+    if (merged.target_weight_kg === null) return reject("target_weight_kg", "out-of-range");
+    // The profile editor has a target row and no pace row, so a maintainer's pace is null and a
+    // goal change from there could never be saved. The middle option stands in until it is asked.
+    if (merged.pace === null) patch.pace = "steady";
   }
   // Once, and only once: a retried patch, a re-answered medical or a web /start run on an
   // onboarded account carries `complete_onboarding` again, and the stamp anchors the push cadence,

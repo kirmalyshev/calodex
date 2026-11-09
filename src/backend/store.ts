@@ -1066,7 +1066,9 @@ export interface Store {
    * has an account. Merging two real accounts is a different problem and is not attempted — the
    * caller checks that before getting here.
    */
-  mergeUsers(fromUserId: string, intoUserId: string): Promise<number | null>;
+  mergeUsers(
+    fromUserId: string, intoUserId: string, overlay?: ProfilePatch,
+  ): Promise<number | "gone" | "not-anonymous">;
   /**
    * Un-spend the code `spendEmailCode` just consumed, because the sign-in it was spent for failed
    * before it landed. Only a code that is used, unexpired, and whose hash matches; the attempt it

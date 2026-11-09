@@ -104,6 +104,78 @@ function contract(name: string, make: () => Promise<Store>) {
     // Isolation comes from every test minting its own users and device ids instead.
     let store: Store | null = null;
     const open = async () => (store ??= await make());
+
+    describe("account lifecycle (ieat-app#2696)", () => {
+      const anonAndReal = async (s: Store) => ({
+        anon: (await s.upsertDeviceUser(device(), "en")).userId,
+        real: (await s.upsertDeviceUser(device(), "en")).userId,
+      });
+
+      it("answers 'gone' when the anonymous account was already merged away", async () => {
+        const s = await open();
+        const { anon, real } = await anonAndReal(s);
+        expect(typeof (await s.mergeUsers(anon, real))).toBe("number");
+        expect(await s.mergeUsers(anon, real)).toBe("gone");
+      });
+
+      it("refuses to merge an account that gained a real identity, and keeps that identity", async () => {
+        const s = await open();
+        const { anon, real } = await anonAndReal(s);
+        const subject = `linked-${crypto.randomUUID()}`;
+        await s.addIdentity(anon, "apple", subject);
+        expect(await s.mergeUsers(anon, real)).toBe("not-anonymous");
+        expect(await s.userIdForIdentity("apple", subject)).toBe(anon);
+        expect(await s.getProfile(anon)).not.toBeNull();
+      });
+
+      it("applies the profile overlay with the merge, and not when the merge is refused", async () => {
+        const s = await open();
+        const { anon, real } = await anonAndReal(s);
+        await s.mergeUsers(anon, real, { goal: "gain", weight_kg: 71 });
+        const p = (await s.getProfile(real))!;
+        expect([p.goal, p.weight_kg]).toEqual(["gain", 71]);
+
+        const { anon: a2, real: r2 } = await anonAndReal(s);
+        await s.addIdentity(a2, "google", `linked-${crypto.randomUUID()}`);
+        await s.mergeUsers(a2, r2, { goal: "gain", weight_kg: 71 });
+        expect((await s.getProfile(r2))!.goal).not.toBe("gain");
+      });
+
+      it("keeps the settled turn outcome when both accounts claimed one client id", async () => {
+        const s = await open();
+        const { anon, real } = await anonAndReal(s);
+        await s.claimTurn(real, "c1");
+        await s.claimTurn(anon, "c1");
+        await s.settleTurn(anon, "c1", { kind: "logged" });
+        await s.mergeUsers(anon, real);
+        expect((await s.getTurn(real, "c1"))?.outcome).toEqual({ kind: "logged" });
+
+        const { anon: a2, real: r2 } = await anonAndReal(s);
+        await s.claimTurn(r2, "c2");
+        await s.settleTurn(r2, "c2", { kind: "survivor" });
+        await s.claimTurn(a2, "c2");
+        await s.settleTurn(a2, "c2", { kind: "anon" });
+        await s.mergeUsers(a2, r2);
+        expect((await s.getTurn(r2, "c2"))?.outcome).toEqual({ kind: "survivor" });
+      });
+
+      it("restores a spent email code, once, and never revives a burnt one", async () => {
+        const s = await open();
+        const email = `restore-${crypto.randomUUID()}@example.com`;
+        const limits = { perHour: 100, perDay: 100, resendSec: 0 };
+        await s.putEmailCode(email, "hash-a", Date.now() + 600_000, limits);
+        expect(await s.spendEmailCode(email, "hash-a", 5)).toBe("ok");
+        expect(await s.spendEmailCode(email, "hash-a", 5)).toBe("dead");
+        await s.restoreEmailCode(email, "hash-a");
+        expect(await s.spendEmailCode(email, "hash-a", 5)).toBe("ok");
+
+        const burnt = `burnt-${crypto.randomUUID()}@example.com`;
+        await s.putEmailCode(burnt, "hash-b", Date.now() + 600_000, limits);
+        for (let i = 0; i < 5; i++) await s.spendEmailCode(burnt, "wrong", 5);
+        await s.restoreEmailCode(burnt, "wrong");
+        expect(await s.spendEmailCode(burnt, "hash-b", 5)).toBe("dead");
+      });
+    });
     // Set once a test below flips a switch: the table is global and persists, so they go back ON.
     let touchedSwitches = false;
     afterAll(async () => {

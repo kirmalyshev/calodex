@@ -61,6 +61,23 @@ describe("complete_onboarding", () => {
   });
 });
 
+describe("complete_onboarding, legacy and editor cases", () => {
+  it("lets an onboarded account with a null goal change an unrelated field", async () => {
+    const id = await store.createUser("en");
+    await store.patchProfile(id, { onboarded_at: new Date().toISOString(), goal: null, weight_kg: null });
+    const r = await patchProfile(depsFor(store), id, { country: "DE" });
+    expect(r?.ok).toBe(true);
+  });
+
+  it("defaults a maintainer's missing pace when the goal leaves maintain with a target", async () => {
+    const id = await store.createUser("en");
+    await patchProfile(depsFor(store), id, { goal: "maintain", weight_kg: 80, complete_onboarding: true });
+    const r = await patchProfile(depsFor(store), id, { goal: "lose", target_weight_kg: 72 });
+    expect(r?.ok).toBe(true);
+    expect((await store.getProfile(id))!.pace).toBe("steady");
+  });
+});
+
 describe("the sign-in merge", () => {
   it("runs once when two sign-ins race from one anonymous session", async () => {
     const { userId: anon } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
@@ -74,7 +91,19 @@ describe("the sign-in merge", () => {
     ]);
     expect(a.userId).toBe(real);
     expect(b.userId).toBe(real);
-    expect([a.outcome, b.outcome].filter((o) => o === "merged")).toHaveLength(1);
+    // Both say `merged`: the phone retags its outbox on `merged` and clears it on `switched`.
+    expect([a.outcome, b.outcome]).toEqual(["merged", "merged"]);
+    expect([a.mergedMeals, b.mergedMeals].sort()).toEqual([0, 0]);
+  });
+
+  it("refuses the merge when the session gained a real identity first, and keeps both accounts", async () => {
+    const { userId: anon } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    const real = await store.createUser("en");
+    await store.addIdentity(real, "apple", "target");
+    await store.addIdentity(anon, "google", "linked-meanwhile");
+    const out = await completeSignIn(depsFor(store), "apple", { provider: "apple", subject: "target" }, anon, "en", CONSENT);
+    expect(out.outcome).toBe("switched");
+    expect(await store.userIdForIdentity("google", "linked-meanwhile")).toBe(anon);
   });
 
   it("keeps the turn row that has an outcome when both sides claimed one client id", async () => {

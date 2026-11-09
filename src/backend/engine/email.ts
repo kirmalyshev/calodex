@@ -166,6 +166,9 @@ export async function verifyEmailCode(
   // inside `completeSignIn` stores it exactly as a provider-vouched address, which this one is.
   // The code is spent, and a throw after this point (consent write, merge) would strand the user
   // behind the resend window with a code that proved the address. Give it back and rethrow.
+  // The restore is its own statement after the throw, not part of the failed work: if the process
+  // dies between the two, the code stays spent (the old behaviour); and a request replayed while it
+  // is restored simply signs the same address in again, which is what a retry is.
   try {
     return await completeSignIn(
       deps, "email", { provider: "email", subject: email, email },
