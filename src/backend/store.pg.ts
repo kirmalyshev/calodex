@@ -3535,14 +3535,16 @@ export async function postgresStore(
 
     async listOnboardingExperiments() {
       const rows = await sql`
-        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at,
+               revision
         from onboarding_experiments order by created_at desc`;
       return rows.map(toOnboardingExperiment);
     },
 
     async runningOnboardingExperiment(lang) {
       const rows = await sql`
-        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at
+        select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at,
+               revision
         from onboarding_experiments where lang = ${lang} and status = 'running' limit 1`;
       return rows.length === 0 ? null : toOnboardingExperiment(rows[0]!);
     },

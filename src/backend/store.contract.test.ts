@@ -3197,6 +3197,54 @@ function contract(name: string, make: () => Promise<Store>) {
         // The collision is the account's own: its row is not overwritten by the session's.
         expect((await s.onboardingAssignment(real, shared.id))?.variant_id).toBe(3);
       });
+
+      it("refuses a stale revision and accepts the fresh one", async () => {
+        // The optimistic guard turns each draft edit's read-modify-write into "last writer loses
+        // politely": a put carrying an old revision matches no row and answers false, rather than
+        // overwriting the draft a second admin already moved. On Postgres this is the WHERE of
+        // the guarded UPDATE — which the selects feeding it must read, or the guard compares 0.
+        const s = await open();
+        const e = exp({ id: `rev-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const read = (await s.listOnboardingExperiments()).find((x) => x.id === e.id)!;
+        expect(read.revision).toBe(1);
+        expect(await s.putOnboardingExperiment({ ...read, rules: { countries: ["de"] } }, read.revision)).toBe(true);
+        const moved = (await s.listOnboardingExperiments()).find((x) => x.id === e.id)!;
+        expect(moved.revision).toBe(2);
+        // The stale write — still carrying revision 1 — is refused instead of clobbering rules.
+        expect(await s.putOnboardingExperiment({ ...read, rules: { countries: ["fr"] } }, read.revision)).toBe(false);
+        const still = (await s.listOnboardingExperiments()).find((x) => x.id === e.id)!;
+        expect(still.rules).toEqual({ countries: ["de"] });
+        // And the fresh revision writes again.
+        expect(await s.putOnboardingExperiment({ ...moved, rules: { countries: ["at"] } }, moved.revision)).toBe(true);
+      });
+
+      it("runs a whole draft-edit cycle under the guard: create, set, clone, save", async () => {
+        // The engine's edit path is read → mutate → put-at-that-revision at every step; the
+        // routes run exactly these statements, so this is the guard working end to end.
+        const s = await open();
+        const e = exp({ id: `cycle-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const read = () => s.listOnboardingExperiments().then((l) => l.find((x) => x.id === e.id)!);
+        // set: rules land.
+        const first = await read();
+        expect(await s.putOnboardingExperiment({ ...first, rules: { surfaces: ["app"] } }, first.revision)).toBe(true);
+        // clone: a second arm appears — still at the fresh revision.
+        const second = await read();
+        expect(await s.putOnboardingExperiment({
+          ...second,
+          variants: [...second.variants, { weight: 1, content: { version: 2 } as never }],
+        }, second.revision)).toBe(true);
+        // save: the arm's copy is written — each put reads its own revision or loses.
+        const third = await read();
+        expect(await s.putOnboardingExperiment({
+          ...third,
+          variants: third.variants.map((v, i) => i === 1 ? { ...v, content: { version: 3 } as never } : v),
+        }, third.revision)).toBe(true);
+        const final = await read();
+        expect(final.variants).toHaveLength(2);
+        expect(final.variants[1]!.content.version).toBe(3);
+      });
     });
 
     it("prunes health rows dated before a day, for every account, and keeps that day (#562)", async () => {
