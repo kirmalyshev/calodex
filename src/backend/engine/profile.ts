@@ -392,8 +392,8 @@ export async function patchProfile(
   }
   // Once, and only once: a retried patch, a re-answered medical or a web /start run on an
   // onboarded account carries `complete_onboarding` again, and the stamp anchors the push cadence,
-  // the weigh-in slot floor and the admin's per-day counts. It means "the plan exists" (medical
-  // answered), NOT "the onboarding run is over": country and streak come after it and are not
+  // the weigh-in slot floor and the admin's per-day counts. It means "the plan exists" (the questionnaire's
+  // last answer: medical in the app), NOT "the onboarding run is over": country and streak come after it and are not
   // stored as finished. The one reader that needs the end of the run derives it from the first
   // meal (`hasLoggedMeal`, in `resumeTo`) rather than from a second stamp (ieat-app#2696).
   if (req.complete_onboarding && current.onboarded_at === null) {

@@ -1961,26 +1961,59 @@ describe("the session account, before and after sign-up (S8)", () => {
     expect((await get("/start/country", earlier)).status).toBe(303);
   });
 
-  it("resumes an account that has logged a meal at the product, country unanswered (ieat-app#2696)", async () => {
-    // An app user finishes streak AFTER the first meal and may never have answered country. The web
-    // walk in progress (no meal yet) still goes to /start/country; past the first meal it does not.
-    const earlier = await signIn("meal-no-country", "apple");
-    const real = await webUser(earlier);
-    await store.patchProfile(real, { onboarded_at: new Date().toISOString(), goal: "lose", streak_goal_days: 14 });
-    expect((await get("/start", earlier)).headers.get("location")).toBe("/start/country");
-    await store.insertMeal({
-      id: crypto.randomUUID(), user_id: real, ts: new Date().toISOString(), date: localDate(CONFIG.timezone), isFood: true,
+  describe("past the first meal it is not the funnel (ieat-app#2696 hole 9)", () => {
+    const meal = (userId: string) => store.insertMeal({
+      id: crypto.randomUUID(), user_id: userId, ts: new Date().toISOString(), date: localDate(CONFIG.timezone), isFood: true,
       items: [{ name: "Rice", grams: 200 }], kcal: 300, protein_g: 5, carbs_g: 60, fat_g: 2, satfat_g: 1, fiber_g: 1,
       sugar_g: 1, sodium_mg: 100, verdicts: {}, healthScore: null, confidence: "high", notes: "", corrected: false, model: "test",
     });
-    const product = (await get("/start", earlier)).headers.get("location");
-    expect(product).not.toBe("/start/country");
-    expect(product).not.toBe("/start/streak");
-    // A country the app only FILLED is no different once a meal exists.
-    await store.patchProfile(real, { country: "de", filled_fields: ["country"] });
-    expect((await get("/start", earlier)).headers.get("location")).toBe(product);
-    // Typing the URL still lets a person answer it.
-    expect((await get("/start/country", earlier)).status).toBe(200);
+    /** Where the provider callback sends a session that signs in again as `subject`. */
+    const callbackLocation = async (subject: string, session: string) => {
+      const start = await post("/start/auth/apple", { terms: "yes" }, session);
+      const state = new URL(start.headers.get("location")!).searchParams.get("state")!;
+      const back = await get(
+        `/start/auth/apple/callback?code=${subject}&state=${encodeURIComponent(state)}`,
+        `${cookieFrom(start, "eait_oauth")}; ${session}`);
+      expect(back.status).toBe(303);
+      return back.headers.get("location");
+    };
+    // The web has no web app in this file's router, so the product is the chat.
+    const PRODUCT = "/start/chat";
+
+    it("sends a signed-in account with a meal and no country to the product, from every caller", async () => {
+      // An app user finishes streak AFTER the first meal and may never have answered country. The
+      // web walk in progress (no meal yet) still goes to /start/country; past the first meal it does not.
+      const earlier = await signIn("meal-no-country", "apple");
+      const real = await webUser(earlier);
+      await store.patchProfile(real, { onboarded_at: new Date().toISOString(), goal: "lose", streak_goal_days: 14 });
+      expect((await get("/start", earlier)).headers.get("location")).toBe("/start/country");
+      expect(await callbackLocation("meal-no-country", earlier)).toBe("/start/country");
+      await meal(real);
+      expect((await get("/start", earlier)).headers.get("location")).toBe(PRODUCT);
+      expect((await get("/start/signup", earlier)).headers.get("location")).toBe(PRODUCT);
+      expect(await callbackLocation("meal-no-country", earlier)).toBe(PRODUCT);
+      // A country the app only FILLED from the device is no different once a meal exists.
+      await store.patchProfile(real, { country: "de", filled_fields: ["country"] });
+      expect((await get("/start", earlier)).headers.get("location")).toBe(PRODUCT);
+      // Typing the URL still lets a person answer it.
+      expect((await get("/start/country", earlier)).status).toBe(200);
+    });
+
+    it("does not send a meal-logger with the streak goal unanswered back to /start/streak", async () => {
+      const earlier = await signIn("meal-no-streak", "apple");
+      const real = await webUser(earlier);
+      await store.patchProfile(real, { onboarded_at: new Date().toISOString(), goal: "lose" });
+      expect((await get("/start", earlier)).headers.get("location")).toBe("/start/streak");
+      await meal(real);
+      expect((await get("/start", earlier)).headers.get("location")).toBe(PRODUCT);
+    });
+
+    it("still sends an anonymous account with a meal to the plan, not the product", async () => {
+      const session = await answerAll(undefined, ANSWERS);
+      const userId = (await store.userIdForToken(session.split("=")[1]!))!;
+      await meal(userId);
+      expect((await get("/start", session)).headers.get("location")).toBe("/start/plan");
+    });
   });
 
   it("stamps the marketing box only when it was ticked", async () => {

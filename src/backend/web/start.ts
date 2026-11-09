@@ -354,12 +354,14 @@ async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Pr
   if (await isAnonymous(ctx.deps, userId)) return `${START_PREFIX}/plan`;
   // Still in the funnel, not an account that finished without a goal: that one goes to the product.
   //
-  // PAST THE FIRST MEAL IT IS NOT THE FUNNEL. The app asks streak and country AFTER the first meal
-  // and lets either go unanswered, so an account that has logged one and has no country is a
-  // finished app run, not a web walk in progress (ieat-app#2696). Sent to /start/country on every
-  // sign-in it had no exit but answering. The walk in progress has no meal yet and still resumes
-  // here; typing /start/country still renders it. If the app ever moves streak before the first
-  // meal this stops catching a finished app run, and the test named after it says where to look.
+  // PAST THE FIRST MEAL IT IS NOT THE FUNNEL. The app asks country right after sign-up and the
+  // streak goal after the first verdict, and country can end up unanswered anyway (filled from the
+  // device, #2676, or a sign-in that goes straight to the tabs). So an account that has logged a
+  // meal and has no answered country is a finished app run, not a web walk in progress
+  // (ieat-app#2696); sent to /start/country on every sign-in it had no exit but answering. The
+  // walk in progress has no meal yet and still resumes here, and typing /start/country still
+  // renders it. The assumption is that the web walk cannot log a meal before country: if it ever
+  // can, this skips the question for that account.
   if (!countryAnswered(profile) && !(await hasLoggedMeal(ctx.deps, userId))) {
     return profile.streak_goal_days === null ? STREAK_PATH : `${START_PREFIX}/country`;
   }
@@ -1465,7 +1467,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   //
   // The phone asks it after the first verdict, which the web does not have at this point; the plan
   // is the nearest moment the goal means something. A session that leaves comes back here until it
-  // answers or passes the country; past that a null goal stays null, because the phone's ask
+  // answers, passes the country or logs a meal (`resumeTo`); past that a null goal stays null, because the phone's ask
   // follows a first verdict only its own onboarding owes. Past the bar, so no dash.
   if (pathname === STREAK_PATH) {
     const signup = `${START_PREFIX}/signup`;
