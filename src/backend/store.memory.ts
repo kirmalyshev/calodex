@@ -269,6 +269,21 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   // the same thing in a nullable column, so both implementations answer the same question.
   const tokens = new Map<string, { userId: string; lastUsedAt: number; ttlMs?: number }>();
   const meals = new Map<string, MealRecord>(); // mealId -> record
+  // Must match `NUMBER_COLUMNS` in store.pg.ts: the writes that move a meal's version.
+  const NUMBER_KEYS = new Set(["items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
+  const versions = new Map<string, number>(); // mealId -> count of number-changing writes (#2695), absent = 0
+  const writeMeal = (userId: string, mealId: string, patch: MealPatch, ifVersion: number | null): MealRecord | "conflict" | null => {
+    const m = meals.get(mealId);
+    if (!m || m.user_id !== userId) return null;
+    if (ifVersion !== null && (versions.get(mealId) ?? 0) !== ifVersion) return "conflict";
+    const next: MealRecord = { ...m };
+    for (const [k, v] of Object.entries(patch)) {
+      if (v !== undefined) (next as unknown as Record<string, unknown>)[k] = v;
+    }
+    meals.set(mealId, clone(next));
+    if (Object.keys(patch).some((k) => NUMBER_KEYS.has(k) && (patch as Record<string, unknown>)[k] !== undefined)) versions.set(mealId, (versions.get(mealId) ?? 0) + 1);
+    return scored(clone(next));
+  };
   /**
    * `healthScore` is computed at READ (#118), like the Postgres `toMeal`: from the meal's own
    * numbers and stored verdicts plus the account's declared restrictions. Never trusted off the
@@ -1786,14 +1801,17 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async updateMeal(userId, mealId, patch: MealPatch) {
+      const out = writeMeal(userId, mealId, patch, null);
+      return out === "conflict" ? null : out;
+    },
+
+    async updateMealIfVersion(userId, mealId, patch: MealPatch, version: number) {
+      return writeMeal(userId, mealId, patch, version);
+    },
+
+    async getMealVersioned(userId, mealId) {
       const m = meals.get(mealId);
-      if (!m || m.user_id !== userId) return null;
-      const next: MealRecord = { ...m };
-      for (const [k, v] of Object.entries(patch)) {
-        if (v !== undefined) (next as unknown as Record<string, unknown>)[k] = v;
-      }
-      meals.set(mealId, clone(next));
-      return scored(clone(next));
+      return !m || m.user_id !== userId ? null : { ...scored(clone(m)), version: versions.get(mealId) ?? 0 };
     },
 
     async mealsForDate(userId, date) {
@@ -1946,17 +1964,23 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async putPending(pending) {
+      // Never a proposal for a meal that is already logged under its id (#2695).
+      if (meals.get(pending.id)?.user_id === pending.userId) return;
       pendings.set(pending.id, clone(pending));
     },
 
     async getPending(userId, pendingId) {
       const p = pendings.get(pendingId);
-      if (!p || p.userId !== userId) return null;
-      if (p.expiresAt <= now()) {
-        pendings.delete(pendingId);
-        return null;
-      }
+      // A read never deletes (#2695): expiry is a filter here, `pruneExpiredPendings` the sweep.
+      if (!p || p.userId !== userId || p.expiresAt <= now()) return null;
       return clone(p);
+    },
+
+    async setPendingDate(userId, pendingId, date) {
+      const p = pendings.get(pendingId);
+      if (!p || p.userId !== userId || p.expiresAt <= now()) return false;
+      p.date = date;
+      return true;
     },
 
     async pendingsFor(userId) {
@@ -1980,7 +2004,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async updatePending(userId, pending) {
       const p = pendings.get(pending.id);
       if (!p || p.userId !== userId || p.expiresAt <= now()) return false;
-      pendings.set(pending.id, clone(pending));
+      // Analysis and expiry only — the day belongs to `setPendingDate` (#2695).
+      pendings.set(pending.id, clone({ ...pending, date: p.date }));
       return true;
     },
 

@@ -2466,3 +2466,38 @@ describe("store-review sign-in (eait#713)", () => {
     expect(await r.active(((await res.json()) as { token: string }).token)).toBe(false);
   });
 });
+
+describe("meal-changed over HTTP (ieat-app#2695)", () => {
+  /** Every versioned meal write loses its race: what a PATCH landing mid-request looks like to the engine. */
+  const alwaysConflicting = () => {
+    const s: Store = { ...store, updateMealIfVersion: async () => "conflict" as const };
+    handle = createRouter({ store: s, config: CONFIG, llm: demoPorts(), push: fakePush(), mail: logMail() }, s, testVerifier);
+  };
+
+  it("PATCH /v1/meals/:id answers 409 meal-changed after three lost races", async () => {
+    const token = await session();
+    const logged = await (await handle(photoRequest(token))).json() as { mealId: string };
+    alwaysConflicting();
+    const res = await patch(ROUTES.meal(logged.mealId), { protein_g: 9 }, token);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "meal-changed" });
+  });
+
+  it("POST /v1/meals/:id/reanalyze answers 409 meal-changed and keeps the numbers", async () => {
+    const token = await session();
+    const logged = await (await handle(photoRequest(token))).json() as { mealId: string };
+    alwaysConflicting();
+    const res = await post(ROUTES.mealReanalyze(logged.mealId), {}, token);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "meal-changed" });
+  });
+
+  it("POST /v1/messages answers 409 meal-changed for a correction pinned to its read", async () => {
+    const token = await session();
+    const logged = await (await handle(photoRequest(token))).json() as { mealId: string };
+    alwaysConflicting();
+    const res = await post(ROUTES.messages, { text: "only half of it", focusMealId: logged.mealId }, token);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "meal-changed" });
+  });
+});

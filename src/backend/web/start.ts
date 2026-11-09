@@ -36,6 +36,7 @@ import {
   type Barrier, type CountedBefore, type MedicalTag, type NumberField, type OnboardingContent, type PatchProfileRequest,
   type Profile, type Situation, type StreakGoal, type UnitSystem,
 } from "@eait/shared";
+import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
 import type { PayPlanRow } from "@eait/shared/ui/kit";
 import { AuthError, type IdentityVerifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
@@ -1792,6 +1793,9 @@ function noticeText(code: string | null, lang: Lang): string | null {
   // `Object.hasOwn` on the CODE, still — the table is built fresh per language now, and building
   // it does not change what the guard is for: `?notice=constructor` on a bare lookup returns a
   // function, survives `?? null`, and throws inside `escape`.
+  // The one sentence the app already has in every language (#2695): a correction that lost to another
+  // write. Without it the code has no sentence and the page redraws with no notice at all.
+  if (code === "meal-changed") return chatScreenCopyFor(lang).phone.refusals.changedNote;
   const table = chatNotice(pageCopyFor(lang));
   return code !== null && Object.hasOwn(table, code) ? table[code]! : null;
 }

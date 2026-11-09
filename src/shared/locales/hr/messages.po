@@ -469,6 +469,11 @@ msgstr "Ta je poveznica istekla. Otvori svoj plan na webu i ponovno pritisni Pov
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Taj se obrok upravo promijenio. Pogledaj ga ponovno pa reci još jednom."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Ta je poruka predugačka za slanje."
 

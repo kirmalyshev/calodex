@@ -475,6 +475,11 @@ msgstr "Quel link è scaduto. Apri il tuo piano sul web e premi di nuovo Collega
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Questo pasto è appena cambiato. Dagli un'altra occhiata, poi riprova a dirlo."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Questo messaggio è troppo lungo da inviare."
 

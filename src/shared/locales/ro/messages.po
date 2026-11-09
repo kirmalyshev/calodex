@@ -469,6 +469,11 @@ msgstr "Linkul a expirat. Deschide-ți planul pe web și apasă din nou Conectea
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Masa aceasta tocmai s-a schimbat. Uită-te din nou, apoi spune încă o dată."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Mesajul e prea lung pentru a fi trimis."
 

@@ -12,7 +12,7 @@ import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
 import type { OnboardingContent, OnboardingEvent } from "./onboarding.ts";
 import type { TargetBasis } from "./targets.ts";
-import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
+import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
 import type { BmiRange } from "./scores.ts";
 import { WEIGHT_RANGES, type ChartDay, type WeightRange } from "./ui/charts.ts";
@@ -52,6 +52,14 @@ export const REFUSAL_STATUS = {
   "unreadable-label": 422,
   "no-photo": 404,
   /**
+   * The meal's numbers changed under a write that was computed from an older read (ieat-app#2695): a
+   * chat correction or a photo re-read (refused on the first conflict), or an unpinned manual edit
+   * that lost three races. Nothing was overwritten. 409, and the app and the Telegram catalog word
+   * it as "that meal just changed, look again" (the web chat page shows its try-again notice); the
+   * retry reads the new numbers. A billed turn that ends here stays charged: the model call had run.
+   */
+  "meal-changed": 409,
+  /**
    * Email sign-in (#569): the code typed did not match the live one, and it may be tried again —
    * five wrong tries burn it, which is when `code-dead` takes over. 401 like `sign-in-failed`,
    * because a wrong credential is not a malformed request.
@@ -80,6 +88,11 @@ export const REFUSAL_STATUS = {
   "referral-paid": 409,
 } as const;
 export type RefusalKind = keyof typeof REFUSAL_STATUS;
+
+/** Every `Refusal` member has a status: a kind added to `Refusal` and not to the map fails here, not as a 500 at runtime. */
+export type RefusalHasStatus = Refusal["kind"] extends RefusalKind ? true : never;
+const _refusalHasStatus: RefusalHasStatus = true;
+void _refusalHasStatus;
 
 /**
  * A streamed route's LAST line when the server itself failed mid-turn (#514): the JSON path's 500
@@ -1258,7 +1271,7 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
   return true;
 }
 
-export type EditMealResponse = MealUpdated | TargetGone;
+export type EditMealResponse = MealUpdated | TargetGone | MealChanged;
 
 /**
  * `POST /v1/meals/:id/redate` — "Move to yesterday", as an offset: `1` is yesterday, `0` a no-op,

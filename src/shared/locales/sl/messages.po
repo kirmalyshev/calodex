@@ -469,6 +469,11 @@ msgstr "Ta povezava je potekla. Na spletu odpri svoj načrt in znova pritisni Po
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Ta obrok se je pravkar spremenil. Poglej ga še enkrat in povej znova."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "To sporočilo je predolgo za pošiljanje."
 

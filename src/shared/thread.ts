@@ -196,6 +196,8 @@ export function reconcilePage(
  * them means somebody who has just paid has to retype the meal they already typed (#261). Every
  * other refusal is final for this turn: a spent daily cap resets at midnight and a network cap is
  * not about this account, so a bubble kept under either is a retry that cannot work.
+ * `meal-changed` is retryable, but the retry is a deliberate new send once she has looked at the meal,
+ * not a re-send of this bubble, so its words are dropped too.
  *
  * `analysis-failed` is not here because it never reaches this question: it is not a refusal of the
  * turn but an upstream that fell over, and it takes the `failed` path, where "not sent" is true.
@@ -335,8 +337,8 @@ export const pendingIdOf = (e: ThreadEntry): string | null =>
 /**
  * Whether a proposal may still be confirmed, as far as the CLIENT can tell (#367).
  *
- * A COURTESY, NOT THE GUARANTEE. The server stays the authority: `getPending` deletes an expired
- * row lazily and `POST /confirm` answers 410, and that path is untouched. What this stops is the
+ * A COURTESY, NOT THE GUARANTEE. The server stays the authority: `getPending` refuses an expired
+ * row and `POST /confirm` answers 410, and that path is untouched. What this stops is the
  * app offering a button that was never going to work — a proposal nobody supersedes keeps its
  * "Log it" until somebody presses it, and the way they find out is the refusal.
  *

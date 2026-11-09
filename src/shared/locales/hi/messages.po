@@ -469,6 +469,11 @@ msgstr "वह लिंक एक्सपायर हो चुका है�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "यह भोजन अभी बदला है। एक बार फिर देखें, फिर दोबारा बताएँ।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "यह मैसेज भेजने के लिए बहुत लंबा है।"
 

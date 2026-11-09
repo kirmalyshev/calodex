@@ -469,6 +469,11 @@ msgstr "ആ ലിങ്കിന്റെ കാലാവധി കഴിഞ്
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "ഈ ഭക്ഷണം ഇപ്പോൾ മാറിയിരിക്കുന്നു. ഒന്നുകൂടി നോക്കി, വീണ്ടും പറയൂ."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "ആ സന്ദേശം അയയ്ക്കാൻ കഴിയാത്തത്ര നീളമുള്ളതാണ്."
 

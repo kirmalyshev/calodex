@@ -469,6 +469,11 @@ msgstr "そのリンクは期限切れです。Webでプランを開き、もう
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "この食事はたった今変更されました。もう一度確認して、あらためて伝えてください。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "メッセージが長すぎて送信できません。"
 

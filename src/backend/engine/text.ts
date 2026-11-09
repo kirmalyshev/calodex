@@ -98,7 +98,7 @@ export async function textTurn(
   const { analysisId, fresh, onCost, onCall } = charged;
 
   const focus = input.focusMealId
-    ? await deps.store.getMeal(userId, input.focusMealId)
+    ? await deps.store.getMealVersioned(userId, input.focusMealId)
     : null;
   // A proposal is a meal that has not logged yet: its id is the id the meal is written under, so
   // a client naming it means this row — and when nothing was named, the offer still standing is
@@ -331,9 +331,20 @@ export async function textTurn(
         // The same gate a fresh meal takes (#248): a correction that comes back not-food or with no
         // items is a failed estimate, and writing it would zero the meal it claims to fix.
         if (!reconciled.isFood || emptyEstimate(reconciled)) return { kind: "analysis-failed" };
-        const target = focus ?? contextTarget;
-        return target !== null
-          ? applyCorrection(deps, userId, target.id, reconciled)
+        if (focus === null && contextTarget !== null) {
+          // The router picked this meal from the list read at turn start, so the correction was
+          // computed from THAT snapshot (#2695). Read it again with its version: if the numbers moved
+          // during the model call the correction is refused, otherwise the write is held to the
+          // version just read.
+          const fresh = await deps.store.getMealVersioned(userId, contextTarget.id);
+          if (!fresh) return { kind: "target-gone", on: "correction" };
+          if (!sameNumbers(fresh, contextTarget)) return { kind: "meal-changed" };
+          return applyCorrection(deps, userId, fresh.id, reconciled, fresh.version);
+        }
+        return focus !== null
+          // The version the focus was READ at: the model call between that read and the write is
+          // the window a PATCH can land in (#2695), so the write must be held to it.
+          ? applyCorrection(deps, userId, focus.id, reconciled, focus.version)
           : amendPending(deps, userId, focusPending!, reconciled, profile);
       }
 
@@ -348,12 +359,19 @@ export async function textTurn(
         // Same move on an offer still standing: the pending's day shifts, nothing else. Settled
         // mid-turn, the row's meal carries the correction the way `amendPending`'s race does.
         const date = dateMinus(today, clampDayOffset(routed.dayOffset));
-        if (await deps.store.updatePending(userId, { ...focusPending!, date })) {
+        // A column write (#2695): the turn's own read of the offer may predate an amend, and
+        // writing that read back whole would undo the correction.
+        if (await deps.store.setPendingDate(userId, focusPending!.id, date)) {
+          const now = (await deps.store.getPending(userId, focusPending!.id)) ?? { ...focusPending!, date };
+          // Verdicts recomputed, never the stored ones: the card must describe today's targets.
+          const verdicts = await gatedVerdicts(deps, userId, now.analysis);
           return {
-            kind: "proposed", pendingId: focusPending!.id, analysis: focusPending!.analysis, date,
-            expiresAt: new Date(focusPending!.expiresAt).toISOString(),
-            verdictInline: verdictInlineText(focusPending!.analysis.verdicts, profile.lang),
-            verdictLabels: verdictLabels(focusPending!.analysis.verdicts, profile.lang),
+            kind: "proposed", pendingId: now.id,
+            analysis: { ...now.analysis, verdicts, healthScore: healthScore({ ...now.analysis, verdicts }, profile.restrictions) },
+            date: now.date,
+            expiresAt: new Date(now.expiresAt).toISOString(),
+            verdictInline: verdictInlineText(verdicts, profile.lang),
+            verdictLabels: verdictLabels(verdicts, profile.lang),
           } satisfies MealProposed;
         }
         const meal = await deps.store.getMeal(userId, focusPending!.id);
@@ -363,6 +381,12 @@ export async function textTurn(
       }
     }
   }
+}
+
+/** Whether two reads of one meal carry the same numbers: what a correction is computed from. */
+function sameNumbers(a: MealRecord, b: MealRecord): boolean {
+  return a.kcal === b.kcal && a.protein_g === b.protein_g && a.carbs_g === b.carbs_g && a.fat_g === b.fat_g &&
+    JSON.stringify(a.items) === JSON.stringify(b.items);
 }
 
 /**
@@ -389,11 +413,16 @@ async function amendPending(
     // the correction — or expired or cancelled, which is the gone it honestly is.
     const meal = await deps.store.getMeal(userId, held.id);
     return meal !== null
-      ? applyCorrection(deps, userId, held.id, reconciled)
+      // Pinned to 0: the confirm's insert created the meal at version 0, and a manual edit since
+      // moved it, which makes this correction stale (#2695).
+      ? applyCorrection(deps, userId, held.id, reconciled, 0)
       : { kind: "target-gone", on: "correction" };
   }
+  // The day is whatever the row holds NOW: `updatePending` never writes it, so a redate that landed
+  // while this turn ran stands (#2695).
+  const date = (await deps.store.getPending(userId, held.id))?.date ?? held.date;
   return {
-    kind: "proposed", pendingId: held.id, analysis, date: held.date,
+    kind: "proposed", pendingId: held.id, analysis, date,
     expiresAt: new Date(expiresAt).toISOString(),
     verdictInline: verdictInlineText(analysis.verdicts, profile.lang),
     verdictLabels: verdictLabels(analysis.verdicts, profile.lang),
@@ -416,8 +445,9 @@ async function keep(
   // its language and declared restrictions.
   before: MealRecord | null, amended: PendingMeal | null, profile: Profile,
 ): Promise<void> {
-  // A refusal never was a turn; a correction whose meal is gone changed nothing, and the app says
-  // so in a notice that is not a line.
+  // A refusal never was a turn, and `meal-changed` is one: a correction that lost to another write
+  // wrote nothing, so no line is kept. A correction whose meal is gone changed nothing either, and
+  // the app says so in a notice that is not a line.
   if (result.kind === "target-gone" || isRefusal(result)) return;
   // An answer that came back empty is no turn: a sentence with nothing in it is not kept.
   if (result.kind === "answered" && result.text === "") return;

@@ -469,6 +469,11 @@ msgstr "Термін дії посилання минув. Відкрий сві
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Цей прийом їжі щойно змінився. Поглянь ще раз і повтори."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Це повідомлення задовге, щоб його надіслати."
 

@@ -469,6 +469,11 @@ msgstr "该链接已过期。请在网页上打开你的计划，再次点击“
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "这餐刚刚发生了变化。请再看一下，然后重新说一遍。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "这条消息太长，发不出去。"
 

@@ -469,6 +469,11 @@ msgstr "Linkki on vanhentunut. Avaa suunnitelmasi verkossa ja paina uudelleen Yh
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Tämä ateria muuttui juuri. Katso se uudelleen ja sano se sitten uudestaan."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Viesti on liian pitkä lähetettäväksi."
 

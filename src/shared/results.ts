@@ -88,7 +88,9 @@ export type Refusal =
    */
   | { kind: "unreadable-label" }
   /** A re-analysis of a meal that has no stored photo. */
-  | { kind: "no-photo" };
+  | { kind: "no-photo" }
+  /** The meal's numbers changed under a write computed from an older read (ieat-app#2695). */
+  | { kind: "meal-changed" };
 
 export type LogPhotoResult = MealLogged | Refusal;
 
@@ -106,8 +108,8 @@ export interface MealProposed {
    * its own copy of the number eventually disagrees with the one doing the refusing.
    *
    * A surface reads it to stop OFFERING a confirm it cannot honour (`proposalLive`, #367). It is a
-   * courtesy and never the guarantee: the row is swept on the next proposal and deleted lazily on
-   * read, and `POST /confirm` answers 410 either way.
+   * courtesy and never the guarantee: the row is swept on the next proposal and refused on read,
+   * and `POST /confirm` answers 410 either way.
    */
   expiresAt: string;
   /**
@@ -204,6 +206,9 @@ export interface MealRedated {
   totals: DailyTotals;
   date: string;
 }
+
+/** A write refused because the meal's numbers changed under it (ieat-app#2695). A member of `Refusal`: its status comes from `REFUSAL_STATUS` (409) and `streamEnd`/`isRefusal` carry it with no special case. */
+export type MealChanged = Extract<Refusal, { kind: "meal-changed" }>;
 
 export type HandleTextResult =
   | Answered

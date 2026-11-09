@@ -475,6 +475,11 @@ msgstr "Ссылка истекла. Открой свой план на сай�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Этот приём пищи только что изменился. Посмотри на него ещё раз и повтори."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Это сообщение слишком длинное, чтобы его отправить."
 

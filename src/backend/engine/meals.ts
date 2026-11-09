@@ -12,7 +12,7 @@
 
 import {
   type DailyTotals, type EditMealRequest, type LogPhotoResult, type MealAnalysis, type MealHint,
-  type Lang, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
+  type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
   type MealRedated, type MealUpdated, type PhotoEvent,
   type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_SAVED_MEALS, mealNames,
   explainTargets, verdictsFromTargets, visibleVerdicts,
@@ -23,6 +23,8 @@ import {
   kcalNumbers, verdictLabels, verdictNoun, wholeNumbers, windowStart,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
+import type { VersionedMeal } from "../store.ts";
+
 import { MAX_OPTION, MAX_QUESTION, normalizePromptText } from "../llm/prompt.ts";
 import { isCookingFat, prepareAnalysis } from "./analysis.ts";
 import { catalogMicros, groundWhenOn, mealFromFood, recomputeFromSnapshot } from "./ground.ts";
@@ -453,9 +455,9 @@ export async function editMeal(
   // in this same turn, so their `ref`/`food` are ours rather than a client's claim, and reconciling
   // them against the stored meal would strip the provenance of every new or renamed item. Set by
   // `applyCorrection` only; the PATCH route and the meal-update job never do.
-  opts: { thread?: boolean; measure?: boolean; serverItems?: boolean } = {},
-): Promise<MealUpdated | TargetGone> {
-  const existing = await deps.store.getMeal(userId, mealId);
+  opts: { thread?: boolean; measure?: boolean; serverItems?: boolean; attempt?: number; readVersion?: number } = {},
+): Promise<MealUpdated | TargetGone | MealChanged> {
+  const existing = await deps.store.getMealVersioned(userId, mealId);
   // Scoped read: another user's meal id resolves to null here, indistinguishable from a deleted one.
   if (!existing) return { kind: "target-gone", on: "correction" };
   // Every item at 0g is no meal, whichever path sent it (ieat-app#1224): those items are ignored
@@ -533,7 +535,9 @@ export async function editMeal(
     sodium_mg: scaled(patch.sodium_mg, existing.sodium_mg, micros.sodium_mg),
   };
 
-  const updated = await deps.store.updateMeal(userId, mealId, {
+  // A caller that computed its edit from an earlier read holds the write to THAT version; a refetch
+  // here would let the stale edit through.
+  const updated = await deps.store.updateMealIfVersion(userId, mealId, {
     ...merged,
     verdicts: await gatedVerdicts(deps, userId, merged),
     ...(atN ? { label: atN.label } : {}),
@@ -543,7 +547,18 @@ export async function editMeal(
     // question is about a plate that no longer exists, and the next `GET /day` would offer the
     // chips again over an answer already given.
     question: null,
-  });
+  }, opts.readVersion ?? existing.version);
+  // Another write landed between our read and ours (#2695). A pinned edit (`opts.readVersion`) cannot
+  // be re-merged without becoming last-write-wins, so it returns `meal-changed` on the first
+  // conflict. An unpinned edit re-reads and re-merges, giving up after three attempts (and logging).
+  // Either way nothing is overwritten.
+  if (updated === "conflict") {
+    if (opts.readVersion !== undefined || (opts.attempt ?? 0) >= 2) {
+      if (opts.readVersion === undefined) console.error(`[eait] meal edit lost three races in a row: ${mealId}`);
+      return { kind: "meal-changed" };
+    }
+    return editMeal(deps, userId, mealId, request, { ...opts, attempt: (opts.attempt ?? 0) + 1 });
+  }
   // Not redundant with the read above: the row can vanish between the two (a concurrent account
   // delete). A correction that silently succeeded against nothing is worse than one that says so.
   if (!updated) return { kind: "target-gone", on: "correction" };
@@ -776,13 +791,15 @@ export async function applyCorrection(
   userId: string,
   mealId: string,
   analysis: AnalyzedMeal,
-): Promise<MealUpdated | TargetGone> {
+  /** The version of the meal the correction was computed from; the write lands only at it (#2695). */
+  readVersion?: number,
+): Promise<MealUpdated | TargetGone | MealChanged> {
   const res = await editMeal(deps, userId, mealId, {
     items: analysis.items, kcal: analysis.kcal, protein_g: analysis.protein_g,
     carbs_g: analysis.carbs_g, fat_g: analysis.fat_g, satfat_g: analysis.satfat_g,
     fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g, sodium_mg: analysis.sodium_mg,
     // These items are the server's own grounded analysis, so their ref/food are kept, not audited.
-  }, { thread: false, measure: false, serverItems: true });
+  }, { thread: false, measure: false, serverItems: true, ...(readVersion !== undefined ? { readVersion } : {}) });
   return res.kind === "updated" ? { ...res, via: "nl" } : res;
 }
 
@@ -850,7 +867,7 @@ export async function reanalyzeMeal(
   /** A queued job's charge binding — `analyzePhotos`'s own `job`, forwarded (ieat-app#1347). */
   job?: JobCharge,
 ): Promise<MealUpdated | TargetGone | Refusal> {
-  const existing = await deps.store.getMeal(userId, mealId);
+  const existing = await deps.store.getMealVersioned(userId, mealId);
   if (!existing) return { kind: "target-gone", on: "correction" };
   if ((existing.photos ?? 0) === 0) return { kind: "no-photo" };
   const profile = await deps.store.getProfile(userId);
@@ -874,7 +891,7 @@ export async function reanalyzeMeal(
  * nobody is going to keep. `editLine`'s bytes therefore sit unread in the caller until this point.
  */
 export async function rewriteMeal(
-  deps: EngineDeps, userId: string, existing: MealRecord, profile: Profile,
+  deps: EngineDeps, userId: string, existing: VersionedMeal, profile: Profile,
   caption: string | undefined, added: () => Promise<Uint8Array[]>, onEvent: ((event: PhotoEvent) => void) | undefined,
   onCounting?: () => void,
   job?: JobCharge,
@@ -893,13 +910,18 @@ export async function rewriteMeal(
   if (read.kind !== "read") return read;
   onCounting?.();
   const { analysis } = read;
-  const updated = await deps.store.updateMeal(userId, existing.id, {
+  const updated = await deps.store.updateMealIfVersion(userId, existing.id, {
     items: analysis.items, kcal: analysis.kcal, protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
     fat_g: analysis.fat_g, satfat_g: analysis.satfat_g, fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g,
     sodium_mg: analysis.sodium_mg, notes: analysis.notes,
     verdicts: await gatedVerdicts(deps, userId, analysis),
+    // A re-read replaces the values with a fresh machine estimate, so `corrected` resets to false and `question` clears.
     confidence: analysis.confidence, corrected: false, model: deps.config.llmModel, question: null,
-  });
+  }, existing.version);
+  // The numbers changed while the re-read ran (#2695): the read is refused, never silently dropped
+  // or laid over the edit. The photos a caller added are not stored and the caption line is not
+  // rewritten (`editLine` returns before it), so a retry starts from the meal as it now stands.
+  if (updated === "conflict") return { kind: "meal-changed" };
   if (!updated) return { kind: "target-gone", on: "correction" };
   await evaluateMilestones(deps, userId);
   // Stored AFTER the numbers that describe them, never for a refused turn. A store failure is a
@@ -994,8 +1016,16 @@ export async function confirmPendingMeal(
   // dropped it, so a retry meets "expired" rather than being offered the same nothing again.
   if (!pending.analysis.isFood || pending.analysis.items.length === 0) return { kind: "analysis-failed" };
 
+  // Hands the proposal back, so the retry the screen offers can log it instead of meeting "expired"
+  // for a sentence already billed. `putPending` refuses a row whose meal exists, which closes the
+  // window between a check that found no meal and this restore; an insert still in flight on the
+  // server can commit after it, and only the id guard below catches that. Logged if even this
+  // fails: the symptom is a later "expired".
+  const restore = () => deps.store.putPending(pending).catch((err) => {
+    console.error(`[eait] pending restore failed: ${(err as Error)?.message ?? err}`);
+  });
+
   let record: MealRecord;
-  let inserted: boolean;
   try {
     const verdicts = await gatedVerdicts(deps, userId, pending.analysis);
     const restrictions = (await deps.store.getProfile(userId))?.restrictions ?? [];
@@ -1012,15 +1042,27 @@ export async function confirmPendingMeal(
       corrected: false,
       model: deps.config.llmModel,
     };
+  } catch (e) {
+    // Nothing was written: the claim was taken and the meal never built.
+    await restore();
+    throw e;
+  }
+  let inserted: boolean;
+  try {
     inserted = await deps.store.insertMeal(record);
   } catch (e) {
-    // The claim was taken and nothing was written: hand the proposal back, so the retry the screen
-    // offers on this failure can log it instead of meeting "expired" for a sentence already billed.
-    // Logged if even that fails: the symptom is a later "expired" on a sentence already billed.
-    await deps.store.putPending(pending).catch((err) => {
-      console.error(`[eait] pending restore failed: ${(err as Error)?.message ?? err}`);
-    });
-    throw e;
+    // The insert can commit and still throw (a statement timeout, a deadline abort, #2695). A meal
+    // under this id means the proposal must NOT come back, or a later "no" answers "cancelled" over
+    // a meal that stays logged; the confirm is then finished like any other, below.
+    const exists = await deps.store.getMeal(userId, pendingId).then((m) => m !== null, () => null);
+    console.error(`[eait] insertMeal threw (meal ${exists === null ? "unknown" : exists ? "exists" : "absent"}, pending ${pendingId}, user ${userId}): ${(e as Error)?.message ?? e}`);
+    if (exists !== true) {
+      // Absent: restore. Unknown (the check failed too, most likely the same outage): restoring could
+      // leave a proposal beside a meal that did commit, so the proposal is not put back.
+      if (exists === false) await restore();
+      throw e;
+    }
+    inserted = true;
   }
   // Cannot lose to another confirm now (the claim above is exclusive); kept as the last guard on
   // the one id two rows may never share. Answered OUTSIDE the restore's reach: the meal is there,
@@ -1086,16 +1128,20 @@ export async function pendingMeals(deps: EngineDeps, userId: string): Promise<Me
   const profile = await deps.store.getProfile(userId);
   const restrictions = profile?.restrictions ?? [];
   const lang = profile?.lang ?? "en";
-  return (await deps.store.pendingsFor(userId)).map((p) => ({
-    kind: "proposed", pendingId: p.id,
-    // Recomputed, not read off the row — a pending written before #118 has none, and a restriction
-    // the user has since ticked should shape the card being re-shown.
-    analysis: { ...p.analysis, healthScore: healthScore(p.analysis, restrictions) },
-    date: p.date, expiresAt: new Date(p.expiresAt).toISOString(),
-    // The card's words recomputed with it — a language change between proposal and read-back shows.
-    verdictInline: verdictInlineText(p.analysis.verdicts, lang),
-    verdictLabels: verdictLabels(p.analysis.verdicts, lang),
-  } satisfies MealProposed));
+  return Promise.all((await deps.store.pendingsFor(userId)).map(async (p) => {
+    // Verdicts and score are recomputed, not read off the row (#2695): a target or restriction that
+    // changed since the proposal must not leave the card describing numbers that no longer hold,
+    // and confirm recomputes them the same way.
+    const verdicts = await gatedVerdicts(deps, userId, p.analysis);
+    return {
+      kind: "proposed", pendingId: p.id,
+      analysis: { ...p.analysis, verdicts, healthScore: healthScore({ ...p.analysis, verdicts }, restrictions) },
+      date: p.date, expiresAt: new Date(p.expiresAt).toISOString(),
+      // The card's words recomputed with it — a language change between proposal and read-back shows.
+      verdictInline: verdictInlineText(verdicts, lang),
+      verdictLabels: verdictLabels(verdicts, lang),
+    } satisfies MealProposed;
+  }));
 }
 
 /** Days of the user's own history the identification prior is built from, counting today. */

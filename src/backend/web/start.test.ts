@@ -33,6 +33,7 @@ import { createRouter } from "../api/routes.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { escape, PAGE_COPY } from "./page.ts";
+import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
 import { pageCopyFor } from "./copy.ts";
 import { targetFloor } from "./page/question.ts";
 import { createWebApp } from "../../frontend/server/index.ts";
@@ -1805,6 +1806,27 @@ describe("chat on the web: saying something", () => {
     expect(spent.headers.get("location")).toBe("/start/chat?notice=subscription-required");
     expect(await (await get("/start/chat?notice=subscription-required", session)).text())
       .toContain(escape(PAGE_COPY.chatRefusalSubscription));
+  });
+});
+
+describe("chat on the web: a correction that lost to another write (ieat-app#2695)", () => {
+  it("shows its own notice instead of redrawing with nothing", async () => {
+    router(CONFIG);
+    const { session, userId } = await onboarded();
+    const id = crypto.randomUUID();
+    await store.insertMeal({
+      id, user_id: userId, ts: new Date().toISOString(), date: localDate(CONFIG.timezone), isFood: true,
+      items: [{ name: "Rice", grams: 200 }], kcal: 300, protein_g: 5, carbs_g: 60, fat_g: 2, satfat_g: 1, fiber_g: 1,
+      sugar_g: 1, sodium_mg: 100, verdicts: {}, healthScore: null, confidence: "high", notes: "", corrected: false, model: "test",
+    });
+    // Another write moves the meal's numbers between the turn's snapshot and the correction's read.
+    const read = store.getMealVersioned.bind(store);
+    store.getMealVersioned = async (u, m) => { const x = await read(u, m); return x && { ...x, kcal: x.kcal + 1 }; };
+    const res = await post("/start/chat/say", { text: "only half of it" }, session);
+    expect(res.headers.get("location")).toBe("/start/chat?notice=meal-changed");
+    expect(await (await get("/start/chat?notice=meal-changed", session)).text())
+      .toContain(escape(chatScreenCopyFor("en").phone.refusals.changedNote));
+    expect((await store.getMeal(userId, id))!.kcal).toBe(300);
   });
 });
 

@@ -475,6 +475,11 @@ msgstr "Dieser Link ist abgelaufen. Öffne deinen Plan im Web und drück noch ei
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Diese Mahlzeit hat sich gerade geändert. Sieh sie dir noch einmal an und sag es dann nochmal."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Diese Nachricht ist zu lang zum Senden."
 

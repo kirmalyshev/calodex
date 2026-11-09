@@ -374,6 +374,9 @@ export interface ChatMessage {
  * rather than by convention. `question` is here so the write that answers it is the write that
  * clears it: one question per meal, asked once, and never two statements that can disagree.
  */
+/** A stored meal and the version it was read at. */
+export type VersionedMeal = MealRecord & { version: number };
+
 export type MealPatch = Partial<
   Pick<MealRecord,
     "items" | "kcal" | "protein_g" | "carbs_g" | "fat_g" | "satfat_g" | "fiber_g" | "sugar_g" |
@@ -1603,6 +1606,18 @@ export interface Store {
   getMeals(userId: string, mealIds: string[]): Promise<MealRecord[]>;
   /** Scoped. Returns null when the row vanished between lookup and write (a delete race). */
   updateMeal(userId: string, mealId: string, patch: MealPatch): Promise<MealRecord | null>;
+  /**
+   * `getMeal` plus the row's `version`, which moves on every write that changes the numbers (an edit,
+   * a re-read, a correction) and not on a redate, a focus or a label (#2695). Backend-only: the version
+   * is a lock token, never part of the contract.
+   */
+  getMealVersioned(userId: string, mealId: string): Promise<VersionedMeal | null>;
+  /**
+   * `updateMeal` that lands only if the row is still at `version` — the one the caller read with
+   * `getMealVersioned`. `"conflict"` means a write got in between: re-read and re-merge, never
+   * overwrite. null is the vanished row, as in `updateMeal`.
+   */
+  updateMealIfVersion(userId: string, mealId: string, patch: MealPatch, version: number): Promise<MealRecord | "conflict" | null>;
   /** The meal and its photos (#608). True when this call removed the caller's meal. */
   deleteMeal(userId: string, mealId: string): Promise<boolean>;
   mealsForDate(userId: string, date: string): Promise<MealRecord[]>;
@@ -1759,11 +1774,19 @@ export interface Store {
    * logging over it (#1117). Scoped like every write here, and live-only like `dropPending`:
    * a row that expired or was claimed between the read and this call is absent, and false is
    * the caller's cue to answer that race honestly.
+   *
+   * Writes `analysis` and `expiresAt` only: `pending.date` is ignored (see `setPendingDate`).
    */
   updatePending(userId: string, pending: PendingMeal): Promise<boolean>;
   /**
+   * Move a live proposal to another day and touch nothing else (#2695): a column write, so a
+   * redate cannot put back the analysis a turn read before an amend landed. Live-only, like
+   * `updatePending`; false is the race answered honestly.
+   */
+  setPendingDate(userId: string, pendingId: string, date: string): Promise<boolean>;
+  /**
    * Delete every proposal past its expiry. Returns how many went. A proposal nobody confirmed or
-   * cancelled is never read again, so `getPending`'s lazy delete never reaches it; the rows are an
+   * cancelled is never swept by a read (`getPending` only refuses an expired row); the rows are an
    * analysis and a date that stopped meaning anything. Swept at startup and with every new
    * proposal; there is no scheduler in this process.
    */

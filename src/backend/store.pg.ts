@@ -1317,6 +1317,7 @@ create table if not exists weights (
 -- Traveler and Gremlin read this. Nullable with a default — a row from before the column has no
 -- logged-at, and reads as its own ts rather than as "logged on the day of the migration".
 alter table meals add column if not exists created_at timestamptz;
+alter table meals add column if not exists version integer not null default 0;
 alter table meals alter column created_at set default now();
 
 create table if not exists milestones (
@@ -1659,6 +1660,9 @@ const PROFILE_COLUMNS = [
   "food_allergies", "product_limitations", "onboarded_at",
 ] as const;
 
+/** The columns whose write moves `meals.version` (#2695): the numbers and what describes them. A write touching any of these invalidates a read taken before it. Must match `NUMBER_KEYS` in `store.memory.ts`. */
+const NUMBER_COLUMNS = new Set(["items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
+
 /** The meal columns an update may write. Same rule, same reason. */
 const MEAL_COLUMNS: Record<string, string> = {
   items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
@@ -1945,6 +1949,9 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   pendingsFor: 0,
   dropPending: 0,
   updatePending: 0,
+  setPendingDate: 0,
+  getMealVersioned: 0,
+  updateMealIfVersion: 0,
   countUserPhotos: 0,
   countUserAnalyses: 0,
   getFreeAnalyses: 0,
@@ -2104,6 +2111,38 @@ export async function postgresStore(
   const restrictionsOf = async (userId: string): Promise<string[]> => {
     const rows = await sql`select restrictions from users where id = ${userId}`;
     return (rows[0]?.restrictions ?? []) as string[];
+  };
+
+  /**
+   * The one meal write (#2695). A write that touches the numbers bumps `version`; with `ifVersion` it also lands only at
+   * that version, so a read-merge-write that lost a race gets "conflict" instead of overwriting.
+   */
+  const writeMeal = async (
+    userId: string, mealId: string, patch: MealPatch, ifVersion: number | null,
+  ): Promise<MealRecord | "conflict" | null> => {
+    if (!UUID.test(mealId)) return null;
+    const entries = Object.keys(MEAL_COLUMNS)
+      .filter((k) => (patch as Record<string, unknown>)[k] !== undefined)
+      .map((k) => [MEAL_COLUMNS[k]!, (patch as Record<string, unknown>)[k]] as const);
+    // Only a write that changes the numbers moves the version: a redate, a focus or a question
+    // must not turn the edit that read the meal before it into a "conflict".
+    const sets = [
+      ...entries.map(([c], i) => `${c} = $${i + 3}`),
+      ...(entries.some(([c]) => NUMBER_COLUMNS.has(c)) ? ["version = version + 1"] : []),
+    ];
+    const guard = ifVersion === null ? "" : ` and version = $${entries.length + 3}`;
+    let landed = true;
+    if (sets.length > 0) {
+      // Values bound as-is: Postgres types each parameter from its column, so no `::jsonb` and no `JSON.stringify` (which stored text).
+      landed = (await sql.unsafe(
+        `update meals set ${sets.join(", ")} where id = $1 and user_id = $2${guard} returning id`,
+        [mealId, userId, ...entries.map(([, v]) => v), ...(ifVersion === null ? [] : [ifVersion])],
+      )).length > 0;
+    }
+    const rows = await sql`select * from meals where id = ${mealId} and user_id = ${userId}`;
+    if (rows.length === 0) return null;
+    if (!landed || (sets.length === 0 && ifVersion !== null && num(rows[0].version) !== ifVersion)) return "conflict";
+    return toMeal(rows[0], await restrictionsOf(userId));
   };
 
   // THE MIGRATION RUNS UNSCOPED, ON A CONNECTION THAT IS THEN THROWN AWAY.
@@ -3824,21 +3863,21 @@ export async function postgresStore(
       return rows.length > 0;
     },
 
-    async updateMeal(userId, mealId, patch: MealPatch) {
+    async getMealVersioned(userId, mealId) {
       if (!UUID.test(mealId)) return null;
-      const entries = Object.keys(MEAL_COLUMNS)
-        .filter((k) => (patch as Record<string, unknown>)[k] !== undefined)
-        .map((k) => [MEAL_COLUMNS[k]!, (patch as Record<string, unknown>)[k]] as const);
-      if (entries.length > 0) {
-        // Values bound as-is: Postgres types each parameter from its column, so no `::jsonb` and no `JSON.stringify` (which stored text).
-        const assignments = entries.map(([c], i) => `${c} = $${i + 3}`).join(", ");
-        await sql.unsafe(
-          `update meals set ${assignments} where id = $1 and user_id = $2`,
-          [mealId, userId, ...entries.map(([, v]) => v)],
-        );
-      }
       const rows = await sql`select * from meals where id = ${mealId} and user_id = ${userId}`;
-      return rows.length > 0 ? toMeal(rows[0], await restrictionsOf(userId)) : null;
+      return rows.length > 0
+        ? { ...toMeal(rows[0], await restrictionsOf(userId)), version: num(rows[0].version) }
+        : null;
+    },
+
+    async updateMeal(userId, mealId, patch: MealPatch) {
+      const out = await writeMeal(userId, mealId, patch, null);
+      return out === "conflict" ? null : out;
+    },
+
+    async updateMealIfVersion(userId, mealId, patch: MealPatch, version: number) {
+      return writeMeal(userId, mealId, patch, version);
     },
 
     async mealsForDate(userId, date) {
@@ -4029,31 +4068,37 @@ export async function postgresStore(
       // `analysis` bound as the object — see `insertMeal` for why `JSON.stringify` stored text.
       await sql`
         insert into pendings (id, user_id, analysis, date, expires_at)
-        values (${p.id}, ${p.userId}, ${p.analysis}, ${p.date},
-                ${new Date(p.expiresAt).toISOString()})`;
+        select ${p.id}, ${p.userId}, ${p.analysis}, ${p.date}, ${new Date(p.expiresAt).toISOString()}
+        where not exists (select 1 from meals where id = ${p.id} and user_id = ${p.userId})`;
     },
 
     async updatePending(userId, p: PendingMeal) {
       const rows = await sql`
         update pendings
-        set analysis = ${p.analysis},
-            date = ${p.date}, expires_at = ${new Date(p.expiresAt).toISOString()}
+        set analysis = ${p.analysis}, expires_at = ${new Date(p.expiresAt).toISOString()}
         where id = ${p.id} and user_id = ${userId} and expires_at > ${new Date(now())}
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async setPendingDate(userId, pendingId, date) {
+      if (!UUID.test(pendingId)) return false;
+      const rows = await sql`
+        update pendings set date = ${date}
+        where id = ${pendingId} and user_id = ${userId} and expires_at > ${new Date(now())}
         returning id`;
       return rows.length > 0;
     },
 
     async getPending(userId, pendingId) {
       if (!UUID.test(pendingId)) return null;
+      // Expiry is in the WHERE, so a read never deletes (#2695): `pruneExpiredPendings` is the sweep.
       const rows = await sql`
-        select * from pendings where id = ${pendingId} and user_id = ${userId}`;
+        select * from pendings
+        where id = ${pendingId} and user_id = ${userId} and expires_at > ${new Date(now())}`;
       if (rows.length === 0) return null;
       const r = rows[0];
       const expiresAt = new Date(r.expires_at as string).getTime();
-      if (expiresAt <= now()) {
-        await sql`delete from pendings where id = ${pendingId} and user_id = ${userId}`;
-        return null;
-      }
       return {
         id: String(r.id), userId: String(r.user_id),
         analysis: json<PendingMeal["analysis"]>(r.analysis, {} as PendingMeal["analysis"]), date: String(r.date), expiresAt,

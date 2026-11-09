@@ -1151,9 +1151,8 @@ export function createRouter(
         if (!isEditMealRequest(body)) return json({ error: "bad-edit" }, 400);
         if (body.swap !== undefined && (await deps.store.foodById(body.swap.ref)) === null) return json({ error: "unknown-food" }, 404);
         const result = await editMeal(deps, userId, decodeURIComponent(mealMatch[1]!), body);
-        return result.kind === "target-gone"
-          ? json({ error: "target-gone", on: result.on }, 409)
-          : json(result);
+        if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
+        return isRefusal(result) ? refusal(result) : json(result);
       }
 
       const messageMatch = MESSAGE_PATH.exec(pathname);

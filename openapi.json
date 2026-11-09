@@ -5916,6 +5916,9 @@
           },
           {
             "$ref": "#/components/schemas/TargetGone"
+          },
+          {
+            "$ref": "#/components/schemas/MealChanged"
           }
         ]
       },
@@ -7153,6 +7156,20 @@
         "additionalProperties": false,
         "description": "The analyzer's validated output for one photo. No photo path — the bytes live in `meal_photos`, reached by meal id."
       },
+      "MealChanged": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "meal-changed"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false,
+        "description": "A write refused because the meal's numbers changed under it (ieat-app#2695). A member of `Refusal`: its status comes from `REFUSAL_STATUS` (409) and `streamEnd`/`isRefusal` carry it with no special case."
+      },
       "MealFocus": {
         "type": "object",
         "properties": {
@@ -7321,7 +7338,7 @@
           },
           "expiresAt": {
             "type": "string",
-            "description": "ISO 8601. When this estimate stops being confirmable, SENT rather than compiled into both sides — the rule `PairCodeResponse.expiresAt` states, and the same reason: the TTL (`EAIT__BACKEND__PENDING_TTL_MINUTES`) is a limit the server enforces, and a client carrying its own copy of the number eventually disagrees with the one doing the refusing.\n\nA surface reads it to stop OFFERING a confirm it cannot honour (`proposalLive`, #367). It is a courtesy and never the guarantee: the row is swept on the next proposal and deleted lazily on read, and `POST /confirm` answers 410 either way."
+            "description": "ISO 8601. When this estimate stops being confirmable, SENT rather than compiled into both sides — the rule `PairCodeResponse.expiresAt` states, and the same reason: the TTL (`EAIT__BACKEND__PENDING_TTL_MINUTES`) is a limit the server enforces, and a client carrying its own copy of the number eventually disagrees with the one doing the refusing.\n\nA surface reads it to stop OFFERING a confirm it cannot honour (`proposalLive`, #367). It is a courtesy and never the guarantee: the row is swept on the next proposal and refused on read, and `POST /confirm` answers 410 either way."
           },
           "verdictInline": {
             "type": "string",
@@ -9952,6 +9969,19 @@
               "kind": {
                 "type": "string",
                 "const": "no-photo"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "meal-changed"
               }
             },
             "required": [

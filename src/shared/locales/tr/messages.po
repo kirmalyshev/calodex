@@ -469,6 +469,11 @@ msgstr "Bu bağlantının süresi doldu. Planını web'de aç ve Telegram'ı Ba�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Bu öğün az önce değişti. Bir kez daha bak, sonra tekrar söyle."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Bu mesaj gönderilemeyecek kadar uzun."
 

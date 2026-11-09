@@ -469,6 +469,11 @@ msgstr "ସେହି ଲିଙ୍କ୍‌ର ମିଆଦ ସରିଗଲା।
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "ଏହି ଭୋଜନ ଏବେ ବଦଳିଛି। ଆଉ ଥରେ ଦେଖନ୍ତୁ, ତାପରେ ପୁଣି କୁହନ୍ତୁ।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "ଏହି ମେସେଜ୍ ପଠାଇବା ପାଇଁ ବହୁତ ଲମ୍ବା।"
 

@@ -469,6 +469,11 @@ msgstr "Länken har gått ut. Öppna din plan på webben och tryck på Anslut Te
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Den måltiden ändrades precis. Titta en gång till och säg det igen."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.tooLong"
 msgstr "Meddelandet är för långt för att skickas."
 
