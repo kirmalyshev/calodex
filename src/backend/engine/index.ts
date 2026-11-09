@@ -36,7 +36,7 @@ export {
 } from "./campaign.ts";
 export { recordPushOpen, recordPushDelivered, pushOpenView, PUSH_STATS_MAX_DAYS, type PushOpenView } from "./push-open.ts";
 export { pushConsent, setPushConsent, pushOffersAllowed, pushDevices } from "./push-consent.ts";
-export { profileView, patchProfile, type PatchOutcome } from "./profile.ts";
+export { profileView, patchProfile, hasLoggedMeal, type PatchOutcome } from "./profile.ts";
 export {
   isLinkPreview, openInvite, redeemReferral, referralAdminView, referralLink, referralRewardDays, referralView, shareReferral,
   type RedeemRefusal, type ReferralAdminView,
