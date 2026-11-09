@@ -413,6 +413,14 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .ahead select { width: auto; margin-left: auto; }
 #copy-new { margin-left: auto; }
 
+/* Experiments: the draft's two inputs and its action row — classes, never style=, which the
+   page's own CSP has no unsafe-inline for. */
+#view-experiments .exp-head { display: flex; justify-content: space-between; align-items: center; }
+#view-experiments .exp-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+#view-experiments .exp-row.first { margin-top: 0; }
+#view-experiments .exp-rules { flex: 1; min-width: 0; }
+#view-experiments .exp-weights { width: 130px; }
+
 /* Onboarding copy: a sub-nav across its four sections, one section at a time. */
 .obsplit { display: flex; gap: 16px; align-items: flex-start; }
 .obsplit > .acol { flex: 1; min-width: 0; }
@@ -616,7 +624,7 @@ details.how p { margin-top: 8px; }
         </p>
       </details>
       <div class="card">
-        <div class="row" style="gap:8px;align-items:center">
+        <div class="exp-row first">
           <strong>New experiment</strong>
           <select id="exp-lang"></select>
           <button class="primary" id="exp-new">Create draft</button>
@@ -3272,7 +3280,7 @@ details.how p { margin-top: 8px; }
       var e = view.experiment;
       var card = document.createElement("div");
       card.className = "card";
-      var head = '<div class="row" style="justify-content:space-between;align-items:center">'
+      var head = '<div class="exp-head">'
         + '<strong>' + esc(e.lang) + ' · ' + esc(e.status) + '</strong>'
         + '<span class="muted">' + esc(e.id.slice(0, 8)) + '</span></div>'
         + '<p class="muted">' + esc(ruleText(e.rules)) + '</p>';
@@ -3307,16 +3315,16 @@ details.how p { margin-top: 8px; }
       }
       var actions = '';
       if (e.status === "draft") {
-        actions = '<div class="row" style="gap:8px;margin-top:8px">'
-          + '<input id="exp-rules-' + esc(e.id) + '" placeholder="rules JSON: countries, hours [from,to), surfaces" style="flex:1;min-width:0" '
+        actions = '<div class="exp-row">'
+          + '<input id="exp-rules-' + esc(e.id) + '" class="exp-rules" placeholder="rules JSON: countries, hours [from,to), surfaces" '
           + 'value="' + esc(JSON.stringify(e.rules)) + '">'
-          + '<input id="exp-weights-' + esc(e.id) + '" placeholder="weights, e.g. 1,1" style="width:130px" '
+          + '<input id="exp-weights-' + esc(e.id) + '" class="exp-weights" placeholder="weights, e.g. 1,1" '
           + 'value="' + esc(view.arms.map(function (a) { return a.variant.weight; }).join(",")) + '">'
           + '<button class="small" data-save="' + esc(e.id) + '">Save targeting</button>'
           + '<button class="small" data-clone="' + esc(e.id) + '">Clone arm</button>'
           + '<button class="primary" data-start="' + esc(e.id) + '">Start</button></div>';
       } else if (e.status === "running") {
-        actions = '<div class="row" style="gap:8px;margin-top:8px">'
+        actions = '<div class="exp-row">'
           + '<button class="warn" data-stop="' + esc(e.id) + '">Stop</button></div>';
       }
       card.innerHTML = head + arms + actions;
