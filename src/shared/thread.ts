@@ -196,6 +196,8 @@ export function reconcilePage(
  * them means somebody who has just paid has to retype the meal they already typed (#261). Every
  * other refusal is final for this turn: a spent daily cap resets at midnight and a network cap is
  * not about this account, so a bubble kept under either is a retry that cannot work.
+ * `meal-changed` is retryable, but the retry is a deliberate new send once she has looked at the meal,
+ * not a re-send of this bubble, so its words are dropped too.
  *
  * `analysis-failed` is not here because it never reaches this question: it is not a refusal of the
  * turn but an upstream that fell over, and it takes the `failed` path, where "not sent" is true.

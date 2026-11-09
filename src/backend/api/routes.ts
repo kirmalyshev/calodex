@@ -1028,7 +1028,6 @@ export function createRouter(
         if (wantsStream(req)) return stream(req, pathname, (line) => handleText(deps, userId, input, line));
         const result = await handleText(deps, userId, input);
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
-        if (result.kind === "meal-changed") return json({ error: "meal-changed" }, 409);
         return isRefusal(result) ? refusal(result) : json(result);
       }
 
@@ -1077,7 +1076,6 @@ export function createRouter(
       if (req.method === "POST" && reanalyzeMatch) {
         const result = await reanalyzeMeal(deps, userId, decodeURIComponent(reanalyzeMatch[1]!));
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
-        if (result.kind === "meal-changed") return json({ error: "meal-changed" }, 409);
         return isRefusal(result) ? refusal(result) : json(result);
       }
 
@@ -1153,9 +1151,8 @@ export function createRouter(
         if (!isEditMealRequest(body)) return json({ error: "bad-edit" }, 400);
         if (body.swap !== undefined && (await deps.store.foodById(body.swap.ref)) === null) return json({ error: "unknown-food" }, 404);
         const result = await editMeal(deps, userId, decodeURIComponent(mealMatch[1]!), body);
-        return result.kind === "target-gone"
-          ? json({ error: "target-gone", on: result.on }, 409)
-          : result.kind === "meal-changed" ? json({ error: "meal-changed" }, 409) : json(result);
+        if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
+        return isRefusal(result) ? refusal(result) : json(result);
       }
 
       const messageMatch = MESSAGE_PATH.exec(pathname);
@@ -1186,7 +1183,6 @@ export function createRouter(
         if (wantsStream(req)) return stream(req, pathname, (line) => editLine(deps, userId, id, input, line));
         const result = await editLine(deps, userId, id, input);
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
-        if (result.kind === "meal-changed") return json({ error: "meal-changed" }, 409);
         if (result.kind === "bad-request") return json({ error: "bad-request" }, 400);
         if (result.kind === "too-many") return json({ error: "too-many-photos", limit: result.limit }, 400);
         return isRefusal(result) ? refusal(result) : json(result);

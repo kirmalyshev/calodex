@@ -548,10 +548,10 @@ export async function editMeal(
     // chips again over an answer already given.
     question: null,
   }, opts.readVersion ?? existing.version);
-  // Another write landed between our read and ours (#2695). An unpinned edit re-reads and re-merges,
-  // up to three attempts. An edit pinned to a caller's `readVersion` cannot be re-merged without
-  // becoming last-write-wins, and a third lost race is a livelock: both return `meal-changed`.
-  // Nothing is overwritten.
+  // Another write landed between our read and ours (#2695). A pinned edit (`opts.readVersion`) cannot
+  // be re-merged without becoming last-write-wins, so it returns `meal-changed` on the first
+  // conflict. An unpinned edit re-reads and re-merges, giving up after three attempts (and logging).
+  // Either way nothing is overwritten.
   if (updated === "conflict") {
     if (opts.readVersion !== undefined || (opts.attempt ?? 0) >= 2) {
       if (opts.readVersion === undefined) console.error(`[eait] meal edit lost three races in a row: ${mealId}`);
@@ -866,7 +866,7 @@ export async function reanalyzeMeal(
   onCounting?: () => void,
   /** A queued job's charge binding — `analyzePhotos`'s own `job`, forwarded (ieat-app#1347). */
   job?: JobCharge,
-): Promise<MealUpdated | TargetGone | MealChanged | Refusal> {
+): Promise<MealUpdated | TargetGone | Refusal> {
   const existing = await deps.store.getMealVersioned(userId, mealId);
   if (!existing) return { kind: "target-gone", on: "correction" };
   if ((existing.photos ?? 0) === 0) return { kind: "no-photo" };
@@ -895,7 +895,7 @@ export async function rewriteMeal(
   caption: string | undefined, added: () => Promise<Uint8Array[]>, onEvent: ((event: PhotoEvent) => void) | undefined,
   onCounting?: () => void,
   job?: JobCharge,
-): Promise<MealUpdated | TargetGone | MealChanged | Refusal> {
+): Promise<MealUpdated | TargetGone | Refusal> {
   const today = localDate(deps.config.timezone);
   // Captured here rather than trusted from `read.images`: the stored count can be stale (another
   // request mutated it since `existing` was read), so slicing `read.images` by it would risk
@@ -1055,7 +1055,7 @@ export async function confirmPendingMeal(
     // under this id means the proposal must NOT come back, or a later "no" answers "cancelled" over
     // a meal that stays logged; the confirm is then finished like any other, below.
     const exists = await deps.store.getMeal(userId, pendingId).then((m) => m !== null, () => null);
-    console.error(`[eait] insertMeal threw (meal ${exists === null ? "unknown" : exists ? "exists" : "absent"}): ${(e as Error)?.message ?? e}`);
+    console.error(`[eait] insertMeal threw (meal ${exists === null ? "unknown" : exists ? "exists" : "absent"}, pending ${pendingId}, user ${userId}): ${(e as Error)?.message ?? e}`);
     if (exists !== true) {
       // Absent: restore. Unknown (the check failed too, most likely the same outage): restoring could
       // leave a proposal beside a meal that did commit, so the proposal is not put back.

@@ -1808,6 +1808,26 @@ describe("chat on the web: saying something", () => {
   });
 });
 
+describe("chat on the web: a correction that lost to another write (ieat-app#2695)", () => {
+  it("shows the try-again notice instead of redrawing with nothing", async () => {
+    router(CONFIG);
+    const { session, userId } = await onboarded();
+    const id = crypto.randomUUID();
+    await store.insertMeal({
+      id, user_id: userId, ts: new Date().toISOString(), date: localDate(CONFIG.timezone), isFood: true,
+      items: [{ name: "Rice", grams: 200 }], kcal: 300, protein_g: 5, carbs_g: 60, fat_g: 2, satfat_g: 1, fiber_g: 1,
+      sugar_g: 1, sodium_mg: 100, verdicts: {}, healthScore: null, confidence: "high", notes: "", corrected: false, model: "test",
+    });
+    // Another write moves the meal's numbers between the turn's snapshot and the correction's read.
+    const read = store.getMealVersioned.bind(store);
+    store.getMealVersioned = async (u, m) => { const x = await read(u, m); return x && { ...x, kcal: x.kcal + 1 }; };
+    const res = await post("/start/chat/say", { text: "only half of it" }, session);
+    expect(res.headers.get("location")).toBe("/start/chat?notice=analysis-failed");
+    expect(await (await get("/start/chat?notice=analysis-failed", session)).text()).toContain(escape(PAGE_COPY.chatRefusalFailed));
+    expect((await store.getMeal(userId, id))!.kcal).toBe(300);
+  });
+});
+
 describe("chat on the web: the address allowance", () => {
   it("bounds chat turns per address, in the same bucket the app's route takes", async () => {
     router({ ...CONFIG, analysisRateLimitPerDay: 1 });

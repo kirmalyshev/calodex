@@ -1812,6 +1812,10 @@ function noticeText(code: string | null, lang: Lang): string | null {
 function noticeFor(result: { kind: string; scope?: string; on?: string }): string | undefined {
   if (result.kind === "target-gone") return `no-focus-${result.on ?? "correction"}`;
   if (!isRefusal(result)) return undefined;
+  // A correction that lost to another write (#2695): nothing was written and saying it again works,
+  // which is what the page's "try again" notice says. Without this the code has no sentence and the
+  // page redraws with no notice at all.
+  if (result.kind === "meal-changed") return "analysis-failed";
   return result.kind === "cap-exceeded" ? `cap-${result.scope ?? "user"}` : result.kind;
 }
 

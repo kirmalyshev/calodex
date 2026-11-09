@@ -53,9 +53,10 @@ export const REFUSAL_STATUS = {
   "no-photo": 404,
   /**
    * The meal's numbers changed under a write that was computed from an older read (ieat-app#2695): a
-   * chat correction, a photo re-read, or a manual edit that lost three races. Nothing was
-   * overwritten. 409, and the surface words it as "that meal just changed, look again" — the retry
-   * reads the new numbers. A billed turn that ends here stays charged: the model call had run.
+   * chat correction or a photo re-read (refused on the first conflict), or an unpinned manual edit
+   * that lost three races. Nothing was overwritten. 409, and the app and the Telegram catalog word
+   * it as "that meal just changed, look again" (the web chat page shows its try-again notice); the
+   * retry reads the new numbers. A billed turn that ends here stays charged: the model call had run.
    */
   "meal-changed": 409,
   /**
@@ -87,6 +88,11 @@ export const REFUSAL_STATUS = {
   "referral-paid": 409,
 } as const;
 export type RefusalKind = keyof typeof REFUSAL_STATUS;
+
+/** Every `Refusal` member has a status: a kind added to `Refusal` and not to the map fails here, not as a 500 at runtime. */
+export type RefusalHasStatus = Refusal["kind"] extends RefusalKind ? true : never;
+const _refusalHasStatus: RefusalHasStatus = true;
+void _refusalHasStatus;
 
 /**
  * A streamed route's LAST line when the server itself failed mid-turn (#514): the JSON path's 500
@@ -2059,7 +2065,7 @@ export interface JobsResponse { jobs: JobEntry[]; cursor: string | null }
  * server counts against what is already stored.
  */
 export type EditLineLast =
-  | MealUpdated | TargetGone | MealChanged | Refusal
+  | MealUpdated | TargetGone | Refusal
   | { kind: "bad-request" } | { kind: "too-many"; limit: number }
   | { kind: typeof OUTCOME_UNKNOWN };
 /**

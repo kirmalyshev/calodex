@@ -445,8 +445,9 @@ async function keep(
   // its language and declared restrictions.
   before: MealRecord | null, amended: PendingMeal | null, profile: Profile,
 ): Promise<void> {
-  // A refusal never was a turn (a correction that lost to another write is one); a correction whose
-  // meal is gone changed nothing, and the app says so in a notice that is not a line.
+  // A refusal never was a turn, and `meal-changed` is one: a correction that lost to another write
+  // wrote nothing, so no line is kept. A correction whose meal is gone changed nothing either, and
+  // the app says so in a notice that is not a line.
   if (result.kind === "target-gone" || isRefusal(result)) return;
   // An answer that came back empty is no turn: a sentence with nothing in it is not kept.
   if (result.kind === "answered" && result.text === "") return;

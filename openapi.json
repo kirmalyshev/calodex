@@ -5803,9 +5803,6 @@
             "$ref": "#/components/schemas/TargetGone"
           },
           {
-            "$ref": "#/components/schemas/MealChanged"
-          },
-          {
             "$ref": "#/components/schemas/Refusal"
           },
           {
@@ -7171,7 +7168,7 @@
           "kind"
         ],
         "additionalProperties": false,
-        "description": "A write refused because the meal changed under it (ieat-app#2695); a `Refusal`, so it travels like one."
+        "description": "A write refused because the meal's numbers changed under it (ieat-app#2695). A member of `Refusal`: its status comes from `REFUSAL_STATUS` (409) and `streamEnd`/`isRefusal` carry it with no special case."
       },
       "MealFocus": {
         "type": "object",
