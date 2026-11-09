@@ -13,7 +13,6 @@ import { expect, logMeal, sessionToken, test } from "./fixtures.ts";
 
 const FIXTURE = "src/backend/web/browser/fixture-meal.png";
 const KEPT = "Saved on this device. It goes on its own as soon as it can.";
-const BEHIND = "Saved on this device. It goes once the message above that is waiting for you has been sent again or discarded.";
 
 async function server<T>(page: Page, path: string): Promise<T> {
   const res = await page.request.get(`/api/v1${path}`, { headers: { authorization: `Bearer ${await sessionToken(page)}` } });
@@ -140,7 +139,7 @@ test("what is kept survives a reload, and goes when the page has a session again
   await expect(waiting(page)).toHaveCount(0);
 });
 
-test("a refusal that comes back when the queue drains is worded against the kept turn, which waits for a decision", async ({ inWebApp: page }) => {
+test("a refusal that comes back when the queue drains is worded against the kept turn, which steps aside (#2686)", async ({ inWebApp: page }) => {
   await expect(page.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
   await page.context().setOffline(true);
   await say(page, "a banana");
@@ -148,7 +147,7 @@ test("a refusal that comes back when the queue drains is worded against the kept
   await expect(waiting(page)).toHaveCount(2);
 
   let refused = true;
-  await page.route("**/api/v1/messages", (r) => (r.request().method() === "POST" && refused
+  await page.route("**/api/v1/messages", (r) => (r.request().method() === "POST" && refused && (r.request().postData() ?? "").includes("a banana")
     ? r.fulfill({ status: 402, contentType: "application/json", body: JSON.stringify({ error: "subscription-required" }) })
     : r.fallback()));
   await page.context().setOffline(false);
@@ -156,23 +155,20 @@ test("a refusal that comes back when the queue drains is worded against the kept
   const banana = page.locator(".thread li.me", { hasText: "Logging meals needs a subscription" });
   await expect(banana).toContainText("Logging meals needs a subscription. Start your free trial to carry on.");
   await expect(page.locator(".thread li.me.refused", { hasText: "a banana" })).toHaveCount(1);
-  // The apple was told it goes on its own; once the banana ahead of it is held, that is no longer true.
-  await expect(page.locator(".notice")).toHaveText(BEHIND);
-  // Held, not retried on its own, and the one behind it waits rather than jumping the queue.
-  await expect(waiting(page)).toHaveCount(1);
-  await expect(waiting(page)).toContainText("and an apple");
-  // A turn said now joins them — sent live, its estimate would be replaced by the apple's — and says
-  // what it is waiting on, which is a decision, not a connection.
+  // Held, not retried on its own — and the turn behind it is not stopped by it: the apple goes.
+  await expect(waiting(page)).toHaveCount(0);
+  await expect(banana.getByRole("button", { name: "Resend" })).toBeVisible();
+  // With only a held turn left, a turn said now goes now rather than joining a queue.
   await say(page, "and some toast");
-  await expect(page.locator(".notice")).toHaveText(BEHIND);
-  await expect(waiting(page)).toHaveCount(2);
+  await expect(waiting(page)).toHaveCount(0);
 
   refused = false;
   // force: see app-chat's Send-again spec — the rising node is swapped under the pointer.
   await banana.getByRole("button", { name: "Resend" }).click({ force: true });
   await expect(waiting(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Resend" })).toHaveCount(0);
-  await expect.poll(() => userLines(page)).toEqual(["text:a banana", "text:and an apple", "text:and some toast"]);
+  // The held banana stepped aside, so its resend lands after the turns that went on without it.
+  await expect.poll(() => userLines(page)).toEqual(["text:and an apple", "text:and some toast", "text:a banana"]);
 });
 
 test("a kept turn can be discarded, and nothing is sent for it", async ({ inWebApp: page }) => {

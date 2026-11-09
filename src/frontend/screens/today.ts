@@ -33,7 +33,7 @@ import { firstMealScreen } from "./first-meal.ts";
 import { blobSrc, ctaEl, kitEl, mealRowEl } from "../kit.ts";
 import { failureOf, outbox } from "../outbox.ts";
 import {
-  DAYS, PENDING, behind, clear, composerRow, dayPickerButton, dayText, el, firstMealDue, flush, heldProposal, kcal, kept,
+  DAYS, PENDING, clear, composerRow, dayPickerButton, dayText, el, firstMealDue, flush, heldProposal, kcal, kept,
   keptLineEl, keptNotice, lang, names, profile, proposalCard, refusalWords, sendOrKeep, setHeldProposal, setRedraw,
   takeCarried, takeTurn, type Frame,
 } from "../shell.ts";
@@ -1083,7 +1083,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
         const box = el("div", "hkept");
         for (const e of keptLines) {
           const resend = (): void => turn(async () => { if (e.held === undefined) { await flush(); } else { await outbox.resend(e.id, uid); } });
-          // Deleting a held head lets whatever waited behind it go.
+          // Deleting a held turn drops it; nothing was waiting on it, so the flush is only a courtesy.
           const drop = (): void => turn(async () => { await outbox.discard(e.id); void flush(); });
           box.append(keptLineEl(e, "div", { resend, drop }));
         }
@@ -1160,7 +1160,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
   // A kept turn's notice carried from a screen that is gone is decided again now: minutes may
   // have passed, and the turn may have gone meanwhile.
   const carried = takeCarried();
-  if (carried !== null) tell(carried === kept() || carried === behind() ? keptNotice(uid) : carried);
+  if (carried !== null) tell(carried === kept() ? keptNotice(uid) : carried);
 
   return wrap;
 }

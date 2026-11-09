@@ -327,6 +327,9 @@ export function refusalFrom(body: { error?: unknown; scope?: unknown } | null | 
 /** A turn whose request reached the server and whose answer never came back (#540). */
 export const UNANSWERED = "unanswered";
 
+/** A kept photo turn whose file is gone — iOS may empty Caches while the app is not running (#2686). Held, never retried: there is nothing left to send. */
+export const LOST = "lost";
+
 /**
  * WHAT A REQUEST THAT LOST ITS ANSWER WAS, from how far it got (#540).
  *

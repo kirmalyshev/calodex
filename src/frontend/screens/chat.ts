@@ -32,7 +32,7 @@ import { failureOf, outbox } from "../outbox.ts";
 import { shrinkPhotos } from "../photo.ts";
 import { updateFor } from "../queue.ts";
 import {
-  COPY, MESSAGES, dayPickerButton, PENDING, Said, UNKNOWN, behind, clear, composerRow, el, flush,
+  COPY, MESSAGES, dayPickerButton, PENDING, Said, UNKNOWN, clear, composerRow, el, flush,
   failBadge, heldProposal, kept, keptLineEl, keptNotice, lang, lastThreadEntries, findMeal, mealLine, outstandingTurn,
   MEAL_PHOTOS, proposalCard, profile, refusalWords, sendOrKeep, setHeldProposal, setLastThread,
   setRedraw, smallCta, takeCarried, takeTurn, timeFmt, names, type Frame,
@@ -252,11 +252,11 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
 
     // KEPT FOR LATER, in the order they go (#708): her bubble, and what is happening to it ON it —
     // pending (a clock: the outbox sends it on its own), failed (the red !, Resend; nothing will
-    // send it again by itself) or refused (the server's reason inside, and Delete so the queue
-    // behind it can go). Spud never speaks for her send, and her words never go back to the field.
+    // send it again by itself) or refused (the server's reason inside, and Resend or Delete; the
+    // turns behind it go on without it). Spud never speaks for her send, and her words never go back to the field.
     for (const e of keptLines) {
       const resend = (): void => turn(async () => { if (e.held === undefined) { await flush(); } else { await outbox.resend(e.id, uid!); } });
-      // Deleting a held head lets whatever waited behind it go.
+      // Deleting a held turn drops it; nothing was waiting on it, so the flush is only a courtesy.
       const drop = (): void => turn(async () => { await outbox.discard(e.id); void flush(); });
       const li = keptLineEl(e, "li", { resend, drop });
       li.className += rise(e.id, idx++);
@@ -671,7 +671,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
   setRedraw(async () => {
     if (!wrap.isConnected) return;
     await draw();
-    if (notice.textContent === kept() || notice.textContent === behind()) tell(keptNotice(uid));
+    if (notice.textContent === kept()) tell(keptNotice(uid));
   });
   // The web's + (the boards' "+ Log"): a button in the top bar that opens two tiles over a veil —
   // Photo (the file picker) and Text (the composer, focused). It turns into an ink Close above the
@@ -765,6 +765,6 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
   wrap.append(el("h1", "visually-hidden", shellCopyFor(lang).navChat), thread, notice, comp.form);
   // What the turn that was out said, if it answered after its own screen was gone.
   const carried = takeCarried();
-  if (carried !== null) tell(carried === kept() || carried === behind() ? keptNotice(uid) : carried);
+  if (carried !== null) tell(carried === kept() ? keptNotice(uid) : carried);
   return wrap;
 }

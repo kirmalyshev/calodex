@@ -246,7 +246,7 @@ export function queuedEntries(entries: readonly Queued<string>[], thread: readon
   // A live bubble for the same turn IS its row until the outbox has taken it over: one key, one
   // entrance, no frame with neither.
   const onScreen = new Set(thread.map((e) => e.id));
-  // A HELD one is always drawn: it heads the queue and waits on a decision only it can offer.
+  // A HELD one is always drawn, even when its line has landed: it waits on a decision only the person can make, and the turns behind it go on without it.
   return entries.filter((e) => !onScreen.has(e.id) && (e.held !== undefined || !landed.has(e.id))).map((e) => ({
     id: e.id, role: "user", text: e.text,
     ...(e.kind === "photo" ? { photo: true } : {}),
