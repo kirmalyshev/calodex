@@ -326,6 +326,7 @@ export async function photoJob(deps: EngineDeps, userId: string, jobId: string):
   // would have run it (a worker writes its job row with the claim, so "no row" means no runner).
   const turn = await deps.store.getTurn(userId, jobId);
   if (!turn) return null;
+  if ((turn.outcome as { kind?: string } | null)?.kind === REMOVED.kind) return { kind: "removed", jobId };
   return { kind: "settled", jobId, result: (turn.outcome ?? { kind: OUTCOME_UNKNOWN }) as PhotoLast };
 }
 
@@ -394,11 +395,19 @@ export async function followPhotoJob(
   }
 }
 
+/** The outcome of a turn removed before it existed: a tombstone `enqueueJob` and `once` both meet as an already-claimed id. */
+const REMOVED = { kind: "removed" } as const;
+
 /** Remove: a running job's meal goes when it lands, a logged one's goes now. */
 export async function removePhotoJob(deps: EngineDeps, userId: string, jobId: string): Promise<PhotoJob | null> {
   if (await deps.store.removeJob(userId, jobId)) return { kind: "removed", jobId };
   const job = await photoJob(deps, userId, jobId);
-  if (!job) return null;
+  if (!job) {
+    // No job and no turn yet: the upload may still be streaming. Claim the turn with a removed outcome, so the enqueue that follows is refused and logs nothing (#2684).
+    if (await deps.store.claimTurn(userId, jobId)) await deps.store.settleTurn(userId, jobId, REMOVED);
+    return (await photoJob(deps, userId, jobId))?.kind === "removed" ? { kind: "removed", jobId } : null;
+  }
+  if (job.kind === "removed") return job;
   if (job.kind === "settled" && job.result.kind === "logged") await deleteMealById(deps, userId, job.result.mealId);
   return { kind: "removed", jobId };
 }
