@@ -382,16 +382,21 @@ export interface OnboardingExperimentView {
 /** Every experiment with its per-variant funnel — the admin's list. */
 export async function onboardingExperiments(deps: EngineDeps): Promise<OnboardingExperimentView[]> {
   const list = await deps.store.listOnboardingExperiments();
-  const stored = await deps.store.getOnboardingContent();
+  // The fill exists for DRAFTS, whose arms the editor opens: a draft written before a content
+  // block existed would throw in `uiCard()`/`beatsCard()` and fail its save, so it is read
+  // through the same block-by-block fill a phone gets — with the arm's OWN version kept, because
+  // the funnel row keys on it. A running arm comes back exactly as stored: what it served is the
+  // truth the admin is looking at.
+  const stored = list.some((e) => e.status === "draft") ? await deps.store.getOnboardingContent() : null;
   const out: OnboardingExperimentView[] = [];
   for (const experiment of list) {
-    // A draft written before a content block existed must still open in the editor: the editor
-    // hands it to `uiCard()`/`beatsCard()` as-is and the validator refuses its save, so the arm
-    // is read through the same block-by-block fill a phone gets — live control supplies the rest.
-    const control = usableContentFor(experiment.lang, stored);
+    const control = experiment.status === "draft" ? usableContentFor(experiment.lang, stored) : null;
     const funnel = await deps.store.onboardingExperimentFunnel(experiment.id);
     const arms = experiment.variants.map((variant) => {
-      variant = { ...variant, content: usableContent(variant.content, control) };
+      if (control !== null) {
+        const filled = usableContent(variant.content, control);
+        variant = { ...variant, content: { ...filled, version: variant.content?.version ?? filled.version } };
+      }
       const row = funnel.find((r) => r.variant_id === variant.content.version);
       // INTENTION TO TREAT: the rate is per ASSIGNED user — completed_users / assigned — not per
       // session, or a restart would inflate the denominator.
