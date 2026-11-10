@@ -8160,7 +8160,7 @@
           "lines"
         ],
         "additionalProperties": false,
-        "description": "What Spud says to pose ONE question, and what the input looks like while it is open.\n\n`lines` is a list because Spud sends bubbles, not paragraphs: \"A little about you, for the calorie formula. Which fits you?\" is one bubble, and the age that follows it is another. One entry, one bubble."
+        "description": "What Spud says to pose ONE question, and what the input looks like while it is open.\n\n`lines` is a list because Spud sends bubbles, not paragraphs: \"A little about you, for the calorie formula. Which fits you?\" is one bubble, and the age that follows it is another. One entry, one bubble. The FIRST line is the question and is required; a later line may be empty, and an empty line renders nothing (ieat-app#2756)."
       },
       "OnboardingBuildingContent": {
         "type": "object",
@@ -8532,11 +8532,11 @@
             "items": {
               "type": "string"
             },
-            "description": "The headline, then its subtitle (ieat-app#2050): \"A plan built around you\" / \"Your goal, your day, your meals\"."
+            "description": "The headline, then its subtitle (ieat-app#2050). May be EMPTY or hold empty lines — an empty line renders nothing (ieat-app#2756)."
           },
           "cta": {
             "type": "string",
-            "description": "The primary button — \"Start\"."
+            "description": "The primary button — \"Get started\"."
           },
           "signin": {
             "type": "string",
