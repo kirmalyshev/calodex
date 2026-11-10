@@ -1363,10 +1363,10 @@ describe("the preliminary plan card", () => {
     const session = await signIn();
     await answerAll(session, ANSWERS);
     const p = (await store.getProfile(await webUser(session)))!;
-    const surplus = prelimCards({ ...p, goal: "gain", target_weight_kg: p.weight_kg! + 6 }, "en");
+    const surplus = prelimCards({ ...p, goal: "gain", target_weight_kg: p.weight_kg! + 6 }, DEFAULT_ONBOARDING_CONTENT, "en");
     expect(surplus).toContain(`class="plg up"`);
     expect(surplus).toMatch(/You burn.*You eat/s);
-    const flat = prelimCards({ ...p, height_cm: null }, "en");
+    const flat = prelimCards({ ...p, height_cm: null }, DEFAULT_ONBOARDING_CONTENT, "en");
     expect(flat).not.toContain("You burn");
     expect(flat).not.toContain(`class="plg`);
     expect(flat.match(/class="card plc"/g)?.length).toBe(1);

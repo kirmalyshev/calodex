@@ -542,6 +542,60 @@ describe("experiments (ieat-app#2669)", () => {
     expect((await stopExp(deps, e.id)).ok).toBe(false);
   });
 
+  it("a draft arm missing blocks opens in the editor filled; a running arm comes back exactly as stored", async () => {
+    const { onboardingExperiments } = await import("./onboarding.ts");
+    // The arm predates ui/beats — what the editor opens must not crash uiCard()/beatsCard() nor
+    // fail its save; the fill wears the arm's OWN version, never control's.
+    const old = variantContent(43, "Old arm") as unknown as Record<string, unknown>;
+    delete old.ui;
+    delete old.beats;
+    const e = experiment({
+      variants: [
+        { control: true, weight: 0, content: variantContent(41, "Control") },
+        { weight: 1, content: old },
+      ],
+    });
+    await store.putOnboardingExperiment(e as never);
+    let view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
+    let arm = view.arms[1]!.variant.content;
+    expect(arm.ui).toEqual(DEFAULT_ONBOARDING_CONTENT.ui);
+    expect(arm.beats).toEqual(DEFAULT_ONBOARDING_CONTENT.beats);
+    expect(arm.welcome.cta).toBe("Old arm");
+    expect(arm.version).toBe(43);
+
+    // Running, the view shows what is frozen — a fill would lie about what served, and a swapped
+    // version would un-hook the funnel row, which keys on the arm's own content_version.
+    await store.startOnboardingExperiment(e.id);
+    await store.setSwitch("onboarding.experiments", true, userId);
+    const assigned = await assignVariant(deps, userId, signals);
+    expect(assigned).not.toBeNull();
+    await store.recordOnboardingEvents(userId, [event({ contentVersion: 43 })] as never);
+    view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
+    const raw = view.arms[1]!.variant.content as unknown as Record<string, unknown>;
+    expect(raw.ui).toBeUndefined();
+    expect(raw.beats).toBeUndefined();
+    expect(raw.version).toBe(43);
+    expect(view.arms[1]!.stats.assigned).toBe(1);
+    expect(view.arms[1]!.stats.sessions).toBe(1);
+  });
+
+  it("clones a control that predates ui/beats into an arm the editor can open", async () => {
+    const { addOnboardingVariant, onboardingExperiments } = await import("./onboarding.ts");
+    const oldControl = variantContent(40, "Old control") as unknown as Record<string, unknown>;
+    delete oldControl.ui;
+    delete oldControl.beats;
+    const e = experiment({ variants: [{ control: true, weight: 1, content: oldControl }] });
+    await store.putOnboardingExperiment(e as never);
+    const added = await addOnboardingVariant(deps, e.id);
+    expect(added.ok).toBe(true);
+    const view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
+    const clone = view.arms[1]!.variant.content;
+    expect(clone.ui).toEqual(DEFAULT_ONBOARDING_CONTENT.ui);
+    expect(clone.beats).toEqual(DEFAULT_ONBOARDING_CONTENT.beats);
+    expect(clone.welcome.cta).toBe("Old control");
+    expect(clone.version).toBeGreaterThanOrEqual(DEFAULT_ONBOARDING_CONTENT.version + 1);
+  });
+
   it("results read by assignment: rate and Wilson interval per arm", async () => {
     const { wilsonInterval, onboardingExperiments } = await import("./onboarding.ts");
     const ci = wilsonInterval(3, 10);

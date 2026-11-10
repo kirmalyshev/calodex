@@ -32,7 +32,7 @@
 // disagree about what "next" means.
 
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
-import { genderedRussian, LANG_TAG } from "./lang.ts";
+import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
 import { ACTIVITY_LEVELS, BARRIERS, COUNTED_BEFORE, PACES, SEXES, SITUATIONS, STREAK_GOALS } from "./types.ts";
 import { DIETS, MEDICAL_TAGS } from "./targets.ts";
 import { lintCopy } from "./claims.ts";
@@ -404,6 +404,54 @@ export interface OnboardingSummaryContent {
   cta: string;
 }
 
+/**
+ * The words around the questions the screens themselves need — the one Continue, the failed-save
+ * line, the pickers' spoken labels and the wheel's unit word (ieat-app#2757). REQUIRED, every one:
+ * an empty Continue is a door with no handle.
+ */
+export interface OnboardingUiContent {
+  /** The one button under every screen that answers something. */
+  continueLabel: string;
+  /** A failed answer save: the answer is still on screen, Continue sends it again. */
+  saveKept: string;
+  /** The composer's idle placeholder on the surfaces that have one (the web's). */
+  idlePlaceholder: string;
+  /** VoiceOver's hint on a row whose tap IS the answer — activation also advances. */
+  optionContinues: string;
+  /** The steppers' spoken −/+ and the stepper's own button. */
+  stepper: { less: string; more: string; continue: string };
+  /**
+   * The unit word beside a wheel's numeral — "32 years". `yearsCount` is the same word as a
+   * whole counted template — the wheel's rows, where a language declines it per number.
+   */
+  units: { years: string; yearsCount: CountForms };
+}
+
+/**
+ * The beats between the questions — the explainers that ask nothing (ieat-app#2757). `ageWhy` and
+ * `echo` are optional and may hide: an empty string renders nothing (ieat-app#2756). The rest are
+ * required — a beat with no words is a dead screen.
+ */
+export interface OnboardingBeatsContent {
+  /** Under the age question: why it is asked. May be empty (hidden). */
+  ageWhy: string;
+  /**
+   * The answers said back as burn numbers under later questions — `{rest}`/`{burn}` are computed
+   * kcal, never typed. Either may be empty (hidden).
+   */
+  echo: { rest: string; days: string };
+  /**
+   * The BMI beat's words. The band labels stay code (`bmiRangeLabel`, shared with Progress) —
+   * only the title, the "BMI" glyph and the one-line explanation move.
+   */
+  baseline: { title: string; bmi: string; what: string };
+  /**
+   * The mid-journey plan beat: burn vs the plan's kcal, the gap named as the pace.
+   * `{delta}`/`{burn}` are computed.
+   */
+  prelim: { title: string; burn: string; gap: string; eat: string; perDay: string; keepTitle: string };
+}
+
 export interface OnboardingContent {
   /**
    * Bumped on every admin save.
@@ -417,6 +465,8 @@ export interface OnboardingContent {
   screens: OnboardingScreenContent[];
   building: OnboardingBuildingContent;
   summary: OnboardingSummaryContent;
+  ui: OnboardingUiContent;
+  beats: OnboardingBeatsContent;
 }
 
 /**
@@ -852,8 +902,11 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   // "Your weight" and "Where do you eat?" — different words under the same number is the average
   // the counter exists to prevent. v19 (eait#726): the age headline is "Your age?" — same
   // question, new words, same reason to bump. v20 (ieat-app#2756): the welcome drops its
-  // headline — `lines` may be empty, and the button is "Get started".
-  version: 20,
+  // headline — `lines` may be empty, and the button is "Get started". v24 (ieat-app#2757): `ui`
+  // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
+  // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
+  // revision may never reuse a number that was already issued.
+  version: 24,
   welcome: {
     lines: [],
     cta: "Get started",
@@ -1086,6 +1139,23 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     // and a second decision.
     cta: "Photograph your first meal",
   },
+  ui: {
+    continueLabel: "Continue",
+    saveKept: "Couldn't save that. Your answer is still here. Continue sends it again.",
+    idlePlaceholder: "Message Spud…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Continue", less: "Less", more: "More" },
+    units: { years: "years", yearsCount: { one: "{n} year", other: "{n} years" } },
+  },
+  beats: {
+    ageWhy: "Your metabolism changes with age, so we factor that in",
+    echo: { rest: "At rest: {rest}kcal a day", days: "Your days burn {burn}kcal" },
+    baseline: { title: "Where you're starting", bmi: "BMI", what: "Body mass index" },
+    prelim: {
+      title: "Your plan", burn: "You burn", gap: "{delta} your pace",
+      eat: "You eat", perDay: "kcal a day", keepTitle: "You burn about {burn}kcal",
+    },
+  },
 };
 
 // ── Validation: the boundary an admin cannot cross ───────────────────────────────────────────
@@ -1199,6 +1269,25 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     }
     str(v[0], `${at}[0]`, MAX_LINE);
     for (const [i, line] of v.slice(1).entries()) optLine(line, `${at}[${i + 1}]`);
+  };
+
+  /**
+   * A template whose `{…}`s are all keys code fills — an invented one renders a literal brace, a
+   * dropped one a figure missing. `requiredPh` must be present whenever the template is non-empty
+   * (a hideable line may be EMPTY and legitimately carry none).
+   */
+  const tmpl = (v: unknown, at: string, opts: { required?: boolean; allowed?: readonly string[]; requiredPh?: readonly string[]; max?: number }) => {
+    const { required = false, allowed = [], requiredPh = [], max = MAX_LABEL } = opts;
+    if (!isStr(v)) { push(`${at} must be a string`); return; }
+    if (required && v.trim() === "") { push(`${at} is required`); return; }
+    if (v.length > max) { push(`${at} is over ${max} characters`); return; }
+    const found = [...v.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
+    for (const ph of found) {
+      if (!allowed.includes(ph)) push(`${at} has {${ph}}, which nothing fills`);
+    }
+    for (const ph of requiredPh) {
+      if (v !== "" && !found.includes(ph)) push(`${at} drops {${ph}} — the figure it stands for disappears`);
+    }
   };
 
   /** A block of lines where every one may hide — 0 to `max`, empty entries allowed. */
@@ -1374,6 +1463,93 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     str(sum.cta, "summary.cta", MAX_LABEL);
   }
 
+  const ui = raw.ui as Record<string, unknown> | undefined;
+  if (typeof ui !== "object" || ui === null) push("ui is required");
+  else {
+    tmpl(ui.continueLabel, "ui.continueLabel", { required: true });
+    tmpl(ui.saveKept, "ui.saveKept", { required: true, max: MAX_BODY });
+    tmpl(ui.idlePlaceholder, "ui.idlePlaceholder", { required: true });
+    tmpl(ui.optionContinues, "ui.optionContinues", { required: true });
+    const stepper = ui.stepper as Record<string, unknown> | undefined;
+    if (typeof stepper !== "object" || stepper === null) push("ui.stepper is required");
+    else {
+      for (const k of Object.keys(stepper)) {
+        if (!["less", "more", "continue"].includes(k)) push(`ui.stepper.${k} is not a used key`);
+      }
+      for (const k of ["less", "more", "continue"]) {
+        tmpl(stepper[k], `ui.stepper.${k}`, { required: true });
+      }
+    }
+    const un = ui.units as Record<string, unknown> | undefined;
+    if (typeof un !== "object" || un === null) push("ui.units is required");
+    else {
+      for (const k of Object.keys(un)) {
+        if (!["years", "yearsCount"].includes(k)) push(`ui.units.${k} is not a used key`);
+      }
+      tmpl(un.years, "ui.units.years", { required: true });
+      const yc = un.yearsCount as Record<string, unknown> | undefined;
+      if (typeof yc !== "object" || yc === null) push("ui.units.yearsCount is required");
+      else {
+        tmpl(yc.other, "ui.units.yearsCount.other", { required: true, allowed: ["n"], requiredPh: ["n"] });
+        for (const k of ["zero", "one", "two", "few", "many"]) {
+          if (yc[k] !== undefined) tmpl(yc[k], `ui.units.yearsCount.${k}`, { allowed: ["n"], requiredPh: ["n"] });
+        }
+        for (const k of Object.keys(yc)) {
+          if (!["zero", "one", "two", "few", "many", "other"].includes(k)) push(`ui.units.yearsCount.${k} is not a plural category`);
+        }
+      }
+    }
+    for (const k of Object.keys(ui)) {
+      if (!["continueLabel", "saveKept", "idlePlaceholder", "optionContinues", "stepper", "units"].includes(k)) {
+        push(`ui.${k} is not a used key`);
+      }
+    }
+  }
+
+  // The beats: `ageWhy`/`echo` may hide (empty renders nothing, ieat-app#2756); the rest stay
+  // required — a beat with no words is a dead screen. Every `{…}` must be one code fills, and a
+  // non-empty template keeps the figure it exists to say.
+  const beats = raw.beats as Record<string, unknown> | undefined;
+  if (typeof beats !== "object" || beats === null) push("beats is required");
+  else {
+    tmpl(beats.ageWhy, "beats.ageWhy", { max: MAX_LINE });
+    const echo = beats.echo as Record<string, unknown> | undefined;
+    if (typeof echo !== "object" || echo === null) push("beats.echo is required");
+    else {
+      for (const k of Object.keys(echo)) {
+        if (!["rest", "days"].includes(k)) push(`beats.echo.${k} is not a used key`);
+      }
+      tmpl(echo.rest, "beats.echo.rest", { allowed: ["rest"], requiredPh: ["rest"], max: MAX_LINE });
+      tmpl(echo.days, "beats.echo.days", { allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
+    }
+    const base = beats.baseline as Record<string, unknown> | undefined;
+    if (typeof base !== "object" || base === null) push("beats.baseline is required");
+    else {
+      for (const k of Object.keys(base)) {
+        if (!["title", "bmi", "what"].includes(k)) push(`beats.baseline.${k} is not a used key`);
+      }
+      tmpl(base.title, "beats.baseline.title", { required: true });
+      tmpl(base.bmi, "beats.baseline.bmi", { required: true });
+      tmpl(base.what, "beats.baseline.what", { required: true, max: MAX_BODY });
+    }
+    const prelim = beats.prelim as Record<string, unknown> | undefined;
+    if (typeof prelim !== "object" || prelim === null) push("beats.prelim is required");
+    else {
+      for (const k of Object.keys(prelim)) {
+        if (!["title", "burn", "gap", "eat", "perDay", "keepTitle"].includes(k)) push(`beats.prelim.${k} is not a used key`);
+      }
+      tmpl(prelim.title, "beats.prelim.title", { required: true });
+      tmpl(prelim.burn, "beats.prelim.burn", { required: true });
+      tmpl(prelim.gap, "beats.prelim.gap", { required: true, allowed: ["delta"], requiredPh: ["delta"], max: MAX_LINE });
+      tmpl(prelim.eat, "beats.prelim.eat", { required: true });
+      tmpl(prelim.perDay, "beats.prelim.perDay", { required: true });
+      tmpl(prelim.keepTitle, "beats.prelim.keepTitle", { required: true, allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
+    }
+    for (const k of Object.keys(beats)) {
+      if (!["ageWhy", "echo", "baseline", "prelim"].includes(k)) push(`beats.${k} is not a used key`);
+    }
+  }
+
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
   // is the third editable public surface: an admin can write anything into it and it reaches every
   // phone that fetches a revision. `retired-no-email` is why this is here — "No email, no name."
@@ -1400,6 +1576,8 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       screens,
       building: raw.building as OnboardingBuildingContent,
       summary: raw.summary as OnboardingSummaryContent,
+      ui: raw.ui as OnboardingUiContent,
+      beats: raw.beats as OnboardingBeatsContent,
     },
   };
 }
@@ -1479,7 +1657,32 @@ export function usableContent(
         && hasKeys(c.summary?.macros, ["protein", "carbs", "fat", "satfat"])
       ? c.summary
       : fallback.summary,
+    // `ui` is all-required — a missing or emptied key is a dead control, so the whole block
+    // falls back. `beats` follows the same shape; `ageWhy`/`echo` only need to be strings,
+    // because empty IS a valid revision there (ieat-app#2756).
+    ui: usableUi(c.ui) ? c.ui : fallback.ui,
+    beats: usableBeats(c.beats) ? c.beats : fallback.beats,
   };
+}
+
+/** A `ui` block with every required word this binary reads. */
+function usableUi(u: OnboardingUiContent | undefined): u is OnboardingUiContent {
+  if (typeof u !== "object" || u === null) return false;
+  return hasKeys(u, ["continueLabel", "saveKept", "idlePlaceholder", "optionContinues"])
+    && hasKeys(u.stepper, ["less", "more", "continue"])
+    && hasKeys(u.units, ["years"])
+    && hasKeys(u.units?.yearsCount, ["other"]);
+}
+
+/** A `beats` block — required tables whole, hideable lines merely present. */
+function usableBeats(b: OnboardingBeatsContent | undefined): b is OnboardingBeatsContent {
+  if (typeof b !== "object" || b === null) return false;
+  const o = b as unknown as Record<string, unknown>;
+  return typeof o.ageWhy === "string"
+    && hasKeys(b.baseline, ["title", "bmi", "what"])
+    && hasKeys(b.prelim, ["title", "burn", "gap", "eat", "perDay", "keepTitle"])
+    && typeof b.echo === "object" && b.echo !== null
+    && typeof b.echo.rest === "string" && typeof b.echo.days === "string";
 }
 
 /** A block with bubbles and every key this binary reads. Missing one means the block is a version behind. */

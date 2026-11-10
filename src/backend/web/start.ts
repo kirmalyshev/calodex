@@ -1142,7 +1142,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const following = walk[i + 1];
       const onward = following !== undefined && following.kind === "auto"
         ? `${askPath}${askPath.includes("?") ? "&" : "?"}show=${following.id}` : askPath;
-      return html(interstitial(auto.place as Parameters<typeof interstitial>[0], profile, profile.lang, onward, backBefore(walk, i)));
+      return html(interstitial(auto.place as Parameters<typeof interstitial>[0], profile, content, profile.lang, onward, backBefore(walk, i)));
     }
 
     if (req.method === "GET") {

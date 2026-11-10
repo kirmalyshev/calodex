@@ -859,6 +859,24 @@ details.how p { margin-top: 8px; }
           <div id="summary"></div>
         </div>
 
+        <div id="ob-ui" data-sec="ui">
+          <p class="muted">
+            The words around the questions — the one Continue under every screen, the failed-save line,
+            the pickers' spoken labels and the wheel's unit word. Every one is required: an empty Continue
+            is a door with no handle.
+          </p>
+          <div id="ui"></div>
+        </div>
+
+        <div id="ob-beats" data-sec="beats">
+          <p class="muted">
+            The explainers between the questions. <code>{rest}</code>, <code>{burn}</code> and
+            <code>{delta}</code> are computed numbers — never type them.
+            "Why we ask" and the two burn echoes may be left empty: an empty line renders nothing.
+          </p>
+          <div id="beats"></div>
+        </div>
+
         <div class="bar" id="bar">
           <span class="status" id="status"></span>
           <button id="reload">Reload</button>
@@ -1189,9 +1207,48 @@ details.how p { margin-top: 8px; }
     return card;
   }
 
-  // The four sections take turns beside a sub-nav; the save bar below them is for all four.
+  function uiCard() {
+    var u = content.ui;
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, "Around the questions");
+    field(card, "Continue button — the one under every screen", u.continueLabel, function (v) { u.continueLabel = v; });
+    field(card, "Failed answer save", u.saveKept, function (v) { u.saveKept = v; });
+    field(card, "Web composer idle placeholder", u.idlePlaceholder, function (v) { u.idlePlaceholder = v; });
+    field(card, "VoiceOver hint — a tap that also advances", u.optionContinues, function (v) { u.optionContinues = v; });
+    field(card, "Stepper button", u.stepper.continue, function (v) { u.stepper.continue = v; });
+    field(card, "Stepper: spoken −", u.stepper.less, function (v) { u.stepper.less = v; });
+    field(card, "Stepper: spoken +", u.stepper.more, function (v) { u.stepper.more = v; });
+    field(card, 'Wheel unit word — "32 years"', u.units.years, function (v) { u.units.years = v; });
+    Object.keys(u.units.yearsCount).forEach(function (k) {
+      field(card, "Counted years: " + k + " — {n} is the number", u.units.yearsCount[k], function (v) { u.units.yearsCount[k] = v; });
+    });
+    return card;
+  }
+
+  function beatsCard() {
+    var t = content.beats;
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, "The beats");
+    field(card, "Why we ask — under the age question (may be empty)", t.ageWhy, function (v) { t.ageWhy = v; });
+    field(card, "Resting echo — {rest} is computed (may be empty)", t.echo.rest, function (v) { t.echo.rest = v; });
+    field(card, "Days echo — {burn} is computed (may be empty)", t.echo.days, function (v) { t.echo.days = v; });
+    field(card, "Baseline title", t.baseline.title, function (v) { t.baseline.title = v; });
+    field(card, 'Baseline: "BMI" glyph', t.baseline.bmi, function (v) { t.baseline.bmi = v; });
+    field(card, "Baseline: one-line explanation", t.baseline.what, function (v) { t.baseline.what = v; });
+    field(card, "Prelim title", t.prelim.title, function (v) { t.prelim.title = v; });
+    field(card, "Prelim: burn row label", t.prelim.burn, function (v) { t.prelim.burn = v; });
+    field(card, "Prelim: gap — {delta} is computed", t.prelim.gap, function (v) { t.prelim.gap = v; });
+    field(card, "Prelim: eat row label", t.prelim.eat, function (v) { t.prelim.eat = v; });
+    field(card, "Prelim: unit line under the card", t.prelim.perDay, function (v) { t.prelim.perDay = v; });
+    field(card, "Prelim: maintainer title — {burn} is computed", t.prelim.keepTitle, function (v) { t.prelim.keepTitle = v; });
+    return card;
+  }
+
+  // The sections take turns beside a sub-nav; the save bar below them is for all of them.
   var obSec = "welcome";
-  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"]];
+  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"]];
 
   function renderObNav() {
     var nav = $("ob-nav");
@@ -1248,6 +1305,8 @@ details.how p { margin-top: 8px; }
     one("welcome", welcomeCard);
     one("building", buildingCard);
     one("summary", summaryCard);
+    one("ui", uiCard);
+    one("beats", beatsCard);
     renderObNav();
     if (fresh) saved = JSON.parse(JSON.stringify(content));
     unsaved();

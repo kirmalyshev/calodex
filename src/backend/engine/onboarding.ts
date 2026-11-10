@@ -382,10 +382,21 @@ export interface OnboardingExperimentView {
 /** Every experiment with its per-variant funnel — the admin's list. */
 export async function onboardingExperiments(deps: EngineDeps): Promise<OnboardingExperimentView[]> {
   const list = await deps.store.listOnboardingExperiments();
+  // The fill exists for DRAFTS, whose arms the editor opens: a draft written before a content
+  // block existed would throw in `uiCard()`/`beatsCard()` and fail its save, so it is read
+  // through the same block-by-block fill a phone gets — with the arm's OWN version kept, because
+  // the funnel row keys on it. A running arm comes back exactly as stored: what it served is the
+  // truth the admin is looking at.
+  const stored = list.some((e) => e.status === "draft") ? await deps.store.getOnboardingContent() : null;
   const out: OnboardingExperimentView[] = [];
   for (const experiment of list) {
+    const control = experiment.status === "draft" ? usableContentFor(experiment.lang, stored) : null;
     const funnel = await deps.store.onboardingExperimentFunnel(experiment.id);
     const arms = experiment.variants.map((variant) => {
+      if (control !== null) {
+        const filled = usableContent(variant.content, control);
+        variant = { ...variant, content: { ...filled, version: variant.content?.version ?? filled.version } };
+      }
       const row = funnel.find((r) => r.variant_id === variant.content.version);
       // INTENTION TO TREAT: the rate is per ASSIGNED user — completed_users / assigned — not per
       // session, or a restart would inflate the denominator.
@@ -573,12 +584,15 @@ export async function addOnboardingVariant(
   const control = experiment.variants.find((v) => v.control) ?? experiment.variants[0];
   if (!control) return { ok: false, errors: ["the experiment has no control to clone"] };
   // A clone gets its own version: two arms naming one revision would be indistinguishable in the
-  // funnel, where content_version IS the variant's name.
+  // funnel, where content_version IS the variant's name. The clone is usable-first: a control
+  // written before a content block existed produces an arm the editor cannot open and the
+  // validator cannot save (ieat-app#2757).
   const floor = compiledContentFor(experiment.lang).version + 1;
   const version = await deps.store.bumpOnboardingContentVersion(floor);
+  const content = usableContent(structuredClone(control.content), compiledContentFor(experiment.lang));
   experiment.variants = [
     ...experiment.variants,
-    { weight: control.weight, content: { ...structuredClone(control.content), version } },
+    { weight: control.weight, content: { ...content, version } },
   ];
   const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
   return wrote

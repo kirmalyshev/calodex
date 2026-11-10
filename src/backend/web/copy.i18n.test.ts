@@ -157,8 +157,8 @@ describe("the language picker on the plan page", () => {
     const de = question({
       prompt: promptById("birth_year")!,
       profile: blankProfile("t", "de"),
-      content: DEFAULT_ONBOARDING_CONTENT,
-      lines: askLines(promptById("birth_year")!, { content: DEFAULT_ONBOARDING_CONTENT, lang: "de" }, blankProfile("t", "de")),
+      content: onboardingContentFor("de"),
+      lines: askLines(promptById("birth_year")!, { content: onboardingContentFor("de"), lang: "de" }, blankProfile("t", "de")),
       lang: "de",
       units: "metric",
       error: null,
@@ -170,7 +170,7 @@ describe("the language picker on the plan page", () => {
       back: "/start",
       today: new Date("2025-01-01T00:00:00Z"),
     });
-    expect(de).toContain(chatCopyFor("de").continueLabel);
+    expect(de).toContain(onboardingContentFor("de").ui.continueLabel);
     expect(de).not.toContain(">Continue<");
   });
 });

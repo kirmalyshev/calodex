@@ -13,7 +13,7 @@ import {
   suggestionFirst, LANGS, type CountryCode,
   type CountrySignals,
   REPORTABLE_FIELDS, SCREEN_FIELDS, disabledScreens,
-  WELCOME_IMAGE_KEYS, onboardingContentFor, screenForStep, usableContent, validateOnboardingContent,
+  WELCOME_IMAGE_KEYS, onboardingContentFor, screenForStep, usableContent, usableContentFor, validateOnboardingContent,
   type OnboardingContent, type Profile,
 } from "./index.ts";
 
@@ -430,6 +430,71 @@ describe("validation allows what an admin is meant to do", () => {
       x.screens.find((s) => s.id === "activity")!.options!.some!.hint = "";
       return x;
     });
+  });
+});
+
+describe("the blocks around the questions (ieat-app#2757)", () => {
+  const bad = (mutate: (c: OnboardingContent) => unknown) => {
+    const result = validateOnboardingContent(mutate(clone(DEFAULT_ONBOARDING_CONTENT)));
+    expect(result.ok).toBe(false);
+    return result.ok ? [] : result.errors;
+  };
+  const good = (mutate: (c: OnboardingContent) => OnboardingContent) => {
+    const result = validateOnboardingContent(mutate(clone(DEFAULT_ONBOARDING_CONTENT)));
+    if (!result.ok) throw new Error(result.errors.join("\n"));
+    return result.content;
+  };
+  it("refuses a missing or emptied required ui word", () => {
+    expect(bad((c) => { delete (c as { ui?: unknown }).ui; return c; }).join(" ")).toContain("ui is required");
+    expect(bad((c) => { c.ui.continueLabel = ""; return c; }).join(" ")).toContain("ui.continueLabel");
+    expect(bad((c) => { c.ui.stepper.more = ""; return c; }).join(" ")).toContain("ui.stepper.more");
+    expect(bad((c) => { c.ui.units.yearsCount.other = ""; return c; }).join(" ")).toContain("yearsCount.other");
+  });
+
+  it("lets the hideable beats lines be empty, never the required tables", () => {
+    good((c) => { c.beats.ageWhy = ""; c.beats.echo.rest = ""; c.beats.echo.days = ""; return c; });
+    expect(bad((c) => { c.beats.baseline.title = ""; return c; }).join(" ")).toContain("beats.baseline.title");
+    expect(bad((c) => { c.beats.prelim.eat = ""; return c; }).join(" ")).toContain("beats.prelim.eat");
+    expect(bad((c) => { delete (c as { beats?: unknown }).beats; return c; }).join(" ")).toContain("beats is required");
+  });
+
+  it("refuses a plural category that is not one, and keys nobody reads", () => {
+    expect(bad((c) => { (c.ui.units.yearsCount as unknown as Record<string, unknown>).singular = "{n} year"; return c; }).join(" "))
+      .toContain("yearsCount.singular");
+    expect(bad((c) => { (c.ui as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("ui.bogus");
+    expect(bad((c) => { (c.ui.units as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("ui.units.bogus");
+    expect(bad((c) => { (c.beats as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("beats.bogus");
+    expect(bad((c) => { (c.beats.echo as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("beats.echo.bogus");
+  });
+
+  it("refuses a template that drops the number code fills, and one that invents a placeholder", () => {
+    expect(bad((c) => { c.ui.units.yearsCount.other = "years"; return c; }).join(" ")).toContain("{n}");
+    expect(bad((c) => { c.beats.prelim.gap = "your pace"; return c; }).join(" ")).toContain("{delta}");
+    expect(bad((c) => { c.beats.prelim.keepTitle = "you burn"; return c; }).join(" ")).toContain("{burn}");
+    expect(bad((c) => { c.beats.echo.rest = "{bogus}"; return c; }).join(" ")).toContain("{bogus}");
+    expect(bad((c) => { c.beats.echo.days = "quiet"; return c; }).join(" ")).toContain("{burn}");
+    expect(bad((c) => { c.ui.continueLabel = "Go {now}"; return c; }).join(" ")).toContain("{now}");
+  });
+
+  it("keeps a stored pre-v24 revision's own blocks and fills ui/beats from this binary's language", () => {
+    const stored = clone(onboardingContentFor("de"));
+    stored.version = 20;
+    delete (stored as { ui?: unknown }).ui;
+    delete (stored as { beats?: unknown }).beats;
+    stored.summary.cta = "Admin's own German words";
+    const served = usableContentFor("de", { de: stored });
+    expect(served.ui).toEqual(onboardingContentFor("de").ui);
+    expect(served.beats).toEqual(onboardingContentFor("de").beats);
+    expect(served.summary.cta).toBe("Admin's own German words");
+    expect(served.version).toBe(20);
+  });
+
+  it("falls the ui block back when a stored revision emptied a required key", () => {
+    const stored = clone(DEFAULT_ONBOARDING_CONTENT);
+    stored.ui.continueLabel = "";
+    stored.ui.idlePlaceholder = "Admin's own";
+    const served = usableContent(stored);
+    expect(served.ui).toEqual(DEFAULT_ONBOARDING_CONTENT.ui);
   });
 });
 

@@ -5446,6 +5446,34 @@
           }
         ]
       },
+      "CountForms": {
+        "type": "object",
+        "properties": {
+          "zero": {
+            "type": "string"
+          },
+          "one": {
+            "type": "string"
+          },
+          "two": {
+            "type": "string"
+          },
+          "few": {
+            "type": "string"
+          },
+          "many": {
+            "type": "string"
+          },
+          "other": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "other"
+        ],
+        "additionalProperties": false,
+        "description": "The forms one counted noun needs, keyed by CLDR plural category. `other` is required because every language has it and it is the fallback for a category the writer did not fill; the rest are only the ones the language's own grammar asks for (`vi` and `id` have just `other`, `ru` carries `one`/`few`/`many`). A WHOLE template per form — \"{n} days\", never a word stapled onto a number — so the sentence's word order is the translator's, as every template here is."
+      },
       "CountedBefore": {
         "type": "string",
         "enum": [
@@ -8162,6 +8190,94 @@
         "additionalProperties": false,
         "description": "What Spud says to pose ONE question, and what the input looks like while it is open.\n\n`lines` is a list because Spud sends bubbles, not paragraphs: \"A little about you, for the calorie formula. Which fits you?\" is one bubble, and the age that follows it is another. One entry, one bubble. The FIRST line is the question and is required; a later line may be empty, and an empty line renders nothing (ieat-app#2756)."
       },
+      "OnboardingBeatsContent": {
+        "type": "object",
+        "properties": {
+          "ageWhy": {
+            "type": "string",
+            "description": "Under the age question: why it is asked. May be empty (hidden)."
+          },
+          "echo": {
+            "type": "object",
+            "properties": {
+              "rest": {
+                "type": "string"
+              },
+              "days": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "rest",
+              "days"
+            ],
+            "additionalProperties": false,
+            "description": "The answers said back as burn numbers under later questions — `{rest}`/`{burn}` are computed kcal, never typed. Either may be empty (hidden)."
+          },
+          "baseline": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "bmi": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "bmi",
+              "what"
+            ],
+            "additionalProperties": false,
+            "description": "The BMI beat's words. The band labels stay code (`bmiRangeLabel`, shared with Progress) — only the title, the \"BMI\" glyph and the one-line explanation move."
+          },
+          "prelim": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "burn": {
+                "type": "string"
+              },
+              "gap": {
+                "type": "string"
+              },
+              "eat": {
+                "type": "string"
+              },
+              "perDay": {
+                "type": "string"
+              },
+              "keepTitle": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "burn",
+              "gap",
+              "eat",
+              "perDay",
+              "keepTitle"
+            ],
+            "additionalProperties": false,
+            "description": "The mid-journey plan beat: burn vs the plan's kcal, the gap named as the pace. `{delta}`/`{burn}` are computed."
+          }
+        },
+        "required": [
+          "ageWhy",
+          "echo",
+          "baseline",
+          "prelim"
+        ],
+        "additionalProperties": false,
+        "description": "The beats between the questions — the explainers that ask nothing (ieat-app#2757). `ageWhy` and `echo` are optional and may hide: an empty string renders nothing (ieat-app#2756). The rest are required — a beat with no words is a dead screen."
+      },
       "OnboardingBuildingContent": {
         "type": "object",
         "properties": {
@@ -8267,6 +8383,12 @@
           },
           "summary": {
             "$ref": "#/components/schemas/OnboardingSummaryContent"
+          },
+          "ui": {
+            "$ref": "#/components/schemas/OnboardingUiContent"
+          },
+          "beats": {
+            "$ref": "#/components/schemas/OnboardingBeatsContent"
           }
         },
         "required": [
@@ -8274,7 +8396,9 @@
           "welcome",
           "screens",
           "building",
-          "summary"
+          "summary",
+          "ui",
+          "beats"
         ],
         "additionalProperties": false
       },
@@ -8523,6 +8647,75 @@
         ],
         "additionalProperties": false,
         "description": "The payoff — the plan card. Editable too, because it is the most-read thing in the flow."
+      },
+      "OnboardingUiContent": {
+        "type": "object",
+        "properties": {
+          "continueLabel": {
+            "type": "string",
+            "description": "The one button under every screen that answers something."
+          },
+          "saveKept": {
+            "type": "string",
+            "description": "A failed answer save: the answer is still on screen, Continue sends it again."
+          },
+          "idlePlaceholder": {
+            "type": "string",
+            "description": "The composer's idle placeholder on the surfaces that have one (the web's)."
+          },
+          "optionContinues": {
+            "type": "string",
+            "description": "VoiceOver's hint on a row whose tap IS the answer — activation also advances."
+          },
+          "stepper": {
+            "type": "object",
+            "properties": {
+              "less": {
+                "type": "string"
+              },
+              "more": {
+                "type": "string"
+              },
+              "continue": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "less",
+              "more",
+              "continue"
+            ],
+            "additionalProperties": false,
+            "description": "The steppers' spoken −/+ and the stepper's own button."
+          },
+          "units": {
+            "type": "object",
+            "properties": {
+              "years": {
+                "type": "string"
+              },
+              "yearsCount": {
+                "$ref": "#/components/schemas/CountForms"
+              }
+            },
+            "required": [
+              "years",
+              "yearsCount"
+            ],
+            "additionalProperties": false,
+            "description": "The unit word beside a wheel's numeral — \"32 years\". `yearsCount` is the same word as a whole counted template — the wheel's rows, where a language declines it per number."
+          }
+        },
+        "required": [
+          "continueLabel",
+          "saveKept",
+          "idlePlaceholder",
+          "optionContinues",
+          "stepper",
+          "units"
+        ],
+        "additionalProperties": false,
+        "description": "The words around the questions the screens themselves need — the one Continue, the failed-save line, the pickers' spoken labels and the wheel's unit word (ieat-app#2757). REQUIRED, every one: an empty Continue is a door with no handle."
       },
       "OnboardingWelcomeContent": {
         "type": "object",
