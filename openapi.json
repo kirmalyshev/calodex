@@ -8395,6 +8395,9 @@
           },
           "pace": {
             "$ref": "#/components/schemas/OnboardingPaceContent"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/OnboardingPlanContent"
           }
         },
         "required": [
@@ -8406,7 +8409,8 @@
           "ui",
           "beats",
           "target",
-          "pace"
+          "pace",
+          "plan"
         ],
         "additionalProperties": false
       },
@@ -8568,6 +8572,173 @@
             "$ref": "#/components/schemas/OnboardingInterstitial"
           }
         ]
+      },
+      "OnboardingPlanContent": {
+        "type": "object",
+        "properties": {
+          "weightTitle": {
+            "type": "string",
+            "description": "\"Your weight\" / \"Every day\" / \"Your info\" / \"Based on your answers\" — the card titles."
+          },
+          "everyDay": {
+            "type": "string"
+          },
+          "infoTitle": {
+            "type": "string"
+          },
+          "basedOn": {
+            "type": "string"
+          },
+          "changeAnytime": {
+            "type": "string",
+            "description": "\"You can change this anytime\" — may be empty (hidden)."
+          },
+          "goal": {
+            "type": "object",
+            "properties": {
+              "lose": {
+                "type": "string"
+              },
+              "gain": {
+                "type": "string"
+              },
+              "maintain": {
+                "type": "string"
+              },
+              "maintainRange": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lose",
+              "gain",
+              "maintain",
+              "maintainRange"
+            ],
+            "additionalProperties": false,
+            "description": "The headline's four shapes — `{kg}`/`{month}`/`{range}` are computed. `maintain` is the ONE maintain title, deduped from `planCopyFor.goalStay` and `chatCopyFor.plan.goalMaintain`."
+          },
+          "info": {
+            "type": "object",
+            "properties": {
+              "startWeight": {
+                "type": "string"
+              },
+              "goalWeight": {
+                "type": "string"
+              },
+              "activity": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetLose": {
+                "type": "string"
+              },
+              "targetGain": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "startWeight",
+              "goalWeight",
+              "activity",
+              "target",
+              "targetLose",
+              "targetGain"
+            ],
+            "additionalProperties": false,
+            "description": "The answers card's rows — `{kg}`/`{month}` computed on the target row's value."
+          },
+          "satFat": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "asked": {
+                "type": "string"
+              },
+              "perDay": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "asked",
+              "perDay"
+            ],
+            "additionalProperties": false,
+            "description": "The declared saturated-fat limit — `{g}` formatted."
+          },
+          "first": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "step": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "step"
+            ],
+            "additionalProperties": false,
+            "description": "The last card — `{kcal}` is the day's target."
+          },
+          "loader": {
+            "type": "object",
+            "properties": {
+              "goal": {
+                "type": "string"
+              },
+              "lose": {
+                "type": "string"
+              },
+              "gain": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "goal",
+              "lose",
+              "gain"
+            ],
+            "additionalProperties": false,
+            "description": "The loader's goal caption — `{kg}`/`{month}` computed."
+          },
+          "chart": {
+            "type": "object",
+            "properties": {
+              "estimateAria": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "estimateAria"
+            ],
+            "additionalProperties": false,
+            "description": "The journey chart's aria name — `{from}`/`{to}`/`{month}` are the endpoints and the month."
+          }
+        },
+        "required": [
+          "weightTitle",
+          "everyDay",
+          "infoTitle",
+          "basedOn",
+          "changeAnytime",
+          "goal",
+          "info",
+          "satFat",
+          "first",
+          "loader",
+          "chart"
+        ],
+        "additionalProperties": false,
+        "description": "The plan screen's words (ieat-app#2757) — the card titles, the goal headline in its four shapes, the answers card's rows, the sat-fat declaration, the first-step card, the loader's caption and the journey chart's aria name. `changeAnytime` may be empty and renders nothing (ieat-app#2756). The waterfall's own words (`howCalc`, the bar names, `method`/`methodSource`) stay code — shared with the You screen and bound to `explainTargets`. `planCopyFor.goalLine` is dead copy and did not move."
       },
       "OnboardingScreenContent": {
         "type": "object",

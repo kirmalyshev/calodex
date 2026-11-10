@@ -39,6 +39,7 @@ const sec = (n: number): string => `${+n.toFixed(2)}s`;
 export function plan(v: PlanView): string {
   const PAGE_COPY = pageCopyFor(v.lang);
   const COPY = planCopyFor(v.lang);
+  const P = v.content.plan;
   const maintain = v.profile.goal === "maintain";
   const arrives = !maintain && v.projection !== null && !v.projection.beyondHorizon;
   const bars = maintain ? null : planWaterfall(v.basis, v.targets.kcal);
@@ -46,8 +47,8 @@ export function plan(v: PlanView): string {
   const left = arrives ? journeyCard(v, COPY) : balance ? balanceCard(v, COPY, balance) : "";
   const goal = goalWords(v, COPY);
   const headline = maintain
-    ? fill(COPY.goalStay, { kg: weightDisplay(v.profile.weight_kg!, v.profile.units, v.lang) })
-    : goal ? fill(v.profile.goal === "gain" ? COPY.goalGain : COPY.goalLose, goal)
+    ? fill(P.goal.maintain, { kg: weightDisplay(v.profile.weight_kg!, v.profile.units, v.lang) })
+    : goal ? fill(v.profile.goal === "gain" ? P.goal.gain : P.goal.lose, goal)
     : v.content.summary.lines[0] ?? "";
 
   // Everything on the page plays AFTER the loader (17): one offset, added to every delay.
@@ -107,7 +108,7 @@ function loader(v: PlanView, COPY: ReturnType<typeof planCopyFor>, goal: { kg: s
     [s.macros.protein, `${n(v.targets.protein_g)}${gram}`],
     [s.macros.carbs, `${n(v.targets.carbs_g)}${gram}`],
     [s.macros.fat, `${n(v.targets.fat_g)}${gram}`],
-    ...(goal ? [[COPY.yourGoal, fill(v.profile.goal === "gain" ? COPY.loaderGain : COPY.loaderLose, goal)]] : []),
+    ...(goal ? [[v.content.plan.loader.goal, fill(v.profile.goal === "gain" ? v.content.plan.loader.gain : v.content.plan.loader.lose, goal)]] : []),
   ];
   const caps = rows.map(([k, val]) => `<p>${escape(k!)} · <b>${escape(val!)}</b></p>`).join("");
   return `<div class="ld" aria-hidden="true" style="--t:${sec(LOADER_S)};--rows:${rows.length}">
@@ -125,7 +126,8 @@ function everyDayCard(v: PlanView, COPY: ReturnType<typeof planCopyFor>): string
   const gram = spellUnit(v.lang, "g");
   const tile = (icon: string, figure: string, label: string) =>
     `<div><i class="ico i-${icon}"></i><b class="num">${escape(figure)}</b><span>${escape(label)}</span></div>`;
-  return `<div class="card ed rise" style="--d:.5s"><p class="ct">${escape(COPY.everyDay)}</p><p class="cs">${escape(COPY.changeAnytime)}</p>
+  const note = v.content.plan.changeAnytime ? `<p class="cs">${escape(v.content.plan.changeAnytime)}</p>` : "";
+  return `<div class="card ed rise" style="--d:.5s"><p class="ct">${escape(v.content.plan.everyDay)}</p>${note}
 <div class="kcb"><span class="tile"><i class="ico i-kcal"></i></span><div><b class="count num" style="--to:${Math.round(v.targets.kcal)};--d:.6s;animation-duration:1.2s"></b><span>${escape(spellUnit(v.lang, "kcal"))}</span></div></div>
 <div class="mt">${tile("protein", `${n(v.targets.protein_g)}${gram}`, summary.macros.protein)}${tile("carbs", `${n(v.targets.carbs_g)}${gram}`, summary.macros.carbs)}${tile("fat", `${n(v.targets.fat_g)}${gram}`, summary.macros.fat)}</div>
 </div>`;
@@ -140,19 +142,19 @@ function infoCard(v: PlanView, COPY: ReturnType<typeof planCopyFor>, goal: { kg:
   const row = (glyph: string, label: string, value: string | null) => value === null ? "" :
     `<div class="pir"><span class="pg" aria-hidden="true">${glyph}</span><div><span>${escape(label)}:</span> ${escape(value)}</div></div>`;
   const satfat = v.targets.satfat_g;
-  return `<div class="card rise" style="--d:.7s"><p class="ct">${escape(COPY.infoTitle)}</p><p class="cs2">${escape(COPY.basedOn)}</p><div class="pib">
-${row("👤", COPY.startWeight, p.weight_kg != null ? weightDisplay(p.weight_kg, p.units, v.lang) : null)}
-${row("🚩", COPY.goalWeight, p.goal !== "maintain" && p.target_weight_kg != null ? weightDisplay(p.target_weight_kg, p.units, v.lang) : null)}
-${row("🚶", COPY.activity, activity)}
-${row("🎯", COPY.target, goal ? fill(p.goal === "gain" ? COPY.targetGain : COPY.targetLose, goal) : null)}
-${row("🧈", COPY.satFatAsked, satfat !== undefined && satfat !== null ? fill(COPY.satFatPerDay, { g: `${n(satfat)}${spellUnit(v.lang, "g")}` }) : null)}
+  return `<div class="card rise" style="--d:.7s"><p class="ct">${escape(v.content.plan.infoTitle)}</p><p class="cs2">${escape(v.content.plan.basedOn)}</p><div class="pib">
+${row("👤", v.content.plan.info.startWeight, p.weight_kg != null ? weightDisplay(p.weight_kg, p.units, v.lang) : null)}
+${row("🚩", v.content.plan.info.goalWeight, p.goal !== "maintain" && p.target_weight_kg != null ? weightDisplay(p.target_weight_kg, p.units, v.lang) : null)}
+${row("🚶", v.content.plan.info.activity, activity)}
+${row("🎯", v.content.plan.info.target, goal ? fill(p.goal === "gain" ? v.content.plan.info.targetGain : v.content.plan.info.targetLose, goal) : null)}
+${row("🧈", v.content.plan.satFat.asked, satfat !== undefined && satfat !== null ? fill(v.content.plan.satFat.perDay, { g: `${n(satfat)}${spellUnit(v.lang, "g")}` }) : null)}
 </div></div>`;
 }
 
 /** The first step (18b): the one habit the plan opens on, carrying the day's real target. */
 function firstCard(v: PlanView, COPY: ReturnType<typeof planCopyFor>): string {
-  return `<div class="card rise" style="--d:.8s"><p class="ct">${escape(COPY.firstTitle)}</p><div class="st">
-<div class="sr"><span class="ti"><img src="${IMG_URL_DIR}/salmon-sq.webp" alt="" aria-hidden="true"></span>${escape(fill(COPY.firstStep, { kcal: kcalNumbers(v.lang)(v.targets.kcal) }))}</div>
+  return `<div class="card rise" style="--d:.8s"><p class="ct">${escape(v.content.plan.first.title)}</p><div class="st">
+<div class="sr"><span class="ti"><img src="${IMG_URL_DIR}/salmon-sq.webp" alt="" aria-hidden="true"></span>${escape(fill(v.content.plan.first.step, { kcal: kcalNumbers(v.lang)(v.targets.kcal) }))}</div>
 </div></div>`;
 }
 
@@ -200,7 +202,7 @@ function journeyCard(v: PlanView, COPY: ReturnType<typeof planCopyFor>): string 
     return `${line}<text class="fade ax${t.kind === "end" ? " end" : ""}" style="--d:${sec(t.delay)}" x="${x}" y="${j.axisY}"${anchor}>${escape(label)}</text>`;
   }).join("");
   return `<div class="card jc rise" style="--d:.3s">
-<p class="ct">${escape(COPY.weightTitle)}</p>
+<p class="ct">${escape(v.content.plan.weightTitle)}</p>
 <div class="jg"><svg class="pgraph" viewBox="${j.viewBox}" width="100%" role="img" aria-label="${escape(aria)}">
 <defs><linearGradient id="pj" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.18"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>
 <path d="${j.areaPath}" fill="url(#pj)" class="fade" style="--d:${sec(T.fill.delay)};animation-duration:${sec(T.fill.duration)}"/>
@@ -224,8 +226,8 @@ function balanceCard(v: PlanView, COPY: ReturnType<typeof planCopyFor>, b: NonNu
   const seg = (flex: number, delay: number, dur: number, cls: string, text: string) =>
     `<i class="gx ${cls}" style="--d:${sec(delay)};animation-duration:${sec(dur)};flex:${flex}">${escape(text)}</i>`;
   return `<div class="card jc">
-<b class="d d22 goal">${escape(fill(COPY.goalStay, { kg: weightDisplay(v.profile.weight_kg!, v.profile.units, v.lang) }))}</b>
-<div class="t13 m">${escape(fill(COPY.goalRange, { range: maintainRange(v.profile.weight_kg!, v.profile.units, v.lang) }))}</div>
+<b class="d d22 goal">${escape(fill(v.content.plan.goal.maintain, { kg: weightDisplay(v.profile.weight_kg!, v.profile.units, v.lang) }))}</b>
+<div class="t13 m">${escape(fill(v.content.plan.goal.maintainRange, { range: maintainRange(v.profile.weight_kg!, v.profile.units, v.lang) }))}</div>
 <div class="bal">
 <span class="t13 semi">${escape(COPY.youBurn)}</span>
 <div class="brow" style="width:${pct(b.share.burn)}">${seg(b.burn.rest, dRest, 0.6, "rest", kn(b.burn.rest))}${seg(b.burn.days, dDays, 0.3, "days", sn(b.burn.days))}</div>

@@ -479,6 +479,39 @@ export interface OnboardingPaceContent {
   echo: string;
 }
 
+/**
+ * The plan screen's words (ieat-app#2757) — the card titles, the goal headline in its four shapes,
+ * the answers card's rows, the sat-fat declaration, the first-step card, the loader's caption and
+ * the journey chart's aria name. `changeAnytime` may be empty and renders nothing (ieat-app#2756).
+ * The waterfall's own words (`howCalc`, the bar names, `method`/`methodSource`) stay code — shared
+ * with the You screen and bound to `explainTargets`. `planCopyFor.goalLine` is dead copy and did
+ * not move.
+ */
+export interface OnboardingPlanContent {
+  /** "Your weight" / "Every day" / "Your info" / "Based on your answers" — the card titles. */
+  weightTitle: string;
+  everyDay: string;
+  infoTitle: string;
+  basedOn: string;
+  /** "You can change this anytime" — may be empty (hidden). */
+  changeAnytime: string;
+  /**
+   * The headline's four shapes — `{kg}`/`{month}`/`{range}` are computed. `maintain` is the ONE
+   * maintain title, deduped from `planCopyFor.goalStay` and `chatCopyFor.plan.goalMaintain`.
+   */
+  goal: { lose: string; gain: string; maintain: string; maintainRange: string };
+  /** The answers card's rows — `{kg}`/`{month}` computed on the target row's value. */
+  info: { startWeight: string; goalWeight: string; activity: string; target: string; targetLose: string; targetGain: string };
+  /** The declared saturated-fat limit — `{g}` formatted. */
+  satFat: { label: string; asked: string; perDay: string };
+  /** The last card — `{kcal}` is the day's target. */
+  first: { title: string; step: string };
+  /** The loader's goal caption — `{kg}`/`{month}` computed. */
+  loader: { goal: string; lose: string; gain: string };
+  /** The journey chart's aria name — `{from}`/`{to}`/`{month}` are the endpoints and the month. */
+  chart: { estimateAria: string };
+}
+
 export interface OnboardingContent {
   /**
    * Bumped on every admin save.
@@ -496,6 +529,7 @@ export interface OnboardingContent {
   beats: OnboardingBeatsContent;
   target: OnboardingTargetContent;
   pace: OnboardingPaceContent;
+  plan: OnboardingPlanContent;
 }
 
 /**
@@ -935,7 +969,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
   // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
   // revision may never reuse a number that was already issued.
-  version: 25,
+  version: 26,
   welcome: {
     lines: [],
     cta: "Get started",
@@ -1203,6 +1237,30 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     rateSuffix: "a week",
     result: "{target} around {month} · {kcal}kcal a day",
     echo: "From {from} to {to}.",
+  },
+  plan: {
+    weightTitle: "Your weight",
+    everyDay: "Every day",
+    infoTitle: "Your info",
+    basedOn: "Based on your answers",
+    changeAnytime: "You can change this anytime",
+    goal: {
+      lose: "Goal: lose {kg} by {month}",
+      gain: "Goal: gain {kg} by {month}",
+      maintain: "Goal: stay around {kg}",
+      maintainRange: "Range: {range}",
+    },
+    info: {
+      startWeight: "Starting weight", goalWeight: "Goal weight", activity: "Activity",
+      target: "Target", targetLose: "lose {kg} by {month}", targetGain: "gain {kg} by {month}",
+    },
+    satFat: { label: "Saturated fat", asked: "Saturated fat · you asked", perDay: "≤ {g} a day" },
+    first: {
+      title: "Your first step",
+      step: "Photograph your next meal. eait checks it against {kcal}kcal.",
+    },
+    loader: { goal: "Your goal", lose: "−{kg} by {month}", gain: "+{kg} by {month}" },
+    chart: { estimateAria: "Estimated weight: {from} now, {to} around {month}" },
   },
 };
 
@@ -1624,7 +1682,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
         if (!["down", "up"].includes(k)) push(`target.suggestion.${k} is not a used key`);
       }
       for (const k of ["down", "up"]) {
-        tmpl(suggestion[k], `target.suggestion.${k}`, { required: true, allowed: ["weight", "pct"], requiredPh: ["weight"], max: MAX_LINE });
+        tmpl(suggestion[k], `target.suggestion.${k}`, { required: true, allowed: ["weight", "pct"], requiredPh: ["weight", "pct"], max: MAX_LINE });
       }
     }
   }
@@ -1639,6 +1697,84 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     tmpl(pace.rateSuffix, "pace.rateSuffix", { required: true });
     tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month", "kcal"], requiredPh: ["target", "month", "kcal"], max: MAX_LINE });
     tmpl(pace.echo, "pace.echo", { allowed: ["from", "to"], requiredPh: ["from", "to"], max: MAX_LINE });
+  }
+
+  // The plan screen's own words (ieat-app#2757) — titles, the four goal shapes, the rows, the
+  // loader's caption, the chart's aria. `changeAnytime` may hide; everything else is required.
+  const plan = raw.plan as Record<string, unknown> | undefined;
+  if (typeof plan !== "object" || plan === null) push("plan is required");
+  else {
+    for (const k of Object.keys(plan)) {
+      if (!["weightTitle", "everyDay", "infoTitle", "basedOn", "changeAnytime", "goal", "info", "satFat", "first", "loader", "chart"].includes(k)) {
+        push(`plan.${k} is not a used key`);
+      }
+    }
+    tmpl(plan.weightTitle, "plan.weightTitle", { required: true });
+    tmpl(plan.everyDay, "plan.everyDay", { required: true });
+    tmpl(plan.infoTitle, "plan.infoTitle", { required: true });
+    tmpl(plan.basedOn, "plan.basedOn", { required: true });
+    tmpl(plan.changeAnytime, "plan.changeAnytime", { max: MAX_LINE });
+    const g = plan.goal as Record<string, unknown> | undefined;
+    if (typeof g !== "object" || g === null) push("plan.goal is required");
+    else {
+      for (const k of Object.keys(g)) {
+        if (!["lose", "gain", "maintain", "maintainRange"].includes(k)) push(`plan.goal.${k} is not a used key`);
+      }
+      tmpl(g.lose, "plan.goal.lose", { required: true, allowed: ["kg", "month"], requiredPh: ["kg", "month"], max: MAX_LINE });
+      tmpl(g.gain, "plan.goal.gain", { required: true, allowed: ["kg", "month"], requiredPh: ["kg", "month"], max: MAX_LINE });
+      tmpl(g.maintain, "plan.goal.maintain", { required: true, allowed: ["kg"], requiredPh: ["kg"], max: MAX_LINE });
+      tmpl(g.maintainRange, "plan.goal.maintainRange", { required: true, allowed: ["range"], requiredPh: ["range"], max: MAX_LINE });
+    }
+    const inf = plan.info as Record<string, unknown> | undefined;
+    if (typeof inf !== "object" || inf === null) push("plan.info is required");
+    else {
+      for (const k of Object.keys(inf)) {
+        if (!["startWeight", "goalWeight", "activity", "target", "targetLose", "targetGain"].includes(k)) push(`plan.info.${k} is not a used key`);
+      }
+      tmpl(inf.startWeight, "plan.info.startWeight", { required: true });
+      tmpl(inf.goalWeight, "plan.info.goalWeight", { required: true });
+      tmpl(inf.activity, "plan.info.activity", { required: true });
+      tmpl(inf.target, "plan.info.target", { required: true });
+      tmpl(inf.targetLose, "plan.info.targetLose", { required: true, allowed: ["kg", "month"], requiredPh: ["kg", "month"], max: MAX_LINE });
+      tmpl(inf.targetGain, "plan.info.targetGain", { required: true, allowed: ["kg", "month"], requiredPh: ["kg", "month"], max: MAX_LINE });
+    }
+    const sf = plan.satFat as Record<string, unknown> | undefined;
+    if (typeof sf !== "object" || sf === null) push("plan.satFat is required");
+    else {
+      for (const k of Object.keys(sf)) {
+        if (!["label", "asked", "perDay"].includes(k)) push(`plan.satFat.${k} is not a used key`);
+      }
+      tmpl(sf.label, "plan.satFat.label", { required: true });
+      tmpl(sf.asked, "plan.satFat.asked", { required: true });
+      tmpl(sf.perDay, "plan.satFat.perDay", { required: true, allowed: ["g"], requiredPh: ["g"], max: MAX_LINE });
+    }
+    const fr = plan.first as Record<string, unknown> | undefined;
+    if (typeof fr !== "object" || fr === null) push("plan.first is required");
+    else {
+      for (const k of Object.keys(fr)) {
+        if (!["title", "step"].includes(k)) push(`plan.first.${k} is not a used key`);
+      }
+      tmpl(fr.title, "plan.first.title", { required: true });
+      tmpl(fr.step, "plan.first.step", { required: true, allowed: ["kcal"], requiredPh: ["kcal"], max: MAX_BODY });
+    }
+    const lo = plan.loader as Record<string, unknown> | undefined;
+    if (typeof lo !== "object" || lo === null) push("plan.loader is required");
+    else {
+      for (const k of Object.keys(lo)) {
+        if (!["goal", "lose", "gain"].includes(k)) push(`plan.loader.${k} is not a used key`);
+      }
+      tmpl(lo.goal, "plan.loader.goal", { required: true });
+      tmpl(lo.lose, "plan.loader.lose", { required: true, allowed: ["kg", "month"], requiredPh: ["kg", "month"], max: MAX_LINE });
+      tmpl(lo.gain, "plan.loader.gain", { required: true, allowed: ["kg", "month"], requiredPh: ["kg", "month"], max: MAX_LINE });
+    }
+    const ch = plan.chart as Record<string, unknown> | undefined;
+    if (typeof ch !== "object" || ch === null) push("plan.chart is required");
+    else {
+      for (const k of Object.keys(ch)) {
+        if (!["estimateAria"].includes(k)) push(`plan.chart.${k} is not a used key`);
+      }
+      tmpl(ch.estimateAria, "plan.chart.estimateAria", { required: true, allowed: ["from", "to", "month"], requiredPh: ["from", "to", "month"], max: MAX_BODY });
+    }
   }
 
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
@@ -1671,6 +1807,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       beats: raw.beats as OnboardingBeatsContent,
       target: raw.target as OnboardingTargetContent,
       pace: raw.pace as OnboardingPaceContent,
+      plan: raw.plan as OnboardingPlanContent,
     },
   };
 }
@@ -1757,6 +1894,7 @@ export function usableContent(
     beats: usableBeats(c.beats) ? c.beats : fallback.beats,
     target: usableTarget(c.target) ? c.target : fallback.target,
     pace: usablePace(c.pace) ? c.pace : fallback.pace,
+    plan: usablePlan(c.plan) ? c.plan : fallback.plan,
   };
 }
 
@@ -1799,6 +1937,19 @@ function usableTarget(t: OnboardingTargetContent | undefined): t is OnboardingTa
 function usablePace(p: OnboardingPaceContent | undefined): p is OnboardingPaceContent {
   if (typeof p !== "object" || p === null) return false;
   return hasKeys(p, ["rate", "rateSuffix", "result"]) && typeof p.echo === "string";
+}
+
+/** The plan screen's words — required titles, rows and lines whole; `changeAnytime` only needs to be a string. */
+function usablePlan(p: OnboardingPlanContent | undefined): p is OnboardingPlanContent {
+  if (typeof p !== "object" || p === null) return false;
+  return hasKeys(p, ["weightTitle", "everyDay", "infoTitle", "basedOn"])
+    && typeof p.changeAnytime === "string"
+    && hasKeys(p.goal, ["lose", "gain", "maintain", "maintainRange"])
+    && hasKeys(p.info, ["startWeight", "goalWeight", "activity", "target", "targetLose", "targetGain"])
+    && hasKeys(p.satFat, ["label", "asked", "perDay"])
+    && hasKeys(p.first, ["title", "step"])
+    && hasKeys(p.loader, ["goal", "lose", "gain"])
+    && hasKeys(p.chart, ["estimateAria"]);
 }
 
 /** A nested string table — `building.rows`, `summary.macros` — with every key present and set. */
