@@ -304,6 +304,17 @@ describe("validation refuses what would break the app", () => {
     }).join(" ")).toContain("welcome.cta");
   });
 
+  it("reports every problem at once, not the first", () => {
+    const errors = bad((c) => {
+      c.screens[0]!.asks.goal!.lines = [""];
+      c.welcome.cta = "";
+      return c;
+    });
+    expect(errors.length).toBeGreaterThan(1);
+    expect(errors.join(" ")).toContain("lines[0]");
+    expect(errors.join(" ")).toContain("welcome.cta");
+  });
+
   it("junk", () => {
     expect(validateOnboardingContent(null).ok).toBe(false);
     expect(validateOnboardingContent("nope").ok).toBe(false);
