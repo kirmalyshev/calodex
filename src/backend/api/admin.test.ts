@@ -294,7 +294,7 @@ describe("editing the copy", () => {
 
   it("422s an interstitial the app could not render", async () => {
     const content = structuredClone(DEFAULT_ONBOARDING_CONTENT);
-    content.welcome.lines = [];
+    content.welcome.lines = ["x".repeat(400)];
 
     const res = await admin("PUT", "/admin/api/content", { content });
     expect(res.status).toBe(422);

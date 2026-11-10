@@ -266,7 +266,8 @@ export interface OnboardingOptionContent {
  *
  * `lines` is a list because Spud sends bubbles, not paragraphs: "A little about you, for the
  * calorie formula. Which fits you?" is one bubble, and the age that follows it is another.
- * One entry, one bubble.
+ * One entry, one bubble. The FIRST line is the question and is required; a later line may be
+ * empty, and an empty line renders nothing (ieat-app#2756).
  */
 export interface OnboardingAskContent {
   lines: string[];
@@ -333,9 +334,9 @@ export interface OnboardingScreenContent {
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
 export interface OnboardingWelcomeContent {
-  /** The headline, then its subtitle (ieat-app#2050): "A plan built around you" / "Your goal, your day, your meals". */
+  /** The headline, then its subtitle (ieat-app#2050). May be EMPTY or hold empty lines — an empty line renders nothing (ieat-app#2756). */
   lines: string[];
-  /** The primary button — "Start". */
+  /** The primary button — "Get started". */
   cta: string;
   /** The second door — "I already have an account". */
   signin: string;
@@ -850,11 +851,12 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   // retires it and every language falls back to this. Same bump for the welcome line, "Height",
   // "Your weight" and "Where do you eat?" — different words under the same number is the average
   // the counter exists to prevent. v19 (eait#726): the age headline is "Your age?" — same
-  // question, new words, same reason to bump.
-  version: 19,
+  // question, new words, same reason to bump. v20 (ieat-app#2756): the welcome drops its
+  // headline — `lines` may be empty, and the button is "Get started".
+  version: 20,
   welcome: {
-    lines: ["Count calories with a photo"],
-    cta: "Start",
+    lines: [],
+    cta: "Get started",
     signin: "I already have an account",
   },
   screens: [
@@ -1175,6 +1177,11 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     else if (v.length > max) push(`${at} is over ${max} characters`);
   };
 
+  /** A line that may hide: a string under the cap, empty allowed — an empty line renders nothing (ieat-app#2756). */
+  const optLine = (v: unknown, at: string) => {
+    if (!isStr(v) || v.length > MAX_LINE) push(`${at} must be a string under ${MAX_LINE} characters`);
+  };
+
   /** A list of Spud bubbles: one to `max`, each a real sentence. */
   const bubbles = (v: unknown, at: string, max: number) => {
     if (!Array.isArray(v) || v.length < 1 || v.length > max) {
@@ -1182,6 +1189,25 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       return;
     }
     for (const [i, line] of v.entries()) str(line, `${at}[${i}]`, MAX_LINE);
+  };
+
+  /** A question's bubbles: the FIRST line is the question and stays required; the rest are subtitles that may hide. */
+  const askBubbles = (v: unknown, at: string, max: number) => {
+    if (!Array.isArray(v) || v.length < 1 || v.length > max) {
+      push(`${at} must be 1 to ${max} lines`);
+      return;
+    }
+    str(v[0], `${at}[0]`, MAX_LINE);
+    for (const [i, line] of v.slice(1).entries()) optLine(line, `${at}[${i + 1}]`);
+  };
+
+  /** A block of lines where every one may hide — 0 to `max`, empty entries allowed. */
+  const freeLines = (v: unknown, at: string, max: number) => {
+    if (!Array.isArray(v) || v.length > max) {
+      push(`${at} must be 0 to ${max} lines`);
+      return;
+    }
+    for (const [i, line] of v.entries()) optLine(line, `${at}[${i}]`);
   };
 
   if (!Array.isArray(raw.screens)) {
@@ -1220,7 +1246,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       for (const field of SCREEN_FIELDS[screenId]) {
         const a = asks[field] as Record<string, unknown> | undefined;
         if (typeof a !== "object" || a === null) { push(`${at}.asks is missing "${field}"`); continue; }
-        bubbles(a.lines, `${at}.asks.${field}.lines`, MAX_ASK_LINES);
+        askBubbles(a.lines, `${at}.asks.${field}.lines`, MAX_ASK_LINES);
         if (a.variants !== undefined) {
           if (typeof a.variants !== "object" || a.variants === null) {
             push(`${at}.asks.${field}.variants must be an object`);
@@ -1229,14 +1255,14 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
               if (!(COUNTED_BEFORE as readonly string[]).includes(key)) {
                 push(`${at}.asks.${field}.variants has "${key}", which no answer selects`);
               } else {
-                bubbles(lines, `${at}.asks.${field}.variants.${key}`, MAX_ASK_LINES);
+                askBubbles(lines, `${at}.asks.${field}.variants.${key}`, MAX_ASK_LINES);
               }
             }
           }
         }
         if (a.placeholder !== undefined
-          && (!isStr(a.placeholder) || a.placeholder.trim() === "" || a.placeholder.length > MAX_LABEL)) {
-          push(`${at}.asks.${field}.placeholder must be a non-empty string under ${MAX_LABEL} characters`);
+          && (!isStr(a.placeholder) || a.placeholder.length > MAX_LABEL)) {
+          push(`${at}.asks.${field}.placeholder must be a string under ${MAX_LABEL} characters`);
         }
       }
     }
@@ -1306,7 +1332,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   const wel = raw.welcome as Record<string, unknown> | undefined;
   if (typeof wel !== "object" || wel === null) push("welcome is required");
   else {
-    bubbles(wel.lines, "welcome.lines", MAX_WELCOME_LINES);
+    freeLines(wel.lines, "welcome.lines", MAX_WELCOME_LINES);
     str(wel.cta, "welcome.cta", MAX_LABEL);
     str(wel.signin, "welcome.signin", MAX_LABEL);
     // The image is a key into the app's bundled registry, never a URL — an admin cannot point the
@@ -1419,7 +1445,8 @@ export function usableContent(
     if (typeof asks !== "object" || asks === null) return fallback;
     for (const field of SCREEN_FIELDS[id]) {
       const ask = asks[field];
-      if (!ask || !Array.isArray(ask.lines) || ask.lines.length === 0) return fallback;
+      if (!ask || !Array.isArray(ask.lines) || ask.lines.length === 0
+        || typeof ask.lines[0] !== "string" || ask.lines[0].trim() === "") return fallback;
     }
     // The option labels are the vocabulary's too. A revision from before a key existed renders the
     // bare id for it — and a REUSED key keeps its old label, which is worse: a stored v15 `few`
@@ -1482,7 +1509,7 @@ function hasKeys(v: unknown, keys: readonly string[]): boolean {
  */
 function usableWelcome(w: OnboardingWelcomeContent | undefined): w is OnboardingWelcomeContent {
   if (typeof w !== "object" || w === null) return false;
-  if (!Array.isArray(w.lines) || w.lines.length === 0) return false;
+  if (!Array.isArray(w.lines)) return false;
   if (typeof w.cta !== "string" || w.cta === "") return false;
   if (typeof w.signin !== "string" || w.signin === "") return false;
   return lintCopy(claimFields({ lines: w.lines, cta: w.cta, signin: w.signin }), ONBOARDING_CLAIM_RULES).length === 0;

@@ -7,6 +7,8 @@
 // are all the real ones.
 
 import { prelimCards } from "./page/moment.ts";
+import { frontDoor } from "./page/front-door.ts";
+import { say } from "./page/board.ts";
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { createHash } from "node:crypto";
@@ -3224,5 +3226,31 @@ describe("refer a friend", () => {
     expect((await get("/start/referral", session)).headers.get("location")).toBe("/start/signup");
     const signed = await signIn("ref-early", "google", undefined, session);
     expect((await get("/start/referral", signed)).headers.get("location")).toBe("/start/country");
+  });
+});
+
+describe("a welcome that hides its lines (ieat-app#2756)", () => {
+  const hrefs = { q: "/start/q", signup: "/start/signup" };
+
+  it("renders no heading, no empty subline, no reserved gap", () => {
+    const content = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    content.welcome.lines = [];
+    const html = frontDoor(content, hrefs, "en");
+    expect(html).not.toContain("<h1");
+    expect(html).not.toContain('class="wsub"');
+    expect(html).toContain("Get started");
+
+    content.welcome.lines = ["", "Only this one."];
+    const withSub = frontDoor(content, hrefs, "en");
+    expect(withSub).not.toContain("<h1");
+    expect(withSub.match(/class="wsub"/g)).toHaveLength(1);
+  });
+
+  it("say() heads the last line that says something and drops the hidden ones", () => {
+    expect(say(["Lead.", ""])).toContain("Lead.");
+    expect(say(["Lead.", ""])).not.toContain("qsub");
+    const html = say(["Lead.", "", "Real question?"]);
+    expect(html).toContain("Real question?");
+    expect(html.match(/class="qsub"/g)).toHaveLength(1);
   });
 });

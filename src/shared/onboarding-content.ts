@@ -38,7 +38,7 @@ import { DEFAULT_ONBOARDING_CONTENT, usableContent, type OnboardingContent } fro
 const FR: OnboardingContent = {
   version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
-    lines: ["Compte les calories avec une photo"],
+    lines: [],
     cta: "Commencer",
     signin: "J'ai déjà un compte",
   },
@@ -210,7 +210,7 @@ const FR: OnboardingContent = {
 const DE: OnboardingContent = {
   version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
-    lines: ["Kalorien zählen per Foto"],
+    lines: [],
     cta: "Los geht's",
     signin: "Ich habe schon ein Konto",
   },
@@ -382,7 +382,7 @@ const DE: OnboardingContent = {
 const IT: OnboardingContent = {
   version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
-    lines: ["Conta le calorie con una foto"],
+    lines: [],
     cta: "Inizia",
     signin: "Ho già un account",
   },
@@ -554,7 +554,7 @@ const IT: OnboardingContent = {
 const ES: OnboardingContent = {
   version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
-    lines: ["Cuenta calorías con una foto"],
+    lines: [],
     cta: "Empezar",
     signin: "Ya tengo una cuenta",
   },
@@ -726,7 +726,7 @@ const ES: OnboardingContent = {
 const VI: OnboardingContent = {
   version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
-    lines: ["Đếm calo bằng một tấm ảnh"],
+    lines: [],
     cta: "Bắt đầu",
     signin: "Mình đã có tài khoản",
   },
@@ -898,7 +898,7 @@ const VI: OnboardingContent = {
 const ID: OnboardingContent = {
   version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
-    lines: ["Hitung kalori dengan foto"],
+    lines: [],
     cta: "Mulai",
     signin: "Aku sudah punya akun",
   },
@@ -1070,7 +1070,7 @@ const ID: OnboardingContent = {
 const RU: OnboardingContent = {
   version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
-    lines: ["Считай калории по фото"],
+    lines: [],
     cta: "Начать",
     signin: "У меня уже есть аккаунт",
   },
@@ -1288,9 +1288,9 @@ const TE: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["ఫోటోతో కేలరీలు లెక్కించండి"],
+    lines: [],
     cta: "ప్రారంభించండి",
     signin: "నాకు ఇప్పటికే ఖాతా ఉంది",
   },
@@ -1570,9 +1570,9 @@ const TA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["புகைப்படத்துடன் கலோரிகளை எண்ணுங்கள்"],
+    lines: [],
     cta: "தொடங்கு",
     signin: "எனக்கு ஏற்கெனவே கணக்கு உள்ளது",
   },
@@ -1852,9 +1852,9 @@ const PA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["ਫੋਟੋ ਨਾਲ ਕੈਲੋਰੀ ਗਿਣੋ"],
+    lines: [],
     cta: "ਸ਼ੁਰੂ ਕਰੋ",
     signin: "ਮੇਰਾ ਅਕਾਊਂਟ ਪਹਿਲਾਂ ਤੋਂ ਹੈ",
   },
@@ -2134,9 +2134,9 @@ const OR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["ଫଟୋରେ କ୍ୟାଲୋରୀ ଗଣନ୍ତୁ"],
+    lines: [],
     cta: "ଆରମ୍ଭ କରନ୍ତୁ",
     signin: "ମୋର ପୂର୍ବରୁ ଆକାଉଣ୍ଟ ଅଛି",
   },
@@ -2416,9 +2416,9 @@ const MR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["फोटोने कॅलरी मोजा"],
+    lines: [],
     cta: "सुरू करा",
     signin: "माझे अकाउंट आधीच आहे",
   },
@@ -2698,9 +2698,9 @@ const ML: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["ഫോട്ടോയിലൂടെ കലോറി കണക്കാക്കൂ"],
+    lines: [],
     cta: "തുടങ്ങുക",
     signin: "എനിക്ക് ഇതിനകം ഒരു അക്കൗണ്ട് ഉണ്ട്",
   },
@@ -2980,9 +2980,9 @@ const KN: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["ಫೋಟೋದಿಂದ ಕ್ಯಾಲೊರಿಗಳನ್ನು ಲೆಕ್ಕ ಹಾಕಿ"],
+    lines: [],
     cta: "ಪ್ರಾರಂಭಿಸಿ",
     signin: "ನನಗೆ ಈಗಾಗಲೇ ಖಾತೆ ಇದೆ",
   },
@@ -3262,9 +3262,9 @@ const GU: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["ફોટોથી કેલરી ગણો"],
+    lines: [],
     cta: "શરૂ કરો",
     signin: "મારું એકાઉન્ટ પહેલેથી છે",
   },
@@ -3544,9 +3544,9 @@ const BN: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["ছবি দিয়ে ক্যালরি গুনুন"],
+    lines: [],
     cta: "শুরু করুন",
     signin: "আমার আগে থেকেই অ্যাকাউন্ট আছে",
   },
@@ -3826,9 +3826,9 @@ const PT_PT: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Conta calorias com uma foto"],
+    lines: [],
     cta: "Começar",
     signin: "Já tenho uma conta",
   },
@@ -4108,9 +4108,9 @@ const MS: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Kira kalori dengan gambar"],
+    lines: [],
     cta: "Mula",
     signin: "Saya sudah ada akaun",
   },
@@ -4390,9 +4390,9 @@ const CA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Compta calories amb una foto"],
+    lines: [],
     cta: "Comença",
     signin: "Ja tinc un compte",
   },
@@ -4672,9 +4672,9 @@ const SL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Štej kalorije s fotografijo"],
+    lines: [],
     cta: "Začni",
     signin: "Račun že imam",
   },
@@ -4954,9 +4954,9 @@ const HR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Broji kalorije s fotografije"],
+    lines: [],
     cta: "Kreni",
     signin: "Već imam račun",
   },
@@ -5236,9 +5236,9 @@ const SK: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Počítaj kalórie z fotky"],
+    lines: [],
     cta: "Začať",
     signin: "Už mám účet",
   },
@@ -5518,10 +5518,10 @@ const NO: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Tell kalorier med et bilde"],
-    cta: "Start",
+    lines: [],
+    cta: "Kom i gang",
     signin: "Jeg har allerede en konto",
   },
   screens: [
@@ -5800,9 +5800,9 @@ const FI: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Laske kalorit kuvalla"],
+    lines: [],
     cta: "Aloita",
     signin: "Minulla on jo tili",
   },
@@ -6082,10 +6082,10 @@ const DA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Tæl kalorier med et foto"],
-    cta: "Start",
+    lines: [],
+    cta: "Kom i gang",
     signin: "Jeg har allerede en konto",
   },
   screens: [
@@ -6364,10 +6364,10 @@ const HU: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Számolj kalóriát egy fotóval"],
-    cta: "Kezdés",
+    lines: [],
+    cta: "Kezdjük",
     signin: "Már van fiókom",
   },
   screens: [
@@ -6646,9 +6646,9 @@ const EL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Μέτρα θερμίδες με μια φωτογραφία"],
+    lines: [],
     cta: "Ξεκίνα",
     signin: "Έχω ήδη λογαριασμό",
   },
@@ -6928,9 +6928,9 @@ const RO: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Numără caloriile cu o poză"],
+    lines: [],
     cta: "Începe",
     signin: "Am deja un cont",
   },
@@ -7210,9 +7210,9 @@ const CS: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Počítej kalorie z fotky"],
+    lines: [],
     cta: "Začít",
     signin: "Už mám účet",
   },
@@ -7492,9 +7492,9 @@ const HI: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["फोटो से कैलोरी गिनें"],
+    lines: [],
     cta: "शुरू करें",
     signin: "मेरा अकाउंट पहले से है",
   },
@@ -7774,9 +7774,9 @@ const TH: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["นับแคลอรี่ด้วยรูปภาพ"],
+    lines: [],
     cta: "เริ่มเลย",
     signin: "ฉันมีบัญชีอยู่แล้ว",
   },
@@ -8056,10 +8056,10 @@ const SV: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Räkna kalorier med ett foto"],
-    cta: "Börja",
+    lines: [],
+    cta: "Kom igång",
     signin: "Jag har redan ett konto",
   },
   screens: [
@@ -8338,9 +8338,9 @@ const UK: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Рахуй калорії за фото"],
+    lines: [],
     cta: "Почати",
     signin: "У мене вже є акаунт",
   },
@@ -8620,10 +8620,10 @@ const NL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Tel calorieën met een foto"],
-    cta: "Start",
+    lines: [],
+    cta: "Aan de slag",
     signin: "Ik heb al een account",
   },
   screens: [
@@ -8902,9 +8902,9 @@ const PL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Policz kalorie ze zdjęcia"],
+    lines: [],
     cta: "Zacznij",
     signin: "Mam już konto",
   },
@@ -9184,9 +9184,9 @@ const TR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Fotoğrafla kalori say"],
+    lines: [],
     cta: "Başla",
     signin: "Zaten bir hesabım var",
   },
@@ -9466,10 +9466,10 @@ const ZH_HANT: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["拍照算卡路里"],
-    cta: "開始",
+    lines: [],
+    cta: "開始使用",
     signin: "我已經有帳號了",
   },
   screens: [
@@ -9748,10 +9748,10 @@ const ZH_HANS: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["拍照算卡路里"],
-    cta: "开始",
+    lines: [],
+    cta: "开始使用",
     signin: "我已有账户",
   },
   screens: [
@@ -10030,9 +10030,9 @@ const KO: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["사진으로 칼로리 계산"],
+    lines: [],
     cta: "시작하기",
     signin: "이미 계정이 있어요",
   },
@@ -10312,9 +10312,9 @@ const JA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["写真でカロリー計算"],
+    lines: [],
     cta: "はじめる",
     signin: "アカウントをお持ちの方",
   },
@@ -10594,9 +10594,9 @@ const PT_BR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 19,
+  version: 20,
   welcome: {
-    lines: ["Conte calorias com uma foto"],
+    lines: [],
     cta: "Começar",
     signin: "Já tenho uma conta",
   },

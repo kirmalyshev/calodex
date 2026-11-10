@@ -30,7 +30,9 @@ export function frontDoor(
     `<div class="wchip" style="${pos};--d:${d}s"><span class="tile ${tone}"><i class="ico i-${icon}"></i></span>` +
     `<div><span>${escape(label)}</span><b class="num">${escape(figure)}<small>${escape(unit)}</small></b></div></div>`;
   const m = content.summary.macros;
-  const [title = "", ...subs] = welcome.lines;
+  // An empty line renders nothing (ieat-app#2756): no headline, no gap.
+  const [title = "", ...rest] = welcome.lines;
+  const subs = rest.filter((l) => l.trim() !== "");
   return shell(PAGE_COPY.titleStart, `
 ${wtop()}
 <div class="wcenter"><div class="wdemo">
@@ -46,7 +48,7 @@ ${wtop()}
   </div>
   </div>
   <div class="whead">
-    <div><h1>${escape(title)}</h1>${subs.map((l) => `<p class="wsub">${escape(l)}</p>`).join("")}</div>
+    <div>${title.trim() !== "" ? `<h1>${escape(title)}</h1>` : ""}${subs.map((l) => `<p class="wsub">${escape(l)}</p>`).join("")}</div>
     <div class="wctas">
       <a class="cta p" href="${escape(hrefs.q)}" aria-label="${escape(welcome.cta)}">${escape(welcome.cta)}</a>
       <a class="cta s" href="${escape(hrefs.signup)}">${escape(welcome.signin)}</a>

@@ -14,6 +14,7 @@ import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
 import type { Store } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
+import { appendLines } from "./chat.ts";
 import {
   assignVariant, onboardingContent, onboardingContentFor, onboardingFunnel, recordOnboardingEvents,
   resetOnboardingContent, saveOnboardingContent,
@@ -79,6 +80,17 @@ describe("content", () => {
     expect(result.ok === false && result.errors.join(" ")).toContain("target");
     // The refusal is total: a half-saved flow is worse than an unsaved one.
     expect(await store.getOnboardingContent()).toBeNull();
+  });
+
+  it("serves a saved hidden line, and an ask coordinate into it appends no empty bubble (ieat-app#2756)", async () => {
+    const payload = clone(DEFAULT_ONBOARDING_CONTENT);
+    payload.screens[0]!.asks.goal!.lines = ["Which fits you?", ""];
+    expect((await saveOnboardingContent(deps, payload, "en")).ok).toBe(true);
+    // The hidden line resolves to "" and is refused rather than appended as an empty message.
+    expect(await appendLines(deps, userId, [{ role: "assistant", ask: { prompt: "goal", line: 1 } }]))
+      .toEqual({ appended: 0, reason: "bad-line" });
+    expect(await appendLines(deps, userId, [{ role: "assistant", ask: { prompt: "goal", line: 0 } }]))
+      .toEqual({ appended: 1 });
   });
 
   it("restores the defaults with a version ahead of the edit it replaces", async () => {

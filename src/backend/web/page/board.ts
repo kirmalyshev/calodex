@@ -40,8 +40,10 @@ export function dash(place: OnboardingPlace, lang: Lang, back?: { href: string; 
  * the question, anything before it is a line under the heading — the board is one sentence deep.
  */
 export function say(lines: readonly string[], sub?: string): string {
-  const q = escape(lines[lines.length - 1] ?? "");
-  const subs = [...lines.slice(0, -1), ...(sub ? [sub] : [])]
+  // An empty line renders nothing (ieat-app#2756) — drop it before picking the headline.
+  const said = lines.filter((l) => l.trim() !== "");
+  const q = escape(said[said.length - 1] ?? "");
+  const subs = [...said.slice(0, -1), ...(sub ? [sub] : [])]
     .map((l) => `<p class="qsub">${escape(l)}</p>`).join("");
   return `<div class="say"><h1 class="q">${q}</h1>${subs}</div>`;
 }
