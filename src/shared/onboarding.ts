@@ -452,6 +452,33 @@ export interface OnboardingBeatsContent {
   prelim: { title: string; burn: string; gap: string; eat: string; perDay: string; keepTitle: string };
 }
 
+/**
+ * The target ruler's own words (ieat-app#2757). `markers` are the labels ON the ruler — each
+ * carries `{weight}`, a formatted weight WITH unit (weightDisplay); the sign's role is carried by
+ * picking down/up, because "−" is U+2212, not a hyphen. `suggestion` is the line the web `/start`
+ * offers under the ruler — `{weight}` the suggested figure, `{pct}` the distance as a share.
+ * All required — a ruler with no words is a dead control.
+ */
+export interface OnboardingTargetContent {
+  markers: { lowest: string; now: string; nowLowest: string; deltaDown: string; deltaUp: string };
+  suggestion: { down: string; up: string };
+}
+
+/**
+ * The pace screen's words (ieat-app#2757). `rate`/`rateSuffix`/`result` are required; `echo` — the
+ * answer said back above the pick — may be empty and renders nothing (ieat-app#2756). `{rate}` is
+ * the projected rate with unit; `{target}`/`{month}`/`{kcal}` the projection's figure, month and
+ * plan; `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code —
+ * the cap and floor's own explanation is bound to `explainTargets`, not editable copy.
+ */
+export interface OnboardingPaceContent {
+  rate: string;
+  /** The words after the rate figure alone — "a week", said without the number. */
+  rateSuffix: string;
+  result: string;
+  echo: string;
+}
+
 export interface OnboardingContent {
   /**
    * Bumped on every admin save.
@@ -467,6 +494,8 @@ export interface OnboardingContent {
   summary: OnboardingSummaryContent;
   ui: OnboardingUiContent;
   beats: OnboardingBeatsContent;
+  target: OnboardingTargetContent;
+  pace: OnboardingPaceContent;
 }
 
 /**
@@ -906,7 +935,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
   // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
   // revision may never reuse a number that was already issued.
-  version: 24,
+  version: 25,
   welcome: {
     lines: [],
     cta: "Get started",
@@ -1155,6 +1184,25 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
       title: "Your plan", burn: "You burn", gap: "{delta} your pace",
       eat: "You eat", perDay: "kcal a day", keepTitle: "You burn about {burn}kcal",
     },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · lowest we set",
+      now: "{weight} · now",
+      nowLowest: "{weight} · now · lowest we set",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: {
+      down: "I suggest {weight}, about {pct}% down, a good first goal",
+      up: "I suggest {weight}, about {pct}% up, a good first goal",
+    },
+  },
+  pace: {
+    rate: "{rate} a week",
+    rateSuffix: "a week",
+    result: "{target} around {month} · {kcal}kcal a day",
+    echo: "From {from} to {to}.",
   },
 };
 
@@ -1550,6 +1598,49 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     }
   }
 
+  // The target ruler's markers and the pace screen's numbers (ieat-app#2757). `pace.echo` may
+  // hide; everything else is required. `{weight}`/`{rate}`/`{target}`/`{month}`/`{kcal}`/`{pct}`/
+  // `{from}`/`{to}` are computed fills — invented placeholders refuse, dropped ones too.
+  const target = raw.target as Record<string, unknown> | undefined;
+  if (typeof target !== "object" || target === null) push("target is required");
+  else {
+    for (const k of Object.keys(target)) {
+      if (!["markers", "suggestion"].includes(k)) push(`target.${k} is not a used key`);
+    }
+    const markers = target.markers as Record<string, unknown> | undefined;
+    if (typeof markers !== "object" || markers === null) push("target.markers is required");
+    else {
+      for (const k of Object.keys(markers)) {
+        if (!["lowest", "now", "nowLowest", "deltaDown", "deltaUp"].includes(k)) push(`target.markers.${k} is not a used key`);
+      }
+      for (const k of ["lowest", "now", "nowLowest", "deltaDown", "deltaUp"]) {
+        tmpl(markers[k], `target.markers.${k}`, { required: true, allowed: ["weight"], requiredPh: ["weight"] });
+      }
+    }
+    const suggestion = target.suggestion as Record<string, unknown> | undefined;
+    if (typeof suggestion !== "object" || suggestion === null) push("target.suggestion is required");
+    else {
+      for (const k of Object.keys(suggestion)) {
+        if (!["down", "up"].includes(k)) push(`target.suggestion.${k} is not a used key`);
+      }
+      for (const k of ["down", "up"]) {
+        tmpl(suggestion[k], `target.suggestion.${k}`, { required: true, allowed: ["weight", "pct"], requiredPh: ["weight"], max: MAX_LINE });
+      }
+    }
+  }
+
+  const pace = raw.pace as Record<string, unknown> | undefined;
+  if (typeof pace !== "object" || pace === null) push("pace is required");
+  else {
+    for (const k of Object.keys(pace)) {
+      if (!["rate", "rateSuffix", "result", "echo"].includes(k)) push(`pace.${k} is not a used key`);
+    }
+    tmpl(pace.rate, "pace.rate", { required: true, allowed: ["rate"], requiredPh: ["rate"], max: MAX_LINE });
+    tmpl(pace.rateSuffix, "pace.rateSuffix", { required: true });
+    tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month", "kcal"], requiredPh: ["target", "month", "kcal"], max: MAX_LINE });
+    tmpl(pace.echo, "pace.echo", { allowed: ["from", "to"], requiredPh: ["from", "to"], max: MAX_LINE });
+  }
+
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
   // is the third editable public surface: an admin can write anything into it and it reaches every
   // phone that fetches a revision. `retired-no-email` is why this is here — "No email, no name."
@@ -1578,6 +1669,8 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       summary: raw.summary as OnboardingSummaryContent,
       ui: raw.ui as OnboardingUiContent,
       beats: raw.beats as OnboardingBeatsContent,
+      target: raw.target as OnboardingTargetContent,
+      pace: raw.pace as OnboardingPaceContent,
     },
   };
 }
@@ -1662,6 +1755,8 @@ export function usableContent(
     // because empty IS a valid revision there (ieat-app#2756).
     ui: usableUi(c.ui) ? c.ui : fallback.ui,
     beats: usableBeats(c.beats) ? c.beats : fallback.beats,
+    target: usableTarget(c.target) ? c.target : fallback.target,
+    pace: usablePace(c.pace) ? c.pace : fallback.pace,
   };
 }
 
@@ -1691,6 +1786,19 @@ function usableBlock<T extends { lines?: unknown }>(block: T | undefined, keys: 
   if (!Array.isArray(block.lines) || block.lines.length === 0) return false;
   const b = block as unknown as Record<string, unknown>;
   return keys.every((k) => typeof b[k] === "string" && b[k] !== "");
+}
+
+/** The target ruler's words — every marker and both suggestion lines whole, or the block falls back. */
+function usableTarget(t: OnboardingTargetContent | undefined): t is OnboardingTargetContent {
+  if (typeof t !== "object" || t === null) return false;
+  return hasKeys(t.markers, ["lowest", "now", "nowLowest", "deltaDown", "deltaUp"])
+    && hasKeys(t.suggestion, ["down", "up"]);
+}
+
+/** The pace screen's words — required lines whole; `echo` only needs to be a string (empty hides). */
+function usablePace(p: OnboardingPaceContent | undefined): p is OnboardingPaceContent {
+  if (typeof p !== "object" || p === null) return false;
+  return hasKeys(p, ["rate", "rateSuffix", "result"]) && typeof p.echo === "string";
 }
 
 /** A nested string table — `building.rows`, `summary.macros` — with every key present and set. */

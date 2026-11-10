@@ -8389,6 +8389,12 @@
           },
           "beats": {
             "$ref": "#/components/schemas/OnboardingBeatsContent"
+          },
+          "target": {
+            "$ref": "#/components/schemas/OnboardingTargetContent"
+          },
+          "pace": {
+            "$ref": "#/components/schemas/OnboardingPaceContent"
           }
         },
         "required": [
@@ -8398,7 +8404,9 @@
           "building",
           "summary",
           "ui",
-          "beats"
+          "beats",
+          "target",
+          "pace"
         ],
         "additionalProperties": false
       },
@@ -8525,6 +8533,32 @@
         ],
         "additionalProperties": false
       },
+      "OnboardingPaceContent": {
+        "type": "object",
+        "properties": {
+          "rate": {
+            "type": "string"
+          },
+          "rateSuffix": {
+            "type": "string",
+            "description": "The words after the rate figure alone — \"a week\", said without the number."
+          },
+          "result": {
+            "type": "string"
+          },
+          "echo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "rate",
+          "rateSuffix",
+          "result",
+          "echo"
+        ],
+        "additionalProperties": false,
+        "description": "The pace screen's words (ieat-app#2757). `rate`/`rateSuffix`/`result` are required; `echo` — the answer said back above the pick — may be empty and renders nothing (ieat-app#2756). `{rate}` is the projected rate with unit; `{target}`/`{month}`/`{kcal}` the projection's figure, month and plan; `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code — the cap and floor's own explanation is bound to `explainTargets`, not editable copy."
+      },
       "OnboardingPlace": {
         "anyOf": [
           {
@@ -8647,6 +8681,61 @@
         ],
         "additionalProperties": false,
         "description": "The payoff — the plan card. Editable too, because it is the most-read thing in the flow."
+      },
+      "OnboardingTargetContent": {
+        "type": "object",
+        "properties": {
+          "markers": {
+            "type": "object",
+            "properties": {
+              "lowest": {
+                "type": "string"
+              },
+              "now": {
+                "type": "string"
+              },
+              "nowLowest": {
+                "type": "string"
+              },
+              "deltaDown": {
+                "type": "string"
+              },
+              "deltaUp": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lowest",
+              "now",
+              "nowLowest",
+              "deltaDown",
+              "deltaUp"
+            ],
+            "additionalProperties": false
+          },
+          "suggestion": {
+            "type": "object",
+            "properties": {
+              "down": {
+                "type": "string"
+              },
+              "up": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "down",
+              "up"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "markers",
+          "suggestion"
+        ],
+        "additionalProperties": false,
+        "description": "The target ruler's own words (ieat-app#2757). `markers` are the labels ON the ruler — each carries `{weight}`, a formatted weight WITH unit (weightDisplay); the sign's role is carried by picking down/up, because \"−\" is U+2212, not a hyphen. `suggestion` is the line the web `/start` offers under the ruler — `{weight}` the suggested figure, `{pct}` the distance as a share. All required — a ruler with no words is a dead control."
       },
       "OnboardingUiContent": {
         "type": "object",

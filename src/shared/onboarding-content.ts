@@ -217,6 +217,22 @@ const FR: OnboardingContent = {
     baseline: { title: "Voici ton point de départ", bmi: "IMC", what: "Indice de masse corporelle" },
     prelim: { title: "Ton plan", burn: "Tu brûles", gap: "{delta} ton rythme", eat: "Tu manges", perDay: "kcal par jour", keepTitle: "Tu brûles environ {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · le plus bas qu'on fixe",
+      now: "{weight} · maintenant",
+      nowLowest: "{weight} · maintenant · le plus bas qu'on fixe",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Je te propose {weight}, soit environ {pct} % de moins — un bon premier objectif", up: "Je te propose {weight}, soit environ {pct} % de plus — un bon premier objectif" },
+  },
+  pace: {
+    rate: "{rate} par semaine",
+    rateSuffix: "par semaine",
+    result: "{target} vers {month} · {kcal}kcal par jour",
+    echo: "De {from} à {to}.",
+  },
 };
 
 // ── Deutsch ───────────────────────────────────────────────────────────────────────
@@ -402,6 +418,22 @@ const DE: OnboardingContent = {
     echo: { rest: "Im Ruhezustand: {rest}kcal am Tag", days: "Deine Tage verbrennen {burn}kcal" },
     baseline: { title: "Das ist dein Ausgangspunkt", bmi: "BMI", what: "Body-Mass-Index" },
     prelim: { title: "Dein Plan", burn: "Du verbrennst", gap: "{delta} dein Tempo", eat: "Du isst", perDay: "kcal am Tag", keepTitle: "Du verbrennst etwa {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · unser Minimum",
+      now: "{weight} · jetzt",
+      nowLowest: "{weight} · jetzt · unser Minimum",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Ich schlage {weight} vor, etwa {pct}% weniger — ein gutes erstes Ziel", up: "Ich schlage {weight} vor, etwa {pct}% mehr — ein gutes erstes Ziel" },
+  },
+  pace: {
+    rate: "{rate} pro Woche",
+    rateSuffix: "pro Woche",
+    result: "{target} etwa im {month} · {kcal}kcal am Tag",
+    echo: "Von {from} auf {to}.",
   },
 };
 
@@ -589,6 +621,22 @@ const IT: OnboardingContent = {
     baseline: { title: "Ecco il tuo punto di partenza", bmi: "IMC", what: "Indice di massa corporea" },
     prelim: { title: "Il tuo piano", burn: "Tu bruci", gap: "{delta} il tuo ritmo", eat: "Tu mangi", perDay: "kcal al giorno", keepTitle: "Bruci circa {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · il minimo che fissiamo",
+      now: "{weight} · ora",
+      nowLowest: "{weight} · ora · il minimo che fissiamo",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Ti suggerisco {weight}, circa il {pct}% in meno — un buon primo obiettivo", up: "Ti suggerisco {weight}, circa il {pct}% in più — un buon primo obiettivo" },
+  },
+  pace: {
+    rate: "{rate} a settimana",
+    rateSuffix: "a settimana",
+    result: "{target} verso {month} · {kcal}kcal al giorno",
+    echo: "Da {from} a {to}.",
+  },
 };
 
 // ── Español ───────────────────────────────────────────────────────────────────────
@@ -774,6 +822,22 @@ const ES: OnboardingContent = {
     echo: { rest: "En reposo: {rest}kcal al día", days: "Tus días queman {burn}kcal" },
     baseline: { title: "Este es tu punto de partida", bmi: "IMC", what: "Índice de masa corporal" },
     prelim: { title: "Tu plan", burn: "Quemas", gap: "{delta} tu ritmo", eat: "Comes", perDay: "kcal al día", keepTitle: "Quemas unas {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · el mínimo que fijamos",
+      now: "{weight} · ahora",
+      nowLowest: "{weight} · ahora · el mínimo que fijamos",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Te sugiero {weight}, alrededor de un {pct}% menos — una buena primera meta", up: "Te sugiero {weight}, alrededor de un {pct}% más — una buena primera meta" },
+  },
+  pace: {
+    rate: "{rate} a la semana",
+    rateSuffix: "a la semana",
+    result: "{target} hacia {month} · {kcal}kcal al día",
+    echo: "De {from} a {to}.",
   },
 };
 
@@ -961,6 +1025,22 @@ const VI: OnboardingContent = {
     baseline: { title: "Đây là điểm xuất phát của bạn", bmi: "BMI", what: "Chỉ số khối cơ thể" },
     prelim: { title: "Kế hoạch của bạn", burn: "Bạn đốt", gap: "{delta} tốc độ của bạn", eat: "Bạn ăn", perDay: "kcal một ngày", keepTitle: "Bạn đốt khoảng {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · mức thấp nhất có thể đặt",
+      now: "{weight} · hiện tại",
+      nowLowest: "{weight} · hiện tại · mức thấp nhất có thể đặt",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Mình gợi ý {weight}, tức xuống khoảng {pct}% — một mục tiêu đầu tiên hợp lý", up: "Mình gợi ý {weight}, tức lên khoảng {pct}% — một mục tiêu đầu tiên hợp lý" },
+  },
+  pace: {
+    rate: "{rate} một tuần",
+    rateSuffix: "một tuần",
+    result: "{target} vào khoảng {month} · {kcal}kcal một ngày",
+    echo: "Từ {from} đến {to}.",
+  },
 };
 
 // ── Bahasa Indonesia ──────────────────────────────────────────────────────────────
@@ -1147,6 +1227,22 @@ const ID: OnboardingContent = {
     baseline: { title: "Ini titik awalmu", bmi: "IMT", what: "Indeks massa tubuh" },
     prelim: { title: "Rencanamu", burn: "Kamu membakar", gap: "{delta} tempomu", eat: "Kamu makan", perDay: "kcal sehari", keepTitle: "Kamu membakar sekitar {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · batas terendah kami",
+      now: "{weight} · sekarang",
+      nowLowest: "{weight} · sekarang · batas terendah kami",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Kusarankan {weight}, turun sekitar {pct}% — target pertama yang bagus", up: "Kusarankan {weight}, naik sekitar {pct}% — target pertama yang bagus" },
+  },
+  pace: {
+    rate: "{rate} seminggu",
+    rateSuffix: "seminggu",
+    result: "{target} sekitar {month} · {kcal}kcal sehari",
+    echo: "Dari {from} ke {to}.",
+  },
 };
 
 // ── Русский ───────────────────────────────────────────────────────────────────────
@@ -1332,6 +1428,22 @@ const RU: OnboardingContent = {
     echo: { rest: "В покое: {rest}ккал в день", days: "Твои дни сжигают {burn}ккал" },
     baseline: { title: "Вот твоя точка отсчёта", bmi: "ИМТ", what: "Индекс массы тела" },
     prelim: { title: "Твой план", burn: "Ты сжигаешь", gap: "{delta} твой темп", eat: "Ты ешь", perDay: "ккал в день", keepTitle: "Ты сжигаешь около {burn}ккал" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · минимум, который мы задаём",
+      now: "{weight} · сейчас",
+      nowLowest: "{weight} · сейчас · минимум, который мы задаём",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Предлагаю {weight} — примерно на {pct}% меньше, хорошая первая цель", up: "Предлагаю {weight} — примерно на {pct}% больше, хорошая первая цель" },
+  },
+  pace: {
+    rate: "{rate} в неделю",
+    rateSuffix: "в неделю",
+    result: "{target} · ориентир — {month} · {kcal}ккал в день",
+    echo: "С {from} до {to}.",
   },
 };
 
@@ -1629,6 +1741,22 @@ const TE: OnboardingContent = {
     baseline: { title: "ఇదే మీ ప్రారంభ స్థాయి", bmi: "BMI", what: "బాడీ మాస్ ఇండెక్స్" },
     prelim: { title: "మీ ప్రణాళిక", burn: "మీరు ఖర్చు చేసేది", gap: "{delta} మీ వేగం", eat: "మీరు తింటారు", perDay: "kcal రోజుకు", keepTitle: "మీరు సుమారు {burn}kcal ఖర్చు చేస్తారు" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · మేము పెట్టే కనిష్ఠం",
+      now: "{weight} · ఇప్పుడు",
+      nowLowest: "{weight} · ఇప్పుడు · మేము పెట్టే కనిష్ఠం",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "{weight} సూచిస్తున్నాను, సుమారు {pct}% తక్కువ, మంచి మొదటి లక్ష్యం", up: "{weight} సూచిస్తున్నాను, సుమారు {pct}% ఎక్కువ, మంచి మొదటి లక్ష్యం" },
+  },
+  pace: {
+    rate: "వారానికి {rate}",
+    rateSuffix: "వారానికి",
+    result: "సుమారు {month} నాటికి {target} · రోజుకు {kcal}kcal",
+    echo: "{from} నుండి {to} వరకు.",
+  },
 };
 
 const TA: OnboardingContent = {
@@ -1924,6 +2052,22 @@ const TA: OnboardingContent = {
     echo: { rest: "ஓய்வில்: ஒரு நாளைக்கு {rest}kcal", days: "உங்கள் நாட்கள் {burn}kcal எரிக்கின்றன" },
     baseline: { title: "இதோ உங்கள் தொடக்க நிலை", bmi: "BMI", what: "உடல் நிறை குறியீட்டெண்" },
     prelim: { title: "உங்கள் திட்டம்", burn: "நீங்கள் எரிப்பது", gap: "{delta} உங்கள் வேகம்", eat: "நீங்கள் சாப்பிடுவது", perDay: "kcal ஒரு நாளைக்கு", keepTitle: "நீங்கள் சுமார் {burn}kcal எரிக்கிறீர்கள்" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · நாங்கள் அமைக்கும் குறைந்தபட்சம்",
+      now: "{weight} · இப்போது",
+      nowLowest: "{weight} · இப்போது · நாங்கள் அமைக்கும் குறைந்தபட்சம்",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "நான் பரிந்துரைப்பது {weight}, சுமார் {pct}% குறைவு, நல்ல முதல் இலக்கு", up: "நான் பரிந்துரைப்பது {weight}, சுமார் {pct}% அதிகம், நல்ல முதல் இலக்கு" },
+  },
+  pace: {
+    rate: "வாரத்திற்கு {rate}",
+    rateSuffix: "வாரத்திற்கு",
+    result: "{month} வாக்கில் {target} · ஒரு நாளைக்கு {kcal}kcal",
+    echo: "{from} முதல் {to} வரை.",
   },
 };
 
@@ -2221,6 +2365,22 @@ const PA: OnboardingContent = {
     baseline: { title: "ਇਹ ਰਿਹਾ ਤੁਹਾਡਾ ਸ਼ੁਰੂਆਤੀ ਆਧਾਰ", bmi: "BMI", what: "ਬਾਡੀ ਮਾਸ ਇੰਡੈਕਸ" },
     prelim: { title: "ਤੁਹਾਡੀ ਯੋਜਨਾ", burn: "ਤੁਸੀਂ ਖ਼ਰਚ ਕਰਦੇ ਹੋ", gap: "{delta} ਤੁਹਾਡੀ ਰਫ਼ਤਾਰ", eat: "ਤੁਸੀਂ ਖਾਂਦੇ ਹੋ", perDay: "kcal ਪ੍ਰਤੀ ਦਿਨ", keepTitle: "ਤੁਸੀਂ ਲਗਭਗ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹੋ" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · ਸਾਡਾ ਘੱਟੋ-ਘੱਟ",
+      now: "{weight} · ਹੁਣ",
+      nowLowest: "{weight} · ਹੁਣ · ਸਾਡਾ ਘੱਟੋ-ਘੱਟ",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "ਮੇਰਾ ਸੁਝਾਅ ਹੈ {weight}, ਲਗਭਗ {pct}% ਘੱਟ, ਇੱਕ ਚੰਗਾ ਪਹਿਲਾ ਟੀਚਾ", up: "ਮੇਰਾ ਸੁਝਾਅ ਹੈ {weight}, ਲਗਭਗ {pct}% ਵੱਧ, ਇੱਕ ਚੰਗਾ ਪਹਿਲਾ ਟੀਚਾ" },
+  },
+  pace: {
+    rate: "{rate} ਪ੍ਰਤੀ ਹਫ਼ਤਾ",
+    rateSuffix: "ਪ੍ਰਤੀ ਹਫ਼ਤਾ",
+    result: "{month} ਦੇ ਆਸ-ਪਾਸ {target} · {kcal}kcal ਪ੍ਰਤੀ ਦਿਨ",
+    echo: "{from} ਤੋਂ {to} ਤੱਕ।",
+  },
 };
 
 const OR: OnboardingContent = {
@@ -2516,6 +2676,22 @@ const OR: OnboardingContent = {
     echo: { rest: "ବିଶ୍ରାମରେ: {rest}kcal ପ୍ରତିଦିନ", days: "ଆପଣଙ୍କ ଦିନ {burn}kcal ଖର୍ଚ୍ଚ କରେ" },
     baseline: { title: "ଏହା ଆପଣଙ୍କ ଆରମ୍ଭିକ ଆଧାର", bmi: "BMI", what: "ବଡି ମାସ୍ ଇଣ୍ଡେକ୍ସ" },
     prelim: { title: "ଆପଣଙ୍କ ଯୋଜନା", burn: "ଆପଣ ଖର୍ଚ୍ଚ କରନ୍ତି", gap: "{delta} ଆପଣଙ୍କ ଗତି", eat: "ଆପଣ ଖାଆନ୍ତି", perDay: "kcal ପ୍ରତିଦିନ", keepTitle: "ଆପଣ ପ୍ରାୟ {burn}kcal ଖର୍ଚ୍ଚ କରନ୍ତି" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · ଆମର ସର୍ବନିମ୍ନ",
+      now: "{weight} · ଏବେ",
+      nowLowest: "{weight} · ଏବେ · ଆମର ସର୍ବନିମ୍ନ",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "ମୋ ପରାମର୍ଶ {weight}, ପ୍ରାୟ {pct}% କମ୍, ଏକ ଭଲ ପ୍ରଥମ ଲକ୍ଷ୍ୟ", up: "ମୋ ପରାମର୍ଶ {weight}, ପ୍ରାୟ {pct}% ଅଧିକ, ଏକ ଭଲ ପ୍ରଥମ ଲକ୍ଷ୍ୟ" },
+  },
+  pace: {
+    rate: "{rate} ପ୍ରତି ସପ୍ତାହ",
+    rateSuffix: "ପ୍ରତି ସପ୍ତାହ",
+    result: "{month} ଆଖପାଖରେ {target} · {kcal}kcal ପ୍ରତିଦିନ",
+    echo: "{from} ରୁ {to} ପର୍ଯ୍ୟନ୍ତ।",
   },
 };
 
@@ -2813,6 +2989,22 @@ const MR: OnboardingContent = {
     baseline: { title: "हा आहे तुमचा सुरुवातीचा आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
     prelim: { title: "तुमची योजना", burn: "तुम्ही खर्च करता", gap: "{delta} तुमचा वेग", eat: "तुम्ही खाता", perDay: "kcal दिवसाला", keepTitle: "तुम्ही सुमारे {burn}kcal खर्च करता" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · आमचे किमान",
+      now: "{weight} · आता",
+      nowLowest: "{weight} · आता · आमचे किमान",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "माझी सूचना: {weight}, सुमारे {pct}% कमी, एक चांगले पहिले ध्येय", up: "माझी सूचना: {weight}, सुमारे {pct}% जास्त, एक चांगले पहिले ध्येय" },
+  },
+  pace: {
+    rate: "{rate} प्रति आठवडा",
+    rateSuffix: "प्रति आठवडा",
+    result: "{month} च्या सुमारास {target} · दिवसाला {kcal}kcal",
+    echo: "{from} पासून {to} पर्यंत.",
+  },
 };
 
 const ML: OnboardingContent = {
@@ -3108,6 +3300,22 @@ const ML: OnboardingContent = {
     echo: { rest: "വിശ്രമത്തിൽ: ദിവസം {rest}kcal", days: "നിങ്ങളുടെ ദിവസങ്ങൾ {burn}kcal ചെലവഴിക്കുന്നു" },
     baseline: { title: "ഇതാ നിങ്ങളുടെ തുടക്കനില", bmi: "BMI", what: "ബോഡി മാസ് ഇൻഡക്സ്" },
     prelim: { title: "നിങ്ങളുടെ പ്ലാൻ", burn: "നിങ്ങൾ ചെലവഴിക്കുന്നത്", gap: "{delta} നിങ്ങളുടെ ഗതി", eat: "നിങ്ങൾ കഴിക്കുന്നത്", perDay: "kcal ദിവസം", keepTitle: "നിങ്ങൾ ഏകദേശം {burn}kcal ചെലവഴിക്കുന്നു" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · ഞങ്ങൾ വയ്ക്കുന്ന ഏറ്റവും കുറഞ്ഞത്",
+      now: "{weight} · ഇപ്പോൾ",
+      nowLowest: "{weight} · ഇപ്പോൾ · ഞങ്ങൾ വയ്ക്കുന്ന ഏറ്റവും കുറഞ്ഞത്",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "ഞാൻ നിർദ്ദേശിക്കുന്നത് {weight}, ഏകദേശം {pct}% കുറവ്, ഒരു നല്ല ആദ്യ ലക്ഷ്യം", up: "ഞാൻ നിർദ്ദേശിക്കുന്നത് {weight}, ഏകദേശം {pct}% കൂടുതൽ, ഒരു നല്ല ആദ്യ ലക്ഷ്യം" },
+  },
+  pace: {
+    rate: "ആഴ്ചയിൽ {rate}",
+    rateSuffix: "ആഴ്ചയിൽ",
+    result: "{month} ആകുമ്പോഴേക്കും {target} · ദിവസം {kcal}kcal",
+    echo: "{from} മുതൽ {to} വരെ.",
   },
 };
 
@@ -3405,6 +3613,22 @@ const KN: OnboardingContent = {
     baseline: { title: "ಇದು ನಿಮ್ಮ ಆರಂಭಿಕ ಸ್ಥಿತಿ", bmi: "BMI", what: "ಬಾಡಿ ಮಾಸ್ ಇಂಡೆಕ್ಸ್" },
     prelim: { title: "ನಿಮ್ಮ ಯೋಜನೆ", burn: "ನೀವು ಖರ್ಚು ಮಾಡುತ್ತೀರಿ", gap: "{delta} ನಿಮ್ಮ ವೇಗ", eat: "ನೀವು ತಿನ್ನುತ್ತೀರಿ", perDay: "kcal ದಿನಕ್ಕೆ", keepTitle: "ನೀವು ಸುಮಾರು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತೀರಿ" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · ನಮ್ಮ ಕನಿಷ್ಠ",
+      now: "{weight} · ಈಗ",
+      nowLowest: "{weight} · ಈಗ · ನಮ್ಮ ಕನಿಷ್ಠ",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "ನನ್ನ ಸಲಹೆ {weight}, ಸುಮಾರು {pct}% ಕಡಿಮೆ, ಉತ್ತಮ ಮೊದಲ ಗುರಿ", up: "ನನ್ನ ಸಲಹೆ {weight}, ಸುಮಾರು {pct}% ಹೆಚ್ಚು, ಉತ್ತಮ ಮೊದಲ ಗುರಿ" },
+  },
+  pace: {
+    rate: "ವಾರಕ್ಕೆ {rate}",
+    rateSuffix: "ವಾರಕ್ಕೆ",
+    result: "ಸುಮಾರು {month} ವೇಳೆಗೆ {target} · ದಿನಕ್ಕೆ {kcal}kcal",
+    echo: "{from} ರಿಂದ {to} ವರೆಗೆ.",
+  },
 };
 
 const GU: OnboardingContent = {
@@ -3700,6 +3924,22 @@ const GU: OnboardingContent = {
     echo: { rest: "આરામની સ્થિતિમાં: {rest}kcal પ્રતિ દિવસ", days: "તમારા દિવસો {burn}kcal ખર્ચે છે" },
     baseline: { title: "આ રહ્યો તમારો શરૂઆતનો આધાર", bmi: "BMI", what: "બોડી માસ ઇન્ડેક્સ" },
     prelim: { title: "તમારી યોજના", burn: "તમે ખર્ચો છો", gap: "{delta} તમારી ઝડપ", eat: "તમે ખાઓ છો", perDay: "kcal પ્રતિ દિવસ", keepTitle: "તમે લગભગ {burn}kcal ખર્ચો છો" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · અમારું ન્યૂનતમ",
+      now: "{weight} · અત્યારે",
+      nowLowest: "{weight} · અત્યારે · અમારું ન્યૂનતમ",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "મારું સૂચન {weight} છે, લગભગ {pct}% ઓછું, એક સારું પહેલું ધ્યેય", up: "મારું સૂચન {weight} છે, લગભગ {pct}% વધુ, એક સારું પહેલું ધ્યેય" },
+  },
+  pace: {
+    rate: "{rate} પ્રતિ અઠવાડિયું",
+    rateSuffix: "પ્રતિ અઠવાડિયું",
+    result: "{month} આસપાસ {target} · {kcal}kcal પ્રતિ દિવસ",
+    echo: "{from} થી {to} સુધી.",
   },
 };
 
@@ -3997,6 +4237,22 @@ const BN: OnboardingContent = {
     baseline: { title: "এই হলো আপনার শুরুর অবস্থা", bmi: "BMI", what: "বডি মাস ইনডেক্স" },
     prelim: { title: "আপনার পরিকল্পনা", burn: "আপনি খরচ করেন", gap: "{delta} আপনার গতি", eat: "আপনি খান", perDay: "kcal দিনে", keepTitle: "আপনি প্রায় {burn}kcal খরচ করেন" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · আমাদের সর্বনিম্ন",
+      now: "{weight} · এখন",
+      nowLowest: "{weight} · এখন · আমাদের সর্বনিম্ন",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "আমার পরামর্শ {weight}, প্রায় {pct}% কম, প্রথম লক্ষ্য হিসেবে ভালো", up: "আমার পরামর্শ {weight}, প্রায় {pct}% বেশি, প্রথম লক্ষ্য হিসেবে ভালো" },
+  },
+  pace: {
+    rate: "সপ্তাহে {rate}",
+    rateSuffix: "প্রতি সপ্তাহে",
+    result: "{month} নাগাদ {target} · দিনে {kcal}kcal",
+    echo: "{from} থেকে {to}।",
+  },
 };
 
 const PT_PT: OnboardingContent = {
@@ -4292,6 +4548,22 @@ const PT_PT: OnboardingContent = {
     echo: { rest: "Em repouso: {rest}kcal por dia", days: "Os teus dias gastam {burn}kcal" },
     baseline: { title: "Este é o teu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
     prelim: { title: "O teu plano", burn: "Gastas", gap: "{delta} o teu ritmo", eat: "Comes", perDay: "kcal por dia", keepTitle: "Gastas cerca de {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · o mínimo que definimos",
+      now: "{weight} · agora",
+      nowLowest: "{weight} · agora · o mínimo que definimos",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Sugiro {weight}, cerca de {pct}% a menos, um bom primeiro objetivo", up: "Sugiro {weight}, cerca de {pct}% a mais, um bom primeiro objetivo" },
+  },
+  pace: {
+    rate: "{rate} por semana",
+    rateSuffix: "por semana",
+    result: "{target} por volta de {month} · {kcal}kcal por dia",
+    echo: "De {from} para {to}.",
   },
 };
 
@@ -4589,6 +4861,22 @@ const MS: OnboardingContent = {
     baseline: { title: "Ini titik permulaan anda", bmi: "BMI", what: "Indeks jisim badan" },
     prelim: { title: "Pelan anda", burn: "Anda membakar", gap: "{delta} kadar anda", eat: "Anda makan", perDay: "kcal sehari", keepTitle: "Anda membakar kira-kira {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · terendah yang kami tetapkan",
+      now: "{weight} · sekarang",
+      nowLowest: "{weight} · sekarang · terendah yang kami tetapkan",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Saya cadangkan {weight}, kira-kira {pct}% kurang, matlamat pertama yang baik", up: "Saya cadangkan {weight}, kira-kira {pct}% lebih, matlamat pertama yang baik" },
+  },
+  pace: {
+    rate: "{rate} seminggu",
+    rateSuffix: "seminggu",
+    result: "{target} sekitar {month} · {kcal}kcal sehari",
+    echo: "Daripada {from} kepada {to}.",
+  },
 };
 
 const CA: OnboardingContent = {
@@ -4884,6 +5172,22 @@ const CA: OnboardingContent = {
     echo: { rest: "En repòs: {rest}kcal al dia", days: "Els teus dies cremen {burn}kcal" },
     baseline: { title: "Aquest és el teu punt de partida", bmi: "IMC", what: "Índex de massa corporal" },
     prelim: { title: "El teu pla", burn: "Cremes", gap: "{delta} el teu ritme", eat: "Menjes", perDay: "kcal al dia", keepTitle: "Cremes unes {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · el mínim que fixem",
+      now: "{weight} · ara",
+      nowLowest: "{weight} · ara · el mínim que fixem",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Et proposo {weight}, un {pct} % menys: un bon primer objectiu", up: "Et proposo {weight}, un {pct} % més: un bon primer objectiu" },
+  },
+  pace: {
+    rate: "{rate} per setmana",
+    rateSuffix: "per setmana",
+    result: "{target} cap a {month} · {kcal}kcal al dia",
+    echo: "De {from} a {to}.",
   },
 };
 
@@ -5181,6 +5485,22 @@ const SL: OnboardingContent = {
     baseline: { title: "To je tvoje izhodišče", bmi: "ITM", what: "Indeks telesne mase" },
     prelim: { title: "Tvoj načrt", burn: "Porabiš", gap: "{delta} tvoj tempo", eat: "Ješ", perDay: "kcal na dan", keepTitle: "Porabiš približno {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · najnižje, kar nastavimo",
+      now: "{weight} · zdaj",
+      nowLowest: "{weight} · zdaj · najnižje, kar nastavimo",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Predlagam {weight}, približno {pct} % manj, dober prvi cilj", up: "Predlagam {weight}, približno {pct} % več, dober prvi cilj" },
+  },
+  pace: {
+    rate: "{rate} na teden",
+    rateSuffix: "na teden",
+    result: "{target} · predvidoma {month} · {kcal}kcal na dan",
+    echo: "Od {from} do {to}.",
+  },
 };
 
 const HR: OnboardingContent = {
@@ -5476,6 +5796,22 @@ const HR: OnboardingContent = {
     echo: { rest: "U mirovanju: {rest}kcal dnevno", days: "Tvoji dani troše {burn}kcal" },
     baseline: { title: "Ovo je tvoja polazna točka", bmi: "BMI", what: "Indeks tjelesne mase" },
     prelim: { title: "Tvoj plan", burn: "Trošiš", gap: "{delta} tvoj tempo", eat: "Jedeš", perDay: "kcal dnevno", keepTitle: "Trošiš oko {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · najniže što postavljamo",
+      now: "{weight} · sada",
+      nowLowest: "{weight} · sada · najniže što postavljamo",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Predlažem {weight}, oko {pct}% manje — dobar prvi cilj", up: "Predlažem {weight}, oko {pct}% više — dobar prvi cilj" },
+  },
+  pace: {
+    rate: "{rate} tjedno",
+    rateSuffix: "tjedno",
+    result: "{target} · procjena: {month} · {kcal}kcal dnevno",
+    echo: "Od {from} do {to}.",
   },
 };
 
@@ -5773,6 +6109,22 @@ const SK: OnboardingContent = {
     baseline: { title: "Tu je tvoj východiskový bod", bmi: "BMI", what: "Index telesnej hmotnosti" },
     prelim: { title: "Tvoj plán", burn: "Spáliš", gap: "{delta} tvoje tempo", eat: "Ješ", perDay: "kcal denne", keepTitle: "Spáliš asi {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · najnižšia, akú nastavíme",
+      now: "{weight} · teraz",
+      nowLowest: "{weight} · teraz · najnižšia, akú nastavíme",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Navrhujem {weight}, asi o {pct} % menej, dobrý prvý cieľ", up: "Navrhujem {weight}, asi o {pct} % viac, dobrý prvý cieľ" },
+  },
+  pace: {
+    rate: "{rate} za týždeň",
+    rateSuffix: "za týždeň",
+    result: "{target} približne {month} · {kcal}kcal denne",
+    echo: "Z {from} na {to}.",
+  },
 };
 
 const NO: OnboardingContent = {
@@ -6068,6 +6420,22 @@ const NO: OnboardingContent = {
     echo: { rest: "I hvile: {rest}kcal om dagen", days: "Dagene dine forbrenner {burn}kcal" },
     baseline: { title: "Her er utgangspunktet ditt", bmi: "KMI", what: "Kroppsmasseindeks" },
     prelim: { title: "Planen din", burn: "Du forbrenner", gap: "{delta} tempoet ditt", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrenner rundt {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · laveste vi setter",
+      now: "{weight} · nå",
+      nowLowest: "{weight} · nå · laveste vi setter",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Jeg foreslår {weight}, rundt {pct} % ned, et godt første mål", up: "Jeg foreslår {weight}, rundt {pct} % opp, et godt første mål" },
+  },
+  pace: {
+    rate: "{rate} i uken",
+    rateSuffix: "i uken",
+    result: "{target} rundt {month} · {kcal}kcal om dagen",
+    echo: "Fra {from} til {to}.",
   },
 };
 
@@ -6365,6 +6733,22 @@ const FI: OnboardingContent = {
     baseline: { title: "Tässä on lähtötasosi", bmi: "BMI", what: "Painoindeksi" },
     prelim: { title: "Suunnitelmasi", burn: "Kulutat", gap: "{delta} tahtisi", eat: "Syöt", perDay: "kcal päivässä", keepTitle: "Kulutat noin {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · alin, jonka asetamme",
+      now: "{weight} · nyt",
+      nowLowest: "{weight} · nyt · alin, jonka asetamme",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Ehdotan {weight}, noin {pct} % vähemmän, hyvä ensimmäinen tavoite", up: "Ehdotan {weight}, noin {pct} % enemmän, hyvä ensimmäinen tavoite" },
+  },
+  pace: {
+    rate: "{rate} viikossa",
+    rateSuffix: "viikossa",
+    result: "{target} · arvio: {month} · {kcal}kcal päivässä",
+    echo: "Nykyisestä {from} tavoitepainoon {to}.",
+  },
 };
 
 const DA: OnboardingContent = {
@@ -6660,6 +7044,22 @@ const DA: OnboardingContent = {
     echo: { rest: "I hvile: {rest}kcal om dagen", days: "Dine dage forbrænder {burn}kcal" },
     baseline: { title: "Her er dit udgangspunkt", bmi: "BMI", what: "Body mass index" },
     prelim: { title: "Din plan", burn: "Du forbrænder", gap: "{delta} dit tempo", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrænder cirka {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · laveste vi sætter",
+      now: "{weight} · nu",
+      nowLowest: "{weight} · nu · laveste vi sætter",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Jeg foreslår {weight}, cirka {pct} % ned, et godt første mål", up: "Jeg foreslår {weight}, cirka {pct} % op, et godt første mål" },
+  },
+  pace: {
+    rate: "{rate} om ugen",
+    rateSuffix: "om ugen",
+    result: "{target} omkring {month} · {kcal}kcal om dagen",
+    echo: "Fra {from} til {to}.",
   },
 };
 
@@ -6957,6 +7357,22 @@ const HU: OnboardingContent = {
     baseline: { title: "Itt a kiindulópontod", bmi: "BMI", what: "Testtömegindex" },
     prelim: { title: "A terved", burn: "Elégetsz", gap: "{delta} a tempód", eat: "Eszel", perDay: "kcal naponta", keepTitle: "Nagyjából {burn}kcal-t égetsz el" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · legalacsonyabb cél",
+      now: "{weight} · most",
+      nowLowest: "{weight} · most · legalacsonyabb cél",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Javaslatom: {weight}, kb. {pct}%-kal kevesebb, jó első cél", up: "Javaslatom: {weight}, kb. {pct}%-kal több, jó első cél" },
+  },
+  pace: {
+    rate: "heti {rate}",
+    rateSuffix: "hetente",
+    result: "{target} · kb. {month} · napi {kcal}kcal",
+    echo: "{from} → {to}.",
+  },
 };
 
 const EL: OnboardingContent = {
@@ -7252,6 +7668,22 @@ const EL: OnboardingContent = {
     echo: { rest: "Σε ηρεμία: {rest}kcal την ημέρα", days: "Οι μέρες σου καίνε {burn}kcal" },
     baseline: { title: "Αυτό είναι το σημείο εκκίνησής σου", bmi: "ΔΜΣ", what: "Δείκτης μάζας σώματος" },
     prelim: { title: "Το πλάνο σου", burn: "Καίς", gap: "{delta} ο ρυθμός σου", eat: "Τρως", perDay: "kcal την ημέρα", keepTitle: "Καίς περίπου {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · το κατώτατο που ορίζουμε",
+      now: "{weight} · τώρα",
+      nowLowest: "{weight} · τώρα · το κατώτατο που ορίζουμε",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Προτείνω {weight}, περίπου {pct}% λιγότερο, ένας καλός πρώτος στόχος", up: "Προτείνω {weight}, περίπου {pct}% περισσότερο, ένας καλός πρώτος στόχος" },
+  },
+  pace: {
+    rate: "{rate} την εβδομάδα",
+    rateSuffix: "την εβδομάδα",
+    result: "{target} περίπου έως {month} · {kcal}kcal την ημέρα",
+    echo: "Από {from} σε {to}.",
   },
 };
 
@@ -7549,6 +7981,22 @@ const RO: OnboardingContent = {
     baseline: { title: "Iată punctul tău de pornire", bmi: "IMC", what: "Indicele de masă corporală" },
     prelim: { title: "Planul tău", burn: "Arzi", gap: "{delta} ritmul tău", eat: "Mănânci", perDay: "kcal pe zi", keepTitle: "Arzi cam {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · minimul nostru",
+      now: "{weight} · acum",
+      nowLowest: "{weight} · acum · minimul nostru",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Îți sugerez {weight}, cu aproximativ {pct}% mai puțin, un prim obiectiv bun", up: "Îți sugerez {weight}, cu aproximativ {pct}% mai mult, un prim obiectiv bun" },
+  },
+  pace: {
+    rate: "{rate} pe săptămână",
+    rateSuffix: "pe săptămână",
+    result: "{target} cam în {month} · {kcal}kcal pe zi",
+    echo: "De la {from} la {to}.",
+  },
 };
 
 const CS: OnboardingContent = {
@@ -7844,6 +8292,22 @@ const CS: OnboardingContent = {
     echo: { rest: "V klidu: {rest}kcal denně", days: "Tvoje dny spálí {burn}kcal" },
     baseline: { title: "Tady je tvůj výchozí bod", bmi: "BMI", what: "Index tělesné hmotnosti" },
     prelim: { title: "Tvůj plán", burn: "Spálíš", gap: "{delta} tvoje tempo", eat: "Jíš", perDay: "kcal denně", keepTitle: "Spálíš zhruba {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · nejnižší, co nastavíme",
+      now: "{weight} · teď",
+      nowLowest: "{weight} · teď · nejnižší, co nastavíme",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Navrhuji {weight}, zhruba o {pct} % méně, dobrý první cíl", up: "Navrhuji {weight}, zhruba o {pct} % více, dobrý první cíl" },
+  },
+  pace: {
+    rate: "{rate} týdně",
+    rateSuffix: "týdně",
+    result: "{target} · odhad: {month} · {kcal}kcal denně",
+    echo: "Z {from} na {to}.",
   },
 };
 
@@ -8141,6 +8605,22 @@ const HI: OnboardingContent = {
     baseline: { title: "यह रहा आपका शुरुआती आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
     prelim: { title: "आपकी योजना", burn: "आप खर्च करते हैं", gap: "{delta} आपकी रफ़्तार", eat: "आप खाते हैं", perDay: "kcal प्रति दिन", keepTitle: "आप लगभग {burn}kcal खर्च करते हैं" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · हमारा न्यूनतम",
+      now: "{weight} · अभी",
+      nowLowest: "{weight} · अभी · हमारा न्यूनतम",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "मेरा सुझाव है {weight}, लगभग {pct}% कम, एक अच्छा पहला लक्ष्य", up: "मेरा सुझाव है {weight}, लगभग {pct}% ज़्यादा, एक अच्छा पहला लक्ष्य" },
+  },
+  pace: {
+    rate: "{rate} प्रति हफ़्ता",
+    rateSuffix: "प्रति हफ़्ता",
+    result: "{month} के आसपास {target} · {kcal}kcal प्रति दिन",
+    echo: "{from} से {to} तक।",
+  },
 };
 
 const TH: OnboardingContent = {
@@ -8436,6 +8916,22 @@ const TH: OnboardingContent = {
     echo: { rest: "ขณะพัก: {rest}kcal ต่อวัน", days: "วันของคุณเผาผลาญ {burn}kcal" },
     baseline: { title: "นี่คือจุดเริ่มต้นของคุณ", bmi: "BMI", what: "ดัชนีมวลกาย" },
     prelim: { title: "แผนของคุณ", burn: "คุณเผาผลาญ", gap: "{delta} ความเร็วของคุณ", eat: "คุณกิน", perDay: "kcal ต่อวัน", keepTitle: "คุณเผาผลาญประมาณ {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · ต่ำสุดที่เราตั้งให้",
+      now: "{weight} · ตอนนี้",
+      nowLowest: "{weight} · ตอนนี้ · ต่ำสุดที่เราตั้งให้",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "เราแนะนำ {weight} น้อยลงประมาณ {pct}% เป็นเป้าหมายแรกที่ดี", up: "เราแนะนำ {weight} มากขึ้นประมาณ {pct}% เป็นเป้าหมายแรกที่ดี" },
+  },
+  pace: {
+    rate: "{rate} ต่อสัปดาห์",
+    rateSuffix: "ต่อสัปดาห์",
+    result: "{target} ราว{month} · {kcal}kcal ต่อวัน",
+    echo: "จาก {from} เป็น {to}",
   },
 };
 
@@ -8733,6 +9229,22 @@ const SV: OnboardingContent = {
     baseline: { title: "Här är din utgångspunkt", bmi: "BMI", what: "Kroppsmasseindex" },
     prelim: { title: "Din plan", burn: "Du förbränner", gap: "{delta} ditt tempo", eat: "Du äter", perDay: "kcal per dag", keepTitle: "Du förbränner cirka {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · lägsta vi sätter",
+      now: "{weight} · nu",
+      nowLowest: "{weight} · nu · lägsta vi sätter",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Jag föreslår {weight}, cirka {pct} % ner, ett bra första mål", up: "Jag föreslår {weight}, cirka {pct} % upp, ett bra första mål" },
+  },
+  pace: {
+    rate: "{rate} i veckan",
+    rateSuffix: "i veckan",
+    result: "{target} runt {month} · {kcal}kcal per dag",
+    echo: "Från {from} till {to}.",
+  },
 };
 
 const UK: OnboardingContent = {
@@ -9028,6 +9540,22 @@ const UK: OnboardingContent = {
     echo: { rest: "У спокої: {rest}ккал на день", days: "Твої дні спалюють {burn}ккал" },
     baseline: { title: "Ось твоя точка відліку", bmi: "ІМТ", what: "Індекс маси тіла" },
     prelim: { title: "Твій план", burn: "Ти спалюєш", gap: "{delta} твій темп", eat: "Ти їси", perDay: "ккал на день", keepTitle: "Ти спалюєш близько {burn}ккал" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · мінімум, який ми ставимо",
+      now: "{weight} · зараз",
+      nowLowest: "{weight} · зараз · мінімум, який ми ставимо",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Пропоную {weight} — приблизно на {pct}% менше, гарна перша мета", up: "Пропоную {weight} — приблизно на {pct}% більше, гарна перша мета" },
+  },
+  pace: {
+    rate: "{rate} на тиждень",
+    rateSuffix: "на тиждень",
+    result: "{target} · орієнтир — {month} · {kcal}ккал на день",
+    echo: "З {from} до {to}.",
   },
 };
 
@@ -9325,6 +9853,22 @@ const NL: OnboardingContent = {
     baseline: { title: "Dit is je uitgangspunt", bmi: "BMI", what: "Body mass index" },
     prelim: { title: "Je plan", burn: "Je verbrandt", gap: "{delta} je tempo", eat: "Je eet", perDay: "kcal per dag", keepTitle: "Je verbrandt ongeveer {burn}kcal" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · ons minimum",
+      now: "{weight} · nu",
+      nowLowest: "{weight} · nu · ons minimum",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Ik stel {weight} voor, zo'n {pct}% eraf, een goed eerste doel", up: "Ik stel {weight} voor, zo'n {pct}% erbij, een goed eerste doel" },
+  },
+  pace: {
+    rate: "{rate} per week",
+    rateSuffix: "per week",
+    result: "{target} rond {month} · {kcal}kcal per dag",
+    echo: "Van {from} naar {to}.",
+  },
 };
 
 const PL: OnboardingContent = {
@@ -9620,6 +10164,22 @@ const PL: OnboardingContent = {
     echo: { rest: "W spoczynku: {rest}kcal dziennie", days: "Twoje dni spalają {burn}kcal" },
     baseline: { title: "Twój punkt wyjścia", bmi: "BMI", what: "Wskaźnik masy ciała" },
     prelim: { title: "Twój plan", burn: "Spalasz", gap: "{delta} twoje tempo", eat: "Jesz", perDay: "kcal dziennie", keepTitle: "Spalasz około {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · nasze minimum",
+      now: "{weight} · teraz",
+      nowLowest: "{weight} · teraz · nasze minimum",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Proponuję {weight}, około {pct}% mniej — dobry pierwszy cel", up: "Proponuję {weight}, około {pct}% więcej — dobry pierwszy cel" },
+  },
+  pace: {
+    rate: "{rate} tygodniowo",
+    rateSuffix: "tygodniowo",
+    result: "{target} — szacunkowo {month} · {kcal}kcal dziennie",
+    echo: "Od {from} do {to}.",
   },
 };
 
@@ -9917,6 +10477,22 @@ const TR: OnboardingContent = {
     baseline: { title: "İşte başlangıç noktan", bmi: "VKİ", what: "Vücut kitle indeksi" },
     prelim: { title: "Planın", burn: "Yakarsın", gap: "{delta} tempon", eat: "Yersin", perDay: "kcal/gün", keepTitle: "Yaklaşık {burn}kcal yakarsın" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · koyduğumuz en düşük",
+      now: "{weight} · şu an",
+      nowLowest: "{weight} · şu an · koyduğumuz en düşük",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "{weight} öneriyorum, yaklaşık %{pct} aşağı, iyi bir ilk hedef", up: "{weight} öneriyorum, yaklaşık %{pct} yukarı, iyi bir ilk hedef" },
+  },
+  pace: {
+    rate: "haftada {rate}",
+    rateSuffix: "haftada",
+    result: "{month} civarında {target} · günde {kcal}kcal",
+    echo: "{from} → {to}.",
+  },
 };
 
 const ZH_HANT: OnboardingContent = {
@@ -10212,6 +10788,22 @@ const ZH_HANT: OnboardingContent = {
     echo: { rest: "靜止時：每天 {rest}大卡", days: "你的日子消耗 {burn}大卡" },
     baseline: { title: "這是你的起點", bmi: "身體質量指數（BMI）", what: "身體質量指數" },
     prelim: { title: "你的計畫", burn: "你消耗", gap: "{delta} 你的步調", eat: "你攝取", perDay: "大卡/天", keepTitle: "你消耗約 {burn}大卡" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · 我們設定的最低值",
+      now: "{weight} · 目前",
+      nowLowest: "{weight} · 目前 · 我們設定的最低值",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "我建議 {weight}，約減少 {pct}%，是不錯的第一個目標", up: "我建議 {weight}，約增加 {pct}%，是不錯的第一個目標" },
+  },
+  pace: {
+    rate: "每週 {rate}",
+    rateSuffix: "每週",
+    result: "約 {month} 達到 {target} · 每天 {kcal}大卡",
+    echo: "從 {from} 到 {to}。",
   },
 };
 
@@ -10509,6 +11101,22 @@ const ZH_HANS: OnboardingContent = {
     baseline: { title: "这是你的起点", bmi: "身体质量指数（BMI）", what: "身体质量指数" },
     prelim: { title: "你的计划", burn: "你消耗", gap: "{delta} 你的节奏", eat: "你摄入", perDay: "千卡/天", keepTitle: "你消耗约 {burn}千卡" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · 我们设定的最低值",
+      now: "{weight} · 当前",
+      nowLowest: "{weight} · 当前 · 我们设定的最低值",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "我建议{weight}，约减少{pct}%，是不错的第一个目标", up: "我建议{weight}，约增加{pct}%，是不错的第一个目标" },
+  },
+  pace: {
+    rate: "每周{rate}",
+    rateSuffix: "每周",
+    result: "约{month}达到{target} · 每天{kcal}千卡",
+    echo: "从{from}到{to}。",
+  },
 };
 
 const KO: OnboardingContent = {
@@ -10804,6 +11412,22 @@ const KO: OnboardingContent = {
     echo: { rest: "휴식 중: 하루 {rest}kcal", days: "하루에는 {burn}kcal를 써요" },
     baseline: { title: "현재 기준점이에요", bmi: "BMI", what: "체질량지수" },
     prelim: { title: "내 계획", burn: "소모", gap: "내 속도 {delta}", eat: "섭취", perDay: "kcal/일", keepTitle: "하루에 약 {burn}kcal를 써요" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · 설정 가능한 최저치",
+      now: "{weight} · 현재",
+      nowLowest: "{weight} · 현재 · 설정 가능한 최저치",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "{weight}를 추천해요. 약 {pct}% 감소로, 첫 목표로 좋아요", up: "{weight}를 추천해요. 약 {pct}% 증가로, 첫 목표로 좋아요" },
+  },
+  pace: {
+    rate: "주당 {rate}",
+    rateSuffix: "주당",
+    result: "{month}쯤 {target} · 하루 {kcal}kcal",
+    echo: "{from}에서 {to}로.",
   },
 };
 
@@ -11101,6 +11725,22 @@ const JA: OnboardingContent = {
     baseline: { title: "あなたの現在地です", bmi: "BMI", what: "ボディマス指数" },
     prelim: { title: "あなたのプラン", burn: "あなたが消費", gap: "あなたのペース {delta}", eat: "あなたが食べる", perDay: "kcal/日", keepTitle: "あなたは約{burn}kcalを消費します" },
   },
+  target: {
+    markers: {
+      lowest: "{weight} · 設定できる下限",
+      now: "{weight} · 現在",
+      nowLowest: "{weight} · 現在 · 設定できる下限",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "おすすめは{weight}。約{pct}%減で、最初の目標にちょうどいいです", up: "おすすめは{weight}。約{pct}%増で、最初の目標にちょうどいいです" },
+  },
+  pace: {
+    rate: "週{rate}",
+    rateSuffix: "/週",
+    result: "{month}ごろ{target} · 1日{kcal}kcal",
+    echo: "{from}から{to}へ。",
+  },
 };
 
 const PT_BR: OnboardingContent = {
@@ -11396,6 +12036,22 @@ const PT_BR: OnboardingContent = {
     echo: { rest: "Em repouso: {rest}kcal por dia", days: "Seus dias gastam {burn}kcal" },
     baseline: { title: "Este é seu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
     prelim: { title: "Seu plano", burn: "Você gasta", gap: "{delta} seu ritmo", eat: "Você come", perDay: "kcal por dia", keepTitle: "Você gasta cerca de {burn}kcal" },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · o mínimo que definimos",
+      now: "{weight} · agora",
+      nowLowest: "{weight} · agora · o mínimo que definimos",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: { down: "Sugiro {weight}, cerca de {pct}% a menos, uma boa primeira meta", up: "Sugiro {weight}, cerca de {pct}% a mais, uma boa primeira meta" },
+  },
+  pace: {
+    rate: "{rate} por semana",
+    rateSuffix: "por semana",
+    result: "{target} por volta de {month} · {kcal}kcal por dia",
+    echo: "De {from} para {to}.",
   },
 };
 

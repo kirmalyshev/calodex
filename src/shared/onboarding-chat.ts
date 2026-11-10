@@ -694,9 +694,10 @@ export function targetSuggestionLine(
   goal: Goal,
   units: Units | null,
   lang: Lang,
+  content: OnboardingContent,
 ): string | null {
   if (goal !== "lose" && goal !== "gain") return null;
-  const copy = chatCopyFor(lang).targetSuggestion;
+  const copy = content.target.suggestion;
   return fill(goal === "lose" ? copy.down : copy.up, {
     weight: weightDisplay(kg, units, lang),
     pct: wholeNumbers(lang)(pct),
@@ -743,9 +744,9 @@ export function maintainRange(kg: number, units: Units | null, lang: Lang): stri
  * The pace screen's answer echo (#1693): the two weights the user just gave, restated above "How
  * fast?". Null until both exist and differ — there is nothing to echo, and no verdict is added.
  */
-export function paceEcho(p: Profile, units: Units | null, lang: Lang): string | null {
+export function paceEcho(p: Profile, units: Units | null, lang: Lang, content: OnboardingContent): string | null {
   if (p.weight_kg === null || p.target_weight_kg === null || p.weight_kg === p.target_weight_kg) return null;
-  return fill(chatCopyFor(lang).pace.echo, { from: weightDisplay(p.weight_kg, units, lang), to: weightDisplay(p.target_weight_kg, units, lang) });
+  return fill(content.pace.echo, { from: weightDisplay(p.weight_kg, units, lang), to: weightDisplay(p.target_weight_kg, units, lang) });
 }
 
 /**
@@ -782,11 +783,14 @@ export function pacePreview(
   pace: Pace,
   today: Date,
   lang: Lang,
+  content: OnboardingContent,
 ): PacePreview | null {
   if (p.target_weight_kg === null || p.weight_kg === null) return null;
   const candidate = { ...p, pace };
   const { targets, basis } = explainTargets(candidate, today);
   const proj = previewProjection(p, p.target_weight_kg, pace);
+  // `result` is editable copy; `floorMarker`/`capMarker` stay code — the cap and floor's own
+  // explanation is bound to `explainTargets`, not the content revision (ieat-app#2757).
   const copy = chatCopyFor(lang).pace;
   // The floor wins when both bit: "every pace lands here" is the floor's story, and the cap's
   // marker under it would explain a number that the floor, not the cap, produced.
@@ -795,7 +799,7 @@ export function pacePreview(
     : null;
   return {
     ratePerWeek: proj === null ? null : Math.round(proj.kgPerWeek * 10) / 10,
-    line: proj === null ? null : fill(copy.result, {
+    line: proj === null ? null : fill(content.pace.result, {
       target: weightDisplay(p.target_weight_kg, p.units, lang),
       month: projectionMonth(today, proj.weeks, lang),
       kcal: kcalNumbers(lang)(targets.kcal),
