@@ -262,10 +262,10 @@ describe("validation refuses what would break the app", () => {
       c.welcome.lines = ["one", "two", "three", "four", "five"];
       return c;
     });
-    bad((c) => {
-      c.welcome.lines = [];
-      return c;
-    });
+    // An EMPTY welcome is allowed since ieat-app#2756 — the photo and the two doors carry the
+    // screen; every optional line may hide.
+    const ok = validateOnboardingContent(clone(DEFAULT_ONBOARDING_CONTENT));
+    expect(ok.ok).toBe(true);
   });
 
   it("disabling a screen whose answer feeds the calorie target", () => {

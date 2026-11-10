@@ -22,6 +22,12 @@ import { pageCopyFor } from "../copy.ts";
 import { ctaLink, ctaSubmit, dash, hidden, optRow, say, segToggle, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
 
+/** The line `say` would head: the last one that says something — empty lines render nothing (ieat-app#2756). */
+const headline = (lines: readonly string[]): string => {
+  for (let i = lines.length - 1; i >= 0; i--) if (lines[i]!.trim() !== "") return lines[i]!;
+  return "";
+};
+
 export interface Action { name: string; value: string; label: string }
 
 export interface QuestionView {
@@ -206,7 +212,7 @@ function rulerControl(v: QuestionView, cfg: RulerCfg): string {
     : `${tickMinor} ${rulerTickPhase(t, centre, cfg.val)}px 100%/100% 18px repeat-x,` +
       `${tickMajor} ${rulerTickPhase(t, centre, cfg.val, true)}px 100%/100% 18px repeat-x`;
   const ruler = `<div class="${cfg.vertical ? "vruler" : "ruler"}" role="slider" tabindex="0"` +
-    ` aria-label="${escape(v.lines[v.lines.length - 1] ?? "")}"` +
+    ` aria-label="${escape(headline(v.lines))}"` +
     ` aria-valuemin="${cfg.min}" aria-valuemax="${cfg.max}" aria-valuenow="${cfg.val}"` +
     ` aria-orientation="${cfg.vertical ? "vertical" : "horizontal"}"` +
     ` style="background:${bg}">${tint}${cfg.marks ? "" : `<div class="lbls">${labels}</div>`}${markers}` +
@@ -228,7 +234,7 @@ function rulerControl(v: QuestionView, cfg: RulerCfg): string {
 
 /** The plain field every scripted control degrades to — the same `answer` name, always posted. */
 function numAlt(v: QuestionView, input: string, unitWord: string, labelled = "answer"): string {
-  const q = v.lines[v.lines.length - 1] ?? "";
+  const q = headline(v.lines);
   return `<div class="numalt"><label class="lab" for="${labelled}">${escape(q)}</label>${input}` +
     `<span class="uname">${escape(unitWord)}</span></div>`;
 }
@@ -254,7 +260,7 @@ function ageControl(v: QuestionView): { control: string } {
   for (let a = min; a <= max; a++)
     rows.push(`<div class="${rowClass(a)}">${escape(years(copy.units.yearsCount, a))}</div>`);
   const wheel = `<div class="ctl" data-ctl="wheel" data-min="${min}" data-val="${val}">` +
-    `<div class="wheelbox"><div class="wheel" tabindex="0" aria-label="${escape(v.lines[v.lines.length - 1] ?? "")}">${rows.join("")}</div></div></div>`;
+    `<div class="wheelbox"><div class="wheel" tabindex="0" aria-label="${escape(headline(v.lines))}">${rows.join("")}</div></div></div>`;
     // The wheel draws ages; the typed fallback also takes a four-digit year — `checkNumber`
   // reads one — so the field's own bounds must not refuse what the server would accept.
   return { control: wheel + numAlt(v, numInput(v, val, 5, 2100, 1), copy.units.years) };
@@ -285,7 +291,7 @@ function heightControl(v: QuestionView): { seg: string; control: string } {
   // Imperial's plain fallback is two fields — "5 ft 8 in" is two numbers, and one box would ask a
   // user to invent a decimal nobody writes. `answer` (total inches) stays the scripted wire.
   const alt = v.units === "imperial"
-    ? `<div class="numalt"><label class="lab" for="answer_ft">${escape(v.lines[v.lines.length - 1] ?? "")}</label>` +
+    ? `<div class="numalt"><label class="lab" for="answer_ft">${escape(headline(v.lines))}</label>` +
       `<input type="number" name="answer_ft" id="answer_ft" data-alt value="${cmToFtIn(val ? Math.round(val * 2.54) : 0).ft}" min="3" max="8" step="1" inputmode="numeric" aria-label="ft">` +
       `<input type="number" name="answer_in" id="answer_in" data-alt value="${cmToFtIn(val ? Math.round(val * 2.54) : 0).in}" min="0" max="11" step="1" inputmode="numeric" aria-label="in">` +
       `<span class="uname">ft · in</span></div>` +
