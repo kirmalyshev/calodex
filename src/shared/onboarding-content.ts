@@ -8059,7 +8059,7 @@ const SV: OnboardingContent = {
   version: 20,
   welcome: {
     lines: [],
-    cta: "Börja",
+    cta: "Kom igång",
     signin: "Jag har redan ett konto",
   },
   screens: [
@@ -9469,7 +9469,7 @@ const ZH_HANT: OnboardingContent = {
   version: 20,
   welcome: {
     lines: [],
-    cta: "開始",
+    cta: "開始使用",
     signin: "我已經有帳號了",
   },
   screens: [
@@ -9751,7 +9751,7 @@ const ZH_HANS: OnboardingContent = {
   version: 20,
   welcome: {
     lines: [],
-    cta: "开始",
+    cta: "开始使用",
     signin: "我已有账户",
   },
   screens: [

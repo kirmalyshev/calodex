@@ -1201,7 +1201,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     for (const [i, line] of v.slice(1).entries()) optLine(line, `${at}[${i + 1}]`);
   };
 
-  /** A block of lines where every one may hide — `min` to `max`, empty entries allowed. */
+  /** A block of lines where every one may hide — 0 to `max`, empty entries allowed. */
   const freeLines = (v: unknown, at: string, max: number) => {
     if (!Array.isArray(v) || v.length > max) {
       push(`${at} must be 0 to ${max} lines`);

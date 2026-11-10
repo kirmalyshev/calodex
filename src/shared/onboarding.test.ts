@@ -289,13 +289,19 @@ describe("validation refuses what would break the app", () => {
     });
   });
 
-  it("reports every problem at once, not the first", () => {
-    const errors = bad((c) => {
+  it("an empty QUESTION line is refused, naming the line", () => {
+    // `lines` may hide a subtitle — never the first line, which is the question itself (#2756).
+    expect(bad((c) => {
       c.screens[0]!.asks.goal!.lines = [""];
+      return c;
+    }).join(" ")).toContain("lines[0]");
+  });
+
+  it("an empty button label is refused, naming the field", () => {
+    expect(bad((c) => {
       c.welcome.cta = "";
       return c;
-    });
-    expect(errors.length).toBeGreaterThan(1);
+    }).join(" ")).toContain("welcome.cta");
   });
 
   it("junk", () => {
@@ -389,6 +395,31 @@ describe("validation allows what an admin is meant to do", () => {
       return x;
     });
   });
+
+  it("hiding every optional line, one empty string at a time (#2756)", () => {
+    // The welcome needs no words at all — the photo and the two doors carry the screen.
+    good((x) => {
+      x.welcome.lines = [];
+      return x;
+    });
+    good((x) => {
+      x.welcome.lines = ["", "Still a welcome."];
+      return x;
+    });
+    // A subtitle after the question may hide; the question may not.
+    good((x) => {
+      x.screens.find((s) => s.id === "goal")!.asks.goal!.lines = ["Which fits you?", ""];
+      return x;
+    });
+    good((x) => {
+      x.screens.find((s) => s.id === "age")!.asks.birth_year!.placeholder = "";
+      return x;
+    });
+    good((x) => {
+      x.screens.find((s) => s.id === "activity")!.options!.some!.hint = "";
+      return x;
+    });
+  });
 });
 
 describe("content from a server this binary does not match", () => {
@@ -442,6 +473,25 @@ describe("content from a server this binary does not match", () => {
     const fine = clone(DEFAULT_ONBOARDING_CONTENT);
     fine.version = 12;
     expect(usableContent(fine).version).toBe(12);
+  });
+
+  it("serves a stored welcome that hides every line (#2756)", () => {
+    // The read-side mirror of the write rule: an admin's empty `lines` is a deliberate hide, not
+    // a defect to repair with the fallback.
+    const stored = clone(DEFAULT_ONBOARDING_CONTENT);
+    stored.welcome.lines = [];
+    stored.welcome.cta = "Admin's own button";
+    const served = usableContent(stored);
+    expect(served.welcome.lines).toEqual([]);
+    expect(served.welcome.cta).toBe("Admin's own button");
+  });
+
+  it("serves a hidden subtitle, and retires a revision whose QUESTION is empty", () => {
+    const stored = clone(DEFAULT_ONBOARDING_CONTENT);
+    stored.screens[0]!.asks.goal!.lines = ["Which fits you?", ""];
+    expect(usableContent(stored).screens[0]!.asks.goal!.lines).toEqual(["Which fits you?", ""]);
+    stored.screens[0]!.asks.goal!.lines = ["", "Which fits you?"];
+    expect(usableContent(stored)).toBe(DEFAULT_ONBOARDING_CONTENT);
   });
 });
 
