@@ -382,10 +382,16 @@ export interface OnboardingExperimentView {
 /** Every experiment with its per-variant funnel — the admin's list. */
 export async function onboardingExperiments(deps: EngineDeps): Promise<OnboardingExperimentView[]> {
   const list = await deps.store.listOnboardingExperiments();
+  const stored = await deps.store.getOnboardingContent();
   const out: OnboardingExperimentView[] = [];
   for (const experiment of list) {
+    // A draft written before a content block existed must still open in the editor: the editor
+    // hands it to `uiCard()`/`beatsCard()` as-is and the validator refuses its save, so the arm
+    // is read through the same block-by-block fill a phone gets — live control supplies the rest.
+    const control = usableContentFor(experiment.lang, stored);
     const funnel = await deps.store.onboardingExperimentFunnel(experiment.id);
     const arms = experiment.variants.map((variant) => {
+      variant = { ...variant, content: usableContent(variant.content, control) };
       const row = funnel.find((r) => r.variant_id === variant.content.version);
       // INTENTION TO TREAT: the rate is per ASSIGNED user — completed_users / assigned — not per
       // session, or a restart would inflate the denominator.
@@ -573,12 +579,15 @@ export async function addOnboardingVariant(
   const control = experiment.variants.find((v) => v.control) ?? experiment.variants[0];
   if (!control) return { ok: false, errors: ["the experiment has no control to clone"] };
   // A clone gets its own version: two arms naming one revision would be indistinguishable in the
-  // funnel, where content_version IS the variant's name.
+  // funnel, where content_version IS the variant's name. The clone is usable-first: a control
+  // written before a content block existed produces an arm the editor cannot open and the
+  // validator cannot save (ieat-app#2757).
   const floor = compiledContentFor(experiment.lang).version + 1;
   const version = await deps.store.bumpOnboardingContentVersion(floor);
+  const content = usableContent(structuredClone(control.content), compiledContentFor(experiment.lang));
   experiment.variants = [
     ...experiment.variants,
-    { weight: control.weight, content: { ...structuredClone(control.content), version } },
+    { weight: control.weight, content: { ...content, version } },
   ];
   const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
   return wrote

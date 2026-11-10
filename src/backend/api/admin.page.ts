@@ -870,8 +870,8 @@ details.how p { margin-top: 8px; }
 
         <div id="ob-beats" data-sec="beats">
           <p class="muted">
-            The explainers between the questions. <code>{rest}</code>, <code>{burn}</code>,
-            <code>{delta}</code> and <code>{floor}</code> are computed numbers — never type them.
+            The explainers between the questions. <code>{rest}</code>, <code>{burn}</code> and
+            <code>{delta}</code> are computed numbers — never type them.
             "Why we ask" and the two burn echoes may be left empty: an empty line renders nothing.
           </p>
           <div id="beats"></div>
@@ -1180,13 +1180,10 @@ details.how p { margin-top: 8px; }
     b.lines.forEach(function (line, i) {
       field(card, "Bubble " + (i + 1), line, function (v) { b.lines[i] = v; }, true);
     });
-    field(card, "Plan card title", b.title, function (v) { b.title = v; });
-    ["calories", "protein", "carbs", "fat", "diet"].forEach(function (k) {
-      field(card, "Row: " + k, b.rows[k], function (v) { b.rows[k] = v; });
-    });
-    field(card, "Limit cap: ldl — {n} is the number", b.limitCap.ldl, function (v) { b.limitCap.ldl = v; });
-    field(card, "Limit cap: kidneys — {n} is the number", b.limitCap.kidneys, function (v) { b.limitCap.kidneys = v; });
-    field(card, "Button label", b.cta, function (v) { b.cta = v; });
+    field(card, "Resting burn", b.restLabel, function (v) { b.restLabel = v; });
+    field(card, "With activity", b.activityLabel, function (v) { b.activityLabel = v; });
+    field(card, "Pace adjustment", b.paceLabel, function (v) { b.paceLabel = v; });
+    field(card, "Safety floor", b.floorLabel, function (v) { b.floorLabel = v; });
     field(card, "Floor card title — {floor} is the number", b.floorTitle, function (v) { b.floorTitle = v; });
     field(card, "Floor card body", b.floorBody, function (v) { b.floorBody = v; }, true);
     return card;
@@ -1201,12 +1198,12 @@ details.how p { margin-top: 8px; }
       field(card, "Bubble " + (i + 1), line, function (v) { s.lines[i] = v; }, true);
     });
     field(card, "Under the number", s.kcalLabel, function (v) { s.kcalLabel = v; });
-    field(card, "Floor marker — {floor} is the number", s.floorMarker, function (v) { s.floorMarker = v; });
-    ["protein", "carbs", "fat", "satfat"].forEach(function (k) {
-      field(card, "Macro row: " + k, s.macros[k], function (v) { s.macros[k] = v; });
-    });
-    field(card, "Capped pace note — {share} is the percentage", s.capNote, function (v) { s.capNote = v; }, true);
+    field(card, "Protein row", s.proteinLabel, function (v) { s.proteinLabel = v; });
     field(card, "Button label", s.cta, function (v) { s.cta = v; });
+    field(card, "Projection — {weeks} {month} {target}", s.projection, function (v) { s.projection = v; });
+    field(card, "Projection past two years", s.projectionFar, function (v) { s.projectionFar = v; });
+    field(card, "Capped pace note — {share} is the percentage", s.capNote, function (v) { s.capNote = v; }, true);
+    field(card, "Disclaimer", s.disclaimer, function (v) { s.disclaimer = v; }, true);
     return card;
   }
 

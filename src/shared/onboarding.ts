@@ -1271,6 +1271,25 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     for (const [i, line] of v.slice(1).entries()) optLine(line, `${at}[${i + 1}]`);
   };
 
+  /**
+   * A template whose `{…}`s are all keys code fills — an invented one renders a literal brace, a
+   * dropped one a figure missing. `requiredPh` must be present whenever the template is non-empty
+   * (a hideable line may be EMPTY and legitimately carry none).
+   */
+  const tmpl = (v: unknown, at: string, opts: { required?: boolean; allowed?: readonly string[]; requiredPh?: readonly string[]; max?: number }) => {
+    const { required = false, allowed = [], requiredPh = [], max = MAX_LABEL } = opts;
+    if (!isStr(v)) { push(`${at} must be a string`); return; }
+    if (required && v.trim() === "") { push(`${at} is required`); return; }
+    if (v.length > max) { push(`${at} is over ${max} characters`); return; }
+    const found = [...v.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
+    for (const ph of found) {
+      if (!allowed.includes(ph)) push(`${at} has {${ph}}, which nothing fills`);
+    }
+    for (const ph of requiredPh) {
+      if (v !== "" && !found.includes(ph)) push(`${at} drops {${ph}} — the figure it stands for disappears`);
+    }
+  };
+
   /** A block of lines where every one may hide — 0 to `max`, empty entries allowed. */
   const freeLines = (v: unknown, at: string, max: number) => {
     if (!Array.isArray(v) || v.length > max) {
@@ -1447,43 +1466,88 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   const ui = raw.ui as Record<string, unknown> | undefined;
   if (typeof ui !== "object" || ui === null) push("ui is required");
   else {
-    str(ui.continueLabel, "ui.continueLabel", MAX_LABEL);
-    str(ui.saveKept, "ui.saveKept", MAX_BODY);
-    str(ui.idlePlaceholder, "ui.idlePlaceholder", MAX_LABEL);
-    str(ui.optionContinues, "ui.optionContinues", MAX_LABEL);
-    strTable(ui.stepper, "ui.stepper", ["less", "more", "continue"], MAX_LABEL);
+    tmpl(ui.continueLabel, "ui.continueLabel", { required: true });
+    tmpl(ui.saveKept, "ui.saveKept", { required: true, max: MAX_BODY });
+    tmpl(ui.idlePlaceholder, "ui.idlePlaceholder", { required: true });
+    tmpl(ui.optionContinues, "ui.optionContinues", { required: true });
+    const stepper = ui.stepper as Record<string, unknown> | undefined;
+    if (typeof stepper !== "object" || stepper === null) push("ui.stepper is required");
+    else {
+      for (const k of Object.keys(stepper)) {
+        if (!["less", "more", "continue"].includes(k)) push(`ui.stepper.${k} is not a used key`);
+      }
+      for (const k of ["less", "more", "continue"]) {
+        tmpl(stepper[k], `ui.stepper.${k}`, { required: true });
+      }
+    }
     const un = ui.units as Record<string, unknown> | undefined;
     if (typeof un !== "object" || un === null) push("ui.units is required");
     else {
-      str(un.years, "ui.units.years", MAX_LABEL);
+      for (const k of Object.keys(un)) {
+        if (!["years", "yearsCount"].includes(k)) push(`ui.units.${k} is not a used key`);
+      }
+      tmpl(un.years, "ui.units.years", { required: true });
       const yc = un.yearsCount as Record<string, unknown> | undefined;
       if (typeof yc !== "object" || yc === null) push("ui.units.yearsCount is required");
       else {
-        str(yc.other, "ui.units.yearsCount.other", MAX_LABEL);
+        tmpl(yc.other, "ui.units.yearsCount.other", { required: true, allowed: ["n"], requiredPh: ["n"] });
         for (const k of ["zero", "one", "two", "few", "many"]) {
-          if (yc[k] !== undefined) str(yc[k], `ui.units.yearsCount.${k}`, MAX_LABEL);
+          if (yc[k] !== undefined) tmpl(yc[k], `ui.units.yearsCount.${k}`, { allowed: ["n"], requiredPh: ["n"] });
         }
         for (const k of Object.keys(yc)) {
           if (!["zero", "one", "two", "few", "many", "other"].includes(k)) push(`ui.units.yearsCount.${k} is not a plural category`);
         }
       }
     }
+    for (const k of Object.keys(ui)) {
+      if (!["continueLabel", "saveKept", "idlePlaceholder", "optionContinues", "stepper", "units"].includes(k)) {
+        push(`ui.${k} is not a used key`);
+      }
+    }
   }
 
   // The beats: `ageWhy`/`echo` may hide (empty renders nothing, ieat-app#2756); the rest stay
-  // required — a beat with no words is a dead screen.
+  // required — a beat with no words is a dead screen. Every `{…}` must be one code fills, and a
+  // non-empty template keeps the figure it exists to say.
   const beats = raw.beats as Record<string, unknown> | undefined;
   if (typeof beats !== "object" || beats === null) push("beats is required");
   else {
-    optLine(beats.ageWhy, "beats.ageWhy");
+    tmpl(beats.ageWhy, "beats.ageWhy", { max: MAX_LINE });
     const echo = beats.echo as Record<string, unknown> | undefined;
     if (typeof echo !== "object" || echo === null) push("beats.echo is required");
     else {
-      optLine(echo.rest, "beats.echo.rest");
-      optLine(echo.days, "beats.echo.days");
+      for (const k of Object.keys(echo)) {
+        if (!["rest", "days"].includes(k)) push(`beats.echo.${k} is not a used key`);
+      }
+      tmpl(echo.rest, "beats.echo.rest", { allowed: ["rest"], requiredPh: ["rest"], max: MAX_LINE });
+      tmpl(echo.days, "beats.echo.days", { allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
     }
-    strTable(beats.baseline, "beats.baseline", ["title", "bmi", "what"], MAX_LABEL);
-    strTable(beats.prelim, "beats.prelim", ["title", "burn", "gap", "eat", "perDay", "keepTitle"], MAX_LABEL);
+    const base = beats.baseline as Record<string, unknown> | undefined;
+    if (typeof base !== "object" || base === null) push("beats.baseline is required");
+    else {
+      for (const k of Object.keys(base)) {
+        if (!["title", "bmi", "what"].includes(k)) push(`beats.baseline.${k} is not a used key`);
+      }
+      tmpl(base.title, "beats.baseline.title", { required: true });
+      tmpl(base.bmi, "beats.baseline.bmi", { required: true });
+      tmpl(base.what, "beats.baseline.what", { required: true, max: MAX_BODY });
+    }
+    const prelim = beats.prelim as Record<string, unknown> | undefined;
+    if (typeof prelim !== "object" || prelim === null) push("beats.prelim is required");
+    else {
+      for (const k of Object.keys(prelim)) {
+        if (!["title", "burn", "gap", "eat", "perDay", "keepTitle"].includes(k)) push(`beats.prelim.${k} is not a used key`);
+      }
+      tmpl(prelim.title, "beats.prelim.title", { required: true });
+      tmpl(prelim.burn, "beats.prelim.burn", { required: true });
+      tmpl(prelim.gap, "beats.prelim.gap", { required: true, allowed: ["delta"], requiredPh: ["delta"], max: MAX_LINE });
+      tmpl(prelim.eat, "beats.prelim.eat", { required: true });
+      tmpl(prelim.perDay, "beats.prelim.perDay", { required: true });
+      tmpl(prelim.keepTitle, "beats.prelim.keepTitle", { required: true, allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
+    }
+    for (const k of Object.keys(beats)) {
+      if (!["ageWhy", "echo", "baseline", "prelim"].includes(k)) push(`beats.${k} is not a used key`);
+    }
   }
 
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
