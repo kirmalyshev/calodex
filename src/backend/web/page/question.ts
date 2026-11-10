@@ -244,7 +244,6 @@ const numInput = (v: QuestionView, val: number, min: number, max: number, step: 
   (v.error !== null ? ` aria-invalid="true" aria-describedby="answer-error"` : "") + `>`;
 
 function ageControl(v: QuestionView): { control: string } {
-  const copy = chatCopyFor(v.lang);
   const val = v.draft ?? (v.current[0] !== undefined ? Number(v.current[0]) : null)
     ?? (v.profile.birth_year ? v.today.getUTCFullYear() - v.profile.birth_year : ONBOARDING_NEUTRAL.ageYears);
   const min = MIN_AGE, max = 100;
@@ -329,7 +328,7 @@ function targetGoals(v: QuestionView, min: number, max: number): Record<string, 
   const goals: Record<string, string> = {};
   for (let d = min; d <= max + 1e-9; d += weightStep(v.units)) {
     const key = Math.round(d * 10) / 10;
-    const line = targetGoalLine(v.profile, v.units === "imperial" ? lbToKg(key) : key, v.units, v.today, v.lang);
+    const line = targetGoalLine(v.profile, v.units === "imperial" ? lbToKg(key) : key, v.units, v.today, v.lang, v.content);
     if (line !== null) goals[String(key)] = line;
   }
   return goals;
@@ -340,7 +339,6 @@ export const targetFloor = (minKg: number, units: UnitSystem): number =>
   units === "imperial" ? Math.ceil(minKg * LB_PER_KG) : minKg;
 
 function targetControl(v: QuestionView): { seg: string; control: string } {
-  const copy = chatCopyFor(v.lang);
   const kg = v.draft
     ?? (v.current[0] !== undefined ? Number(v.current[0]) : null)
     ?? suggestedTargetKg(v.profile)
@@ -389,7 +387,6 @@ function whenCard(line: string): string {
  */
 function paceControl(v: QuestionView, echo: string | null): string {
   const opts = screenOptions(v.content, "pace");
-  const copy = chatCopyFor(v.lang);
   const previews = PACES.map((p) => pacePreview(v.profile, p, v.today, v.lang, v.content));
   const selIdx = Math.max(0, PACES.indexOf((v.current[0] ?? v.profile.pace ?? "steady") as never));
   // The big number is the COMPUTED rate, not the nominal pace — split for the bign's two sizes.

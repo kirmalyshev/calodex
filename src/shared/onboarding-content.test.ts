@@ -84,12 +84,23 @@ describe("every language's onboarding content", () => {
         expect(c.pace.echo, lang).toContain("{from}");
         expect(c.pace.echo, lang).toContain("{to}");
       }
+      // The plan screen's computed fills.
+      for (const k of [c.plan.goal.lose, c.plan.goal.gain, c.plan.info.targetLose, c.plan.info.targetGain, c.plan.loader.lose, c.plan.loader.gain]) {
+        expect(k, lang).toContain("{kg}");
+        expect(k, lang).toContain("{month}");
+      }
+      expect(c.plan.goal.maintain, lang).toContain("{kg}");
+      expect(c.plan.goal.maintainRange, lang).toContain("{range}");
+      expect(c.plan.satFat.perDay, lang).toContain("{g}");
+      expect(c.plan.first.step, lang).toContain("{kcal}");
+      expect(c.plan.chart.estimateAria, lang).toContain("{from}");
+      expect(c.plan.chart.estimateAria, lang).toContain("{to}");
     }
   });
 
   it("introduces no placeholder nothing fills", () => {
     for (const lang of LANGS) {
-      const known = new Set(["floor", "share", "n", "rest", "burn", "delta", "weight", "pct", "rate", "from", "to", "target", "month", "kcal"]);
+      const known = new Set(["floor", "share", "n", "rest", "burn", "delta", "weight", "pct", "rate", "from", "to", "target", "month", "kcal", "kg", "range", "g"]);
       for (const [at, text] of Object.entries(flatten(onboardingContentFor(lang)))) {
         for (const m of text.matchAll(/\{(\w+)\}/g)) {
           expect(known.has(m[1]!), `${lang}.${at} uses {${m[1]}}`).toBe(true);

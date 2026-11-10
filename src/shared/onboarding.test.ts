@@ -499,6 +499,33 @@ describe("the blocks around the questions (ieat-app#2757)", () => {
     expect(bad((c) => { (c.pace as unknown as Record<string, unknown>).capMarker = "x"; return c; }).join(" ")).toContain("pace.capMarker");
   });
 
+  it("refuses a plan line that drops its figure, a missing plan block, and a suggestion without {pct}", () => {
+    expect(bad((c) => { delete (c as { plan?: unknown }).plan; return c; }).join(" ")).toContain("plan is required");
+    expect(bad((c) => { c.plan.goal.lose = "Goal: lose"; return c; }).join(" ")).toContain("{kg}");
+    expect(bad((c) => { c.plan.goal.lose = "Goal: lose {kg}"; return c; }).join(" ")).toContain("{month}");
+    expect(bad((c) => { c.plan.first.step = "Photograph your next meal."; return c; }).join(" ")).toContain("{kcal}");
+    expect(bad((c) => { c.plan.chart.estimateAria = "{from} to {to}"; return c; }).join(" ")).toContain("{month}");
+    expect(bad((c) => { c.target.suggestion.down = "I suggest {weight}"; return c; }).join(" ")).toContain("{pct}");
+    expect(bad((c) => { (c.plan.info as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("plan.info.bogus");
+  });
+
+  it("lets the plan's change-anytime line hide, never the titles", () => {
+    good((c) => { c.plan.changeAnytime = ""; return c; });
+    expect(bad((c) => { c.plan.weightTitle = ""; return c; }).join(" ")).toContain("plan.weightTitle");
+    expect(bad((c) => { c.plan.info.activity = ""; return c; }).join(" ")).toContain("plan.info.activity");
+  });
+
+  it("keeps a stored pre-v26 revision's own blocks and fills plan from this binary's language", () => {
+    const stored = clone(onboardingContentFor("de"));
+    stored.version = 25;
+    delete (stored as { plan?: unknown }).plan;
+    stored.summary.cta = "Admin's own German words";
+    const served = usableContentFor("de", { de: stored });
+    expect(served.plan).toEqual(onboardingContentFor("de").plan);
+    expect(served.summary.cta).toBe("Admin's own German words");
+    expect(served.version).toBe(25);
+  });
+
   it("keeps a stored pre-v25 revision's own blocks and fills target/pace from this binary's language", () => {
     const stored = clone(onboardingContentFor("de"));
     stored.version = 24;

@@ -448,8 +448,8 @@ describe("the units toggle", () => {
       weight_kg: lbToKg(165), target_weight_kg: lbToKg(151),
     });
     const today = new Date("2026-11-02T12:00:00Z");
-    expect(targetGoalLine(p, lbToKg(151), "imperial", today, "en")).toContain("14lb");
-    expect(planGoalLine(p, today, "en")).toContain("14lb");
+    expect(targetGoalLine(p, lbToKg(151), "imperial", today, "en", DEFAULT_ONBOARDING_CONTENT)).toContain("14lb");
+    expect(planGoalLine(p, today, "en", DEFAULT_ONBOARDING_CONTENT)).toContain("14lb");
     expect(planHeadline(p, today, "imperial", "en")).toContain("14");
   });
 

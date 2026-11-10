@@ -1273,9 +1273,41 @@ details.how p { margin-top: 8px; }
     return card;
   }
 
+  function planCard() {
+    var t = content.plan;
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, "The plan");
+    field(card, 'Your weight title', t.weightTitle, function (v) { t.weightTitle = v; });
+    field(card, 'Every day title', t.everyDay, function (v) { t.everyDay = v; });
+    field(card, 'Your info title', t.infoTitle, function (v) { t.infoTitle = v; });
+    field(card, 'Based on your answers', t.basedOn, function (v) { t.basedOn = v; });
+    field(card, 'Change-anytime line (may be empty)', t.changeAnytime, function (v) { t.changeAnytime = v; });
+    field(card, 'Lose headline — {kg} {month}', t.goal.lose, function (v) { t.goal.lose = v; });
+    field(card, 'Gain headline — {kg} {month}', t.goal.gain, function (v) { t.goal.gain = v; });
+    field(card, 'Maintain headline — {kg}', t.goal.maintain, function (v) { t.goal.maintain = v; });
+    field(card, 'Maintain range — {range}', t.goal.maintainRange, function (v) { t.goal.maintainRange = v; });
+    field(card, 'Row: starting weight', t.info.startWeight, function (v) { t.info.startWeight = v; });
+    field(card, 'Row: goal weight', t.info.goalWeight, function (v) { t.info.goalWeight = v; });
+    field(card, 'Row: activity', t.info.activity, function (v) { t.info.activity = v; });
+    field(card, 'Row: target', t.info.target, function (v) { t.info.target = v; });
+    field(card, 'Row: lose value — {kg} {month}', t.info.targetLose, function (v) { t.info.targetLose = v; });
+    field(card, 'Row: gain value — {kg} {month}', t.info.targetGain, function (v) { t.info.targetGain = v; });
+    field(card, 'Sat-fat column label', t.satFat.label, function (v) { t.satFat.label = v; });
+    field(card, 'Sat-fat row label', t.satFat.asked, function (v) { t.satFat.asked = v; });
+    field(card, 'Sat-fat value — {g}', t.satFat.perDay, function (v) { t.satFat.perDay = v; });
+    field(card, 'First-step title', t.first.title, function (v) { t.first.title = v; });
+    field(card, 'First-step line — {kcal}', t.first.step, function (v) { t.first.step = v; }, true);
+    field(card, 'Loader: goal label', t.loader.goal, function (v) { t.loader.goal = v; });
+    field(card, 'Loader: lose value — {kg} {month}', t.loader.lose, function (v) { t.loader.lose = v; });
+    field(card, 'Loader: gain value — {kg} {month}', t.loader.gain, function (v) { t.loader.gain = v; });
+    field(card, 'Chart aria — {from} {to} {month}', t.chart.estimateAria, function (v) { t.chart.estimateAria = v; }, true);
+    return card;
+  }
+
   // The sections take turns beside a sub-nav; the save bar below them is for all of them.
   var obSec = "welcome";
-  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"], ["target", "The target"], ["pace", "The pace"]];
+  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"], ["target", "The target"], ["pace", "The pace"], ["plan", "The plan"]];
 
   function renderObNav() {
     var nav = $("ob-nav");
@@ -1336,6 +1368,7 @@ details.how p { margin-top: 8px; }
     one("beats", beatsCard);
     one("target", targetCard);
     one("pace", paceCard);
+    one("plan", planCard);
     renderObNav();
     if (fresh) saved = JSON.parse(JSON.stringify(content));
     unsaved();

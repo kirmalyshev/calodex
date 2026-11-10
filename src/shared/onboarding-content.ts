@@ -233,6 +233,27 @@ const FR: OnboardingContent = {
     result: "{target} vers {month} · {kcal}kcal par jour",
     echo: "De {from} à {to}.",
   },
+  plan: {
+    weightTitle: "Ton poids",
+    everyDay: "Chaque jour",
+    infoTitle: "Tes infos",
+    basedOn: "D’après tes réponses",
+    changeAnytime: "Tu peux changer ça quand tu veux",
+    goal: {
+      lose: "Objectif : −{kg} d’ici {month}",
+      gain: "Objectif : +{kg} d’ici {month}",
+      maintain: "Objectif : rester autour de {kg}",
+      maintainRange: "Fourchette : {range}",
+    },
+    info: {
+      startWeight: "Poids de départ", goalWeight: "Poids visé", activity: "Activité",
+      target: "Objectif", targetLose: "−{kg} d’ici {month}", targetGain: "+{kg} d’ici {month}",
+    },
+    satFat: { label: "graisses sat.", asked: "Graisses saturées · ta demande", perDay: "≤ {g} par jour" },
+    first: { title: "Ta première étape", step: "Photographie ton prochain repas. eait le compare à {kcal}kcal." },
+    loader: { goal: "Ton objectif", lose: "−{kg} d’ici {month}", gain: "+{kg} d’ici {month}" },
+    chart: { estimateAria: "Poids estimé : {from} maintenant, {to} vers {month}" },
+  },
 };
 
 // ── Deutsch ───────────────────────────────────────────────────────────────────────
@@ -434,6 +455,27 @@ const DE: OnboardingContent = {
     rateSuffix: "pro Woche",
     result: "{target} etwa im {month} · {kcal}kcal am Tag",
     echo: "Von {from} auf {to}.",
+  },
+  plan: {
+    weightTitle: "Dein Gewicht",
+    everyDay: "Jeden Tag",
+    infoTitle: "Deine Angaben",
+    basedOn: "Basierend auf deinen Antworten",
+    changeAnytime: "Du kannst das jederzeit ändern",
+    goal: {
+      lose: "Ziel: −{kg} bis {month}",
+      gain: "Ziel: +{kg} bis {month}",
+      maintain: "Ziel: bei etwa {kg} bleiben",
+      maintainRange: "Bereich: {range}",
+    },
+    info: {
+      startWeight: "Startgewicht", goalWeight: "Zielgewicht", activity: "Aktivität",
+      target: "Ziel", targetLose: "−{kg} bis {month}", targetGain: "+{kg} bis {month}",
+    },
+    satFat: { label: "ges. Fett", asked: "Gesättigte Fette · dein Wunsch", perDay: "≤ {g} am Tag" },
+    first: { title: "Dein erster Schritt", step: "Fotografiere deine nächste Mahlzeit. eait prüft sie gegen {kcal}kcal." },
+    loader: { goal: "Dein Ziel", lose: "−{kg} bis {month}", gain: "+{kg} bis {month}" },
+    chart: { estimateAria: "Geschätztes Gewicht: jetzt {from}, {to} etwa im {month}" },
   },
 };
 
@@ -637,6 +679,27 @@ const IT: OnboardingContent = {
     result: "{target} verso {month} · {kcal}kcal al giorno",
     echo: "Da {from} a {to}.",
   },
+  plan: {
+    weightTitle: "Il tuo peso",
+    everyDay: "Ogni giorno",
+    infoTitle: "I tuoi dati",
+    basedOn: "In base alle tue risposte",
+    changeAnytime: "Puoi cambiarlo quando vuoi",
+    goal: {
+      lose: "Obiettivo: −{kg} entro {month}",
+      gain: "Obiettivo: +{kg} entro {month}",
+      maintain: "Obiettivo: restare intorno a {kg}",
+      maintainRange: "Intervallo: {range}",
+    },
+    info: {
+      startWeight: "Peso di partenza", goalWeight: "Peso obiettivo", activity: "Attività",
+      target: "Obiettivo", targetLose: "−{kg} entro {month}", targetGain: "+{kg} entro {month}",
+    },
+    satFat: { label: "grassi sat.", asked: "Grassi saturi · la tua richiesta", perDay: "≤ {g} al giorno" },
+    first: { title: "Il tuo primo passo", step: "Fotografa il tuo prossimo pasto. eait lo confronta con {kcal}kcal." },
+    loader: { goal: "Il tuo obiettivo", lose: "−{kg} entro {month}", gain: "+{kg} entro {month}" },
+    chart: { estimateAria: "Peso stimato: {from} ora, {to} intorno a {month}" },
+  },
 };
 
 // ── Español ───────────────────────────────────────────────────────────────────────
@@ -838,6 +901,27 @@ const ES: OnboardingContent = {
     rateSuffix: "a la semana",
     result: "{target} hacia {month} · {kcal}kcal al día",
     echo: "De {from} a {to}.",
+  },
+  plan: {
+    weightTitle: "Tu peso",
+    everyDay: "Cada día",
+    infoTitle: "Tus datos",
+    basedOn: "Según tus respuestas",
+    changeAnytime: "Puedes cambiarlo cuando quieras",
+    goal: {
+      lose: "Objetivo: −{kg} para {month}",
+      gain: "Objetivo: +{kg} para {month}",
+      maintain: "Objetivo: mantenerte en torno a {kg}",
+      maintainRange: "Rango: {range}",
+    },
+    info: {
+      startWeight: "Peso inicial", goalWeight: "Peso objetivo", activity: "Actividad",
+      target: "Objetivo", targetLose: "−{kg} para {month}", targetGain: "+{kg} para {month}",
+    },
+    satFat: { label: "grasa sat.", asked: "Grasas saturadas · lo que pediste", perDay: "≤ {g} al día" },
+    first: { title: "Tu primer paso", step: "Fotografía tu próxima comida. eait la compara con {kcal}kcal." },
+    loader: { goal: "Tu objetivo", lose: "−{kg} para {month}", gain: "+{kg} para {month}" },
+    chart: { estimateAria: "Peso estimado: {from} ahora, {to} hacia {month}" },
   },
 };
 
@@ -1041,6 +1125,27 @@ const VI: OnboardingContent = {
     result: "{target} vào khoảng {month} · {kcal}kcal một ngày",
     echo: "Từ {from} đến {to}.",
   },
+  plan: {
+    weightTitle: "Cân nặng của bạn",
+    everyDay: "Mỗi ngày",
+    infoTitle: "Thông tin của bạn",
+    basedOn: "Dựa trên câu trả lời của bạn",
+    changeAnytime: "Bạn có thể đổi bất cứ lúc nào",
+    goal: {
+      lose: "Mục tiêu: −{kg} trước {month}",
+      gain: "Mục tiêu: +{kg} trước {month}",
+      maintain: "Mục tiêu: giữ quanh {kg}",
+      maintainRange: "Khoảng: {range}",
+    },
+    info: {
+      startWeight: "Cân nặng ban đầu", goalWeight: "Cân nặng mục tiêu", activity: "Mức vận động",
+      target: "Mục tiêu", targetLose: "−{kg} trước {month}", targetGain: "+{kg} trước {month}",
+    },
+    satFat: { label: "chất béo bão hòa", asked: "Chất béo bão hòa · bạn yêu cầu", perDay: "≤ {g} mỗi ngày" },
+    first: { title: "Bước đầu tiên của bạn", step: "Chụp ảnh bữa ăn tiếp theo. eait sẽ đối chiếu nó với {kcal}kcal." },
+    loader: { goal: "Mục tiêu của bạn", lose: "−{kg} trước {month}", gain: "+{kg} trước {month}" },
+    chart: { estimateAria: "Cân nặng ước tính: {from} hiện tại, {to} vào khoảng {month}" },
+  },
 };
 
 // ── Bahasa Indonesia ──────────────────────────────────────────────────────────────
@@ -1243,6 +1348,27 @@ const ID: OnboardingContent = {
     result: "{target} sekitar {month} · {kcal}kcal sehari",
     echo: "Dari {from} ke {to}.",
   },
+  plan: {
+    weightTitle: "Berat badanmu",
+    everyDay: "Setiap hari",
+    infoTitle: "Data dirimu",
+    basedOn: "Berdasarkan jawabanmu",
+    changeAnytime: "Kamu bisa mengubahnya kapan saja",
+    goal: {
+      lose: "Target: −{kg} sebelum {month}",
+      gain: "Target: +{kg} sebelum {month}",
+      maintain: "Target: tetap di sekitar {kg}",
+      maintainRange: "Rentang: {range}",
+    },
+    info: {
+      startWeight: "Berat awal", goalWeight: "Berat target", activity: "Aktivitas",
+      target: "Target", targetLose: "−{kg} sebelum {month}", targetGain: "+{kg} sebelum {month}",
+    },
+    satFat: { label: "lemak jenuh", asked: "Lemak jenuh · permintaanmu", perDay: "≤ {g} sehari" },
+    first: { title: "Langkah pertamamu", step: "Foto makananmu berikutnya. eait memeriksanya terhadap {kcal}kkal." },
+    loader: { goal: "Tujuanmu", lose: "−{kg} sebelum {month}", gain: "+{kg} sebelum {month}" },
+    chart: { estimateAria: "Perkiraan berat: {from} sekarang, {to} sekitar {month}" },
+  },
 };
 
 // ── Русский ───────────────────────────────────────────────────────────────────────
@@ -1444,6 +1570,27 @@ const RU: OnboardingContent = {
     rateSuffix: "в неделю",
     result: "{target} · ориентир — {month} · {kcal}ккал в день",
     echo: "С {from} до {to}.",
+  },
+  plan: {
+    weightTitle: "Твой вес",
+    everyDay: "Каждый день",
+    infoTitle: "Твои данные",
+    basedOn: "По твоим ответам",
+    changeAnytime: "Это можно изменить в любой момент",
+    goal: {
+      lose: "Цель: −{kg} · ориентир — {month}",
+      gain: "Цель: +{kg} · ориентир — {month}",
+      maintain: "Цель: держаться около {kg}",
+      maintainRange: "Диапазон: {range}",
+    },
+    info: {
+      startWeight: "Начальный вес", goalWeight: "Целевой вес", activity: "Активность",
+      target: "Цель", targetLose: "−{kg} · ориентир — {month}", targetGain: "+{kg} · ориентир — {month}",
+    },
+    satFat: { label: "насыщ. жиры", asked: "Насыщенные жиры · твой запрос", perDay: "≤ {g} в день" },
+    first: { title: "Твой первый шаг", step: "Сфотографируй следующий приём пищи. eait сверит его с {kcal}ккал." },
+    loader: { goal: "Твоя цель", lose: "−{kg} · ориентир — {month}", gain: "+{kg} · ориентир — {month}" },
+    chart: { estimateAria: "Оценка веса: {from} сейчас, {to} — {month}" },
   },
 };
 
@@ -1757,6 +1904,27 @@ const TE: OnboardingContent = {
     result: "సుమారు {month} నాటికి {target} · రోజుకు {kcal}kcal",
     echo: "{from} నుండి {to} వరకు.",
   },
+  plan: {
+    weightTitle: "మీ బరువు",
+    everyDay: "ప్రతిరోజూ",
+    infoTitle: "మీ సమాచారం",
+    basedOn: "మీ సమాధానాల ఆధారంగా",
+    changeAnytime: "దీన్ని ఎప్పుడైనా మార్చవచ్చు",
+    goal: {
+      lose: "లక్ష్యం: −{kg} · {month} నాటికి",
+      gain: "లక్ష్యం: +{kg} · {month} నాటికి",
+      maintain: "లక్ష్యం: సుమారు {kg} వద్ద ఉండటం",
+      maintainRange: "పరిధి: {range}",
+    },
+    info: {
+      startWeight: "మొదటి బరువు", goalWeight: "లక్ష్య బరువు", activity: "కార్యకలాపం",
+      target: "లక్ష్యం", targetLose: "−{kg} · {month} నాటికి", targetGain: "+{kg} · {month} నాటికి",
+    },
+    satFat: { label: "సంతృప్త కొవ్వు", asked: "సంతృప్త కొవ్వు · మీరు అడిగారు", perDay: "రోజుకు ≤ {g}" },
+    first: { title: "మీ మొదటి అడుగు", step: "మీ తదుపరి భోజనాన్ని ఫోటో తీయండి. eait దాన్ని {kcal}kcalతో పోలుస్తుంది." },
+    loader: { goal: "మీ లక్ష్యం", lose: "−{kg} · {month} నాటికి", gain: "+{kg} · {month} నాటికి" },
+    chart: { estimateAria: "అంచనా బరువు: ఇప్పుడు {from}, సుమారు {month} నాటికి {to}" },
+  },
 };
 
 const TA: OnboardingContent = {
@@ -2068,6 +2236,27 @@ const TA: OnboardingContent = {
     rateSuffix: "வாரத்திற்கு",
     result: "{month} வாக்கில் {target} · ஒரு நாளைக்கு {kcal}kcal",
     echo: "{from} முதல் {to} வரை.",
+  },
+  plan: {
+    weightTitle: "உங்கள் எடை",
+    everyDay: "ஒவ்வொரு நாளும்",
+    infoTitle: "உங்கள் தகவல்",
+    basedOn: "உங்கள் பதில்களின் அடிப்படையில்",
+    changeAnytime: "இதை எப்போது வேண்டுமானாலும் மாற்றலாம்",
+    goal: {
+      lose: "இலக்கு: −{kg} · {month} வரை",
+      gain: "இலக்கு: +{kg} · {month} வரை",
+      maintain: "இலக்கு: சுமார் {kg} அளவில் இருப்பது",
+      maintainRange: "வரம்பு: {range}",
+    },
+    info: {
+      startWeight: "தொடக்க எடை", goalWeight: "இலக்கு எடை", activity: "செயல்பாடு",
+      target: "இலக்கு", targetLose: "−{kg} · {month} வரை", targetGain: "+{kg} · {month} வரை",
+    },
+    satFat: { label: "நிறை. கொழுப்பு", asked: "நிறைவுற்ற கொழுப்பு · நீங்கள் கேட்டது", perDay: "≤ {g} / நாள்" },
+    first: { title: "உங்கள் முதல் படி", step: "உங்கள் அடுத்த உணவைப் புகைப்படம் எடுங்கள். eait அதை {kcal}kcal உடன் ஒப்பிடுகிறது." },
+    loader: { goal: "உங்கள் இலக்கு", lose: "−{kg} · {month} வரை", gain: "+{kg} · {month} வரை" },
+    chart: { estimateAria: "மதிப்பிடப்பட்ட எடை: இப்போது {from}, {month} வாக்கில் {to}" },
   },
 };
 
@@ -2381,6 +2570,27 @@ const PA: OnboardingContent = {
     result: "{month} ਦੇ ਆਸ-ਪਾਸ {target} · {kcal}kcal ਪ੍ਰਤੀ ਦਿਨ",
     echo: "{from} ਤੋਂ {to} ਤੱਕ।",
   },
+  plan: {
+    weightTitle: "ਤੁਹਾਡਾ ਭਾਰ",
+    everyDay: "ਹਰ ਦਿਨ",
+    infoTitle: "ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ",
+    basedOn: "ਤੁਹਾਡੇ ਜਵਾਬਾਂ ਦੇ ਆਧਾਰ 'ਤੇ",
+    changeAnytime: "ਇਸ ਨੂੰ ਕਦੇ ਵੀ ਬਦਲਿਆ ਜਾ ਸਕਦਾ ਹੈ",
+    goal: {
+      lose: "ਟੀਚਾ: −{kg} · {month} ਤੱਕ",
+      gain: "ਟੀਚਾ: +{kg} · {month} ਤੱਕ",
+      maintain: "ਟੀਚਾ: ਲਗਭਗ {kg} 'ਤੇ ਬਣੇ ਰਹੋ",
+      maintainRange: "ਦਾਇਰਾ: {range}",
+    },
+    info: {
+      startWeight: "ਸ਼ੁਰੂਆਤੀ ਭਾਰ", goalWeight: "ਟੀਚਾ ਭਾਰ", activity: "ਸਰਗਰਮੀ",
+      target: "ਟੀਚਾ", targetLose: "−{kg} · {month} ਤੱਕ", targetGain: "+{kg} · {month} ਤੱਕ",
+    },
+    satFat: { label: "ਸੈਚੁ. ਫ਼ੈਟ", asked: "ਸੈਚੁਰੇਟਿਡ ਫ਼ੈਟ · ਤੁਹਾਡੇ ਕਹਿਣ 'ਤੇ", perDay: "≤ {g} ਪ੍ਰਤੀ ਦਿਨ" },
+    first: { title: "ਤੁਹਾਡਾ ਪਹਿਲਾ ਕਦਮ", step: "ਆਪਣੇ ਅਗਲੇ ਖਾਣੇ ਦੀ ਫ਼ੋਟੋ ਲਓ। eait ਇਸਨੂੰ {kcal}kcal ਨਾਲ ਤੁਲਨਾ ਕਰਦਾ ਹੈ।" },
+    loader: { goal: "ਤੁਹਾਡਾ ਟੀਚਾ", lose: "−{kg} · {month} ਤੱਕ", gain: "+{kg} · {month} ਤੱਕ" },
+    chart: { estimateAria: "ਅੰਦਾਜ਼ਨ ਭਾਰ: ਹੁਣ {from}, {month} ਦੇ ਆਸ-ਪਾਸ {to}" },
+  },
 };
 
 const OR: OnboardingContent = {
@@ -2692,6 +2902,27 @@ const OR: OnboardingContent = {
     rateSuffix: "ପ୍ରତି ସପ୍ତାହ",
     result: "{month} ଆଖପାଖରେ {target} · {kcal}kcal ପ୍ରତିଦିନ",
     echo: "{from} ରୁ {to} ପର୍ଯ୍ୟନ୍ତ।",
+  },
+  plan: {
+    weightTitle: "ଆପଣଙ୍କ ଓଜନ",
+    everyDay: "ପ୍ରତିଦିନ",
+    infoTitle: "ଆପଣଙ୍କ ତଥ୍ୟ",
+    basedOn: "ଆପଣଙ୍କ ଉତ୍ତର ଆଧାରରେ",
+    changeAnytime: "ଏହା ଯେକୌଣସି ସମୟରେ ବଦଳାଇପାରିବେ",
+    goal: {
+      lose: "ଲକ୍ଷ୍ୟ: −{kg} · {month} ସୁଦ୍ଧା",
+      gain: "ଲକ୍ଷ୍ୟ: +{kg} · {month} ସୁଦ୍ଧା",
+      maintain: "ଲକ୍ଷ୍ୟ: ପ୍ରାୟ {kg} ରେ ରହିବା",
+      maintainRange: "ପରିସର: {range}",
+    },
+    info: {
+      startWeight: "ଆରମ୍ଭ ଓଜନ", goalWeight: "ଲକ୍ଷ୍ୟ ଓଜନ", activity: "ସକ୍ରିୟତା",
+      target: "ଲକ୍ଷ୍ୟ", targetLose: "−{kg} · {month} ସୁଦ୍ଧା", targetGain: "+{kg} · {month} ସୁଦ୍ଧା",
+    },
+    satFat: { label: "ସାଚୁ. ଫ୍ୟାଟ୍", asked: "ସାଚୁରେଟେଡ୍ ଫ୍ୟାଟ୍ · ଆପଣଙ୍କ ଅନୁରୋଧରେ", perDay: "ଦିନକୁ ≤ {g}" },
+    first: { title: "ଆପଣଙ୍କ ପ୍ରଥମ ପଦକ୍ଷେପ", step: "ଆପଣଙ୍କ ପରବର୍ତ୍ତୀ ଭୋଜନର ଫଟୋ ନିଅନ୍ତୁ। eait ଏହାକୁ {kcal}kcal ସହ ତୁଳନା କରେ।" },
+    loader: { goal: "ଆପଣଙ୍କ ଲକ୍ଷ୍ୟ", lose: "−{kg} · {month} ସୁଦ୍ଧା", gain: "+{kg} · {month} ସୁଦ୍ଧା" },
+    chart: { estimateAria: "ଆନୁମାନିକ ଓଜନ: ଏବେ {from}, {month} ଆଖପାଖରେ {to}" },
   },
 };
 
@@ -3005,6 +3236,27 @@ const MR: OnboardingContent = {
     result: "{month} च्या सुमारास {target} · दिवसाला {kcal}kcal",
     echo: "{from} पासून {to} पर्यंत.",
   },
+  plan: {
+    weightTitle: "तुमचे वजन",
+    everyDay: "दररोज",
+    infoTitle: "तुमची माहिती",
+    basedOn: "तुमच्या उत्तरांवर आधारित",
+    changeAnytime: "हे तुम्ही कधीही बदलू शकता",
+    goal: {
+      lose: "ध्येय: −{kg} · {month} पर्यंत",
+      gain: "ध्येय: {kg} वाढ · {month} पर्यंत",
+      maintain: "ध्येय: सुमारे {kg} वर राहणे",
+      maintainRange: "श्रेणी: {range}",
+    },
+    info: {
+      startWeight: "सुरुवातीचे वजन", goalWeight: "ध्येय वजन", activity: "ॲक्टिव्हिटी",
+      target: "लक्ष्य", targetLose: "−{kg} · {month} पर्यंत", targetGain: "{kg} वाढ · {month} पर्यंत",
+    },
+    satFat: { label: "सॅच. फॅट", asked: "सॅच्युरेटेड फॅट · तुम्ही विचारले", perDay: "दिवसाला ≤ {g}" },
+    first: { title: "तुमची पहिली पायरी", step: "तुमच्या पुढील जेवणाचा फोटो काढा. eait ते {kcal}kcal शी तपासते." },
+    loader: { goal: "तुमचे ध्येय", lose: "−{kg} · {month} पर्यंत", gain: "+{kg} · {month} पर्यंत" },
+    chart: { estimateAria: "अंदाजित वजन: आता {from}, {month} च्या सुमारास {to}" },
+  },
 };
 
 const ML: OnboardingContent = {
@@ -3316,6 +3568,27 @@ const ML: OnboardingContent = {
     rateSuffix: "ആഴ്ചയിൽ",
     result: "{month} ആകുമ്പോഴേക്കും {target} · ദിവസം {kcal}kcal",
     echo: "{from} മുതൽ {to} വരെ.",
+  },
+  plan: {
+    weightTitle: "നിങ്ങളുടെ ഭാരം",
+    everyDay: "എല്ലാ ദിവസവും",
+    infoTitle: "നിങ്ങളുടെ വിവരങ്ങൾ",
+    basedOn: "നിങ്ങളുടെ ഉത്തരങ്ങളെ അടിസ്ഥാനമാക്കി",
+    changeAnytime: "ഇത് എപ്പോൾ വേണമെങ്കിലും മാറ്റാം",
+    goal: {
+      lose: "ലക്ഷ്യം: −{kg} · {month} ആകുമ്പോഴേക്കും",
+      gain: "ലക്ഷ്യം: +{kg} · {month} ആകുമ്പോഴേക്കും",
+      maintain: "ലക്ഷ്യം: ഏകദേശം {kg} നിലനിർത്തുക",
+      maintainRange: "ശ്രേണി: {range}",
+    },
+    info: {
+      startWeight: "തുടക്കത്തിലെ ഭാരം", goalWeight: "ലക്ഷ്യ ഭാരം", activity: "പ്രവർത്തനനില",
+      target: "ലക്ഷ്യം", targetLose: "−{kg} · {month} ആകുമ്പോഴേക്കും", targetGain: "+{kg} · {month} ആകുമ്പോഴേക്കും",
+    },
+    satFat: { label: "പൂരിത കൊഴുപ്പ്", asked: "പൂരിത കൊഴുപ്പ് · നിങ്ങൾ ആവശ്യപ്പെട്ടത്", perDay: "ദിവസം ≤ {g}" },
+    first: { title: "നിങ്ങളുടെ ആദ്യ ചുവട്", step: "നിങ്ങളുടെ അടുത്ത ഭക്ഷണത്തിന്റെ ഫോട്ടോ എടുക്കൂ. eait അതിനെ {kcal}kcal-നോട് താരതമ്യം ചെയ്യും." },
+    loader: { goal: "നിങ്ങളുടെ ലക്ഷ്യം", lose: "−{kg} · {month} ആകുമ്പോഴേക്കും", gain: "+{kg} · {month} ആകുമ്പോഴേക്കും" },
+    chart: { estimateAria: "കണക്കാക്കിയ ഭാരം: ഇപ്പോൾ {from}, {month} ആകുമ്പോഴേക്കും {to}" },
   },
 };
 
@@ -3629,6 +3902,27 @@ const KN: OnboardingContent = {
     result: "ಸುಮಾರು {month} ವೇಳೆಗೆ {target} · ದಿನಕ್ಕೆ {kcal}kcal",
     echo: "{from} ರಿಂದ {to} ವರೆಗೆ.",
   },
+  plan: {
+    weightTitle: "ನಿಮ್ಮ ತೂಕ",
+    everyDay: "ಪ್ರತಿದಿನ",
+    infoTitle: "ನಿಮ್ಮ ಮಾಹಿತಿ",
+    basedOn: "ನಿಮ್ಮ ಉತ್ತರಗಳನ್ನು ಆಧರಿಸಿ",
+    changeAnytime: "ಇದನ್ನು ಯಾವಾಗ ಬೇಕಾದರೂ ಬದಲಿಸಬಹುದು",
+    goal: {
+      lose: "ಗುರಿ: −{kg} · {month} ವೇಳೆಗೆ",
+      gain: "ಗುರಿ: +{kg} · {month} ವೇಳೆಗೆ",
+      maintain: "ಗುರಿ: ಸುಮಾರು {kg} ಕಾಯ್ದುಕೊಳ್ಳುವುದು",
+      maintainRange: "ವ್ಯಾಪ್ತಿ: {range}",
+    },
+    info: {
+      startWeight: "ಆರಂಭಿಕ ತೂಕ", goalWeight: "ಗುರಿ ತೂಕ", activity: "ಚಟುವಟಿಕೆ",
+      target: "ಗುರಿ", targetLose: "−{kg} · {month} ವೇಳೆಗೆ", targetGain: "+{kg} · {month} ವೇಳೆಗೆ",
+    },
+    satFat: { label: "ಸ್ಯಾಚುರೇಟೆಡ್ ಕೊಬ್ಬು", asked: "ಸ್ಯಾಚುರೇಟೆಡ್ ಕೊಬ್ಬು · ನೀವು ಕೇಳಿದ್ದು", perDay: "ದಿನಕ್ಕೆ ≤ {g}" },
+    first: { title: "ನಿಮ್ಮ ಮೊದಲ ಹೆಜ್ಜೆ", step: "ನಿಮ್ಮ ಮುಂದಿನ ಊಟದ ಫೋಟೋ ತೆಗೆಯಿರಿ. eait ಅದನ್ನು {kcal}kcal ವಿರುದ್ಧ ಪರಿಶೀಲಿಸುತ್ತದೆ." },
+    loader: { goal: "ನಿಮ್ಮ ಗುರಿ", lose: "−{kg} · {month} ವೇಳೆಗೆ", gain: "+{kg} · {month} ವೇಳೆಗೆ" },
+    chart: { estimateAria: "ಅಂದಾಜು ತೂಕ: ಈಗ {from}, ಸುಮಾರು {month} ವೇಳೆಗೆ {to}" },
+  },
 };
 
 const GU: OnboardingContent = {
@@ -3940,6 +4234,27 @@ const GU: OnboardingContent = {
     rateSuffix: "પ્રતિ અઠવાડિયું",
     result: "{month} આસપાસ {target} · {kcal}kcal પ્રતિ દિવસ",
     echo: "{from} થી {to} સુધી.",
+  },
+  plan: {
+    weightTitle: "તમારું વજન",
+    everyDay: "દરરોજ",
+    infoTitle: "તમારી માહિતી",
+    basedOn: "તમારા જવાબોના આધારે",
+    changeAnytime: "આ ગમે ત્યારે બદલી શકાય છે",
+    goal: {
+      lose: "ધ્યેય: −{kg} · {month} સુધીમાં",
+      gain: "ધ્યેય: +{kg} · {month} સુધીમાં",
+      maintain: "ધ્યેય: લગભગ {kg} પર રહેવું",
+      maintainRange: "શ્રેણી: {range}",
+    },
+    info: {
+      startWeight: "શરૂઆતનું વજન", goalWeight: "લક્ષ્ય વજન", activity: "પ્રવૃત્તિ",
+      target: "લક્ષ્ય", targetLose: "−{kg} · {month} સુધીમાં", targetGain: "+{kg} · {month} સુધીમાં",
+    },
+    satFat: { label: "સેચ્યુ. ફેટ", asked: "સેચ્યુરેટેડ ફેટ · તમારી વિનંતી પર", perDay: "≤ {g} પ્રતિ દિવસ" },
+    first: { title: "તમારું પહેલું પગલું", step: "તમારા આગલા ભોજનનો ફોટો લો. eait તેને {kcal}kcal સામે તપાસે છે." },
+    loader: { goal: "તમારું ધ્યેય", lose: "−{kg} · {month} સુધીમાં", gain: "+{kg} · {month} સુધીમાં" },
+    chart: { estimateAria: "અંદાજિત વજન: અત્યારે {from}, {month} આસપાસ {to}" },
   },
 };
 
@@ -4253,6 +4568,27 @@ const BN: OnboardingContent = {
     result: "{month} নাগাদ {target} · দিনে {kcal}kcal",
     echo: "{from} থেকে {to}।",
   },
+  plan: {
+    weightTitle: "আপনার ওজন",
+    everyDay: "প্রতিদিন",
+    infoTitle: "আপনার তথ্য",
+    basedOn: "আপনার উত্তরের ভিত্তিতে",
+    changeAnytime: "এটি যেকোনো সময় বদলাতে পারেন",
+    goal: {
+      lose: "লক্ষ্য: −{kg} · {month} নাগাদ",
+      gain: "লক্ষ্য: +{kg} · {month} নাগাদ",
+      maintain: "লক্ষ্য: প্রায় {kg}-এ থাকা",
+      maintainRange: "পরিসর: {range}",
+    },
+    info: {
+      startWeight: "শুরুর ওজন", goalWeight: "লক্ষ্য ওজন", activity: "কার্যকলাপ",
+      target: "লক্ষ্যমাত্রা", targetLose: "−{kg} · {month} নাগাদ", targetGain: "+{kg} · {month} নাগাদ",
+    },
+    satFat: { label: "স্যাচু. ফ্যাট", asked: "স্যাচুরেটেড ফ্যাট · আপনার অনুরোধে", perDay: "দিনে ≤ {g}" },
+    first: { title: "আপনার প্রথম ধাপ", step: "পরের খাবারের ছবি তুলুন। eait সেটি {kcal}kcal-এর সঙ্গে মিলিয়ে দেখে।" },
+    loader: { goal: "আপনার লক্ষ্য", lose: "−{kg} · {month} নাগাদ", gain: "+{kg} · {month} নাগাদ" },
+    chart: { estimateAria: "আনুমানিক ওজন: এখন {from}, {month} নাগাদ {to}" },
+  },
 };
 
 const PT_PT: OnboardingContent = {
@@ -4564,6 +4900,27 @@ const PT_PT: OnboardingContent = {
     rateSuffix: "por semana",
     result: "{target} por volta de {month} · {kcal}kcal por dia",
     echo: "De {from} para {to}.",
+  },
+  plan: {
+    weightTitle: "O teu peso",
+    everyDay: "Todos os dias",
+    infoTitle: "Os teus dados",
+    basedOn: "Com base nas tuas respostas",
+    changeAnytime: "Podes mudar isto quando quiseres",
+    goal: {
+      lose: "Objetivo: −{kg} até {month}",
+      gain: "Objetivo: +{kg} até {month}",
+      maintain: "Objetivo: ficar perto de {kg}",
+      maintainRange: "Intervalo: {range}",
+    },
+    info: {
+      startWeight: "Peso inicial", goalWeight: "Peso-alvo", activity: "Atividade",
+      target: "Alvo", targetLose: "−{kg} até {month}", targetGain: "+{kg} até {month}",
+    },
+    satFat: { label: "gord. saturada", asked: "Gordura saturada · a teu pedido", perDay: "≤ {g} por dia" },
+    first: { title: "O teu primeiro passo", step: "Fotografa a tua próxima refeição. eait compara-a com {kcal}kcal." },
+    loader: { goal: "O teu objetivo", lose: "−{kg} até {month}", gain: "+{kg} até {month}" },
+    chart: { estimateAria: "Peso estimado: {from} agora, {to} por volta de {month}" },
   },
 };
 
@@ -4877,6 +5234,27 @@ const MS: OnboardingContent = {
     result: "{target} sekitar {month} · {kcal}kcal sehari",
     echo: "Daripada {from} kepada {to}.",
   },
+  plan: {
+    weightTitle: "Berat anda",
+    everyDay: "Setiap hari",
+    infoTitle: "Maklumat anda",
+    basedOn: "Berdasarkan jawapan anda",
+    changeAnytime: "Anda boleh menukar ini bila-bila masa",
+    goal: {
+      lose: "Matlamat: −{kg} menjelang {month}",
+      gain: "Matlamat: +{kg} menjelang {month}",
+      maintain: "Matlamat: kekal sekitar {kg}",
+      maintainRange: "Julat: {range}",
+    },
+    info: {
+      startWeight: "Berat permulaan", goalWeight: "Berat matlamat", activity: "Aktiviti",
+      target: "Sasaran", targetLose: "−{kg} menjelang {month}", targetGain: "+{kg} menjelang {month}",
+    },
+    satFat: { label: "lemak tepu", asked: "Lemak tepu · permintaan anda", perDay: "≤ {g} sehari" },
+    first: { title: "Langkah pertama anda", step: "Ambil foto hidangan anda seterusnya. eait menyemaknya dengan {kcal}kcal." },
+    loader: { goal: "Matlamat anda", lose: "−{kg} menjelang {month}", gain: "+{kg} menjelang {month}" },
+    chart: { estimateAria: "Anggaran berat: {from} sekarang, {to} sekitar {month}" },
+  },
 };
 
 const CA: OnboardingContent = {
@@ -5188,6 +5566,27 @@ const CA: OnboardingContent = {
     rateSuffix: "per setmana",
     result: "{target} cap a {month} · {kcal}kcal al dia",
     echo: "De {from} a {to}.",
+  },
+  plan: {
+    weightTitle: "El teu pes",
+    everyDay: "Cada dia",
+    infoTitle: "Les teves dades",
+    basedOn: "Segons les teves respostes",
+    changeAnytime: "Pots canviar-ho quan vulguis",
+    goal: {
+      lose: "Meta: −{kg} cap a {month}",
+      gain: "Meta: +{kg} cap a {month}",
+      maintain: "Meta: mantenir-se al voltant de {kg}",
+      maintainRange: "Interval: {range}",
+    },
+    info: {
+      startWeight: "Pes inicial", goalWeight: "Pes objectiu", activity: "Activitat",
+      target: "Objectiu", targetLose: "−{kg} cap a {month}", targetGain: "+{kg} cap a {month}",
+    },
+    satFat: { label: "greix sat.", asked: "Greix saturat · ho has demanat", perDay: "≤ {g} al dia" },
+    first: { title: "El teu primer pas", step: "Fes una foto al teu proper àpat. eait el compara amb {kcal}kcal." },
+    loader: { goal: "La teva meta", lose: "−{kg} cap a {month}", gain: "+{kg} cap a {month}" },
+    chart: { estimateAria: "Pes estimat: {from} ara, {to} cap a {month}" },
   },
 };
 
@@ -5501,6 +5900,27 @@ const SL: OnboardingContent = {
     result: "{target} · predvidoma {month} · {kcal}kcal na dan",
     echo: "Od {from} do {to}.",
   },
+  plan: {
+    weightTitle: "Tvoja teža",
+    everyDay: "Vsak dan",
+    infoTitle: "Tvoji podatki",
+    basedOn: "Na podlagi tvojih odgovorov",
+    changeAnytime: "To lahko kadar koli spremeniš",
+    goal: {
+      lose: "Cilj: −{kg} · predvidoma {month}",
+      gain: "Cilj: +{kg} · predvidoma {month}",
+      maintain: "Cilj: ostati okoli {kg}",
+      maintainRange: "Razpon: {range}",
+    },
+    info: {
+      startWeight: "Začetna teža", goalWeight: "Ciljna teža", activity: "Aktivnost",
+      target: "Ciljna vrednost", targetLose: "−{kg} · predvidoma {month}", targetGain: "+{kg} · predvidoma {month}",
+    },
+    satFat: { label: "nas. maščobe", asked: "Nasičene maščobe · na tvojo željo", perDay: "≤ {g} na dan" },
+    first: { title: "Tvoj prvi korak", step: "Fotografiraj naslednji obrok. eait ga preveri glede na {kcal}kcal." },
+    loader: { goal: "Tvoj cilj", lose: "−{kg} · predvidoma {month}", gain: "+{kg} · predvidoma {month}" },
+    chart: { estimateAria: "Ocenjena teža: zdaj {from}; {to} · predvidoma {month}" },
+  },
 };
 
 const HR: OnboardingContent = {
@@ -5812,6 +6232,27 @@ const HR: OnboardingContent = {
     rateSuffix: "tjedno",
     result: "{target} · procjena: {month} · {kcal}kcal dnevno",
     echo: "Od {from} do {to}.",
+  },
+  plan: {
+    weightTitle: "Tvoja težina",
+    everyDay: "Svaki dan",
+    infoTitle: "Tvoji podaci",
+    basedOn: "Na temelju tvojih odgovora",
+    changeAnytime: "Ovo možeš promijeniti bilo kada",
+    goal: {
+      lose: "Cilj: −{kg} · {month}",
+      gain: "Cilj: +{kg} · {month}",
+      maintain: "Cilj: ostati oko {kg}",
+      maintainRange: "Raspon: {range}",
+    },
+    info: {
+      startWeight: "Početna težina", goalWeight: "Ciljna težina", activity: "Aktivnost",
+      target: "Ciljna vrijednost", targetLose: "−{kg} · {month}", targetGain: "+{kg} · {month}",
+    },
+    satFat: { label: "zasićene masti", asked: "Zasićene masti · na tvoj zahtjev", perDay: "≤ {g} dnevno" },
+    first: { title: "Tvoj prvi korak", step: "Fotografiraj sljedeći obrok. eait ga provjerava u odnosu na {kcal}kcal." },
+    loader: { goal: "Tvoj cilj", lose: "−{kg} · {month}", gain: "+{kg} · {month}" },
+    chart: { estimateAria: "Procijenjena težina: sada {from}, {to} — procjena: {month}" },
   },
 };
 
@@ -6125,6 +6566,27 @@ const SK: OnboardingContent = {
     result: "{target} približne {month} · {kcal}kcal denne",
     echo: "Z {from} na {to}.",
   },
+  plan: {
+    weightTitle: "Tvoja váha",
+    everyDay: "Každý deň",
+    infoTitle: "Tvoje údaje",
+    basedOn: "Podľa tvojich odpovedí",
+    changeAnytime: "Môžeš to kedykoľvek zmeniť",
+    goal: {
+      lose: "Cieľ: −{kg} · {month}",
+      gain: "Cieľ: +{kg} · {month}",
+      maintain: "Cieľ: zostať okolo {kg}",
+      maintainRange: "Rozsah: {range}",
+    },
+    info: {
+      startWeight: "Počiatočná váha", goalWeight: "Cieľová váha", activity: "Aktivita",
+      target: "Cieľ", targetLose: "−{kg} · {month}", targetGain: "+{kg} · {month}",
+    },
+    satFat: { label: "nas. tuky", asked: "Nasýtené tuky · na tvoju žiadosť", perDay: "≤ {g} denne" },
+    first: { title: "Tvoj prvý krok", step: "Odfoť svoje ďalšie jedlo. eait ho porovná s {kcal}kcal." },
+    loader: { goal: "Tvoj cieľ", lose: "−{kg} · {month}", gain: "+{kg} · {month}" },
+    chart: { estimateAria: "Odhadovaná váha: teraz {from}, {to} približne {month}" },
+  },
 };
 
 const NO: OnboardingContent = {
@@ -6436,6 +6898,27 @@ const NO: OnboardingContent = {
     rateSuffix: "i uken",
     result: "{target} rundt {month} · {kcal}kcal om dagen",
     echo: "Fra {from} til {to}.",
+  },
+  plan: {
+    weightTitle: "Vekten din",
+    everyDay: "Hver dag",
+    infoTitle: "Opplysningene dine",
+    basedOn: "Basert på svarene dine",
+    changeAnytime: "Du kan endre dette når som helst",
+    goal: {
+      lose: "Mål: −{kg} innen {month}",
+      gain: "Mål: +{kg} innen {month}",
+      maintain: "Mål: hold deg rundt {kg}",
+      maintainRange: "Intervall: {range}",
+    },
+    info: {
+      startWeight: "Startvekt", goalWeight: "Målvekt", activity: "Aktivitet",
+      target: "Målsetting", targetLose: "−{kg} innen {month}", targetGain: "+{kg} innen {month}",
+    },
+    satFat: { label: "mettet fett", asked: "Mettet fett · du ba om det", perDay: "≤ {g} om dagen" },
+    first: { title: "Ditt første steg", step: "Ta bilde av ditt neste måltid. eait sjekker det mot {kcal}kcal." },
+    loader: { goal: "Målet ditt", lose: "−{kg} innen {month}", gain: "+{kg} innen {month}" },
+    chart: { estimateAria: "Anslått vekt: {from} nå, {to} rundt {month}" },
   },
 };
 
@@ -6749,6 +7232,27 @@ const FI: OnboardingContent = {
     result: "{target} · arvio: {month} · {kcal}kcal päivässä",
     echo: "Nykyisestä {from} tavoitepainoon {to}.",
   },
+  plan: {
+    weightTitle: "Painosi",
+    everyDay: "Joka päivä",
+    infoTitle: "Tietosi",
+    basedOn: "Vastaustesi perusteella",
+    changeAnytime: "Voit muuttaa tätä milloin vain",
+    goal: {
+      lose: "Tavoite: −{kg} · {month}",
+      gain: "Tavoite: +{kg} · {month}",
+      maintain: "Tavoite: ylläpito, noin {kg}",
+      maintainRange: "Vaihteluväli: {range}",
+    },
+    info: {
+      startWeight: "Lähtöpaino", goalWeight: "Tavoitepaino", activity: "Aktiivisuus",
+      target: "Tavoitetaso", targetLose: "−{kg} · {month}", targetGain: "+{kg} · {month}",
+    },
+    satFat: { label: "tyyd. rasva", asked: "Tyydyttynyt rasva · toiveesi", perDay: "≤ {g} päivässä" },
+    first: { title: "Ensimmäinen askeleesi", step: "Kuvaa seuraava ateriasi. eait vertaa sitä lukuun {kcal}kcal." },
+    loader: { goal: "Tavoitteesi", lose: "−{kg} · {month}", gain: "+{kg} · {month}" },
+    chart: { estimateAria: "Arvioitu paino: nyt {from}, {to} arviolta {month}" },
+  },
 };
 
 const DA: OnboardingContent = {
@@ -7060,6 +7564,27 @@ const DA: OnboardingContent = {
     rateSuffix: "om ugen",
     result: "{target} omkring {month} · {kcal}kcal om dagen",
     echo: "Fra {from} til {to}.",
+  },
+  plan: {
+    weightTitle: "Din vægt",
+    everyDay: "Hver dag",
+    infoTitle: "Dine oplysninger",
+    basedOn: "Baseret på dine svar",
+    changeAnytime: "Du kan ændre det når som helst",
+    goal: {
+      lose: "Mål: −{kg} inden {month}",
+      gain: "Mål: +{kg} inden {month}",
+      maintain: "Mål: hold dig omkring {kg}",
+      maintainRange: "Interval: {range}",
+    },
+    info: {
+      startWeight: "Startvægt", goalWeight: "Målvægt", activity: "Aktivitet",
+      target: "Målværdi", targetLose: "−{kg} inden {month}", targetGain: "+{kg} inden {month}",
+    },
+    satFat: { label: "mættet fedt", asked: "Mættet fedt · du bad om det", perDay: "≤ {g} om dagen" },
+    first: { title: "Dit første skridt", step: "Tag et foto af dit næste måltid. eait tjekker det mod {kcal}kcal." },
+    loader: { goal: "Dit mål", lose: "−{kg} inden {month}", gain: "+{kg} inden {month}" },
+    chart: { estimateAria: "Anslået vægt: {from} nu, {to} omkring {month}" },
   },
 };
 
@@ -7373,6 +7898,27 @@ const HU: OnboardingContent = {
     result: "{target} · kb. {month} · napi {kcal}kcal",
     echo: "{from} → {to}.",
   },
+  plan: {
+    weightTitle: "A súlyod",
+    everyDay: "Minden nap",
+    infoTitle: "Az adataid",
+    basedOn: "A válaszaid alapján",
+    changeAnytime: "Ezt bármikor módosíthatod",
+    goal: {
+      lose: "Cél: −{kg} · határidő: {month}",
+      gain: "Cél: +{kg} · határidő: {month}",
+      maintain: "Cél: {kg} körül maradni",
+      maintainRange: "Tartomány: {range}",
+    },
+    info: {
+      startWeight: "Kezdő súly", goalWeight: "Célsúly", activity: "Aktivitás",
+      target: "Célérték", targetLose: "−{kg} · határidő: {month}", targetGain: "+{kg} · határidő: {month}",
+    },
+    satFat: { label: "tel. zsír", asked: "Telített zsír · te kérted", perDay: "≤ {g} naponta" },
+    first: { title: "Az első lépésed", step: "Fotózd le a következő étkezésedet. Az eait {kcal}kcal-hoz hasonlítja." },
+    loader: { goal: "A célod", lose: "−{kg} · határidő: {month}", gain: "+{kg} · határidő: {month}" },
+    chart: { estimateAria: "Becsült testsúly: most {from}, kb. {month}: {to}" },
+  },
 };
 
 const EL: OnboardingContent = {
@@ -7684,6 +8230,27 @@ const EL: OnboardingContent = {
     rateSuffix: "την εβδομάδα",
     result: "{target} περίπου έως {month} · {kcal}kcal την ημέρα",
     echo: "Από {from} σε {to}.",
+  },
+  plan: {
+    weightTitle: "Το βάρος σου",
+    everyDay: "Κάθε μέρα",
+    infoTitle: "Τα στοιχεία σου",
+    basedOn: "Με βάση τις απαντήσεις σου",
+    changeAnytime: "Μπορείς να το αλλάξεις όποτε θες",
+    goal: {
+      lose: "Στόχος: −{kg} · {month}",
+      gain: "Στόχος: +{kg} · {month}",
+      maintain: "Στόχος: να μείνεις γύρω στα {kg}",
+      maintainRange: "Εύρος: {range}",
+    },
+    info: {
+      startWeight: "Αρχικό βάρος", goalWeight: "Βάρος-στόχος", activity: "Δραστηριότητα",
+      target: "Στόχος", targetLose: "−{kg} · {month}", targetGain: "+{kg} · {month}",
+    },
+    satFat: { label: "κορ. λιπαρά", asked: "Κορεσμένα λιπαρά · το ζήτησες", perDay: "≤ {g} την ημέρα" },
+    first: { title: "Το πρώτο σου βήμα", step: "Φωτογράφισε το επόμενο γεύμα σου. Το eait το συγκρίνει με {kcal}kcal." },
+    loader: { goal: "Ο στόχος σου", lose: "−{kg} · {month}", gain: "+{kg} · {month}" },
+    chart: { estimateAria: "Εκτιμώμενο βάρος: {from} τώρα, {to} περίπου έως {month}" },
   },
 };
 
@@ -7997,6 +8564,27 @@ const RO: OnboardingContent = {
     result: "{target} cam în {month} · {kcal}kcal pe zi",
     echo: "De la {from} la {to}.",
   },
+  plan: {
+    weightTitle: "Greutatea ta",
+    everyDay: "În fiecare zi",
+    infoTitle: "Datele tale",
+    basedOn: "Pe baza răspunsurilor tale",
+    changeAnytime: "Poți schimba asta oricând",
+    goal: {
+      lose: "Obiectiv: −{kg} până în {month}",
+      gain: "Obiectiv: +{kg} până în {month}",
+      maintain: "Obiectiv: să rămâi în jur de {kg}",
+      maintainRange: "Interval: {range}",
+    },
+    info: {
+      startWeight: "Greutatea de pornire", goalWeight: "Greutatea țintă", activity: "Activitate",
+      target: "Țintă", targetLose: "−{kg} până în {month}", targetGain: "+{kg} până în {month}",
+    },
+    satFat: { label: "grăsimi sat.", asked: "Grăsimi saturate · la cererea ta", perDay: "≤ {g} pe zi" },
+    first: { title: "Primul tău pas", step: "Fotografiază următoarea masă. eait o verifică față de {kcal}kcal." },
+    loader: { goal: "Obiectivul tău", lose: "−{kg} până în {month}", gain: "+{kg} până în {month}" },
+    chart: { estimateAria: "Greutate estimată: {from} acum, {to} cam în {month}" },
+  },
 };
 
 const CS: OnboardingContent = {
@@ -8308,6 +8896,27 @@ const CS: OnboardingContent = {
     rateSuffix: "týdně",
     result: "{target} · odhad: {month} · {kcal}kcal denně",
     echo: "Z {from} na {to}.",
+  },
+  plan: {
+    weightTitle: "Tvoje váha",
+    everyDay: "Každý den",
+    infoTitle: "Tvoje údaje",
+    basedOn: "Podle tvých odpovědí",
+    changeAnytime: "Tohle můžeš kdykoli změnit",
+    goal: {
+      lose: "Cíl: −{kg} · orientačně {month}",
+      gain: "Cíl: +{kg} · orientačně {month}",
+      maintain: "Cíl: držet se kolem {kg}",
+      maintainRange: "Rozmezí: {range}",
+    },
+    info: {
+      startWeight: "Počáteční váha", goalWeight: "Cílová váha", activity: "Aktivita",
+      target: "Cíl", targetLose: "−{kg} · orientačně {month}", targetGain: "+{kg} · orientačně {month}",
+    },
+    satFat: { label: "nas. tuky", asked: "Nasycené tuky · na tvoje přání", perDay: "≤ {g} denně" },
+    first: { title: "Tvůj první krok", step: "Vyfoť svoje příští jídlo. eait ho zkontroluje proti {kcal}kcal." },
+    loader: { goal: "Tvůj cíl", lose: "−{kg} · orientačně {month}", gain: "+{kg} · orientačně {month}" },
+    chart: { estimateAria: "Odhadovaná váha: teď {from}, odhad na {month}: {to}" },
   },
 };
 
@@ -8621,6 +9230,27 @@ const HI: OnboardingContent = {
     result: "{month} के आसपास {target} · {kcal}kcal प्रति दिन",
     echo: "{from} से {to} तक।",
   },
+  plan: {
+    weightTitle: "आपका वज़न",
+    everyDay: "हर दिन",
+    infoTitle: "आपकी जानकारी",
+    basedOn: "आपके जवाबों के आधार पर",
+    changeAnytime: "इसे कभी भी बदला जा सकता है",
+    goal: {
+      lose: "लक्ष्य: −{kg} · {month} तक",
+      gain: "लक्ष्य: +{kg} · {month} तक",
+      maintain: "लक्ष्य: लगभग {kg} पर बने रहें",
+      maintainRange: "दायरा: {range}",
+    },
+    info: {
+      startWeight: "शुरुआती वज़न", goalWeight: "लक्ष्य वज़न", activity: "गतिविधि",
+      target: "लक्ष्य", targetLose: "−{kg} · {month} तक", targetGain: "+{kg} · {month} तक",
+    },
+    satFat: { label: "सैच. फ़ैट", asked: "सैचुरेटेड फ़ैट · आपके कहने पर", perDay: "≤ {g} प्रति दिन" },
+    first: { title: "आपका पहला क़दम", step: "अपने अगले भोजन की फ़ोटो लें। eait इसे {kcal}kcal से तुलना करेगा।" },
+    loader: { goal: "आपका लक्ष्य", lose: "−{kg} · {month} तक", gain: "+{kg} · {month} तक" },
+    chart: { estimateAria: "अनुमानित वज़न: अभी {from}, {month} के आसपास {to}" },
+  },
 };
 
 const TH: OnboardingContent = {
@@ -8932,6 +9562,27 @@ const TH: OnboardingContent = {
     rateSuffix: "ต่อสัปดาห์",
     result: "{target} ราว{month} · {kcal}kcal ต่อวัน",
     echo: "จาก {from} เป็น {to}",
+  },
+  plan: {
+    weightTitle: "น้ำหนักของคุณ",
+    everyDay: "ทุกวัน",
+    infoTitle: "ข้อมูลของคุณ",
+    basedOn: "จากคำตอบของคุณ",
+    changeAnytime: "เปลี่ยนได้ทุกเมื่อ",
+    goal: {
+      lose: "เป้าหมาย: −{kg} ภายใน {month}",
+      gain: "เป้าหมาย: +{kg} ภายใน {month}",
+      maintain: "เป้าหมาย: คงไว้ราว {kg}",
+      maintainRange: "ช่วง: {range}",
+    },
+    info: {
+      startWeight: "น้ำหนักเริ่มต้น", goalWeight: "น้ำหนักเป้าหมาย", activity: "กิจกรรม",
+      target: "เป้า", targetLose: "−{kg} ภายใน {month}", targetGain: "+{kg} ภายใน {month}",
+    },
+    satFat: { label: "ไขมันอิ่มตัว", asked: "ไขมันอิ่มตัว · ตามที่คุณขอ", perDay: "≤ {g} ต่อวัน" },
+    first: { title: "ก้าวแรกของคุณ", step: "ถ่ายรูปมื้อถัดไปของคุณ eait จะเช็กเทียบกับ {kcal}kcal" },
+    loader: { goal: "เป้าหมายของคุณ", lose: "−{kg} ภายใน {month}", gain: "+{kg} ภายใน {month}" },
+    chart: { estimateAria: "น้ำหนักโดยประมาณ: ตอนนี้ {from} ราว{month} {to}" },
   },
 };
 
@@ -9245,6 +9896,27 @@ const SV: OnboardingContent = {
     result: "{target} runt {month} · {kcal}kcal per dag",
     echo: "Från {from} till {to}.",
   },
+  plan: {
+    weightTitle: "Din vikt",
+    everyDay: "Varje dag",
+    infoTitle: "Dina uppgifter",
+    basedOn: "Utifrån dina svar",
+    changeAnytime: "Du kan ändra det när du vill",
+    goal: {
+      lose: "Mål: −{kg} till {month}",
+      gain: "Mål: +{kg} till {month}",
+      maintain: "Mål: ligga kvar runt {kg}",
+      maintainRange: "Intervall: {range}",
+    },
+    info: {
+      startWeight: "Startvikt", goalWeight: "Målvikt", activity: "Aktivitet",
+      target: "Mål", targetLose: "−{kg} till {month}", targetGain: "+{kg} till {month}",
+    },
+    satFat: { label: "mättat fett", asked: "Mättat fett · du bad om det", perDay: "≤ {g} per dag" },
+    first: { title: "Ditt första steg", step: "Fotografera din nästa måltid. eait kollar den mot {kcal}kcal." },
+    loader: { goal: "Ditt mål", lose: "−{kg} till {month}", gain: "+{kg} till {month}" },
+    chart: { estimateAria: "Uppskattad vikt: {from} nu, {to} runt {month}" },
+  },
 };
 
 const UK: OnboardingContent = {
@@ -9556,6 +10228,27 @@ const UK: OnboardingContent = {
     rateSuffix: "на тиждень",
     result: "{target} · орієнтир — {month} · {kcal}ккал на день",
     echo: "З {from} до {to}.",
+  },
+  plan: {
+    weightTitle: "Твоя вага",
+    everyDay: "Щодня",
+    infoTitle: "Твої дані",
+    basedOn: "За твоїми відповідями",
+    changeAnytime: "Це можна змінити будь-коли",
+    goal: {
+      lose: "Мета: −{kg} · орієнтир — {month}",
+      gain: "Мета: +{kg} · орієнтир — {month}",
+      maintain: "Мета: триматися близько {kg}",
+      maintainRange: "Діапазон: {range}",
+    },
+    info: {
+      startWeight: "Початкова вага", goalWeight: "Бажана вага", activity: "Активність",
+      target: "Ціль", targetLose: "−{kg} · орієнтир — {month}", targetGain: "+{kg} · орієнтир — {month}",
+    },
+    satFat: { label: "нас. жири", asked: "Насичені жири · твій запит", perDay: "≤ {g} на день" },
+    first: { title: "Твій перший крок", step: "Сфотографуй свій наступний прийом їжі. eait звірить його з {kcal}ккал." },
+    loader: { goal: "Твоя мета", lose: "−{kg} · орієнтир — {month}", gain: "+{kg} · орієнтир — {month}" },
+    chart: { estimateAria: "Оцінка ваги: {from} зараз, {to} — орієнтовно {month}" },
   },
 };
 
@@ -9869,6 +10562,27 @@ const NL: OnboardingContent = {
     result: "{target} rond {month} · {kcal}kcal per dag",
     echo: "Van {from} naar {to}.",
   },
+  plan: {
+    weightTitle: "Je gewicht",
+    everyDay: "Elke dag",
+    infoTitle: "Je gegevens",
+    basedOn: "Op basis van je antwoorden",
+    changeAnytime: "Je kunt dit altijd aanpassen",
+    goal: {
+      lose: "Doel: {kg} afvallen vóór {month}",
+      gain: "Doel: {kg} aankomen vóór {month}",
+      maintain: "Doel: rond {kg} blijven",
+      maintainRange: "Bereik: {range}",
+    },
+    info: {
+      startWeight: "Startgewicht", goalWeight: "Streefgewicht", activity: "Activiteit",
+      target: "Doel", targetLose: "{kg} afvallen vóór {month}", targetGain: "{kg} aankomen vóór {month}",
+    },
+    satFat: { label: "verz. vet", asked: "Verzadigd vet · op jouw verzoek", perDay: "≤ {g} per dag" },
+    first: { title: "Je eerste stap", step: "Maak een foto van je volgende maaltijd. eait checkt hem tegen {kcal}kcal." },
+    loader: { goal: "Je doel", lose: "−{kg} vóór {month}", gain: "+{kg} vóór {month}" },
+    chart: { estimateAria: "Geschat gewicht: nu {from}, rond {month} {to}" },
+  },
 };
 
 const PL: OnboardingContent = {
@@ -10180,6 +10894,27 @@ const PL: OnboardingContent = {
     rateSuffix: "tygodniowo",
     result: "{target} — szacunkowo {month} · {kcal}kcal dziennie",
     echo: "Od {from} do {to}.",
+  },
+  plan: {
+    weightTitle: "Twoja waga",
+    everyDay: "Każdego dnia",
+    infoTitle: "Twoje dane",
+    basedOn: "Na podstawie twoich odpowiedzi",
+    changeAnytime: "Możesz to zmienić w dowolnej chwili",
+    goal: {
+      lose: "Cel: −{kg} · orientacyjnie {month}",
+      gain: "Cel: +{kg} · orientacyjnie {month}",
+      maintain: "Cel: utrzymać około {kg}",
+      maintainRange: "Zakres: {range}",
+    },
+    info: {
+      startWeight: "Waga początkowa", goalWeight: "Waga docelowa", activity: "Aktywność",
+      target: "Cel", targetLose: "−{kg} · orientacyjnie {month}", targetGain: "+{kg} · orientacyjnie {month}",
+    },
+    satFat: { label: "tł. nasycone", asked: "Tłuszcze nasycone · na twoją prośbę", perDay: "≤ {g} dziennie" },
+    first: { title: "Twój pierwszy krok", step: "Sfotografuj kolejny posiłek. eait porówna go z {kcal}kcal." },
+    loader: { goal: "Twój cel", lose: "−{kg} · orientacyjnie {month}", gain: "+{kg} · orientacyjnie {month}" },
+    chart: { estimateAria: "Szacowana waga: teraz {from}, {to} — szacunkowo {month}" },
   },
 };
 
@@ -10493,6 +11228,27 @@ const TR: OnboardingContent = {
     result: "{month} civarında {target} · günde {kcal}kcal",
     echo: "{from} → {to}.",
   },
+  plan: {
+    weightTitle: "Kilon",
+    everyDay: "Her gün",
+    infoTitle: "Bilgilerin",
+    basedOn: "Yanıtlarına göre",
+    changeAnytime: "Bunu istediğin zaman değiştirebilirsin",
+    goal: {
+      lose: "Hedef: {month} tarihine kadar {kg} vermek",
+      gain: "Hedef: {month} tarihine kadar {kg} almak",
+      maintain: "Hedef: {kg} civarında kalmak",
+      maintainRange: "Aralık: {range}",
+    },
+    info: {
+      startWeight: "Başlangıç kilosu", goalWeight: "Hedef kilo", activity: "Aktivite",
+      target: "Hedef", targetLose: "{month} tarihine kadar {kg} vermek", targetGain: "{month} tarihine kadar {kg} almak",
+    },
+    satFat: { label: "doymuş yağ", asked: "Doymuş yağ · senin isteğin", perDay: "günde ≤ {g}" },
+    first: { title: "İlk adımın", step: "Bir sonraki öğününün fotoğrafını çek. eait onu {kcal}kcal ile karşılaştırır." },
+    loader: { goal: "Hedefin", lose: "−{kg} · {month}", gain: "+{kg} · {month}" },
+    chart: { estimateAria: "Tahmini kilo: şu an {from}, {month} civarında {to}" },
+  },
 };
 
 const ZH_HANT: OnboardingContent = {
@@ -10804,6 +11560,27 @@ const ZH_HANT: OnboardingContent = {
     rateSuffix: "每週",
     result: "約 {month} 達到 {target} · 每天 {kcal}大卡",
     echo: "從 {from} 到 {to}。",
+  },
+  plan: {
+    weightTitle: "你的體重",
+    everyDay: "每天",
+    infoTitle: "你的資料",
+    basedOn: "根據你的回答",
+    changeAnytime: "你可以隨時更改",
+    goal: {
+      lose: "目標：{month}前減少 {kg}",
+      gain: "目標：{month}前增加 {kg}",
+      maintain: "目標：維持在 {kg} 左右",
+      maintainRange: "範圍：{range}",
+    },
+    info: {
+      startWeight: "起始體重", goalWeight: "目標體重", activity: "活動量",
+      target: "目標", targetLose: "{month}前減少 {kg}", targetGain: "{month}前增加 {kg}",
+    },
+    satFat: { label: "飽和脂肪", asked: "飽和脂肪 · 依你的要求", perDay: "每天 ≤ {g}" },
+    first: { title: "你的第一步", step: "拍下你的下一餐。eait 會以 {kcal}大卡檢查它。" },
+    loader: { goal: "你的目標", lose: "{month}前 −{kg}", gain: "{month}前 +{kg}" },
+    chart: { estimateAria: "預估體重：現在 {from}，約 {month} 達到 {to}" },
   },
 };
 
@@ -11117,6 +11894,27 @@ const ZH_HANS: OnboardingContent = {
     result: "约{month}达到{target} · 每天{kcal}千卡",
     echo: "从{from}到{to}。",
   },
+  plan: {
+    weightTitle: "你的体重",
+    everyDay: "每天",
+    infoTitle: "你的信息",
+    basedOn: "基于你的回答",
+    changeAnytime: "你可以随时更改",
+    goal: {
+      lose: "目标：减 {kg}，预计{month}",
+      gain: "目标：增 {kg}，预计{month}",
+      maintain: "目标：保持在 {kg} 左右",
+      maintainRange: "范围：{range}",
+    },
+    info: {
+      startWeight: "起始体重", goalWeight: "目标体重", activity: "活动量",
+      target: "目标", targetLose: "减 {kg}，预计{month}", targetGain: "增 {kg}，预计{month}",
+    },
+    satFat: { label: "饱和脂肪", asked: "饱和脂肪 · 按你的要求", perDay: "每天 ≤ {g}" },
+    first: { title: "你的第一步", step: "拍下你的下一餐。eait 会按 {kcal}千卡 检查它。" },
+    loader: { goal: "你的目标", lose: "−{kg}，预计{month}", gain: "+{kg}，预计{month}" },
+    chart: { estimateAria: "预估体重：现在{from}，约{month}达到{to}" },
+  },
 };
 
 const KO: OnboardingContent = {
@@ -11428,6 +12226,27 @@ const KO: OnboardingContent = {
     rateSuffix: "주당",
     result: "{month}쯤 {target} · 하루 {kcal}kcal",
     echo: "{from}에서 {to}로.",
+  },
+  plan: {
+    weightTitle: "내 체중",
+    everyDay: "매일",
+    infoTitle: "내 정보",
+    basedOn: "내 답변을 바탕으로",
+    changeAnytime: "언제든 바꿀 수 있어요",
+    goal: {
+      lose: "목표: {month}까지 {kg} 감량",
+      gain: "목표: {month}까지 {kg} 증량",
+      maintain: "목표: {kg} 정도 유지",
+      maintainRange: "범위: {range}",
+    },
+    info: {
+      startWeight: "시작 체중", goalWeight: "목표 체중", activity: "활동량",
+      target: "목표", targetLose: "{month}까지 {kg} 감량", targetGain: "{month}까지 {kg} 증량",
+    },
+    satFat: { label: "포화 지방", asked: "포화 지방 · 요청한 항목", perDay: "하루 {g} 이하" },
+    first: { title: "첫 번째 단계", step: "다음 식사를 사진으로 찍어 보세요. eait이 {kcal}kcal와 비교해 확인해요." },
+    loader: { goal: "내 목표", lose: "{month}까지 −{kg}", gain: "{month}까지 +{kg}" },
+    chart: { estimateAria: "예상 체중: 현재 {from}, {month}쯤 {to}" },
   },
 };
 
@@ -11741,6 +12560,27 @@ const JA: OnboardingContent = {
     result: "{month}ごろ{target} · 1日{kcal}kcal",
     echo: "{from}から{to}へ。",
   },
+  plan: {
+    weightTitle: "あなたの体重",
+    everyDay: "毎日",
+    infoTitle: "あなたの情報",
+    basedOn: "あなたの回答にもとづいています",
+    changeAnytime: "いつでも変更できます",
+    goal: {
+      lose: "目標：{month}までに{kg}減",
+      gain: "目標：{month}までに{kg}増",
+      maintain: "目標：{kg}前後をキープ",
+      maintainRange: "範囲：{range}",
+    },
+    info: {
+      startWeight: "開始時の体重", goalWeight: "目標体重", activity: "活動量",
+      target: "目標", targetLose: "{month}までに{kg}減", targetGain: "{month}までに{kg}増",
+    },
+    satFat: { label: "飽和脂肪酸", asked: "飽和脂肪酸 · ご希望により", perDay: "1日{g}以下" },
+    first: { title: "最初の一歩", step: "次の食事を撮影してください。eaitが{kcal}kcalと照合します。" },
+    loader: { goal: "あなたの目標", lose: "{month}までに−{kg}", gain: "{month}までに+{kg}" },
+    chart: { estimateAria: "体重の見込み：現在{from}、{month}ごろ{to}" },
+  },
 };
 
 const PT_BR: OnboardingContent = {
@@ -12052,6 +12892,27 @@ const PT_BR: OnboardingContent = {
     rateSuffix: "por semana",
     result: "{target} por volta de {month} · {kcal}kcal por dia",
     echo: "De {from} para {to}.",
+  },
+  plan: {
+    weightTitle: "Seu peso",
+    everyDay: "Todo dia",
+    infoTitle: "Seus dados",
+    basedOn: "Com base nas suas respostas",
+    changeAnytime: "Você pode mudar isso quando quiser",
+    goal: {
+      lose: "Meta: perder {kg} até {month}",
+      gain: "Meta: ganhar {kg} até {month}",
+      maintain: "Meta: ficar em torno de {kg}",
+      maintainRange: "Faixa: {range}",
+    },
+    info: {
+      startWeight: "Peso inicial", goalWeight: "Peso-meta", activity: "Atividade",
+      target: "Meta", targetLose: "perder {kg} até {month}", targetGain: "ganhar {kg} até {month}",
+    },
+    satFat: { label: "gord. saturada", asked: "Gordura saturada · você pediu", perDay: "≤ {g} por dia" },
+    first: { title: "Seu primeiro passo", step: "Fotografe sua próxima refeição. eait a compara com {kcal}kcal." },
+    loader: { goal: "Sua meta", lose: "−{kg} até {month}", gain: "+{kg} até {month}" },
+    chart: { estimateAria: "Peso estimado: {from} agora, {to} por volta de {month}" },
   },
 };
 

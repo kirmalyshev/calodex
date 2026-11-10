@@ -818,12 +818,12 @@ export function pacePreview(
  * honest date: no weight, the target within half a kilo of it, past the horizon, or a target the
  * guards would turn around.
  */
-export function targetGoalLine(p: Profile, targetKg: number, units: Units, today: Date, lang: Lang): string | null {
+export function targetGoalLine(p: Profile, targetKg: number, units: Units, today: Date, lang: Lang, content: OnboardingContent): string | null {
   if (p.weight_kg === null || Math.abs(p.weight_kg - targetKg) < 0.5) return null;
   const proj = previewProjection(p, targetKg, p.pace ?? "steady");
   if (proj === null || proj.beyondHorizon) return null;
-  const c = planCopyFor(lang);
-  return fill(targetKg < p.weight_kg ? c.goalLose : c.goalGain, {
+  const c = content.plan.goal;
+  return fill(targetKg < p.weight_kg ? c.lose : c.gain, {
     kg: weightDeltaDisplay(p.weight_kg, targetKg, units, lang),
     month: projectionMonth(today, proj.weeks, lang),
   });
@@ -898,14 +898,17 @@ export function planRows(
  * month, or none). A maintainer's plan says "keep my weight" instead, and a projection past the
  * horizon honestly names no month.
  */
-export function planGoalLine(p: Profile, today: Date, lang: Lang): string | null {
-  const copy = chatCopyFor(lang).plan;
-  if (p.goal === "maintain") return copy.goalMaintain;
+export function planGoalLine(p: Profile, today: Date, lang: Lang, content: OnboardingContent): string | null {
+  const copy = content.plan.goal;
+  if (p.goal === "maintain") {
+    return p.weight_kg === null ? null
+      : fill(copy.maintain, { kg: weightDisplay(p.weight_kg, p.units, lang) });
+  }
   if (p.target_weight_kg === null || p.weight_kg === null) return null;
   const projection = projectGoal(p, explainTargets(p, today).basis);
   if (projection === null || projection.beyondHorizon) return null;
-  return fill(p.goal === "gain" ? copy.goalGain : copy.goalLose, {
-    delta: weightDeltaDisplay(p.weight_kg, p.target_weight_kg, p.units, lang),
+  return fill(p.goal === "gain" ? copy.gain : copy.lose, {
+    kg: weightDeltaDisplay(p.weight_kg, p.target_weight_kg, p.units, lang),
     month: projectionMonth(today, projection.weeks, lang),
   });
 }
