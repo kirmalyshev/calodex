@@ -71,12 +71,25 @@ describe("every language's onboarding content", () => {
       if (c.beats.echo.days !== "") expect(c.beats.echo.days, lang).toContain("{burn}");
       expect(c.beats.prelim.gap, lang).toContain("{delta}");
       expect(c.beats.prelim.keepTitle, lang).toContain("{burn}");
+      // The target ruler's and the pace screen's computed fills.
+      for (const k of ["lowest", "now", "nowLowest", "deltaDown", "deltaUp"] as const) {
+        expect(c.target.markers[k], lang).toContain("{weight}");
+      }
+      expect(c.target.suggestion.down, lang).toContain("{weight}");
+      expect(c.target.suggestion.up, lang).toContain("{pct}");
+      expect(c.pace.rate, lang).toContain("{rate}");
+      expect(c.pace.result, lang).toContain("{target}");
+      expect(c.pace.result, lang).toContain("{kcal}");
+      if (c.pace.echo !== "") {
+        expect(c.pace.echo, lang).toContain("{from}");
+        expect(c.pace.echo, lang).toContain("{to}");
+      }
     }
   });
 
   it("introduces no placeholder nothing fills", () => {
     for (const lang of LANGS) {
-      const known = new Set(["floor", "share", "n", "rest", "burn", "delta"]);
+      const known = new Set(["floor", "share", "n", "rest", "burn", "delta", "weight", "pct", "rate", "from", "to", "target", "month", "kcal"]);
       for (const [at, text] of Object.entries(flatten(onboardingContentFor(lang)))) {
         for (const m of text.matchAll(/\{(\w+)\}/g)) {
           expect(known.has(m[1]!), `${lang}.${at} uses {${m[1]}}`).toBe(true);

@@ -363,9 +363,9 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
     fmt: "int", vertical: false, smalls: spellUnit(v.lang, word), unitWord: spellUnit(v.lang, word), settle: true,
     marks: true,
     now: now !== undefined
-      ? { at: now, label: fill(copy.target.now, { weight: weightDisplay(nowKg!, v.units, v.lang) }) }
+      ? { at: now, label: fill(v.content.target.markers.now, { weight: weightDisplay(nowKg!, v.units, v.lang) }) }
       : undefined,
-    delta: { dn: copy.target.deltaDown, up: copy.target.deltaUp },
+    delta: { dn: v.content.target.markers.deltaDown, up: v.content.target.markers.deltaUp },
     goals: targetGoals(v, min, max),
   });
   const alt = numAlt(v, numInput(v, Math.max(val, min), min, max, weightStep(v.units)), spellUnit(v.lang, word));
@@ -390,7 +390,7 @@ function whenCard(line: string): string {
 function paceControl(v: QuestionView, echo: string | null): string {
   const opts = screenOptions(v.content, "pace");
   const copy = chatCopyFor(v.lang);
-  const previews = PACES.map((p) => pacePreview(v.profile, p, v.today, v.lang));
+  const previews = PACES.map((p) => pacePreview(v.profile, p, v.today, v.lang, v.content));
   const selIdx = Math.max(0, PACES.indexOf((v.current[0] ?? v.profile.pace ?? "steady") as never));
   // The big number is the COMPUTED rate, not the nominal pace — split for the bign's two sizes.
   const word = v.units === "imperial" ? "lb" : "kg";
@@ -400,7 +400,7 @@ function paceControl(v: QuestionView, echo: string | null): string {
     return {
       num: pr?.ratePerWeek == null ? "–"
         : numbers(v.lang)(Math.round(weightDisplayValue(pr.ratePerWeek, v.units) * 10) / 10),
-      rest: `${disp === null ? "" : spellUnit(v.lang, word)} ${copy.pace.rateSuffix}`,
+      rest: `${disp === null ? "" : spellUnit(v.lang, word)} ${v.content.pace.rateSuffix}`,
       disp,
     };
   };
@@ -487,7 +487,7 @@ export function question(v: QuestionView): string {
       });
     }
     case "pace":
-      return page(v, { control: paceControl(v, paceEcho(v.profile, v.units, v.lang)) });
+      return page(v, { control: paceControl(v, paceEcho(v.profile, v.units, v.lang, v.content)) });
     default:
       // A field prompt this file does not draw is a bug, not a page — fail loud in dev.
       return page(v, {

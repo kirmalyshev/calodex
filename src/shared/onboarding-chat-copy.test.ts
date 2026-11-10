@@ -119,7 +119,7 @@ describe("the readers of those tables", () => {
   it("say every branch in the asked language, with nothing left to fill", () => {
     for (const lang of LANGS) {
       const p = her(lang);
-      const preview = pacePreview(p, "steady", today, lang)!;
+      const preview = pacePreview(p, "steady", today, lang, DEFAULT_ONBOARDING_CONTENT)!;
       const said = [
         switchedLine("gain", lang), switchedLine("lose", lang),
         UNDER_AGE_CARD(lang).title,

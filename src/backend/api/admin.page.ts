@@ -1246,9 +1246,36 @@ details.how p { margin-top: 8px; }
     return card;
   }
 
+  function targetCard() {
+    var t = content.target;
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, "The target");
+    field(card, 'Lowest mark — {weight} is computed', t.markers.lowest, function (v) { t.markers.lowest = v; });
+    field(card, 'Now mark — {weight} is computed', t.markers.now, function (v) { t.markers.now = v; });
+    field(card, 'Now-at-lowest mark — {weight} is computed', t.markers.nowLowest, function (v) { t.markers.nowLowest = v; });
+    field(card, 'Down delta — {weight} is computed', t.markers.deltaDown, function (v) { t.markers.deltaDown = v; });
+    field(card, 'Up delta — {weight} is computed', t.markers.deltaUp, function (v) { t.markers.deltaUp = v; });
+    field(card, 'Lose suggestion — {weight} and {pct} are computed', t.suggestion.down, function (v) { t.suggestion.down = v; }, true);
+    field(card, 'Gain suggestion — {weight} and {pct} are computed', t.suggestion.up, function (v) { t.suggestion.up = v; }, true);
+    return card;
+  }
+
+  function paceCard() {
+    var t = content.pace;
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, "The pace");
+    field(card, 'Rate line — {rate} is computed', t.rate, function (v) { t.rate = v; });
+    field(card, 'Rate suffix ("a week")', t.rateSuffix, function (v) { t.rateSuffix = v; });
+    field(card, 'Result — {target} {month} {kcal} are computed', t.result, function (v) { t.result = v; });
+    field(card, 'Answer echo — {from} {to} are computed (may be empty)', t.echo, function (v) { t.echo = v; });
+    return card;
+  }
+
   // The sections take turns beside a sub-nav; the save bar below them is for all of them.
   var obSec = "welcome";
-  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"]];
+  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"], ["target", "The target"], ["pace", "The pace"]];
 
   function renderObNav() {
     var nav = $("ob-nav");
@@ -1307,6 +1334,8 @@ details.how p { margin-top: 8px; }
     one("summary", summaryCard);
     one("ui", uiCard);
     one("beats", beatsCard);
+    one("target", targetCard);
+    one("pace", paceCard);
     renderObNav();
     if (fresh) saved = JSON.parse(JSON.stringify(content));
     unsaved();

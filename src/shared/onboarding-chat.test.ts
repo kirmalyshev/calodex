@@ -359,7 +359,7 @@ describe("the plan's computed words", () => {
     // Steady requests 0.5kg/wk; the persona's deficit cap hands back less — and the pace
     // screen's big number is the computed `kgPerWeek` rounded, not `PACE_KG_PER_WEEK`. A screen
     // that printed the asked rate would describe a plan that does not exist.
-    const p = pacePreview(her, "steady", SEP_24, "en")!;
+    const p = pacePreview(her, "steady", SEP_24, "en", DEFAULT_ONBOARDING_CONTENT)!;
     expect(p.ratePerWeek).not.toBe(0.5);
     expect(p.ratePerWeek).not.toBeNull();
     expect(Math.abs(p.ratePerWeek! * 10 - Math.round(p.ratePerWeek! * 10))).toBe(0);
@@ -369,12 +369,12 @@ describe("the plan's computed words", () => {
   });
 
   it("says which guard decided the pace's number, with its marker", () => {
-    const capped = pacePreview(her, "push", SEP_24, "en")!;
+    const capped = pacePreview(her, "push", SEP_24, "en", DEFAULT_ONBOARDING_CONTENT)!;
     expect(capped.marker).toBe("cap");
     expect(capped.markerText).toContain("capped at the safe limit");
     // A profile light enough that the floor decides gets the floor's marker instead.
     const small = profile({ ...her, weight_kg: 55, target_weight_kg: 52, height_cm: 155 });
-    const floored = pacePreview(small, "push", SEP_24, "en")!;
+    const floored = pacePreview(small, "push", SEP_24, "en", DEFAULT_ONBOARDING_CONTENT)!;
     if (floored.marker === "floor") {
       expect(floored.markerText).toContain("never below");
       expect(floored.markerText).not.toContain("{floor}");
@@ -382,7 +382,7 @@ describe("the plan's computed words", () => {
   });
 
   it("is null where the arithmetic honestly has nothing", () => {
-    expect(pacePreview(profile({ ...her, target_weight_kg: null }), "steady", SEP_24, "en")).toBeNull();
+    expect(pacePreview(profile({ ...her, target_weight_kg: null }), "steady", SEP_24, "en", DEFAULT_ONBOARDING_CONTENT)).toBeNull();
   });
 });
 
