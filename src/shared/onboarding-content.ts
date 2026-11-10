@@ -203,6 +203,20 @@ const FR: OnboardingContent = {
     capNote: "Ce rythme demanderait un écart quotidien plus grand qu'on ne peut tenir sans risque, alors tu as la version sûre : {share}% de ce que ton corps brûle en une journée.",
     cta: "Photographie ton premier repas",
   },
+  ui: {
+    continueLabel: "Continuer",
+    saveKept: "Impossible d'enregistrer. Ta réponse est toujours là. Continuer l'envoie à nouveau.",
+    idlePlaceholder: "Écrire à Spud…",
+    optionContinues: "Sélectionne et continue",
+    stepper: { continue: "Continuer", less: "Moins", more: "Plus" },
+    units: { years: "ans", yearsCount: { one: "{n} an", other: "{n} ans" } },
+  },
+  beats: {
+    ageWhy: "Ton métabolisme change avec l’âge, on en tient compte",
+    echo: { rest: "Au repos : {rest}kcal par jour", days: "Tes journées brûlent {burn}kcal" },
+    baseline: { title: "Voici ton point de départ", bmi: "IMC", what: "Indice de masse corporelle" },
+    prelim: { title: "Ton plan", burn: "Tu brûles", gap: "{delta} ton rythme", eat: "Tu manges", perDay: "kcal par jour", keepTitle: "Tu brûles environ {burn}kcal" },
+  },
 };
 
 // ── Deutsch ───────────────────────────────────────────────────────────────────────
@@ -374,6 +388,20 @@ const DE: OnboardingContent = {
     },
     capNote: "Dieses Tempo bräuchte eine größere Tagesänderung, als sich sicher durchhalten lässt, also bekommst du die sichere Variante: {share}% dessen, was dein Körper am Tag verbrennt.",
     cta: "Fotografier deine erste Mahlzeit",
+  },
+  ui: {
+    continueLabel: "Weiter",
+    saveKept: "Das konnte nicht gespeichert werden. Deine Antwort ist noch da. Mit Weiter wird sie erneut gesendet.",
+    idlePlaceholder: "Nachricht an Spud…",
+    optionContinues: "Wählt aus und fährt fort",
+    stepper: { continue: "Weiter", less: "Weniger", more: "Mehr" },
+    units: { years: "Jahre", yearsCount: { one: "{n} Jahr", other: "{n} Jahre" } },
+  },
+  beats: {
+    ageWhy: "Dein Stoffwechsel verändert sich mit dem Alter, das rechnen wir ein",
+    echo: { rest: "Im Ruhezustand: {rest}kcal am Tag", days: "Deine Tage verbrennen {burn}kcal" },
+    baseline: { title: "Das ist dein Ausgangspunkt", bmi: "BMI", what: "Body-Mass-Index" },
+    prelim: { title: "Dein Plan", burn: "Du verbrennst", gap: "{delta} dein Tempo", eat: "Du isst", perDay: "kcal am Tag", keepTitle: "Du verbrennst etwa {burn}kcal" },
   },
 };
 
@@ -547,6 +575,20 @@ const IT: OnboardingContent = {
     capNote: "Quel ritmo chiederebbe una variazione quotidiana più grande di quanto sia sicuro mantenere, quindi il tuo è la versione sicura: {share}% di quello che il tuo corpo brucia in un giorno.",
     cta: "Fotografa il tuo primo pasto",
   },
+  ui: {
+    continueLabel: "Continua",
+    saveKept: "Non è stato possibile salvare. La tua risposta è ancora qui. Con Continua viene inviata di nuovo.",
+    idlePlaceholder: "Scrivi a Spud…",
+    optionContinues: "Seleziona e continua",
+    stepper: { continue: "Continua", less: "Meno", more: "Più" },
+    units: { years: "anni", yearsCount: { one: "{n} anno", other: "{n} anni" } },
+  },
+  beats: {
+    ageWhy: "Il tuo metabolismo cambia con l’età, e ne teniamo conto",
+    echo: { rest: "A riposo: {rest}kcal al giorno", days: "Le tue giornate bruciano {burn}kcal" },
+    baseline: { title: "Ecco il tuo punto di partenza", bmi: "IMC", what: "Indice di massa corporea" },
+    prelim: { title: "Il tuo piano", burn: "Tu bruci", gap: "{delta} il tuo ritmo", eat: "Tu mangi", perDay: "kcal al giorno", keepTitle: "Bruci circa {burn}kcal" },
+  },
 };
 
 // ── Español ───────────────────────────────────────────────────────────────────────
@@ -718,6 +760,20 @@ const ES: OnboardingContent = {
     },
     capNote: "Ese ritmo pediría un cambio diario mayor del que es seguro sostener, así que el tuyo es la versión segura: {share}% de lo que tu cuerpo quema en un día.",
     cta: "Fotografía tu primera comida",
+  },
+  ui: {
+    continueLabel: "Continuar",
+    saveKept: "No se pudo guardar. Tu respuesta sigue aquí. Con Continuar se envía otra vez.",
+    idlePlaceholder: "Escribe a Spud…",
+    optionContinues: "Selecciona y continúa",
+    stepper: { continue: "Continuar", less: "Menos", more: "Más" },
+    units: { years: "años", yearsCount: { one: "{n} año", other: "{n} años" } },
+  },
+  beats: {
+    ageWhy: "Tu metabolismo cambia con la edad, y lo tenemos en cuenta",
+    echo: { rest: "En reposo: {rest}kcal al día", days: "Tus días queman {burn}kcal" },
+    baseline: { title: "Este es tu punto de partida", bmi: "IMC", what: "Índice de masa corporal" },
+    prelim: { title: "Tu plan", burn: "Quemas", gap: "{delta} tu ritmo", eat: "Comes", perDay: "kcal al día", keepTitle: "Quemas unas {burn}kcal" },
   },
 };
 
@@ -891,6 +947,20 @@ const VI: OnboardingContent = {
     capNote: "Tốc độ đó cần mức thay đổi mỗi ngày lớn hơn mức an toàn để duy trì, nên bạn nhận bản an toàn: {share}% lượng cơ thể bạn đốt trong một ngày.",
     cta: "Chụp bữa ăn đầu tiên",
   },
+  ui: {
+    continueLabel: "Tiếp tục",
+    saveKept: "Không lưu được. Câu trả lời của bạn vẫn còn đây. Bấm Tiếp tục để gửi lại.",
+    idlePlaceholder: "Nhắn cho Spud…",
+    optionContinues: "Chọn và tiếp tục",
+    stepper: { continue: "Tiếp tục", less: "Bớt", more: "Thêm" },
+    units: { years: "tuổi", yearsCount: { other: "{n} tuổi" } },
+  },
+  beats: {
+    ageWhy: "Trao đổi chất thay đổi theo tuổi, nên chúng tôi tính cả điều đó",
+    echo: { rest: "Lúc nghỉ: {rest}kcal một ngày", days: "Những ngày của bạn đốt {burn}kcal" },
+    baseline: { title: "Đây là điểm xuất phát của bạn", bmi: "BMI", what: "Chỉ số khối cơ thể" },
+    prelim: { title: "Kế hoạch của bạn", burn: "Bạn đốt", gap: "{delta} tốc độ của bạn", eat: "Bạn ăn", perDay: "kcal một ngày", keepTitle: "Bạn đốt khoảng {burn}kcal" },
+  },
 };
 
 // ── Bahasa Indonesia ──────────────────────────────────────────────────────────────
@@ -1062,6 +1132,20 @@ const ID: OnboardingContent = {
     },
     capNote: "Tempo itu butuh selisih harian yang terlalu besar untuk dijaga dengan aman, jadi rencanamu memakai versi aman: {share}% dari kalori yang dibakar tubuhmu dalam sehari.",
     cta: "Foto makanan pertamamu",
+  },
+  ui: {
+    continueLabel: "Lanjutkan",
+    saveKept: "Tidak bisa disimpan. Jawabanmu masih di sini. Lanjutkan akan mengirimnya lagi.",
+    idlePlaceholder: "Kirim pesan ke Spud…",
+    optionContinues: "Pilih dan lanjutkan",
+    stepper: { continue: "Lanjut", less: "Kurangi", more: "Tambah" },
+    units: { years: "tahun", yearsCount: { other: "{n} tahun" } },
+  },
+  beats: {
+    ageWhy: "Metabolismemu berubah seiring usia, jadi kami memperhitungkannya",
+    echo: { rest: "Saat istirahat: {rest}kcal sehari", days: "Harimu membakar {burn}kcal" },
+    baseline: { title: "Ini titik awalmu", bmi: "IMT", what: "Indeks massa tubuh" },
+    prelim: { title: "Rencanamu", burn: "Kamu membakar", gap: "{delta} tempomu", eat: "Kamu makan", perDay: "kcal sehari", keepTitle: "Kamu membakar sekitar {burn}kcal" },
   },
 };
 
@@ -1235,6 +1319,20 @@ const RU: OnboardingContent = {
     capNote: "Такой темп потребовал бы большей дневной разницы, чем безопасно выдерживать, так что у тебя безопасный вариант: {share}% от того, что тело сжигает за день.",
     cta: "Сфотографируй первый приём пищи",
   },
+  ui: {
+    continueLabel: "Продолжить",
+    saveKept: "Не удалось сохранить. Твой ответ всё ещё здесь. «Продолжить» отправит его снова.",
+    idlePlaceholder: "Написать Spud…",
+    optionContinues: "Выбирает и продолжает",
+    stepper: { continue: "Продолжить", less: "Меньше", more: "Больше" },
+    units: { years: "лет", yearsCount: { one: "{n} год", few: "{n} года", many: "{n} лет", other: "{n} года" } },
+  },
+  beats: {
+    ageWhy: "С возрастом обмен веществ меняется, мы это учитываем",
+    echo: { rest: "В покое: {rest}ккал в день", days: "Твои дни сжигают {burn}ккал" },
+    baseline: { title: "Вот твоя точка отсчёта", bmi: "ИМТ", what: "Индекс массы тела" },
+    prelim: { title: "Твой план", burn: "Ты сжигаешь", gap: "{delta} твой темп", eat: "Ты ешь", perDay: "ккал в день", keepTitle: "Ты сжигаешь около {burn}ккал" },
+  },
 };
 
 const TE: OnboardingContent = {
@@ -1288,7 +1386,7 @@ const TE: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "ప్రారంభించండి",
@@ -1517,6 +1615,20 @@ const TE: OnboardingContent = {
     // and a second decision.
     cta: "మీ మొదటి భోజనాన్ని ఫోటో తీయండి",
   },
+  ui: {
+    continueLabel: "కొనసాగించండి",
+    saveKept: "అది సేవ్ కాలేదు. మీ సమాధానం ఇంకా ఇక్కడే ఉంది. \"కొనసాగించండి\" నొక్కితే అది మళ్ళీ పంపబడుతుంది.",
+    idlePlaceholder: "Spudకు మెసేజ్ పంపండి…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "కొనసాగించండి", less: "తక్కువ", more: "ఎక్కువ" },
+    units: { years: "ఏళ్లు", yearsCount: { one: "{n} ఏడాది", other: "{n} ఏళ్లు" } },
+  },
+  beats: {
+    ageWhy: "వయసుతో పాటు మీ జీవక్రియ మారుతుంది, అందుకే దాన్ని లెక్కలోకి తీసుకుంటాం",
+    echo: { rest: "విశ్రాంతిలో: రోజుకు {rest}kcal", days: "మీ రోజులు {burn}kcal ఖర్చు చేస్తాయి" },
+    baseline: { title: "ఇదే మీ ప్రారంభ స్థాయి", bmi: "BMI", what: "బాడీ మాస్ ఇండెక్స్" },
+    prelim: { title: "మీ ప్రణాళిక", burn: "మీరు ఖర్చు చేసేది", gap: "{delta} మీ వేగం", eat: "మీరు తింటారు", perDay: "kcal రోజుకు", keepTitle: "మీరు సుమారు {burn}kcal ఖర్చు చేస్తారు" },
+  },
 };
 
 const TA: OnboardingContent = {
@@ -1570,7 +1682,7 @@ const TA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "தொடங்கு",
@@ -1799,6 +1911,20 @@ const TA: OnboardingContent = {
     // and a second decision.
     cta: "உங்கள் முதல் உணவைப் புகைப்படம் எடுங்கள்",
   },
+  ui: {
+    continueLabel: "தொடர்க",
+    saveKept: "அதைச் சேமிக்க முடியவில்லை. உங்கள் பதில் இன்னும் இங்கே உள்ளது. தொடர்க என்பதை அழுத்தினால் மீண்டும் அனுப்பப்படும்.",
+    idlePlaceholder: "Spud-க்குச் செய்தி…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "தொடர்க", less: "குறைவு", more: "அதிகம்" },
+    units: { years: "ஆண்டுகள்", yearsCount: { one: "{n} ஆண்டு", other: "{n} ஆண்டுகள்" } },
+  },
+  beats: {
+    ageWhy: "வயதுடன் உங்கள் வளர்சிதை மாற்றம் மாறுகிறது, அதனால் அதைக் கணக்கில் கொள்கிறோம்",
+    echo: { rest: "ஓய்வில்: ஒரு நாளைக்கு {rest}kcal", days: "உங்கள் நாட்கள் {burn}kcal எரிக்கின்றன" },
+    baseline: { title: "இதோ உங்கள் தொடக்க நிலை", bmi: "BMI", what: "உடல் நிறை குறியீட்டெண்" },
+    prelim: { title: "உங்கள் திட்டம்", burn: "நீங்கள் எரிப்பது", gap: "{delta} உங்கள் வேகம்", eat: "நீங்கள் சாப்பிடுவது", perDay: "kcal ஒரு நாளைக்கு", keepTitle: "நீங்கள் சுமார் {burn}kcal எரிக்கிறீர்கள்" },
+  },
 };
 
 const PA: OnboardingContent = {
@@ -1852,7 +1978,7 @@ const PA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "ਸ਼ੁਰੂ ਕਰੋ",
@@ -2081,6 +2207,20 @@ const PA: OnboardingContent = {
     // and a second decision.
     cta: "ਆਪਣੇ ਪਹਿਲੇ ਖਾਣੇ ਦੀ ਫ਼ੋਟੋ ਲਓ",
   },
+  ui: {
+    continueLabel: "ਜਾਰੀ ਰੱਖੋ",
+    saveKept: "ਇਹ ਸੇਵ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਤੁਹਾਡਾ ਜਵਾਬ ਹਾਲੇ ਵੀ ਇੱਥੇ ਹੈ। ਜਾਰੀ ਰੱਖੋ ਦਬਾਉਣ 'ਤੇ ਇਹ ਦੁਬਾਰਾ ਭੇਜਿਆ ਜਾਵੇਗਾ।",
+    idlePlaceholder: "Spud ਨੂੰ ਮੈਸੇਜ ਕਰੋ…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "ਜਾਰੀ ਰੱਖੋ", less: "ਘੱਟ", more: "ਵੱਧ" },
+    units: { years: "ਸਾਲ", yearsCount: { one: "{n} ਸਾਲ", other: "{n} ਸਾਲ" } },
+  },
+  beats: {
+    ageWhy: "ਉਮਰ ਨਾਲ ਤੁਹਾਡਾ ਮੈਟਾਬੋਲਿਜ਼ਮ ਬਦਲਦਾ ਹੈ, ਇਸ ਲਈ ਅਸੀਂ ਇਸ ਨੂੰ ਧਿਆਨ ਵਿੱਚ ਰੱਖਦੇ ਹਾਂ",
+    echo: { rest: "ਆਰਾਮ ਦੀ ਹਾਲਤ ਵਿੱਚ: {rest}kcal ਪ੍ਰਤੀ ਦਿਨ", days: "ਤੁਹਾਡੇ ਦਿਨ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹਨ" },
+    baseline: { title: "ਇਹ ਰਿਹਾ ਤੁਹਾਡਾ ਸ਼ੁਰੂਆਤੀ ਆਧਾਰ", bmi: "BMI", what: "ਬਾਡੀ ਮਾਸ ਇੰਡੈਕਸ" },
+    prelim: { title: "ਤੁਹਾਡੀ ਯੋਜਨਾ", burn: "ਤੁਸੀਂ ਖ਼ਰਚ ਕਰਦੇ ਹੋ", gap: "{delta} ਤੁਹਾਡੀ ਰਫ਼ਤਾਰ", eat: "ਤੁਸੀਂ ਖਾਂਦੇ ਹੋ", perDay: "kcal ਪ੍ਰਤੀ ਦਿਨ", keepTitle: "ਤੁਸੀਂ ਲਗਭਗ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹੋ" },
+  },
 };
 
 const OR: OnboardingContent = {
@@ -2134,7 +2274,7 @@ const OR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "ଆରମ୍ଭ କରନ୍ତୁ",
@@ -2363,6 +2503,20 @@ const OR: OnboardingContent = {
     // and a second decision.
     cta: "ଆପଣଙ୍କ ପ୍ରଥମ ଭୋଜନର ଫଟୋ ନିଅନ୍ତୁ",
   },
+  ui: {
+    continueLabel: "ଜାରି ରଖନ୍ତୁ",
+    saveKept: "ଏହା ସେଭ୍ ହୋଇପାରିଲା ନାହିଁ। ଆପଣଙ୍କ ଉତ୍ତର ଏଠାରେ ଅଛି। “ଜାରି ରଖନ୍ତୁ” ଦବାଇଲେ ଏହା ପୁଣି ପଠାହେବ।",
+    idlePlaceholder: "Spud କୁ ମେସେଜ୍ କରନ୍ତୁ…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "ଜାରି ରଖନ୍ତୁ", less: "କମ୍", more: "ଅଧିକ" },
+    units: { years: "ବର୍ଷ", yearsCount: { one: "{n} ବର୍ଷ", other: "{n} ବର୍ଷ" } },
+  },
+  beats: {
+    ageWhy: "ବୟସ ସହ ଆପଣଙ୍କ ମେଟାବୋଲିଜମ୍ ବଦଳେ, ତେଣୁ ଆମେ ତାହା ହିସାବକୁ ନେଉ",
+    echo: { rest: "ବିଶ୍ରାମରେ: {rest}kcal ପ୍ରତିଦିନ", days: "ଆପଣଙ୍କ ଦିନ {burn}kcal ଖର୍ଚ୍ଚ କରେ" },
+    baseline: { title: "ଏହା ଆପଣଙ୍କ ଆରମ୍ଭିକ ଆଧାର", bmi: "BMI", what: "ବଡି ମାସ୍ ଇଣ୍ଡେକ୍ସ" },
+    prelim: { title: "ଆପଣଙ୍କ ଯୋଜନା", burn: "ଆପଣ ଖର୍ଚ୍ଚ କରନ୍ତି", gap: "{delta} ଆପଣଙ୍କ ଗତି", eat: "ଆପଣ ଖାଆନ୍ତି", perDay: "kcal ପ୍ରତିଦିନ", keepTitle: "ଆପଣ ପ୍ରାୟ {burn}kcal ଖର୍ଚ୍ଚ କରନ୍ତି" },
+  },
 };
 
 const MR: OnboardingContent = {
@@ -2416,7 +2570,7 @@ const MR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "सुरू करा",
@@ -2645,6 +2799,20 @@ const MR: OnboardingContent = {
     // and a second decision.
     cta: "तुमच्या पहिल्या जेवणाचा फोटो काढा",
   },
+  ui: {
+    continueLabel: "पुढे जा",
+    saveKept: "हे सेव्ह करता आले नाही. तुमचे उत्तर अजून इथेच आहे. पुढे जा दाबल्यास ते पुन्हा पाठवले जाईल.",
+    idlePlaceholder: "Spud ला मेसेज करा…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "पुढे जा", less: "कमी", more: "जास्त" },
+    units: { years: "वर्षे", yearsCount: { one: "{n} वर्ष", other: "{n} वर्षे" } },
+  },
+  beats: {
+    ageWhy: "वयानुसार तुमचा मेटाबॉलिझम बदलतो, म्हणून आम्ही तेही लक्षात घेतो",
+    echo: { rest: "विश्रांतीत: दिवसाला {rest}kcal", days: "तुमचे दिवस {burn}kcal खर्च करतात" },
+    baseline: { title: "हा आहे तुमचा सुरुवातीचा आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
+    prelim: { title: "तुमची योजना", burn: "तुम्ही खर्च करता", gap: "{delta} तुमचा वेग", eat: "तुम्ही खाता", perDay: "kcal दिवसाला", keepTitle: "तुम्ही सुमारे {burn}kcal खर्च करता" },
+  },
 };
 
 const ML: OnboardingContent = {
@@ -2698,7 +2866,7 @@ const ML: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "തുടങ്ങുക",
@@ -2927,6 +3095,20 @@ const ML: OnboardingContent = {
     // and a second decision.
     cta: "നിങ്ങളുടെ ആദ്യ ഭക്ഷണത്തിന്റെ ഫോട്ടോ എടുക്കൂ",
   },
+  ui: {
+    continueLabel: "തുടരുക",
+    saveKept: "അത് സംരക്ഷിക്കാനായില്ല. നിങ്ങളുടെ ഉത്തരം ഇപ്പോഴും ഇവിടെയുണ്ട്. തുടരുക അമർത്തിയാൽ അത് വീണ്ടും അയയ്ക്കും.",
+    idlePlaceholder: "Spud-ന് സന്ദേശം അയയ്ക്കൂ…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "തുടരുക", less: "കുറവ്", more: "കൂടുതൽ" },
+    units: { years: "വയസ്സ്", yearsCount: { one: "{n} വയസ്സ്", other: "{n} വയസ്സ്" } },
+  },
+  beats: {
+    ageWhy: "പ്രായത്തിനനുസരിച്ച് നിങ്ങളുടെ മെറ്റബോളിസം മാറുന്നു, അതിനാൽ ഞങ്ങൾ അത് കണക്കിലെടുക്കുന്നു",
+    echo: { rest: "വിശ്രമത്തിൽ: ദിവസം {rest}kcal", days: "നിങ്ങളുടെ ദിവസങ്ങൾ {burn}kcal ചെലവഴിക്കുന്നു" },
+    baseline: { title: "ഇതാ നിങ്ങളുടെ തുടക്കനില", bmi: "BMI", what: "ബോഡി മാസ് ഇൻഡക്സ്" },
+    prelim: { title: "നിങ്ങളുടെ പ്ലാൻ", burn: "നിങ്ങൾ ചെലവഴിക്കുന്നത്", gap: "{delta} നിങ്ങളുടെ ഗതി", eat: "നിങ്ങൾ കഴിക്കുന്നത്", perDay: "kcal ദിവസം", keepTitle: "നിങ്ങൾ ഏകദേശം {burn}kcal ചെലവഴിക്കുന്നു" },
+  },
 };
 
 const KN: OnboardingContent = {
@@ -2980,7 +3162,7 @@ const KN: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "ಪ್ರಾರಂಭಿಸಿ",
@@ -3209,6 +3391,20 @@ const KN: OnboardingContent = {
     // and a second decision.
     cta: "ನಿಮ್ಮ ಮೊದಲ ಊಟದ ಫೋಟೋ ತೆಗೆಯಿರಿ",
   },
+  ui: {
+    continueLabel: "ಮುಂದುವರಿಸಿ",
+    saveKept: "ಅದನ್ನು ಉಳಿಸಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಉತ್ತರ ಇನ್ನೂ ಇಲ್ಲೇ ಇದೆ. ಮುಂದುವರಿಸಿ ಒತ್ತಿದರೆ ಅದು ಮತ್ತೆ ಕಳುಹಿಸಲ್ಪಡುತ್ತದೆ.",
+    idlePlaceholder: "Spud ಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "ಮುಂದುವರಿಸಿ", less: "ಕಡಿಮೆ", more: "ಹೆಚ್ಚು" },
+    units: { years: "ವರ್ಷ", yearsCount: { one: "{n} ವರ್ಷ", other: "{n} ವರ್ಷಗಳು" } },
+  },
+  beats: {
+    ageWhy: "ವಯಸ್ಸಿನೊಂದಿಗೆ ನಿಮ್ಮ ಚಯಾಪಚಯ ಬದಲಾಗುತ್ತದೆ, ಹಾಗಾಗಿ ನಾವು ಅದನ್ನು ಲೆಕ್ಕಕ್ಕೆ ತೆಗೆದುಕೊಳ್ಳುತ್ತೇವೆ",
+    echo: { rest: "ವಿಶ್ರಾಂತಿಯಲ್ಲಿ: ದಿನಕ್ಕೆ {rest}kcal", days: "ನಿಮ್ಮ ದಿನಗಳು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತವೆ" },
+    baseline: { title: "ಇದು ನಿಮ್ಮ ಆರಂಭಿಕ ಸ್ಥಿತಿ", bmi: "BMI", what: "ಬಾಡಿ ಮಾಸ್ ಇಂಡೆಕ್ಸ್" },
+    prelim: { title: "ನಿಮ್ಮ ಯೋಜನೆ", burn: "ನೀವು ಖರ್ಚು ಮಾಡುತ್ತೀರಿ", gap: "{delta} ನಿಮ್ಮ ವೇಗ", eat: "ನೀವು ತಿನ್ನುತ್ತೀರಿ", perDay: "kcal ದಿನಕ್ಕೆ", keepTitle: "ನೀವು ಸುಮಾರು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತೀರಿ" },
+  },
 };
 
 const GU: OnboardingContent = {
@@ -3262,7 +3458,7 @@ const GU: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "શરૂ કરો",
@@ -3491,6 +3687,20 @@ const GU: OnboardingContent = {
     // and a second decision.
     cta: "તમારા પહેલા ભોજનનો ફોટો લો",
   },
+  ui: {
+    continueLabel: "ચાલુ રાખો",
+    saveKept: "આ સેવ ન થઈ શક્યું. તમારો જવાબ હજી અહીં જ છે. ચાલુ રાખો દબાવતાં તે ફરીથી મોકલાશે.",
+    idlePlaceholder: "Spud ને મેસેજ કરો…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "ચાલુ રાખો", less: "ઓછું", more: "વધુ" },
+    units: { years: "વર્ષ", yearsCount: { one: "{n} વર્ષ", other: "{n} વર્ષ" } },
+  },
+  beats: {
+    ageWhy: "ઉંમર સાથે તમારું મેટાબોલિઝમ બદલાય છે, તેથી અમે તેને ધ્યાનમાં લઈએ છીએ",
+    echo: { rest: "આરામની સ્થિતિમાં: {rest}kcal પ્રતિ દિવસ", days: "તમારા દિવસો {burn}kcal ખર્ચે છે" },
+    baseline: { title: "આ રહ્યો તમારો શરૂઆતનો આધાર", bmi: "BMI", what: "બોડી માસ ઇન્ડેક્સ" },
+    prelim: { title: "તમારી યોજના", burn: "તમે ખર્ચો છો", gap: "{delta} તમારી ઝડપ", eat: "તમે ખાઓ છો", perDay: "kcal પ્રતિ દિવસ", keepTitle: "તમે લગભગ {burn}kcal ખર્ચો છો" },
+  },
 };
 
 const BN: OnboardingContent = {
@@ -3544,7 +3754,7 @@ const BN: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "শুরু করুন",
@@ -3773,6 +3983,20 @@ const BN: OnboardingContent = {
     // and a second decision.
     cta: "আপনার প্রথম খাবারের ছবি তুলুন",
   },
+  ui: {
+    continueLabel: "চালিয়ে যান",
+    saveKept: "এটি সেভ করা যায়নি। আপনার উত্তর এখনও এখানে আছে। চালিয়ে যান চাপলে আবার পাঠানো হবে।",
+    idlePlaceholder: "Spud-কে মেসেজ করুন…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "চালিয়ে যান", less: "কম", more: "বেশি" },
+    units: { years: "বছর", yearsCount: { one: "{n} বছর", other: "{n} বছর" } },
+  },
+  beats: {
+    ageWhy: "বয়সের সঙ্গে আপনার মেটাবলিজম বদলায়, তাই আমরা সেটা হিসাবে রাখি",
+    echo: { rest: "বিশ্রামে: দিনে {rest}kcal", days: "আপনার দিনগুলো {burn}kcal খরচ করে" },
+    baseline: { title: "এই হলো আপনার শুরুর অবস্থা", bmi: "BMI", what: "বডি মাস ইনডেক্স" },
+    prelim: { title: "আপনার পরিকল্পনা", burn: "আপনি খরচ করেন", gap: "{delta} আপনার গতি", eat: "আপনি খান", perDay: "kcal দিনে", keepTitle: "আপনি প্রায় {burn}kcal খরচ করেন" },
+  },
 };
 
 const PT_PT: OnboardingContent = {
@@ -3826,7 +4050,7 @@ const PT_PT: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Começar",
@@ -4055,6 +4279,20 @@ const PT_PT: OnboardingContent = {
     // and a second decision.
     cta: "Fotografa a tua primeira refeição",
   },
+  ui: {
+    continueLabel: "Continuar",
+    saveKept: "Não foi possível guardar. A tua resposta continua aqui. Continuar envia-a de novo.",
+    idlePlaceholder: "Mensagem para o Spud…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Continuar", less: "Menos", more: "Mais" },
+    units: { years: "anos", yearsCount: { one: "{n} ano", other: "{n} anos" } },
+  },
+  beats: {
+    ageWhy: "O teu metabolismo muda com a idade, por isso temos isso em conta",
+    echo: { rest: "Em repouso: {rest}kcal por dia", days: "Os teus dias gastam {burn}kcal" },
+    baseline: { title: "Este é o teu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
+    prelim: { title: "O teu plano", burn: "Gastas", gap: "{delta} o teu ritmo", eat: "Comes", perDay: "kcal por dia", keepTitle: "Gastas cerca de {burn}kcal" },
+  },
 };
 
 const MS: OnboardingContent = {
@@ -4108,7 +4346,7 @@ const MS: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Mula",
@@ -4337,6 +4575,20 @@ const MS: OnboardingContent = {
     // and a second decision.
     cta: "Ambil foto hidangan pertama anda",
   },
+  ui: {
+    continueLabel: "Teruskan",
+    saveKept: "Itu tidak dapat disimpan. Jawapan anda masih ada di sini. Teruskan akan menghantarnya semula.",
+    idlePlaceholder: "Mesej Spud…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Teruskan", less: "Kurang", more: "Lagi" },
+    units: { years: "tahun", yearsCount: { one: "{n} tahun", other: "{n} tahun" } },
+  },
+  beats: {
+    ageWhy: "Metabolisme anda berubah mengikut usia, jadi kami mengambil kira perkara itu",
+    echo: { rest: "Ketika rehat: {rest}kcal sehari", days: "Hari-hari anda membakar {burn}kcal" },
+    baseline: { title: "Ini titik permulaan anda", bmi: "BMI", what: "Indeks jisim badan" },
+    prelim: { title: "Pelan anda", burn: "Anda membakar", gap: "{delta} kadar anda", eat: "Anda makan", perDay: "kcal sehari", keepTitle: "Anda membakar kira-kira {burn}kcal" },
+  },
 };
 
 const CA: OnboardingContent = {
@@ -4390,7 +4642,7 @@ const CA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Comença",
@@ -4619,6 +4871,20 @@ const CA: OnboardingContent = {
     // and a second decision.
     cta: "Fotografia el teu primer àpat",
   },
+  ui: {
+    continueLabel: "Continua",
+    saveKept: "No s'ha pogut desar. La teva resposta encara és aquí. Amb Continua, s'envia de nou.",
+    idlePlaceholder: "Escriu a Spud…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Continua", less: "Menys", more: "Més" },
+    units: { years: "anys", yearsCount: { one: "{n} any", other: "{n} anys" } },
+  },
+  beats: {
+    ageWhy: "El metabolisme canvia amb l'edat, i ho tenim en compte",
+    echo: { rest: "En repòs: {rest}kcal al dia", days: "Els teus dies cremen {burn}kcal" },
+    baseline: { title: "Aquest és el teu punt de partida", bmi: "IMC", what: "Índex de massa corporal" },
+    prelim: { title: "El teu pla", burn: "Cremes", gap: "{delta} el teu ritme", eat: "Menjes", perDay: "kcal al dia", keepTitle: "Cremes unes {burn}kcal" },
+  },
 };
 
 const SL: OnboardingContent = {
@@ -4672,7 +4938,7 @@ const SL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Začni",
@@ -4901,6 +5167,20 @@ const SL: OnboardingContent = {
     // and a second decision.
     cta: "Fotografiraj svoj prvi obrok",
   },
+  ui: {
+    continueLabel: "Nadaljuj",
+    saveKept: "Tega ni bilo mogoče shraniti. Tvoj odgovor je še vedno tu. Gumb Nadaljuj ga pošlje znova.",
+    idlePlaceholder: "Sporočilo za Spuda…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Nadaljuj", less: "Manj", more: "Več" },
+    units: { years: "let", yearsCount: { one: "{n} leto", other: "{n} let" } },
+  },
+  beats: {
+    ageWhy: "Presnova se s starostjo spreminja, zato to upoštevamo",
+    echo: { rest: "V mirovanju: {rest}kcal na dan", days: "Tvoji dnevi porabijo {burn}kcal" },
+    baseline: { title: "To je tvoje izhodišče", bmi: "ITM", what: "Indeks telesne mase" },
+    prelim: { title: "Tvoj načrt", burn: "Porabiš", gap: "{delta} tvoj tempo", eat: "Ješ", perDay: "kcal na dan", keepTitle: "Porabiš približno {burn}kcal" },
+  },
 };
 
 const HR: OnboardingContent = {
@@ -4954,7 +5234,7 @@ const HR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Kreni",
@@ -5183,6 +5463,20 @@ const HR: OnboardingContent = {
     // and a second decision.
     cta: "Fotografiraj svoj prvi obrok",
   },
+  ui: {
+    continueLabel: "Nastavi",
+    saveKept: "To se nije moglo spremiti. Odgovor je još tu. Dodirom na Nastavi šalje se ponovno.",
+    idlePlaceholder: "Poruka za Spuda…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Nastavi", less: "Manje", more: "Više" },
+    units: { years: "god.", yearsCount: { one: "{n} godina", other: "{n} god." } },
+  },
+  beats: {
+    ageWhy: "Metabolizam se mijenja s godinama, pa to uračunavamo",
+    echo: { rest: "U mirovanju: {rest}kcal dnevno", days: "Tvoji dani troše {burn}kcal" },
+    baseline: { title: "Ovo je tvoja polazna točka", bmi: "BMI", what: "Indeks tjelesne mase" },
+    prelim: { title: "Tvoj plan", burn: "Trošiš", gap: "{delta} tvoj tempo", eat: "Jedeš", perDay: "kcal dnevno", keepTitle: "Trošiš oko {burn}kcal" },
+  },
 };
 
 const SK: OnboardingContent = {
@@ -5236,7 +5530,7 @@ const SK: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Začať",
@@ -5465,6 +5759,20 @@ const SK: OnboardingContent = {
     // and a second decision.
     cta: "Odfoť svoje prvé jedlo",
   },
+  ui: {
+    continueLabel: "Pokračovať",
+    saveKept: "Nepodarilo sa to uložiť. Tvoja odpoveď je stále tu. Ťuknutím na Pokračovať ju pošleš znova.",
+    idlePlaceholder: "Spud čaká na správu…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Pokračovať", less: "Menej", more: "Viac" },
+    units: { years: "rokov", yearsCount: { one: "{n} rok", other: "{n} r." } },
+  },
+  beats: {
+    ageWhy: "Metabolizmus sa s vekom mení, preto to zohľadňujeme",
+    echo: { rest: "V pokoji: {rest}kcal denne", days: "Tvoje dni spália {burn}kcal" },
+    baseline: { title: "Tu je tvoj východiskový bod", bmi: "BMI", what: "Index telesnej hmotnosti" },
+    prelim: { title: "Tvoj plán", burn: "Spáliš", gap: "{delta} tvoje tempo", eat: "Ješ", perDay: "kcal denne", keepTitle: "Spáliš asi {burn}kcal" },
+  },
 };
 
 const NO: OnboardingContent = {
@@ -5518,7 +5826,7 @@ const NO: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Kom i gang",
@@ -5747,6 +6055,20 @@ const NO: OnboardingContent = {
     // and a second decision.
     cta: "Ta bilde av ditt første måltid",
   },
+  ui: {
+    continueLabel: "Fortsett",
+    saveKept: "Det kunne ikke lagres. Svaret ditt er fortsatt her. Fortsett sender det på nytt.",
+    idlePlaceholder: "Melding til Spud…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Fortsett", less: "Mindre", more: "Mer" },
+    units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
+  },
+  beats: {
+    ageWhy: "Stoffskiftet endrer seg med alderen, så vi regner det inn",
+    echo: { rest: "I hvile: {rest}kcal om dagen", days: "Dagene dine forbrenner {burn}kcal" },
+    baseline: { title: "Her er utgangspunktet ditt", bmi: "KMI", what: "Kroppsmasseindeks" },
+    prelim: { title: "Planen din", burn: "Du forbrenner", gap: "{delta} tempoet ditt", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrenner rundt {burn}kcal" },
+  },
 };
 
 const FI: OnboardingContent = {
@@ -5800,7 +6122,7 @@ const FI: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Aloita",
@@ -6029,6 +6351,20 @@ const FI: OnboardingContent = {
     // and a second decision.
     cta: "Kuvaa ensimmäinen ateriasi",
   },
+  ui: {
+    continueLabel: "Jatka",
+    saveKept: "Tallennus epäonnistui. Vastauksesi on yhä tässä. Jatka lähettää sen uudelleen.",
+    idlePlaceholder: "Kirjoita Spudille…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Jatka", less: "Vähemmän", more: "Enemmän" },
+    units: { years: "vuotta", yearsCount: { one: "{n} vuosi", other: "{n} vuotta" } },
+  },
+  beats: {
+    ageWhy: "Aineenvaihdunta muuttuu iän myötä, joten otamme sen huomioon",
+    echo: { rest: "Levossa: {rest}kcal päivässä", days: "Päiväsi kuluttavat {burn}kcal" },
+    baseline: { title: "Tässä on lähtötasosi", bmi: "BMI", what: "Painoindeksi" },
+    prelim: { title: "Suunnitelmasi", burn: "Kulutat", gap: "{delta} tahtisi", eat: "Syöt", perDay: "kcal päivässä", keepTitle: "Kulutat noin {burn}kcal" },
+  },
 };
 
 const DA: OnboardingContent = {
@@ -6082,7 +6418,7 @@ const DA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Kom i gang",
@@ -6311,6 +6647,20 @@ const DA: OnboardingContent = {
     // and a second decision.
     cta: "Fotografér dit første måltid",
   },
+  ui: {
+    continueLabel: "Fortsæt",
+    saveKept: "Det kunne ikke gemmes. Dit svar er her stadig. Fortsæt sender det igen.",
+    idlePlaceholder: "Skriv til Spud…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Fortsæt", less: "Mindre", more: "Mere" },
+    units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
+  },
+  beats: {
+    ageWhy: "Dit stofskifte ændrer sig med alderen, så det regner vi med",
+    echo: { rest: "I hvile: {rest}kcal om dagen", days: "Dine dage forbrænder {burn}kcal" },
+    baseline: { title: "Her er dit udgangspunkt", bmi: "BMI", what: "Body mass index" },
+    prelim: { title: "Din plan", burn: "Du forbrænder", gap: "{delta} dit tempo", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrænder cirka {burn}kcal" },
+  },
 };
 
 const HU: OnboardingContent = {
@@ -6364,7 +6714,7 @@ const HU: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Kezdjük",
@@ -6593,6 +6943,20 @@ const HU: OnboardingContent = {
     // and a second decision.
     cta: "Fotózd le az első étkezésedet",
   },
+  ui: {
+    continueLabel: "Tovább",
+    saveKept: "Ezt nem sikerült menteni. A válaszod még itt van. A Tovább újra elküldi.",
+    idlePlaceholder: "Üzenet Spudnak…",
+    optionContinues: "Kiválasztja és folytat",
+    stepper: { continue: "Tovább", less: "Kevesebb", more: "Több" },
+    units: { years: "év", yearsCount: { one: "{n} év", other: "{n} év" } },
+  },
+  beats: {
+    ageWhy: "Az anyagcseréd az életkorral változik, ezt is beszámítjuk",
+    echo: { rest: "Nyugalomban: napi {rest}kcal", days: "A napjaid elégetnek {burn}kcal-t" },
+    baseline: { title: "Itt a kiindulópontod", bmi: "BMI", what: "Testtömegindex" },
+    prelim: { title: "A terved", burn: "Elégetsz", gap: "{delta} a tempód", eat: "Eszel", perDay: "kcal naponta", keepTitle: "Nagyjából {burn}kcal-t égetsz el" },
+  },
 };
 
 const EL: OnboardingContent = {
@@ -6646,7 +7010,7 @@ const EL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Ξεκίνα",
@@ -6875,6 +7239,20 @@ const EL: OnboardingContent = {
     // and a second decision.
     cta: "Φωτογράφισε το πρώτο σου γεύμα",
   },
+  ui: {
+    continueLabel: "Συνέχεια",
+    saveKept: "Δεν ήταν δυνατή η αποθήκευση. Η απάντησή σου είναι ακόμα εδώ. Πάτα Συνέχεια για να σταλεί ξανά.",
+    idlePlaceholder: "Μήνυμα προς Spud…",
+    optionContinues: "Επιλέγει και συνεχίζει",
+    stepper: { continue: "Συνέχεια", less: "Λιγότερο", more: "Περισσότερο" },
+    units: { years: "έτη", yearsCount: { one: "{n} έτος", other: "{n} έτη" } },
+  },
+  beats: {
+    ageWhy: "Ο μεταβολισμός σου αλλάζει με την ηλικία, γι' αυτό το υπολογίζουμε",
+    echo: { rest: "Σε ηρεμία: {rest}kcal την ημέρα", days: "Οι μέρες σου καίνε {burn}kcal" },
+    baseline: { title: "Αυτό είναι το σημείο εκκίνησής σου", bmi: "ΔΜΣ", what: "Δείκτης μάζας σώματος" },
+    prelim: { title: "Το πλάνο σου", burn: "Καίς", gap: "{delta} ο ρυθμός σου", eat: "Τρως", perDay: "kcal την ημέρα", keepTitle: "Καίς περίπου {burn}kcal" },
+  },
 };
 
 const RO: OnboardingContent = {
@@ -6928,7 +7306,7 @@ const RO: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Începe",
@@ -7157,6 +7535,20 @@ const RO: OnboardingContent = {
     // and a second decision.
     cta: "Fotografiază prima ta masă",
   },
+  ui: {
+    continueLabel: "Continuă",
+    saveKept: "Nu s-a putut salva. Răspunsul tău e încă aici. Continuă îl trimite din nou.",
+    idlePlaceholder: "Scrie-i lui Spud…",
+    optionContinues: "Selectează și continuă",
+    stepper: { continue: "Continuă", less: "Mai puțin", more: "Mai mult" },
+    units: { years: "ani", yearsCount: { one: "{n} an", other: "{n} ani" } },
+  },
+  beats: {
+    ageWhy: "Metabolismul se schimbă odată cu vârsta, așa că ținem cont de asta",
+    echo: { rest: "În repaus: {rest}kcal pe zi", days: "Zilele tale ard {burn}kcal" },
+    baseline: { title: "Iată punctul tău de pornire", bmi: "IMC", what: "Indicele de masă corporală" },
+    prelim: { title: "Planul tău", burn: "Arzi", gap: "{delta} ritmul tău", eat: "Mănânci", perDay: "kcal pe zi", keepTitle: "Arzi cam {burn}kcal" },
+  },
 };
 
 const CS: OnboardingContent = {
@@ -7210,7 +7602,7 @@ const CS: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Začít",
@@ -7439,6 +7831,20 @@ const CS: OnboardingContent = {
     // and a second decision.
     cta: "Vyfoť své první jídlo",
   },
+  ui: {
+    continueLabel: "Pokračovat",
+    saveKept: "Nepodařilo se to uložit. Tvoje odpověď tu pořád je. Tlačítko Pokračovat ji odešle znovu.",
+    idlePlaceholder: "Zpráva pro Spud…",
+    optionContinues: "Vybere a pokračuje",
+    stepper: { continue: "Pokračovat", less: "Méně", more: "Více" },
+    units: { years: "let", yearsCount: { one: "{n} rok", other: "{n} let" } },
+  },
+  beats: {
+    ageWhy: "S věkem se mění metabolismus, a tak s tím počítáme",
+    echo: { rest: "V klidu: {rest}kcal denně", days: "Tvoje dny spálí {burn}kcal" },
+    baseline: { title: "Tady je tvůj výchozí bod", bmi: "BMI", what: "Index tělesné hmotnosti" },
+    prelim: { title: "Tvůj plán", burn: "Spálíš", gap: "{delta} tvoje tempo", eat: "Jíš", perDay: "kcal denně", keepTitle: "Spálíš zhruba {burn}kcal" },
+  },
 };
 
 const HI: OnboardingContent = {
@@ -7492,7 +7898,7 @@ const HI: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "शुरू करें",
@@ -7721,6 +8127,20 @@ const HI: OnboardingContent = {
     // and a second decision.
     cta: "अपने पहले भोजन की फ़ोटो लें",
   },
+  ui: {
+    continueLabel: "जारी रखें",
+    saveKept: "यह सेव नहीं हो सका। आपका जवाब अभी भी यहीं है। जारी रखें दबाने पर यह फिर से भेजा जाएगा।",
+    idlePlaceholder: "Spud को मैसेज करें…",
+    optionContinues: "चुनें और जारी रखें",
+    stepper: { continue: "जारी रखें", less: "कम", more: "ज़्यादा" },
+    units: { years: "साल", yearsCount: { one: "{n} साल", other: "{n} साल" } },
+  },
+  beats: {
+    ageWhy: "उम्र के साथ आपका मेटाबॉलिज़्म बदलता है, इसलिए हम इसे ध्यान में रखते हैं",
+    echo: { rest: "आराम की स्थिति में: {rest}kcal प्रति दिन", days: "आपके दिन {burn}kcal खर्च करते हैं" },
+    baseline: { title: "यह रहा आपका शुरुआती आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
+    prelim: { title: "आपकी योजना", burn: "आप खर्च करते हैं", gap: "{delta} आपकी रफ़्तार", eat: "आप खाते हैं", perDay: "kcal प्रति दिन", keepTitle: "आप लगभग {burn}kcal खर्च करते हैं" },
+  },
 };
 
 const TH: OnboardingContent = {
@@ -7774,7 +8194,7 @@ const TH: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "เริ่มเลย",
@@ -8003,6 +8423,20 @@ const TH: OnboardingContent = {
     // and a second decision.
     cta: "ถ่ายรูปมื้อแรกของคุณ",
   },
+  ui: {
+    continueLabel: "ต่อไป",
+    saveKept: "บันทึกไม่สำเร็จ คำตอบของคุณยังอยู่ แตะ ต่อไป เพื่อส่งอีกครั้ง",
+    idlePlaceholder: "ส่งข้อความถึง Spud…",
+    optionContinues: "เลือกและดำเนินการต่อ",
+    stepper: { continue: "ต่อไป", less: "น้อยลง", more: "มากขึ้น" },
+    units: { years: "ปี", yearsCount: { one: "{n} ปี", other: "{n} ปี" } },
+  },
+  beats: {
+    ageWhy: "การเผาผลาญเปลี่ยนไปตามอายุ เราจึงนำมาคำนวณด้วย",
+    echo: { rest: "ขณะพัก: {rest}kcal ต่อวัน", days: "วันของคุณเผาผลาญ {burn}kcal" },
+    baseline: { title: "นี่คือจุดเริ่มต้นของคุณ", bmi: "BMI", what: "ดัชนีมวลกาย" },
+    prelim: { title: "แผนของคุณ", burn: "คุณเผาผลาญ", gap: "{delta} ความเร็วของคุณ", eat: "คุณกิน", perDay: "kcal ต่อวัน", keepTitle: "คุณเผาผลาญประมาณ {burn}kcal" },
+  },
 };
 
 const SV: OnboardingContent = {
@@ -8056,7 +8490,7 @@ const SV: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Kom igång",
@@ -8285,6 +8719,20 @@ const SV: OnboardingContent = {
     // and a second decision.
     cta: "Fota din första måltid",
   },
+  ui: {
+    continueLabel: "Fortsätt",
+    saveKept: "Kunde inte spara det. Ditt svar finns kvar. Fortsätt skickar det igen.",
+    idlePlaceholder: "Skriv till Spud…",
+    optionContinues: "Väljer och fortsätter",
+    stepper: { continue: "Fortsätt", less: "Mindre", more: "Mer" },
+    units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
+  },
+  beats: {
+    ageWhy: "Ämnesomsättningen förändras med åldern, så vi räknar med det",
+    echo: { rest: "I vila: {rest}kcal per dag", days: "Dina dagar förbränner {burn}kcal" },
+    baseline: { title: "Här är din utgångspunkt", bmi: "BMI", what: "Kroppsmasseindex" },
+    prelim: { title: "Din plan", burn: "Du förbränner", gap: "{delta} ditt tempo", eat: "Du äter", perDay: "kcal per dag", keepTitle: "Du förbränner cirka {burn}kcal" },
+  },
 };
 
 const UK: OnboardingContent = {
@@ -8338,7 +8786,7 @@ const UK: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Почати",
@@ -8567,6 +9015,20 @@ const UK: OnboardingContent = {
     // and a second decision.
     cta: "Сфотографуй перший прийом їжі",
   },
+  ui: {
+    continueLabel: "Продовжити",
+    saveKept: "Не вдалося зберегти. Твоя відповідь усе ще тут. «Продовжити» надішле її знову.",
+    idlePlaceholder: "Написати Spud…",
+    optionContinues: "Вибирає й продовжує",
+    stepper: { continue: "Продовжити", less: "Менше", more: "Більше" },
+    units: { years: "років", yearsCount: { one: "{n} рік", other: "{n} р." } },
+  },
+  beats: {
+    ageWhy: "З віком обмін речовин змінюється, тож ми це враховуємо",
+    echo: { rest: "У спокої: {rest}ккал на день", days: "Твої дні спалюють {burn}ккал" },
+    baseline: { title: "Ось твоя точка відліку", bmi: "ІМТ", what: "Індекс маси тіла" },
+    prelim: { title: "Твій план", burn: "Ти спалюєш", gap: "{delta} твій темп", eat: "Ти їси", perDay: "ккал на день", keepTitle: "Ти спалюєш близько {burn}ккал" },
+  },
 };
 
 const NL: OnboardingContent = {
@@ -8620,7 +9082,7 @@ const NL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Aan de slag",
@@ -8849,6 +9311,20 @@ const NL: OnboardingContent = {
     // and a second decision.
     cta: "Fotografeer je eerste maaltijd",
   },
+  ui: {
+    continueLabel: "Verder",
+    saveKept: "Dat kon niet worden opgeslagen. Je antwoord staat er nog. Met Verder stuur je het opnieuw.",
+    idlePlaceholder: "Bericht aan Spud…",
+    optionContinues: "Selecteert en gaat verder",
+    stepper: { continue: "Verder", less: "Minder", more: "Meer" },
+    units: { years: "jaar", yearsCount: { one: "{n} jaar", other: "{n} jaar" } },
+  },
+  beats: {
+    ageWhy: "Je stofwisseling verandert met de leeftijd, dus daar rekenen we mee",
+    echo: { rest: "In rust: {rest}kcal per dag", days: "Je dagen verbranden {burn}kcal" },
+    baseline: { title: "Dit is je uitgangspunt", bmi: "BMI", what: "Body mass index" },
+    prelim: { title: "Je plan", burn: "Je verbrandt", gap: "{delta} je tempo", eat: "Je eet", perDay: "kcal per dag", keepTitle: "Je verbrandt ongeveer {burn}kcal" },
+  },
 };
 
 const PL: OnboardingContent = {
@@ -8902,7 +9378,7 @@ const PL: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Zacznij",
@@ -9131,6 +9607,20 @@ const PL: OnboardingContent = {
     // and a second decision.
     cta: "Sfotografuj swój pierwszy posiłek",
   },
+  ui: {
+    continueLabel: "Dalej",
+    saveKept: "Nie udało się tego zapisać. Twoja odpowiedź wciąż tu jest. „Dalej” wyśle ją ponownie.",
+    idlePlaceholder: "Wiadomość do Spuda…",
+    optionContinues: "Wybiera i przechodzi dalej",
+    stepper: { continue: "Dalej", less: "Mniej", more: "Więcej" },
+    units: { years: "lat", yearsCount: { one: "{n} rok", other: "{n} l." } },
+  },
+  beats: {
+    ageWhy: "Metabolizm zmienia się z wiekiem, więc to uwzględniamy",
+    echo: { rest: "W spoczynku: {rest}kcal dziennie", days: "Twoje dni spalają {burn}kcal" },
+    baseline: { title: "Twój punkt wyjścia", bmi: "BMI", what: "Wskaźnik masy ciała" },
+    prelim: { title: "Twój plan", burn: "Spalasz", gap: "{delta} twoje tempo", eat: "Jesz", perDay: "kcal dziennie", keepTitle: "Spalasz około {burn}kcal" },
+  },
 };
 
 const TR: OnboardingContent = {
@@ -9184,7 +9674,7 @@ const TR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Başla",
@@ -9413,6 +9903,20 @@ const TR: OnboardingContent = {
     // and a second decision.
     cta: "İlk öğününün fotoğrafını çek",
   },
+  ui: {
+    continueLabel: "Devam",
+    saveKept: "Kaydedilemedi. Yanıtın hâlâ burada. Devam onu tekrar gönderir.",
+    idlePlaceholder: "Spud'a yaz…",
+    optionContinues: "Seçer ve devam eder",
+    stepper: { continue: "Devam", less: "Daha az", more: "Daha fazla" },
+    units: { years: "yaş", yearsCount: { one: "{n} yaş", other: "{n} yaş" } },
+  },
+  beats: {
+    ageWhy: "Metabolizman yaşla değişir, biz de bunu hesaba katarız",
+    echo: { rest: "Dinlenirken: günde {rest}kcal", days: "Günlerin {burn}kcal yakar" },
+    baseline: { title: "İşte başlangıç noktan", bmi: "VKİ", what: "Vücut kitle indeksi" },
+    prelim: { title: "Planın", burn: "Yakarsın", gap: "{delta} tempon", eat: "Yersin", perDay: "kcal/gün", keepTitle: "Yaklaşık {burn}kcal yakarsın" },
+  },
 };
 
 const ZH_HANT: OnboardingContent = {
@@ -9466,7 +9970,7 @@ const ZH_HANT: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "開始使用",
@@ -9695,6 +10199,20 @@ const ZH_HANT: OnboardingContent = {
     // and a second decision.
     cta: "拍下你的第一餐",
   },
+  ui: {
+    continueLabel: "繼續",
+    saveKept: "無法儲存。你的答案還在，按「繼續」會再傳送一次。",
+    idlePlaceholder: "傳訊息給 Spud…",
+    optionContinues: "選取並繼續",
+    stepper: { continue: "繼續", less: "減少", more: "增加" },
+    units: { years: "歲", yearsCount: { one: "{n} 歲", other: "{n} 歲" } },
+  },
+  beats: {
+    ageWhy: "你的代謝會隨年齡改變，所以我們把它納入計算",
+    echo: { rest: "靜止時：每天 {rest}大卡", days: "你的日子消耗 {burn}大卡" },
+    baseline: { title: "這是你的起點", bmi: "身體質量指數（BMI）", what: "身體質量指數" },
+    prelim: { title: "你的計畫", burn: "你消耗", gap: "{delta} 你的步調", eat: "你攝取", perDay: "大卡/天", keepTitle: "你消耗約 {burn}大卡" },
+  },
 };
 
 const ZH_HANS: OnboardingContent = {
@@ -9748,7 +10266,7 @@ const ZH_HANS: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "开始使用",
@@ -9977,6 +10495,20 @@ const ZH_HANS: OnboardingContent = {
     // and a second decision.
     cta: "拍下你的第一餐",
   },
+  ui: {
+    continueLabel: "继续",
+    saveKept: "无法保存。你的回答还在，点击“继续”会再次发送。",
+    idlePlaceholder: "给 Spud 发消息…",
+    optionContinues: "选择并继续",
+    stepper: { continue: "继续", less: "减少", more: "增加" },
+    units: { years: "岁", yearsCount: { one: "{n}岁", other: "{n}岁" } },
+  },
+  beats: {
+    ageWhy: "代谢会随年龄变化，所以我们会把它考虑进去",
+    echo: { rest: "静息时：每天{rest}千卡", days: "你的日子消耗 {burn}千卡" },
+    baseline: { title: "这是你的起点", bmi: "身体质量指数（BMI）", what: "身体质量指数" },
+    prelim: { title: "你的计划", burn: "你消耗", gap: "{delta} 你的节奏", eat: "你摄入", perDay: "千卡/天", keepTitle: "你消耗约 {burn}千卡" },
+  },
 };
 
 const KO: OnboardingContent = {
@@ -10030,7 +10562,7 @@ const KO: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "시작하기",
@@ -10259,6 +10791,20 @@ const KO: OnboardingContent = {
     // and a second decision.
     cta: "첫 식사를 찍어 보세요",
   },
+  ui: {
+    continueLabel: "계속",
+    saveKept: "저장하지 못했어요. 답변은 그대로 있어요. 계속을 누르면 다시 보내요.",
+    idlePlaceholder: "Spud에게 메시지…",
+    optionContinues: "선택하고 계속",
+    stepper: { continue: "계속", less: "줄이기", more: "늘리기" },
+    units: { years: "세", yearsCount: { one: "{n}세", other: "{n}세" } },
+  },
+  beats: {
+    ageWhy: "나이에 따라 대사가 달라지니 그만큼 반영해요",
+    echo: { rest: "휴식 중: 하루 {rest}kcal", days: "하루에는 {burn}kcal를 써요" },
+    baseline: { title: "현재 기준점이에요", bmi: "BMI", what: "체질량지수" },
+    prelim: { title: "내 계획", burn: "소모", gap: "내 속도 {delta}", eat: "섭취", perDay: "kcal/일", keepTitle: "하루에 약 {burn}kcal를 써요" },
+  },
 };
 
 const JA: OnboardingContent = {
@@ -10312,7 +10858,7 @@ const JA: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "はじめる",
@@ -10541,6 +11087,20 @@ const JA: OnboardingContent = {
     // and a second decision.
     cta: "最初の食事を撮影する",
   },
+  ui: {
+    continueLabel: "続ける",
+    saveKept: "保存できませんでした。回答は残っています。「続ける」でもう一度送信します。",
+    idlePlaceholder: "Spudにメッセージ…",
+    optionContinues: "選択して次へ進みます",
+    stepper: { continue: "続ける", less: "減らす", more: "増やす" },
+    units: { years: "歳", yearsCount: { one: "{n}歳", other: "{n}歳" } },
+  },
+  beats: {
+    ageWhy: "代謝は年齢とともに変わるので、それも計算に入れます",
+    echo: { rest: "安静時：1日{rest}kcal", days: "あなたの一日は{burn}kcalを消費します" },
+    baseline: { title: "あなたの現在地です", bmi: "BMI", what: "ボディマス指数" },
+    prelim: { title: "あなたのプラン", burn: "あなたが消費", gap: "あなたのペース {delta}", eat: "あなたが食べる", perDay: "kcal/日", keepTitle: "あなたは約{burn}kcalを消費します" },
+  },
 };
 
 const PT_BR: OnboardingContent = {
@@ -10594,7 +11154,7 @@ const PT_BR: OnboardingContent = {
   // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
   // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
   // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
-  version: 20,
+  version: DEFAULT_ONBOARDING_CONTENT.version,
   welcome: {
     lines: [],
     cta: "Começar",
@@ -10822,6 +11382,20 @@ const PT_BR: OnboardingContent = {
     // being asked for is the first photo. "Start logging" points at a diary, which is an empty list
     // and a second decision.
     cta: "Fotografe sua primeira refeição",
+  },
+  ui: {
+    continueLabel: "Continuar",
+    saveKept: "Não foi possível salvar. Sua resposta continua aqui. Continuar envia de novo.",
+    idlePlaceholder: "Mensagem para o Spud…",
+    optionContinues: "Seleciona e continua",
+    stepper: { continue: "Continuar", less: "Menos", more: "Mais" },
+    units: { years: "anos", yearsCount: { one: "{n} ano", other: "{n} anos" } },
+  },
+  beats: {
+    ageWhy: "Seu metabolismo muda com a idade, por isso levamos isso em conta",
+    echo: { rest: "Em repouso: {rest}kcal por dia", days: "Seus dias gastam {burn}kcal" },
+    baseline: { title: "Este é seu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
+    prelim: { title: "Seu plano", burn: "Você gasta", gap: "{delta} seu ritmo", eat: "Você come", perDay: "kcal por dia", keepTitle: "Você gasta cerca de {burn}kcal" },
   },
 };
 

@@ -66,12 +66,17 @@ describe("every language's onboarding content", () => {
       expect(c.building.limitCap.kidneys, lang).toContain("{n}");
       expect(c.summary.floorMarker, lang).toContain("{floor}");
       expect(c.summary.capNote, lang).toContain("{share}");
+      // The beats' computed fills — a hidden (empty) template drops its placeholder legitimately.
+      if (c.beats.echo.rest !== "") expect(c.beats.echo.rest, lang).toContain("{rest}");
+      if (c.beats.echo.days !== "") expect(c.beats.echo.days, lang).toContain("{burn}");
+      expect(c.beats.prelim.gap, lang).toContain("{delta}");
+      expect(c.beats.prelim.keepTitle, lang).toContain("{burn}");
     }
   });
 
   it("introduces no placeholder nothing fills", () => {
     for (const lang of LANGS) {
-      const known = new Set(["floor", "share", "n"]);
+      const known = new Set(["floor", "share", "n", "rest", "burn", "delta"]);
       for (const [at, text] of Object.entries(flatten(onboardingContentFor(lang)))) {
         for (const m of text.matchAll(/\{(\w+)\}/g)) {
           expect(known.has(m[1]!), `${lang}.${at} uses {${m[1]}}`).toBe(true);

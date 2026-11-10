@@ -56,7 +56,6 @@ export interface QuestionView {
 
 /** The page scaffold every question shares: dash → say → (error) → [seg] → form. */
 function page(v: QuestionView, opts: { seg?: string; control: string; foot?: string; echo?: string | null; sub?: string | undefined }): string {
-  const copy = chatCopyFor(v.lang);
   const error = v.error
     ? `<p class="notice" id="answer-error" role="alert">${escape(v.error)}</p>` : "";
   const actions = v.actions.map((a) =>
@@ -73,7 +72,7 @@ ${opts.seg ?? ""}
 ${hidden("prompt", v.prompt.id)}${hidden("units", v.units)}
 ${opts.control}
 ${actions}
-${opts.foot ?? ctaSubmit(copy.continueLabel)}
+${opts.foot ?? ctaSubmit(v.content.ui.continueLabel)}
 </form></div></div>`;
   // A question page's title is the product — the question itself is the h1 already on screen.
   return shell("eait", body, v.lang, "ob");
@@ -258,12 +257,12 @@ function ageControl(v: QuestionView): { control: string } {
   };
   const rows: string[] = [];
   for (let a = min; a <= max; a++)
-    rows.push(`<div class="${rowClass(a)}">${escape(years(copy.units.yearsCount, a))}</div>`);
+    rows.push(`<div class="${rowClass(a)}">${escape(years(v.content.ui.units.yearsCount, a))}</div>`);
   const wheel = `<div class="ctl" data-ctl="wheel" data-min="${min}" data-val="${val}">` +
     `<div class="wheelbox"><div class="wheel" tabindex="0" aria-label="${escape(headline(v.lines))}">${rows.join("")}</div></div></div>`;
     // The wheel draws ages; the typed fallback also takes a four-digit year — `checkNumber`
   // reads one — so the field's own bounds must not refuse what the server would accept.
-  return { control: wheel + numAlt(v, numInput(v, val, 5, 2100, 1), copy.units.years) };
+  return { control: wheel + numAlt(v, numInput(v, val, 5, 2100, 1), v.content.ui.units.years) };
 }
 
 function unitsSeg(v: QuestionView, which: "height" | "weight"): string {
@@ -462,7 +461,7 @@ export function question(v: QuestionView): string {
       const rest = basalMetabolicRate(v.profile, v.today);
       return page(v, {
         control: optionControl(v),
-        echo: rest === null ? null : fill(chatCopyFor(v.lang).echo.rest, { rest: kcalNumbers(v.lang)(rest) }),
+        echo: rest === null ? null : fill(v.content.beats.echo.rest, { rest: kcalNumbers(v.lang)(rest) }),
       });
     }
     // Every language's barrier ask is [question, "Pick all that fit"]; `say` heads with the last
@@ -470,7 +469,7 @@ export function question(v: QuestionView): string {
     case "barrier":
       return page({ ...v, lines: [...v.lines].reverse() }, { control: optionControl(v) });
     case "age":
-      return page(v, { ...ageControl(v), sub: chatCopyFor(v.lang).ageWhy });
+      return page(v, { ...ageControl(v), sub: v.content.beats.ageWhy });
     case "height": {
       const { seg, control } = heightControl(v);
       return page(v, { seg, control });
@@ -484,7 +483,7 @@ export function question(v: QuestionView): string {
       const burn = explainTargets(v.profile, v.today).basis.tdee;
       return page(v, {
         seg, control,
-        sub: burn === null ? undefined : fill(chatCopyFor(v.lang).echo.days, { burn: kcalNumbers(v.lang)(burn) }),
+        sub: burn === null ? undefined : fill(v.content.beats.echo.days, { burn: kcalNumbers(v.lang)(burn) }),
       });
     }
     case "pace":

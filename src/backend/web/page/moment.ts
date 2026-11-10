@@ -6,7 +6,7 @@
 import {
   bmi, BMI_AXIS, BMI_SEGMENTS, bmiRange, bmiRangeLabel, chatCopyFor, explainTargets, fill, kcalNumbers, numbers,
 } from "@eait/shared";
-import type { Lang, Profile } from "@eait/shared";
+import type { Lang, OnboardingContent, Profile } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -16,8 +16,10 @@ import { escape, shell } from "./shell.ts";
  * range label under it, and the one-line "what this is" the copy carries. Computed here from the
  * profile and never stored; a profile missing either number draws the title only.
  */
-function baselineCards(profile: Profile, lang: Lang): string {
-  const b = chatCopyFor(lang).baseline;
+function baselineCards(profile: Profile, content: OnboardingContent, lang: Lang): string {
+  const b = content.beats.baseline;
+  // The band boundaries stay code: they are numbers-as-labels off the WHO edges, not copy.
+  const bands = chatCopyFor(lang).baseline.bands;
   const value = bmi(profile.weight_kg, profile.height_cm);
   const band = value === null ? null
     : value < 18.5 ? "under" : value < 25 ? "healthy" : value < 30 ? "over" : "obese";
@@ -35,7 +37,7 @@ function baselineCards(profile: Profile, lang: Lang): string {
     `<div class="bmi-b">${BMI_SEGMENTS.map((seg, i) => `<i${i === on ? ' class="cur"' : ""}></i>`).join("")}` +
     `<span class="bmi-k" style="left:${at}%"></span></div>` +
     `<div class="bmi-l">${BMI_SEGMENTS.map((seg, i) => `<span${i === on ? ' class="cur"' : ""}>${escape(bmiRangeLabel(seg.id, lang))}</span>`).join("")}</div>` +
-    `<div class="bmi-w">${escape(b.bands[band!])}</div></div>`;
+    `<div class="bmi-w">${escape(bands[band!])}</div></div>`;
   return `<div class="bstack">${meter}` +
     `<p class="muted-sub">${escape(b.what)}</p></div>`;
 }
@@ -47,8 +49,8 @@ function baselineCards(profile: Profile, lang: Lang): string {
  * from, so the card reads it like every other plan surface. A flat-band profile has no burn to
  * split, and draws the plan's row only.
  */
-export function prelimCards(profile: Profile, lang: Lang): string {
-  const p = chatCopyFor(lang).prelim;
+export function prelimCards(profile: Profile, content: OnboardingContent, lang: Lang): string {
+  const p = content.beats.prelim;
   const { targets, basis } = explainTargets(profile, new Date());
   const kn = kcalNumbers(lang);
   const signed = (x: number): string =>
@@ -70,23 +72,24 @@ export function prelimCards(profile: Profile, lang: Lang): string {
 export function interstitial(
   place: "baseline" | "prelim",
   profile: Profile,
+  content: OnboardingContent,
   lang: Lang,
   continueHref: string,
   back: string,
 ): string {
-  const copy = chatCopyFor(lang);
-  const inner = place === "baseline" ? baselineCards(profile, lang) : prelimCards(profile, lang);
-  const title = place === "baseline" ? copy.baseline.title
+  const beats = content.beats;
+  const inner = place === "baseline" ? baselineCards(profile, content, lang) : prelimCards(profile, content, lang);
+  const title = place === "baseline" ? beats.baseline.title
     : profile.goal === "maintain"
-      ? fill(copy.prelim.keepTitle, { burn: kcalNumbers(lang)(explainTargets(profile, new Date()).basis.tdee ?? 0) })
-      : copy.prelim.title;
+      ? fill(beats.prelim.keepTitle, { burn: kcalNumbers(lang)(explainTargets(profile, new Date()).basis.tdee ?? 0) })
+      : beats.prelim.title;
   const body = `${wtop()}
 <div class="wmain one q mom"><div class="wcol">
 ${dash(place, lang, { href: back, label: pageCopyFor(lang).back })}
 <div class="igroup">
 ${say([title])}
 ${inner}
-${ctaLink(continueHref, copy.continueLabel)}
+${ctaLink(continueHref, content.ui.continueLabel)}
 </div>
 </div></div>`;
   return shell("eait", body, lang, "ob");

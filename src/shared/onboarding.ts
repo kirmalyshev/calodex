@@ -32,7 +32,7 @@
 // disagree about what "next" means.
 
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
-import { genderedRussian, LANG_TAG } from "./lang.ts";
+import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
 import { ACTIVITY_LEVELS, BARRIERS, COUNTED_BEFORE, PACES, SEXES, SITUATIONS, STREAK_GOALS } from "./types.ts";
 import { DIETS, MEDICAL_TAGS } from "./targets.ts";
 import { lintCopy } from "./claims.ts";
@@ -404,6 +404,54 @@ export interface OnboardingSummaryContent {
   cta: string;
 }
 
+/**
+ * The words around the questions the screens themselves need — the one Continue, the failed-save
+ * line, the pickers' spoken labels and the wheel's unit word (ieat-app#2757). REQUIRED, every one:
+ * an empty Continue is a door with no handle.
+ */
+export interface OnboardingUiContent {
+  /** The one button under every screen that answers something. */
+  continueLabel: string;
+  /** A failed answer save: the answer is still on screen, Continue sends it again. */
+  saveKept: string;
+  /** The composer's idle placeholder on the surfaces that have one (the web's). */
+  idlePlaceholder: string;
+  /** VoiceOver's hint on a row whose tap IS the answer — activation also advances. */
+  optionContinues: string;
+  /** The steppers' spoken −/+ and the stepper's own button. */
+  stepper: { less: string; more: string; continue: string };
+  /**
+   * The unit word beside a wheel's numeral — "32 years". `yearsCount` is the same word as a
+   * whole counted template — the wheel's rows, where a language declines it per number.
+   */
+  units: { years: string; yearsCount: CountForms };
+}
+
+/**
+ * The beats between the questions — the explainers that ask nothing (ieat-app#2757). `ageWhy` and
+ * `echo` are optional and may hide: an empty string renders nothing (ieat-app#2756). The rest are
+ * required — a beat with no words is a dead screen.
+ */
+export interface OnboardingBeatsContent {
+  /** Under the age question: why it is asked. May be empty (hidden). */
+  ageWhy: string;
+  /**
+   * The answers said back as burn numbers under later questions — `{rest}`/`{burn}` are computed
+   * kcal, never typed. Either may be empty (hidden).
+   */
+  echo: { rest: string; days: string };
+  /**
+   * The BMI beat's words. The band labels stay code (`bmiRangeLabel`, shared with Progress) —
+   * only the title, the "BMI" glyph and the one-line explanation move.
+   */
+  baseline: { title: string; bmi: string; what: string };
+  /**
+   * The mid-journey plan beat: burn vs the plan's kcal, the gap named as the pace.
+   * `{delta}`/`{burn}` are computed.
+   */
+  prelim: { title: string; burn: string; gap: string; eat: string; perDay: string; keepTitle: string };
+}
+
 export interface OnboardingContent {
   /**
    * Bumped on every admin save.
@@ -417,6 +465,8 @@ export interface OnboardingContent {
   screens: OnboardingScreenContent[];
   building: OnboardingBuildingContent;
   summary: OnboardingSummaryContent;
+  ui: OnboardingUiContent;
+  beats: OnboardingBeatsContent;
 }
 
 /**
@@ -852,8 +902,11 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   // "Your weight" and "Where do you eat?" — different words under the same number is the average
   // the counter exists to prevent. v19 (eait#726): the age headline is "Your age?" — same
   // question, new words, same reason to bump. v20 (ieat-app#2756): the welcome drops its
-  // headline — `lines` may be empty, and the button is "Get started".
-  version: 20,
+  // headline — `lines` may be empty, and the button is "Get started". v24 (ieat-app#2757): `ui`
+  // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
+  // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
+  // revision may never reuse a number that was already issued.
+  version: 24,
   welcome: {
     lines: [],
     cta: "Get started",
@@ -1085,6 +1138,23 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     // being asked for is the first photo. "Start logging" points at a diary, which is an empty list
     // and a second decision.
     cta: "Photograph your first meal",
+  },
+  ui: {
+    continueLabel: "Continue",
+    saveKept: "Couldn't save that. Your answer is still here. Continue sends it again.",
+    idlePlaceholder: "Message Spud…",
+    optionContinues: "Selects and continues",
+    stepper: { continue: "Continue", less: "Less", more: "More" },
+    units: { years: "years", yearsCount: { one: "{n} year", other: "{n} years" } },
+  },
+  beats: {
+    ageWhy: "Your metabolism changes with age, so we factor that in",
+    echo: { rest: "At rest: {rest}kcal a day", days: "Your days burn {burn}kcal" },
+    baseline: { title: "Where you're starting", bmi: "BMI", what: "Body mass index" },
+    prelim: {
+      title: "Your plan", burn: "You burn", gap: "{delta} your pace",
+      eat: "You eat", perDay: "kcal a day", keepTitle: "You burn about {burn}kcal",
+    },
   },
 };
 
@@ -1374,6 +1444,48 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     str(sum.cta, "summary.cta", MAX_LABEL);
   }
 
+  const ui = raw.ui as Record<string, unknown> | undefined;
+  if (typeof ui !== "object" || ui === null) push("ui is required");
+  else {
+    str(ui.continueLabel, "ui.continueLabel", MAX_LABEL);
+    str(ui.saveKept, "ui.saveKept", MAX_BODY);
+    str(ui.idlePlaceholder, "ui.idlePlaceholder", MAX_LABEL);
+    str(ui.optionContinues, "ui.optionContinues", MAX_LABEL);
+    strTable(ui.stepper, "ui.stepper", ["less", "more", "continue"], MAX_LABEL);
+    const un = ui.units as Record<string, unknown> | undefined;
+    if (typeof un !== "object" || un === null) push("ui.units is required");
+    else {
+      str(un.years, "ui.units.years", MAX_LABEL);
+      const yc = un.yearsCount as Record<string, unknown> | undefined;
+      if (typeof yc !== "object" || yc === null) push("ui.units.yearsCount is required");
+      else {
+        str(yc.other, "ui.units.yearsCount.other", MAX_LABEL);
+        for (const k of ["zero", "one", "two", "few", "many"]) {
+          if (yc[k] !== undefined) str(yc[k], `ui.units.yearsCount.${k}`, MAX_LABEL);
+        }
+        for (const k of Object.keys(yc)) {
+          if (!["zero", "one", "two", "few", "many", "other"].includes(k)) push(`ui.units.yearsCount.${k} is not a plural category`);
+        }
+      }
+    }
+  }
+
+  // The beats: `ageWhy`/`echo` may hide (empty renders nothing, ieat-app#2756); the rest stay
+  // required — a beat with no words is a dead screen.
+  const beats = raw.beats as Record<string, unknown> | undefined;
+  if (typeof beats !== "object" || beats === null) push("beats is required");
+  else {
+    optLine(beats.ageWhy, "beats.ageWhy");
+    const echo = beats.echo as Record<string, unknown> | undefined;
+    if (typeof echo !== "object" || echo === null) push("beats.echo is required");
+    else {
+      optLine(echo.rest, "beats.echo.rest");
+      optLine(echo.days, "beats.echo.days");
+    }
+    strTable(beats.baseline, "beats.baseline", ["title", "bmi", "what"], MAX_LABEL);
+    strTable(beats.prelim, "beats.prelim", ["title", "burn", "gap", "eat", "perDay", "keepTitle"], MAX_LABEL);
+  }
+
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
   // is the third editable public surface: an admin can write anything into it and it reaches every
   // phone that fetches a revision. `retired-no-email` is why this is here — "No email, no name."
@@ -1400,6 +1512,8 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       screens,
       building: raw.building as OnboardingBuildingContent,
       summary: raw.summary as OnboardingSummaryContent,
+      ui: raw.ui as OnboardingUiContent,
+      beats: raw.beats as OnboardingBeatsContent,
     },
   };
 }
@@ -1479,7 +1593,32 @@ export function usableContent(
         && hasKeys(c.summary?.macros, ["protein", "carbs", "fat", "satfat"])
       ? c.summary
       : fallback.summary,
+    // `ui` is all-required — a missing or emptied key is a dead control, so the whole block
+    // falls back. `beats` follows the same shape; `ageWhy`/`echo` only need to be strings,
+    // because empty IS a valid revision there (ieat-app#2756).
+    ui: usableUi(c.ui) ? c.ui : fallback.ui,
+    beats: usableBeats(c.beats) ? c.beats : fallback.beats,
   };
+}
+
+/** A `ui` block with every required word this binary reads. */
+function usableUi(u: OnboardingUiContent | undefined): u is OnboardingUiContent {
+  if (typeof u !== "object" || u === null) return false;
+  return hasKeys(u, ["continueLabel", "saveKept", "idlePlaceholder", "optionContinues"])
+    && hasKeys(u.stepper, ["less", "more", "continue"])
+    && hasKeys(u.units, ["years"])
+    && hasKeys(u.units?.yearsCount, ["other"]);
+}
+
+/** A `beats` block — required tables whole, hideable lines merely present. */
+function usableBeats(b: OnboardingBeatsContent | undefined): b is OnboardingBeatsContent {
+  if (typeof b !== "object" || b === null) return false;
+  const o = b as unknown as Record<string, unknown>;
+  return typeof o.ageWhy === "string"
+    && hasKeys(b.baseline, ["title", "bmi", "what"])
+    && hasKeys(b.prelim, ["title", "burn", "gap", "eat", "perDay", "keepTitle"])
+    && typeof b.echo === "object" && b.echo !== null
+    && typeof b.echo.rest === "string" && typeof b.echo.days === "string";
 }
 
 /** A block with bubbles and every key this binary reads. Missing one means the block is a version behind. */
