@@ -6,6 +6,8 @@ import {
   validateOnboardingContent,
 } from "./onboarding.ts";
 import { ONBOARDING_CONTENT, onboardingContentFor, usableContentFor } from "./onboarding-content.ts";
+import { signupCopyFor } from "./app/signup-copy.ts";
+import { chatCopyFor } from "./onboarding-chat-copy.ts";
 
 // Onboarding is the one flow where a missing sentence is not a wart: `usableContent` drops a whole
 // revision that is missing an ask, because a question with nothing to ask it with is a conversation
@@ -95,6 +97,15 @@ describe("every language's onboarding content", () => {
       expect(c.plan.first.step, lang).toContain("{kcal}");
       expect(c.plan.chart.estimateAria, lang).toContain("{from}");
       expect(c.plan.chart.estimateAria, lang).toContain("{to}");
+    }
+  });
+
+  it("carries the area (d) words identical to the tables the phone still reads, in every language", () => {
+    for (const lang of LANGS) {
+      const c = onboardingContentFor(lang);
+      expect(c.signup, lang).toEqual({ heading: signupCopyFor(lang).savePlanHeading, line: signupCopyFor(lang).savePlanLine });
+      expect(c.health, lang).toEqual(chatCopyFor(lang).health);
+      expect(c.firstMeal, lang).toEqual(chatCopyFor(lang).firstMeal);
     }
   });
 

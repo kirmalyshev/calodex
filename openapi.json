@@ -8398,6 +8398,21 @@
           },
           "plan": {
             "$ref": "#/components/schemas/OnboardingPlanContent"
+          },
+          "signup": {
+            "$ref": "#/components/schemas/OnboardingSignupContent"
+          },
+          "referral": {
+            "$ref": "#/components/schemas/OnboardingReferralContent"
+          },
+          "health": {
+            "$ref": "#/components/schemas/OnboardingHealthContent"
+          },
+          "liveActivity": {
+            "$ref": "#/components/schemas/OnboardingLiveActivityContent"
+          },
+          "firstMeal": {
+            "$ref": "#/components/schemas/OnboardingFirstMealContent"
           }
         },
         "required": [
@@ -8410,7 +8425,12 @@
           "beats",
           "target",
           "pace",
-          "plan"
+          "plan",
+          "signup",
+          "referral",
+          "health",
+          "liveActivity",
+          "firstMeal"
         ],
         "additionalProperties": false
       },
@@ -8509,6 +8529,58 @@
         ],
         "additionalProperties": false
       },
+      "OnboardingFirstMealContent": {
+        "type": "object",
+        "properties": {
+          "ask": {
+            "type": "string"
+          },
+          "react": {
+            "type": "string"
+          },
+          "photo": {
+            "type": "string"
+          },
+          "tell": {
+            "type": "string"
+          },
+          "keepGoing": {
+            "type": "string"
+          },
+          "correct": {
+            "type": "string"
+          },
+          "afterAsk": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ask",
+          "react",
+          "photo",
+          "tell",
+          "keepGoing",
+          "correct",
+          "afterAsk"
+        ],
+        "additionalProperties": false
+      },
+      "OnboardingHealthContent": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "body"
+        ],
+        "additionalProperties": false
+      },
       "OnboardingInterstitial": {
         "type": "string",
         "enum": [
@@ -8520,6 +8592,28 @@
           "referral",
           "health"
         ]
+      },
+      "OnboardingLiveActivityContent": {
+        "type": "object",
+        "properties": {
+          "titles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "go": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "titles",
+          "go"
+        ],
+        "additionalProperties": false,
+        "description": "The three step titles the Live Activity cycles through, and its button."
       },
       "OnboardingOptionContent": {
         "type": "object",
@@ -8740,6 +8834,54 @@
         "additionalProperties": false,
         "description": "The plan screen's words (ieat-app#2757) — the card titles, the goal headline in its four shapes, the answers card's rows, the sat-fat declaration, the first-step card, the loader's caption and the journey chart's aria name. `changeAnytime` may be empty and renders nothing (ieat-app#2756). The waterfall's own words (`howCalc`, the bar names, `method`/`methodSource`) stay code — shared with the You screen and bound to `explainTargets`. `planCopyFor.goalLine` is dead copy and did not move."
       },
+      "OnboardingReferralContent": {
+        "type": "object",
+        "properties": {
+          "ask": {
+            "type": "string"
+          },
+          "sub": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "applied": {
+            "type": "string"
+          },
+          "unknown": {
+            "type": "string"
+          },
+          "own": {
+            "type": "string"
+          },
+          "already": {
+            "type": "string"
+          },
+          "paid": {
+            "type": "string"
+          },
+          "tryAgain": {
+            "type": "string"
+          },
+          "skip": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ask",
+          "sub",
+          "field",
+          "applied",
+          "unknown",
+          "own",
+          "already",
+          "paid",
+          "tryAgain",
+          "skip"
+        ],
+        "additionalProperties": false
+      },
       "OnboardingScreenContent": {
         "type": "object",
         "properties": {
@@ -8790,6 +8932,23 @@
           "country",
           "streak"
         ]
+      },
+      "OnboardingSignupContent": {
+        "type": "object",
+        "properties": {
+          "heading": {
+            "type": "string"
+          },
+          "line": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "heading",
+          "line"
+        ],
+        "additionalProperties": false,
+        "description": "The account step, the referral step, the Apple Health offer, the Live Activity step and the first meal's beats (ieat-app#2757, area d). Every string is REQUIRED — none hides. What stays code: the provider buttons, terms and consent lines and `phoneCopyFor.email` (legal, shared with the standalone sign-in), the referral field's `eait.fit/r/…` placeholder and the Profile referral card, the Health sync diagram's chips and the dimmed Today backdrop, the camera and the first verdict's sheet."
       },
       "OnboardingSummaryContent": {
         "type": "object",

@@ -139,7 +139,12 @@ describe("the shipped copy", () => {
       .replace(/\bfree to try\b/g, "")
       .replace(/\b(a week|\d+ days?) free\b/g, "")
       // A "free text" instruction is about a box, not a claim about a price.
-      .replace(/\bfree text\b/g, "");
+      .replace(/\bfree text\b/g, "")
+      // The referral step's two lines about the friend's invite week (ieat-app#2757, area d): a
+      // dated, bounded week — the "N days free" form — that the phone has shipped since the step
+      // existed. Exact phrases, so a third "free" there is still caught.
+      .replace(/\byour first week of eait is free\b/g, "")
+      .replace(/\byour free week starts now\b/g, "");
     expect(unqualified).not.toMatch(/\bfree\b/);
   });
 
@@ -513,6 +518,31 @@ describe("the blocks around the questions (ieat-app#2757)", () => {
     good((c) => { c.plan.changeAnytime = ""; return c; });
     expect(bad((c) => { c.plan.weightTitle = ""; return c; }).join(" ")).toContain("plan.weightTitle");
     expect(bad((c) => { c.plan.info.activity = ""; return c; }).join(" ")).toContain("plan.info.activity");
+  });
+
+  it("refuses a missing or emptied signup, referral, health, live-activity and first-meal block (area d)", () => {
+    for (const k of ["signup", "referral", "health", "liveActivity", "firstMeal"]) {
+      expect(bad((c) => { delete (c as unknown as Record<string, unknown>)[k]; return c; }).join(" ")).toContain(`${k} is required`);
+    }
+    expect(bad((c) => { c.signup.heading = ""; return c; }).join(" ")).toContain("signup.heading");
+    expect(bad((c) => { c.referral.skip = ""; return c; }).join(" ")).toContain("referral.skip");
+    expect(bad((c) => { c.health.body = " "; return c; }).join(" ")).toContain("health.body");
+    expect(bad((c) => { c.liveActivity.titles[1] = ""; return c; }).join(" ")).toContain("liveActivity.titles[1]");
+    expect(bad((c) => { c.firstMeal.afterAsk = ""; return c; }).join(" ")).toContain("firstMeal.afterAsk");
+    expect(bad((c) => { (c.firstMeal as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("firstMeal.bogus");
+  });
+
+  it("keeps a stored pre-v27 revision's own blocks and fills the area (d) blocks from this binary's language", () => {
+    const stored = clone(onboardingContentFor("de"));
+    stored.version = 26;
+    for (const k of ["signup", "referral", "health", "liveActivity", "firstMeal"]) delete (stored as unknown as Record<string, unknown>)[k];
+    stored.summary.cta = "Admin's own German words";
+    const served = usableContentFor("de", { de: stored });
+    const own = onboardingContentFor("de");
+    expect([served.signup, served.referral, served.health, served.liveActivity, served.firstMeal])
+      .toEqual([own.signup, own.referral, own.health, own.liveActivity, own.firstMeal]);
+    expect(served.summary.cta).toBe("Admin's own German words");
+    expect(served.version).toBe(26);
   });
 
   it("keeps a stored pre-v26 revision's own blocks and fills plan from this binary's language", () => {

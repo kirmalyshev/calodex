@@ -512,6 +512,26 @@ export interface OnboardingPlanContent {
   chart: { estimateAria: string };
 }
 
+/**
+ * The account step, the referral step, the Apple Health offer, the Live Activity step and the first
+ * meal's beats (ieat-app#2757, area d). Every string is REQUIRED — none hides. What stays code: the
+ * provider buttons, terms and consent lines and `phoneCopyFor.email` (legal, shared with the
+ * standalone sign-in), the referral field's `eait.fit/r/…` placeholder and the Profile referral
+ * card, the Health sync diagram's chips and the dimmed Today backdrop, the camera and the first
+ * verdict's sheet.
+ */
+export interface OnboardingSignupContent { heading: string; line: string }
+export interface OnboardingReferralContent {
+  ask: string; sub: string; field: string; applied: string; unknown: string;
+  own: string; already: string; paid: string; tryAgain: string; skip: string;
+}
+export interface OnboardingHealthContent { title: string; body: string }
+/** The three step titles the Live Activity cycles through, and its button. */
+export interface OnboardingLiveActivityContent { titles: [string, string, string]; go: string }
+export interface OnboardingFirstMealContent {
+  ask: string; react: string; photo: string; tell: string; keepGoing: string; correct: string; afterAsk: string;
+}
+
 export interface OnboardingContent {
   /**
    * Bumped on every admin save.
@@ -530,6 +550,11 @@ export interface OnboardingContent {
   target: OnboardingTargetContent;
   pace: OnboardingPaceContent;
   plan: OnboardingPlanContent;
+  signup: OnboardingSignupContent;
+  referral: OnboardingReferralContent;
+  health: OnboardingHealthContent;
+  liveActivity: OnboardingLiveActivityContent;
+  firstMeal: OnboardingFirstMealContent;
 }
 
 /**
@@ -969,7 +994,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
   // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
   // revision may never reuse a number that was already issued.
-  version: 26,
+  version: 27,
   welcome: {
     lines: [],
     cta: "Get started",
@@ -1261,6 +1286,30 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     },
     loader: { goal: "Your goal", lose: "−{kg} by {month}", gain: "+{kg} by {month}" },
     chart: { estimateAria: "Estimated weight: {from} now, {to} around {month}" },
+  },
+  signup: { heading: "Save your plan", line: "So your plan and your subscription follow you to a new phone, and your meals are kept." },
+  referral: {
+    ask: "Did a friend send you a link?",
+    sub: "Optional. Join with it and your first week of eait is free.",
+    field: "Friend's invite link",
+    applied: "Invite applied. Your free week starts now.",
+    unknown: "That link doesn't match anyone. Check it, or skip.",
+    own: "That's your own link. A friend's link goes here.",
+    already: "This account already joined with a friend's link.",
+    paid: "Invite links are for new members, and this account has already bought eait.",
+    tryAgain: "Try again",
+    skip: "Skip",
+  },
+  health: { title: "Sync with Apple Health", body: "Weight and activity come in. Your meals go to Health." },
+  liveActivity: { titles: ["Questions", "Your plan", "Almost done"], go: "Continue" },
+  firstMeal: {
+    ask: "One meal on me. Photo, or just tell me?",
+    react: "No problem. Try me first",
+    photo: "Take a photo",
+    tell: "Tell me what you ate",
+    keepGoing: "Keep going",
+    correct: "Correct meal",
+    afterAsk: "That was one. Want this for every meal?",
   },
 };
 
@@ -1777,6 +1826,26 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     }
   }
 
+  // Area (d) (ieat-app#2757): signup, referral, Health, Live Activity, first meal. All required.
+  const strBlock = (key: string, keys: readonly string[]) => {
+    const b = (raw as Record<string, unknown>)[key] as Record<string, unknown> | undefined;
+    if (typeof b !== "object" || b === null) { push(`${key} is required`); return; }
+    for (const k of Object.keys(b)) if (!keys.includes(k)) push(`${key}.${k} is not a used key`);
+    for (const k of keys) tmpl(b[k], `${key}.${k}`, { required: true, max: MAX_BODY });
+  };
+  strBlock("signup", ["heading", "line"]);
+  strBlock("referral", ["ask", "sub", "field", "applied", "unknown", "own", "already", "paid", "tryAgain", "skip"]);
+  strBlock("health", ["title", "body"]);
+  strBlock("firstMeal", ["ask", "react", "photo", "tell", "keepGoing", "correct", "afterAsk"]);
+  const la = raw.liveActivity as Record<string, unknown> | undefined;
+  if (typeof la !== "object" || la === null) push("liveActivity is required");
+  else {
+    for (const k of Object.keys(la)) if (!["titles", "go"].includes(k)) push(`liveActivity.${k} is not a used key`);
+    if (!Array.isArray(la.titles) || la.titles.length !== 3) push("liveActivity.titles must be 3 lines");
+    else for (const [i, x] of la.titles.entries()) tmpl(x, `liveActivity.titles[${i}]`, { required: true });
+    tmpl(la.go, "liveActivity.go", { required: true });
+  }
+
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
   // is the third editable public surface: an admin can write anything into it and it reaches every
   // phone that fetches a revision. `retired-no-email` is why this is here — "No email, no name."
@@ -1808,6 +1877,11 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       target: raw.target as OnboardingTargetContent,
       pace: raw.pace as OnboardingPaceContent,
       plan: raw.plan as OnboardingPlanContent,
+      signup: raw.signup as OnboardingSignupContent,
+      referral: raw.referral as OnboardingReferralContent,
+      health: raw.health as OnboardingHealthContent,
+      liveActivity: raw.liveActivity as OnboardingLiveActivityContent,
+      firstMeal: raw.firstMeal as OnboardingFirstMealContent,
     },
   };
 }
@@ -1895,6 +1969,11 @@ export function usableContent(
     target: usableTarget(c.target) ? c.target : fallback.target,
     pace: usablePace(c.pace) ? c.pace : fallback.pace,
     plan: usablePlan(c.plan) ? c.plan : fallback.plan,
+    signup: hasKeys(c.signup, ["heading", "line"]) ? c.signup : fallback.signup,
+    referral: hasKeys(c.referral, ["ask", "sub", "field", "applied", "unknown", "own", "already", "paid", "tryAgain", "skip"]) ? c.referral : fallback.referral,
+    health: hasKeys(c.health, ["title", "body"]) ? c.health : fallback.health,
+    liveActivity: usableLiveActivity(c.liveActivity) ? c.liveActivity : fallback.liveActivity,
+    firstMeal: hasKeys(c.firstMeal, ["ask", "react", "photo", "tell", "keepGoing", "correct", "afterAsk"]) ? c.firstMeal : fallback.firstMeal,
   };
 }
 
@@ -1952,8 +2031,14 @@ function usablePlan(p: OnboardingPlanContent | undefined): p is OnboardingPlanCo
     && hasKeys(p.chart, ["estimateAria"]);
 }
 
+/** The Live Activity's three titles and its button — every one set. */
+function usableLiveActivity(v: OnboardingLiveActivityContent | undefined): v is OnboardingLiveActivityContent {
+  return typeof v === "object" && v !== null && hasKeys(v, ["go"])
+    && Array.isArray(v.titles) && v.titles.length === 3 && v.titles.every((x) => typeof x === "string" && x !== "");
+}
+
 /** A nested string table — `building.rows`, `summary.macros` — with every key present and set. */
-function hasKeys(v: unknown, keys: readonly string[]): boolean {
+function hasKeys<T>(v: T | undefined, keys: readonly string[]): v is T {
   if (typeof v !== "object" || v === null) return false;
   const o = v as Record<string, unknown>;
   return keys.every((k) => typeof o[k] === "string" && o[k] !== "");
