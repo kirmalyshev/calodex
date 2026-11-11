@@ -8413,6 +8413,9 @@
           },
           "firstMeal": {
             "$ref": "#/components/schemas/OnboardingFirstMealContent"
+          },
+          "refusals": {
+            "$ref": "#/components/schemas/OnboardingRefusalsContent"
           }
         },
         "required": [
@@ -8430,7 +8433,8 @@
           "referral",
           "health",
           "liveActivity",
-          "firstMeal"
+          "firstMeal",
+          "refusals"
         ],
         "additionalProperties": false
       },
@@ -8873,6 +8877,104 @@
           "skip"
         ],
         "additionalProperties": false
+      },
+      "OnboardingRefusalsContent": {
+        "type": "object",
+        "properties": {
+          "invalid": {
+            "type": "object",
+            "properties": {
+              "age": {
+                "type": "string"
+              },
+              "height_cm": {
+                "type": "string"
+              },
+              "weight_kg": {
+                "type": "string"
+              },
+              "target_weight_kg": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "age",
+              "height_cm",
+              "weight_kg",
+              "target_weight_kg"
+            ],
+            "additionalProperties": false
+          },
+          "ambiguousAge": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "string"
+              },
+              "confirm": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line",
+              "confirm"
+            ],
+            "additionalProperties": false
+          },
+          "direction": {
+            "type": "object",
+            "properties": {
+              "gain": {
+                "type": "string"
+              },
+              "lose": {
+                "type": "string"
+              },
+              "switchToLose": {
+                "type": "string"
+              },
+              "switchToGain": {
+                "type": "string"
+              },
+              "above": {
+                "type": "string"
+              },
+              "below": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "gain",
+              "lose",
+              "switchToLose",
+              "switchToGain",
+              "above",
+              "below"
+            ],
+            "additionalProperties": false
+          },
+          "switched": {
+            "type": "object",
+            "properties": {
+              "gain": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "gain"
+            ],
+            "additionalProperties": false,
+            "description": "Only `gain`: `lose` carries the pacing brake (\"faster isn't better\") and stays in code."
+          }
+        },
+        "required": [
+          "invalid",
+          "ambiguousAge",
+          "direction",
+          "switched"
+        ],
+        "additionalProperties": false,
+        "description": "The refusals (ieat-app#2757, area e): what Spud says when an answer is not a number, an age is ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy card (safety), the cap/floor explanation, `switched.lose` (the pacing brake), the computed promises and `goalEdit.*` (Settings)."
       },
       "OnboardingScreenContent": {
         "type": "object",

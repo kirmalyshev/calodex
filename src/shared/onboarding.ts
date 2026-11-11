@@ -532,6 +532,21 @@ export interface OnboardingFirstMealContent {
   ask: string; react: string; photo: string; tell: string; keepGoing: string; correct: string; afterAsk: string;
 }
 
+/**
+ * The refusals (ieat-app#2757, area e): what Spud says when an answer is not a number, an age is
+ * ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All
+ * REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the
+ * digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy
+ * card (safety), the cap/floor explanation, `switched.lose` (the pacing brake), the computed promises and `goalEdit.*` (Settings).
+ */
+export interface OnboardingRefusalsContent {
+  invalid: { age: string; height_cm: string; weight_kg: string; target_weight_kg: string };
+  ambiguousAge: { line: string; confirm: string };
+  direction: { gain: string; lose: string; switchToLose: string; switchToGain: string; above: string; below: string };
+  /** Only `gain`: `lose` carries the pacing brake ("faster isn't better") and stays in code. */
+  switched: { gain: string };
+}
+
 export interface OnboardingContent {
   /**
    * Bumped on every admin save.
@@ -555,6 +570,7 @@ export interface OnboardingContent {
   health: OnboardingHealthContent;
   liveActivity: OnboardingLiveActivityContent;
   firstMeal: OnboardingFirstMealContent;
+  refusals: OnboardingRefusalsContent;
 }
 
 /**
@@ -994,7 +1010,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
   // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
   // revision may never reuse a number that was already issued.
-  version: 27,
+  version: 28,
   welcome: {
     lines: [],
     cta: "Get started",
@@ -1308,6 +1324,29 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     keepGoing: "Keep going",
     correct: "Correct meal",
     afterAsk: "That was one. Want this for every meal?",
+  },
+  refusals: {
+    invalid: {
+      age: "That doesn't look like an age — try something like 34.",
+      height_cm: "In centimetres — something like 175.",
+      weight_kg: "In kilograms — roughly is fine.",
+      target_weight_kg: "A number in kg — like 70.",
+    },
+    ambiguousAge: {
+      line: "Want to be sure I read that right — if you meant the year {year}, send all four digits.",
+      confirm: "I'm {age}",
+    },
+    direction: {
+      gain: "You're at {weight}kg and asked to gain to {target} — that's not a gain from here. If the goal changed, we can switch it; otherwise give me a number above {weight}.",
+      lose: "You're at {weight}kg and asked to lose to {target} — that's not a loss from here. If the goal changed, we can switch it; otherwise give me a number below {weight}.",
+      switchToLose: "Switch to losing",
+      switchToGain: "Switch to gaining",
+      above: "A number above {weight}…",
+      below: "A number below {weight}…",
+    },
+    switched: {
+      gain: "Switched — gaining it is. Where would you like to be, in kg?",
+    },
   },
 };
 
@@ -1844,6 +1883,23 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     tmpl(la.go, "liveActivity.go", { required: true });
   }
 
+  // Area (e) (ieat-app#2757): the refusals. All required; the figures they name must survive.
+  const rf = raw.refusals as Record<string, Record<string, unknown> | undefined> | undefined;
+  if (typeof rf !== "object" || rf === null) push("refusals is required");
+  else {
+    const grp = (g: string, spec: Record<string, readonly string[]>) => {
+      const b = rf[g];
+      if (typeof b !== "object" || b === null) { push(`refusals.${g} is required`); return; }
+      for (const k of Object.keys(b)) if (!(k in spec)) push(`refusals.${g}.${k} is not a used key`);
+      for (const [k, ph] of Object.entries(spec)) tmpl(b[k], `refusals.${g}.${k}`, { required: true, allowed: ph, requiredPh: ph, max: MAX_BODY });
+    };
+    for (const k of Object.keys(rf)) if (!["invalid", "ambiguousAge", "direction", "switched"].includes(k)) push(`refusals.${k} is not a used key`);
+    grp("invalid", { age: [], height_cm: [], weight_kg: [], target_weight_kg: [] });
+    grp("ambiguousAge", { line: ["year"], confirm: ["age"] });
+    grp("direction", { gain: ["weight", "target"], lose: ["weight", "target"], switchToLose: [], switchToGain: [], above: ["weight"], below: ["weight"] });
+    grp("switched", { gain: [] });
+  }
+
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
   // is the third editable public surface: an admin can write anything into it and it reaches every
   // phone that fetches a revision. `retired-no-email` is why this is here — "No email, no name."
@@ -1880,6 +1936,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
       health: raw.health as OnboardingHealthContent,
       liveActivity: raw.liveActivity as OnboardingLiveActivityContent,
       firstMeal: raw.firstMeal as OnboardingFirstMealContent,
+      refusals: raw.refusals as OnboardingRefusalsContent,
     },
   };
 }
@@ -1971,6 +2028,7 @@ export function usableContent(
     referral: hasKeys(c.referral, ["ask", "field", "unknown", "own", "already", "paid", "tryAgain", "skip"]) ? c.referral : fallback.referral,
     health: hasKeys(c.health, ["title", "body"]) ? c.health : fallback.health,
     liveActivity: usableLiveActivity(c.liveActivity) ? c.liveActivity : fallback.liveActivity,
+    refusals: usableRefusals(c.refusals) ? c.refusals : fallback.refusals,
     firstMeal: hasKeys(c.firstMeal, ["ask", "react", "photo", "tell", "keepGoing", "correct", "afterAsk"]) ? c.firstMeal : fallback.firstMeal,
   };
 }
@@ -2036,6 +2094,15 @@ function usablePlan(p: OnboardingPlanContent | undefined): p is OnboardingPlanCo
 export function usableFirstMeal(served: unknown, fallback: OnboardingFirstMealContent): OnboardingFirstMealContent {
   return hasKeys(served as OnboardingFirstMealContent | undefined, ["ask", "react", "photo", "tell", "keepGoing", "correct", "afterAsk"])
     ? served as OnboardingFirstMealContent : fallback;
+}
+
+/** The refusals — every group whole, every string set. */
+function usableRefusals(r: OnboardingRefusalsContent | undefined): r is OnboardingRefusalsContent {
+  return typeof r === "object" && r !== null
+    && hasKeys(r.invalid, ["age", "height_cm", "weight_kg", "target_weight_kg"])
+    && hasKeys(r.ambiguousAge, ["line", "confirm"])
+    && hasKeys(r.direction, ["gain", "lose", "switchToLose", "switchToGain", "above", "below"])
+    && hasKeys(r.switched, ["gain"]);
 }
 
 /** The Live Activity's three titles and its button — every one set. */

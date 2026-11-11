@@ -276,6 +276,29 @@ const FR: OnboardingContent = {
     correct: "Corriger le repas",
     afterAsk: "Et d'un ! Tu veux ça pour chaque repas ?",
   },
+  refusals: {
+    invalid: {
+      age: "Ça ne ressemble pas à un âge — essaie quelque chose comme 34.",
+      height_cm: "En centimètres — quelque chose comme 175.",
+      weight_kg: "En kilos — à peu près, ça suffit.",
+      target_weight_kg: "Un nombre en kg — comme 70.",
+    },
+    ambiguousAge: {
+      line: "Je veux être sûr d'avoir bien lu — si tu voulais dire l'année {year}, envoie les quatre chiffres.",
+      confirm: "J'ai {age} ans",
+    },
+    direction: {
+      gain: "Tu es à {weight}kg et tu demandes à monter jusqu'à {target} — ce n'est pas une hausse par rapport à aujourd'hui. Si ton objectif a changé, on peut le modifier ; sinon, donne-moi un nombre au-dessus de {weight}.",
+      lose: "Tu es à {weight}kg et tu demandes à descendre jusqu'à {target} — ce n'est pas une baisse par rapport à aujourd'hui. Si ton objectif a changé, on peut le modifier ; sinon, donne-moi un nombre en dessous de {weight}.",
+      switchToLose: "Je veux perdre du poids",
+      switchToGain: "Je veux prendre du poids",
+      above: "Un nombre au-dessus de {weight}…",
+      below: "Un nombre en dessous de {weight}…",
+    },
+    switched: {
+      gain: "Va pour la prise de poids. Où aimerais-tu arriver, en kg ?",
+    },
+  },
 };
 
 // ── Deutsch ───────────────────────────────────────────────────────────────────────
@@ -520,6 +543,29 @@ const DE: OnboardingContent = {
     keepGoing: "Weiter",
     correct: "Mahlzeit korrigieren",
     afterAsk: "Das war eine. Willst du das für jede Mahlzeit?",
+  },
+  refusals: {
+    invalid: {
+      age: "Das sieht nicht nach einem Alter aus — versuch es mit so etwas wie 34.",
+      height_cm: "In Zentimetern — so etwas wie 175.",
+      weight_kg: "In Kilogramm — ungefähr reicht.",
+      target_weight_kg: "Eine Zahl in kg — zum Beispiel 70.",
+    },
+    ambiguousAge: {
+      line: "Ich will sichergehen, dass ich das richtig lese — wenn du das Jahr {year} meintest, schick alle vier Ziffern.",
+      confirm: "Ich bin {age}",
+    },
+    direction: {
+      gain: "Du bist bei {weight}kg und willst auf {target} zunehmen — von hier aus ist das keine Zunahme. Wenn sich das Ziel geändert hat, stellen wir um; sonst gib mir eine Zahl über {weight}.",
+      lose: "Du bist bei {weight}kg und willst auf {target} abnehmen — von hier aus ist das keine Abnahme. Wenn sich das Ziel geändert hat, stellen wir um; sonst gib mir eine Zahl unter {weight}.",
+      switchToLose: "Auf Abnehmen umstellen",
+      switchToGain: "Auf Zunehmen umstellen",
+      above: "Eine Zahl über {weight}…",
+      below: "Eine Zahl unter {weight}…",
+    },
+    switched: {
+      gain: "Umgestellt — zunehmen also. Wo möchtest du landen, in kg?",
+    },
   },
 };
 
@@ -766,6 +812,29 @@ const IT: OnboardingContent = {
     correct: "Correggi il pasto",
     afterAsk: "Ecco il primo. Lo vuoi per ogni pasto?",
   },
+  refusals: {
+    invalid: {
+      age: "Non sembra un'età — prova con qualcosa tipo 34.",
+      height_cm: "In centimetri — qualcosa tipo 175.",
+      weight_kg: "In chilogrammi — approssimare va bene.",
+      target_weight_kg: "Un numero in kg — tipo 70.",
+    },
+    ambiguousAge: {
+      line: "Voglio essere sicuro di aver letto bene — se intendevi l'anno {year}, mandami tutte e quattro le cifre.",
+      confirm: "Ho {age} anni",
+    },
+    direction: {
+      gain: "Sei a {weight}kg e chiedi di salire a {target} — da qui non è un aumento. Se l'obiettivo è cambiato possiamo invertirlo; altrimenti dammi un numero sopra {weight}.",
+      lose: "Sei a {weight}kg e chiedi di scendere a {target} — da qui non è un calo. Se l'obiettivo è cambiato possiamo invertirlo; altrimenti dammi un numero sotto {weight}.",
+      switchToLose: "Passa a perdere peso",
+      switchToGain: "Passa a prendere peso",
+      above: "Un numero sopra {weight}…",
+      below: "Un numero sotto {weight}…",
+    },
+    switched: {
+      gain: "Fatto, allora prendiamo peso. Dove ti piacerebbe arrivare, in kg?",
+    },
+  },
 };
 
 // ── Español ───────────────────────────────────────────────────────────────────────
@@ -1010,6 +1079,29 @@ const ES: OnboardingContent = {
     keepGoing: "Seguir",
     correct: "Corregir la comida",
     afterAsk: "Esa fue una. ¿La quieres para cada comida?",
+  },
+  refusals: {
+    invalid: {
+      age: "Eso no parece una edad — prueba con algo como 34.",
+      height_cm: "En centímetros — algo como 175.",
+      weight_kg: "En kilogramos — aproximado vale.",
+      target_weight_kg: "Un número en kg — como 70.",
+    },
+    ambiguousAge: {
+      line: "Quiero estar seguro de haberlo leído bien — si querías decir el año {year}, mándame las cuatro cifras.",
+      confirm: "Tengo {age} años",
+    },
+    direction: {
+      gain: "Estás en {weight}kg y pides subir hasta {target} — desde aquí eso no es subir. Si el objetivo ha cambiado, lo cambiamos; si no, dame un número por encima de {weight}.",
+      lose: "Estás en {weight}kg y pides bajar hasta {target} — desde aquí eso no es bajar. Si el objetivo ha cambiado, lo cambiamos; si no, dame un número por debajo de {weight}.",
+      switchToLose: "Cambiar a perder peso",
+      switchToGain: "Cambiar a ganar peso",
+      above: "Un número por encima de {weight}…",
+      below: "Un número por debajo de {weight}…",
+    },
+    switched: {
+      gain: "Cambiado — ganar, entonces. ¿Dónde te gustaría llegar, en kg?",
+    },
   },
 };
 
@@ -1256,6 +1348,29 @@ const VI: OnboardingContent = {
     correct: "Sửa bữa ăn",
     afterAsk: "Vừa rồi là một bữa. Muốn vậy cho mọi bữa không?",
   },
+  refusals: {
+    invalid: {
+      age: "Cái đó trông không giống một số tuổi — thử kiểu như 34 xem.",
+      height_cm: "Tính bằng cm — kiểu như 175.",
+      weight_kg: "Tính bằng kg — áng chừng là được.",
+      target_weight_kg: "Một số tính bằng kg — ví dụ 70.",
+    },
+    ambiguousAge: {
+      line: "Mình muốn chắc là đọc đúng — nếu ý bạn là năm {year}, gửi đủ bốn chữ số nhé.",
+      confirm: "Mình {age} tuổi",
+    },
+    direction: {
+      gain: "Bạn đang ở {weight}kg mà lại muốn tăng lên {target} — từ đây thì đó không phải là tăng. Nếu mục tiêu đã đổi, chúng mình đổi theo; còn không thì cho mình một số trên {weight}.",
+      lose: "Bạn đang ở {weight}kg mà lại muốn giảm xuống {target} — từ đây thì đó không phải là giảm. Nếu mục tiêu đã đổi, chúng mình đổi theo; còn không thì cho mình một số dưới {weight}.",
+      switchToLose: "Chuyển sang giảm cân",
+      switchToGain: "Chuyển sang tăng cân",
+      above: "Một số trên {weight}…",
+      below: "Một số dưới {weight}…",
+    },
+    switched: {
+      gain: "Đã chuyển — vậy là tăng cân. Bạn muốn về mức nào, tính bằng kg?",
+    },
+  },
 };
 
 // ── Bahasa Indonesia ──────────────────────────────────────────────────────────────
@@ -1501,6 +1616,29 @@ const ID: OnboardingContent = {
     correct: "Koreksi makanan",
     afterAsk: "Itu baru satu. Mau begini untuk setiap makanan?",
   },
+  refusals: {
+    invalid: {
+      age: "Itu tidak kelihatan seperti umur — coba seperti 34.",
+      height_cm: "Dalam sentimeter — seperti 175.",
+      weight_kg: "Dalam kilogram — kira-kira saja tidak apa-apa.",
+      target_weight_kg: "Angka dalam kg — misalnya 70.",
+    },
+    ambiguousAge: {
+      line: "Aku mau pastikan tidak salah baca — kalau maksudmu tahun {year}, kirim keempat angkanya.",
+      confirm: "Umurku {age}",
+    },
+    direction: {
+      gain: "Kamu di {weight}kg dan minta naik ke {target} — dari sini itu bukan kenaikan. Kalau tujuannya berubah, kita bisa ganti; kalau tidak, beri aku angka di atas {weight}.",
+      lose: "Kamu di {weight}kg dan minta turun ke {target} — dari sini itu bukan penurunan. Kalau tujuannya berubah, kita bisa ganti; kalau tidak, beri aku angka di bawah {weight}.",
+      switchToLose: "Ganti ke menurunkan",
+      switchToGain: "Ganti ke menaikkan",
+      above: "Angka di atas {weight}…",
+      below: "Angka di bawah {weight}…",
+    },
+    switched: {
+      gain: "Diganti — jadi menaikkan. Kamu ingin sampai di angka berapa, dalam kg?",
+    },
+  },
 };
 
 // ── Русский ───────────────────────────────────────────────────────────────────────
@@ -1745,6 +1883,29 @@ const RU: OnboardingContent = {
     keepGoing: "Дальше",
     correct: "Исправить",
     afterAsk: "Это был первый. Хочешь так с каждым приёмом пищи?",
+  },
+  refusals: {
+    invalid: {
+      age: "На возраст не похоже — попробуй что-то вроде 34.",
+      height_cm: "В сантиметрах — что-то вроде 175.",
+      weight_kg: "В килограммах — можно примерно.",
+      target_weight_kg: "Число в кг — например 70.",
+    },
+    ambiguousAge: {
+      line: "Хочу убедиться, что понял правильно: если речь про {year} год, пришли все четыре цифры.",
+      confirm: "Мне {age}",
+    },
+    direction: {
+      gain: "Сейчас у тебя {weight}кг, а цель — {target}: это не набор веса. Если цель поменялась, можем переключить; иначе дай число больше {weight}.",
+      lose: "Сейчас у тебя {weight}кг, а цель — {target}: это не снижение веса. Если цель поменялась, можем переключить; иначе дай число меньше {weight}.",
+      switchToLose: "Переключить на похудение",
+      switchToGain: "Переключить на набор",
+      above: "Число больше {weight}…",
+      below: "Число меньше {weight}…",
+    },
+    switched: {
+      gain: "Переключил — значит набираем. Куда хочешь прийти, в кг?",
+    },
   },
 };
 
@@ -2101,6 +2262,29 @@ const TE: OnboardingContent = {
     correct: "భోజనాన్ని సరిదిద్దండి",
     afterAsk: "అది ఒకటి అయింది. ప్రతి భోజనానికీ ఇలాగే కావాలా?",
   },
+  refusals: {
+    invalid: {
+      age: "అది వయసులా లేదు — 34 లాంటిది ప్రయత్నించండి.",
+      height_cm: "సెంటీమీటర్లలో — 175 లాంటిది.",
+      weight_kg: "కిలోగ్రాముల్లో — సుమారుగా చెప్పినా సరే.",
+      target_weight_kg: "kgలో ఒక సంఖ్య — 70 లాగా.",
+    },
+    ambiguousAge: {
+      line: "నేను సరిగ్గా చదివానో లేదో నిర్ధారించుకోవాలి — మీ ఉద్దేశం {year} సంవత్సరం అయితే, నాలుగు అంకెలూ పంపండి.",
+      confirm: "నా వయసు {age}",
+    },
+    direction: {
+      gain: "మీ బరువు ఇప్పుడు {weight} kg, మీరు {target} వరకు పెరగాలని అడిగారు — ఇక్కడి నుండి అది పెరుగుదల కాదు. లక్ష్యం మారితే మనం దాన్ని మార్చవచ్చు; లేదంటే {weight} కంటే ఎక్కువ సంఖ్య ఇవ్వండి.",
+      lose: "మీ బరువు ఇప్పుడు {weight} kg, మీరు {target} వరకు తగ్గాలని అడిగారు — ఇక్కడి నుండి అది తగ్గుదల కాదు. లక్ష్యం మారితే మనం దాన్ని మార్చవచ్చు; లేదంటే {weight} కంటే తక్కువ సంఖ్య ఇవ్వండి.",
+      switchToLose: "బరువు తగ్గడానికి మార్చండి",
+      switchToGain: "బరువు పెరగడానికి మార్చండి",
+      above: "{weight} కంటే ఎక్కువ సంఖ్య…",
+      below: "{weight} కంటే తక్కువ సంఖ్య…",
+    },
+    switched: {
+      gain: "మార్చాను — అయితే బరువు పెరగడమే. మీరు ఎంత బరువుకు చేరాలనుకుంటున్నారు, kgలో?",
+    },
+  },
 };
 
 const TA: OnboardingContent = {
@@ -2455,6 +2639,29 @@ const TA: OnboardingContent = {
     keepGoing: "தொடருங்கள்",
     correct: "உணவைச் சரிசெய்",
     afterAsk: "இது ஒன்று. ஒவ்வொரு உணவுக்கும் இப்படி வேண்டுமா?",
+  },
+  refusals: {
+    invalid: {
+      age: "அது வயது போலத் தெரியவில்லை — 34 போல ஏதாவது முயலுங்கள்.",
+      height_cm: "சென்டிமீட்டரில் — 175 போல.",
+      weight_kg: "கிலோகிராமில் — தோராயமாகச் சொன்னாலும் பரவாயில்லை.",
+      target_weight_kg: "kg-இல் ஒரு எண் — 70 போல.",
+    },
+    ambiguousAge: {
+      line: "சரியாகப் புரிந்துகொண்டேனா என உறுதிசெய்ய — {year} என்ற ஆண்டைக் குறித்தீர்கள் என்றால், நான்கு இலக்கங்களையும் அனுப்புங்கள்.",
+      confirm: "என் வயது {age}",
+    },
+    direction: {
+      gain: "உங்கள் எடை {weight} kg, இலக்காக {target} வரை அதிகரிக்கக் கேட்டீர்கள் — இங்கிருந்து அது அதிகரிப்பு அல்ல. குறிக்கோள் மாறியிருந்தால், அதை மாற்றலாம்; இல்லையெனில் {weight} ஐ விட அதிகமான ஓர் எண்ணைத் தாருங்கள்.",
+      lose: "உங்கள் எடை {weight} kg, இலக்காக {target} வரை குறைக்கக் கேட்டீர்கள் — இங்கிருந்து அது குறைப்பு அல்ல. குறிக்கோள் மாறியிருந்தால், அதை மாற்றலாம்; இல்லையெனில் {weight} ஐ விடக் குறைவான ஓர் எண்ணைத் தாருங்கள்.",
+      switchToLose: "எடை குறைப்புக்கு மாறு",
+      switchToGain: "எடை அதிகரிப்புக்கு மாறு",
+      above: "{weight} ஐ விட அதிகமான எண்…",
+      below: "{weight} ஐ விடக் குறைவான எண்…",
+    },
+    switched: {
+      gain: "மாற்றப்பட்டது — எடை அதிகரிப்புதான். எந்த எடையை அடைய விரும்புகிறீர்கள், kg-இல்?",
+    },
   },
 };
 
@@ -2811,6 +3018,29 @@ const PA: OnboardingContent = {
     correct: "ਖਾਣਾ ਸੁਧਾਰੋ",
     afterAsk: "ਇਹ ਇੱਕ ਹੋ ਗਿਆ। ਹਰ ਖਾਣੇ ਲਈ ਇਹੀ ਚਾਹੀਦਾ ਹੈ?",
   },
+  refusals: {
+    invalid: {
+      age: "ਇਹ ਉਮਰ ਵਰਗਾ ਨਹੀਂ ਲੱਗਦਾ — ਕੁਝ ਇਸ ਤਰ੍ਹਾਂ ਲਿਖੋ, ਜਿਵੇਂ 34।",
+      height_cm: "ਸੈਂਟੀਮੀਟਰ ਵਿੱਚ — ਜਿਵੇਂ 175।",
+      weight_kg: "ਕਿਲੋਗ੍ਰਾਮ ਵਿੱਚ — ਅੰਦਾਜ਼ੇ ਨਾਲ ਵੀ ਚੱਲੇਗਾ।",
+      target_weight_kg: "kg ਵਿੱਚ ਇੱਕ ਨੰਬਰ — ਜਿਵੇਂ 70।",
+    },
+    ambiguousAge: {
+      line: "ਬੱਸ ਪੱਕਾ ਕਰ ਲਈਏ: ਜੇ ਤੁਹਾਡਾ ਮਤਲਬ ਸਾਲ {year} ਤੋਂ ਸੀ, ਤਾਂ ਚਾਰੇ ਅੰਕ ਭੇਜੋ।",
+      confirm: "ਮੇਰੀ ਉਮਰ {age} ਹੈ",
+    },
+    direction: {
+      gain: "ਤੁਹਾਡਾ ਭਾਰ ਹੁਣ {weight} kg ਹੈ ਅਤੇ ਟੀਚਾ {target} ਤੱਕ ਵਧਾਉਣ ਦਾ ਹੈ — ਇੱਥੋਂ ਇਹ ਵਾਧਾ ਨਹੀਂ ਹੈ। ਜੇ ਟੀਚਾ ਬਦਲ ਗਿਆ ਹੈ, ਤਾਂ ਅਸੀਂ ਇਸ ਨੂੰ ਬਦਲ ਸਕਦੇ ਹਾਂ; ਨਹੀਂ ਤਾਂ {weight} ਤੋਂ ਵੱਧ ਕੋਈ ਨੰਬਰ ਦਿਓ।",
+      lose: "ਤੁਹਾਡਾ ਭਾਰ ਹੁਣ {weight} kg ਹੈ ਅਤੇ ਟੀਚਾ {target} ਤੱਕ ਘਟਾਉਣ ਦਾ ਹੈ — ਇੱਥੋਂ ਇਹ ਕਮੀ ਨਹੀਂ ਹੈ। ਜੇ ਟੀਚਾ ਬਦਲ ਗਿਆ ਹੈ, ਤਾਂ ਅਸੀਂ ਇਸ ਨੂੰ ਬਦਲ ਸਕਦੇ ਹਾਂ; ਨਹੀਂ ਤਾਂ {weight} ਤੋਂ ਘੱਟ ਕੋਈ ਨੰਬਰ ਦਿਓ।",
+      switchToLose: "ਭਾਰ ਘਟਾਉਣ 'ਤੇ ਬਦਲੋ",
+      switchToGain: "ਭਾਰ ਵਧਾਉਣ 'ਤੇ ਬਦਲੋ",
+      above: "{weight} ਤੋਂ ਵੱਧ ਕੋਈ ਨੰਬਰ…",
+      below: "{weight} ਤੋਂ ਘੱਟ ਕੋਈ ਨੰਬਰ…",
+    },
+    switched: {
+      gain: "ਬਦਲ ਦਿੱਤਾ — ਤਾਂ ਭਾਰ ਵਧਾਉਣਾ ਹੈ। ਟੀਚਾ ਕਿੰਨਾ ਰੱਖੀਏ, kg ਵਿੱਚ?",
+    },
+  },
 };
 
 const OR: OnboardingContent = {
@@ -3165,6 +3395,29 @@ const OR: OnboardingContent = {
     keepGoing: "ଆଗକୁ ବଢ଼ନ୍ତୁ",
     correct: "ଭୋଜନ ସଂଶୋଧନ କରନ୍ତୁ",
     afterAsk: "ଗୋଟିଏ ହେଲା। ପ୍ରତି ଭୋଜନ ପାଇଁ ଏହା ଚାହାଁନ୍ତି କି?",
+  },
+  refusals: {
+    invalid: {
+      age: "ଏହା ବୟସ ପରି ଲାଗୁନାହିଁ — 34 ପରି କିଛି ଲେଖନ୍ତୁ।",
+      height_cm: "ସେଣ୍ଟିମିଟରରେ — 175 ପରି।",
+      weight_kg: "କିଲୋଗ୍ରାମରେ — ଆନୁମାନିକ ହେଲେ ବି ଚଳିବ।",
+      target_weight_kg: "kg ରେ ଏକ ସଂଖ୍ୟା — 70 ପରି।",
+    },
+    ambiguousAge: {
+      line: "ମୁଁ ଠିକ୍ ପଢ଼ିଲି କି ନାହିଁ ନିଶ୍ଚିତ ହେବାକୁ ଚାହେଁ — ଯଦି ଆପଣ {year} ମସିହା କହିବାକୁ ଚାହୁଁଥିଲେ, ଚାରିଟି ଅଙ୍କ ପଠାନ୍ତୁ।",
+      confirm: "ମୋ ବୟସ {age}",
+    },
+    direction: {
+      gain: "ଏବେ ଆପଣଙ୍କ ଓଜନ {weight} kg ଏବଂ ଲକ୍ଷ୍ୟ {target} — ଏଠାରୁ ଏହା ବୃଦ୍ଧି ନୁହେଁ। ଲକ୍ଷ୍ୟ ବଦଳିଥିଲେ, ଆମେ ତାହା ବଦଳାଇପାରିବା; ନଚେତ୍ {weight} ରୁ ଅଧିକ ଏକ ସଂଖ୍ୟା ଦିଅନ୍ତୁ।",
+      lose: "ଏବେ ଆପଣଙ୍କ ଓଜନ {weight} kg ଏବଂ ଲକ୍ଷ୍ୟ {target} — ଏଠାରୁ ଏହା ହ୍ରାସ ନୁହେଁ। ଲକ୍ଷ୍ୟ ବଦଳିଥିଲେ, ଆମେ ତାହା ବଦଳାଇପାରିବା; ନଚେତ୍ {weight} ରୁ କମ୍ ଏକ ସଂଖ୍ୟା ଦିଅନ୍ତୁ।",
+      switchToLose: "ଓଜନ କମାଇବାକୁ ବଦଳାନ୍ତୁ",
+      switchToGain: "ଓଜନ ବଢ଼ାଇବାକୁ ବଦଳାନ୍ତୁ",
+      above: "{weight} ରୁ ଅଧିକ ଏକ ସଂଖ୍ୟା…",
+      below: "{weight} ରୁ କମ୍ ଏକ ସଂଖ୍ୟା…",
+    },
+    switched: {
+      gain: "ବଦଳିଗଲା — ତେବେ ଓଜନ ବଢ଼ାଇବା। kg ରେ କେତେ ପର୍ଯ୍ୟନ୍ତ ଯିବାକୁ ଚାହାଁନ୍ତି?",
+    },
   },
 };
 
@@ -3521,6 +3774,29 @@ const MR: OnboardingContent = {
     correct: "जेवण दुरुस्त करा",
     afterAsk: "हे एक झाले. प्रत्येक जेवणासाठी हे हवे आहे का?",
   },
+  refusals: {
+    invalid: {
+      age: "हे वय वाटत नाही — 34 सारखे काहीतरी लिहा.",
+      height_cm: "सेंटीमीटरमध्ये — 175 सारखे.",
+      weight_kg: "किलोग्रॅममध्ये — अंदाजे चालेल.",
+      target_weight_kg: "kg मध्ये एक संख्या — 70 सारखी.",
+    },
+    ambiguousAge: {
+      line: "मी बरोबर वाचले याची खात्री करायची आहे — तुम्हाला वर्ष {year} म्हणायचे असल्यास, चारही अंक पाठवा.",
+      confirm: "माझे वय {age} आहे",
+    },
+    direction: {
+      gain: "तुमचे वजन आता {weight} kg आहे आणि लक्ष्य {target} — इथून ही वाढ नाही. ध्येय बदलले असल्यास, आपण ते बदलू शकतो; नाहीतर {weight} पेक्षा जास्त संख्या द्या.",
+      lose: "तुमचे वजन आता {weight} kg आहे आणि लक्ष्य {target} — इथून ही घट नाही. ध्येय बदलले असल्यास, आपण ते बदलू शकतो; नाहीतर {weight} पेक्षा कमी संख्या द्या.",
+      switchToLose: "वजन कमी करण्यावर बदला",
+      switchToGain: "वजन वाढवण्यावर बदला",
+      above: "{weight} पेक्षा जास्त संख्या…",
+      below: "{weight} पेक्षा कमी संख्या…",
+    },
+    switched: {
+      gain: "बदलले — म्हणजे वजन वाढवायचे. kg मध्ये, किती वजनापर्यंत पोहोचायचे आहे?",
+    },
+  },
 };
 
 const ML: OnboardingContent = {
@@ -3875,6 +4151,29 @@ const ML: OnboardingContent = {
     keepGoing: "തുടരുക",
     correct: "ഭക്ഷണം തിരുത്തുക",
     afterAsk: "അതൊന്നായി. എല്ലാ ഭക്ഷണത്തിനും ഇങ്ങനെ വേണോ?",
+  },
+  refusals: {
+    invalid: {
+      age: "അതൊരു പ്രായമായി തോന്നുന്നില്ല — 34 പോലെ എന്തെങ്കിലും നൽകൂ.",
+      height_cm: "സെന്റിമീറ്ററിൽ — 175 പോലെ.",
+      weight_kg: "കിലോഗ്രാമിൽ — ഏകദേശം മതി.",
+      target_weight_kg: "kg-ൽ ഒരു സംഖ്യ — 70 പോലെ.",
+    },
+    ambiguousAge: {
+      line: "ഞാൻ ശരിയായാണോ വായിച്ചതെന്ന് ഉറപ്പാക്കട്ടെ — വർഷം {year} ആണ് ഉദ്ദേശിച്ചതെങ്കിൽ, നാല് അക്കങ്ങളും അയയ്ക്കൂ.",
+      confirm: "എന്റെ പ്രായം {age}",
+    },
+    direction: {
+      gain: "നിങ്ങൾ ഇപ്പോൾ {weight} kg ആണ്, ലക്ഷ്യമായി പറഞ്ഞത് {target} — ഇവിടെ നിന്ന് അത് ഭാരം കൂട്ടലല്ല. ലക്ഷ്യം മാറിയെങ്കിൽ നമുക്ക് അത് മാറ്റാം; അല്ലെങ്കിൽ {weight} എന്നതിന് മുകളിലുള്ള ഒരു സംഖ്യ തരൂ.",
+      lose: "നിങ്ങൾ ഇപ്പോൾ {weight} kg ആണ്, ലക്ഷ്യമായി പറഞ്ഞത് {target} — ഇവിടെ നിന്ന് അത് ഭാരം കുറയ്ക്കലല്ല. ലക്ഷ്യം മാറിയെങ്കിൽ നമുക്ക് അത് മാറ്റാം; അല്ലെങ്കിൽ {weight} എന്നതിന് താഴെയുള്ള ഒരു സംഖ്യ തരൂ.",
+      switchToLose: "ഭാരം കുറയ്ക്കലിലേക്ക് മാറുക",
+      switchToGain: "ഭാരം കൂട്ടലിലേക്ക് മാറുക",
+      above: "{weight} എന്നതിന് മുകളിലുള്ള ഒരു സംഖ്യ…",
+      below: "{weight} എന്നതിന് താഴെയുള്ള ഒരു സംഖ്യ…",
+    },
+    switched: {
+      gain: "മാറ്റി — ഭാരം കൂട്ടാം. kg-ൽ, എത്രയിൽ എത്താനാണ് ആഗ്രഹം?",
+    },
   },
 };
 
@@ -4231,6 +4530,29 @@ const KN: OnboardingContent = {
     correct: "ಊಟ ಸರಿಪಡಿಸಿ",
     afterAsk: "ಅದು ಒಂದು ಆಯಿತು. ಪ್ರತಿ ಊಟಕ್ಕೂ ಇದು ಬೇಕೇ?",
   },
+  refusals: {
+    invalid: {
+      age: "ಇದು ವಯಸ್ಸಿನಂತೆ ಕಾಣುತ್ತಿಲ್ಲ — ಉದಾಹರಣೆಗೆ 34 ಎಂದು ಬರೆಯಿರಿ.",
+      height_cm: "ಸೆಂಟಿಮೀಟರ್‌ಗಳಲ್ಲಿ — ಉದಾಹರಣೆಗೆ 175.",
+      weight_kg: "ಕಿಲೋಗ್ರಾಂಗಳಲ್ಲಿ — ಅಂದಾಜು ಸಾಕು.",
+      target_weight_kg: "kg ನಲ್ಲಿ ಒಂದು ಸಂಖ್ಯೆ — ಉದಾಹರಣೆಗೆ 70.",
+    },
+    ambiguousAge: {
+      line: "ನಾನು ಸರಿಯಾಗಿ ಓದಿದ್ದೇನೆಯೇ ಎಂದು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಲು — ನೀವು {year} ಇಸವಿಯನ್ನು ಉದ್ದೇಶಿಸಿದ್ದರೆ, ನಾಲ್ಕೂ ಅಂಕೆಗಳನ್ನು ಕಳುಹಿಸಿ.",
+      confirm: "ನನಗೆ {age} ವರ್ಷ",
+    },
+    direction: {
+      gain: "ನೀವು ಈಗ {weight} kg ಇದ್ದೀರಿ ಮತ್ತು {target} ವರೆಗೆ ತೂಕ ಹೆಚ್ಚಿಸಲು ಕೇಳಿದ್ದೀರಿ — ಇಲ್ಲಿಂದ ಅದು ಹೆಚ್ಚಳವಲ್ಲ. ಗುರಿ ಬದಲಾಗಿದ್ದರೆ, ನಾವು ಅದನ್ನು ಬದಲಿಸಬಹುದು; ಇಲ್ಲದಿದ್ದರೆ {weight} ಮೀರಿದ ಸಂಖ್ಯೆ ಕೊಡಿ.",
+      lose: "ನೀವು ಈಗ {weight} kg ಇದ್ದೀರಿ ಮತ್ತು {target} ವರೆಗೆ ತೂಕ ಇಳಿಸಲು ಕೇಳಿದ್ದೀರಿ — ಇಲ್ಲಿಂದ ಅದು ಇಳಿಕೆಯಲ್ಲ. ಗುರಿ ಬದಲಾಗಿದ್ದರೆ, ನಾವು ಅದನ್ನು ಬದಲಿಸಬಹುದು; ಇಲ್ಲದಿದ್ದರೆ {weight} ಕ್ಕಿಂತ ಕಡಿಮೆ ಸಂಖ್ಯೆ ಕೊಡಿ.",
+      switchToLose: "ತೂಕ ಇಳಿಸುವುದಕ್ಕೆ ಬದಲಿಸಿ",
+      switchToGain: "ತೂಕ ಹೆಚ್ಚಿಸುವುದಕ್ಕೆ ಬದಲಿಸಿ",
+      above: "{weight} ಮೀರಿದ ಸಂಖ್ಯೆ…",
+      below: "{weight} ಕ್ಕಿಂತ ಕಡಿಮೆ ಸಂಖ್ಯೆ…",
+    },
+    switched: {
+      gain: "ಬದಲಾಯಿಸಲಾಗಿದೆ — ತೂಕ ಹೆಚ್ಚಿಸುವುದು. kg ನಲ್ಲಿ ನೀವು ಎಷ್ಟು ತಲುಪಲು ಬಯಸುತ್ತೀರಿ?",
+    },
+  },
 };
 
 const GU: OnboardingContent = {
@@ -4585,6 +4907,29 @@ const GU: OnboardingContent = {
     keepGoing: "આગળ વધો",
     correct: "ભોજન સુધારો",
     afterAsk: "આ એક થયું. દરેક ભોજન માટે આવું જોઈએ છે?",
+  },
+  refusals: {
+    invalid: {
+      age: "આ ઉંમર જેવું લાગતું નથી — 34 જેવું કંઈક લખો.",
+      height_cm: "સેન્ટિમીટરમાં — 175 જેવું કંઈક.",
+      weight_kg: "કિલોગ્રામમાં — અંદાજે પણ ચાલશે.",
+      target_weight_kg: "kg માં એક સંખ્યા — જેમ કે 70.",
+    },
+    ambiguousAge: {
+      line: "ખાતરી કરી લઈએ: જો તમારો મતલબ વર્ષ {year} હતો, તો ચારેય અંક મોકલો.",
+      confirm: "મારી ઉંમર {age} છે",
+    },
+    direction: {
+      gain: "અત્યારે તમારું વજન {weight} kg છે અને લક્ષ્ય {target} — અહીંથી તે વધારો નથી. જો ધ્યેય બદલાયું હોય, તો આપણે તેને બદલી શકીએ; નહીં તો {weight} થી વધુ કોઈ સંખ્યા આપો.",
+      lose: "અત્યારે તમારું વજન {weight} kg છે અને લક્ષ્ય {target} — અહીંથી તે ઘટાડો નથી. જો ધ્યેય બદલાયું હોય, તો આપણે તેને બદલી શકીએ; નહીં તો {weight} થી ઓછી કોઈ સંખ્યા આપો.",
+      switchToLose: "વજન ઘટાડવા પર સ્વિચ કરો",
+      switchToGain: "વજન વધારવા પર સ્વિચ કરો",
+      above: "{weight} થી વધુ કોઈ સંખ્યા…",
+      below: "{weight} થી ઓછી કોઈ સંખ્યા…",
+    },
+    switched: {
+      gain: "બદલી દીધું — તો વજન વધારવાનું છે. લક્ષ્ય કેટલું રાખીએ, kg માં?",
+    },
   },
 };
 
@@ -4941,6 +5286,29 @@ const BN: OnboardingContent = {
     correct: "খাবার সংশোধন করুন",
     afterAsk: "একটা হয়ে গেল। প্রতিটি খাবারের জন্য এটা চান?",
   },
+  refusals: {
+    invalid: {
+      age: "এটা বয়স বলে মনে হচ্ছে না — যেমন 34, এমন কিছু লিখুন।",
+      height_cm: "সেন্টিমিটারে — যেমন 175।",
+      weight_kg: "কিলোগ্রামে — আনুমানিক হলেও চলবে।",
+      target_weight_kg: "kg-তে একটি সংখ্যা — যেমন 70।",
+    },
+    ambiguousAge: {
+      line: "ঠিক পড়েছি কি না নিশ্চিত হতে চাই — আপনি যদি {year} সাল বোঝাতে চান, তাহলে চারটি অঙ্কই পাঠান।",
+      confirm: "আমার বয়স {age}",
+    },
+    direction: {
+      gain: "আপনার ওজন এখন {weight} kg, আর বাড়ানোর লক্ষ্য দিয়েছেন {target} — এখান থেকে সেটা বাড়ানো নয়। লক্ষ্য বদলে থাকলে সেটা পাল্টে দিতে পারি; নইলে {weight} থেকে বেশি একটা সংখ্যা দিন।",
+      lose: "আপনার ওজন এখন {weight} kg, আর কমানোর লক্ষ্য দিয়েছেন {target} — এখান থেকে সেটা কমানো নয়। লক্ষ্য বদলে থাকলে সেটা পাল্টে দিতে পারি; নইলে {weight} থেকে কম একটা সংখ্যা দিন।",
+      switchToLose: "ওজন কমানোয় বদলান",
+      switchToGain: "ওজন বাড়ানোয় বদলান",
+      above: "{weight} থেকে বেশি একটা সংখ্যা…",
+      below: "{weight} থেকে কম একটা সংখ্যা…",
+    },
+    switched: {
+      gain: "বদলে দিয়েছি — তাহলে ওজন বাড়ানো। কোথায় পৌঁছাতে চান, kg-তে?",
+    },
+  },
 };
 
 const PT_PT: OnboardingContent = {
@@ -5295,6 +5663,29 @@ const PT_PT: OnboardingContent = {
     keepGoing: "Continuar",
     correct: "Corrigir refeição",
     afterAsk: "Essa foi uma. Queres isto em todas as refeições?",
+  },
+  refusals: {
+    invalid: {
+      age: "Isso não parece uma idade — experimenta algo como 34.",
+      height_cm: "Em centímetros — algo como 175.",
+      weight_kg: "Em quilos — um valor aproximado chega.",
+      target_weight_kg: "Um número em kg — como 70.",
+    },
+    ambiguousAge: {
+      line: "Quero ter a certeza de que li bem — se querias dizer o ano {year}, envia os quatro dígitos.",
+      confirm: "Tenho {age} anos",
+    },
+    direction: {
+      gain: "Estás com {weight} kg e pediste para subir até {target} — a partir daqui, isso não é uma subida. Se o objetivo mudou, podemos trocá-lo; senão, dá-me um número acima de {weight}.",
+      lose: "Estás com {weight} kg e pediste para descer até {target} — a partir daqui, isso não é uma descida. Se o objetivo mudou, podemos trocá-lo; senão, dá-me um número abaixo de {weight}.",
+      switchToLose: "Mudar para perder peso",
+      switchToGain: "Mudar para ganhar peso",
+      above: "Um número acima de {weight}…",
+      below: "Um número abaixo de {weight}…",
+    },
+    switched: {
+      gain: "Feito — vamos ganhar peso. Onde gostavas de chegar, em kg?",
+    },
   },
 };
 
@@ -5651,6 +6042,29 @@ const MS: OnboardingContent = {
     correct: "Betulkan hidangan",
     afterAsk: "Itu satu. Mahu ini untuk setiap hidangan?",
   },
+  refusals: {
+    invalid: {
+      age: "Itu tidak kelihatan seperti umur — cuba sesuatu seperti 34.",
+      height_cm: "Dalam sentimeter — contohnya 175.",
+      weight_kg: "Dalam kilogram — anggaran pun tidak mengapa.",
+      target_weight_kg: "Nombor dalam kg — contohnya 70.",
+    },
+    ambiguousAge: {
+      line: "Saya mahu pastikan saya membacanya dengan betul — jika maksud anda tahun {year}, hantar keempat-empat digit.",
+      confirm: "Umur saya {age}",
+    },
+    direction: {
+      gain: "Berat anda {weight} kg dan anda minta naik ke {target} — itu bukan kenaikan dari sini. Jika matlamat sudah berubah, kita boleh tukar; jika tidak, berikan nombor melebihi {weight}.",
+      lose: "Berat anda {weight} kg dan anda minta turun ke {target} — itu bukan penurunan dari sini. Jika matlamat sudah berubah, kita boleh tukar; jika tidak, berikan nombor di bawah {weight}.",
+      switchToLose: "Tukar ke turun berat",
+      switchToGain: "Tukar ke naik berat",
+      above: "Nombor melebihi {weight}…",
+      below: "Nombor di bawah {weight}…",
+    },
+    switched: {
+      gain: "Sudah ditukar — naik berat. Anda mahu ke berapa, dalam kg?",
+    },
+  },
 };
 
 const CA: OnboardingContent = {
@@ -6005,6 +6419,29 @@ const CA: OnboardingContent = {
     keepGoing: "Continua",
     correct: "Corregeix l'àpat",
     afterAsk: "Ja en portem un. Ho vols per a cada àpat?",
+  },
+  refusals: {
+    invalid: {
+      age: "Això no sembla una edat — prova amb alguna cosa com 34.",
+      height_cm: "En centímetres — alguna cosa com 175.",
+      weight_kg: "En quilograms — aproximat ja va bé.",
+      target_weight_kg: "Un número en kg — com 70.",
+    },
+    ambiguousAge: {
+      line: "Vull assegurar-me que ho he llegit bé — si volies dir l'any {year}, envia les quatre xifres.",
+      confirm: "Tinc {age} anys",
+    },
+    direction: {
+      gain: "Ara peses {weight} kg i has demanat pujar fins a {target} — des d'aquí això no és pujar. Si la meta ha canviat, la podem canviar; si no, dona'm un número per sobre de {weight}.",
+      lose: "Ara peses {weight} kg i has demanat baixar fins a {target} — des d'aquí això no és baixar. Si la meta ha canviat, la podem canviar; si no, dona'm un número per sota de {weight}.",
+      switchToLose: "Canvia a baixar de pes",
+      switchToGain: "Canvia a pujar de pes",
+      above: "Un número per sobre de {weight}…",
+      below: "Un número per sota de {weight}…",
+    },
+    switched: {
+      gain: "Canviat — doncs a pujar. On t'agradaria arribar, en kg?",
+    },
   },
 };
 
@@ -6361,6 +6798,29 @@ const SL: OnboardingContent = {
     correct: "Popravi obrok",
     afterAsk: "To je bil prvi. Želiš tako pri vsakem obroku?",
   },
+  refusals: {
+    invalid: {
+      age: "To ni videti kot starost — poskusi na primer 34.",
+      height_cm: "V centimetrih — na primer 175.",
+      weight_kg: "V kilogramih — približno je v redu.",
+      target_weight_kg: "Število v kg — na primer 70.",
+    },
+    ambiguousAge: {
+      line: "Da ne bo pomote: če gre za letnico {year}, pošlji vse štiri števke.",
+      confirm: "Imam {age} let",
+    },
+    direction: {
+      gain: "Zdaj imaš {weight} kg, cilj pa je {target} — to ni več, kot imaš zdaj. Če se je cilj spremenil, ga lahko zamenjaš; sicer mi napiši število nad {weight}.",
+      lose: "Zdaj imaš {weight} kg, cilj pa je {target} — to ni manj, kot imaš zdaj. Če se je cilj spremenil, ga lahko zamenjaš; sicer mi napiši število pod {weight}.",
+      switchToLose: "Preklopi na izgubo teže",
+      switchToGain: "Preklopi na pridobivanje teže",
+      above: "Število nad {weight}…",
+      below: "Število pod {weight}…",
+    },
+    switched: {
+      gain: "Preklopljeno — torej pridobivanje teže. Kam želiš priti, v kg?",
+    },
+  },
 };
 
 const HR: OnboardingContent = {
@@ -6715,6 +7175,29 @@ const HR: OnboardingContent = {
     keepGoing: "Nastavi",
     correct: "Ispravi obrok",
     afterAsk: "To je bio jedan. Želiš ovo za svaki obrok?",
+  },
+  refusals: {
+    invalid: {
+      age: "To ne izgleda kao dob — probaj nešto poput 34.",
+      height_cm: "U centimetrima — nešto poput 175.",
+      weight_kg: "U kilogramima — otprilike je dovoljno.",
+      target_weight_kg: "Broj u kg — npr. 70.",
+    },
+    ambiguousAge: {
+      line: "Samo provjera — ako misliš na godinu {year}, pošalji sve četiri znamenke.",
+      confirm: "Imam {age}",
+    },
+    direction: {
+      gain: "Sada imaš {weight} kg, a cilj ti je {target} — odavde to nije dobivanje na težini. Ako se cilj promijenio, možemo ga zamijeniti; inače mi daj broj veći od {weight}.",
+      lose: "Sada imaš {weight} kg, a cilj ti je {target} — odavde to nije gubitak težine. Ako se cilj promijenio, možemo ga zamijeniti; inače mi daj broj manji od {weight}.",
+      switchToLose: "Prebaci na mršavljenje",
+      switchToGain: "Prebaci na dobivanje težine",
+      above: "Broj veći od {weight}…",
+      below: "Broj manji od {weight}…",
+    },
+    switched: {
+      gain: "Prebačeno — dobivanje težine. Gdje želiš biti, u kg?",
+    },
   },
 };
 
@@ -7071,6 +7554,29 @@ const SK: OnboardingContent = {
     correct: "Opraviť jedlo",
     afterAsk: "To bolo jedno. Chceš to tak pri každom jedle?",
   },
+  refusals: {
+    invalid: {
+      age: "To nevyzerá ako vek — skús niečo ako 34.",
+      height_cm: "V centimetroch — niečo ako 175.",
+      weight_kg: "V kilogramoch — stačí približne.",
+      target_weight_kg: "Číslo v kg — napríklad 70.",
+    },
+    ambiguousAge: {
+      line: "Chcem mať istotu, že to čítam správne — ak ide o rok {year}, pošli všetky štyri číslice.",
+      confirm: "Mám {age} rokov",
+    },
+    direction: {
+      gain: "Teraz máš {weight} kg a chceš pribrať na {target} — odtiaľto to nie je prírastok. Ak sa cieľ zmenil, môžeme ho prepnúť; inak mi daj číslo nad {weight}.",
+      lose: "Teraz máš {weight} kg a chceš schudnúť na {target} — odtiaľto to nie je úbytok. Ak sa cieľ zmenil, môžeme ho prepnúť; inak mi daj číslo pod {weight}.",
+      switchToLose: "Prepnúť na chudnutie",
+      switchToGain: "Prepnúť na priberanie",
+      above: "Číslo nad {weight}…",
+      below: "Číslo pod {weight}…",
+    },
+    switched: {
+      gain: "Prepnuté — ideme priberať. Kde chceš byť, v kg?",
+    },
+  },
 };
 
 const NO: OnboardingContent = {
@@ -7425,6 +7931,29 @@ const NO: OnboardingContent = {
     keepGoing: "Fortsett",
     correct: "Korriger måltidet",
     afterAsk: "Det var ett. Vil du ha dette for hvert måltid?",
+  },
+  refusals: {
+    invalid: {
+      age: "Det ser ikke ut som en alder — prøv for eksempel 34.",
+      height_cm: "I centimeter — for eksempel 175.",
+      weight_kg: "I kilo — omtrent er greit.",
+      target_weight_kg: "Et tall i kg — for eksempel 70.",
+    },
+    ambiguousAge: {
+      line: "Jeg vil være sikker på at jeg leste det riktig — hvis du mente året {year}, send alle fire sifrene.",
+      confirm: "Jeg er {age}",
+    },
+    direction: {
+      gain: "Du er på {weight} kg og ba om å gå opp til {target} — det er ingen økning herfra. Hvis målet har endret seg, kan vi bytte det; ellers gi meg et tall over {weight}.",
+      lose: "Du er på {weight} kg og ba om å gå ned til {target} — det er ingen nedgang herfra. Hvis målet har endret seg, kan vi bytte det; ellers gi meg et tall under {weight}.",
+      switchToLose: "Bytt til å gå ned",
+      switchToGain: "Bytt til å gå opp",
+      above: "Et tall over {weight}…",
+      below: "Et tall under {weight}…",
+    },
+    switched: {
+      gain: "Byttet — da går vi opp. Hvor vil du lande, i kg?",
+    },
   },
 };
 
@@ -7781,6 +8310,29 @@ const FI: OnboardingContent = {
     correct: "Korjaa ateria",
     afterAsk: "Siinä yksi. Haluatko tämän jokaiseen ateriaan?",
   },
+  refusals: {
+    invalid: {
+      age: "Tuo ei näytä iältä – kokeile vaikkapa 34.",
+      height_cm: "Senttimetreinä – esimerkiksi 175.",
+      weight_kg: "Kilogrammoina – suunnilleen riittää.",
+      target_weight_kg: "Luku kilogrammoina – esimerkiksi 70.",
+    },
+    ambiguousAge: {
+      line: "Haluan varmistaa, että luin oikein – jos tarkoitit vuotta {year}, lähetä kaikki neljä numeroa.",
+      confirm: "Olen {age}",
+    },
+    direction: {
+      gain: "Painat nyt {weight} kg ja tavoitepainoksi annoit {target} – se ei ole painonnousua tästä. Jos tavoite muuttui, voimme vaihtaa sen; muuten anna luku, joka on yli {weight}.",
+      lose: "Painat nyt {weight} kg ja tavoitepainoksi annoit {target} – se ei ole painonpudotusta tästä. Jos tavoite muuttui, voimme vaihtaa sen; muuten anna luku, joka on alle {weight}.",
+      switchToLose: "Vaihda painonpudotukseen",
+      switchToGain: "Vaihda painonnousuun",
+      above: "Luku, joka on yli {weight}…",
+      below: "Luku, joka on alle {weight}…",
+    },
+    switched: {
+      gain: "Vaihdettu – painonnousu siis. Mihin haluaisit päätyä, kilogrammoina?",
+    },
+  },
 };
 
 const DA: OnboardingContent = {
@@ -8135,6 +8687,29 @@ const DA: OnboardingContent = {
     keepGoing: "Fortsæt",
     correct: "Ret måltid",
     afterAsk: "Det var ét. Vil du have det til hvert måltid?",
+  },
+  refusals: {
+    invalid: {
+      age: "Det ligner ikke en alder — prøv noget i stil med 34.",
+      height_cm: "I centimeter — noget i stil med 175.",
+      weight_kg: "I kilo — cirka er fint.",
+      target_weight_kg: "Et tal i kg — fx 70.",
+    },
+    ambiguousAge: {
+      line: "Jeg vil være sikker på, at jeg læste det rigtigt — hvis du mente året {year}, så send alle fire cifre.",
+      confirm: "Jeg er {age}",
+    },
+    direction: {
+      gain: "Du vejer {weight} kg og bad om at komme op på {target} — det er ikke en stigning herfra. Hvis målet har ændret sig, kan vi skifte det; ellers giv mig et tal over {weight}.",
+      lose: "Du vejer {weight} kg og bad om at komme ned på {target} — det er ikke et fald herfra. Hvis målet har ændret sig, kan vi skifte det; ellers giv mig et tal under {weight}.",
+      switchToLose: "Skift til vægttab",
+      switchToGain: "Skift til vægtøgning",
+      above: "Et tal over {weight}…",
+      below: "Et tal under {weight}…",
+    },
+    switched: {
+      gain: "Skiftet — så er det vægtøgning. Hvor vil du gerne ende, i kg?",
+    },
   },
 };
 
@@ -8491,6 +9066,29 @@ const HU: OnboardingContent = {
     correct: "Étkezés javítása",
     afterAsk: "Ez volt az első. Szeretnéd így minden étkezésnél?",
   },
+  refusals: {
+    invalid: {
+      age: "Ez nem tűnik életkornak — próbáld valami ilyesmivel: 34.",
+      height_cm: "Centiméterben — például 175.",
+      weight_kg: "Kilogrammban — nagyjából is jó.",
+      target_weight_kg: "Egy szám kg-ban — például 70.",
+    },
+    ambiguousAge: {
+      line: "Biztos akarok lenni benne, hogy jól olvastam — ha évszámra gondoltál ({year}), küldd el mind a négy számjegyet.",
+      confirm: "{age} éves vagyok",
+    },
+    direction: {
+      gain: "Most {weight} kg a testsúlyod, a gyarapodási célod pedig {target} — innen ez nem gyarapodás. Ha a cél változott, átállíthatjuk; különben adj meg egy {weight} feletti számot.",
+      lose: "Most {weight} kg a testsúlyod, a fogyási célod pedig {target} — innen ez nem fogyás. Ha a cél változott, átállíthatjuk; különben adj meg egy {weight} alatti számot.",
+      switchToLose: "Váltás fogyásra",
+      switchToGain: "Váltás súlygyarapításra",
+      above: "Egy {weight} feletti szám…",
+      below: "Egy {weight} alatti szám…",
+    },
+    switched: {
+      gain: "Átállítva — akkor súlygyarapítás. Hová szeretnél eljutni, kg-ban?",
+    },
+  },
 };
 
 const EL: OnboardingContent = {
@@ -8845,6 +9443,29 @@ const EL: OnboardingContent = {
     keepGoing: "Συνέχισε",
     correct: "Διόρθωση γεύματος",
     afterAsk: "Αυτό ήταν το ένα. Το θέλεις για κάθε γεύμα;",
+  },
+  refusals: {
+    invalid: {
+      age: "Αυτό δεν μοιάζει με ηλικία — δοκίμασε κάτι σαν 34.",
+      height_cm: "Σε εκατοστά — κάτι σαν 175.",
+      weight_kg: "Σε κιλά — κατά προσέγγιση αρκεί.",
+      target_weight_kg: "Ένας αριθμός σε kg — π.χ. 70.",
+    },
+    ambiguousAge: {
+      line: "Θέλω να βεβαιωθώ ότι το διάβασα σωστά — αν εννοούσες το έτος {year}, στείλε και τα τέσσερα ψηφία.",
+      confirm: "Είμαι {age} ετών",
+    },
+    direction: {
+      gain: "Είσαι στα {weight} kg και ζήτησες να ανέβεις στα {target} — από εδώ αυτό δεν είναι αύξηση. Αν άλλαξε ο στόχος, μπορούμε να τον αλλάξουμε· αλλιώς δώσε μου έναν αριθμό πάνω από {weight}.",
+      lose: "Είσαι στα {weight} kg και ζήτησες να πέσεις στα {target} — από εδώ αυτό δεν είναι μείωση. Αν άλλαξε ο στόχος, μπορούμε να τον αλλάξουμε· αλλιώς δώσε μου έναν αριθμό κάτω από {weight}.",
+      switchToLose: "Αλλαγή σε απώλεια βάρους",
+      switchToGain: "Αλλαγή σε αύξηση βάρους",
+      above: "Ένας αριθμός πάνω από {weight}…",
+      below: "Ένας αριθμός κάτω από {weight}…",
+    },
+    switched: {
+      gain: "Έγινε — πάμε για αύξηση. Πού θα ήθελες να φτάσεις, σε kg;",
+    },
   },
 };
 
@@ -9201,6 +9822,29 @@ const RO: OnboardingContent = {
     correct: "Corectează masa",
     afterAsk: "Asta a fost una. Vrei asta la fiecare masă?",
   },
+  refusals: {
+    invalid: {
+      age: "Nu pare o vârstă — încearcă ceva de genul 34.",
+      height_cm: "În centimetri — ceva de genul 175.",
+      weight_kg: "În kilograme — aproximativ e în regulă.",
+      target_weight_kg: "Un număr în kg — de exemplu 70.",
+    },
+    ambiguousAge: {
+      line: "Vreau să mă asigur că am citit bine — dacă te refereai la anul {year}, trimite toate cele patru cifre.",
+      confirm: "Am {age} ani",
+    },
+    direction: {
+      gain: "Ai {weight} kg și ai cerut să ajungi la {target} — de aici nu e o creștere. Dacă s-a schimbat obiectivul, îl putem schimba; altfel dă-mi un număr peste {weight}.",
+      lose: "Ai {weight} kg și ai cerut să cobori la {target} — de aici nu e o scădere. Dacă s-a schimbat obiectivul, îl putem schimba; altfel dă-mi un număr sub {weight}.",
+      switchToLose: "Treci la slăbit",
+      switchToGain: "Treci la luat în greutate",
+      above: "Un număr peste {weight}…",
+      below: "Un număr sub {weight}…",
+    },
+    switched: {
+      gain: "Am schimbat — deci luăm în greutate. Unde ai vrea să ajungi, în kg?",
+    },
+  },
 };
 
 const CS: OnboardingContent = {
@@ -9555,6 +10199,29 @@ const CS: OnboardingContent = {
     keepGoing: "Jedeme dál",
     correct: "Opravit",
     afterAsk: "To bylo jedno. Chceš to tak u každého jídla?",
+  },
+  refusals: {
+    invalid: {
+      age: "To nevypadá jako věk — zkus něco jako 34.",
+      height_cm: "V centimetrech — třeba 175.",
+      weight_kg: "V kilogramech — stačí zhruba.",
+      target_weight_kg: "Číslo v kg — třeba 70.",
+    },
+    ambiguousAge: {
+      line: "Pro jistotu: pokud myslíš rok {year}, pošli všechny čtyři číslice.",
+      confirm: "Je mi {age}",
+    },
+    direction: {
+      gain: "Máš {weight} kg a chceš přibrat na {target} — to odsud není přírůstek. Pokud se cíl změnil, můžeme ho přepnout; jinak mi dej číslo nad {weight}.",
+      lose: "Máš {weight} kg a chceš zhubnout na {target} — to odsud není úbytek. Pokud se cíl změnil, můžeme ho přepnout; jinak mi dej číslo pod {weight}.",
+      switchToLose: "Přepnout na hubnutí",
+      switchToGain: "Přepnout na přibírání",
+      above: "Číslo nad {weight}…",
+      below: "Číslo pod {weight}…",
+    },
+    switched: {
+      gain: "Přepnuto — tak přibíráme. Kam se chceš dostat, v kg?",
+    },
   },
 };
 
@@ -9911,6 +10578,29 @@ const HI: OnboardingContent = {
     correct: "भोजन सुधारें",
     afterAsk: "यह एक हो गया। हर भोजन के लिए ऐसा ही चाहिए?",
   },
+  refusals: {
+    invalid: {
+      age: "यह उम्र जैसा नहीं लग रहा — कुछ ऐसा लिखें, जैसे 34।",
+      height_cm: "सेंटीमीटर में — जैसे 175।",
+      weight_kg: "किलोग्राम में — अंदाज़े से भी चलेगा।",
+      target_weight_kg: "kg में एक संख्या — जैसे 70।",
+    },
+    ambiguousAge: {
+      line: "बस पक्का कर लें: अगर आपका मतलब साल {year} से था, तो चारों अंक भेजें।",
+      confirm: "मेरी उम्र {age} है",
+    },
+    direction: {
+      gain: "अभी आपका वज़न {weight} kg है और लक्ष्य {target} — यहाँ से यह बढ़त नहीं है। अगर लक्ष्य बदल गया है, तो हम उसे बदल सकते हैं; वरना {weight} से ज़्यादा कोई संख्या दें।",
+      lose: "अभी आपका वज़न {weight} kg है और लक्ष्य {target} — यहाँ से यह कमी नहीं है। अगर लक्ष्य बदल गया है, तो हम उसे बदल सकते हैं; वरना {weight} से कम कोई संख्या दें।",
+      switchToLose: "वज़न घटाने पर स्विच करें",
+      switchToGain: "वज़न बढ़ाने पर स्विच करें",
+      above: "{weight} से ज़्यादा कोई संख्या…",
+      below: "{weight} से कम कोई संख्या…",
+    },
+    switched: {
+      gain: "बदल दिया — तो वज़न बढ़ाना है। लक्ष्य कितना रखें, kg में?",
+    },
+  },
 };
 
 const TH: OnboardingContent = {
@@ -10265,6 +10955,29 @@ const TH: OnboardingContent = {
     keepGoing: "ไปต่อ",
     correct: "แก้มื้อให้ถูก",
     afterAsk: "นั่นคือหนึ่งมื้อ อยากได้แบบนี้ทุกมื้อไหม?",
+  },
+  refusals: {
+    invalid: {
+      age: "ดูไม่เหมือนอายุนะ — ลองแบบ 34",
+      height_cm: "เป็นเซนติเมตร — ประมาณ 175",
+      weight_kg: "เป็นกิโลกรัม — ประมาณๆ ก็ได้",
+      target_weight_kg: "ตัวเลขเป็น กก. — เช่น 70",
+    },
+    ambiguousAge: {
+      line: "ขอเช็กว่าเราอ่านถูก — ถ้าหมายถึงปี {year} ส่งมาให้ครบสี่หลัก",
+      confirm: "อายุ {age}",
+    },
+    direction: {
+      gain: "ตอนนี้คุณหนัก {weight} กก. และขอเพิ่มเป็น {target} — จากตรงนี้นั่นไม่ใช่การเพิ่ม ถ้าเป้าหมายเปลี่ยนแล้ว เราสลับให้ได้ ไม่งั้นบอกตัวเลขที่มากกว่า {weight}",
+      lose: "ตอนนี้คุณหนัก {weight} กก. และขอลดเป็น {target} — จากตรงนี้นั่นไม่ใช่การลด ถ้าเป้าหมายเปลี่ยนแล้ว เราสลับให้ได้ ไม่งั้นบอกตัวเลขที่น้อยกว่า {weight}",
+      switchToLose: "สลับเป็นลดน้ำหนัก",
+      switchToGain: "สลับเป็นเพิ่มน้ำหนัก",
+      above: "ตัวเลขที่มากกว่า {weight}…",
+      below: "ตัวเลขที่น้อยกว่า {weight}…",
+    },
+    switched: {
+      gain: "สลับแล้ว — เพิ่มน้ำหนักนะ อยากไปถึงกี่ กก.?",
+    },
   },
 };
 
@@ -10621,6 +11334,29 @@ const SV: OnboardingContent = {
     correct: "Korrigera måltiden",
     afterAsk: "Det var en. Vill du ha det här för varje måltid?",
   },
+  refusals: {
+    invalid: {
+      age: "Det ser inte ut som en ålder — testa något i stil med 34.",
+      height_cm: "I centimeter — något i stil med 175.",
+      weight_kg: "I kilo — ungefär räcker.",
+      target_weight_kg: "Ett tal i kg — till exempel 70.",
+    },
+    ambiguousAge: {
+      line: "Vill vara säker på att jag läste rätt — om du menade året {year}, skicka alla fyra siffrorna.",
+      confirm: "Jag är {age}",
+    },
+    direction: {
+      gain: "Du väger {weight} kg och vill gå upp till {target} — det är ingen uppgång härifrån. Om målet har ändrats kan vi byta; annars ge mig ett tal över {weight}.",
+      lose: "Du väger {weight} kg och vill gå ner till {target} — det är ingen nedgång härifrån. Om målet har ändrats kan vi byta; annars ge mig ett tal under {weight}.",
+      switchToLose: "Byt till att gå ner",
+      switchToGain: "Byt till att gå upp",
+      above: "Ett tal över {weight}…",
+      below: "Ett tal under {weight}…",
+    },
+    switched: {
+      gain: "Bytt — då går vi upp. Var vill du landa, i kg?",
+    },
+  },
 };
 
 const UK: OnboardingContent = {
@@ -10975,6 +11711,29 @@ const UK: OnboardingContent = {
     keepGoing: "Далі",
     correct: "Виправити",
     afterAsk: "Це був перший. Хочеш так із кожним прийомом їжі?",
+  },
+  refusals: {
+    invalid: {
+      age: "Не схоже на вік — спробуй щось на кшталт 34.",
+      height_cm: "У сантиметрах — щось на кшталт 175.",
+      weight_kg: "У кілограмах — можна приблизно.",
+      target_weight_kg: "Число в кг — наприклад, 70.",
+    },
+    ambiguousAge: {
+      line: "Хочу переконатися, що все правильно: якщо йдеться про {year} рік, надішли всі чотири цифри.",
+      confirm: "Мені {age}",
+    },
+    direction: {
+      gain: "Зараз у тебе {weight} кг, а мета — {target}: це не набір ваги. Якщо мета змінилася, можемо перемкнути; інакше дай число більше за {weight}.",
+      lose: "Зараз у тебе {weight} кг, а мета — {target}: це не зниження ваги. Якщо мета змінилася, можемо перемкнути; інакше дай число менше за {weight}.",
+      switchToLose: "Перемкнути на схуднення",
+      switchToGain: "Перемкнути на набір",
+      above: "Число більше за {weight}…",
+      below: "Число менше за {weight}…",
+    },
+    switched: {
+      gain: "Перемкнуто — отже, набираємо. До якої ваги хочеш прийти, у кг?",
+    },
   },
 };
 
@@ -11331,6 +12090,29 @@ const NL: OnboardingContent = {
     correct: "Maaltijd corrigeren",
     afterAsk: "Dat was er één. Wil je dit voor elke maaltijd?",
   },
+  refusals: {
+    invalid: {
+      age: "Dat lijkt geen leeftijd — probeer iets als 34.",
+      height_cm: "In centimeters — iets als 175.",
+      weight_kg: "In kilo's — ongeveer is prima.",
+      target_weight_kg: "Een getal in kg — bijvoorbeeld 70.",
+    },
+    ambiguousAge: {
+      line: "Ik wil zeker weten dat ik dat goed lees — bedoelde je het jaar {year}, stuur dan alle vier de cijfers.",
+      confirm: "Ik ben {age}",
+    },
+    direction: {
+      gain: "Je zit op {weight} kg en wilt aankomen tot {target} — dat is vanaf hier geen aankomen. Is het doel veranderd, dan zetten we het om; anders geef me een getal boven {weight}.",
+      lose: "Je zit op {weight} kg en wilt afvallen tot {target} — dat is vanaf hier geen afvallen. Is het doel veranderd, dan zetten we het om; anders geef me een getal onder {weight}.",
+      switchToLose: "Overschakelen naar afvallen",
+      switchToGain: "Overschakelen naar aankomen",
+      above: "Een getal boven {weight}…",
+      below: "Een getal onder {weight}…",
+    },
+    switched: {
+      gain: "Omgezet — aankomen dus. Waar wil je uitkomen, in kg?",
+    },
+  },
 };
 
 const PL: OnboardingContent = {
@@ -11685,6 +12467,29 @@ const PL: OnboardingContent = {
     keepGoing: "Dalej",
     correct: "Popraw posiłek",
     afterAsk: "To był jeden. Chcesz tak przy każdym posiłku?",
+  },
+  refusals: {
+    invalid: {
+      age: "To nie wygląda na wiek — spróbuj czegoś w stylu 34.",
+      height_cm: "W centymetrach — na przykład 175.",
+      weight_kg: "W kilogramach — wystarczy w przybliżeniu.",
+      target_weight_kg: "Liczba w kg — na przykład 70.",
+    },
+    ambiguousAge: {
+      line: "Chcę mieć pewność, że dobrze to odczytuję — jeśli chodziło ci o rok {year}, wyślij wszystkie cztery cyfry.",
+      confirm: "Mój wiek: {age}",
+    },
+    direction: {
+      gain: "Ważysz {weight} kg i chcesz przytyć do {target} — stąd to nie jest przyrost. Jeśli cel się zmienił, możemy go przestawić; jeśli nie, podaj liczbę powyżej {weight}.",
+      lose: "Ważysz {weight} kg i chcesz schudnąć do {target} — stąd to nie jest spadek. Jeśli cel się zmienił, możemy go przestawić; jeśli nie, podaj liczbę poniżej {weight}.",
+      switchToLose: "Przestaw na chudnięcie",
+      switchToGain: "Przestaw na przybieranie",
+      above: "Liczba powyżej {weight}…",
+      below: "Liczba poniżej {weight}…",
+    },
+    switched: {
+      gain: "Przestawione — czyli przybieranie. Ile chcesz ważyć, w kg?",
+    },
   },
 };
 
@@ -12041,6 +12846,29 @@ const TR: OnboardingContent = {
     correct: "Öğünü düzelt",
     afterAsk: "Bu bir taneydi. Her öğünde ister misin?",
   },
+  refusals: {
+    invalid: {
+      age: "Bu bir yaş gibi görünmüyor — 34 gibi bir şey dene.",
+      height_cm: "Santimetre olarak — 175 gibi bir şey.",
+      weight_kg: "Kilogram olarak — yaklaşık olması yeter.",
+      target_weight_kg: "kg cinsinden bir sayı — 70 gibi.",
+    },
+    ambiguousAge: {
+      line: "Doğru okuduğumdan emin olmak istiyorum — {year} yılını kastettiysen dört hanenin hepsini gönder.",
+      confirm: "{age} yaşındayım",
+    },
+    direction: {
+      gain: "Şu an {weight} kg'sın ve {target} hedefine kilo almak istedin — buradan bu bir artış değil. Amaç değiştiyse onu değiştirebiliriz; değilse bana {weight} üstünde bir sayı ver.",
+      lose: "Şu an {weight} kg'sın ve {target} hedefine kilo vermek istedin — buradan bu bir düşüş değil. Amaç değiştiyse onu değiştirebiliriz; değilse bana {weight} altında bir sayı ver.",
+      switchToLose: "Kilo vermeye geç",
+      switchToGain: "Kilo almaya geç",
+      above: "{weight} üstünde bir sayı…",
+      below: "{weight} altında bir sayı…",
+    },
+    switched: {
+      gain: "Değiştirildi — kilo alıyoruz. kg olarak nereye varmak istersin?",
+    },
+  },
 };
 
 const ZH_HANT: OnboardingContent = {
@@ -12395,6 +13223,29 @@ const ZH_HANT: OnboardingContent = {
     keepGoing: "繼續",
     correct: "修正餐點",
     afterAsk: "這就是一餐。想要每一餐都這樣嗎？",
+  },
+  refusals: {
+    invalid: {
+      age: "這看起來不像年齡，試試像 34 這樣的數字。",
+      height_cm: "以公分為單位，例如 175。",
+      weight_kg: "以公斤為單位，大概就好。",
+      target_weight_kg: "以公斤為單位的數字，例如 70。",
+    },
+    ambiguousAge: {
+      line: "我想確認沒看錯：如果你指的是 {year} 年，請傳完整的四位數。",
+      confirm: "我 {age} 歲",
+    },
+    direction: {
+      gain: "你目前 {weight} 公斤，想增重到 {target}，但從現在來看這不是增重。如果目標改變了，我們可以切換；否則請給我一個大於 {weight} 的數字。",
+      lose: "你目前 {weight} 公斤，想減重到 {target}，但從現在來看這不是減重。如果目標改變了，我們可以切換；否則請給我一個小於 {weight} 的數字。",
+      switchToLose: "改為減重",
+      switchToGain: "改為增重",
+      above: "大於 {weight} 的數字…",
+      below: "小於 {weight} 的數字…",
+    },
+    switched: {
+      gain: "已切換，那就增重。你想達到幾公斤？",
+    },
   },
 };
 
@@ -12751,6 +13602,29 @@ const ZH_HANS: OnboardingContent = {
     correct: "修正这一餐",
     afterAsk: "这是第一餐。想每餐都这样吗？",
   },
+  refusals: {
+    invalid: {
+      age: "这看起来不像年龄——试试像 34 这样的数字。",
+      height_cm: "以厘米为单位——比如 175。",
+      weight_kg: "以公斤为单位——大概的数字就行。",
+      target_weight_kg: "以公斤为单位的数字——比如 70。",
+    },
+    ambiguousAge: {
+      line: "我想确认没有理解错——如果你指的是{year}年，请发送完整的四位数字。",
+      confirm: "我{age}岁",
+    },
+    direction: {
+      gain: "你现在{weight}公斤，却想增重到{target}——这并不是增重。如果目标变了，我们可以切换；否则请给我一个大于{weight}的数字。",
+      lose: "你现在{weight}公斤，却想减重到{target}——这并不是减重。如果目标变了，我们可以切换；否则请给我一个小于{weight}的数字。",
+      switchToLose: "切换为减重",
+      switchToGain: "切换为增重",
+      above: "大于{weight}的数字…",
+      below: "小于{weight}的数字…",
+    },
+    switched: {
+      gain: "已切换——那就增重。你想达到多少公斤？",
+    },
+  },
 };
 
 const KO: OnboardingContent = {
@@ -13105,6 +13979,29 @@ const KO: OnboardingContent = {
     keepGoing: "계속하기",
     correct: "식사 수정",
     afterAsk: "한 끼 끝났어요. 매 끼니 이렇게 해 볼까요?",
+  },
+  refusals: {
+    invalid: {
+      age: "나이 같지 않아요. 34처럼 입력해 보세요.",
+      height_cm: "센티미터로 입력해 주세요. 예: 175.",
+      weight_kg: "킬로그램으로 입력해 주세요. 대략이어도 괜찮아요.",
+      target_weight_kg: "kg 단위 숫자로 입력해 주세요. 예: 70.",
+    },
+    ambiguousAge: {
+      line: "제대로 읽었는지 확인하고 싶어요. {year}년을 뜻한 거라면 네 자리 모두 보내 주세요.",
+      confirm: "{age}세예요",
+    },
+    direction: {
+      gain: "지금 {weight}kg인데 {target}까지 늘리고 싶다고 했어요. 지금 기준으로는 증가가 아니에요. 목표가 바뀌었다면 전환할 수 있어요. 아니라면 {weight}보다 큰 숫자를 알려 주세요.",
+      lose: "지금 {weight}kg인데 {target}까지 줄이고 싶다고 했어요. 지금 기준으로는 감량이 아니에요. 목표가 바뀌었다면 전환할 수 있어요. 아니라면 {weight}보다 작은 숫자를 알려 주세요.",
+      switchToLose: "감량으로 전환",
+      switchToGain: "증량으로 전환",
+      above: "{weight}보다 큰 숫자…",
+      below: "{weight}보다 작은 숫자…",
+    },
+    switched: {
+      gain: "전환했어요. 증량으로 가요. 목표 체중은 몇 kg인가요?",
+    },
   },
 };
 
@@ -13461,6 +14358,29 @@ const JA: OnboardingContent = {
     correct: "食事を修正",
     afterAsk: "これで1食です。毎食こうしてみませんか？",
   },
+  refusals: {
+    invalid: {
+      age: "年齢ではないようです。34のように入力してください。",
+      height_cm: "センチメートルで入力してください（例：175）。",
+      weight_kg: "キログラムで入力してください。だいたいで大丈夫です。",
+      target_weight_kg: "kgの数字で入力してください（例：70）。",
+    },
+    ambiguousAge: {
+      line: "念のため確認させてください。{year}年のことなら、4桁すべて送ってください。",
+      confirm: "{age}歳です",
+    },
+    direction: {
+      gain: "今は{weight}kgで、{target}まで増やしたいとのことですが、今の体重からだと増量になりません。目標が変わったなら切り替えられます。そうでなければ{weight}より大きい数字を教えてください。",
+      lose: "今は{weight}kgで、{target}まで減らしたいとのことですが、今の体重からだと減量になりません。目標が変わったなら切り替えられます。そうでなければ{weight}より小さい数字を教えてください。",
+      switchToLose: "減量に切り替える",
+      switchToGain: "増量に切り替える",
+      above: "{weight}より大きい数字…",
+      below: "{weight}より小さい数字…",
+    },
+    switched: {
+      gain: "切り替えました。増量ですね。何kgを目指しますか？",
+    },
+  },
 };
 
 const PT_BR: OnboardingContent = {
@@ -13815,6 +14735,29 @@ const PT_BR: OnboardingContent = {
     keepGoing: "Continuar",
     correct: "Corrigir refeição",
     afterAsk: "Essa foi uma. Quer isso em toda refeição?",
+  },
+  refusals: {
+    invalid: {
+      age: "Isso não parece uma idade — tente algo como 34.",
+      height_cm: "Em centímetros — algo como 175.",
+      weight_kg: "Em quilos — um valor aproximado já serve.",
+      target_weight_kg: "Um número em kg — como 70.",
+    },
+    ambiguousAge: {
+      line: "Quero ter certeza de que entendi — se você quis dizer o ano {year}, envie os quatro dígitos.",
+      confirm: "Tenho {age} anos",
+    },
+    direction: {
+      gain: "Você está com {weight} kg e pediu para ganhar até {target} — isso não é um ganho a partir de agora. Se a meta mudou, podemos trocar; senão, me dê um número acima de {weight}.",
+      lose: "Você está com {weight} kg e pediu para perder até {target} — isso não é uma perda a partir de agora. Se a meta mudou, podemos trocar; senão, me dê um número abaixo de {weight}.",
+      switchToLose: "Mudar para perder",
+      switchToGain: "Mudar para ganhar",
+      above: "Um número acima de {weight}…",
+      below: "Um número abaixo de {weight}…",
+    },
+    switched: {
+      gain: "Pronto — vamos ganhar. Onde você gostaria de chegar, em kg?",
+    },
   },
 };
 

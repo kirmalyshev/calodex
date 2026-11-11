@@ -456,6 +456,7 @@ function answerFor(
   prompt: ChatPrompt,
   answers: string[],
   profile: Profile,
+  content: OnboardingContent,
   units: UnitSystem,
   form?: { get(name: string): unknown },
 ): Answered {
@@ -530,7 +531,7 @@ function answerFor(
         raw = String(weightToKg("imperial", Number(value)));
       }
     }
-    const checked = checkNumber(field as NumberField, raw, profile.lang, new Date());
+    const checked = checkNumber(field as NumberField, raw, profile.lang, new Date(), content.refusals);
     if (!checked.ok) {
       if ("underAge" in checked) return { kind: "under-age" };
       // "90" is 1990 typed the short way, or somebody who is ninety. Computing the wrong one is
@@ -548,7 +549,7 @@ function answerFor(
     // surplus aimed at a number below the current weight and produce a plan that cannot arrive,
     // with nothing on any screen to say so.
     if (field === "target_weight_kg" && profile.goal !== null && profile.weight_kg !== null) {
-      const wrong = checkDirection(profile.goal, profile.weight_kg, checked.value, profile.lang);
+      const wrong = checkDirection(profile.goal, profile.weight_kg, checked.value, profile.lang, content.refusals);
       if (wrong) return { kind: "refuse", line: wrong.line, switchTo: wrong.switchTo };
     }
     return { kind: "patch", patch: { [field]: checked.value } as PatchProfileRequest };
@@ -1153,7 +1154,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       // The goal was just flipped mid-question, so the target is asked again in the words the app
       // uses for it rather than in silence.
       const switched = url.searchParams.has("switched") && profile.goal !== null
-        ? switchedLine(profile.goal, profile.lang)
+        ? switchedLine(profile.goal, profile.lang, content.refusals)
         : null;
       return ask(switched);
     }
@@ -1207,14 +1208,14 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         // The number is read in the system the PAGE carried, not a fresh resolution — the hidden
         // `units` field is the toggle's state at render, and it is what the answer was typed in.
         const postedUnits = form.get("units");
-        const answer = answerFor(open, typed, profile,
+        const answer = answerFor(open, typed, profile, content,
           postedUnits === "metric" || postedUnits === "imperial" ? postedUnits : units, form);
         const retry = (error: string | null, actions: Action[] = []) =>
           html(renderQuestion(walk, walk.indexOf(open), profile, content, error, actions, undefined,
             typed.length > 0 ? typed : undefined, askPath, units));
         if (answer.kind === "missing") return retry(pageCopyFor(profile.lang).answerRequired);
         if (answer.kind === "ambiguous-age") {
-          const age = AMBIGUOUS_AGE(profile.lang);
+          const age = AMBIGUOUS_AGE(profile.lang, content.refusals);
           return retry(age.line(answer.age), [
             { name: "age", value: String(answer.age), label: age.confirm(answer.age) },
           ]);
@@ -1283,12 +1284,12 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       // Same rule as the first answer: the hidden `units` field is the toggle the page showed,
       // and the number converts in it — a stale render must not reinterpret what was typed.
       const postedUnits = form.get("units");
-      const answer = answerFor(open, answers, profile,
+      const answer = answerFor(open, answers, profile, content,
         postedUnits === "metric" || postedUnits === "imperial" ? postedUnits : units, form);
       if (answer.kind === "missing") return retry(pageCopyFor(profile.lang).answerRequired);
       if (answer.kind === "ambiguous-age") {
         // The quick reply takes it as an age; four digits in the box take it as the year.
-        const age = AMBIGUOUS_AGE(profile.lang);
+        const age = AMBIGUOUS_AGE(profile.lang, content.refusals);
         return retry(age.line(answer.age), [
           { name: "age", value: String(answer.age), label: age.confirm(answer.age) },
         ]);
@@ -1487,7 +1488,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     if (req.method === "POST") {
       const form = await req.formData().catch(() => null);
       const answers = form?.getAll("answer").filter((v): v is string => typeof v === "string") ?? [];
-      const answer = answerFor(prompt, answers, profile, units);
+      const answer = answerFor(prompt, answers, profile, content, units);
       if (answer.kind !== "patch") return ask(pageCopyFor(profile.lang).answerRequired);
       await patchProfile(ctx.deps, userId, answer.patch);
       return seeOther(signup);

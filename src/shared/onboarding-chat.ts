@@ -48,7 +48,7 @@ import type {
 } from "./types.ts";
 import {
   isKnownScreen, optionLabel, screenForStep, screenOptionValues, screenOptions, stepApplies,
-  type OnboardingContent, type OnboardingPlace, type OnboardingScreenId, type OnboardingStep,
+  type OnboardingContent, type OnboardingPlace, type OnboardingRefusalsContent, type OnboardingScreenId, type OnboardingStep,
 } from "./onboarding.ts";
 
 // ── The prompts ──────────────────────────────────────────────────────────────────────────────
@@ -381,8 +381,10 @@ export type NumberAnswer =
  * by a ninety-year-old it means ninety. Guessing either way computes somebody else's target, so
  * Spud asks — the quick reply takes it as an age, four digits take it as the year.
  */
-export const AMBIGUOUS_AGE = (lang: Lang) => {
-  const copy = chatCopyFor(lang).ambiguousAge;
+// The four refusal readers below take the served `refusals` (ieat-app#2757, area e). Without one they
+// read `chatCopyFor` — the same words — because the phone still calls them bare until its half moves.
+export const AMBIGUOUS_AGE = (lang: Lang, refusals?: OnboardingRefusalsContent) => {
+  const copy = refusals?.ambiguousAge ?? chatCopyFor(lang).ambiguousAge;
   const n = numbers(lang);
   return {
     // The YEAR is not a quantity and must never be grouped: `1990` and not `1,990`. The age beside
@@ -415,8 +417,9 @@ export function checkNumber(
   // and it made reaching the language cost a `new Date()` the caller did not want to name — so the
   // call that skipped it read as correct and rendered English.
   today = new Date(),
+  refusals?: OnboardingRefusalsContent,
 ): NumberAnswer {
-  const invalid = chatCopyFor(lang).invalid;
+  const invalid = refusals?.invalid ?? chatCopyFor(lang).invalid;
   // THE QUESTION IS AN AGE, AND THE AGE IS WHAT TRAVELS. "How old are you?" is what people answer
   // without arithmetic; `birth_year` is what the profile stores, because an age stored as a number
   // is wrong within twelve months (`types.ts`). The subtraction happens in `engine/profile.ts`,
@@ -488,8 +491,9 @@ export function checkDirection(
   weightKg: number,
   targetKg: number,
   lang: Lang,
+  refusals?: OnboardingRefusalsContent,
 ): DirectionRefusal | null {
-  const copy = chatCopyFor(lang).direction;
+  const copy = refusals?.direction ?? chatCopyFor(lang).direction;
   const n = numbers(lang);
   const params = { weight: n(weightKg), target: n(targetKg) };
   if (goal === "gain" && targetKg <= weightKg) {
@@ -512,9 +516,10 @@ export function checkDirection(
 }
 
 /** What Spud says after the goal is flipped mid-question, and the target is asked again. */
-export function switchedLine(goal: Goal, lang: Lang): string {
+export function switchedLine(goal: Goal, lang: Lang, refusals?: OnboardingRefusalsContent): string {
+  // `lose` carries the pacing brake and is code on purpose: an edit must not turn it into "faster is better".
   const copy = chatCopyFor(lang).switched;
-  return goal === "gain" ? copy.gain : copy.lose;
+  return goal === "gain" ? refusals?.switched.gain ?? copy.gain : copy.lose;
 }
 
 /**

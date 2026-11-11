@@ -1345,9 +1345,26 @@ details.how p { margin-top: 8px; }
     ]);
   }
 
+  function refusalsCard() {
+    var t = content.refusals;
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, "Refusals");
+    [["invalid", [["age", "Not an age"], ["height_cm", "Not a height"], ["weight_kg", "Not a weight"], ["target_weight_kg", "Not a target"]]],
+     ["ambiguousAge", [["line", "Ambiguous age — {year}", true], ["confirm", "Ambiguous age: confirm — {age}"]]],
+     ["direction", [["gain", "Gain target below weight — {weight} {target}", true], ["lose", "Lose target above weight — {weight} {target}", true],
+       ["switchToLose", "Switch to losing"], ["switchToGain", "Switch to gaining"], ["above", "Placeholder above — {weight}"], ["below", "Placeholder below — {weight}"]]],
+     ["switched", [["gain", "After switching to gain", true]]]].forEach(function (g) {
+      g[1].forEach(function (r) {
+        field(card, g[0] + ": " + r[1], t[g[0]][r[0]], function (v) { t[g[0]][r[0]] = v; }, r[2]);
+      });
+    });
+    return card;
+  }
+
   // The sections take turns beside a sub-nav; the save bar below them is for all of them.
   var obSec = "welcome";
-  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"], ["target", "The target"], ["pace", "The pace"], ["plan", "The plan"], ["signup", "Sign-up"], ["referral", "Referral"], ["health", "Apple Health"], ["liveActivity", "Live Activity"], ["firstMeal", "First meal"]];
+  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"], ["target", "The target"], ["pace", "The pace"], ["plan", "The plan"], ["signup", "Sign-up"], ["referral", "Referral"], ["health", "Apple Health"], ["liveActivity", "Live Activity"], ["firstMeal", "First meal"], ["refusals", "Refusals"]];
 
   function renderObNav() {
     var nav = $("ob-nav");
@@ -1414,6 +1431,7 @@ details.how p { margin-top: 8px; }
     one("health", healthCard);
     one("liveActivity", liveActivityCard);
     one("firstMeal", firstMealCard);
+    one("refusals", refusalsCard);
     renderObNav();
     if (fresh) saved = JSON.parse(JSON.stringify(content));
     unsaved();
