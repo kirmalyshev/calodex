@@ -537,13 +537,14 @@ export interface OnboardingFirstMealContent {
  * ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All
  * REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the
  * digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy
- * card (safety), the cap/floor explanation, the computed promises and `goalEdit.*` (Settings).
+ * card (safety), the cap/floor explanation, `switched.lose` (the pacing brake), the computed promises and `goalEdit.*` (Settings).
  */
 export interface OnboardingRefusalsContent {
   invalid: { age: string; height_cm: string; weight_kg: string; target_weight_kg: string };
   ambiguousAge: { line: string; confirm: string };
   direction: { gain: string; lose: string; switchToLose: string; switchToGain: string; above: string; below: string };
-  switched: { gain: string; lose: string };
+  /** Only `gain`: `lose` carries the pacing brake ("faster isn't better") and stays in code. */
+  switched: { gain: string };
 }
 
 export interface OnboardingContent {
@@ -1345,7 +1346,6 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     },
     switched: {
       gain: "Switched — gaining it is. Where would you like to be, in kg?",
-      lose: "Switched — losing it is. Where would you like to be, in kg? Faster isn't better here — it's just harder to keep.",
     },
   },
 };
@@ -1897,7 +1897,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     grp("invalid", { age: [], height_cm: [], weight_kg: [], target_weight_kg: [] });
     grp("ambiguousAge", { line: ["year"], confirm: ["age"] });
     grp("direction", { gain: ["weight", "target"], lose: ["weight", "target"], switchToLose: [], switchToGain: [], above: ["weight"], below: ["weight"] });
-    grp("switched", { gain: [], lose: [] });
+    grp("switched", { gain: [] });
   }
 
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
@@ -2102,7 +2102,7 @@ function usableRefusals(r: OnboardingRefusalsContent | undefined): r is Onboardi
     && hasKeys(r.invalid, ["age", "height_cm", "weight_kg", "target_weight_kg"])
     && hasKeys(r.ambiguousAge, ["line", "confirm"])
     && hasKeys(r.direction, ["gain", "lose", "switchToLose", "switchToGain", "above", "below"])
-    && hasKeys(r.switched, ["gain", "lose"]);
+    && hasKeys(r.switched, ["gain"]);
 }
 
 /** The Live Activity's three titles and its button — every one set. */

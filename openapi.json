@@ -8958,16 +8958,13 @@
             "properties": {
               "gain": {
                 "type": "string"
-              },
-              "lose": {
-                "type": "string"
               }
             },
             "required": [
-              "gain",
-              "lose"
+              "gain"
             ],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Only `gain`: `lose` carries the pacing brake (\"faster isn't better\") and stays in code."
           }
         },
         "required": [
@@ -8977,7 +8974,7 @@
           "switched"
         ],
         "additionalProperties": false,
-        "description": "The refusals (ieat-app#2757, area e): what Spud says when an answer is not a number, an age is ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy card (safety), the cap/floor explanation, the computed promises and `goalEdit.*` (Settings)."
+        "description": "The refusals (ieat-app#2757, area e): what Spud says when an answer is not a number, an age is ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy card (safety), the cap/floor explanation, `switched.lose` (the pacing brake), the computed promises and `goalEdit.*` (Settings)."
       },
       "OnboardingScreenContent": {
         "type": "object",

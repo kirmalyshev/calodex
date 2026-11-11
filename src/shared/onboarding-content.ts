@@ -297,7 +297,6 @@ const FR: OnboardingContent = {
     },
     switched: {
       gain: "Va pour la prise de poids. Où aimerais-tu arriver, en kg ?",
-      lose: "D'accord, on vise plus bas. Où aimerais-tu arriver, en kg ? Ici, aller plus vite n'aide pas — c'est juste plus dur à tenir.",
     },
   },
 };
@@ -566,7 +565,6 @@ const DE: OnboardingContent = {
     },
     switched: {
       gain: "Umgestellt — zunehmen also. Wo möchtest du landen, in kg?",
-      lose: "Umgestellt — abnehmen also. Wo möchtest du landen, in kg? Schneller ist hier nicht besser — nur schwerer zu halten.",
     },
   },
 };
@@ -835,7 +833,6 @@ const IT: OnboardingContent = {
     },
     switched: {
       gain: "Fatto, allora prendiamo peso. Dove ti piacerebbe arrivare, in kg?",
-      lose: "Invertito — si perde peso, allora. Dove ti piacerebbe arrivare, in kg? Andare più veloce non è meglio: è solo più difficile da mantenere.",
     },
   },
 };
@@ -1104,7 +1101,6 @@ const ES: OnboardingContent = {
     },
     switched: {
       gain: "Cambiado — ganar, entonces. ¿Dónde te gustaría llegar, en kg?",
-      lose: "Cambiado — perder, entonces. ¿Dónde te gustaría llegar, en kg? Más rápido no es mejor aquí — solo es más difícil de sostener.",
     },
   },
 };
@@ -1373,7 +1369,6 @@ const VI: OnboardingContent = {
     },
     switched: {
       gain: "Đã chuyển — vậy là tăng cân. Bạn muốn về mức nào, tính bằng kg?",
-      lose: "Đã chuyển — vậy là giảm cân. Bạn muốn về mức nào, tính bằng kg? Nhanh hơn không có nghĩa là tốt hơn — chỉ khó giữ hơn thôi.",
     },
   },
 };
@@ -1642,7 +1637,6 @@ const ID: OnboardingContent = {
     },
     switched: {
       gain: "Diganti — jadi menaikkan. Kamu ingin sampai di angka berapa, dalam kg?",
-      lose: "Diganti — jadi menurunkan. Kamu ingin sampai di angka berapa, dalam kg? Lebih cepat bukan berarti lebih baik — hanya lebih sulit dijaga.",
     },
   },
 };
@@ -1911,7 +1905,6 @@ const RU: OnboardingContent = {
     },
     switched: {
       gain: "Переключил — значит набираем. Куда хочешь прийти, в кг?",
-      lose: "Переключил — значит худеем. Куда хочешь прийти, в кг? Быстрее здесь не значит лучше — просто труднее удержать.",
     },
   },
 };
@@ -2290,7 +2283,6 @@ const TE: OnboardingContent = {
     },
     switched: {
       gain: "మార్చాను — అయితే బరువు పెరగడమే. మీరు ఎంత బరువుకు చేరాలనుకుంటున్నారు, kgలో?",
-      lose: "మార్చాను — అయితే బరువు తగ్గడమే. మీరు ఎంత బరువుకు చేరాలనుకుంటున్నారు, kgలో? ఇక్కడ వేగంగా ఉండటం మెరుగు కాదు — దాన్ని నిలబెట్టుకోవడం కష్టం అవుతుంది, అంతే.",
     },
   },
 };
@@ -2669,7 +2661,6 @@ const TA: OnboardingContent = {
     },
     switched: {
       gain: "மாற்றப்பட்டது — எடை அதிகரிப்புதான். எந்த எடையை அடைய விரும்புகிறீர்கள், kg-இல்?",
-      lose: "மாற்றப்பட்டது — எடை குறைப்புதான். எந்த எடையை அடைய விரும்புகிறீர்கள், kg-இல்? இங்கே வேகமாகச் செல்வது சிறந்தது அல்ல — தக்கவைப்பதுதான் கடினமாகும்.",
     },
   },
 };
@@ -3048,7 +3039,6 @@ const PA: OnboardingContent = {
     },
     switched: {
       gain: "ਬਦਲ ਦਿੱਤਾ — ਤਾਂ ਭਾਰ ਵਧਾਉਣਾ ਹੈ। ਟੀਚਾ ਕਿੰਨਾ ਰੱਖੀਏ, kg ਵਿੱਚ?",
-      lose: "ਬਦਲ ਦਿੱਤਾ — ਤਾਂ ਭਾਰ ਘਟਾਉਣਾ ਹੈ। ਟੀਚਾ ਕਿੰਨਾ ਰੱਖੀਏ, kg ਵਿੱਚ? ਇੱਥੇ ਤੇਜ਼ ਹੋਣਾ ਬਿਹਤਰ ਨਹੀਂ — ਬੱਸ ਉਸ ਨੂੰ ਬਣਾਈ ਰੱਖਣਾ ਔਖਾ ਹੁੰਦਾ ਹੈ।",
     },
   },
 };
@@ -3427,7 +3417,6 @@ const OR: OnboardingContent = {
     },
     switched: {
       gain: "ବଦଳିଗଲା — ତେବେ ଓଜନ ବଢ଼ାଇବା। kg ରେ କେତେ ପର୍ଯ୍ୟନ୍ତ ଯିବାକୁ ଚାହାଁନ୍ତି?",
-      lose: "ବଦଳିଗଲା — ତେବେ ଓଜନ କମାଇବା। kg ରେ କେତେ ପର୍ଯ୍ୟନ୍ତ ଯିବାକୁ ଚାହାଁନ୍ତି? ଏଠାରେ ଦ୍ରୁତ ମାନେ ଭଲ ନୁହେଁ — କେବଳ ବଜାୟ ରଖିବା କଷ୍ଟକର।",
     },
   },
 };
@@ -3806,7 +3795,6 @@ const MR: OnboardingContent = {
     },
     switched: {
       gain: "बदलले — म्हणजे वजन वाढवायचे. kg मध्ये, किती वजनापर्यंत पोहोचायचे आहे?",
-      lose: "बदलले — म्हणजे वजन कमी करायचे. kg मध्ये, किती वजनापर्यंत पोहोचायचे आहे? इथे जलद म्हणजे चांगले नाही — फक्त टिकवणे कठीण होते.",
     },
   },
 };
@@ -4185,7 +4173,6 @@ const ML: OnboardingContent = {
     },
     switched: {
       gain: "മാറ്റി — ഭാരം കൂട്ടാം. kg-ൽ, എത്രയിൽ എത്താനാണ് ആഗ്രഹം?",
-      lose: "മാറ്റി — ഭാരം കുറയ്ക്കാം. kg-ൽ, എത്രയിൽ എത്താനാണ് ആഗ്രഹം? ഇവിടെ വേഗം കൂടുന്നത് നല്ലതല്ല — നിലനിർത്താൻ കൂടുതൽ ബുദ്ധിമുട്ടാകും എന്നേയുള്ളൂ.",
     },
   },
 };
@@ -4564,7 +4551,6 @@ const KN: OnboardingContent = {
     },
     switched: {
       gain: "ಬದಲಾಯಿಸಲಾಗಿದೆ — ತೂಕ ಹೆಚ್ಚಿಸುವುದು. kg ನಲ್ಲಿ ನೀವು ಎಷ್ಟು ತಲುಪಲು ಬಯಸುತ್ತೀರಿ?",
-      lose: "ಬದಲಾಯಿಸಲಾಗಿದೆ — ತೂಕ ಇಳಿಸುವುದು. kg ನಲ್ಲಿ ನೀವು ಎಷ್ಟು ತಲುಪಲು ಬಯಸುತ್ತೀರಿ? ಇಲ್ಲಿ ವೇಗ ಹೆಚ್ಚಿದ್ದರೆ ಉತ್ತಮವಲ್ಲ — ಅದನ್ನು ಕಾಯ್ದುಕೊಳ್ಳುವುದು ಕಷ್ಟವಷ್ಟೇ.",
     },
   },
 };
@@ -4943,7 +4929,6 @@ const GU: OnboardingContent = {
     },
     switched: {
       gain: "બદલી દીધું — તો વજન વધારવાનું છે. લક્ષ્ય કેટલું રાખીએ, kg માં?",
-      lose: "બદલી દીધું — તો વજન ઘટાડવાનું છે. લક્ષ્ય કેટલું રાખીએ, kg માં? અહીં વધુ ઝડપ વધુ સારી નથી — બસ તેને જાળવવું વધુ મુશ્કેલ બને છે.",
     },
   },
 };
@@ -5322,7 +5307,6 @@ const BN: OnboardingContent = {
     },
     switched: {
       gain: "বদলে দিয়েছি — তাহলে ওজন বাড়ানো। কোথায় পৌঁছাতে চান, kg-তে?",
-      lose: "বদলে দিয়েছি — তাহলে ওজন কমানো। কোথায় পৌঁছাতে চান, kg-তে? এখানে দ্রুত মানেই ভালো নয় — শুধু ধরে রাখা কঠিন হয়।",
     },
   },
 };
@@ -5701,7 +5685,6 @@ const PT_PT: OnboardingContent = {
     },
     switched: {
       gain: "Feito — vamos ganhar peso. Onde gostavas de chegar, em kg?",
-      lose: "Feito — vamos perder peso. Onde gostavas de chegar, em kg? Mais rápido não é melhor aqui — só é mais difícil de manter.",
     },
   },
 };
@@ -6080,7 +6063,6 @@ const MS: OnboardingContent = {
     },
     switched: {
       gain: "Sudah ditukar — naik berat. Anda mahu ke berapa, dalam kg?",
-      lose: "Sudah ditukar — turun berat. Anda mahu ke berapa, dalam kg? Lebih pantas tidak lebih baik di sini — cuma lebih sukar dikekalkan.",
     },
   },
 };
@@ -6459,7 +6441,6 @@ const CA: OnboardingContent = {
     },
     switched: {
       gain: "Canviat — doncs a pujar. On t'agradaria arribar, en kg?",
-      lose: "Canviat — doncs a baixar. On t'agradaria arribar, en kg? Aquí més ràpid no és millor — només és més difícil de mantenir.",
     },
   },
 };
@@ -6838,7 +6819,6 @@ const SL: OnboardingContent = {
     },
     switched: {
       gain: "Preklopljeno — torej pridobivanje teže. Kam želiš priti, v kg?",
-      lose: "Preklopljeno — torej izguba teže. Kam želiš priti, v kg? Hitreje tu ni bolje — le težje se ohrani.",
     },
   },
 };
@@ -7217,7 +7197,6 @@ const HR: OnboardingContent = {
     },
     switched: {
       gain: "Prebačeno — dobivanje težine. Gdje želiš biti, u kg?",
-      lose: "Prebačeno — mršavljenje. Gdje želiš biti, u kg? Brže ovdje nije bolje — samo je teže održati.",
     },
   },
 };
@@ -7596,7 +7575,6 @@ const SK: OnboardingContent = {
     },
     switched: {
       gain: "Prepnuté — ideme priberať. Kde chceš byť, v kg?",
-      lose: "Prepnuté — ideme chudnúť. Kde chceš byť, v kg? Rýchlejšie tu neznamená lepšie — len ťažšie udržateľné.",
     },
   },
 };
@@ -7975,7 +7953,6 @@ const NO: OnboardingContent = {
     },
     switched: {
       gain: "Byttet — da går vi opp. Hvor vil du lande, i kg?",
-      lose: "Byttet — da går vi ned. Hvor vil du lande, i kg? Raskere er ikke bedre her — det er bare vanskeligere å holde.",
     },
   },
 };
@@ -8354,7 +8331,6 @@ const FI: OnboardingContent = {
     },
     switched: {
       gain: "Vaihdettu – painonnousu siis. Mihin haluaisit päätyä, kilogrammoina?",
-      lose: "Vaihdettu – painonpudotus siis. Mihin haluaisit päätyä, kilogrammoina? Nopeampi ei ole tässä parempi – vain vaikeampi pitää.",
     },
   },
 };
@@ -8733,7 +8709,6 @@ const DA: OnboardingContent = {
     },
     switched: {
       gain: "Skiftet — så er det vægtøgning. Hvor vil du gerne ende, i kg?",
-      lose: "Skiftet — så er det vægttab. Hvor vil du gerne ende, i kg? Hurtigere er ikke bedre her — det er bare sværere at holde.",
     },
   },
 };
@@ -9112,7 +9087,6 @@ const HU: OnboardingContent = {
     },
     switched: {
       gain: "Átállítva — akkor súlygyarapítás. Hová szeretnél eljutni, kg-ban?",
-      lose: "Átállítva — akkor fogyás. Hová szeretnél eljutni, kg-ban? A gyorsabb itt nem jobb — csak nehezebb megtartani.",
     },
   },
 };
@@ -9491,7 +9465,6 @@ const EL: OnboardingContent = {
     },
     switched: {
       gain: "Έγινε — πάμε για αύξηση. Πού θα ήθελες να φτάσεις, σε kg;",
-      lose: "Έγινε — πάμε για απώλεια. Πού θα ήθελες να φτάσεις, σε kg; Το πιο γρήγορο δεν είναι καλύτερο εδώ — απλώς πιο δύσκολο να διατηρηθεί.",
     },
   },
 };
@@ -9870,7 +9843,6 @@ const RO: OnboardingContent = {
     },
     switched: {
       gain: "Am schimbat — deci luăm în greutate. Unde ai vrea să ajungi, în kg?",
-      lose: "Am schimbat — deci slăbim. Unde ai vrea să ajungi, în kg? Mai repede nu e mai bine aici — e doar mai greu de menținut.",
     },
   },
 };
@@ -10249,7 +10221,6 @@ const CS: OnboardingContent = {
     },
     switched: {
       gain: "Přepnuto — tak přibíráme. Kam se chceš dostat, v kg?",
-      lose: "Přepnuto — tak hubneme. Kam se chceš dostat, v kg? Rychleji tu neznamená líp — jen se to hůř udrží.",
     },
   },
 };
@@ -10628,7 +10599,6 @@ const HI: OnboardingContent = {
     },
     switched: {
       gain: "बदल दिया — तो वज़न बढ़ाना है। लक्ष्य कितना रखें, kg में?",
-      lose: "बदल दिया — तो वज़न घटाना है। लक्ष्य कितना रखें, kg में? यहाँ तेज़ होना बेहतर नहीं — बस उसे बनाए रखना मुश्किल होता है।",
     },
   },
 };
@@ -11007,7 +10977,6 @@ const TH: OnboardingContent = {
     },
     switched: {
       gain: "สลับแล้ว — เพิ่มน้ำหนักนะ อยากไปถึงกี่ กก.?",
-      lose: "สลับแล้ว — ลดน้ำหนักนะ อยากไปถึงกี่ กก.? เร็วกว่าไม่ได้ดีกว่า — แค่รักษาไว้ยากกว่า",
     },
   },
 };
@@ -11386,7 +11355,6 @@ const SV: OnboardingContent = {
     },
     switched: {
       gain: "Bytt — då går vi upp. Var vill du landa, i kg?",
-      lose: "Bytt — då går vi ner. Var vill du landa, i kg? Snabbare är inte bättre här — bara svårare att hålla.",
     },
   },
 };
@@ -11765,7 +11733,6 @@ const UK: OnboardingContent = {
     },
     switched: {
       gain: "Перемкнуто — отже, набираємо. До якої ваги хочеш прийти, у кг?",
-      lose: "Перемкнуто — отже, худнемо. До якої ваги хочеш прийти, у кг? Швидше тут не означає краще — просто важче втримати.",
     },
   },
 };
@@ -12144,7 +12111,6 @@ const NL: OnboardingContent = {
     },
     switched: {
       gain: "Omgezet — aankomen dus. Waar wil je uitkomen, in kg?",
-      lose: "Omgezet — afvallen dus. Waar wil je uitkomen, in kg? Sneller is hier niet beter — alleen lastiger vol te houden.",
     },
   },
 };
@@ -12523,7 +12489,6 @@ const PL: OnboardingContent = {
     },
     switched: {
       gain: "Przestawione — czyli przybieranie. Ile chcesz ważyć, w kg?",
-      lose: "Przestawione — czyli chudnięcie. Ile chcesz ważyć, w kg? Szybciej nie znaczy tu lepiej — po prostu trudniej to utrzymać.",
     },
   },
 };
@@ -12902,7 +12867,6 @@ const TR: OnboardingContent = {
     },
     switched: {
       gain: "Değiştirildi — kilo alıyoruz. kg olarak nereye varmak istersin?",
-      lose: "Değiştirildi — kilo veriyoruz. kg olarak nereye varmak istersin? Burada daha hızlı daha iyi değil — sadece korunması daha zor.",
     },
   },
 };
@@ -13281,7 +13245,6 @@ const ZH_HANT: OnboardingContent = {
     },
     switched: {
       gain: "已切換，那就增重。你想達到幾公斤？",
-      lose: "已切換，那就減重。你想達到幾公斤？這裡不是越快越好，越快只會越難維持。",
     },
   },
 };
@@ -13660,7 +13623,6 @@ const ZH_HANS: OnboardingContent = {
     },
     switched: {
       gain: "已切换——那就增重。你想达到多少公斤？",
-      lose: "已切换——那就减重。你想达到多少公斤？这里并不是越快越好——太快只会更难保持。",
     },
   },
 };
@@ -14039,7 +14001,6 @@ const KO: OnboardingContent = {
     },
     switched: {
       gain: "전환했어요. 증량으로 가요. 목표 체중은 몇 kg인가요?",
-      lose: "전환했어요. 감량으로 가요. 목표 체중은 몇 kg인가요? 여기서는 빠르다고 좋은 게 아니에요. 유지하기가 더 어려울 뿐이에요.",
     },
   },
 };
@@ -14418,7 +14379,6 @@ const JA: OnboardingContent = {
     },
     switched: {
       gain: "切り替えました。増量ですね。何kgを目指しますか？",
-      lose: "切り替えました。減量ですね。何kgを目指しますか？速ければいいわけではありません。維持するのが難しくなるだけです。",
     },
   },
 };
@@ -14797,7 +14757,6 @@ const PT_BR: OnboardingContent = {
     },
     switched: {
       gain: "Pronto — vamos ganhar. Onde você gostaria de chegar, em kg?",
-      lose: "Pronto — vamos perder. Onde você gostaria de chegar, em kg? Mais rápido não é melhor aqui — só é mais difícil de manter.",
     },
   },
 };

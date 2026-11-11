@@ -1354,7 +1354,7 @@ details.how p { margin-top: 8px; }
      ["ambiguousAge", [["line", "Ambiguous age — {year}", true], ["confirm", "Ambiguous age: confirm — {age}"]]],
      ["direction", [["gain", "Gain target below weight — {weight} {target}", true], ["lose", "Lose target above weight — {weight} {target}", true],
        ["switchToLose", "Switch to losing"], ["switchToGain", "Switch to gaining"], ["above", "Placeholder above — {weight}"], ["below", "Placeholder below — {weight}"]]],
-     ["switched", [["gain", "After switching to gain", true], ["lose", "After switching to lose", true]]]].forEach(function (g) {
+     ["switched", [["gain", "After switching to gain", true]]]].forEach(function (g) {
       g[1].forEach(function (r) {
         field(card, g[0] + ": " + r[1], t[g[0]][r[0]], function (v) { t[g[0]][r[0]] = v; }, r[2]);
       });

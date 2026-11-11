@@ -534,7 +534,7 @@ describe("the blocks around the questions (ieat-app#2757)", () => {
     expect(bad((c) => { c.refusals.ambiguousAge.confirm = "I'm older"; return c; }).join(" ")).toContain("{age}");
     expect(bad((c) => { c.refusals.direction.gain = "That is not a gain {weight}"; return c; }).join(" ")).toContain("{target}");
     expect(bad((c) => { c.refusals.direction.below = "A number below"; return c; }).join(" ")).toContain("{weight}");
-    expect(bad((c) => { c.refusals.switched.lose = "Switched {kg}"; return c; }).join(" ")).toContain("{kg}");
+    expect(bad((c) => { c.refusals.switched.gain = "Switched {kg}"; return c; }).join(" ")).toContain("{kg}");
     expect(bad((c) => { (c.refusals.direction as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("refusals.direction.bogus");
   });
 

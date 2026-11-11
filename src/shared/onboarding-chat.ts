@@ -517,8 +517,9 @@ export function checkDirection(
 
 /** What Spud says after the goal is flipped mid-question, and the target is asked again. */
 export function switchedLine(goal: Goal, lang: Lang, refusals?: OnboardingRefusalsContent): string {
-  const copy = refusals?.switched ?? chatCopyFor(lang).switched;
-  return goal === "gain" ? copy.gain : copy.lose;
+  // `lose` carries the pacing brake and is code on purpose: an edit must not turn it into "faster is better".
+  const copy = chatCopyFor(lang).switched;
+  return goal === "gain" ? refusals?.switched.gain ?? copy.gain : copy.lose;
 }
 
 /**

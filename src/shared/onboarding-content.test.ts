@@ -132,7 +132,7 @@ describe("every language's onboarding content", () => {
       expect(c.invalid, lang).toEqual(o.invalid);
       expect(c.ambiguousAge, lang).toEqual(o.ambiguousAge);
       expect(c.direction, lang).toEqual(o.direction);
-      expect(c.switched, lang).toEqual(o.switched);
+      expect(c.switched, lang).toEqual({ gain: o.switched.gain });
     }
     const r = structuredClone(onboardingContentFor("en").refusals);
     r.invalid.age = "A"; r.ambiguousAge.confirm = "B {age}"; r.direction.switchToLose = "C"; r.switched.gain = "D";
@@ -141,6 +141,7 @@ describe("every language's onboarding content", () => {
     expect(checkDirection("gain", 80, 70, "en", r)!.switchLabel).toBe("C");
     expect(switchedLine("gain", "en", r)).toBe("D");
     expect(switchedLine("gain", "en")).toBe(chatCopyFor("en").switched.gain);
+    expect(switchedLine("lose", "en", r)).toBe(chatCopyFor("en").switched.lose);
   });
 
   it("introduces no placeholder nothing fills", () => {
