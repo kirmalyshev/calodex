@@ -558,7 +558,10 @@ export interface FunnelAggregate {
   completed: number;
   rows: {
     place: string;
+    /** Every time the screen was shown — a person who went back and returned counts twice. */
     views: number;
+    /** Distinct runs that saw the screen at least once: what a funnel step counts. */
+    people: number;
     answers: number;
     backs: number;
     rejects: number;

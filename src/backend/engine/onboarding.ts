@@ -339,6 +339,7 @@ export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { d
     return {
       place,
       views: r?.views ?? 0,
+      people: r?.people ?? 0,
       answers: r?.answers ?? 0,
       backs: r?.backs ?? 0,
       rejects: r?.rejects ?? 0,

@@ -50,15 +50,15 @@ function median(values: number[]): number | null {
  * differs between implementations is a metric that means nothing.
  */
 export function aggregateFunnel(events: StoredEvent[]): FunnelAggregate {
-  const byPlace = new Map<string, { views: number; answers: number; backs: number; rejects: number; ms: number[] }>();
+  const byPlace = new Map<string, { views: number; people: Set<string>; answers: number; backs: number; rejects: number; ms: number[] }>();
   const sessions = new Set<string>();
   const completed = new Set<string>();
 
   for (const e of events) {
     sessions.add(e.sessionId);
     if (e.action === "complete") completed.add(e.sessionId);
-    const row = byPlace.get(e.place) ?? { views: 0, answers: 0, backs: 0, rejects: 0, ms: [] };
-    if (e.action === "view") row.views++;
+    const row = byPlace.get(e.place) ?? { views: 0, people: new Set<string>(), answers: 0, backs: 0, rejects: 0, ms: [] };
+    if (e.action === "view") { row.views++; row.people.add(e.sessionId); }
     if (e.action === "answer") {
       row.answers++;
       if (typeof e.ms === "number") row.ms.push(e.ms);
@@ -72,7 +72,7 @@ export function aggregateFunnel(events: StoredEvent[]): FunnelAggregate {
     sessions: sessions.size,
     completed: completed.size,
     rows: [...byPlace.entries()].map(([place, r]) => ({
-      place, views: r.views, answers: r.answers, backs: r.backs, rejects: r.rejects,
+      place, views: r.views, people: r.people.size, answers: r.answers, backs: r.backs, rejects: r.rejects,
       medianMs: median(r.ms),
     })),
   };

@@ -3145,14 +3145,17 @@ function contract(name: string, make: () => Promise<Store>) {
         ev(4, { action: "back" }),
         ev(5, { action: "reject", field: "goal" }),
         ev(6, { place: "summary", action: "complete" }),
+        // The same person back on the screen: a second view, not a second person.
+        ev(7, {}),
       ] as never);
       const after = await s.onboardingFunnel({ from: null, to: null });
 
-      const delta = (key: "views" | "answers" | "backs" | "rejects") =>
+      const delta = (key: "views" | "people" | "answers" | "backs" | "rejects") =>
         (after.rows.find((r) => r.place === "goal")?.[key] ?? 0)
         - (before.rows.find((r) => r.place === "goal")?.[key] ?? 0);
 
-      expect(delta("views")).toBe(1);
+      expect(delta("views")).toBe(2);
+      expect(delta("people")).toBe(1);
       expect(delta("answers")).toBe(2);
       expect(delta("backs")).toBe(1);
       expect(delta("rejects")).toBe(1);
