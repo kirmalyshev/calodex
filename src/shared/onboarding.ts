@@ -1390,10 +1390,19 @@ const isStr = (v: unknown): v is string => typeof v === "string";
  * Not the marketing set: this surface's own honest answers are "Lose weight" and "Diabetes", and
  * `weight-promise` and `disease-term` cannot tell those from a claim. The root AGENTS.md names
  * that exact problem as the reason the web gate covers `PAGE_COPY` and not the rendered page.
- * What IS decidable here is a promise the product has retired, because those are fixed strings
- * with no legitimate use left.
+ * What IS decidable here is a promise the product has retired, and the billing family: free,
+ * trial, price. Those are a fixed vocabulary — "free to try", "N days free", ONE meal on the
+ * house, and no card/trial/cancel promised away — so an admin or an experiment variant typing
+ * "Free forever" or "Three meals on me" is refused the same way "No email, no name." is. The
+ * five opt-in rules live in `claims.ts`, kept out of the default set because the notification
+ * and web copies write "free trial" and "free week" HONESTLY (ieat-app#2766).
+ *
+ * Exported because the test that sweeps the compiled tables reads the same list — two lists that
+ * must agree are two lists that eventually will not.
  */
-const ONBOARDING_CLAIM_RULES = ["retired-no-email"] as const;
+export const ONBOARDING_CLAIM_RULES = [
+  "retired-no-email", "unqualified-free", "billing-promise", "competitor", "free-meals", "price",
+] as const;
 
 /**
  * Every sentence in a revision that a user will read, keyed well enough to find it again.
@@ -1904,6 +1913,8 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   // is the third editable public surface: an admin can write anything into it and it reaches every
   // phone that fetches a revision. `retired-no-email` is why this is here — "No email, no name."
   // was Spud's third welcome bubble until issue #95, and nothing stopped an admin typing it back.
+  // The free/trial/price rules joined it for #2766 — the signup line and the first-meal offer are
+  // editable too, and "Three meals on me" or "Free forever" is the same class of typed-in claim.
   for (const v of lintCopy(claimFields(raw), ONBOARDING_CLAIM_RULES)) {
     errors.push(`${v.field} contains a ${v.pattern} claim: "${v.span}"`);
   }

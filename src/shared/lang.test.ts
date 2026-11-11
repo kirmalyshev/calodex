@@ -237,6 +237,9 @@ describe("genderedRussian — the check no English-reading reviewer could be", (
     "Ты прав — это много.", "Ты голоден? Запиши перекус.", "Ты доволен результатом?",
     "Ты подписан на пробный период.", "Ты новичок здесь.", "Ты здесь не одинок.",
     "Ты в этом не один.", "Что ел ты сегодня?", "Если это был не ты, просто не отвечай.",
+    // The vocative: `друг` here is the reader being addressed, and `пришёл` still agrees with
+    // `ты` — the `друг`-before-a-verb exemption is for the third-person subject only (#2766).
+    "Ты, друг, пришёл?", "Ты, друг, пришла?",
   ];
   const FINE = [
     // Spud, about himself. His gender is his own to have.
@@ -248,7 +251,7 @@ describe("genderedRussian — the check no English-reading reviewer could be", (
     "Хорошо — первый день начался. Ещё одно, прежде чем ты уйдёшь.",
     "Твой целевой вес больше не подходил к цели.",
     // A third person: the verb agrees with the friend, not with the reader.
-    "Друг прислал тебе ссылку?",
+    "Друг прислал тебе ссылку?", "У тебя друг пришёл.",
     // Neuter is never a person; `самая` is the superlative.
     "Готово.", "Уйдёт само, как только получится.", "Самая низкая цель для твоего роста",
     // A unit that happens to end in -л.
