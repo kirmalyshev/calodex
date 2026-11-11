@@ -24,6 +24,7 @@ import { LANGS } from "./types.ts";
 import { NOTIFICATION_COPY } from "./notifications.ts";
 import { HEALTH_SCREEN_COPY } from "./health-copy.ts";
 import { ONBOARDING_CONTENT } from "./onboarding-content.ts";
+import { ONBOARDING_CLAIM_RULES } from "./onboarding.ts";
 import { chatCopyFor } from "./onboarding-chat-copy.ts";
 import { projectionMonth } from "./projection.ts";
 import { PLAN_COPY } from "./app/plan-copy.ts";
@@ -481,7 +482,8 @@ describe("every sentence this product ships", () => {
   it("passes the onboarding gate, in all eight, under the rules that surface opts into", () => {
     // NOT the full set: "Lose weight" is a goal a user picks and "Diabetes" is a restriction they
     // declare. `claims.ts` says why the narrower list exists, and this proves the narrowing holds
-    // in every language rather than only in the one the rules were written for.
+    // in every language rather than only in the one the rules were written for. The list is the
+    // one the save gate applies — `ONBOARDING_CLAIM_RULES`, not a copy of it.
     for (const lang of LANGS) {
       const content = ONBOARDING_CONTENT[lang];
       if (!content) continue;
@@ -492,9 +494,20 @@ describe("every sentence this product ships", () => {
         for (const [k, v] of Object.entries(node)) walk(v, at === "" ? k : `${at}.${k}`);
       };
       walk(content, "");
-      expect(lintCopy(fields, ["retired-no-email"]).map((v) => `${v.field}: ${v.span}`), lang)
+      expect(lintCopy(fields, ONBOARDING_CLAIM_RULES).map((v) => `${v.field}: ${v.span}`), lang)
         .toEqual([]);
     }
+  });
+
+  it("fires the opt-in billing rules only on a surface that names them (#2766)", () => {
+    // "Start your free trial" is the notification and web refusal's own honest line — under the
+    // default set it must pass untouched, and under the onboarding list it must be refused. A rule
+    // that could fire uninvited is the one that gets the whole linter switched off.
+    const fields = { line: "Start your free trial — it is free to try." };
+    expect(lintCopy(fields)).toEqual([]);
+    const hits = lintCopy(fields, ONBOARDING_CLAIM_RULES);
+    expect(hits.map((v) => v.pattern)).toEqual(["unqualified-free"]);
+    expect(hits[0]?.span).toBe("free");
   });
 
   it("the W2 surface's own words pass the gate — the plan beats, the units word, the pace tail", () => {
