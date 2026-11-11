@@ -1642,7 +1642,7 @@ details.how p { margin-top: 8px; }
       Array.prototype.forEach.call(seg.querySelectorAll("button"), function (b) { b.classList.toggle("on", b.id === rangePreset); });
     };
     var change = function () {
-      rangePreset = null;
+      rangePreset = (!from.value && !to.value) ? "range-all" : null;
       mark();
       applyRange(dayStart(from.value), dayEnd(to.value));
       run(id);
@@ -1721,7 +1721,13 @@ details.how p { margin-top: 8px; }
     ]);
 
     var shown = numAll ? days : days.slice(0, 7);
-    $("numbers-title").textContent = echoLabel(numData.range);
+    // The days the window actually touched, which is what every number here aggregates: a "Last
+    // 24 hours" ask reads its two days, and an All time one reads the span it covered — the
+    // store's cap is visible in the earliest day, not hidden behind the word "all" (#2779).
+    $("numbers-title").textContent = m.days.length
+      ? dayLabel(m.days[0].date) + (m.days[0].date.slice(0, 4) !== m.days[m.days.length - 1].date.slice(0, 4) ? " " + m.days[0].date.slice(0, 4) : "")
+        + " → " + dayLabel(m.days[m.days.length - 1].date) + " · " + m.days.length + " days"
+      : echoLabel(m.range);
     moreButton($("numbers-more"), days.length, 7, numAll, "days");
     var body = $("metrics").querySelector("tbody");
     body.textContent = "";
@@ -1766,11 +1772,13 @@ details.how p { margin-top: 8px; }
         });
       }
       if (!e.from) { numPrior = null; renderNumbers(); return; }
-      var end = e.to ? Date.parse(e.to) : Date.now();
-      var span = end - Date.parse(e.from);
-      if (span <= 0) { numPrior = null; renderNumbers(); return; }
-      var prev = "?from=" + encodeURIComponent(new Date(Date.parse(e.from) - span).toISOString())
-        + "&to=" + encodeURIComponent(e.from);
+      // The window counted whole instance-zone days — m.days, oldest first — so the window of the
+      // same length before it ends the day BEFORE the first of them. A "to" of the echo's "from"
+      // lands inside that first day and counts it in both windows (#2779).
+      var n0 = m.days.length;
+      if (n0 === 0) { numPrior = null; renderNumbers(); return; }
+      var prev = "?from=" + encodeURIComponent(dayInstant(m.timezone, dayMinus(m.days[0].date, n0)).toISOString())
+        + "&to=" + encodeURIComponent(dayInstant(m.timezone, dayMinus(m.days[0].date, 1)).toISOString());
       return api("GET", "/admin/api/metrics" + prev).then(function (p) {
         numPrior = p;
         renderNumbers();
@@ -1787,6 +1795,23 @@ details.how p { margin-top: 8px; }
   function dayInZone(tz, at) {
     try { return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(at || new Date()); }
     catch (e) { return (at || new Date()).toISOString().slice(0, 10); }
+  }
+  // "date" minus n calendar days — the arithmetic stays in YYYY-MM-DD, so no zone touches it.
+  function dayMinus(date, n) {
+    var d = new Date(date + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().slice(0, 10);
+  }
+  // An instant that lands on "date" in zone "tz": noon UTC, corrected by what the zone says it
+  // maps to — converging in at most two steps, since zones span UTC-12 to UTC+14.
+  function dayInstant(tz, date) {
+    var t = new Date(date + "T12:00:00Z");
+    for (var i = 0; i < 3; i++) {
+      var d = dayInZone(tz, t);
+      if (d === date) return t;
+      t = new Date(t.getTime() + (d < date ? 86400000 : -86400000));
+    }
+    return t;
   }
 
   function renderPushes() {
@@ -2256,7 +2281,10 @@ details.how p { margin-top: 8px; }
           // step can hold MORE people than this one. That is not a drop, and "-5 left" reads as one.
           var g = el("div", "fp-gap" + (worst.indexOf(d) !== -1 && d > 0 ? " fp-big" : ""),
             d >= 0 ? "\u25bc " + d + " left" : "+" + (-d) + " joined here");
-          g.appendChild(el("em", "", d >= 0 ? "(" + pct1(d, s.n) + " of " + s.n + ")" : "(runs that began before this window)"));
+          // The "before this window" reason only exists when there IS a before: under All time a
+          // negative gap is a step only some runs reach, and the claim would be a lie (#2779).
+          if (d >= 0) g.appendChild(el("em", "", "(" + pct1(d, s.n) + " of " + s.n + ")"));
+          else if (f.range && f.range.from) g.appendChild(el("em", "", "(runs that began before this window)"));
           host.appendChild(g);
         }
       });
@@ -3915,7 +3943,9 @@ details.how p { margin-top: 8px; }
       range.to = td && !isNaN(td.getTime()) ? td : null;
       rangeSet = true;
       if (rangeQS() !== before) rangePreset = null;   // a link names a window, not a button
-      delete state[id];
+      // No delete state[id]: show() already re-reads when the window it last loaded under differs,
+      // and an unconditional one makes every Back/Forward re-fetch — on Accounts that throws the
+      // load-more pages away (#2779).
     }
     // A nav into the onboarding view asks for the LIVE copy — the arm editor only opens from its
     // own "Edit copy" button. variantEdit surviving a nav would point the next Save at the arm.
