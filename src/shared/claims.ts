@@ -403,7 +403,7 @@ const OPT_IN_RULES: readonly Rule[] = [
   // not a price. "Free forever", "free trial" and "meals for free" all read the same word bare.
   {
     name: "unqualified-free",
-    re: /(?<!(?:a\s+week|\d+\s+days?)\s)\bfree\b(?!\s+to\s+try)(?!\s+text\b)/gi,
+    re: /(?<!(?:a\s+week|\d+\s+days?)\s+)\bfree\b(?!\s+to\s+try)(?!\s+text\b)/gi,
   },
   // The paywall retired these by existing: a trial takes a card, and there is then something to
   // cancel. The never-say list `onboarding.test.ts` holds the compiled copy to, applied at save.
@@ -426,10 +426,11 @@ const OPT_IN_RULES: readonly Rule[] = [
   },
   // No price is quoted anywhere — the store's price is per-territory and lives in App Store
   // Connect, so a number against a currency in editable copy is a claim nobody can keep true.
+  // The symbol rides both sides of the figure: "$4.99" AND the continental "9,99 €".
   // `(?!\p{L})` and not `\b` at the end: a Cyrillic `рублей` has no ASCII word boundary after it.
   {
     name: "price",
-    re: /[$€£¥₹]\s*\d|\b\d+(?:[.,]\d{1,2})?\s*(?:USD|EUR|GBP|RUB|dollars?|euros?|pounds?|рубл[а-яё]*)(?!\p{L})|\b(?:USD|EUR|GBP|RUB)\s*\d/giu,
+    re: /[$€£¥₹]\s*\d|\d+(?:[.,]\d{1,2})?\s*[$€£¥₹]|\b\d+(?:[.,]\d{1,2})?\s*(?:USD|EUR|GBP|RUB|dollars?|euros?|pounds?|рубл[а-яё]*)(?!\p{L})|\b(?:USD|EUR|GBP|RUB)\s*\d/giu,
   },
 ];
 

@@ -415,6 +415,9 @@ describe("the billing claims cannot be typed back in (ieat-app#2766)", () => {
       .join("\n")).toContain("competitor");
     expect(bad((c) => { c.signup.line = "Only $4.99 a month."; return c; })
       .join("\n")).toContain("price");
+    // The continental shape too — the figure first, the symbol after.
+    expect(bad((c) => { c.signup.line = "Nur 9,99 € im Monat."; return c; })
+      .join("\n")).toContain("price");
   });
 
   it("reads an experiment variant's lines, not only the block's own", () => {
