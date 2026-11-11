@@ -3385,12 +3385,15 @@ function contract(name: string, make: () => Promise<Store>) {
         for (const u of [user, staff]) {
           await s.putOnboardingAssignment(u, e.id, 41);
           await s.recordOnboardingEvents(u, [{
-            id: crypto.randomUUID(), sessionId: "s-" + u.slice(0, 4), place: "goal",
+            id: crypto.randomUUID(), sessionId: "s-" + u, place: "goal",
             action: "complete", contentVersion: 41, at: new Date().toISOString(),
           }] as never);
         }
         const rows = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
         expect(rows.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 1, sessions: 1, completed: 1 });
+        await s.setStaff(staff, false);
+        const back = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
+        expect(back.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 2, sessions: 2, completed: 2 });
       });
 
       it("moves assignments on merge, keeping the account's own row on a collision", async () => {
@@ -4789,14 +4792,29 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
         id: `${sid}-${who}-${n}`, sessionId: `${sid}-${who}`, place: "goal",
         action: "view", contentVersion: 1, at: new Date().toISOString(),
       }] as never);
+      const done = (who: string) => s.recordOnboardingEvents(who, [{
+        id: `${sid}-${who}-done`, sessionId: `${sid}-${who}`, place: "summary",
+        action: "complete", contentVersion: 1, at: new Date().toISOString(),
+      }] as never);
+      const baseDone = (await s.onboardingFunnel(all)).completed;
       await ev(staff, 1);
+      await done(staff);
       const f = await s.onboardingFunnel(all);
       expect(f.sessions).toBe(base.sessions);
+      expect(f.completed).toBe(baseDone);
       expect((await goal())?.people ?? 0).toBe(base.people);
       expect((await goal())?.views ?? 0).toBe(base.views);
       await ev(user, 1);
+      await done(user);
       expect((await s.onboardingFunnel(all)).sessions).toBe(base.sessions + 1);
       expect((await goal())?.people).toBe(base.people + 1);
+      expect((await s.onboardingFunnel(all)).completed).toBe(baseDone + 1);
+      // An id staff by config alone (`campaignStaffIds`), never flagged, is left out too.
+      expect((await s.onboardingFunnel(all, [user])).sessions).toBe(base.sessions);
+      // The flag is read at query time: un-flagging brings the account's earlier run back.
+      await s.setStaff(staff, false);
+      expect((await s.onboardingFunnel(all)).sessions).toBe(base.sessions + 2);
+      expect((await s.onboardingFunnel(all)).completed).toBe(baseDone + 2);
     });
 
     it("rows the push stats by send time, the day dated in the instance zone", async () => {

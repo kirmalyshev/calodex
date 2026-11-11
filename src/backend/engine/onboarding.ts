@@ -319,7 +319,7 @@ export async function adminMetrics(
 /** The funnel, in the order the screens are actually shown. */
 export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { days?: number } | number): Promise<OnboardingFunnel> {
   const ask = adminRangeOf(range, 30, 365);
-  const agg = await deps.store.onboardingFunnel(ask);
+  const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds);
   // THE NEWEST REVISION IN ANY LANGUAGE, because the counter is one counter (`store.putOnboardingContent`) and
   // this row names which words the numbers below were collected against. Reading English's alone
   // would report a stale number on a host whose last edit was German.
@@ -401,7 +401,7 @@ export async function onboardingExperiments(
   const out: OnboardingExperimentView[] = [];
   for (const experiment of list) {
     const control = experiment.status === "draft" ? usableContentFor(experiment.lang, stored) : null;
-    const funnel = await deps.store.onboardingExperimentFunnel(experiment.id, ask);
+    const funnel = await deps.store.onboardingExperimentFunnel(experiment.id, ask, deps.config.campaignStaffIds);
     const arms = experiment.variants.map((variant) => {
       if (control !== null) {
         const filled = usableContent(variant.content, control);

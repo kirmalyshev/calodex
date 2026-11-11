@@ -69,6 +69,8 @@ const HEALTH_UPSERT = `
 
 /** Shape check for ids that get spliced into an array literal; every id here is one we issued. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** A uuid[] literal, built by hand like `getMeals` (Bun.sql sends a JS array as a bare comma list). Only UUIDs get in. */
+const uuidArray = (ids: string[]) => `{${ids.filter((id) => UUID.test(id)).join(",")}}`;
 
 /**
  * EVERY TABLE WHOSE ROWS BELONG TO ONE ACCOUNT, and the column that says which.
@@ -3749,8 +3751,9 @@ export async function postgresStore(
       return rows.map(toOnboardingAssignment);
     },
 
-    async onboardingExperimentFunnel(experimentId, range) {
+    async onboardingExperimentFunnel(experimentId, range, staffIds = []) {
       const { from: lo, to: hi } = range;
+      const configStaff = uuidArray(staffIds);
       // By ASSIGNMENT, not by the version an event carries — intention to treat. A run whose
       // events name a different revision is "fell back", its own number beside the rate.
       // And only the events inside the experiment's own window count: a run from before the
@@ -3777,6 +3780,7 @@ export async function postgresStore(
           and (${hi === null} or e.at <= ${hi})
         where a.experiment_id = ${experimentId}
           and not exists (select 1 from users u where u.id = a.user_id and u.staff)
+          and a.user_id <> all(${configStaff}::uuid[])
           and (${lo === null} or a.assigned_at >= ${lo})
           and (${hi === null} or a.assigned_at <= ${hi})
         group by a.variant_id`;
@@ -3922,16 +3926,18 @@ export async function postgresStore(
       return Number(r?.n ?? 0);
     },
 
-    async onboardingFunnel(range): Promise<FunnelAggregate> {
+    async onboardingFunnel(range, staffIds = []): Promise<FunnelAggregate> {
       const { from: lo, to: hi } = range;
-      // Staff accounts (admin-flagged: the principal and testers) are not users; their runs stay out (#2783).
+      const configStaff = uuidArray(staffIds);
+      // Staff accounts (admin-flagged) are not users; their runs stay out (#2783).
 
       const totals = await sql`
         select count(distinct session_id)::int as sessions,
                count(distinct session_id) filter (where action = 'complete')::int as completed
         from onboarding_events
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
-          and not exists (select 1 from users u where u.id = onboarding_events.user_id and u.staff)`;
+          and not exists (select 1 from users u where u.id = onboarding_events.user_id and u.staff)
+          and onboarding_events.user_id <> all(${configStaff}::uuid[])`;
 
       // `percentile_cont` over the answer rows only — a median that included view events would be
       // measuring nothing, since a view carries no elapsed time.
@@ -3948,6 +3954,7 @@ export async function postgresStore(
         from onboarding_events
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
           and not exists (select 1 from users u where u.id = onboarding_events.user_id and u.staff)
+          and onboarding_events.user_id <> all(${configStaff}::uuid[])
         group by place`;
 
       return {

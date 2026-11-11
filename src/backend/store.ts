@@ -1558,8 +1558,9 @@ export interface Store {
    * that double-counts a bad connection reports its best numbers for its worst users.
    */
   recordOnboardingEvents(userId: string, events: OnboardingEvent[]): Promise<number>;
-  /** The funnel inside `range` (#2776), aggregated. Reads every user — this is the admin's view. */
-  onboardingFunnel(range: AdminRange): Promise<FunnelAggregate>;
+  /** The funnel inside `range` (#2776), aggregated. Reads every user except staff-flagged ones (#2783) — this is the admin's view.
+   * `staffIds` are accounts staff by config (`campaignStaffIds`), left out beside the flag. */
+  onboardingFunnel(range: AdminRange, staffIds?: string[]): Promise<FunnelAggregate>;
   /**
    * How many accounts finished onboarding in the last `hours` — the loader's "43 people are building
    * their plan with eait" (ieat-app#2050). A count over every user and nothing else: no id, no
@@ -1612,8 +1613,9 @@ export interface Store {
    * fell-back-to-compiled-copy count, read as its own number rather than hidden in a rate.
    * `range` (#2776) NARROWS inside the experiment's own started→stopped window; it never widens
    * it — an assignment or an event outside the range is out, whatever the window's own bounds say.
+   * A staff-flagged account's assignment is left out (#2783), so `assigned` is not every assignment row.
    */
-  onboardingExperimentFunnel(experimentId: string, range: AdminRange): Promise<OnboardingExperimentFunnelRow[]>;
+  onboardingExperimentFunnel(experimentId: string, range: AdminRange, staffIds?: string[]): Promise<OnboardingExperimentFunnelRow[]>;
   /**
    * Take the next revision number off the shared counter WITHOUT installing copy — a variant's
    * version comes off the same counter the admin saves do, so a content_version always names ONE
@@ -1622,7 +1624,7 @@ export interface Store {
    */
   bumpOnboardingContentVersion(floorVersion: number): Promise<number>;
   /**
-   * The numbers past the funnel (#377), over a window. Reads every user, like `onboardingFunnel`.
+   * The numbers past the funnel (#377), over a window. Reads every user, staff included (unlike `onboardingFunnel`, #2783).
    *
    * THE SECOND UNSCOPED READ IN THIS PORT, and named like the first (`adminListUsers`) for the same
    * reason: an aggregate is still a query over other people's rows, so the widening is visible in

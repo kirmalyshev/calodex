@@ -1743,11 +1743,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return [...users.values()].filter((u) => u.onboarded_at && Date.parse(u.onboarded_at) >= since).length;
     },
 
-    async onboardingFunnel(range) {
+    async onboardingFunnel(range, staffIds = []) {
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
       return aggregateFunnel([...onboardingEvents.values()]
-        .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId)));
+        .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)));
     },
 
     async listOnboardingExperiments() {
@@ -1828,14 +1828,14 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .map(clone);
     },
 
-    async onboardingExperimentFunnel(experimentId, range) {
+    async onboardingExperimentFunnel(experimentId, range, staffIds = []) {
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
       const events = [...onboardingEvents.values()];
       const experiment = onboardingExperiments.get(experimentId);
       const out = new Map<number, OnboardingExperimentFunnelRow>();
       for (const a of onboardingAssignments.values()) {
-        if (a.experiment_id !== experimentId || staffSet.has(a.user_id)) continue;
+        if (a.experiment_id !== experimentId || staffSet.has(a.user_id) || staffIds.includes(a.user_id)) continue;
         // `range` narrows inside the experiment's own window, never widens it (#2776): an
         // assignment outside it is out, and so are that account's events outside it.
         const assignedAt = Date.parse(a.assigned_at);
