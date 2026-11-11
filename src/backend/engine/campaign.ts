@@ -27,8 +27,10 @@ import {
   pushKeyGaps, validateCampaignInput,
   type CampaignInput, type CampaignStatus, type CampaignTemplateKey, type Lang, type PushKind, type PushTemplateRow, type SegmentFacts,
 } from "@eait/shared";
-import type { CampaignReport, CampaignRow } from "../store.ts";
+import type { AdminRange, CampaignReport, CampaignRow } from "../store.ts";
+import type { AdminWindowEcho } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
+import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 import { readReferralBonus } from "./entitlement.ts";
 import { CATCH_UP_MS, claimSend, instantOf, isStaffAccount, sendLogged, sendRoom, zoneOf } from "./notify.ts";
 import { campaignWords } from "./push-templates.ts";
@@ -134,9 +136,14 @@ export interface CampaignOverview {
   killed: boolean;
   copy: CampaignCopy[];
   campaigns: (CampaignRow & { report: CampaignReport; effect: ReturnType<typeof effectOf> })[];
+  /** The window the reports were read over (ieat-app#2776). */
+  range: AdminWindowEcho;
 }
 
-export async function campaignOverview(deps: EngineDeps): Promise<CampaignOverview> {
+export async function campaignOverview(
+  deps: EngineDeps, range: AdminRange & { days?: number } | number = { from: null, to: null },
+): Promise<CampaignOverview> {
+  const ask = adminRangeOf(range, 30);
   const rows = await deps.store.listCampaigns();
   const templates = (await deps.store.listPushTemplates()).filter((r) => isCampaignTemplateKey(r.key));
   // Keys a campaign names but nobody has written yet are listed too, with every language missing.
@@ -150,9 +157,10 @@ export async function campaignOverview(deps: EngineDeps): Promise<CampaignOvervi
       return { key, rows: own, gaps: pushKeyGaps(own, key, needed) };
     }),
     campaigns: await Promise.all(rows.map(async (c) => {
-      const report = await deps.store.campaignReport(c.id);
+      const report = await deps.store.campaignReport(c.id, ask);
       return { ...c, report, effect: effectOf(report.groups) };
     })),
+    range: adminWindowEcho(ask),
   };
 }
 

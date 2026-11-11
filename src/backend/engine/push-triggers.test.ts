@@ -231,6 +231,6 @@ describe("admin test push for a staff account", () => {
     const userId = await account();
     await sendTestPush(staffDeps(userId), userId);
     expect(await lastLog(userId)).toMatchObject({ kind: "campaign", ref: "admin-test", variant: "admin-test" });
-    expect(await store.pushOpenStats(2, ZONE)).toEqual([]);
+    expect(await store.pushOpenStats({ from: null, to: null }, ZONE)).toEqual([]);
   });
 });

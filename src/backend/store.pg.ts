@@ -20,7 +20,7 @@ import type {
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -2654,7 +2654,7 @@ export async function postgresStore(
       }));
     },
 
-    async adminListUsers({ q, limit, cursor, today }) {
+    async adminListUsers({ q, limit, cursor, today, from, to }) {
       const bounded = Math.min(Math.max(1, Math.trunc(limit)), ADMIN_USER_PAGE_MAX);
 
       // ── THE FILTER, AND WHY IT IS TWO EXACT MATCHES ────────────────────────────────────────
@@ -2700,6 +2700,8 @@ export async function postgresStore(
                 or (${isPrefix} and u.id::text like ${needle.toLowerCase() + "%"})
                 or exists (select 1 from identities i
                             where i.user_id = u.id and lower(i.email) = ${needle.toLowerCase()}))
+           and (${from == null} or u.created_at >= ${from ?? null})
+           and (${to == null} or u.created_at <= ${to ?? null})
            and (${cursor === undefined}
                 or (u.created_at, u.id::text) < (${at}::timestamptz, ${afterId}))
          order by u.created_at desc, u.id desc
@@ -2749,11 +2751,37 @@ export async function postgresStore(
       return rows.length > 0 ? String(rows[0].subject) : null;
     },
 
-    async adminMetrics({ days, today, timezone }) {
-      const window = Math.min(Math.max(1, Math.trunc(days)), ADMIN_METRICS_MAX_DAYS);
+    async adminMetrics({ days, from: fromAt, to: toAt, today, timezone }) {
+      // EVERY column this reports on is a day, so the window resolves to instance-zone days first:
+      // `days` is the old calendar ask — N days ending today — while `from`/`to` (#2776) are the
+      // range control's instants, each landing on the day it belongs to in the instance's zone.
+      // `to` covers its WHOLE day: the instant 00:00:00.000 of a day is still inside it.
+      let from: string;
+      let toDay: string;
+      if (fromAt !== undefined || toAt !== undefined) {
+        toDay = toAt == null ? today : localDate(timezone, toAt);
+        const fromDay = fromAt == null ? dateMinus(toDay, ADMIN_METRICS_MAX_DAYS - 1)
+          : localDate(timezone, fromAt);
+        // A range whose bounds meet no day — From after To — is an empty ask, not an error.
+        if (fromDay > toDay) {
+          return {
+            days: [], d1: { eligible: 0, returned: 0 }, d7: { eligible: 0, returned: 0 },
+            latency: { n: 0, queue: { p50: null, p95: null }, firstItem: { p50: null, p95: null }, total: { p50: null, p95: null } },
+          };
+        }
+        // Capped like `days` is: the newest days of what was asked for, never more than the bound.
+        from = fromDay < dateMinus(toDay, ADMIN_METRICS_MAX_DAYS - 1)
+          ? dateMinus(toDay, ADMIN_METRICS_MAX_DAYS - 1) : fromDay;
+      } else {
+        const window = Math.min(Math.max(1, Math.trunc(days ?? 30)), ADMIN_METRICS_MAX_DAYS);
+        from = dateMinus(today, window - 1);
+        toDay = today;
+      }
       const dates: string[] = [];
-      for (let i = window - 1; i >= 0; i--) dates.push(dateMinus(today, i));
-      const from = dates[0]!;
+      for (let d = from; d <= toDay; d = dateMinus(d, -1)) dates.push(d);
+      // The retention cohort still asks "had its nth day BY TODAY" — a window that ends in the
+      // past counts returns against the day the window ended on, not against now.
+      const refDay = toDay < today ? toDay : today;
 
       // `at time zone` turns the instant into the INSTANCE's calendar day, which is the calendar
       // `analyses.date` is already written on. Counting signups by their UTC date and analyses by
@@ -2769,16 +2797,18 @@ export async function postgresStore(
         sql`select (created_at at time zone ${timezone})::date::text as d, count(*)::int as n
               from users
              where (created_at at time zone ${timezone})::date >= ${from}::date
+               and (created_at at time zone ${timezone})::date <= ${toDay}::date
              group by 1`,
         sql`select (onboarded_at at time zone ${timezone})::date::text as d, count(*)::int as n
               from users
              where onboarded_at is not null
                and (onboarded_at at time zone ${timezone})::date >= ${from}::date
+               and (onboarded_at at time zone ${timezone})::date <= ${toDay}::date
              group by 1`,
         // Both scopes: a typed meal costs money and the global cap counts it.
         sql`select date as d, count(*)::int as n, sum(cost_usd) as cost,
                    count(*) filter (where cost_usd is null or unpriced_calls > 0)::int as unpriced
-              from analyses where date >= ${from} and date <= ${today}
+              from analyses where date >= ${from} and date <= ${toDay}
              group by 1`,
       ]);
 
@@ -2807,7 +2837,7 @@ export async function postgresStore(
                  ))::int as returned
             from users u
            where (u.created_at at time zone ${timezone})::date >= ${from}::date
-             and (u.created_at at time zone ${timezone})::date <= (${today}::date - ${n})`;
+             and (u.created_at at time zone ${timezone})::date <= (${refDay}::date - ${n})`;
         return { eligible: num(rows[0]?.eligible), returned: num(rows[0]?.returned) };
       };
 
@@ -2824,7 +2854,7 @@ export async function postgresStore(
                percentile_disc(0.95) within group (order by ms_first_item)::double precision as f95,
                percentile_disc(0.5) within group (order by ms_total)::double precision as t50,
                percentile_disc(0.95) within group (order by ms_total)::double precision as t95
-          from analyses where date >= ${from} and date <= ${today}`;
+          from analyses where date >= ${from} and date <= ${toDay}`;
       const t = timing[0]!;
       const leg = (p50: unknown, p95: unknown) =>
         ({ p50: p50 === null ? null : num(p50), p95: p95 === null ? null : num(p95) });
@@ -3266,32 +3296,37 @@ export async function postgresStore(
       await sql`insert into referral_refusals (reason, at) values (${reason}, ${new Date(now())})`;
     },
 
-    async referralStats(days, timezone) {
-      const since = new Date(now() - days * 24 * 60 * 60 * 1000);
+    async referralStats(range, timezone) {
+      const { from: lo, to: hi } = range;
       const perDay = await sql`
         select d.day, sum(d.shared)::int as shared, sum(d.opened)::int as opened,
                sum(d.joined)::int as joined, sum(d.paid)::int as paid
         from (
           select (at at time zone ${timezone})::date::text as day, (kind = 'share')::int as shared, (kind = 'open')::int as opened, 0 as joined, 0 as paid
-            from referral_events where at >= ${since}
+            from referral_events where (${lo === null} or at >= ${lo}) and (${hi === null} or at <= ${hi})
           union all
-          select (referred_at at time zone ${timezone})::date::text, 0, 0, 1, 0 from users where referred_at >= ${since}
+          select (referred_at at time zone ${timezone})::date::text, 0, 0, 1, 0 from users
+           where referred_at is not null and (${lo === null} or referred_at >= ${lo}) and (${hi === null} or referred_at <= ${hi})
           union all
-          select (event_at at time zone ${timezone})::date::text, 0, 0, 0, 1 from referral_grants where event_at >= ${since} and revoked_at is null
+          select (event_at at time zone ${timezone})::date::text, 0, 0, 0, 1 from referral_grants
+           where (${lo === null} or event_at >= ${lo}) and (${hi === null} or event_at <= ${hi}) and revoked_at is null
         ) d group by d.day order by d.day desc`;
       const via = await sql`
         select via, count(*)::int as shares from referral_events
-        where kind = 'share' and at >= ${since} group by via order by 2 desc, 1`;
+        where kind = 'share' and (${lo === null} or at >= ${lo}) and (${hi === null} or at <= ${hi}) group by via order by 2 desc, 1`;
       const refusals = await sql`
-        select reason, count(*)::int as n from referral_refusals where at >= ${since} group by reason`;
+        select reason, count(*)::int as n from referral_refusals
+        where (${lo === null} or at >= ${lo}) and (${hi === null} or at <= ${hi}) group by reason`;
       const totals = await sql`
-        with sharers as (select distinct referrer_id from referral_events where kind = 'share' and at >= ${since})
+        with sharers as (select distinct referrer_id from referral_events where kind = 'share' and (${lo === null} or at >= ${lo}) and (${hi === null} or at <= ${hi}))
         select (select count(*) from sharers)::int as sharers,
                (select count(*) from sharers s where exists (
-                  select 1 from users f where f.referred_by = s.referrer_id and f.referred_at >= ${since}))::int as sharers_joined,
-               (select count(*) from referral_grants where event_at >= ${since} and revoked_at is null and days < 14)::int as monthly,
-               (select count(*) from referral_grants where event_at >= ${since} and revoked_at is null and days >= 14)::int as yearly,
-               (select coalesce(sum(days), 0) from referral_grants where event_at >= ${since} and revoked_at is null)::int as granted`;
+                  select 1 from users f where f.referred_by = s.referrer_id
+                    and f.referred_at is not null
+                    and (${lo === null} or f.referred_at >= ${lo}) and (${hi === null} or f.referred_at <= ${hi})))::int as sharers_joined,
+               (select count(*) from referral_grants where (${lo === null} or event_at >= ${lo}) and (${hi === null} or event_at <= ${hi}) and revoked_at is null and days < 14)::int as monthly,
+               (select count(*) from referral_grants where (${lo === null} or event_at >= ${lo}) and (${hi === null} or event_at <= ${hi}) and revoked_at is null and days >= 14)::int as yearly,
+               (select coalesce(sum(days), 0) from referral_grants where (${lo === null} or event_at >= ${lo}) and (${hi === null} or event_at <= ${hi}) and revoked_at is null)::int as granted`;
       const t = totals[0] as Record<string, number>;
       const by = Object.fromEntries((refusals as { reason: string; n: number }[]).map((r) => [r.reason, r.n]));
       return {
@@ -3658,7 +3693,7 @@ export async function postgresStore(
       try {
         const rows = await sql`
           update onboarding_experiments e
-          set status = 'running', started_at = now()
+          set status = 'running', started_at = ${new Date(now())}
           where e.id = ${id} and e.status = 'draft'
             and not exists (
               select 1 from onboarding_experiments o
@@ -3680,7 +3715,7 @@ export async function postgresStore(
     async stopOnboardingExperiment(id) {
       const rows = await sql`
         update onboarding_experiments
-        set status = 'stopped', stopped_at = now()
+        set status = 'stopped', stopped_at = ${new Date(now())}
         where id = ${id} and status = 'running'
         returning id`;
       return rows.length > 0;
@@ -3699,8 +3734,8 @@ export async function postgresStore(
       // returns the row already there, so two concurrent first requests can never split one user
       // across two variants. The update-then-return shape keeps the answer to one statement.
       const rows = await sql`
-        insert into onboarding_assignments (user_id, experiment_id, variant_id)
-        values (${userId}, ${experimentId}, ${variantId})
+        insert into onboarding_assignments (user_id, experiment_id, variant_id, assigned_at)
+        values (${userId}, ${experimentId}, ${variantId}, ${new Date(now())})
         on conflict (user_id, experiment_id) do update
           set variant_id = onboarding_assignments.variant_id
         returning user_id, experiment_id, variant_id, assigned_at`;
@@ -3714,12 +3749,15 @@ export async function postgresStore(
       return rows.map(toOnboardingAssignment);
     },
 
-    async onboardingExperimentFunnel(experimentId) {
+    async onboardingExperimentFunnel(experimentId, range) {
+      const { from: lo, to: hi } = range;
       // By ASSIGNMENT, not by the version an event carries — intention to treat. A run whose
       // events name a different revision is "fell back", its own number beside the rate.
       // And only the events inside the experiment's own window count: a run from before the
       // assignment — or, for a stopped experiment, after the stop — is the same user's history,
       // not this arm's result.
+      // `range` NARROWS inside that window, never widens it (#2776): the assignment AND its
+      // events must each land in it, so the arm's numbers stay the window it ran in.
       const rows = await sql`
         select a.variant_id,
                count(distinct a.user_id)                                         as assigned,
@@ -3735,7 +3773,11 @@ export async function postgresStore(
         left join onboarding_events e on e.user_id = a.user_id
           and e.at >= a.assigned_at
           and (x.stopped_at is null or e.at <= x.stopped_at)
+          and (${lo === null} or e.at >= ${lo})
+          and (${hi === null} or e.at <= ${hi})
         where a.experiment_id = ${experimentId}
+          and (${lo === null} or a.assigned_at >= ${lo})
+          and (${hi === null} or a.assigned_at <= ${hi})
         group by a.variant_id`;
       return rows.map((r: Record<string, unknown>) => ({
         variant_id: num(r.variant_id), assigned: num(r.assigned), sessions: num(r.sessions),
@@ -3863,9 +3905,9 @@ export async function postgresStore(
       for (const e of events) {
         const rows = await sql`
           insert into onboarding_events
-            (id, user_id, session_id, place, action, content_version, ms, field, value, at)
+            (id, user_id, session_id, place, action, content_version, ms, field, value, at, received_at)
           values (${e.id}, ${userId}, ${e.sessionId}, ${e.place}, ${e.action}, ${e.contentVersion},
-                  ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at})
+                  ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at}, ${new Date(now())})
           on conflict (id) do nothing
           returning id`;
         if (rows.length > 0) added++;
@@ -3879,15 +3921,14 @@ export async function postgresStore(
       return Number(r?.n ?? 0);
     },
 
-    async onboardingFunnel(days): Promise<FunnelAggregate> {
-      // `days` is an integer chosen by the engine, never a raw request value, and it is bound as a
-      // parameter regardless.
-      const since = new Date(now() - days * 24 * 60 * 60 * 1000).toISOString();
+    async onboardingFunnel(range): Promise<FunnelAggregate> {
+      const { from: lo, to: hi } = range;
 
       const totals = await sql`
         select count(distinct session_id)::int as sessions,
                count(distinct session_id) filter (where action = 'complete')::int as completed
-        from onboarding_events where received_at >= ${since}`;
+        from onboarding_events
+        where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})`;
 
       // `percentile_cont` over the answer rows only — a median that included view events would be
       // measuring nothing, since a view carries no elapsed time.
@@ -3901,7 +3942,7 @@ export async function postgresStore(
                  order by ms
                ) filter (where action = 'answer' and ms is not null) as median_ms
         from onboarding_events
-        where received_at >= ${since}
+        where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
         group by place`;
 
       return {
@@ -4425,8 +4466,11 @@ export async function postgresStore(
     },
 
     async createSend(userId, r) {
-      await sql`insert into send_log (id, user_id, kind, ref, template_key, lang, variant, token, state)
-        values (${r.id}, ${userId}, ${r.kind}, ${r.ref}, ${r.templateKey}, ${r.lang}, ${r.variant}, ${r.token}, ${r.state})`;
+      // `created_at` from the store's clock rather than the column default — the same reason
+      // `users.created_at` takes one: a test that can move time forward cannot move `default now()`,
+      // and the admin's push stats are filtered on this column.
+      await sql`insert into send_log (id, user_id, kind, ref, template_key, lang, variant, token, state, created_at)
+        values (${r.id}, ${userId}, ${r.kind}, ${r.ref}, ${r.templateKey}, ${r.lang}, ${r.variant}, ${r.token}, ${r.state}, ${new Date(now())})`;
     },
 
     async settleSend(userId, id, patch) {
@@ -4460,8 +4504,8 @@ export async function postgresStore(
       return (rows as unknown[]).length > 0;
     },
 
-    async pushOpenStats(days, timezone) {
-      const since = new Date(now() - days * 24 * 60 * 60 * 1000).toISOString();
+    async pushOpenStats(range, timezone) {
+      const { from: lo, to: hi } = range;
       // `at` is the send's instant to the millisecond, which is all the JS side can name: a meal
       // stamped at exactly the send's own `createdAt` must land inside [at, at + 24 h) however many
       // microseconds Postgres kept. `reached` leaves out what no phone ever got (dead, refused,
@@ -4470,7 +4514,9 @@ export async function postgresStore(
         with s as (
           select *, date_trunc('milliseconds', created_at) as at,
                  state not in ('dead', 'refused', 'dry') as reached
-          from send_log where created_at >= ${since} and state <> 'would_have_sent' and ref is distinct from 'admin-test'
+          from send_log
+          where (${lo === null} or created_at >= ${lo}) and (${hi === null} or created_at <= ${hi})
+            and state <> 'would_have_sent' and ref is distinct from 'admin-test'
         )
         select (s.created_at at time zone ${timezone})::date::text as day, s.kind, s.template_key,
                count(*)::int as sent,
@@ -4552,7 +4598,8 @@ export async function postgresStore(
       return (rows as unknown[]).length > 0;
     },
 
-    async campaignReport(campaignId) {
+    async campaignReport(campaignId, range) {
+      const { from: lo, to: hi } = range;
       const totals = await sql`
         select
           count(*) filter (where s.variant is distinct from 'test' and s.state not in ('dry','would_have_sent'))::int as sent,
@@ -4563,7 +4610,8 @@ export async function postgresStore(
           count(*) filter (where s.variant = 'test')::int as test,
           count(*) filter (where s.variant is distinct from 'test' and s.state = 'would_have_sent')::int as held
         from send_log s left join push_open o on o.user_id = s.user_id and o.send_id = s.id
-        where s.kind = 'campaign' and s.ref = ${campaignId}`;
+        where s.kind = 'campaign' and s.ref = ${campaignId}
+          and (${lo === null} or s.created_at >= ${lo}) and (${hi === null} or s.created_at <= ${hi})`;
       // By ACCOUNT, because the comparison is of people, and INTENT TO TREAT for conversion: a meal after
       // the send counts whatever became of the delivery (the holdout has no dead rows, so filtering
       // them out would lower only the treated rate). Opened keeps its delivery filter; a held-out
@@ -4574,6 +4622,7 @@ export async function postgresStore(
                  case when state = 'would_have_sent' then 'holdout' else coalesce(variant, 'default') end as grp
           from send_log
           where kind = 'campaign' and ref = ${campaignId} and variant is distinct from 'test' and state <> 'dry'
+            and (${lo === null} or created_at >= ${lo}) and (${hi === null} or created_at <= ${hi})
         )
         select grp,
                count(distinct user_id)::int as users,

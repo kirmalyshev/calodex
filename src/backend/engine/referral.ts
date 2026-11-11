@@ -6,9 +6,10 @@
 // first paid period, because a sign-up is free to farm and a payment is not. Both weeks land in
 // `users.bonus_until`, the third grant `entitlementLive` counts.
 
-import { normalizeReferralCode, type ProfileResponse, type ReferralView } from "@eait/shared";
+import { normalizeReferralCode, type AdminWindowEcho, type ProfileResponse, type ReferralView } from "@eait/shared";
 import type { Config } from "../config.ts";
-import type { ReferralStats } from "../store.ts";
+import type { AdminRange, ReferralStats } from "../store.ts";
+import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 import type { EngineDeps } from "./deps.ts";
 import { profileView } from "./profile.ts";
 import { readReferralBonus } from "./entitlement.ts";
@@ -94,17 +95,15 @@ export async function openInvite(deps: EngineDeps, input: string, userAgent: str
   if (code !== null && !isLinkPreview(userAgent)) await deps.store.recordReferralOpen(code);
 }
 
-/** The admin's window, in days: 7, 30 and 90 are what the header offers; anything else is clamped. */
-const ADMIN_MAX_DAYS = 90;
-
 export interface ReferralAdminView extends ReferralStats {
-  window: number;
+  /** The window this was read over (ieat-app#2776). */
+  range: AdminWindowEcho;
   timezone: string;
 }
 
-/** The admin's Referrals view (#899): counts over the last `days` days, in this server's zone. */
-export async function referralAdminView(deps: EngineDeps, days: number): Promise<ReferralAdminView> {
-  const window = Number.isFinite(days) ? Math.min(ADMIN_MAX_DAYS, Math.max(1, Math.floor(days))) : 7;
+/** The admin's Referrals view (#899): counts inside `range`, in this server's zone. */
+export async function referralAdminView(deps: EngineDeps, range: AdminRange & { days?: number } | number): Promise<ReferralAdminView> {
+  const ask = adminRangeOf(range, 7, 90);
   const timezone = deps.config.timezone;
-  return { window, timezone, ...await deps.store.referralStats(window, timezone) };
+  return { range: adminWindowEcho(ask), timezone, ...await deps.store.referralStats(ask, timezone) };
 }

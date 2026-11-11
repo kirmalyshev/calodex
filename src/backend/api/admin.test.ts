@@ -90,7 +90,7 @@ describe("experiments (ieat-app#2669)", () => {
   beforeEach(async () => { await mountWithAdmin(); });
 
   it("lists nothing at first, and drafts are born with the control cloned", async () => {
-    expect(await (await admin("GET", "/admin/api/experiments")).json()).toEqual({ experiments: [] });
+    expect(await (await admin("GET", "/admin/api/experiments")).json()).toMatchObject({ experiments: [] });
     const created = await admin("POST", "/admin/api/experiments", { lang: "de" });
     expect(created.status).toBe(200);
     const { experiment } = await created.json() as { experiment: { lang: string; status: string; variants: { control?: boolean }[] } };
@@ -1223,13 +1223,19 @@ describe("the admin's push opens view (ieat-app#1759)", () => {
     await store.recordPushOpen(userId, sendId, "tap");
     const res = await admin("GET", "/admin/api/push/stats?days=3");
     expect(res.status).toBe(200);
-    const view = await res.json() as { days: number; timezone: string; rows: Record<string, unknown>[] };
-    expect(view.days).toBe(3);
+    const view = await res.json() as { range: { days: number | null }; timezone: string; rows: Record<string, unknown>[] };
+    expect(view.range.days).toBe(3);
     expect(view.rows.find((r) => r.templateKey === "view-t")).toMatchObject({
       kind: "campaign", sent: 1, accepted: 1, dead: 0, opened: 1, converted: 0,
     });
     expect(JSON.stringify(view)).not.toContain(userId);
     expect(JSON.stringify(view)).not.toContain("ExponentPushToken");
+  });
+
+  it("reads all=1 as the unbounded window, not the default seven days", async () => {
+    const view = await (await admin("GET", "/admin/api/push/stats?all=1")).json() as
+      { range: { days: number | null; from: string | null; to: string | null } };
+    expect(view.range).toEqual({ days: null, from: null, to: null });
   });
 
   it("is closed to anyone but the admin", async () => {
@@ -1474,13 +1480,42 @@ describe("the referrals view", () => {
     expect(res.status).toBe(200);
     const body = await res.json() as Record<string, unknown>;
     expect(body).toMatchObject({
-      window: 30, timezone: base.timezone, via: [{ via: "messages", shares: 1 }],
+      range: { days: 30 }, timezone: base.timezone, via: [{ via: "messages", shares: 1 }],
       refusals: { unknown: 0, own: 1, already: 0 }, sharers: 1, sharersJoined: 1,
     });
     expect(JSON.stringify(body)).not.toContain(referrer);
     expect(JSON.stringify(body)).not.toContain(friend);
     expect(JSON.stringify(body)).not.toContain(code);
-    expect((await (await admin("GET", "/admin/api/referrals?days=nonsense")).json() as { window: number }).window).toBe(7);
+    expect((await (await admin("GET", "/admin/api/referrals?days=nonsense")).json() as { range: { days: number } }).range.days).toBe(7);
+  });
+
+  it("reads all=1 as the unbounded window, and from/to as the instants sent", async () => {
+    type Echo = { range: { days: number | null; from: string | null; to: string | null } };
+    // No params would fall back to `days`; all=1 is how the page says unbounded on purpose.
+    const all = await (await admin("GET", "/admin/api/referrals?all=1")).json() as Echo;
+    expect(all.range).toEqual({ days: null, from: null, to: null });
+    const bounded = await (await admin(
+      "GET", "/admin/api/referrals?from=2026-11-03T00:00:00.000Z&to=2026-11-09T00:00:00.000Z",
+    )).json() as Echo;
+    expect(bounded.range).toEqual({ days: null, from: "2026-11-03T00:00:00.000Z", to: "2026-11-09T00:00:00.000Z" });
+  });
+
+  it("reads a bound outside any plausible span as open on every ranged endpoint, never a 500", async () => {
+    const paths = [
+      "/admin/api/campaigns", "/admin/api/experiments", "/admin/api/funnel", "/admin/api/users",
+      "/admin/api/metrics", "/admin/api/referrals", "/admin/api/push/stats",
+    ];
+    const asks = [
+      "from=-005000-01-01T00:00:00Z", "to=+275760-09-13T00:00:00.000Z",
+      "from=1900-01-01T00:00:00Z&to=+100000-01-01T00:00:00Z", "from=nope&to=",
+    ];
+    for (const p of paths) for (const q of asks) {
+      const res = await admin("GET", `${p}?${q}`);
+      expect({ p, q, status: res.status }).toEqual({ p, q, status: 200 });
+    }
+    const echo = await (await admin("GET", "/admin/api/referrals?from=-005000-01-01T00:00:00Z&to=2026-11-09T00:00:00.000Z"))
+      .json() as { range: { from: string | null; to: string | null } };
+    expect(echo.range).toMatchObject({ from: null, to: "2026-11-09T00:00:00.000Z" });
   });
 
   it("is on the page, in Operate after Campaigns", () => {

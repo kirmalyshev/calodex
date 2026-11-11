@@ -320,6 +320,10 @@ pre { overflow-x: auto; max-width: 100%; }
 .aseg button { height: 28px; padding: 0 10px; border-radius: 7px; background: transparent; box-shadow: none; font-size: 12px; color: var(--muted); }
 .aseg button:hover { box-shadow: none; color: var(--ink); }
 .aseg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(23,25,28,.08); }
+.aseg .rng { display: inline-flex; align-items: center; gap: 4px; padding: 0 2px; }
+.aseg .rng-l { font-size: 11px; color: var(--muted); }
+.aseg .rng input { height: 28px; width: 132px; padding: 0 6px; border: 0; border-radius: 7px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); font-size: 12px; color: var(--ink); }
+.aseg .rng-note { align-self: center; padding: 0 6px; font-size: 11px; color: var(--muted); white-space: nowrap; }
 .tab { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .kvs { display: flex; flex-direction: column; gap: 6px; }
 .kv { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -341,6 +345,8 @@ button.quiet { box-shadow: none; color: var(--muted); }
 .nv > .card, .nv > p.muted { margin: 0; }
 .nv > p.muted { font-size: 12px; }
 .ahead .aseg { margin-left: auto; }
+.ahead { flex-wrap: wrap; }
+#head-window { flex-wrap: wrap; min-width: 0; }
 .akpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; min-width: 0; }
 .akpi.k3 { grid-template-columns: repeat(3, 1fr); }
 .akpi > div { background: var(--surface); border-radius: var(--r-card); box-shadow: 0 0 0 1px var(--hair); padding: 12px 14px; min-width: 0; }
@@ -378,7 +384,7 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .srow .t > span { font-size: 12px; color: var(--muted); }
 .nv.food { max-width: 720px; }
 .pb.flips { gap: 6px; }
-@media (max-width: 760px) { #head-window { display: none; } .abar.wide { width: 72px; flex-basis: 72px; } #view-numbers .ph b, #view-pushes .ph b, #view-funnel .ph b { white-space: nowrap; } #pushes-zone { display: none; } }
+@media (max-width: 760px) { #head-window { order: 3; width: 100%; margin-left: 0; } #range-zone, #range-note { white-space: normal; } .abar.wide { width: 72px; flex-basis: 72px; } #view-numbers .ph b, #view-pushes .ph b, #view-funnel .ph b { white-space: nowrap; } #pushes-zone { display: none; } }
 @media (max-width: 600px) {
   .fp .fp-st.fp-hd { display: none; }
   .fp .fp-st { grid-template-columns: 28px 1fr auto; grid-template-areas: "n nm cnt" ". bar bar" ". pc pc"; row-gap: 6px; }
@@ -631,6 +637,7 @@ details.how p { margin-top: 8px; }
           <button class="primary" id="exp-new">Create draft</button>
         </div>
       </div>
+      <p class="muted" id="experiments-scope"></p>
       <div id="exp-list"></div>
     </div>
   </div>
@@ -650,6 +657,7 @@ details.how p { margin-top: 8px; }
         <div class="camps-l"><div class="card flush alist" id="camp-list"></div></div>
         <div class="card flush camps-r" id="camp-detail"></div>
       </div>
+      <p class="muted" id="campaigns-scope"></p>
       <datalist id="campaign-keys"></datalist>
     </div>
     <div id="camp-new-mode" class="hidden">
@@ -1534,49 +1542,163 @@ details.how p { margin-top: 8px; }
     btn.textContent = all ? "Show last " + shown + " " + noun : "Show all " + total + " " + noun;
   }
 
-  // The window each reporting view reads over, picked in the header: 7, 30 or 90 days.
-  var windows = { numbers: 7, pushes: 7, funnel: 7, referrals: 7 };
+  // ── The window every time-based view reads over (ieat-app#2776) ────────────────────────────
+  //
+  // From/To are instants typed in the browser's own zone and sent as ISO; either may be left open —
+  // an empty box is "everything on that side" — and both empty is All time. It is ONE range for
+  // every panel that has one, and it lives in the hash so a link reproduces exactly what the
+  // admin was looking at. Content and system views never show it.
+  var RANGED = { numbers: 1, pushes: 1, funnel: 1, experiments: 1, campaigns: 1, referrals: 1, accounts: 1 };
+  var range = { from: null, to: null };
+  var rangeSet = false;   // the admin or a link named a window — until then the hash stays clean
+
+  // The boxes are calendar dates in the browser's zone, ONE rule: From is that day's first instant,
+  // To that day's last (the server's "to" is inclusive), both sent to the server as UTC instants.
+  // "YYYY-MM-DD" as <input type="date"> wants it.
+  function localInput(d) {
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  // new Date("2026-11-03") would be UTC midnight; a date box means the admin's own midnight.
+  function dayStart(v) {
+    var m = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(v || "");
+    if (!m) return null;
+    var d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function dayEnd(v) {
+    var d = dayStart(v);
+    return d ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0, -1) : null;
+  }
+  var ZONE = (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { return ""; } })();
+
+  function rangeQS() {
+    // An ask with both ends open is all: nothing means "no choice yet", when the API
+    // would fall back to its days default and never see All time at all.
+    if (!range.from && !range.to) return rangeSet ? "all=1" : "";
+    var q = "";
+    if (range.from) q = "from=" + encodeURIComponent(range.from.toISOString());
+    if (range.to) q += (q ? "&" : "") + "to=" + encodeURIComponent(range.to.toISOString());
+    return q;
+  }
+  function rangeQuery() { var q = rangeQS(); return q ? "?" + q : ""; }
+
+  // What the open view is being asked for, in words: "3 Nov 14:00 → 9 Nov 14:00".
+  function rangeLabel() {
+    if (!range.from && !range.to) return "All time";
+    return (range.from ? atLabel(range.from.toISOString()) : "the start") + " → " + (range.to ? atLabel(range.to.toISOString()) : "now");
+  }
+  // The server's own echo of the same ask — what it actually filtered by.
+  function echoLabel(e) {
+    if (!e) return rangeLabel();
+    if (e.days) return e.days + " days";
+    if (!e.from && !e.to) return "All time";
+    return (e.from ? atLabel(e.from) : "the start") + " → " + (e.to ? atLabel(e.to) : "now");
+  }
+
+  function writeRangeToHash() {
+    if (!rangeSet || !(viewId in RANGED)) return;
+    history.replaceState(null, "", "#" + viewId + "?" + rangeQS());
+  }
+
+  var rangeNoteEl = null;
+  var lastEcho = null;    // the last range echo a loader got back — the note quotes it
+  function rangeNote() {
+    if (rangeNoteEl) rangeNoteEl.textContent = lastEcho ? echoLabel(lastEcho) : (rangeSet ? rangeLabel() : "");
+  }
+
+  function applyRange(from, to) {
+    range.from = from;
+    range.to = to;
+    rangeSet = true;
+    lastEcho = null;
+    writeRangeToHash();
+    rangeNote();
+  }
 
   function drawWindow(id) {
     var seg = $("head-window");
-    seg.classList.toggle("hidden", !(id in windows));
+    seg.classList.toggle("hidden", !(id in RANGED));
     seg.textContent = "";
-    if (!(id in windows)) return;
-    [7, 30, 90].forEach(function (n) {
-      var b = el("button", n === windows[id] ? "on" : "", n + " days");
+    if (!(id in RANGED)) return;
+    var mk = function (label, input) {
+      var w = el("label", "rng");
+      w.appendChild(el("span", "rng-l", label));
+      w.appendChild(input);
+      return w;
+    };
+    var from = document.createElement("input");
+    from.type = "date";
+    from.id = "range-from";
+    from.setAttribute("aria-label", "From");
+    var to = document.createElement("input");
+    to.type = "date";
+    to.id = "range-to";
+    to.setAttribute("aria-label", "To");
+    if (range.from) from.value = localInput(range.from);
+    if (range.to) to.value = localInput(range.to);
+    var change = function () {
+      applyRange(dayStart(from.value), dayEnd(to.value));
+      run(id);
+    };
+    from.addEventListener("change", change);
+    to.addEventListener("change", change);
+    seg.appendChild(mk("From", from));
+    seg.appendChild(mk("To", to));
+    // Rolling windows ending now — "Last 24 hours" is now − 24h, not today.
+    [["range-24h", "Last 24 hours", 1], ["range-7d", "7 days", 7], ["range-30d", "30 days", 30]].forEach(function (p) {
+      var b = el("button", "", p[1]);
+      b.id = p[0];
       b.addEventListener("click", function () {
-        if (n === windows[id]) return;
-        windows[id] = n;
+        var now = new Date(), f = new Date(now.getTime() - p[2] * 86400000);
+        from.value = localInput(f);
+        to.value = localInput(now);
+        applyRange(f, now);
         run(id);
-        drawWindow(id);
       });
       seg.appendChild(b);
     });
+    var all = el("button", "", "All time");
+    all.id = "range-all";
+    all.addEventListener("click", function () {
+      from.value = "";
+      to.value = "";
+      applyRange(null, null);
+      run(id);
+    });
+    seg.appendChild(all);
+    rangeNoteEl = el("span", "rng-note", "");
+    rangeNoteEl.id = "range-note";
+    seg.appendChild(rangeNoteEl);
+    var zone = el("span", "rng-note", "Dates in " + (ZONE || "your browser's time zone") + ", sent as UTC");
+    zone.id = "range-zone";
+    seg.appendChild(zone);
+    lastEcho = null;
+    rangeNote();
   }
 
   var numData = null;       // the last /admin/api/metrics answer, oldest day first
-  var numAgg = null;        // the same read over exactly the selected window: retention and latency
+  var numPrior = null;      // the window of the same length that ended where this one began
   var numAll = false;       // the table shows every day, not the last seven
 
   function renderNumbers() {
     var m = numData;
     var days = m.days.slice().reverse();   // newest first on screen; the server's order is a window's
     var today = days[0] || { analyses: 0 };
-    var N = windows.numbers;
-    var week = days.slice(0, N), before = days.slice(N, 2 * N);
+    var N = days.length;
     var kp = $("numbers-kpi");
     kp.textContent = "";
-    kpi(kp, "Analyses today", String(today.analyses), "", "");
-    var signups = sum(week, function (d) { return d.signups; });
-    var prior = sum(before, function (d) { return d.signups; });
-    if (before.length === N && prior > 0) {
+    kpi(kp, days.length ? "Analyses " + dayLabel(days[0].date) : "Analyses", String(today.analyses), "", "");
+    var signups = sum(days, function (d) { return d.signups; });
+    var prior = numPrior ? sum(numPrior.days, function (d) { return d.signups; }) : 0;
+    if (numPrior && prior > 0) {
       var change = Math.round(((signups - prior) / prior) * 100);
-      kpi(kp, "Signups · " + week.length + " days", String(signups), "", (change >= 0 ? "+" : "") + change + "% on the " + (N === 7 ? "week" : N + " days") + " before", change >= 0 ? "up" : "dn");
+      kpi(kp, "Signups · " + N + " days", String(signups), "", (change >= 0 ? "+" : "") + change + "% on the " + (numPrior.days.length === 7 ? "week" : numPrior.days.length + " days") + " before", change >= 0 ? "up" : "dn");
     } else {
-      kpi(kp, "Signups · " + week.length + " days", String(signups), "", "");
+      kpi(kp, "Signups · " + N + " days", String(signups), "", "");
     }
-    // These three cover the selected window itself, which is why they come from their own read.
-    var a = numAgg;
+    // These three cover the selected window itself, which is what this read is.
+    var a = numData;
     kpi(kp, "Came back next day", pct(a.d1.returned, a.d1.eligible), "", [
       a.d1.returned + " of " + a.d1.eligible,
       "on day 7 " + a.d7.returned + " of " + a.d7.eligible + " (" + pct(a.d7.returned, a.d7.eligible) + ")"
@@ -1586,10 +1708,9 @@ details.how p { margin-top: 8px; }
       secs(a.latency.queue.p50) + " to the call · " + secs(a.latency.firstItem.p50) + " to first item"
     ]);
 
-    var all = days.slice(0, Math.max(N, 30));
-    var shown = numAll ? all : days.slice(0, 7);
-    $("numbers-title").textContent = "Last " + shown.length + " days";
-    moreButton($("numbers-more"), all.length, 7, numAll, "days");
+    var shown = numAll ? days : days.slice(0, 7);
+    $("numbers-title").textContent = echoLabel(numData.range);
+    moreButton($("numbers-more"), days.length, 7, numAll, "days");
     var body = $("metrics").querySelector("tbody");
     body.textContent = "";
     shown.forEach(function (d) {
@@ -1615,15 +1736,33 @@ details.how p { margin-top: 8px; }
   }
 
   function loadMetrics() {
-    var n = windows.numbers, wide = Math.max(30, 2 * n);
-    return Promise.all([
-      api("GET", "/admin/api/metrics?days=" + wide),
-      n === wide ? null : api("GET", "/admin/api/metrics?days=" + n)
-    ]).then(function (r) {
-      var m = r[0];
-      numAgg = r[1] || m;
+    return api("GET", "/admin/api/metrics" + rangeQuery()).then(function (m) {
       numData = m;
-      renderNumbers();
+      lastEcho = m.range;
+      rangeNote();
+      // The comparison card asks for the window that came BEFORE: the same span, ending where
+      // this one starts. The echo carries the resolved bounds even for a days ask; an open
+      // start has no before.
+      var e = m.range || {};
+      // A days answer is zone-calendar rows, not instants: the window before it is the first
+      // half of one twice as long. A clamped ask that comes back no longer reads as no prior.
+      if (e.days && !e.from) {
+        return api("GET", "/admin/api/metrics?days=" + e.days * 2).then(function (p) {
+          var rows = p.days || [];
+          numPrior = rows.length > e.days ? { days: rows.slice(0, e.days) } : null;
+          renderNumbers();
+        });
+      }
+      if (!e.from) { numPrior = null; renderNumbers(); return; }
+      var end = e.to ? Date.parse(e.to) : Date.now();
+      var span = end - Date.parse(e.from);
+      if (span <= 0) { numPrior = null; renderNumbers(); return; }
+      var prev = "?from=" + encodeURIComponent(new Date(Date.parse(e.from) - span).toISOString())
+        + "&to=" + encodeURIComponent(e.from);
+      return api("GET", "/admin/api/metrics" + prev).then(function (p) {
+        numPrior = p;
+        renderNumbers();
+      });
     });
   }
 
@@ -1632,31 +1771,30 @@ details.how p { margin-top: 8px; }
   var pushData = null;      // the last /admin/api/push/stats answer
   var pushAll = false;      // every day of the window, not the last seven
 
-  // Today's calendar day in the zone the instance counts push days in.
-  function dayInZone(tz) {
-    try { return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date()); }
-    catch (e) { return new Date().toISOString().slice(0, 10); }
+  // A calendar day in the zone the instance counts push days in — today when 'at' is not given.
+  function dayInZone(tz, at) {
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(at || new Date()); }
+    catch (e) { return (at || new Date()).toISOString().slice(0, 10); }
   }
 
   function renderPushes() {
     var v = pushData;
-    var today = Date.parse(dayInZone(v.timezone) + "T00:00:00Z");
-    var cutOf = function (n) { return new Date(today - (n - 1) * 86400000).toISOString().slice(0, 10); };
-    var cut = cutOf(windows.pushes);
+    var endDay = Date.parse(dayInZone(v.timezone, v.range && v.range.to ? new Date(v.range.to) : null) + "T00:00:00Z");
+    var cutOf = function (n) { return new Date(endDay - (n - 1) * 86400000).toISOString().slice(0, 10); };
     var rows = v.rows.slice().sort(function (a, b) { return a.day < b.day ? 1 : a.day > b.day ? -1 : 0; });
-    var week = rows.filter(function (r) { return r.day >= cut; });
-    var sent = sum(week, function (r) { return r.sent; });
-    var delivered = sum(week, function (r) { return r.delivered; });
-    var opened = sum(week, function (r) { return r.opened; });
-    var dead = sum(week, function (r) { return r.dead; });
+    var sent = sum(rows, function (r) { return r.sent; });
+    var delivered = sum(rows, function (r) { return r.delivered; });
+    var opened = sum(rows, function (r) { return r.opened; });
+    var dead = sum(rows, function (r) { return r.dead; });
     var kp = $("pushes-kpi");
     kp.textContent = "";
-    kpi(kp, "Sent · " + windows.pushes + " days", String(sent), "", "");
+    kpi(kp, "Sent · " + echoLabel(v.range), String(sent), "", "");
     kpi(kp, "Delivered", String(delivered), "", pct(delivered, sent));
     kpi(kp, "Opened", String(opened), "", pct1(opened, delivered) + " of delivered");
     kpi(kp, "Dead tokens", String(dead), "", dead ? "dropped when found dead" : "", dead ? "warn" : "");
     $("pushes-zone").textContent = v.timezone;
-    moreButton($("pushes-more"), v.days, 7, pushAll, "days");
+    var daysInWindow = rows.length ? Math.max(1, Math.round((endDay - Date.parse(rows[rows.length - 1].day + "T00:00:00Z")) / 86400000) + 1) : 0;
+    moreButton($("pushes-more"), daysInWindow, 7, pushAll, "days");
     var last7 = cutOf(7);
     var body = $("pushes").querySelector("tbody");
     body.textContent = "";
@@ -1671,8 +1809,10 @@ details.how p { margin-top: 8px; }
   }
 
   function loadPushes() {
-    return api("GET", "/admin/api/push/stats?days=" + Math.max(14, windows.pushes)).then(function (v) {
+    return api("GET", "/admin/api/push/stats" + rangeQuery()).then(function (v) {
       pushData = v;
+      lastEcho = v.range;
+      rangeNote();
       renderPushes();
     });
   }
@@ -2012,7 +2152,8 @@ details.how p { margin-top: 8px; }
   });
   function syncHead() {
     var none = !campData || campData.campaigns.length === 0;
-    headActs.classList.toggle("hidden", location.hash !== "#campaigns" || !campData || campMode !== "list");
+    // The hash may carry the window (#campaigns?from=…), so the view is the part before "?".
+    headActs.classList.toggle("hidden", location.hash.split("?")[0] !== "#campaigns" || !campData || campMode !== "list");
     newCamp.classList.toggle("hidden", none);
   }
   window.addEventListener("hashchange", syncHead);
@@ -2028,13 +2169,16 @@ details.how p { margin-top: 8px; }
     stopAll.textContent = v.killed ? "Resume all campaigns" : "Stop all campaigns";
     if (!v.campaigns.some(function (c) { return c.id === campSel; })) campSel = none ? null : v.campaigns[0].id;
     if (!none) { renderList(v); renderDetail(v); }
+    $("campaigns-scope").textContent = "Reports count sends inside " + echoLabel(v.range) + ".";
     syncHead();
   }
 
   function loadCampaigns() {
-    return api("GET", "/admin/api/campaigns").then(function (v) {
+    return api("GET", "/admin/api/campaigns" + rangeQuery()).then(function (v) {
       if (!campaignOptions) campaignOptions = v.options;
       campData = v;
+      lastEcho = v.range;
+      rangeNote();
       copyKeys(v.copy);
       renderCampaigns();
     });
@@ -2052,13 +2196,15 @@ details.how p { margin-top: 8px; }
   };
 
   function loadFunnel() {
-    return api("GET", "/admin/api/funnel?days=" + windows.funnel).then(function (f) {
+    return api("GET", "/admin/api/funnel" + rangeQuery()).then(function (f) {
+      lastEcho = f.range;
+      rangeNote();
       var kp = $("funnel-kpi");
       kp.textContent = "";
       kpi(kp, "Started", String(f.sessions), "", "");
       kpi(kp, "Finished", String(f.completed), "", "");
       kpi(kp, "Completion", pct1(f.completed, f.sessions), "", "");
-      $("funnel-scope").textContent = "Last " + f.days + " days \u00b7 every account that started onboarding \u00b7 app content v" +
+      $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding \u00b7 app content v" +
         f.contentVersion + " \u00b7 counted by people who reached each step";
       var host = $("funnel-path");
       host.textContent = "";
@@ -2119,7 +2265,7 @@ details.how p { margin-top: 8px; }
     var paid = sum(v.days, function (d) { return d.paid; });
     var kp = $("referrals-kpi");
     kp.textContent = "";
-    kpi(kp, "Shared · " + v.window + " days", String(shared), "", "share sheet finished");
+    kpi(kp, "Shared · " + echoLabel(v.range), String(shared), "", "share sheet finished");
     kpi(kp, "Link opened", String(opened), "", shared ? (Math.round((opened / shared) * 10) / 10) + " per share" : "");
     kpi(kp, "Joined", String(joined), "", (opened ? pct(joined, opened) + " of opens · " : "") + "a week each");
     var weeks = Math.floor(v.daysGranted / 7);
@@ -2127,13 +2273,28 @@ details.how p { margin-top: 8px; }
     $("referrals-zone").textContent = v.timezone;
 
     // Every day of the window, the empty ones too — newest first, the last seven unless asked.
+    // An open start has no first day to count back to, so it lists only the days with something.
     var byDay = {};
     v.days.forEach(function (d) { byDay[d.day] = d; });
-    var today = Date.parse(dayInZone(v.timezone) + "T00:00:00Z");
     var rows = [];
-    for (var i = 0; i < v.window; i++) {
-      var day = new Date(today - i * 86400000).toISOString().slice(0, 10);
-      rows.push(byDay[day] || { day: day, shared: 0, opened: 0, joined: 0, paid: 0 });
+    var e = v.range || {};
+    var endDay = dayInZone(v.timezone, e.to ? new Date(e.to) : null);
+    var dayAt = function (i) { return new Date(Date.parse(endDay + "T00:00:00Z") - i * 86400000).toISOString().slice(0, 10); };
+    if (e.days) {
+      // A days answer is that many zone-calendar rows ending at the window's end day.
+      for (var i = 0; i < e.days; i++) {
+        var d = dayAt(i);
+        rows.push(byDay[d] || { day: d, shared: 0, opened: 0, joined: 0, paid: 0 });
+      }
+    } else if (e.from) {
+      var d0 = dayInZone(v.timezone, new Date(e.from));
+      for (var i = 0; i < 400; i++) {
+        var day = dayAt(i);
+        if (day < d0) break;
+        rows.push(byDay[day] || { day: day, shared: 0, opened: 0, joined: 0, paid: 0 });
+      }
+    } else {
+      rows = v.days.slice().sort(function (a, b) { return a.day < b.day ? 1 : a.day > b.day ? -1 : 0; });
     }
     moreButton($("referrals-more"), rows.length, 7, refAll, "days");
     var body = $("referrals-days").querySelector("tbody");
@@ -2146,7 +2307,7 @@ details.how p { margin-top: 8px; }
     var foot = $("referrals-days").querySelector("tfoot");
     foot.textContent = "";
     var tot = document.createElement("tr");
-    [v.window + " days", shared, opened, joined, paid].forEach(function (t, i) { td(tot, t, i, 1); });
+    [rows.length + " days", shared, opened, joined, paid].forEach(function (t, i) { td(tot, t, i, 1); });
     foot.appendChild(tot);
 
     var via = $("referrals-via").querySelector("tbody");
@@ -2176,8 +2337,10 @@ details.how p { margin-top: 8px; }
   }
 
   function loadReferrals() {
-    return api("GET", "/admin/api/referrals?days=" + windows.referrals).then(function (v) {
+    return api("GET", "/admin/api/referrals" + rangeQuery()).then(function (v) {
       refData = v;
+      lastEcho = v.range;
+      rangeNote();
       renderReferrals();
     });
   }
@@ -3088,8 +3251,11 @@ details.how p { margin-top: 8px; }
     var q = $("users-q").value.trim();
     var path = "/admin/api/users?limit=50";
     if (q) path += "&q=" + encodeURIComponent(q);
+    if (rangeQS()) path += "&" + rangeQS();
     if (append && usersCursor) path += "&cursor=" + encodeURIComponent(usersCursor);
     return api("GET", path).then(function (page) {
+      lastEcho = page.range;
+      rangeNote();
       var body = $("users").querySelector("tbody");
       if (!append) body.textContent = "";
       page.users.forEach(function (u) { body.appendChild(userRow(u)); });
@@ -3099,7 +3265,7 @@ details.how p { margin-top: 8px; }
       $("users-wrap").classList.toggle("hidden", n === 0);
       $("users-empty").classList.toggle("hidden", n !== 0);
       $("users-foot").classList.toggle("hidden", n === 0);
-      $("users-empty-title").textContent = q ? "Nothing matches that." : "No accounts yet.";
+      $("users-empty-title").textContent = q ? "Nothing matches that." : "No accounts in this window.";
       $("users-empty-note").textContent = q ? "It takes a whole address, or the start of an id." : "";
       $("users-status").textContent = n + " shown";
     });
@@ -3433,9 +3599,12 @@ details.how p { margin-top: 8px; }
           langs = res.langs || []; labels = res.labels || {}; meta = res.meta;
         }, function () {});
     return prime.then(function () {
-      return api("GET", "/admin/api/experiments");
+      return api("GET", "/admin/api/experiments" + rangeQuery());
     }).then(function (res) {
       experiments = res.experiments || [];
+      lastEcho = res.range;
+      rangeNote();
+      $("experiments-scope").textContent = echoLabel(res.range) + " \u00b7 per-arm numbers count assignments and events inside the window";
       var select = $("exp-lang");
       if (select.options.length === 0) {
         (langs.length ? langs : ["en"]).forEach(function (code) {
@@ -3609,6 +3778,7 @@ details.how p { margin-top: 8px; }
 
   // view id -> "loading" | "ready". Absent: never opened, failed, or stale and due a read.
   var state = {};
+  var viewId = "numbers";
 
   // kpis: the view opens on KPI cards (Numbers), so its skeleton draws them above the rows.
   function skeleton(kpis) {
@@ -3668,7 +3838,11 @@ details.how p { margin-top: 8px; }
     paintBox($("state-" + id), $("body-" + id), kind, err, VIEWS[id].title.toLowerCase(), function () { run(id); }, false, VIEWS[id].kpis);
   }
 
+  // view id -> the rangeQS() it last loaded with: a ranged view opened under another window reads again.
+  var loadedRange = {};
+
   function run(id) {
+    loadedRange[id] = rangeQS();
     state[id] = "loading";
     paint(id, "loading");
     VIEWS[id].load().then(function () {
@@ -3689,6 +3863,7 @@ details.how p { margin-top: 8px; }
   }
 
   function show(id) {
+    viewId = id;
     Object.keys(VIEWS).forEach(function (v) { $("view-" + v).classList.toggle("hidden", v !== id); });
     $("view-title").textContent = VIEWS[id].title;
     $("lang").classList.toggle("hidden", id !== "onboarding");
@@ -3701,13 +3876,30 @@ details.how p { margin-top: 8px; }
     });
     $("switcher").value = id;
     drawWindow(id);
+    // The window carries across sections: the nav's plain #pushes gets it back, so a reload or a
+    // copied link keeps it, and a view last read under another window reads again.
+    writeRangeToHash();
     setHead();
     window.scrollTo(0, 0);
+    if (id in RANGED && loadedRange[id] !== rangeQS()) delete state[id];
     if (!state[id]) run(id);
   }
 
   function route() {
-    var id = location.hash.replace("#", "");
+    var h = location.hash.slice(1);
+    var q = h.indexOf("?");
+    var id = q < 0 ? h : h.slice(0, q);
+    // A link may carry the window as ?from&to on the hash (#2776). It wins over whatever the
+    // header held, and the view it names must read fresh: a stale "ready" would answer the old ask.
+    if (q >= 0 && VIEWS[id] && id in RANGED) {
+      var p = new URLSearchParams(h.slice(q + 1));
+      var f = p.get("from"), t = p.get("to");
+      var fd = f ? new Date(f) : null, td = t ? new Date(t) : null;
+      range.from = fd && !isNaN(fd.getTime()) ? fd : null;
+      range.to = td && !isNaN(td.getTime()) ? td : null;
+      rangeSet = true;
+      delete state[id];
+    }
     // A nav into the onboarding view asks for the LIVE copy — the arm editor only opens from its
     // own "Edit copy" button. variantEdit surviving a nav would point the next Save at the arm.
     if (id === "onboarding" && variantEdit) {

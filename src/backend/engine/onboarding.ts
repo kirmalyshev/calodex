@@ -12,12 +12,13 @@ import {
   ONBOARDING_PLACES, countryFromRegion, isReportableField, isTimezone, localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   validateOnboardingContent,
-  type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
+  type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
   type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
-import type { AdminMetrics, OnboardingExperiment, OnboardingVariant } from "../store.ts";
+import type { AdminMetrics, AdminRange, OnboardingExperiment, OnboardingVariant } from "../store.ts";
+import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 
 /** Every place an event may name — the questions, and the three places that are not questions. */
 const PLACES: readonly string[] = ONBOARDING_PLACES;
@@ -302,18 +303,23 @@ export async function recordOnboardingEvents(
  */
 export async function adminMetrics(
   deps: EngineDeps,
-  days: number,
-): Promise<AdminMetrics> {
-  return deps.store.adminMetrics({
-    days,
-    today: localDate(deps.config.timezone),
-    timezone: deps.config.timezone,
-  });
+  window: number | { days?: number; from?: Date | null; to?: Date | null },
+): Promise<AdminMetrics & { range: AdminWindowEcho }> {
+  const ask = typeof window === "number" ? { days: window } : window;
+  return {
+    ...await deps.store.adminMetrics({
+      ...ask,
+      today: localDate(deps.config.timezone),
+      timezone: deps.config.timezone,
+    }),
+    range: adminWindowEcho(ask),
+  };
 }
 
 /** The funnel, in the order the screens are actually shown. */
-export async function onboardingFunnel(deps: EngineDeps, days: number): Promise<OnboardingFunnel> {
-  const agg = await deps.store.onboardingFunnel(days);
+export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { days?: number } | number): Promise<OnboardingFunnel> {
+  const ask = adminRangeOf(range, 30, 365);
+  const agg = await deps.store.onboardingFunnel(ask);
   // THE NEWEST REVISION IN ANY LANGUAGE, because the counter is one counter (`store.putOnboardingContent`) and
   // this row names which words the numbers below were collected against. Reading English's alone
   // would report a stale number on a host whose last edit was German.
@@ -343,7 +349,7 @@ export async function onboardingFunnel(deps: EngineDeps, days: number): Promise<
   return {
     sessions: agg.sessions,
     completed: agg.completed,
-    days,
+    range: adminWindowEcho(ask),
     contentVersion,
     rows,
   };
@@ -380,7 +386,10 @@ export interface OnboardingExperimentView {
 }
 
 /** Every experiment with its per-variant funnel — the admin's list. */
-export async function onboardingExperiments(deps: EngineDeps): Promise<OnboardingExperimentView[]> {
+export async function onboardingExperiments(
+  deps: EngineDeps, range: AdminRange & { days?: number } | number = { from: null, to: null },
+): Promise<OnboardingExperimentView[]> {
+  const ask = adminRangeOf(range, 30);
   const list = await deps.store.listOnboardingExperiments();
   // The fill exists for DRAFTS, whose arms the editor opens: a draft written before a content
   // block existed would throw in `uiCard()`/`beatsCard()` and fail its save, so it is read
@@ -391,7 +400,7 @@ export async function onboardingExperiments(deps: EngineDeps): Promise<Onboardin
   const out: OnboardingExperimentView[] = [];
   for (const experiment of list) {
     const control = experiment.status === "draft" ? usableContentFor(experiment.lang, stored) : null;
-    const funnel = await deps.store.onboardingExperimentFunnel(experiment.id);
+    const funnel = await deps.store.onboardingExperimentFunnel(experiment.id, ask);
     const arms = experiment.variants.map((variant) => {
       if (control !== null) {
         const filled = usableContent(variant.content, control);

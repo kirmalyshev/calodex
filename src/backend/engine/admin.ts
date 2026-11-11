@@ -34,10 +34,11 @@
 
 import {
   explainTargets, localDate, windowStart,
-  type FoodTargets, type MealRecord,
+  type AdminWindowEcho, type FoodTargets, type MealRecord,
 } from "@eait/shared";
 import { chatHistoryWithProvenance, type AdminChatEntry } from "./chat.ts";
 import type { EngineDeps } from "./deps.ts";
+import type { AdminRange } from "../store.ts";
 
 /**
  * The most meals one request may return.
@@ -114,4 +115,34 @@ export async function adminUserChat(
   // person has said nothing" are different answers to a support question.
   if (await deps.store.getProfile(userId) === null) return null;
   return chatHistoryWithProvenance(deps, userId, opts);
+}
+
+/**
+ * A window the admin asked for, as instants (ieat-app#2776). `days` is the legacy spelling — the
+ * shorthand the engine still takes — and resolves to the last N days ENDING NOW, both bounds
+ * inclusive, clamped and defaulted exactly as the `days` parameter always was. The `days` rides
+ * along in the result so `adminWindowEcho` can name which spelling the request used.
+ */
+export function adminRangeOf(
+  window: AdminRange & { days?: number } | number,
+  defaultDays: number,
+  maxDays: number = Number.POSITIVE_INFINITY,
+): AdminRange & { days?: number } {
+  if (typeof window !== "number") return window;
+  const days = Number.isFinite(window) ? Math.min(maxDays, Math.max(1, Math.floor(window))) : defaultDays;
+  return { from: new Date(Date.now() - days * 86_400_000), to: new Date(), days };
+}
+
+/**
+ * What a time-based admin endpoint was asked for, serialized for the answer (ieat-app#2776):
+ * the instant bounds the range control resolved to, or the `days` the request carried.
+ */
+export function adminWindowEcho(
+  window: { from?: Date | null; to?: Date | null; days?: number },
+): AdminWindowEcho {
+  return {
+    from: window.from?.toISOString() ?? null,
+    to: window.to?.toISOString() ?? null,
+    days: window.days ?? null,
+  };
 }

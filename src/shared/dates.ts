@@ -273,3 +273,14 @@ export function forgivingStreak(kcalByDate: ReadonlyMap<string, number>, today: 
   const state = run === 0 && longest > 0 ? "ended" : bentRecently ? "bent" : "holding";
   return { streak: run, longest, state, endedAt: run === 0 ? lastRun : 0, marks };
 }
+
+/**
+ * What a time-based admin endpoint was asked for, echoed back in its answer (ieat-app#2776): the
+ * resolved instant bounds — `from`/`to`, ISO UTC, both inclusive — or the `days` count it was
+ * asked in, never both.
+ */
+export interface AdminWindowEcho {
+  from: string | null;
+  to: string | null;
+  days: number | null;
+}

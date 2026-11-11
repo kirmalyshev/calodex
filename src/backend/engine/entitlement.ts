@@ -13,11 +13,12 @@
 import {
   DIARY_WINDOW_DAYS, KCAL_PER_KG, entitlementActive, entitlementLive, explainTargets, forgivingStreak, localDate,
   referralBonusEnd,
-  trialDaysLeft, windowStart, type Entitlement, type Goal, type Lang,
+  trialDaysLeft, windowStart, type AdminWindowEcho, type Entitlement, type Goal, type Lang,
 } from "@eait/shared";
 import type { Config } from "../config.ts";
 import type { AdminUserRow, EntitlementPatch, StoredEntitlement } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
+import { adminWindowEcho } from "./admin.ts";
 import { isStoreReviewer } from "./email.ts";
 import { referralRewardDays } from "./referral.ts";
 
@@ -77,6 +78,8 @@ export interface AdminUser extends AdminUserRow {
 export interface AdminUsers {
   users: AdminUser[];
   nextCursor: string | null;
+  /** The window this was read over (ieat-app#2776) — empty instants when it was not ranged. */
+  range: AdminWindowEcho;
 }
 
 /**
@@ -88,7 +91,7 @@ export interface AdminUsers {
  */
 export async function adminUsers(
   deps: EngineDeps,
-  query: { q?: string; limit: number; cursor?: string },
+  query: { q?: string; limit: number; cursor?: string; from?: Date | null; to?: Date | null; days?: number },
 ): Promise<AdminUsers> {
   const page = await deps.store.adminListUsers({
     ...query, today: localDate(deps.config.timezone),
@@ -101,6 +104,7 @@ export async function adminUsers(
       effective: row.freeAnalyses ?? 0,
     })),
     nextCursor: page.nextCursor,
+    range: adminWindowEcho(query),
   };
 }
 

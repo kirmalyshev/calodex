@@ -45,11 +45,11 @@ import {
   SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
-  adminMetrics, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, livePrompts,
+  adminMetrics, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
   onboardingExperiments, saveOnboardingVariant, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
-  onboardingFunnel, promptHistory, referralAdminView, savePrompt,
+  onboardingFunnel, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
   sendTestPush, pushOpenView, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
@@ -71,6 +71,41 @@ const notFound = () => json({ error: "not found" }, 404);
  * so a string that is not a date is a comparison against arbitrary input.
  */
 const isDate = (v: string | null): v is string => v !== null && isCalendarDate(v);
+
+/**
+ * The window a time-based admin endpoint was asked for (ieat-app#2776).
+ *
+ * `from`/`to` are instants — an ISO timestamp with a zone is what the page sends; either may be
+ * absent, which is an open end. `?days=N` is the old spelling and stays: it clamps rather than
+ * rejects, like `days` always did, and resolves to instants here so a store sees ONE shape. An
+ * unparseable bound reads as open — a dashboard control, not an error page — and a `from` after
+ * `to` is a legal ask that reads as empty.
+ */
+type RangeAsk = { days: number } | { from: Date | null; to: Date | null };
+const RANGE_MIN_MS = Date.UTC(2000, 0, 1), RANGE_MAX_MS = Date.UTC(2100, 0, 1);
+
+function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number }): RangeAsk;
+function rangeParam(url: URL, bounds: null): { from: Date | null; to: Date | null };
+function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number } | null): RangeAsk {
+  const f = url.searchParams.get("from"), t = url.searchParams.get("to");
+  // A bound outside 2000–2100 reads as open too: Postgres refuses a timestamp before 4713 BC and
+  // `dateMinus` turns a 6-digit year into Invalid Date, so either was a 500 from a typed box.
+  const instant = (v: string | null): Date | null => {
+    if (v === null || v === "") return null;
+    const ms = Date.parse(v);
+    return Number.isNaN(ms) || ms < RANGE_MIN_MS || ms >= RANGE_MAX_MS ? null : new Date(ms);
+  };
+  if (f !== null || t !== null) return { from: instant(f), to: instant(t) };
+  // `all` is how the page says "no bounds on purpose": with no params at all a bounded
+  // endpoint falls back to its `days` default, so All time cannot just send nothing.
+  if (url.searchParams.has("all")) return { from: null, to: null };
+  if (bounds === null) return { from: null, to: null };
+  const raw = Number(url.searchParams.get("days") ?? bounds.defaultDays);
+  const days = Number.isFinite(raw)
+    ? Math.min(bounds.maxDays, Math.max(1, Math.round(raw)))
+    : bounds.defaultDays;
+  return { days };
+}
 
 /**
  * Which language's copy this request is about.
@@ -251,7 +286,7 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   if (pathname === "/admin/api/campaigns") {
     if (req.method === "GET") {
       return json({
-        ...(await campaignOverview(deps)),
+        ...(await campaignOverview(deps, rangeParam(url, null))),
         options: {
           langs: LANGS, variants: CAMPAIGN_VARIANTS, statuses: CAMPAIGN_STATUSES,
           entitlement: ENTITLEMENT_STATES, streakBands: STREAK_BANDS, sinceLog: SINCE_LOG_BANDS,
@@ -349,7 +384,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // row is a draft; a running experiment is frozen by the store's own guard, so every write here
   // that answers false is a write against a running experiment, shown as the refusal it is.
   if (req.method === "GET" && pathname === "/admin/api/experiments") {
-    return json({ experiments: await onboardingExperiments(deps) });
+    const ask = rangeParam(url, null);
+    return json({ experiments: await onboardingExperiments(deps, ask), range: adminWindowEcho(ask) });
   }
   if (req.method === "POST" && pathname === "/admin/api/experiments") {
     const body = await req.json().catch(() => null) as { lang?: unknown } | null;
@@ -391,11 +427,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   }
 
   if (req.method === "GET" && pathname === "/admin/api/funnel") {
-    const raw = Number(url.searchParams.get("days") ?? 30);
-    // Clamped rather than rejected. This is a dashboard control, and a silly number in a query
-    // string should show a sensible window, not an error page.
-    const days = Number.isFinite(raw) ? Math.min(365, Math.max(1, Math.round(raw))) : 30;
-    return json(await onboardingFunnel(deps, days));
+    const ask = rangeParam(url, { defaultDays: 30, maxDays: 365 });
+    return json(await onboardingFunnel(deps, "days" in ask ? ask.days : ask));
   }
 
   // ── The accounts ───────────────────────────────────────────────────────────────────────────
@@ -419,6 +452,7 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       limit,
       ...(q === "" ? {} : { q }),
       ...(cursor === "" ? {} : { cursor }),
+      ...rangeParam(url, null),
     }));
   }
 
@@ -532,10 +566,9 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // anybody came back — the two an operator acts on. An aggregate is still a query over other
   // people's rows, so it is behind the same role as everything else here.
   if (req.method === "GET" && pathname === "/admin/api/metrics") {
-    const raw = Number(url.searchParams.get("days") ?? 30);
-    // Clamped rather than rejected, exactly as the funnel's own `days` is.
-    const days = Number.isFinite(raw) ? Math.min(400, Math.max(1, Math.round(raw))) : 30;
-    return json(await adminMetrics(deps, days));
+    // `days` stays a count for this one — "30 days" is 30 calendar rows, not 30×24h.
+    const ask = rangeParam(url, { defaultDays: 30, maxDays: 400 });
+    return json(await adminMetrics(deps, "days" in ask ? ask : { ...ask }));
   }
 
   // ── Per-account grant (ieat-app#2364: no default sample) ─────────────────────────────────────────────────────────────────────
@@ -566,7 +599,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // Shared, opened, joined and paid per day, by channel and by refusal. Counts only, like the
   // opens view below: no account, no code, nothing that names a person.
   if (req.method === "GET" && pathname === "/admin/api/referrals") {
-    return json(await referralAdminView(deps, Number(url.searchParams.get("days") ?? 7)));
+    const ask = rangeParam(url, { defaultDays: 7, maxDays: 90 });
+    return json(await referralAdminView(deps, "days" in ask ? ask.days : ask));
   }
 
   // ── Push: the opens view (#1759) ───────────────────────────────────────────────────────────
@@ -574,7 +608,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // Per day and per kind/template: sent, accepted, dead, opened, converted. Counts only — no
   // account, token or body — so it is the one push read that names nobody.
   if (req.method === "GET" && pathname === "/admin/api/push/stats") {
-    return json(await pushOpenView(deps, Number(url.searchParams.get("days") ?? 7)));
+    const ask = rangeParam(url, { defaultDays: 7, maxDays: PUSH_STATS_MAX_DAYS });
+    return json(await pushOpenView(deps, "days" in ask ? ask.days : ask));
   }
 
   // ── Push: test one account, read what it was sent ──────────────────────────────────────────
