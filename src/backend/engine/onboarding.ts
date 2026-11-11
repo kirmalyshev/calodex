@@ -304,7 +304,7 @@ export async function recordOnboardingEvents(
 export async function adminMetrics(
   deps: EngineDeps,
   window: number | { days?: number; from?: Date | null; to?: Date | null },
-): Promise<AdminMetrics & { range: AdminWindowEcho }> {
+): Promise<AdminMetrics & { range: AdminWindowEcho; timezone: string }> {
   const ask = typeof window === "number" ? { days: window } : window;
   return {
     ...await deps.store.adminMetrics({
@@ -313,6 +313,9 @@ export async function adminMetrics(
       timezone: deps.config.timezone,
     }),
     range: adminWindowEcho(ask),
+    // The zone the days above are dated in — the same field pushOpenView already carries. The
+    // page's comparison card walks instance-zone days, so it cannot guess it (#2779).
+    timezone: deps.config.timezone,
   };
 }
 
