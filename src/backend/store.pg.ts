@@ -3776,6 +3776,7 @@ export async function postgresStore(
           and (${lo === null} or e.at >= ${lo})
           and (${hi === null} or e.at <= ${hi})
         where a.experiment_id = ${experimentId}
+          and not exists (select 1 from users u where u.id = a.user_id and u.staff)
           and (${lo === null} or a.assigned_at >= ${lo})
           and (${hi === null} or a.assigned_at <= ${hi})
         group by a.variant_id`;
@@ -3923,12 +3924,14 @@ export async function postgresStore(
 
     async onboardingFunnel(range): Promise<FunnelAggregate> {
       const { from: lo, to: hi } = range;
+      // Staff accounts (admin-flagged: the principal and testers) are not users; their runs stay out (#2783).
 
       const totals = await sql`
         select count(distinct session_id)::int as sessions,
                count(distinct session_id) filter (where action = 'complete')::int as completed
         from onboarding_events
-        where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})`;
+        where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
+          and not exists (select 1 from users u where u.id = onboarding_events.user_id and u.staff)`;
 
       // `percentile_cont` over the answer rows only — a median that included view events would be
       // measuring nothing, since a view carries no elapsed time.
@@ -3944,6 +3947,7 @@ export async function postgresStore(
                ) filter (where action = 'answer' and ms is not null) as median_ms
         from onboarding_events
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
+          and not exists (select 1 from users u where u.id = onboarding_events.user_id and u.staff)
         group by place`;
 
       return {
