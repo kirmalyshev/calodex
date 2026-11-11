@@ -169,9 +169,13 @@ describe("experiments (ieat-app#2669)", () => {
       refusals: expect.arrayContaining([{ place: "pace", rule: "must-follow", after: "target" }]),
     });
     expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/0`, { order })).status).toBe(422);
+    // Never half a write: copy and order together are refused, and so is a body that is not an object.
+    expect((await admin("PUT", arm, { order, content: structuredClone(DEFAULT_ONBOARDING_CONTENT) })).status).toBe(422);
+    expect((await admin("PUT", arm, 5)).status).toBe(422);
     expect((await admin("PUT", arm, { order })).status).toBe(200);
-    // Control carries no weight, so the arm is the only one anybody rolls into.
-    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1] })).status).toBe(200);
+    // Control carries no weight, so the arm is the only one anybody rolls into; an ordered arm is
+    // app-only until /start walks orders.
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
     await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
     expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
 
@@ -181,6 +185,8 @@ describe("experiments (ieat-app#2669)", () => {
     const newer = await session();
     const served = await (await admin("GET", "/v1/onboarding?order=1", undefined, newer)).json() as { order?: unknown };
     expect(served.order).toEqual(order);
+    const garbled = await session();
+    expect((await (await admin("GET", "/v1/onboarding?order=abc", undefined, garbled)).json() as { order?: unknown }).order).toBeUndefined();
   });
 });
 

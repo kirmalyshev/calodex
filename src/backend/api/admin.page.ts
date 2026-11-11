@@ -824,8 +824,8 @@ details.how p { margin-top: 8px; }
           <summary>How saving works</summary>
           <p class="muted">
             Every word Spud says to POSE a question, plus the option labels, the front door, the plan, the sign-up, the referral, Apple Health, the Live Activity and the first meal.
-            The <em>questions</em> are fixed in code — they feed the calorie target — and so is their order,
-            and so are Spud's replies and the support cards, which carry citations. Saving bumps the content
+            The <em>questions</em> are fixed in code — they feed the calorie target — and so is their default
+            order (an experiment arm may reorder them, in Experiments), and so are Spud's replies and the support cards, which carry citations. Saving bumps the content
             version, which is what the funnel is grouped by.
           </p>
           <p class="muted">
@@ -3675,7 +3675,15 @@ details.how p { margin-top: 8px; }
   function orderRefused(panel, err) {
     var body = err && err.body ? err.body : {};
     var errors = body.errors || [String(err && err.message || err)];
-    (body.refusals || []).forEach(function (r, n) {
+    // No row named: the refusal is about the experiment itself (it moved, it started), so the order
+    // being arranged is stale — drop this experiment's drafts and reload what the server has.
+    if (!body.refusals || body.refusals.length === 0) {
+      var prefix = panel.getAttribute("data-order-key").replace(/:[0-9]+$/, ":");
+      Object.keys(orderDraft).forEach(function (k) { if (k.indexOf(prefix) === 0) delete orderDraft[k]; });
+      expErrors(err);
+      return;
+    }
+    body.refusals.forEach(function (r, n) {
       var row = panel.querySelector('li[data-place="' + String(r.place).replace(/"/g, "") + '"] .order-error');
       if (row) { row.textContent = errors[n] || r.rule; row.classList.add("bad"); }
     });

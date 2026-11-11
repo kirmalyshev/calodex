@@ -412,21 +412,19 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
     }
     if (req.method === "PUT" && sub === "variants") {
-      const body = (await req.json().catch(() => ({})) ?? {}) as { content?: unknown; order?: unknown };
+      const raw: unknown = await req.json().catch(() => ({}));
+      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown };
       const index = Number(expMatch[3]);
-      // An ORDER-only body is the order editor's save (ieat-app#2788): `null` clears it. A body with
-      // content is the copy editor's, as before — with an `order` beside it, both are written.
-      let version: number | undefined;
-      if (body.content !== undefined || !("order" in body)) {
-        const result = await saveOnboardingVariant(deps, id, index, body.content);
-        if (!result.ok) return json({ errors: result.errors }, 422);
-        version = result.version;
-      }
+      // Two editors, two bodies, never both (ieat-app#2788): `{order}` is the order editor's save
+      // (`null` clears it), anything else the copy editor's. A body carrying both is refused rather
+      // than half-written — a content save is committed before an order could be refused.
       if ("order" in body) {
+        if (body.content !== undefined) return json({ errors: ["send the copy or the order, not both"] }, 422);
         const result = await saveOnboardingVariantOrder(deps, id, index, body.order);
-        if (!result.ok) return json({ errors: result.errors, refusals: result.refusals ?? [] }, 422);
+        return result.ok ? json({ ok: true }) : json({ errors: result.errors, refusals: result.refusals ?? [] }, 422);
       }
-      return json(version === undefined ? { ok: true } : { version });
+      const result = await saveOnboardingVariant(deps, id, index, body.content);
+      return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, 422);
     }
     if (req.method === "POST" && sub === "variants") {
       const result = await addOnboardingVariant(deps, id);

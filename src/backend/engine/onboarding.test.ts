@@ -675,11 +675,39 @@ describe("experiments (ieat-app#2669)", () => {
     it("refuses to start an experiment whose stored order no longer validates", async () => {
       const { startOnboardingExperiment } = await import("./onboarding.ts");
       const e = ordered(["welcome", "pace", "summary", "signup"]);
+      e.rules = { surfaces: ["app"] } as never;
       await store.putOnboardingExperiment(e as never);
       await store.setSwitch("onboarding.experiments", true, userId);
       const res = await startOnboardingExperiment(deps, e.id);
-      expect(res.ok).toBe(false);
+      expect(res).toMatchObject({ ok: false, errors: expect.arrayContaining(["arm 1: activity is a question and cannot be left out"]) });
       expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.status).toBe("draft");
+    });
+
+    it("refuses to start an ordered experiment the web could be targeted by — /start walks no order yet", async () => {
+      const { startOnboardingExperiment } = await import("./onboarding.ts");
+      await store.setSwitch("onboarding.experiments", true, userId);
+      for (const rules of [{}, { surfaces: ["app", "web"] }]) {
+        const e = ordered();
+        e.rules = rules as never;
+        await store.putOnboardingExperiment(e as never);
+        expect((await startOnboardingExperiment(deps, e.id)).ok).toBe(false);
+      }
+      const app = ordered();
+      app.rules = { surfaces: ["app"] } as never;
+      await store.putOnboardingExperiment(app as never);
+      expect(await startOnboardingExperiment(deps, app.id)).toEqual({ ok: true });
+    });
+
+    it("keeps the order when the arm's copy is saved, and refuses an order on a running arm", async () => {
+      const { saveOnboardingVariant, saveOnboardingVariantOrder } = await import("./onboarding.ts");
+      const e = ordered();
+      await store.putOnboardingExperiment(e as never);
+      expect((await saveOnboardingVariant(deps, e.id, 1, structuredClone(DEFAULT_ONBOARDING_CONTENT))).ok).toBe(true);
+      expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toEqual(ARM_ORDER as never);
+      await store.startOnboardingExperiment(e.id);
+      expect(await saveOnboardingVariantOrder(deps, e.id, 1, null)).toEqual({
+        ok: false, errors: ["only a draft's arms take an order — a running arm is frozen"],
+      });
     });
 
     it("enrolls only a client that declared the order capability", async () => {
@@ -706,7 +734,9 @@ describe("experiments (ieat-app#2669)", () => {
       const older = await onboardingServedFor(deps, userId, signals);
       expect(older.content.welcome.cta).not.toBe("Variant");
       expect(older.order).toBeUndefined();
-      expect((await onboardingContentFor(deps, userId, capable)).welcome.cta).toBe("Variant");
+      // A reader that walks nothing — the chat quoting a stored ask line — gets the words the user
+      // was shown, whatever it can walk.
+      expect((await onboardingContentFor(deps, userId, signals)).welcome.cta).toBe("Variant");
     });
 
     it("reads each arm's place funnel in that arm's order, without a beat it removed", async () => {
@@ -716,6 +746,8 @@ describe("experiments (ieat-app#2669)", () => {
       await recordOnboardingEvents(deps, userId, [
         event({ place: "medical", contentVersion: 42 }),
         event({ place: "diet", contentVersion: 42, action: "answer", ms: 900 }),
+        // A run that fell back walked the default order: it is the arm's `fell_back`, not a row here.
+        event({ id: crypto.randomUUID(), sessionId: "s-fell", place: "medical", contentVersion: 41 }),
       ]);
       const view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
       const arm = view.arms[1]!;
@@ -724,6 +756,7 @@ describe("experiments (ieat-app#2669)", () => {
       expect(places.indexOf("medical")).toBeLessThan(places.indexOf("diet"));
       expect(places.slice(-4)).toEqual(["country", "referral", "health", "streak"]);
       expect(arm.places.find((r) => r.place === "medical")?.views).toBe(1);
+      expect(arm.stats.fell_back).toBe(1);
       expect(arm.places.find((r) => r.place === "diet")?.answers).toBe(1);
       // Control reads in the default order.
       expect(view.arms[0]!.places.map((r) => r.place)).toEqual([...ONBOARDING_PLACES]);

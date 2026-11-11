@@ -111,7 +111,7 @@ test("removes a beat, adds it back where the default has it, and resets to the d
   await page.getByRole("button", { name: "Default order" }).click();
   await expect.poll(() => saves.length).toBe(2);
   expect(saves[1]).toEqual({ order: null });
-  // Each arm's place table reads in that arm's order.
+  // Each arm gets its own place table.
   await expect(page.locator("details summary", { hasText: "variant 2" })).toHaveCount(1);
   expect(errors).toEqual([]);
 });

@@ -3931,7 +3931,7 @@ export async function postgresStore(
       const { from: lo, to: hi } = range;
       const configStaff = uuidArray(staffIds);
       // `onboardingExperimentFunnel`'s population and window, grouped by place as `onboardingFunnel`
-      // counts it — so a place row means the same thing on the whole-host funnel and on an arm.
+      // counts it — so a place row is counted the same way on the whole-host funnel and on an arm.
       const rows = await sql`
         select a.variant_id, e.place,
                count(*) filter (where e.action = 'view')::int   as views,
@@ -3945,6 +3945,8 @@ export async function postgresStore(
         from onboarding_assignments a
         join onboarding_experiments x on x.id = a.experiment_id
         join onboarding_events e on e.user_id = a.user_id
+          -- Only runs that rendered this arm: a fell-back run walked another order (ieat-app#2788).
+          and e.content_version = a.variant_id
           and e.at >= a.assigned_at
           and (x.stopped_at is null or e.at <= x.stopped_at)
           and (${lo === null} or e.at >= ${lo})

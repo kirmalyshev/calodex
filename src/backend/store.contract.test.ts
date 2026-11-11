@@ -3424,9 +3424,28 @@ function contract(name: string, make: () => Promise<Store>) {
             { id: crypto.randomUUID(), sessionId: "p-old-" + who, place: "goal", action: "view", contentVersion: 42, at: "2000-01-01T00:00:00Z" },
           ] as never);
         }
+        // A second arm with its own user; a run of u's that fell back to 41 is not 42's row.
+        const v = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.putOnboardingAssignment(v, e.id, 41);
+        const now = new Date().toISOString();
+        await s.recordOnboardingEvents(v, [
+          { id: crypto.randomUUID(), sessionId: "p-v", place: "goal", action: "view", contentVersion: 41, at: now },
+        ] as never);
+        await s.recordOnboardingEvents(u, [
+          { id: crypto.randomUUID(), sessionId: "p-fell", place: "diet", action: "view", contentVersion: 41, at: now },
+        ] as never);
+        // And a run after the stop is the user's history, not the arm's.
+        await s.startOnboardingExperiment(e.id);
+        await s.stopOnboardingExperiment(e.id);
+        await s.recordOnboardingEvents(u, [
+          { id: crypto.randomUUID(), sessionId: "p-late", place: "goal", action: "view", contentVersion: 42, at: "2999-01-01T00:00:00Z" },
+        ] as never);
+        const key = (r: { variant_id: number; place: string }) => `${r.variant_id}:${r.place}`;
         const rows = await s.onboardingExperimentPlaces(e.id, { from: null, to: null });
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({ variant_id: 42, place: "medical", views: 1, people: 1, answers: 1, medianMs: 800 });
+        expect(rows.map(key).sort()).toEqual(["41:goal", "42:medical"]);
+        expect(rows.find((r) => r.variant_id === 42)).toMatchObject({ place: "medical", views: 1, people: 1, answers: 1, medianMs: 800 });
+        // An id staff by config alone is left out as well.
+        expect((await s.onboardingExperimentPlaces(e.id, { from: null, to: null }, [u])).map(key)).toEqual(["41:goal"]);
         await s.setStaff(staff, false);
       });
 
