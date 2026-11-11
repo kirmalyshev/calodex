@@ -383,6 +383,56 @@ const RULES: readonly Rule[] = [
   // linter switched off. The four above were reviewed; these have not been.
 ];
 
+// ── OPT-IN RULES: reachable only when a surface names them in `only` ──────────────────────────
+//
+// WHY THEY ARE NOT IN `RULES`. Every other gated surface writes these words HONESTLY: "Start
+// your free trial" is the notification copy's own refusal line and the web's, "Why isn't it
+// free?" is the landing's FAQ, and the trial-everything model dates from #2364 — after which a
+// bare "free" is exactly what those pages exist to explain. A rule that cannot tell a promise
+// from an honest sentence belongs to the one surface whose allowed vocabulary is FIXED rather
+// than negotiated: the onboarding content, where `marketing/DECISIONS.md` (2026-07-26) allows
+// exactly two qualified forms — "free to try" and "N days free" — and nothing else.
+//
+// ENGLISH-ONLY, like `retired-no-email`, for the same reason the file's own comment gives: the
+// forms an admin may write are a closed set, and the translated tables do not translate them —
+// `ONBOARDING_CONTENT` carries the same bounded sentences in every language, so a false promise
+// in any of them is still refused when it is written in the language the rules can read.
+const OPT_IN_RULES: readonly Rule[] = [
+  // `free` is a claim unless it is one of the three qualified shapes the decisions allow — "free
+  // to try", "a week free" / "N days free", and the "free text" instruction that is about a box,
+  // not a price. "Free forever", "free trial" and "meals for free" all read the same word bare.
+  {
+    name: "unqualified-free",
+    re: /(?<!(?:a\s+week|\d+\s+days?)\s)\bfree\b(?!\s+to\s+try)(?!\s+text\b)/gi,
+  },
+  // The paywall retired these by existing: a trial takes a card, and there is then something to
+  // cancel. The never-say list `onboarding.test.ts` holds the compiled copy to, applied at save.
+  {
+    name: "billing-promise",
+    re: /\bno\s+card\b|\bno\s+trial\b|nothing\s+to\s+cancel/gi,
+  },
+  // All seven competitors have the billing complaint this copy argues against; naming one invites
+  // a fair-comparison argument the research says is lost. `lose it` reads as ordinary prose and is
+  // refused anyway — the compiled-content gate has held that line since the paywall shipped.
+  {
+    name: "competitor",
+    re: /\b(?:cal\s?ai|myfitnesspal|noom|yazio|lose\s*it)\b/gi,
+  },
+  // The allowance is ONE meal — the shipped "One meal on me". A bigger number, a plural without
+  // one, or an open-ended "every/all/unlimited" is a promise the product does not keep.
+  {
+    name: "free-meals",
+    re: /\b(?:[2-9]|\d{2,}|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|dozen|several|every|all|unlimited)\s+meals?\s+on\s+me\b|\bmeals\s+on\s+me\b/gi,
+  },
+  // No price is quoted anywhere — the store's price is per-territory and lives in App Store
+  // Connect, so a number against a currency in editable copy is a claim nobody can keep true.
+  // `(?!\p{L})` and not `\b` at the end: a Cyrillic `рублей` has no ASCII word boundary after it.
+  {
+    name: "price",
+    re: /[$€£¥₹]\s*\d|\b\d+(?:[.,]\d{1,2})?\s*(?:USD|EUR|GBP|RUB|dollars?|euros?|pounds?|рубл[а-яё]*)(?!\p{L})|\b(?:USD|EUR|GBP|RUB)\s*\d/giu,
+  },
+];
+
 /**
  * Normalizes an invisible-character bypass before matching — a zero-width space or soft hyphen
  * splits a banned token for the regex while the rendered text shows the word intact. NFKC first,
@@ -417,14 +467,17 @@ export const CLAIM_EXEMPTIONS: Readonly<Record<string, readonly string[]>> = {
  * legitimate answers are "Lose weight" and "Diabetes". `weight-promise` and `disease-term` cannot
  * tell those from a claim — the root AGENTS.md says so, and it is why the web gate covers
  * `PAGE_COPY` rather than the rendered page — so that surface opts into the rules that ARE
- * decidable there rather than being handed the marketing set. Omitted means every rule.
+ * decidable there rather than being handed the marketing set. A name in `only` selects from
+ * `RULES` AND `OPT_IN_RULES`; omitted means `RULES` only, so the opt-in set can never fire on a
+ * surface that did not ask for it.
  */
 export function lintCopy(
   fields: Record<string, string>,
   only?: readonly string[],
 ): ClaimViolation[] {
   const violations: ClaimViolation[] = [];
-  const rules = only === undefined ? RULES : RULES.filter((r) => only.includes(r.name));
+  const rules =
+    only === undefined ? RULES : [...RULES, ...OPT_IN_RULES].filter((r) => only.includes(r.name));
   for (const [field, rawText] of Object.entries(fields)) {
     const text = normalizeForMatch(rawText);
     const exempt = CLAIM_EXEMPTIONS[field];
