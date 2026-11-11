@@ -18,7 +18,7 @@ import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, NOTIFICAT
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
-import { SWITCH_KEYS, type Store } from "../store.ts";
+import { SWITCH_KEYS, type Store, type StoreOptions } from "../store.ts";
 import type { EngineDeps } from "../engine/index.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
 import { createRouter } from "./routes.ts";
@@ -46,8 +46,8 @@ let adminBearer: string;
 
 const url = (p: string) => `http://localhost${p}`;
 
-function mount(config: Config) {
-  store = memoryStore();
+function mount(config: Config, opts: StoreOptions = {}) {
+  store = memoryStore(opts);
   push = fakePush();
   const deps: EngineDeps = { store, config, llm: demoPorts(), push, mail: logMail() };
   handle = createRouter(deps, store, verifier);
@@ -634,6 +634,74 @@ describe("the account list", () => {
   it("gives an anonymous request a 401 and no rows", async () => {
     const res = await admin("GET", "/admin/api/users", undefined, "");
     expect(res.status).toBe(401);
+  });
+});
+
+// The window every time-based endpoint reads over (ieat-app#2776, follow-ups #2779). These are
+// HTTP tests, not echo tests: the echo was already proven, what was not proven is that `from`/`to`
+// — and a resolved `days` on an endpoint that defaults unbounded — actually filter the rows.
+describe("the window on the wire", () => {
+  // Clock-injected so an account can be stamped BEFORE now — `created_at` is what the bounds and
+  // the resolved `days` filter on, and "everything stamped now" cannot tell a filter from an echo.
+  let clock = 0;
+  beforeEach(async () => {
+    clock = Date.now();
+    mount(base, { now: () => clock });
+    const token = await session();
+    await store.setRole((await store.userIdForToken(token))!, "admin");
+    adminBearer = token;
+  });
+
+  const user = async () => (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+  const list = async (query = "") =>
+    await (await admin("GET", `/admin/api/users${query}`)).json() as {
+      users: { userId: string }[];
+      range: { from: string | null; to: string | null; days: number | null };
+    };
+
+  it("from/to filters what /admin/api/users returns, not just the echo", async () => {
+    clock -= 2 * 86_400_000;
+    const old = await user();
+    clock = Date.now();
+    const fresh = await user();
+    const ids = (b: Awaited<ReturnType<typeof list>>) => b.users.map((u) => u.userId);
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString();
+    const since = await list(`?from=${encodeURIComponent(yesterday)}`);
+    expect(ids(since)).toContain(fresh);
+    expect(ids(since)).not.toContain(old);
+    expect(since.range.from).toBe(yesterday);
+    const until = await list(`?to=${encodeURIComponent(yesterday)}`);
+    expect(ids(until)).toContain(old);
+    expect(ids(until)).not.toContain(fresh);
+  });
+
+  it("?days=N names a window on the endpoints that default unbounded", async () => {
+    clock -= 2 * 86_400_000;
+    const old = await user();
+    clock = Date.now();
+    const fresh = await user();
+    const one = await list("?days=1");
+    const ids = one.users.map((u) => u.userId);
+    expect(ids).toContain(fresh);
+    expect(ids).not.toContain(old);
+    // Resolved to instants AND echoed in the spelling the request used — all three fields ride.
+    expect(one.range.days).toBe(1);
+    expect(one.range.from).not.toBeNull();
+    expect(one.range.to).not.toBeNull();
+    // Nothing still means everything on these, and a nonsense days is "no ask", not an error.
+    for (const b of [await list(), await list("?days=abc")]) {
+      expect(b.range).toEqual({ from: null, to: null, days: null });
+      expect(b.users.map((u) => u.userId)).toEqual(expect.arrayContaining([old, fresh]));
+    }
+    // The same ask on the other two unbounded endpoints echoes the kept window.
+    const exp = await (await admin("GET", "/admin/api/experiments?days=5")).json() as
+      { range: { days: number | null; from: string | null } };
+    expect(exp.range.days).toBe(5);
+    expect(exp.range.from).not.toBeNull();
+    const camp = await (await admin("GET", "/admin/api/campaigns?days=3")).json() as
+      { range: { days: number | null; from: string | null } };
+    expect(camp.range.days).toBe(3);
+    expect(camp.range.from).not.toBeNull();
   });
 });
 

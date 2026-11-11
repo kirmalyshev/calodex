@@ -4773,14 +4773,28 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
         action: "view", contentVersion: 1, at: new Date(clock).toISOString(),
       }];
       const range = { from: new Date(T0 + H), to: new Date(T0 + 3 * H) };
-      const sessions = async () => (await s.onboardingFunnel(range)).sessions;
-      const base = await sessions();
+      const base = await s.onboardingFunnel(range);
+      const baseGoal = base.rows.find((r) => r.place === "goal");
       clock = T0;         await s.recordOnboardingEvents(u, ev(1) as never);
       clock = T0 + H;     await s.recordOnboardingEvents(u, ev(2) as never);
       clock = T0 + 2 * H; await s.recordOnboardingEvents(u, ev(3) as never);
       clock = T0 + 3 * H; await s.recordOnboardingEvents(u, ev(4) as never);
       clock = T0 + 4 * H; await s.recordOnboardingEvents(u, ev(5) as never);
-      expect(await sessions() - base).toBe(3);
+      // A run that finishes INSIDE the window lifts `completed` — and nobody else's (#2779: each
+      // number the aggregate carries is its own bounded read, not a column off the sessions one).
+      clock = T0 + 2 * H;
+      await s.recordOnboardingEvents(u, [{
+        id: `${sid}-done`, sessionId: `${sid}-3`, place: "summary",
+        action: "complete", contentVersion: 1, at: new Date(clock).toISOString(),
+      }] as never);
+      const f = await s.onboardingFunnel(range);
+      expect(f.sessions - base.sessions).toBe(3);
+      expect(f.completed - base.completed).toBe(1);
+      const goal = f.rows.find((r) => r.place === "goal")!;
+      // Three runs reached `goal` and showed it once each — the step's people and its views are
+      // bounded by the same window the sessions counter is.
+      expect(goal.people - (baseGoal?.people ?? 0)).toBe(3);
+      expect(goal.views - (baseGoal?.views ?? 0)).toBe(3);
       expect((await s.onboardingFunnel({ from: range.to, to: range.from })).sessions).toBe(0);
     });
 
@@ -4857,13 +4871,28 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       const s = await open();
       const u = await s.createUser("en");
       const ref = `rng-camp-${RUN}`;
-      const send = async () => s.createSend(u, {
-        id: crypto.randomUUID(), kind: "campaign", ref, templateKey: `rng-camp-t-${RUN}`,
-        lang: "en", variant: "default", token: `ExponentPushToken[${ref}]`, state: "accepted",
-      });
-      clock = T0;     await send();
-      clock = T0 + H; await send();
-      expect((await s.campaignReport(ref, { from: new Date(T0 + H), to: null })).sent).toBe(1);
+      const send = async (state: "accepted" | "dead" | "would_have_sent" = "accepted", variant = "default") => {
+        const id = crypto.randomUUID();
+        await s.createSend(u, {
+          id, kind: "campaign", ref, templateKey: `rng-camp-t-${RUN}`,
+          lang: "en", variant, token: `ExponentPushToken[${ref}-${id.slice(0, 8)}]`, state,
+        });
+        return id;
+      };
+      clock = T0;         await send();
+      clock = T0 + H;     const openedId = await send();
+      clock = T0 + 2 * H; await send("dead");
+      clock = T0 + 2 * H; await send("would_have_sent");
+      clock = T0 + 2 * H; await send("accepted", "test");
+      clock = T0 + 4 * H; await send();
+      const range = { from: new Date(T0 + H), to: new Date(T0 + 3 * H) };
+      const report = await s.campaignReport(ref, range);
+      // Every counter is its own filtered read (#2779): sent counts the non-dry, non-test rows,
+      // and accepted/dead/opened/test/held are separately bounded — one `sent` assertion would
+      // pass with four of the five broken.
+      expect(report).toMatchObject({ sent: 2, accepted: 1, dead: 1, opened: 0, test: 1, held: 1 });
+      await s.recordPushOpen(u, openedId, "tap");
+      expect((await s.campaignReport(ref, range)).opened).toBe(1);
       expect((await s.campaignReport(ref, { from: null, to: new Date(T0 + H) })).sent).toBe(2);
       expect((await s.campaignReport(ref, { from: new Date(T0 + H), to: new Date(T0) })).sent).toBe(0);
     });
@@ -4872,12 +4901,25 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       const s = await open();
       const me = await s.createUser("en");
       const via = `rng-ref-${RUN}`;
+      const range = { from: new Date(T0 + H), to: new Date(T0 + 3 * H) };
+      // These tables are global, so everything but `via` asserts a DELTA against the same ask
+      // taken before the writes — the shared database may hold other runs' rows in the window.
+      const base = await s.referralStats(range, "UTC");
+      const day10 = (v: typeof base) => v.days.find((d) => d.day === "2026-08-10");
       clock = T0;         await s.recordReferralShare(me, via);
       clock = T0 + H;     await s.recordReferralShare(me, via);
       clock = T0 + 2 * H; await s.recordReferralShare(me, via);
       clock = T0 + 4 * H; await s.recordReferralShare(me, via);
-      const view = await s.referralStats({ from: new Date(T0 + H), to: new Date(T0 + 3 * H) }, "UTC");
+      clock = T0 + 2 * H; await s.recordReferralRefusal("own");
+      clock = T0 + 4 * H; await s.recordReferralRefusal("already");
+      const view = await s.referralStats(range, "UTC");
       expect(view.via.find((v) => v.via === via)?.shares).toBe(2);
+      // Every counter the view carries is bounded by the same window, not just `via` (#2779):
+      // the day rows, the refusal reasons and the sharer count each read the range on their own.
+      expect((day10(view)?.shared ?? 0) - (day10(base)?.shared ?? 0)).toBe(2);
+      expect(view.refusals.own - base.refusals.own).toBe(1);
+      expect(view.refusals.already - base.refusals.already).toBe(0);
+      expect(view.sharers - base.sharers).toBe(1);
       const unbounded = await s.referralStats({ from: null, to: null }, "UTC");
       expect(unbounded.via.find((v) => v.via === via)?.shares).toBe(4);
       expect((await s.referralStats({ from: new Date(T0 + 3 * H), to: new Date(T0 + H) }, "UTC"))
@@ -4911,6 +4953,33 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect(await s.onboardingExperimentFunnel(e.id, { from: new Date(T0 + 3 * H), to: new Date(T0 + H) })).toEqual([]);
     });
 
+    it("narrows a stopped experiment's funnel to events before the stop AND inside the range", async () => {
+      const s = await open();
+      const e = {
+        id: `rng-stop-${RUN}`, lang: "en" as const, status: "draft" as const, rules: {},
+        variants: [{ weight: 1, content: { version: 42 } as never }],
+        created_by: crypto.randomUUID(), created_at: new Date(T0).toISOString(),
+        started_at: null, stopped_at: null, revision: 1,
+      };
+      clock = T0;
+      await s.putOnboardingExperiment(e as never);
+      expect(await s.startOnboardingExperiment(e.id)).toBe(true);
+      const u = await s.createUser("en");
+      clock = T0 + H;
+      await s.putOnboardingAssignment(u, e.id, 42);
+      const ev = (at: string, sessionId: string) => [{
+        id: crypto.randomUUID(), sessionId, place: "goal", action: "view", contentVersion: 42, at,
+      }];
+      // One run inside the range and before the stop; one inside the range but AFTER it — the
+      // range narrows inside the experiment's own window, it never widens it (#2779).
+      await s.recordOnboardingEvents(u, ev(new Date(T0 + 1.5 * H).toISOString(), "s-in") as never);
+      clock = T0 + 2 * H;
+      expect(await s.stopOnboardingExperiment(e.id)).toBe(true);
+      await s.recordOnboardingEvents(u, ev(new Date(T0 + 2.5 * H).toISOString(), "s-after-stop") as never);
+      const rows = await s.onboardingExperimentFunnel(e.id, { from: new Date(T0), to: new Date(T0 + 3 * H) });
+      expect(rows.find((r) => r.variant_id === 42)).toMatchObject({ assigned: 1, sessions: 1 });
+    });
+
     it("reads metrics over the calendar days the range's instants land on", async () => {
       const s = await open();
       const u = await s.createUser("en");
@@ -4942,6 +5011,18 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
         today: "2044-12-31", timezone: "UTC",
       });
       expect(rev.days).toEqual([]);
+
+      // Same instants, a zone far from UTC (#2779 — metrics was only ever asked in UTC).
+      // day1T23:30Z is already day2 12:30 in Auckland (UTC+13 in January), and day2T12:00Z is
+      // Auckland's day3: the Auckland ask starts a day LATER and ends a day later than it reads.
+      const day3 = new Date(base + 2 * 86_400_000).toISOString().slice(0, 10);
+      const nz = await s.adminMetrics({
+        from: new Date(day1 + "T23:30:00Z"), to: new Date(day2 + "T12:00:00Z"),
+        today: "2044-12-31", timezone: "Pacific/Auckland",
+      });
+      expect(nz.days.map((d) => d.date)).toEqual([day2, day3]);
+      expect(nz.days[0]!.analyses).toBe(2);
+      expect(nz.days[1]!.analyses).toBe(0);
     });
   });
 }
