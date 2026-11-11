@@ -3391,6 +3391,9 @@ function contract(name: string, make: () => Promise<Store>) {
         }
         const rows = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
         expect(rows.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 1, sessions: 1, completed: 1 });
+        // An id staff by config alone (`campaignStaffIds`) is left out of the arms too.
+        const byList = await s.onboardingExperimentFunnel(e.id, { from: null, to: null }, [user]);
+        expect(byList.reduce((n, r) => n + r.assigned, 0)).toBe(0);
         await s.setStaff(staff, false);
         const back = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
         expect(back.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 2, sessions: 2, completed: 2 });
