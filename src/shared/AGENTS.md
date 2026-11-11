@@ -184,7 +184,11 @@ gets its meal names in that language.
   recall. `validateNotificationCopy` accepted *Garantierter Gewichtsverlust*.
   - COVERED IN EVERY LANGUAGE: `guarantee`, `weight-promise`, `lowers-marker`, `detox`.
   - STILL ENGLISH-ONLY: `disease-verb`, `treats-disease`, `disease-term`, `burns-fat`,
-    `exclusivity`, `superiority`, `retired-no-email`. Two of those are German-shaped risks with no
+    `exclusivity`, `superiority`, `retired-no-email`, and the opt-in billing set —
+    `unqualified-free`, `billing-promise`, `competitor`, `free-meals`, `price` — which only a
+    surface that names them in `only` runs (onboarding's save gate does; the landing and
+    notifications write "free trial" honestly, so they must never fire there). Two of the
+    English-only rules are German-shaped risks with no
     German pattern — `disease-verb` is the sharpest HWG exposure there is, and `exclusivity` is
     the *Alleinstellungsbehauptung* the file's own comment cites §5 UWG for. They are out because
     each needs a native reading to write narrowly, and a guessed pattern is the kind that fires on
