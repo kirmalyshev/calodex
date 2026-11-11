@@ -26,6 +26,10 @@ export const DEFAULT_ORDER: readonly OnboardingPlace[] = ONBOARDING_PLACES.slice
 /** The places an arm may leave out: the two beats, which write nothing. Every question stays. */
 export const REMOVABLE_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
 
+const OTHER_QUESTIONS = DEFAULT_ORDER.filter(
+  (p) => !["welcome", "diet", "medical", "summary", "signup", ...REMOVABLE_PLACES].includes(p),
+);
+
 /**
  * What each place must come AFTER, and why. A predecessor an arm removed (a beat) is no constraint.
  *
@@ -39,6 +43,9 @@ export const REMOVABLE_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim
  *   prelim    explainTargets over every target input, the pace included
  *   barrier   its options gain one named by the goal; "never counted" skips it; its copy variant
  *   situation its copy variant is keyed by `counted_before`
+ *   diet,     the LAST questions, either order between them: `isAnswered` counts medical answered
+ *   medical   only once onboarding is complete (a Balanced diet likewise), so a question after them
+ *             is one `resumeAt` rewinds past on every resume — and the app completes on that answer
  *   summary   a rule: the plan is the end of the questions. planRows reads diet and medical and
  *             explainTargets the target inputs; the rest follow the rule
  */
@@ -51,29 +58,36 @@ export const ORDER_AFTER: Readonly<Partial<Record<OnboardingPlace, readonly Onbo
   prelim: ["goal", "sex", "age", "height", "weight", "activity", "target", "pace"],
   barrier: ["goal", "counted"],
   situation: ["counted"],
+  diet: OTHER_QUESTIONS,
+  medical: OTHER_QUESTIONS,
   summary: DEFAULT_ORDER.filter((p) => !["welcome", "summary", "signup"].includes(p)),
 };
 
 /** Why an order is refused. Only `must-follow` names a second place. */
 export type OrderRefusal =
   /**
+   *   not-a-list the order is not an array at all (`place` is empty)
    *   unknown    not a place in the span
    *   duplicate  listed twice
    *   missing    a question left out (only `REMOVABLE_PLACES` may be)
    *   fixed      the welcome is not first, or the sign-up is not straight after the plan
    */
-  | { place: string; rule: "unknown" | "duplicate" | "missing" | "fixed" }
+  | { place: string; rule: "not-a-list" | "unknown" | "duplicate" | "missing" | "fixed" }
   /** `place` sits before `after`, which it must follow. */
   | { place: OnboardingPlace; rule: "must-follow"; after: OnboardingPlace };
 
-const inSpan = (p: string): p is OnboardingPlace => (DEFAULT_ORDER as readonly string[]).includes(p);
+const inSpan = (p: unknown): p is OnboardingPlace => (DEFAULT_ORDER as readonly unknown[]).includes(p);
 
-/** Every reason this order is refused; empty when it is valid. The one validator for every caller. */
-export function validateOnboardingOrder(order: readonly string[]): OrderRefusal[] {
+/**
+ * Every reason this order is refused; empty when it is valid. The one validator for every caller.
+ * Takes `unknown` because every caller holds parsed JSON — a stored arm, a request body, a response.
+ */
+export function validateOnboardingOrder(order: unknown): OrderRefusal[] {
+  if (!Array.isArray(order)) return [{ place: "", rule: "not-a-list" }];
   const out: OrderRefusal[] = [];
-  const seen = new Set<string>();
-  for (const p of order) {
-    if (!inSpan(p)) out.push({ place: p, rule: "unknown" });
+  const seen = new Set<unknown>();
+  for (const p of order as readonly unknown[]) {
+    if (!inSpan(p)) out.push({ place: String(p), rule: "unknown" });
     else if (seen.has(p)) out.push({ place: p, rule: "duplicate" });
     seen.add(p);
   }
@@ -94,12 +108,12 @@ export function validateOnboardingOrder(order: readonly string[]): OrderRefusal[
 }
 
 /** The order a surface walks: the served one when it is valid, the default otherwise. */
-export function servedOrder(order: readonly string[] | undefined): readonly OnboardingPlace[] {
-  return order !== undefined && validateOnboardingOrder(order).length === 0 ? order.filter(inSpan) : DEFAULT_ORDER;
+export function servedOrder(order: unknown): readonly OnboardingPlace[] {
+  return Array.isArray(order) && validateOnboardingOrder(order).length === 0 ? order.filter(inSpan) : DEFAULT_ORDER;
 }
 
 /** Whether a client handed this order walks the default instead — the signal the funnel reports. */
-export function orderFellBack(order: readonly string[] | undefined): boolean {
+export function orderFellBack(order: unknown): boolean {
   return order !== undefined && validateOnboardingOrder(order).length > 0;
 }
 

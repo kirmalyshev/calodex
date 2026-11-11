@@ -68,6 +68,12 @@ const EDGES: [OnboardingPlace, OnboardingPlace, string][] = [
 // The plan is the end of the questions: every place between the welcome and the plan comes first.
 const BEFORE_SUMMARY = DEFAULT_ORDER.filter((p) => !["welcome", "summary", "signup"].includes(p));
 
+// diet and medical are the LAST questions, in either order between them: `isAnswered` counts medical
+// answered only once onboarding is complete (and a Balanced diet likewise), so a question after them
+// is one `resumeAt` rewinds past on every resume — and the app completes onboarding on that answer.
+const LAST_QUESTIONS: OnboardingPlace[] = ["diet", "medical"];
+const OTHER_QUESTIONS = BEFORE_SUMMARY.filter((p) => !LAST_QUESTIONS.includes(p) && !["baseline", "prelim"].includes(p));
+
 describe("a hard edge", () => {
   for (const [later, earlier, why] of EDGES) {
     it(`refuses ${later} before ${earlier} (${why})`, () => {
@@ -85,11 +91,40 @@ describe("the plan", () => {
   }
 });
 
+describe("diet and medical", () => {
+  for (const last of LAST_QUESTIONS) {
+    for (const q of OTHER_QUESTIONS) {
+      it(`refuses ${last} before ${q}`, () => {
+        expect(validateOnboardingOrder(moved(last, q))).toContainEqual({ place: last, rule: "must-follow", after: q });
+      });
+    }
+  }
+
+  it("may come in either order between them", () => {
+    expect(validateOnboardingOrder(moved("medical", "diet"))).toEqual([]);
+  });
+
+  it("resume at the first of them once every other question is answered, in either order", () => {
+    const p = profile({
+      goal: "lose", sex: "female", birth_year: 1990, height_cm: 170, weight_kg: 80, activity: "some",
+      target_weight_kg: 70, pace: "steady", counted_before: "never", barriers: [], situations: [],
+    });
+    const at = (order?: readonly OnboardingPlace[]) => {
+      const prompts = promptsFor(p, ["country"], { health: false }, order);
+      return prompts[resumeAt(prompts, p)]!.id;
+    };
+    expect(at()).toBe("diet");
+    expect(at(moved("medical", "diet"))).toBe("medical");
+  });
+});
+
 describe("the rules", () => {
   it("are exactly the edges above, at ONBOARDING_ORDER_VERSION 1 — change either, bump the version", () => {
     // A client validates against its OWN copy of these rules; one on the old copy must stop being
     // enrolled in an ordered arm, which only a version bump does (`onboarding-order.ts`).
-    const expected: Partial<Record<OnboardingPlace, OnboardingPlace[]>> = { summary: BEFORE_SUMMARY };
+    const expected: Partial<Record<OnboardingPlace, OnboardingPlace[]>> = {
+      summary: BEFORE_SUMMARY, diet: [...OTHER_QUESTIONS], medical: [...OTHER_QUESTIONS],
+    };
     for (const [later, earlier] of EDGES) (expected[later] ??= []).push(earlier);
     const sorted = (g: Partial<Record<string, readonly string[]>>) =>
       Object.fromEntries(Object.entries(g).map(([k, v]) => [k, [...v!].sort()]));
@@ -104,12 +139,10 @@ describe("what may move", () => {
     expect(validateOnboardingOrder(moved("age", "sex"))).toEqual([]);
   });
 
-  it("diet, medical and the counted questions anywhere after the goal", () => {
-    let order = moved("medical", "sex");
-    order = moved("diet", "medical", order);
-    order = moved("counted", "diet", order);
-    order = moved("barrier", "diet", order);
-    order = moved("situation", "diet", order);
+  it("the counted questions anywhere after the goal", () => {
+    let order = moved("counted", "sex");
+    order = moved("barrier", "sex", order);
+    order = moved("situation", "sex", order);
     expect(validateOnboardingOrder(order)).toEqual([]);
   });
 
@@ -121,9 +154,18 @@ describe("what may move", () => {
 });
 
 describe("what is refused", () => {
+  it("anything that is not a list — the served JSON may be anything", () => {
+    for (const bad of [null, {}, 5, "welcome"]) {
+      expect(validateOnboardingOrder(bad)).toEqual([{ place: "", rule: "not-a-list" }]);
+      expect(servedOrder(bad)).toBe(DEFAULT_ORDER);
+      expect(orderFellBack(bad)).toBe(true);
+    }
+  });
+
   it("a place that is not in the span", () => {
     expect(validateOnboardingOrder([...DEFAULT_ORDER, "country"])).toContainEqual({ place: "country", rule: "unknown" });
     expect(validateOnboardingOrder([...DEFAULT_ORDER, "nope"])).toContainEqual({ place: "nope", rule: "unknown" });
+    expect(validateOnboardingOrder([...DEFAULT_ORDER, 7])).toContainEqual({ place: "7", rule: "unknown" });
   });
 
   it("a place twice", () => {
@@ -168,14 +210,14 @@ describe("a served order", () => {
 });
 
 describe("the walk in an arm's order", () => {
-  const order = moved("diet", "sex").filter((p) => p !== "prelim");
+  const order = moved("counted", "sex").filter((p) => p !== "prelim");
   const ids = (p: Profile) => promptsFor(p, ["country"], { health: false }, order).map((x) => x.id);
 
   it("follows the order, drops a removed beat and keeps the tail after it", () => {
     expect(ids(profile())).toEqual([
-      "welcome", "goal", "diet", "sex", "birth_year", "height_cm", "weight_kg", "activity", "baseline",
-      "target_weight_kg", "pace", "counted_before", "barriers", "situations",
-      "medical", "summary", "signup", "streak_goal_days",
+      "welcome", "goal", "counted_before", "sex", "birth_year", "height_cm", "weight_kg", "activity", "baseline",
+      "target_weight_kg", "pace", "barriers", "situations",
+      "diet", "medical", "summary", "signup", "streak_goal_days",
     ]);
   });
 
