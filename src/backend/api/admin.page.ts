@@ -811,7 +811,7 @@ details.how p { margin-top: 8px; }
         <details class="how">
           <summary>How saving works</summary>
           <p class="muted">
-            Every word Spud says to POSE a question, plus the option labels, the front door and the plan.
+            Every word Spud says to POSE a question, plus the option labels, the front door, the plan, the sign-up, the referral, Apple Health, the Live Activity and the first meal.
             The <em>questions</em> are fixed in code — they feed the calorie target — and so is their order,
             and so are Spud's replies and the support cards, which carry citations. Saving bumps the content
             version, which is what the funnel is grouped by.
@@ -1305,9 +1305,49 @@ details.how p { margin-top: 8px; }
     return card;
   }
 
+  // Area (d): the account step, the referral step, Apple Health, the Live Activity, the first meal.
+  function blockCard(key, title, rows) {
+    var t = content[key];
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, title);
+    rows.forEach(function (r) { field(card, r[1], t[r[0]], function (v) { t[r[0]] = v; }, r[2]); });
+    return card;
+  }
+  function signupCard() {
+    return blockCard("signup", "Sign-up", [["heading", "Save-your-plan heading"], ["line", "Save-your-plan line", true]]);
+  }
+  function referralCard() {
+    return blockCard("referral", "Referral", [
+      ["ask", "Question"], ["sub", "Sub line", true], ["field", "Field label"], ["applied", "Applied"],
+      ["unknown", "Unknown link", true], ["own", "Own link", true], ["already", "Already joined", true],
+      ["paid", "Already paid", true], ["tryAgain", "Try again"], ["skip", "Skip"],
+    ]);
+  }
+  function healthCard() {
+    return blockCard("health", "Apple Health offer", [["title", "Title"], ["body", "Body", true]]);
+  }
+  function liveActivityCard() {
+    var t = content.liveActivity;
+    var card = document.createElement("div");
+    card.className = "card";
+    sectionHead(card, "Live Activity");
+    [0, 1, 2].forEach(function (i) {
+      field(card, "Step " + (i + 1) + " title", t.titles[i], function (v) { t.titles[i] = v; });
+    });
+    field(card, "Button", t.go, function (v) { t.go = v; });
+    return card;
+  }
+  function firstMealCard() {
+    return blockCard("firstMeal", "The first meal", [
+      ["ask", "Ask", true], ["react", "Reaction to a closed offer", true], ["photo", "Photo button"], ["tell", "Tell-me button"],
+      ["keepGoing", "Verdict: keep going"], ["correct", "Verdict: correct the meal"], ["afterAsk", "Ask after the free meal", true],
+    ]);
+  }
+
   // The sections take turns beside a sub-nav; the save bar below them is for all of them.
   var obSec = "welcome";
-  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"], ["target", "The target"], ["pace", "The pace"], ["plan", "The plan"]];
+  var OB_SECS = [["welcome", "Welcome screen"], ["screens", "Screens"], ["building", "Working out the number"], ["summary", "Plan screen"], ["ui", "Around the questions"], ["beats", "The beats"], ["target", "The target"], ["pace", "The pace"], ["plan", "The plan"], ["signup", "Sign-up"], ["referral", "Referral"], ["health", "Apple Health"], ["liveActivity", "Live Activity"], ["firstMeal", "First meal"]];
 
   function renderObNav() {
     var nav = $("ob-nav");
@@ -1369,6 +1409,11 @@ details.how p { margin-top: 8px; }
     one("target", targetCard);
     one("pace", paceCard);
     one("plan", planCard);
+    one("signup", signupCard);
+    one("referral", referralCard);
+    one("health", healthCard);
+    one("liveActivity", liveActivityCard);
+    one("firstMeal", firstMealCard);
     renderObNav();
     if (fresh) saved = JSON.parse(JSON.stringify(content));
     unsaved();

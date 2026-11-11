@@ -19,17 +19,16 @@ import { verdictMood } from "../../shared/types.ts";
 
 
 import type { MascotMood } from "../../shared/mascot.ts";
-// The one-meal flow's Spud lines — ONE table both clients read (#42): the phone through
-// `chatCopyFor(lang).firstMeal`, the browser through this module. It is small on purpose: a
-// module the browser imports ships whole, so this imports types and nothing else.
-import { FIRST_MEAL_COPY } from "../../shared/first-meal-copy.ts";
+// The one-meal flow's Spud lines are onboarding CONTENT (ieat-app#2757): the compiled-in revision
+// draws first, and the served one (the admin's words, or an experiment's) replaces it when it lands.
+import { onboardingContentFor } from "../../shared/onboarding-content.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
 import { UNIT_KCAL, kcalNumbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import { localTime } from "../../shared/dates.ts";
 import type { Answered, MealAnalysis, MealLogged, MealProposed, VerdictLabel } from "@eait/shared";
 import type {
-  EditMealResponse, PendingResponse, PhotoProgress, ProfileResponse,
+  EditMealResponse, OnboardingContentResponse, PendingResponse, PhotoProgress, ProfileResponse,
 } from "@eait/shared/contract";
 import { ApiError, Unauthenticated, api } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
@@ -59,7 +58,7 @@ function sayRow(mood: MascotMood, line: string): HTMLElement {
 export function firstMealScreen(me: ProfileResponse): HTMLElement {
   // The words that ARE the flow, from the one table both clients read (#42) — `photo` is the
   // phone's camera line and stays unused here: the web's button is its own "Upload a photo".
-  const fm = FIRST_MEAL_COPY[lang];
+  let fm = onboardingContentFor(lang).firstMeal;
   const mc = mealCopyFor(lang);
   const zone = me.timezone;
   const wrap = el("div", "fflow");
@@ -471,6 +470,11 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
     return scrim;
   };
 
-  show(askStep());
+  const first = askStep();
+  show(first);
+  void api<OnboardingContentResponse>(`/onboarding?lang=${lang}`).then((res) => {
+    fm = res.content.firstMeal;
+    if (stage.firstChild === first) show(askStep());
+  }).catch(() => {});
   return wrap;
 }

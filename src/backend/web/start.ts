@@ -742,6 +742,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       termsHref: config.termsUrl === "" ? null : config.termsUrl,
       privacyHref: config.landingUrl === "" ? null : `${config.landingUrl}/privacy`,
       fromPlan: profile !== null,
+      signup: profile === null ? null : (await onboardingContentFor(ctx.deps, userId, {
+        lang, surface: "web", region: browserRegion(req),
+      })).signup,
       lang,
     }), 200, {
       // The consent POST answers with a 303 to the provider's own origin — and `form-action`

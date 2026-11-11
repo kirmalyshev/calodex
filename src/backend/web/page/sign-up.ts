@@ -1,4 +1,4 @@
-import { signupCopyFor } from "@eait/shared";
+import { signupCopyFor, type OnboardingSignupContent } from "@eait/shared";
 import type { Lang } from "@eait/shared";
 import { brandSvg } from "@eait/shared/ui/icons";
 import { pageCopyFor } from "../copy.ts";
@@ -35,6 +35,8 @@ export interface SignUpView {
   privacyHref: string | null;
   /** True when the person arrives from their own plan: the heading is "Save your progress" (19). */
   fromPlan: boolean;
+  /** The "Save your plan" heading and line, from the onboarding content (ieat-app#2757); null off the plan. */
+  signup: OnboardingSignupContent | null;
   lang: Lang;
 }
 
@@ -54,12 +56,12 @@ export function signUp(v: SignUpView): string {
   // kickoff — the address comes first — so the pill is a link where the others are submits.
   const email = v.emailHref === null ? ""
     : `  <a class="cta s" href="${escape(v.emailHref)}"><i class="ico i-mail" aria-hidden="true"></i>${escape(SIGNUP_COPY.continueEmail)}</a>\n`;
-  return shell(v.fromPlan ? SIGNUP_COPY.savePlanHeading : SIGNUP_COPY.signUpHeading, `${wtop()}
+  return shell(v.signup ? v.signup.heading : SIGNUP_COPY.signUpHeading, `${wtop()}
 <div class="wmain one"><div class="wcol">
 <div class="sup">
 ${v.fromPlan ? dash("signup", v.lang, { href: "/start/plan", label: pageCopyFor(v.lang).back }) : ""}
-<h1>${escape(v.fromPlan ? SIGNUP_COPY.savePlanHeading : SIGNUP_COPY.signUpHeading)}</h1>
-${v.fromPlan ? `<p class="sub">${escape(SIGNUP_COPY.savePlanLine)}</p>` : ""}
+<h1>${escape(v.signup ? v.signup.heading : SIGNUP_COPY.signUpHeading)}</h1>
+${v.signup ? `<p class="sub">${escape(v.signup.line)}</p>` : ""}
 ${v.error ? `<p class="notice" role="alert">${escape(v.error)}</p>` : ""}
 <form id="signup" method="post">
 ${v.providers.map((p) =>

@@ -118,8 +118,7 @@ export interface WebCopy {
 
   // ── The first-meal flow (#42): one analysis on the house, its verdict, the offer after. ─────
   // Spud's lines on the flow — the react/ask/tell/keepGoing/correct/afterAsk — are NOT here:
-  // `chatCopyFor(lang).firstMeal` (`shared/onboarding-chat-copy.ts`) is the one table both clients
-  // read. What stays is what that table does not carry: the web's upload wording (`photo` there is
+  // `OnboardingContent.firstMeal` (`shared/onboarding.ts`) is where they live. What stays is what that table does not carry: the web's upload wording (`photo` there is
   // the phone's camera), the drop zone, the edit fields, the offer's prices and timeline.
   /** The web's photo button — `firstMeal.photo` is the phone's "Take a photo". */
   firstMealUpload: string;
