@@ -93,6 +93,9 @@ function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number } |
     return Number.isNaN(ms) ? null : new Date(ms);
   };
   if (f !== null || t !== null) return { from: instant(f), to: instant(t) };
+  // `all` is how the page says "no bounds on purpose": with no params at all a bounded
+  // endpoint falls back to its `days` default, so All time cannot just send nothing.
+  if (url.searchParams.has("all")) return { from: null, to: null };
   if (bounds === null) return { from: null, to: null };
   const raw = Number(url.searchParams.get("days") ?? bounds.defaultDays);
   const days = Number.isFinite(raw)

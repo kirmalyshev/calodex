@@ -4713,21 +4713,26 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       clock = T0 + 2 * H; const mid = await s.createUser("en");
       clock = T0 + 3 * H; const hi = await s.createUser("en");
       clock = T0 + 4 * H; const out2 = await s.createUser("en");
-      const page = async (from: Date | null, to: Date | null) =>
-        (await s.adminListUsers({ limit: 10_000, today: "2026-08-10", from, to })).rows.map((r) => r.userId);
+      // One account at a time, through the id-prefix search: the shared postgres test
+      // database holds hundreds of accounts newer than these, and the newest-first page
+      // (bounded at ADMIN_USER_PAGE_MAX) would page these out before the range mattered.
+      const has = async (id: string, from: Date | null, to: Date | null) =>
+        (await s.adminListUsers({ q: id, limit: 10, today: "2026-08-10", from, to })).rows.length === 1;
 
-      const inside = await page(new Date(T0 + H), new Date(T0 + 3 * H));
-      expect(inside).toEqual(expect.arrayContaining([lo, mid, hi]));
-      for (const out of [out1, out2]) expect(inside).not.toContain(out);
+      const f = new Date(T0 + H), t = new Date(T0 + 3 * H);
+      expect(await has(lo, f, t)).toBe(true);
+      expect(await has(mid, f, t)).toBe(true);
+      expect(await has(hi, f, t)).toBe(true);
+      expect(await has(out1, f, t)).toBe(false);
+      expect(await has(out2, f, t)).toBe(false);
 
-      const openEnd = await page(new Date(T0 + 2 * H), null);
-      expect(openEnd).toEqual(expect.arrayContaining([mid, hi, out2]));
-      expect(openEnd).not.toContain(lo);
-      const openStart = await page(null, new Date(T0 + H));
-      expect(openStart).toEqual(expect.arrayContaining([lo]));
-      expect(openStart).not.toContain(mid);
+      expect(await has(out2, new Date(T0 + 2 * H), null)).toBe(true);
+      expect(await has(lo, new Date(T0 + 2 * H), null)).toBe(false);
+      expect(await has(lo, null, new Date(T0 + H))).toBe(true);
+      expect(await has(mid, null, new Date(T0 + H))).toBe(false);
 
-      expect(await page(new Date(T0 + 3 * H), new Date(T0 + H))).toEqual([]);
+      expect(await has(mid, t, f)).toBe(false);
+      expect((await s.adminListUsers({ limit: 10, today: "2026-08-10", from: t, to: f })).rows).toEqual([]);
     });
 
     it("counts only the onboarding events received inside the range", async () => {
@@ -4842,29 +4847,32 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
     it("reads metrics over the calendar days the range's instants land on", async () => {
       const s = await open();
       const u = await s.createUser("en");
-      // Far-future dates no other test's RUN_DATE can collide with: these reads are global.
-      const day1 = "2044-03-04", day2 = "2044-03-05";
+      // Far-future days keyed to this run: an analysis count is global, so a re-run on the
+      // same database must not find its own rows again.
+      const base = Date.parse("2044-01-01T00:00:00Z") + (RUN.charCodeAt(2) % 300) * 86_400_000;
+      const day1 = new Date(base).toISOString().slice(0, 10);
+      const day2 = new Date(base + 86_400_000).toISOString().slice(0, 10);
       await s.recordAnalysis(u, day1, "photo");
       await s.recordAnalysis(u, day2, "photo");
       await s.recordAnalysis(u, day2, "text");
 
       const m = await s.adminMetrics({
-        from: new Date("2044-03-05T00:30:00Z"), to: new Date("2044-03-05T23:00:00Z"),
-        today: "2044-03-31", timezone: "UTC",
+        from: new Date(day2 + "T00:30:00Z"), to: new Date(day2 + "T23:00:00Z"),
+        today: "2044-12-31", timezone: "UTC",
       });
       // `to` covers its WHOLE day — an instant inside a day still includes the day.
       expect(m.days.map((d) => d.date)).toEqual([day2]);
       expect(m.days[0]!.analyses).toBe(2);
 
       const span = await s.adminMetrics({
-        from: new Date("2044-03-04T23:00:00Z"), to: new Date("2044-03-05T01:00:00Z"),
-        today: "2044-03-31", timezone: "UTC",
+        from: new Date(day1 + "T23:00:00Z"), to: new Date(day2 + "T01:00:00Z"),
+        today: "2044-12-31", timezone: "UTC",
       });
       expect(span.days.map((d) => d.date)).toEqual([day1, day2]);
 
       const rev = await s.adminMetrics({
-        from: new Date("2044-03-05T00:00:00Z"), to: new Date("2044-03-04T00:00:00Z"),
-        today: "2044-03-31", timezone: "UTC",
+        from: new Date(day2 + "T00:00:00Z"), to: new Date(day1 + "T00:00:00Z"),
+        today: "2044-12-31", timezone: "UTC",
       });
       expect(rev.days).toEqual([]);
     });

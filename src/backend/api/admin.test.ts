@@ -1232,6 +1232,12 @@ describe("the admin's push opens view (ieat-app#1759)", () => {
     expect(JSON.stringify(view)).not.toContain("ExponentPushToken");
   });
 
+  it("reads all=1 as the unbounded window, not the default seven days", async () => {
+    const view = await (await admin("GET", "/admin/api/push/stats?all=1")).json() as
+      { range: { days: number | null; from: string | null; to: string | null } };
+    expect(view.range).toEqual({ days: null, from: null, to: null });
+  });
+
   it("is closed to anyone but the admin", async () => {
     expect((await admin("GET", "/admin/api/push/stats", undefined, "")).status).toBe(401);
   });
@@ -1481,6 +1487,17 @@ describe("the referrals view", () => {
     expect(JSON.stringify(body)).not.toContain(friend);
     expect(JSON.stringify(body)).not.toContain(code);
     expect((await (await admin("GET", "/admin/api/referrals?days=nonsense")).json() as { range: { days: number } }).range.days).toBe(7);
+  });
+
+  it("reads all=1 as the unbounded window, and from/to as the instants sent", async () => {
+    type Echo = { range: { days: number | null; from: string | null; to: string | null } };
+    // No params would fall back to `days`; all=1 is how the page says unbounded on purpose.
+    const all = await (await admin("GET", "/admin/api/referrals?all=1")).json() as Echo;
+    expect(all.range).toEqual({ days: null, from: null, to: null });
+    const bounded = await (await admin(
+      "GET", "/admin/api/referrals?from=2026-11-03T00:00:00.000Z&to=2026-11-09T00:00:00.000Z",
+    )).json() as Echo;
+    expect(bounded.range).toEqual({ days: null, from: "2026-11-03T00:00:00.000Z", to: "2026-11-09T00:00:00.000Z" });
   });
 
   it("is on the page, in Operate after Campaigns", () => {

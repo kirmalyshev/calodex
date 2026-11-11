@@ -148,6 +148,7 @@ async function stubAdmin(page: import("@playwright/test").Page, over: Record<str
           entitlement: ["active", "trial", "none"], streakBands: ["none", "building"],
           sinceLog: ["today", "recent", "lapsing", "lapsed", "never"], staffCount: 1,
         },
+        range: { from: null, to: null, days: null },
       }));
     }
     if (path.endsWith("/kill")) { campaignKilled = (body as { killed: boolean }).killed; return r.fulfill(json({ killed: campaignKilled })); }
@@ -156,24 +157,30 @@ async function stubAdmin(page: import("@playwright/test").Page, over: Record<str
     if (over.campaignRefuse) return r.fulfill(json({ errors: [over.campaignRefuse] }, 422));
     return r.fulfill(json({ row: campaignRows[0] }));
   });
+  // The range echo is what the server resolved the ask to: `days` asks keep their count beside
+  // the instant bounds, an unbounded ask echoes nulls.
+  const since = (days: number) => ({
+    days, to: new Date().toISOString(), from: new Date(Date.now() - days * 86400000).toISOString(),
+  });
   await page.route("**/admin/api/metrics**", (r) => r.fulfill(json({
     days: [],
     d1: { returned: 0, eligible: 0 }, d7: { returned: 0, eligible: 0 },
     latency: { n: 0, queue: { p50: null, p95: null }, firstItem: { p50: null, p95: null }, total: { p50: null, p95: null } },
+    range: { days: 30, from: null, to: null },
   })));
-  await page.route("**/admin/api/push/stats**", (r) => r.fulfill(json({ days: 14, timezone: "UTC", rows: [] })));
+  await page.route("**/admin/api/push/stats**", (r) => r.fulfill(json({ range: since(14), timezone: "UTC", rows: [] })));
   await page.route("**/admin/api/referrals**", (r) => r.fulfill(json({
-    window: 7, timezone: "UTC",
+    range: since(7), timezone: "UTC",
     days: [{ day: new Date().toISOString().slice(0, 10), shared: 6, opened: 9, joined: 2, paid: 1 }],
     via: [{ via: "messages", shares: 4 }, { via: "web-share", shares: 2 }],
     refusals: { unknown: 6, own: 1, already: 2, paid: 1 }, sharers: 21, sharersJoined: 9,
     paidMonthly: 1, paidYearly: 0, daysGranted: 7,
   })));
   await page.route("**/admin/api/funnel**", (r) => r.fulfill(json({
-    days: 30, contentVersion: 1, sessions: 0, completed: 0, rows: [],
+    range: since(30), contentVersion: 1, sessions: 0, completed: 0, rows: [],
   })));
   await page.route("**/admin/api/users**", (r) => r.fulfill(json({
-    users: [], nextCursor: null,
+    users: [], nextCursor: null, range: { from: null, to: null, days: null },
   })));
   // The grounding switches (#563): a stub with memory, so a PUT is followed by a re-read that shows it.
   const switchCalls = (over.switchCalls ?? []) as { path: string; body: unknown }[];

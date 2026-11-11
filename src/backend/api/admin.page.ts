@@ -1557,6 +1557,9 @@ details.how p { margin-top: 8px; }
   }
 
   function rangeQS() {
+    // An ask with both ends open is all: nothing means "no choice yet", when the API
+    // would fall back to its days default and never see All time at all.
+    if (!range.from && !range.to) return rangeSet ? "all=1" : "";
     var q = "";
     if (range.from) q = "from=" + encodeURIComponent(range.from.toISOString());
     if (range.to) q += (q ? "&" : "") + "to=" + encodeURIComponent(range.to.toISOString());
@@ -1572,7 +1575,7 @@ details.how p { margin-top: 8px; }
   // The server's own echo of the same ask — what it actually filtered by.
   function echoLabel(e) {
     if (!e) return rangeLabel();
-    if (e.days) return "Last " + e.days + " days";
+    if (e.days) return e.days + " days";
     if (!e.from && !e.to) return "All time";
     return (e.from ? atLabel(e.from) : "the start") + " → " + (e.to ? atLabel(e.to) : "now");
   }
@@ -1583,14 +1586,16 @@ details.how p { margin-top: 8px; }
   }
 
   var rangeNoteEl = null;
+  var lastEcho = null;    // the last range echo a loader got back — the note quotes it
   function rangeNote() {
-    if (rangeNoteEl) rangeNoteEl.textContent = rangeLabel();
+    if (rangeNoteEl) rangeNoteEl.textContent = lastEcho ? echoLabel(lastEcho) : (rangeSet ? rangeLabel() : "");
   }
 
   function applyRange(from, to) {
     range.from = from;
     range.to = to;
     rangeSet = true;
+    lastEcho = null;
     writeRangeToHash();
     rangeNote();
   }
@@ -1650,6 +1655,7 @@ details.how p { margin-top: 8px; }
     rangeNoteEl = el("span", "rng-note", "");
     rangeNoteEl.id = "range-note";
     seg.appendChild(rangeNoteEl);
+    lastEcho = null;
     rangeNote();
   }
 
@@ -1685,7 +1691,7 @@ details.how p { margin-top: 8px; }
     ]);
 
     var shown = numAll ? days : days.slice(0, 7);
-    $("numbers-title").textContent = rangeLabel();
+    $("numbers-title").textContent = echoLabel(numData.range);
     moreButton($("numbers-more"), days.length, 7, numAll, "days");
     var body = $("metrics").querySelector("tbody");
     body.textContent = "";
@@ -1712,22 +1718,33 @@ details.how p { margin-top: 8px; }
   }
 
   function loadMetrics() {
-    // The comparison card asks for the window that came BEFORE: the same span, ending where this
-    // one starts. An open start has no before.
-    var prev = null;
-    if (range.from) {
-      var end = range.to || new Date();
-      var span = end.getTime() - range.from.getTime();
-      if (span > 0) prev = "?from=" + encodeURIComponent(new Date(range.from.getTime() - span).toISOString())
-        + "&to=" + encodeURIComponent(range.from.toISOString());
-    }
-    return Promise.all([
-      api("GET", "/admin/api/metrics" + rangeQuery()),
-      prev ? api("GET", "/admin/api/metrics" + prev) : null
-    ]).then(function (r) {
-      numData = r[0];
-      numPrior = r[1];
-      renderNumbers();
+    return api("GET", "/admin/api/metrics" + rangeQuery()).then(function (m) {
+      numData = m;
+      lastEcho = m.range;
+      rangeNote();
+      // The comparison card asks for the window that came BEFORE: the same span, ending where
+      // this one starts. The echo carries the resolved bounds even for a days ask; an open
+      // start has no before.
+      var e = m.range || {};
+      // A days answer is zone-calendar rows, not instants: the window before it is the first
+      // half of one twice as long. A clamped ask that comes back no longer reads as no prior.
+      if (e.days && !e.from) {
+        return api("GET", "/admin/api/metrics?days=" + e.days * 2).then(function (p) {
+          var rows = p.days || [];
+          numPrior = rows.length > e.days ? { days: rows.slice(0, e.days) } : null;
+          renderNumbers();
+        });
+      }
+      if (!e.from) { numPrior = null; renderNumbers(); return; }
+      var end = e.to ? Date.parse(e.to) : Date.now();
+      var span = end - Date.parse(e.from);
+      if (span <= 0) { numPrior = null; renderNumbers(); return; }
+      var prev = "?from=" + encodeURIComponent(new Date(Date.parse(e.from) - span).toISOString())
+        + "&to=" + encodeURIComponent(e.from);
+      return api("GET", "/admin/api/metrics" + prev).then(function (p) {
+        numPrior = p;
+        renderNumbers();
+      });
     });
   }
 
@@ -1776,6 +1793,8 @@ details.how p { margin-top: 8px; }
   function loadPushes() {
     return api("GET", "/admin/api/push/stats" + rangeQuery()).then(function (v) {
       pushData = v;
+      lastEcho = v.range;
+      rangeNote();
       renderPushes();
     });
   }
@@ -2139,6 +2158,8 @@ details.how p { margin-top: 8px; }
     return api("GET", "/admin/api/campaigns" + rangeQuery()).then(function (v) {
       if (!campaignOptions) campaignOptions = v.options;
       campData = v;
+      lastEcho = v.range;
+      rangeNote();
       copyKeys(v.copy);
       renderCampaigns();
     });
@@ -2157,6 +2178,8 @@ details.how p { margin-top: 8px; }
 
   function loadFunnel() {
     return api("GET", "/admin/api/funnel" + rangeQuery()).then(function (f) {
+      lastEcho = f.range;
+      rangeNote();
       var kp = $("funnel-kpi");
       kp.textContent = "";
       kpi(kp, "Started", String(f.sessions), "", "");
@@ -2237,10 +2260,17 @@ details.how p { margin-top: 8px; }
     var rows = [];
     var e = v.range || {};
     var endDay = dayInZone(v.timezone, e.to ? new Date(e.to) : null);
-    if (e.from) {
+    var dayAt = function (i) { return new Date(Date.parse(endDay + "T00:00:00Z") - i * 86400000).toISOString().slice(0, 10); };
+    if (e.days) {
+      // A days answer is that many zone-calendar rows ending at the window's end day.
+      for (var i = 0; i < e.days; i++) {
+        var d = dayAt(i);
+        rows.push(byDay[d] || { day: d, shared: 0, opened: 0, joined: 0, paid: 0 });
+      }
+    } else if (e.from) {
       var d0 = dayInZone(v.timezone, new Date(e.from));
       for (var i = 0; i < 400; i++) {
-        var day = new Date(Date.parse(endDay + "T00:00:00Z") - i * 86400000).toISOString().slice(0, 10);
+        var day = dayAt(i);
         if (day < d0) break;
         rows.push(byDay[day] || { day: day, shared: 0, opened: 0, joined: 0, paid: 0 });
       }
@@ -2290,6 +2320,8 @@ details.how p { margin-top: 8px; }
   function loadReferrals() {
     return api("GET", "/admin/api/referrals" + rangeQuery()).then(function (v) {
       refData = v;
+      lastEcho = v.range;
+      rangeNote();
       renderReferrals();
     });
   }
@@ -3203,6 +3235,8 @@ details.how p { margin-top: 8px; }
     if (rangeQS()) path += "&" + rangeQS();
     if (append && usersCursor) path += "&cursor=" + encodeURIComponent(usersCursor);
     return api("GET", path).then(function (page) {
+      lastEcho = page.range;
+      rangeNote();
       var body = $("users").querySelector("tbody");
       if (!append) body.textContent = "";
       page.users.forEach(function (u) { body.appendChild(userRow(u)); });
@@ -3549,6 +3583,8 @@ details.how p { margin-top: 8px; }
       return api("GET", "/admin/api/experiments" + rangeQuery());
     }).then(function (res) {
       experiments = res.experiments || [];
+      lastEcho = res.range;
+      rangeNote();
       $("experiments-scope").textContent = echoLabel(res.range) + " \u00b7 per-arm numbers count assignments and events inside the window";
       var select = $("exp-lang");
       if (select.options.length === 0) {

@@ -26,12 +26,27 @@ const RANGE = { from: FROM, to: TO, days: null };
 /** The query strings the page sent each admin endpoint, in order. */
 type Calls = Record<string, URLSearchParams[]>;
 
+// The `days` a bounded endpoint falls back to when the ask carries nothing, per the routes.
+const DEFAULT_DAYS: Record<string, number> = { metrics: 30, funnel: 30, referrals: 7, "push/stats": 7 };
+
+/** What the server would echo back for the ask: `all` reads as unbounded, from/to as sent. */
+function echoOf(key: string, q: URLSearchParams) {
+  if (q.has("all")) return { from: null, to: null, days: null };
+  if (q.get("from") || q.get("to")) return { from: q.get("from"), to: q.get("to"), days: null };
+  const days = q.get("days") ? Number(q.get("days")) : DEFAULT_DAYS[key];
+  return days ? { from: null, to: null, days } : { from: null, to: null, days: null };
+}
+
 async function stubAdmin(page: Page, calls: Calls) {
   const json = (body: unknown, status = 200) =>
     ({ status, contentType: "application/json", body: JSON.stringify(body) });
   const record = (key: string) => (r: import("@playwright/test").Route) => {
-    (calls[key] ??= []).push(new URL(r.request().url()).searchParams);
-    return r.fulfill(json(BODIES[key]));
+    const q = new URL(r.request().url()).searchParams;
+    (calls[key] ??= []).push(q);
+    const body = BODIES[key];
+    return r.fulfill(json(
+      body && typeof body === "object" && "range" in body ? { ...body, range: echoOf(key, q) } : body,
+    ));
   };
 
   await page.route("**/admin", (r) => r.fulfill({
@@ -179,9 +194,29 @@ test("the scope line quotes the server's echo, and All time clears the boxes", a
   await expect(page.locator("#funnel-scope")).toContainText("→");
   await page.locator("#range-all").click();
   await expect.poll(() => calls.funnel?.length ?? 0).toBeGreaterThan(1);
+  // Nothing is "no choice yet" — a bounded endpoint would fall back to its `days` default, so
+  // All time is a signal of its own and the hash carries it too.
   expect(calls.funnel!.at(-1)!.get("from")).toBeNull();
   expect(calls.funnel!.at(-1)!.get("to")).toBeNull();
+  expect(calls.funnel!.at(-1)!.get("all")).toBe("1");
   await expect(page.locator("#range-note")).toHaveText("All time");
-  expect(page.url()).toContain("#funnel?");
+  expect(page.url()).toContain("#funnel?all=1");
+  expect(errors).toEqual([]);
+});
+
+test("a hash carrying all=1 asks for the unbounded window", async ({ page }) => {
+  const errors = watchConsole(page);
+  const calls: Calls = {};
+  await stubAdmin(page, calls);
+  await openAdmin(page, "funnel?all=1");
+
+  await expect.poll(() => calls.funnel?.length ?? 0).toBeGreaterThan(0);
+  const q = calls.funnel![0]!;
+  expect(q.get("all")).toBe("1");
+  expect(q.get("from")).toBeNull();
+  expect(q.get("to")).toBeNull();
+  await expect(page.locator("#range-from")).toHaveValue("");
+  await expect(page.locator("#range-to")).toHaveValue("");
+  await expect(page.locator("#range-note")).toHaveText("All time");
   expect(errors).toEqual([]);
 });

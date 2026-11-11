@@ -140,11 +140,9 @@ export function adminRangeOf(
 export function adminWindowEcho(
   window: { from?: Date | null; to?: Date | null; days?: number },
 ): AdminWindowEcho {
-  return window.days !== undefined
-    ? { from: null, to: null, days: window.days }
-    : {
-        from: window.from?.toISOString() ?? null,
-        to: window.to?.toISOString() ?? null,
-        days: null,
-      };
+  return {
+    from: window.from?.toISOString() ?? null,
+    to: window.to?.toISOString() ?? null,
+    days: window.days ?? null,
+  };
 }
