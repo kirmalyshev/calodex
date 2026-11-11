@@ -732,6 +732,17 @@ export interface AdminUserRow {
   pushOffers: boolean;
 }
 
+/**
+ * The admin date-range control, resolved (ieat-app#2776): two UTC instants, BOTH ends inclusive,
+ * and either may be null — "unbounded on that end", which is what All time sends for both.
+ * `?days=N` maps to `{from: now − N·24h, to: now}` at the route; a store never re-derives `days`
+ * itself. A range where `from` is after `to` is a legal ask that reads as empty, never an error.
+ */
+export interface AdminRange {
+  from: Date | null;
+  to: Date | null;
+}
+
 /** What the admin's list was asked for. */
 export interface AdminUserQuery {
   /**
@@ -747,6 +758,9 @@ export interface AdminUserQuery {
   cursor?: string;
   /** The instance's today, in its own timezone. Passed in, because a store has no calendar. */
   today: string;
+  /** Sign-up bounds (#2776): `created_at` inside both, inclusive. Null or absent leaves an end open. */
+  from?: Date | null;
+  to?: Date | null;
 }
 
 export interface AdminUserPage {
@@ -767,8 +781,21 @@ export const ADMIN_USER_PAGE_MAX = 200;
 export const ADMIN_METRICS_MAX_DAYS = 400;
 
 export interface AdminMetricsQuery {
-  /** How many days back, ending today. Bounded by the caller AND by the implementation. */
-  days: number;
+  /**
+   * How many days back, ending today. Bounded by the caller AND by the implementation.
+   * Read only when NEITHER of `from`/`to` is present — a `?days=N` still means the N instance-days
+   * ending today, because every column this reports on IS a day (`analyses.date` carries no
+   * instant). The range control's explicit window goes through `from`/`to` instead (#2776).
+   */
+  days?: number;
+  /**
+   * Instant bounds, both inclusive — each mapped to the instance-zone day it lands on BEFORE any
+   * counting, so `to` covers its whole day and `from` covers all of its own. `to` null or absent
+   * means today; `from` null means the maximum window. Present — even as nulls — is what says
+   * "range mode"; with both absent this method reads `days` exactly as it always has.
+   */
+  from?: Date | null;
+  to?: Date | null;
   /** The instance's today. A store has no calendar. */
   today: string;
   /** The instance's zone, for turning `users.created_at` into the same day `analyses.date` is. */
@@ -1288,8 +1315,8 @@ export interface Store {
   recordReferralOpen(code: string): Promise<boolean>;
   /** Count one refusal at the friend's-link step. Names no account: the reason and the instant. */
   recordReferralRefusal(reason: ReferralRefusal): Promise<void>;
-  /** The admin's view of the last `days` days. Global, so unscoped; counts only. */
-  referralStats(days: number, timezone: string): Promise<ReferralStats>;
+  /** The admin's view inside `range` (#2776). Global, so unscoped; counts only. */
+  referralStats(range: AdminRange, timezone: string): Promise<ReferralStats>;
   /** Null when there is no such account. Counts other accounts' rows, so it reads unscoped. */
   referralOf(userId: string): Promise<ReferralRow | null>;
 
@@ -1384,10 +1411,10 @@ export interface Store {
    */
   recordPushDelivered(userId: string, sendId: string): Promise<boolean>;
   /**
-   * Per day (in `timezone`), kind and template over the last `days` days: sent, accepted, dead,
+   * Per day (in `timezone`), kind and template over `range` (#2776): sent, accepted, dead,
    * opened and converted. Reads across users — the admin's view of the campaign, never an account's.
    */
-  pushOpenStats(days: number, timezone: string): Promise<PushStatRow[]>;
+  pushOpenStats(range: AdminRange, timezone: string): Promise<PushStatRow[]>;
 
   // ── Campaigns (ieat-app#1761) ──────────────────────────────────────────────────────────────
   listCampaigns(): Promise<CampaignRow[]>;
@@ -1407,7 +1434,8 @@ export interface Store {
   hasCampaignSend(userId: string, campaignId: string): Promise<boolean>;
   /** Scoped. Record that this account is handed this campaign: true for exactly one caller. */
   claimCampaignSend(userId: string, campaignId: string): Promise<boolean>;
-  campaignReport(campaignId: string): Promise<CampaignReport>;
+  /** The campaign's send log inside `range` (#2776). */
+  campaignReport(campaignId: string, range: AdminRange): Promise<CampaignReport>;
 
   // ── Onboarding ─────────────────────────────────────────────────────────────────────────────
   /**
@@ -1527,8 +1555,8 @@ export interface Store {
    * that double-counts a bad connection reports its best numbers for its worst users.
    */
   recordOnboardingEvents(userId: string, events: OnboardingEvent[]): Promise<number>;
-  /** The funnel over the last `days`, aggregated. Reads every user — this is the admin's view. */
-  onboardingFunnel(days: number): Promise<FunnelAggregate>;
+  /** The funnel inside `range` (#2776), aggregated. Reads every user — this is the admin's view. */
+  onboardingFunnel(range: AdminRange): Promise<FunnelAggregate>;
   /**
    * How many accounts finished onboarding in the last `hours` — the loader's "43 people are building
    * their plan with eait" (ieat-app#2050). A count over every user and nothing else: no id, no
@@ -1579,8 +1607,10 @@ export interface Store {
    * The per-variant funnel for one experiment: users, sessions and completions grouped by the
    * assigned variant, plus the sessions that rendered a DIFFERENT revision than assigned — the
    * fell-back-to-compiled-copy count, read as its own number rather than hidden in a rate.
+   * `range` (#2776) NARROWS inside the experiment's own started→stopped window; it never widens
+   * it — an assignment or an event outside the range is out, whatever the window's own bounds say.
    */
-  onboardingExperimentFunnel(experimentId: string): Promise<OnboardingExperimentFunnelRow[]>;
+  onboardingExperimentFunnel(experimentId: string, range: AdminRange): Promise<OnboardingExperimentFunnelRow[]>;
   /**
    * Take the next revision number off the shared counter WITHOUT installing copy — a variant's
    * version comes off the same counter the admin saves do, so a content_version always names ONE

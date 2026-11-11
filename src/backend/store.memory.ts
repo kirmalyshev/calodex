@@ -753,13 +753,15 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .map((i) => ({ provider: i.provider, linkedAt: i.linkedAt }));
     },
 
-    async adminListUsers({ q, limit, cursor, today }) {
+    async adminListUsers({ q, limit, cursor, today, from, to }) {
       const bounded = Math.min(Math.max(1, Math.trunc(limit)), ADMIN_USER_PAGE_MAX);
       const wanted = matchingUsers(q);
       if (wanted !== null && wanted.length === 0) return { rows: [], nextCursor: null };
 
       const ordered = [...users.keys()]
-        .filter((id) => wanted === null || wanted.includes(id))
+        .filter((id) => (wanted === null || wanted.includes(id))
+          && (from == null || (createdAt.get(id) ?? 0) >= from.getTime())
+          && (to == null || (createdAt.get(id) ?? 0) <= to.getTime()))
         .map((id) => ({ id, at: createdAt.get(id) ?? 0 }))
         // Newest first, the id settling a tie, exactly as Postgres orders it — two accounts made in
         // the same millisecond must come back in ONE order or the cursor skips a row.
@@ -807,12 +809,33 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return identities.find((i) => i.userId === userId && i.provider === provider)?.subject ?? null;
     },
 
-    async adminMetrics({ days, today, timezone }) {
-      const window = Math.min(Math.max(1, Math.trunc(days)), ADMIN_METRICS_MAX_DAYS);
+    async adminMetrics({ days, from: fromAt, to: toAt, today, timezone }) {
       const dayOf = (at: number) => localDate(timezone, new Date(at));
 
+      // The same day resolution as Postgres: `days` is the calendar ask ending today, `from`/`to`
+      // the range control's instants (#2776), each landing on the instance-zone day it belongs to.
+      let from: string;
+      let toDay: string;
+      if (fromAt !== undefined || toAt !== undefined) {
+        toDay = toAt == null ? today : dayOf(toAt.getTime());
+        const fromDay = fromAt == null ? dateMinus(toDay, ADMIN_METRICS_MAX_DAYS - 1)
+          : dayOf(fromAt.getTime());
+        if (fromDay > toDay) {
+          return {
+            days: [], d1: { eligible: 0, returned: 0 }, d7: { eligible: 0, returned: 0 },
+            latency: { n: 0, queue: { p50: null, p95: null }, firstItem: { p50: null, p95: null }, total: { p50: null, p95: null } },
+          };
+        }
+        from = fromDay < dateMinus(toDay, ADMIN_METRICS_MAX_DAYS - 1)
+          ? dateMinus(toDay, ADMIN_METRICS_MAX_DAYS - 1) : fromDay;
+      } else {
+        const window = Math.min(Math.max(1, Math.trunc(days ?? 30)), ADMIN_METRICS_MAX_DAYS);
+        from = dateMinus(today, window - 1);
+        toDay = today;
+      }
       const dates: string[] = [];
-      for (let i = window - 1; i >= 0; i--) dates.push(dateMinus(today, i));
+      for (let d = from; d <= toDay; d = dateMinus(d, -1)) dates.push(d);
+      const refDay = toDay < today ? toDay : today;
 
       const signups = new Map<string, number>();
       const activations = new Map<string, number>();
@@ -843,7 +866,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         for (const [id, at] of createdAt) {
           const born = dayOf(at);
           // Inside the window, and old enough to have HAD its nth day.
-          if (born < dates[0]! || dateMinus(today, n) < born) continue;
+          if (born < from || dateMinus(refDay, n) < born) continue;
           eligible++;
           if (active.get(id)?.has(dateMinus(born, -n))) returned++;
         }
@@ -864,7 +887,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         latency: (() => {
           // The percentile math Postgres does with percentile_cont, over the rows the window
           // holds — same rule the days series gets: outside the window is invisible.
-          const inWindow = analyses.filter((a) => a.date >= dates[0]! && a.date <= today);
+          const inWindow = analyses.filter((a) => a.date >= from && a.date <= toDay);
           const at = (p: number, xs: number[]) =>
             xs.length === 0 ? null : xs[Math.min(xs.length - 1, Math.max(0, Math.ceil(p * xs.length) - 1))]!;
           const legs = (pick: (a: typeof inWindow[number]) => number | null | undefined) => {
@@ -1194,8 +1217,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       referralRefusals.push({ reason, at: now() });
     },
 
-    async referralStats(days, timezone) {
-      const since = now() - days * 24 * 60 * 60 * 1000;
+    async referralStats(range, timezone) {
+      const lo = range.from?.getTime() ?? -Infinity;
+      const hi = range.to?.getTime() ?? Infinity;
       const rows = new Map<string, ReferralStats["days"][number]>();
       const row = (at: number) => {
         const day = localDate(timezone, new Date(at));
@@ -1203,22 +1227,23 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         if (!r) rows.set(day, r = { day, shared: 0, opened: 0, joined: 0, paid: 0 });
         return r;
       };
-      const events = referralShares.filter((e) => e.at >= since);
+      const events = referralShares.filter((e) => e.at >= lo && e.at <= hi);
       const via = new Map<string, number>();
       for (const e of events) {
         if (e.kind === "open") { row(e.at).opened++; continue; }
         row(e.at).shared++;
         via.set(e.via, (via.get(e.via) ?? 0) + 1);
       }
-      const joined = [...referredAt].filter(([, at]) => at >= since);
+      const joined = [...referredAt].filter(([, at]) => at >= lo && at <= hi);
       for (const [, at] of joined) row(at).joined++;
       // A revoked or void grant paid nobody anything.
-      const grants = [...referralGrants.values()].filter((g) => !g.revoked && Date.parse(g.eventAt) >= since);
+      const grants = [...referralGrants.values()].filter((g) => !g.revoked
+        && Date.parse(g.eventAt) >= lo && Date.parse(g.eventAt) <= hi);
       for (const g of grants) row(Date.parse(g.eventAt)).paid++;
       const sharers = new Set(events.filter((e) => e.kind === "share").map((e) => e.referrerId));
       const joinedThrough = new Set(joined.map(([friend]) => referredBy.get(friend)));
       const refusals = { unknown: 0, own: 0, already: 0, paid: 0 };
-      for (const r of referralRefusals) if (r.at >= since) refusals[r.reason]++;
+      for (const r of referralRefusals) if (r.at >= lo && r.at <= hi) refusals[r.reason]++;
       return {
         days: [...rows.values()].sort((a, b) => b.day.localeCompare(a.day)),
         via: [...via].map(([v, shares]) => ({ via: v, shares })).sort((a, b) => b.shares - a.shares || a.via.localeCompare(b.via)),
@@ -1397,7 +1422,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (!users.has(userId)) throw new Error("send_log: no such user");
       sendLog.set(row.id, {
         ...row, userId, ticketId: null, receiptError: null,
-        createdAt: new Date().toISOString(), receiptAt: null, deliveredAt: null,
+        createdAt: new Date(now()).toISOString(), receiptAt: null, deliveredAt: null,
       });
     },
 
@@ -1437,13 +1462,14 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return true;
     },
 
-    async pushOpenStats(days, timezone) {
-      const since = now() - days * 24 * 60 * 60 * 1000;
+    async pushOpenStats(range, timezone) {
+      const lo = range.from?.getTime() ?? -Infinity;
+      const hi = range.to?.getTime() ?? Infinity;
       const DAY = 24 * 60 * 60 * 1000;
       const out = new Map<string, PushStatRow>();
       for (const r of sendLog.values()) {
         const at = Date.parse(r.createdAt);
-        if (at < since || r.state === "would_have_sent" || r.ref === "admin-test") continue;
+        if (at < lo || at > hi || r.state === "would_have_sent" || r.ref === "admin-test") continue;
         const day = localDate(timezone, new Date(at));
         const key = `${day}|${r.kind}|${r.templateKey}`;
         const row = out.get(key) ?? { day, kind: r.kind, templateKey: r.templateKey, sent: 0, accepted: 0, dead: 0, delivered: 0, opened: 0, converted: 0 };
@@ -1512,12 +1538,16 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return true;
     },
 
-    async campaignReport(campaignId) {
+    async campaignReport(campaignId, range) {
+      const lo = range.from?.getTime() ?? -Infinity;
+      const hi = range.to?.getTime() ?? Infinity;
       const out = { sent: 0, accepted: 0, dead: 0, dry: 0, opened: 0, test: 0, held: 0 };
       const DAY = 24 * 60 * 60 * 1000;
       const groups = new Map<string, Map<string, { opened: boolean; converted: boolean }>>();
       for (const r of sendLog.values()) {
         if (r.kind !== "campaign" || r.ref !== campaignId) continue;
+        const sentAt = Date.parse(r.createdAt);
+        if (sentAt < lo || sentAt > hi) continue;
         if (r.variant === "test") { out.test++; continue; }
         if (r.state === "dry") { out.dry++; continue; }
         const held = r.state === "would_have_sent";
@@ -1532,11 +1562,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         const users = groups.get(name) ?? new Map();
         const mine = users.get(r.userId) ?? { opened: false, converted: false };
         const reached = r.state !== "dead" && r.state !== "refused";
-        const at = Date.parse(r.createdAt);
         if (!held && reached && pushOpens.has(`${r.userId}|${r.id}`)) mine.opened = true;
         // INTENT TO TREAT: a meal within 24 h of the account's send counts whatever became of the
         // delivery. The holdout has no dead rows, so filtering them out here would lower only the treated rate.
-        if ([...meals.values()].some((m) => m.user_id === r.userId && Date.parse(m.ts) >= at && Date.parse(m.ts) < at + DAY)) mine.converted = true;
+        if ([...meals.values()].some((m) => m.user_id === r.userId && Date.parse(m.ts) >= sentAt && Date.parse(m.ts) < sentAt + DAY)) mine.converted = true;
         users.set(r.userId, mine);
         groups.set(name, users);
       }
@@ -1714,9 +1743,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return [...users.values()].filter((u) => u.onboarded_at && Date.parse(u.onboarded_at) >= since).length;
     },
 
-    async onboardingFunnel(days) {
-      const since = now() - days * 24 * 60 * 60 * 1000;
-      return aggregateFunnel([...onboardingEvents.values()].filter((e) => e.receivedAt >= since));
+    async onboardingFunnel(range) {
+      const lo = range.from?.getTime() ?? -Infinity;
+      const hi = range.to?.getTime() ?? Infinity;
+      return aggregateFunnel([...onboardingEvents.values()]
+        .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi));
     },
 
     async listOnboardingExperiments() {
@@ -1797,12 +1828,18 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .map(clone);
     },
 
-    async onboardingExperimentFunnel(experimentId) {
+    async onboardingExperimentFunnel(experimentId, range) {
+      const lo = range.from?.getTime() ?? -Infinity;
+      const hi = range.to?.getTime() ?? Infinity;
       const events = [...onboardingEvents.values()];
       const experiment = onboardingExperiments.get(experimentId);
       const out = new Map<number, OnboardingExperimentFunnelRow>();
       for (const a of onboardingAssignments.values()) {
         if (a.experiment_id !== experimentId) continue;
+        // `range` narrows inside the experiment's own window, never widens it (#2776): an
+        // assignment outside it is out, and so are that account's events outside it.
+        const assignedAt = Date.parse(a.assigned_at);
+        if (assignedAt < lo || assignedAt > hi) continue;
         const row = out.get(a.variant_id)
           ?? { variant_id: a.variant_id, assigned: 0, sessions: 0, completed: 0, completed_users: 0, fell_back: 0 };
         row.assigned += 1;
@@ -1813,8 +1850,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         const runs = new Map<string, { completed: boolean; fell: boolean }>();
         for (const e of events) {
           if (e.userId !== a.user_id) continue;
-          if (e.at < a.assigned_at) continue;
-          if (experiment?.stopped_at != null && e.at > experiment.stopped_at) continue;
+          const at = Date.parse(e.at);
+          if (at < assignedAt || at < lo || at > hi) continue;
+          if (experiment?.stopped_at != null && at > Date.parse(experiment.stopped_at)) continue;
           const r = runs.get(e.sessionId) ?? { completed: false, fell: false };
           if (e.action === "complete") r.completed = true;
           if (e.contentVersion !== a.variant_id) r.fell = true;

@@ -1265,7 +1265,7 @@ function contract(name: string, make: () => Promise<Store>) {
         await mk("dry", "dry");
         await mk("accepted", "test");
         await s.recordPushOpen(u, real, "tap");
-        expect(await s.campaignReport(id)).toEqual({
+        expect(await s.campaignReport(id, { from: null, to: null })).toEqual({
           sent: 2, accepted: 1, dead: 1, dry: 1, opened: 1, test: 1, held: 0,
           groups: [{ group: "default", users: 1, opened: 1, converted: 0 }],
         });
@@ -1406,7 +1406,7 @@ function contract(name: string, make: () => Promise<Store>) {
         return id;
       };
       const statsFor = async (s: Awaited<ReturnType<typeof open>>, tag: string) =>
-        (await s.pushOpenStats(2, "UTC")).filter((r) => r.templateKey === `${RUN}-${tag}`);
+        (await s.pushOpenStats({ from: null, to: null }, "UTC")).filter((r) => r.templateKey === `${RUN}-${tag}`);
 
       it("records an open once per send, however many times the phone reports it", async () => {
         const s = await open();
@@ -1520,7 +1520,7 @@ function contract(name: string, make: () => Promise<Store>) {
 
         await s.mergeUsers(anon, real);
 
-        const rows = (await s.pushOpenStats(2, "UTC")).filter((r) => r.templateKey.startsWith(`${RUN}-merge-`));
+        const rows = (await s.pushOpenStats({ from: null, to: null }, "UTC")).filter((r) => r.templateKey.startsWith(`${RUN}-merge-`));
         expect(rows.find((r) => r.templateKey === `${RUN}-merge-open`)).toMatchObject({ sent: 1, opened: 1 });
         // Already recorded stays recorded under the survivor; an unopened send is the survivor's to open.
         expect(await s.recordPushOpen(real, opened, "tap")).toBe(false);
@@ -3137,7 +3137,7 @@ function contract(name: string, make: () => Promise<Store>) {
       // every user — so it carries rows from the other tests in this suite, and against real
       // Postgres it carries rows from every earlier run today. Absolute counts here would pass
       // exactly once per database.
-      const before = await s.onboardingFunnel(1);
+      const before = await s.onboardingFunnel({ from: null, to: null });
       await s.recordOnboardingEvents(u, [
         ev(1, {}),
         ev(2, { action: "answer", field: "goal", value: "lose", ms: 1000 }),
@@ -3146,7 +3146,7 @@ function contract(name: string, make: () => Promise<Store>) {
         ev(5, { action: "reject", field: "goal" }),
         ev(6, { place: "summary", action: "complete" }),
       ] as never);
-      const after = await s.onboardingFunnel(1);
+      const after = await s.onboardingFunnel({ from: null, to: null });
 
       const delta = (key: "views" | "answers" | "backs" | "rejects") =>
         (after.rows.find((r) => r.place === "goal")?.[key] ?? 0)
@@ -3170,7 +3170,7 @@ function contract(name: string, make: () => Promise<Store>) {
       const sid = `erase-${RUN}`;
       // `pace` is used by no other test here, so its count is this test's alone.
       const views = async () =>
-        (await s.onboardingFunnel(1)).rows.find((r) => r.place === "pace")?.views ?? 0;
+        (await s.onboardingFunnel({ from: null, to: null })).rows.find((r) => r.place === "pace")?.views ?? 0;
 
       const before = await views();
       await s.recordOnboardingEvents(u, [{
@@ -3365,7 +3365,7 @@ function contract(name: string, make: () => Promise<Store>) {
         await s.startOnboardingExperiment(e.id);
         await s.stopOnboardingExperiment(e.id);
         await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-late", at: "2999-01-01T00:00:00Z" }) as never);
-        const rows = await s.onboardingExperimentFunnel(e.id);
+        const rows = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
         const v41 = rows.find((r) => r.variant_id === 41);
         const v42 = rows.find((r) => r.variant_id === 42);
         expect(v41).toMatchObject({ assigned: 2, sessions: 1, completed: 1, fell_back: 0 });
@@ -4632,7 +4632,7 @@ function referrals(name: string, make: (opts: StoreOptions) => Promise<Store>) {
     // so on a shared Postgres every assertion is a DIFFERENCE across the actions it makes.
     it("counts shares, opens, joins, payments and refusals for the admin, naming nobody", async () => {
       const s = await open();
-      const before = await s.referralStats(7, "Europe/Berlin");
+      const before = await s.referralStats({ from: null, to: null }, "Europe/Berlin");
       const referrer = await s.createUser("en");
       const [a, b, c] = [await s.createUser("en"), await s.createUser("en"), await s.createUser("en")];
       const code = await codeOf(s, referrer);
@@ -4655,7 +4655,7 @@ function referrals(name: string, make: (opts: StoreOptions) => Promise<Store>) {
       await s.recordReferralRefusal("own");
       await s.recordReferralRefusal("already");
       await s.recordReferralRefusal("unknown");
-      const after = await s.referralStats(7, "Europe/Berlin");
+      const after = await s.referralStats({ from: null, to: null }, "Europe/Berlin");
 
       const day = (st: typeof after) => st.days.find((d) => d.day === "2026-10-10") ?? { shared: 0, opened: 0, joined: 0, paid: 0 };
       const via = (st: typeof after, v: string) => st.via.find((x) => x.via === v)?.shares ?? 0;
@@ -4691,11 +4691,192 @@ function referrals(name: string, make: (opts: StoreOptions) => Promise<Store>) {
 }
 
 
+// The range control on every time-based admin panel (ieat-app#2776): `from`/`to` are INSTANTS,
+// both bounds inclusive — a row made exactly ON a bound counts — and a From after To is a legal
+// ask that reads empty, never an error. The clock is injected so a row can land exactly on a
+// bound, and every assertion names either the test's own rows or a delta, because these reads are
+// instance-wide by definition.
+function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>) {
+  describe(`admin ranges — ${name}`, () => {
+    let clock = Date.parse("2026-08-10T00:00:00Z");
+    const H = 3_600_000;
+    const T0 = Date.parse("2026-08-10T00:00:00Z");
+
+    let store: Store | null = null;
+    const open = async () => (store ??= await make({ now: () => clock }));
+    afterAll(async () => { await store?.close(); });
+
+    it("lists only accounts created inside the range, both bounds inclusive", async () => {
+      const s = await open();
+      clock = T0;         const out1 = await s.createUser("en");
+      clock = T0 + H;     const lo = await s.createUser("en");
+      clock = T0 + 2 * H; const mid = await s.createUser("en");
+      clock = T0 + 3 * H; const hi = await s.createUser("en");
+      clock = T0 + 4 * H; const out2 = await s.createUser("en");
+      const page = async (from: Date | null, to: Date | null) =>
+        (await s.adminListUsers({ limit: 10_000, today: "2026-08-10", from, to })).rows.map((r) => r.userId);
+
+      const inside = await page(new Date(T0 + H), new Date(T0 + 3 * H));
+      expect(inside).toEqual(expect.arrayContaining([lo, mid, hi]));
+      for (const out of [out1, out2]) expect(inside).not.toContain(out);
+
+      const openEnd = await page(new Date(T0 + 2 * H), null);
+      expect(openEnd).toEqual(expect.arrayContaining([mid, hi, out2]));
+      expect(openEnd).not.toContain(lo);
+      const openStart = await page(null, new Date(T0 + H));
+      expect(openStart).toEqual(expect.arrayContaining([lo]));
+      expect(openStart).not.toContain(mid);
+
+      expect(await page(new Date(T0 + 3 * H), new Date(T0 + H))).toEqual([]);
+    });
+
+    it("counts only the onboarding events received inside the range", async () => {
+      const s = await open();
+      const u = await s.createUser("en");
+      const sid = `rng-funnel-${RUN}`;
+      const ev = (n: number) => [{
+        id: `${sid}-${n}`, sessionId: `${sid}-${n}`, place: "goal",
+        action: "view", contentVersion: 1, at: new Date(clock).toISOString(),
+      }];
+      const range = { from: new Date(T0 + H), to: new Date(T0 + 3 * H) };
+      const sessions = async () => (await s.onboardingFunnel(range)).sessions;
+      const base = await sessions();
+      clock = T0;         await s.recordOnboardingEvents(u, ev(1) as never);
+      clock = T0 + H;     await s.recordOnboardingEvents(u, ev(2) as never);
+      clock = T0 + 2 * H; await s.recordOnboardingEvents(u, ev(3) as never);
+      clock = T0 + 3 * H; await s.recordOnboardingEvents(u, ev(4) as never);
+      clock = T0 + 4 * H; await s.recordOnboardingEvents(u, ev(5) as never);
+      expect(await sessions() - base).toBe(3);
+      expect((await s.onboardingFunnel({ from: range.to, to: range.from })).sessions).toBe(0);
+    });
+
+    it("rows the push stats by send time, the day dated in the instance zone", async () => {
+      const s = await open();
+      const u = await s.createUser("en");
+      const key = `rng-push-${RUN}`;
+      const send = async (tag: string) => s.createSend(u, {
+        id: crypto.randomUUID(), kind: "campaign", ref: null, templateKey: `${key}-${tag}`,
+        lang: "en", variant: null, token: `ExponentPushToken[${key}-${tag}]`, state: "accepted",
+      });
+      clock = T0;         await send("out1");
+      clock = T0 + H;     await send("lo");
+      clock = T0 + 3 * H; await send("hi");
+      clock = T0 + 4 * H; await send("out2");
+      const inside = (await s.pushOpenStats({ from: new Date(T0 + H), to: new Date(T0 + 3 * H) }, "UTC"))
+        .filter((r) => r.templateKey.startsWith(key));
+      expect(inside.reduce((n, r) => n + r.sent, 0)).toBe(2);
+
+      // The day on the row is the send's day IN THE INSTANCE ZONE — the same instant is the
+      // 10th in UTC and the 11th in Auckland.
+      clock = Date.parse("2026-08-10T23:30:00Z");
+      await send("zone");
+      const utc = (await s.pushOpenStats({ from: null, to: null }, "UTC"))
+        .find((r) => r.templateKey === `${key}-zone`)!;
+      const nz = (await s.pushOpenStats({ from: null, to: null }, "Pacific/Auckland"))
+        .find((r) => r.templateKey === `${key}-zone`)!;
+      expect(utc.day).toBe("2026-08-10");
+      expect(nz.day).toBe("2026-08-11");
+
+      expect((await s.pushOpenStats({ from: new Date(T0 + 3 * H), to: new Date(T0 + H) }, "UTC"))
+        .filter((r) => r.templateKey.startsWith(key))).toEqual([]);
+    });
+
+    it("reports a campaign's sends inside the range only", async () => {
+      const s = await open();
+      const u = await s.createUser("en");
+      const ref = `rng-camp-${RUN}`;
+      const send = async () => s.createSend(u, {
+        id: crypto.randomUUID(), kind: "campaign", ref, templateKey: `rng-camp-t-${RUN}`,
+        lang: "en", variant: "default", token: `ExponentPushToken[${ref}]`, state: "accepted",
+      });
+      clock = T0;     await send();
+      clock = T0 + H; await send();
+      expect((await s.campaignReport(ref, { from: new Date(T0 + H), to: null })).sent).toBe(1);
+      expect((await s.campaignReport(ref, { from: null, to: new Date(T0 + H) })).sent).toBe(2);
+      expect((await s.campaignReport(ref, { from: new Date(T0 + H), to: new Date(T0) })).sent).toBe(0);
+    });
+
+    it("buckets the referral counts inside the range only", async () => {
+      const s = await open();
+      const me = await s.createUser("en");
+      const via = `rng-ref-${RUN}`;
+      clock = T0;         await s.recordReferralShare(me, via);
+      clock = T0 + H;     await s.recordReferralShare(me, via);
+      clock = T0 + 2 * H; await s.recordReferralShare(me, via);
+      clock = T0 + 4 * H; await s.recordReferralShare(me, via);
+      const view = await s.referralStats({ from: new Date(T0 + H), to: new Date(T0 + 3 * H) }, "UTC");
+      expect(view.via.find((v) => v.via === via)?.shares).toBe(2);
+      const unbounded = await s.referralStats({ from: null, to: null }, "UTC");
+      expect(unbounded.via.find((v) => v.via === via)?.shares).toBe(4);
+      expect((await s.referralStats({ from: new Date(T0 + 3 * H), to: new Date(T0 + H) }, "UTC"))
+        .via.find((v) => v.via === via)).toBeUndefined();
+    });
+
+    it("narrows an experiment's funnel to assignments AND events inside the range", async () => {
+      const s = await open();
+      const e = {
+        id: `rng-exp-${RUN}`, lang: "en" as const, status: "draft" as const, rules: {},
+        variants: [{ weight: 1, content: { version: 41 } as never }],
+        created_by: crypto.randomUUID(), created_at: new Date(clock).toISOString(),
+        started_at: null, stopped_at: null, revision: 1,
+      };
+      await s.putOnboardingExperiment(e as never);
+      const u1 = await s.createUser("en");
+      const u2 = await s.createUser("en");
+      clock = T0;     await s.putOnboardingAssignment(u1, e.id, 41);
+      clock = T0 + H; await s.putOnboardingAssignment(u2, e.id, 41);
+      const ev = (userId: string, at: string, sessionId: string) => [{
+        id: crypto.randomUUID(), sessionId, place: "goal", action: "view",
+        contentVersion: 41, at,
+      }];
+      // u1's events land inside the range but its ASSIGNMENT does not — outside.
+      await s.recordOnboardingEvents(u1, ev(u1, new Date(T0 + 2 * H).toISOString(), "s-u1") as never);
+      // u2 was assigned inside; of its two runs only the one inside the range counts.
+      await s.recordOnboardingEvents(u2, ev(u2, new Date(T0 + 2 * H).toISOString(), "s-u2-in") as never);
+      await s.recordOnboardingEvents(u2, ev(u2, new Date(T0 + 4 * H).toISOString(), "s-u2-out") as never);
+      const rows = await s.onboardingExperimentFunnel(e.id, { from: new Date(T0 + H), to: new Date(T0 + 3 * H) });
+      expect(rows.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 1, sessions: 1 });
+      expect(await s.onboardingExperimentFunnel(e.id, { from: new Date(T0 + 3 * H), to: new Date(T0 + H) })).toEqual([]);
+    });
+
+    it("reads metrics over the calendar days the range's instants land on", async () => {
+      const s = await open();
+      const u = await s.createUser("en");
+      // Far-future dates no other test's RUN_DATE can collide with: these reads are global.
+      const day1 = "2044-03-04", day2 = "2044-03-05";
+      await s.recordAnalysis(u, day1, "photo");
+      await s.recordAnalysis(u, day2, "photo");
+      await s.recordAnalysis(u, day2, "text");
+
+      const m = await s.adminMetrics({
+        from: new Date("2044-03-05T00:30:00Z"), to: new Date("2044-03-05T23:00:00Z"),
+        today: "2044-03-31", timezone: "UTC",
+      });
+      // `to` covers its WHOLE day — an instant inside a day still includes the day.
+      expect(m.days.map((d) => d.date)).toEqual([day2]);
+      expect(m.days[0]!.analyses).toBe(2);
+
+      const span = await s.adminMetrics({
+        from: new Date("2044-03-04T23:00:00Z"), to: new Date("2044-03-05T01:00:00Z"),
+        today: "2044-03-31", timezone: "UTC",
+      });
+      expect(span.days.map((d) => d.date)).toEqual([day1, day2]);
+
+      const rev = await s.adminMetrics({
+        from: new Date("2044-03-05T00:00:00Z"), to: new Date("2044-03-04T00:00:00Z"),
+        today: "2044-03-31", timezone: "UTC",
+      });
+      expect(rev.days).toEqual([]);
+    });
+  });
+}
+
 tokenLifetime("memory", async (o) => memoryStore(o));
 referrals("memory", async (o) => memoryStore(o));
 pendingLifetime("memory", async (o) => memoryStore(o));
 pairingCodes("memory", async (o) => memoryStore(o));
 abandonedAccounts("memory", async (o) => memoryStore(o));
+adminRanges("memory", async (o) => memoryStore(o));
 
 if (PG_URL) {
   tokenLifetime("postgres", (o) => postgresStore(PG_URL, { ...o, maxConnections: TEST_POOL }));
@@ -4742,6 +4923,7 @@ if (PG_URL) {
   pendingLifetime("postgres", (o) => postgresStore(PG_URL, { ...o, maxConnections: TEST_POOL }));
   pairingCodes("postgres", (o) => postgresStore(PG_URL, { ...o, maxConnections: TEST_POOL }));
   abandonedAccounts("postgres", (o) => postgresStore(PG_URL, { ...o, maxConnections: TEST_POOL }));
+  adminRanges("postgres", (o) => postgresStore(PG_URL, { ...o, maxConnections: TEST_POOL }));
 
   // The same question the tokens table is asked below, for the same reason: a pairing code is a
   // credential, the nightly dump leaves this box, and a column holding the value a person types
