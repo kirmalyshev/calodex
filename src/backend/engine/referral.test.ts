@@ -406,9 +406,9 @@ describe("the admin's referral view", () => {
     await redeemReferral(deps, me, "not a code");
     await redeemReferral(deps, me, await codeOf(me));
     const view = await referralAdminView(deps, 9999);
-    expect(view.window).toBe(90);
+    expect(view.range.days).toBe(90);
     expect(view.timezone).toBe(CONFIG.timezone);
     expect(view.refusals).toEqual({ unknown: 1, own: 1, already: 0, paid: 0 });
-    expect((await referralAdminView(deps, Number.NaN)).window).toBe(7);
+    expect((await referralAdminView(deps, Number.NaN)).range.days).toBe(7);
   });
 });

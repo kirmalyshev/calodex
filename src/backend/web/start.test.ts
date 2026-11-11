@@ -3121,7 +3121,7 @@ describe("refer a friend", () => {
   const SAFARI = { "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1" };
   const LISTING = "https://apps.apple.com/app/id0000000000";
   const codeOf = async (userId: string) => (await store.referralOf(userId))!.code;
-  const opens = async () => (await store.referralStats(7, CONFIG.timezone)).days.reduce((n, d) => n + d.opened, 0);
+  const opens = async () => (await store.referralStats({ from: null, to: null }, CONFIG.timezone)).days.reduce((n, d) => n + d.opened, 0);
 
   it("serves the invite page, counting a person's open and not a preview's", async () => {
     router({ ...CONFIG, appStoreUrl: LISTING, landingUrl: "https://eait.fit" });
@@ -3208,7 +3208,7 @@ describe("refer a friend", () => {
     await store.redeemReferral(userId, await codeOf(first), 7);
     const already = await (await post("/start/referral", { code: await codeOf(await store.createUser("en")) }, session)).text();
     expect(already).toContain(escape(PAGE_COPY.referralAlready));
-    expect((await store.referralStats(7, CONFIG.timezone)).refusals).toEqual({ unknown: 1, own: 1, already: 1, paid: 0 });
+    expect((await store.referralStats({ from: null, to: null }, CONFIG.timezone)).refusals).toEqual({ unknown: 1, own: 1, already: 1, paid: 0 });
   });
 
   // #597 refuses an account that has already bought eait; the step says so and moves on.
@@ -3218,7 +3218,7 @@ describe("refer a friend", () => {
     const page = await (await post("/start/referral", { code: await codeOf(await store.createUser("en")) }, session)).text();
     expect(page).toContain(escape(PAGE_COPY.referralPaid));
     expect(page).toContain(`href="/start/chat">${escape(PAGE_COPY.continueLabel)}`);
-    expect((await store.referralStats(7, CONFIG.timezone)).refusals.paid).toBe(1);
+    expect((await store.referralStats({ from: null, to: null }, CONFIG.timezone)).refusals.paid).toBe(1);
   });
 
   it("is not reachable before the walk has got there", async () => {

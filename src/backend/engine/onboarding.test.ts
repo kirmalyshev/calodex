@@ -158,7 +158,7 @@ describe("events", () => {
       event({ place: "goal", action: "answer", field: "goal", value: "lose" }),
     ]);
 
-    const stored = await store.onboardingFunnel(30);
+    const stored = await store.onboardingFunnel({ from: null, to: null });
     expect(stored.rows.find((r) => r.place === "weight")!.answers).toBe(1);
     // The rows exist — the funnel still knows those screens were answered — and the values do not.
     const raw = JSON.stringify(stored);

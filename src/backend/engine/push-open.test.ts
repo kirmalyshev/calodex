@@ -79,12 +79,12 @@ describe("pushOpenView", () => {
     await userWithSend();
     const view = await pushOpenView(deps, 7);
     expect(view.timezone).toBe("Europe/Berlin");
-    expect(view.days).toBe(7);
+    expect(view.range.days).toBe(7);
   });
 
   it("bounds the window", async () => {
-    expect((await pushOpenView(deps, 100_000)).days).toBe(PUSH_STATS_MAX_DAYS);
-    expect((await pushOpenView(deps, 0)).days).toBe(1);
-    expect((await pushOpenView(deps, Number.NaN)).days).toBe(7);
+    expect((await pushOpenView(deps, 100_000)).range.days).toBe(PUSH_STATS_MAX_DAYS);
+    expect((await pushOpenView(deps, 0)).range.days).toBe(1);
+    expect((await pushOpenView(deps, Number.NaN)).range.days).toBe(7);
   });
 });

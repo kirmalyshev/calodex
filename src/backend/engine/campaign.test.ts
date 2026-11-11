@@ -486,7 +486,7 @@ describe("dry run", () => {
     expect((await store.sendLogFor(u2, 5))).toHaveLength(1);
     expect(await store.claimPushSlot(u1, "2026-08-20", "evening", null)).toEqual({ claimed: true });
     expect(await store.hasCampaignSend(u1, c.id)).toBe(false);
-    expect(await store.campaignReport(c.id)).toMatchObject({ dry: 2, sent: 0 });
+    expect(await store.campaignReport(c.id, { from: null, to: null })).toMatchObject({ dry: 2, sent: 0 });
   });
 
   it("reports an unknown campaign", async () => {
@@ -518,7 +518,7 @@ describe("test send", () => {
     await testSendCampaign(deps, c.id, me, BERLIN_1830);
     const row = (await store.sendLogFor(me, 1))[0]!;
     await store.recordPushOpen(me, row.id, "tap");
-    expect(await store.campaignReport(c.id)).toEqual({ sent: 0, accepted: 0, dead: 0, dry: 0, opened: 0, test: 1, held: 0, groups: [] });
+    expect(await store.campaignReport(c.id, { from: null, to: null })).toEqual({ sent: 0, accepted: 0, dead: 0, dry: 0, opened: 0, test: 1, held: 0, groups: [] });
   });
 
   it("refuses when the template is incomplete, before taking the slot", async () => {

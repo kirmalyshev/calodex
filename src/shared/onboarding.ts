@@ -31,6 +31,7 @@
 // so it can render the next question without a round trip. One implementation, so they cannot
 // disagree about what "next" means.
 
+import type { AdminWindowEcho } from "./dates.ts";
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
 import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
 import { ACTIVITY_LEVELS, BARRIERS, COUNTED_BEFORE, PACES, SEXES, SITUATIONS, STREAK_GOALS } from "./types.ts";
@@ -2237,7 +2238,8 @@ export interface OnboardingFunnel {
   sessions: number;
   /** Runs that reached `complete`. */
   completed: number;
-  days: number;
+  /** The window this was read over (ieat-app#2776) — instants for the range control, `days` for `?days=N`. */
+  range: AdminWindowEcho;
   contentVersion: number;
   rows: FunnelRow[];
 }

@@ -1904,7 +1904,7 @@ describe("push opens (ieat-app#1759)", () => {
     return id;
   }
   const opened = async () =>
-    (await store.pushOpenStats(2, "UTC")).filter((r) => r.templateKey === "route-t").reduce((n, r) => n + r.opened, 0);
+    (await store.pushOpenStats({ from: null, to: null }, "UTC")).filter((r) => r.templateKey === "route-t").reduce((n, r) => n + r.opened, 0);
 
   it("records an open, once, however often it is reported", async () => {
     const t = await session();
@@ -1946,7 +1946,7 @@ describe("push delivered beacon", () => {
     return id;
   }
   const delivered = async () =>
-    (await store.pushOpenStats(2, "UTC")).filter((r) => r.templateKey === "deliv-t").reduce((n, r) => n + r.delivered, 0);
+    (await store.pushOpenStats({ from: null, to: null }, "UTC")).filter((r) => r.templateKey === "deliv-t").reduce((n, r) => n + r.delivered, 0);
 
   it("records a delivery once, however often it is reported", async () => {
     const t = await session();

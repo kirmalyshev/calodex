@@ -90,7 +90,7 @@ describe("experiments (ieat-app#2669)", () => {
   beforeEach(async () => { await mountWithAdmin(); });
 
   it("lists nothing at first, and drafts are born with the control cloned", async () => {
-    expect(await (await admin("GET", "/admin/api/experiments")).json()).toEqual({ experiments: [] });
+    expect(await (await admin("GET", "/admin/api/experiments")).json()).toMatchObject({ experiments: [] });
     const created = await admin("POST", "/admin/api/experiments", { lang: "de" });
     expect(created.status).toBe(200);
     const { experiment } = await created.json() as { experiment: { lang: string; status: string; variants: { control?: boolean }[] } };
@@ -1223,8 +1223,8 @@ describe("the admin's push opens view (ieat-app#1759)", () => {
     await store.recordPushOpen(userId, sendId, "tap");
     const res = await admin("GET", "/admin/api/push/stats?days=3");
     expect(res.status).toBe(200);
-    const view = await res.json() as { days: number; timezone: string; rows: Record<string, unknown>[] };
-    expect(view.days).toBe(3);
+    const view = await res.json() as { range: { days: number | null }; timezone: string; rows: Record<string, unknown>[] };
+    expect(view.range.days).toBe(3);
     expect(view.rows.find((r) => r.templateKey === "view-t")).toMatchObject({
       kind: "campaign", sent: 1, accepted: 1, dead: 0, opened: 1, converted: 0,
     });
@@ -1474,13 +1474,13 @@ describe("the referrals view", () => {
     expect(res.status).toBe(200);
     const body = await res.json() as Record<string, unknown>;
     expect(body).toMatchObject({
-      window: 30, timezone: base.timezone, via: [{ via: "messages", shares: 1 }],
+      range: { days: 30 }, timezone: base.timezone, via: [{ via: "messages", shares: 1 }],
       refusals: { unknown: 0, own: 1, already: 0 }, sharers: 1, sharersJoined: 1,
     });
     expect(JSON.stringify(body)).not.toContain(referrer);
     expect(JSON.stringify(body)).not.toContain(friend);
     expect(JSON.stringify(body)).not.toContain(code);
-    expect((await (await admin("GET", "/admin/api/referrals?days=nonsense")).json() as { window: number }).window).toBe(7);
+    expect((await (await admin("GET", "/admin/api/referrals?days=nonsense")).json() as { range: { days: number } }).range.days).toBe(7);
   });
 
   it("is on the page, in Operate after Campaigns", () => {
