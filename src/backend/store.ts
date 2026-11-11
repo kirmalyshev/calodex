@@ -16,7 +16,7 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingPlace, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
@@ -597,6 +597,12 @@ export interface OnboardingVariant {
   control?: boolean;
   weight: number;
   content: OnboardingContent;
+  /**
+   * The order this arm walks the span from the welcome to the sign-up in (ieat-app#2788), absent for
+   * the default. Validated by `validateOnboardingOrder` when it is SAVED and again at the start, so a
+   * stored one is valid against this build's rules; never on the control arm.
+   */
+  order?: OnboardingPlace[];
 }
 
 export type OnboardingExperimentStatus = "draft" | "running" | "stopped";
@@ -1616,6 +1622,13 @@ export interface Store {
    * A staff-flagged account's assignment is left out (#2783), so `assigned` is not every assignment row.
    */
   onboardingExperimentFunnel(experimentId: string, range: AdminRange, staffIds?: string[]): Promise<OnboardingExperimentFunnelRow[]>;
+  /**
+   * The same population and window as `onboardingExperimentFunnel` — by assignment, from the
+   * assignment to the stop, narrowed by `range`, staff out — counted per PLACE, one row per
+   * `(variant_id, place)` that has an event (ieat-app#2788). The engine lays each arm's rows out in
+   * that arm's own order; a place with no event has no row.
+   */
+  onboardingExperimentPlaces(experimentId: string, range: AdminRange, staffIds?: string[]): Promise<(FunnelAggregate["rows"][number] & { variant_id: number })[]>;
   /**
    * Take the next revision number off the shared counter WITHOUT installing copy — a variant's
    * version comes off the same counter the admin saves do, so a content_version always names ONE

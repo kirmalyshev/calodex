@@ -52,7 +52,8 @@ export {
 } from "./email.ts";
 export {
   addOnboardingVariant, assignVariant, createOnboardingExperiment, onboardingContent,
-  onboardingContentFor, onboardingExperiments, saveOnboardingContent, saveOnboardingVariant,
+  onboardingContentFor, onboardingExperiments, onboardingServedFor, orderRefusalText, saveOnboardingContent,
+  saveOnboardingVariant, saveOnboardingVariantOrder,
   resetOnboardingContent, recordOnboardingEvents, sanitizeExperimentRules, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment, wilsonInterval,
   adminMetrics,

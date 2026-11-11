@@ -3399,6 +3399,37 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(back.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 2, sessions: 2, completed: 2 });
       });
 
+      it("keeps an arm's order, and counts each arm's places inside the arm's own window (ieat-app#2788)", async () => {
+        const s = await open();
+        const order = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
+          "pace", "counted", "barrier", "situation", "medical", "diet", "summary", "signup"];
+        const e = exp({
+          id: `places-${RUN}`,
+          variants: [
+            { control: true, weight: 1, content: { version: 41 } as never },
+            { weight: 1, content: { version: 42 } as never, order },
+          ],
+        });
+        await s.putOnboardingExperiment(e as never); created.push(e.id);
+        expect((await s.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toEqual(order as never);
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const staff = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.setStaff(staff, true);
+        for (const who of [u, staff]) {
+          await s.putOnboardingAssignment(who, e.id, 42);
+          const at = new Date().toISOString();
+          await s.recordOnboardingEvents(who, [
+            { id: crypto.randomUUID(), sessionId: "p-" + who, place: "medical", action: "view", contentVersion: 42, at },
+            { id: crypto.randomUUID(), sessionId: "p-" + who, place: "medical", action: "answer", contentVersion: 42, at, ms: 800 },
+            { id: crypto.randomUUID(), sessionId: "p-old-" + who, place: "goal", action: "view", contentVersion: 42, at: "2000-01-01T00:00:00Z" },
+          ] as never);
+        }
+        const rows = await s.onboardingExperimentPlaces(e.id, { from: null, to: null });
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({ variant_id: 42, place: "medical", views: 1, people: 1, answers: 1, medianMs: 800 });
+        await s.setStaff(staff, false);
+      });
+
       it("moves assignments on merge, keeping the account's own row on a collision", async () => {
         const s = await open();
         const anon = (await s.upsertDeviceUser(device(), "en")).userId;

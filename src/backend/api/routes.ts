@@ -37,7 +37,7 @@ import type { Store } from "../store.ts";
 import {
   MAX_WINDOW_DAYS, appendLines, cancelPendingMeal, logFoodMeal, logNumbersMeal, chatHistory, confirmPendingMeal, day, days, average, deleteLine, deleteMealById, editLine,
   editMeal, handleText,
-  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, onboardingContentFor, patchProfile, pendingMeals, profileView,
+  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, onboardingServedFor, patchProfile, pendingMeals, profileView,
   sendEmailCode, unlinkIdentity, verifyEmailCode,
   EMAIL_ADDRESS, normalizeEmail,
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
@@ -817,14 +817,19 @@ export function createRouter(
           : (await deps.store.getProfile(userId))?.lang ?? "en";
         // `?tz=` (IANA) and `?region=` (the device's locale region) are the experiment signals
         // (ieat-app#2669): a request without them is still answered — missing means "not
-        // eligible", never an error.
+        // eligible", never an error. `?order=` is the order capability (ieat-app#2788): absent or
+        // not a number is 0, which no experiment with an ordered arm enrolls.
+        const orderVersion = Number(url.searchParams.get("order") ?? 0);
+        const served = await onboardingServedFor(deps, userId, {
+          lang, surface: "app",
+          region: url.searchParams.get("region"),
+          tz: url.searchParams.get("tz"),
+          orderVersion: Number.isFinite(orderVersion) ? orderVersion : 0,
+        });
         return json({
-          content: await onboardingContentFor(deps, userId, {
-            lang, surface: "app",
-            region: url.searchParams.get("region"),
-            tz: url.searchParams.get("tz"),
-          }),
+          content: served.content,
           lang,
+          ...(served.order ? { order: served.order } : {}),
         } satisfies OnboardingContentResponse);
       }
 

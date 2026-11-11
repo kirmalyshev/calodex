@@ -1828,6 +1828,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   putOnboardingAssignment: 0,
   onboardingAssignments: "unscoped",
   onboardingExperimentFunnel: "unscoped",
+  onboardingExperimentPlaces: "unscoped",
   // The counter the admin saves and the experiment variants share — global, like the row it bumps.
   bumpOnboardingContentVersion: "unscoped",
   // The six system prompts. One set for the whole instance, admin-edited, no account anywhere.
@@ -3924,6 +3925,46 @@ export async function postgresStore(
       const since = new Date(now() - hours * 60 * 60 * 1000).toISOString();
       const [r] = await sql`select count(*)::int as n from users where onboarded_at >= ${since}`;
       return Number(r?.n ?? 0);
+    },
+
+    async onboardingExperimentPlaces(experimentId, range, staffIds = []) {
+      const { from: lo, to: hi } = range;
+      const configStaff = uuidArray(staffIds);
+      // `onboardingExperimentFunnel`'s population and window, grouped by place as `onboardingFunnel`
+      // counts it — so a place row means the same thing on the whole-host funnel and on an arm.
+      const rows = await sql`
+        select a.variant_id, e.place,
+               count(*) filter (where e.action = 'view')::int   as views,
+               count(distinct e.session_id) filter (where e.action = 'view')::int as people,
+               count(*) filter (where e.action = 'answer')::int as answers,
+               count(*) filter (where e.action = 'back')::int   as backs,
+               count(*) filter (where e.action = 'reject')::int as rejects,
+               percentile_cont(0.5) within group (
+                 order by e.ms
+               ) filter (where e.action = 'answer' and e.ms is not null) as median_ms
+        from onboarding_assignments a
+        join onboarding_experiments x on x.id = a.experiment_id
+        join onboarding_events e on e.user_id = a.user_id
+          and e.at >= a.assigned_at
+          and (x.stopped_at is null or e.at <= x.stopped_at)
+          and (${lo === null} or e.at >= ${lo})
+          and (${hi === null} or e.at <= ${hi})
+        where a.experiment_id = ${experimentId}
+          and not exists (select 1 from users u where u.id = a.user_id and u.staff)
+          and a.user_id <> all(${configStaff}::uuid[])
+          and (${lo === null} or a.assigned_at >= ${lo})
+          and (${hi === null} or a.assigned_at <= ${hi})
+        group by a.variant_id, e.place`;
+      return rows.map((r: Record<string, unknown>) => ({
+        variant_id: num(r.variant_id),
+        place: String(r.place),
+        views: num(r.views),
+        people: num(r.people),
+        answers: num(r.answers),
+        backs: num(r.backs),
+        rejects: num(r.rejects),
+        medianMs: r.median_ms === null || r.median_ms === undefined ? null : Math.round(Number(r.median_ms)),
+      }));
     },
 
     async onboardingFunnel(range, staffIds = []): Promise<FunnelAggregate> {

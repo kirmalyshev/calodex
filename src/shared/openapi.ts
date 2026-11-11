@@ -93,7 +93,10 @@ export const API: readonly Endpoint[] = [
     // READ BY THE HANDLER (`api/routes.ts`), so it belongs here: the response carries `lang` for
     // the sole purpose of answering this, and a client generated from `openapi.json` could not
     // express the ask at all while only the response half was declared.
-    query: { lang: "A Lang code. The account's language when absent, English when unknown." },
+    query: {
+      lang: "A Lang code. The account's language when absent, English when unknown.",
+      order: "The order capability this client can walk (`ONBOARDING_ORDER_VERSION`). Absent is 0: no experiment with an ordered arm enrolls it, and `order` is never sent.",
+    },
     summary: "The onboarding copy this server is serving.", responses: { 200: "OnboardingContentResponse" } },
   { route: "onboardingEvents", method: "POST", path: "/v1/onboarding/events", auth: "bearer",
     summary: "A batch of onboarding funnel events.",

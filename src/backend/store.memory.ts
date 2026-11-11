@@ -1869,6 +1869,29 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return [...out.values()];
     },
 
+    async onboardingExperimentPlaces(experimentId, range, staffIds = []) {
+      const lo = range.from?.getTime() ?? -Infinity;
+      const hi = range.to?.getTime() ?? Infinity;
+      const experiment = onboardingExperiments.get(experimentId);
+      // The population and window `onboardingExperimentFunnel` reads, per arm, then the one
+      // aggregation the whole-host funnel uses — so a place row means the same thing in both.
+      const byArm = new Map<number, StoredEvent[]>();
+      for (const a of onboardingAssignments.values()) {
+        if (a.experiment_id !== experimentId || staffSet.has(a.user_id) || staffIds.includes(a.user_id)) continue;
+        const assignedAt = Date.parse(a.assigned_at);
+        if (assignedAt < lo || assignedAt > hi) continue;
+        const mine = [...onboardingEvents.values()].filter((e) => {
+          if (e.userId !== a.user_id) return false;
+          const at = Date.parse(e.at);
+          if (at < assignedAt || at < lo || at > hi) return false;
+          return experiment?.stopped_at == null || at <= Date.parse(experiment.stopped_at);
+        });
+        byArm.set(a.variant_id, [...(byArm.get(a.variant_id) ?? []), ...mine]);
+      }
+      return [...byArm].flatMap(([variant_id, events]) =>
+        aggregateFunnel(events).rows.map((r) => ({ ...r, variant_id })));
+    },
+
     async bumpOnboardingContentVersion(floorVersion) {
       // The counter counts the SET's versions too — seeded content at version 42 means the next
       // number off the counter is 43, not 1 (the pg column never forgets it; neither may this).
