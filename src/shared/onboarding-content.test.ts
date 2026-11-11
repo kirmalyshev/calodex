@@ -9,7 +9,6 @@ import { ONBOARDING_CONTENT, onboardingContentFor, usableContentFor } from "./on
 import { genderedRussian } from "./lang.ts";
 import { usableFirstMeal } from "./onboarding.ts";
 import { AMBIGUOUS_AGE, checkDirection, checkNumber, switchedLine } from "./onboarding-chat.ts";
-import { signupCopyFor } from "./app/signup-copy.ts";
 import { chatCopyFor } from "./onboarding-chat-copy.ts";
 
 // Onboarding is the one flow where a missing sentence is not a wart: `usableContent` drops a whole
@@ -103,15 +102,6 @@ describe("every language's onboarding content", () => {
     }
   });
 
-  it("carries the area (d) words identical to the tables the phone still reads, in every language", () => {
-    for (const lang of LANGS) {
-      const c = onboardingContentFor(lang);
-      expect(c.signup, lang).toEqual({ heading: signupCopyFor(lang).savePlanHeading, line: signupCopyFor(lang).savePlanLine });
-      expect(c.health, lang).toEqual(chatCopyFor(lang).health);
-      expect(c.firstMeal, lang).toEqual(chatCopyFor(lang).firstMeal);
-    }
-  });
-
   it("passes the Russian gender gate on the referral ask, and the gate still catches a verb that is not the friend's", () => {
     expect(genderedRussian(onboardingContentFor("ru").referral)).toEqual([]);
     expect(genderedRussian(["Друг прислал ссылку, а ты не открыл её"]).length).toBeGreaterThan(0);
@@ -126,28 +116,28 @@ describe("every language's onboarding content", () => {
     expect(usableFirstMeal(served, own)).toBe(served);
   });
 
-  it("carries the refusals identical to the chat table the phone still reads, and the readers prefer the served ones", () => {
-    for (const lang of LANGS) {
-      const c = onboardingContentFor(lang).refusals, o = chatCopyFor(lang);
-      expect(c.invalid, lang).toEqual(o.invalid);
-      expect(c.ambiguousAge, lang).toEqual(o.ambiguousAge);
-      expect(c.direction, lang).toEqual(o.direction);
-      expect(c.switched, lang).toEqual({ gain: o.switched.gain });
-    }
+  it("has the refusals' readers prefer a served revision over the compiled one", () => {
     const r = structuredClone(onboardingContentFor("en").refusals);
     r.invalid.age = "A"; r.ambiguousAge.confirm = "B {age}"; r.direction.switchToLose = "C"; r.switched.gain = "D";
-    expect((checkNumber("birth_year", "abc", "en", new Date(), r) as { line: string }).line).toBe("A");
+    expect((checkNumber("birth_year", "abc", "en", { refusals: r }) as { line: string }).line).toBe("A");
     expect(AMBIGUOUS_AGE("en", r).confirm(30)).toBe("B 30");
     expect(checkDirection("gain", 80, 70, "en", r)!.switchLabel).toBe("C");
     expect(switchedLine("gain", "en", r)).toBe("D");
-    expect(switchedLine("gain", "en")).toBe(chatCopyFor("en").switched.gain);
+    // `switched.lose` is code on purpose — the pacing brake an admin edit must not weaken.
     expect(switchedLine("lose", "en", r)).toBe(chatCopyFor("en").switched.lose);
   });
 
   it("introduces no placeholder nothing fills", () => {
+    // Per-key: `{year}`/`{age}` belong to the ambiguous-age exchange alone — one straying into
+    // another key is a literal brace on screen, and a shared set could not see it.
+    const common = new Set(["floor", "share", "n", "rest", "burn", "delta", "weight", "pct", "rate", "from", "to", "target", "month", "kcal", "kg", "range", "g"]);
+    const own: Record<string, readonly string[]> = {
+      "refusals.ambiguousAge.line": ["year"],
+      "refusals.ambiguousAge.confirm": ["age"],
+    };
     for (const lang of LANGS) {
-      const known = new Set(["floor", "share", "n", "rest", "burn", "delta", "weight", "pct", "rate", "from", "to", "target", "month", "kcal", "kg", "range", "g", "year", "age"]);
       for (const [at, text] of Object.entries(flatten(onboardingContentFor(lang)))) {
+        const known = new Set([...common, ...(own[at] ?? [])]);
         for (const m of text.matchAll(/\{(\w+)\}/g)) {
           expect(known.has(m[1]!), `${lang}.${at} uses {${m[1]}}`).toBe(true);
         }

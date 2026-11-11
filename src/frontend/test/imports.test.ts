@@ -47,7 +47,6 @@ const WEB_MODULES = new Set([
                        // Localized table, reads health.ts + lang.ts only
   "onboarding.ts",     // the profile editor's option vocabulary and CLDR country names (#474)
   "onboarding-content.ts", // the compiled fallback when /onboarding's labels have not landed
-  "first-meal-copy.ts",
   "milestones.ts",     // the 36 badges: ids, names, criteria — pure, reads dates.ts only
   "micro-goals.ts",    // fibre/sugar/sodium goal limits (#914) — pure, types only
 ]);

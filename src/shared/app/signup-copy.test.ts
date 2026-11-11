@@ -9,7 +9,7 @@ import { LANGS, type Lang } from "../types.ts";
 import { SIGNUP_COPY, signupCopyFor } from "./signup-copy.ts";
 
 const KEYS = [
-  "startCta", "haveAccountCta", "signUpHeading", "saveHeading", "savePlanHeading", "savePlanLine", "signInMealHeading",
+  "startCta", "haveAccountCta", "signUpHeading", "saveHeading", "signInMealHeading",
   "termsLabel", "termsLink", "privacyLink", "consentMarketing", "errorTerms",
 ] as const;
 

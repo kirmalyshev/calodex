@@ -381,10 +381,11 @@ export type NumberAnswer =
  * by a ninety-year-old it means ninety. Guessing either way computes somebody else's target, so
  * Spud asks — the quick reply takes it as an age, four digits take it as the year.
  */
-// The four refusal readers below take the served `refusals` (ieat-app#2757, area e). Without one they
-// read `chatCopyFor` — the same words — because the phone still calls them bare until its half moves.
-export const AMBIGUOUS_AGE = (lang: Lang, refusals?: OnboardingRefusalsContent) => {
-  const copy = refusals?.ambiguousAge ?? chatCopyFor(lang).ambiguousAge;
+// The four refusal readers below take the served `refusals` (ieat-app#2757, area e), and the
+// parameter is required: a caller that omits it compiled to `chatCopyFor` once, and a missed one
+// is now a compile error. `switched.lose` is the exception — it reads `chatCopyFor` on purpose.
+export const AMBIGUOUS_AGE = (lang: Lang, refusals: OnboardingRefusalsContent) => {
+  const copy = refusals.ambiguousAge;
   const n = numbers(lang);
   return {
     // The YEAR is not a quantity and must never be grouped: `1990` and not `1,990`. The age beside
@@ -413,13 +414,12 @@ export function checkNumber(
   field: NumberField,
   raw: string,
   lang: Lang,
-  // BEHIND the language, and that is the whole reason it moved. Required-after-optional compiles,
-  // and it made reaching the language cost a `new Date()` the caller did not want to name — so the
-  // call that skipped it read as correct and rendered English.
-  today = new Date(),
-  refusals?: OnboardingRefusalsContent,
+  opts: { today?: Date; refusals: OnboardingRefusalsContent },
 ): NumberAnswer {
-  const invalid = refusals?.invalid ?? chatCopyFor(lang).invalid;
+  // `today` sits in a bag and stays defaulted: reaching the words cost a `new Date()` the caller
+  // did not want to name once, and the call that skipped it read as correct and rendered English.
+  const today = opts.today ?? new Date();
+  const invalid = opts.refusals.invalid;
   // THE QUESTION IS AN AGE, AND THE AGE IS WHAT TRAVELS. "How old are you?" is what people answer
   // without arithmetic; `birth_year` is what the profile stores, because an age stored as a number
   // is wrong within twelve months (`types.ts`). The subtraction happens in `engine/profile.ts`,
@@ -491,9 +491,9 @@ export function checkDirection(
   weightKg: number,
   targetKg: number,
   lang: Lang,
-  refusals?: OnboardingRefusalsContent,
+  refusals: OnboardingRefusalsContent,
 ): DirectionRefusal | null {
-  const copy = refusals?.direction ?? chatCopyFor(lang).direction;
+  const copy = refusals.direction;
   const n = numbers(lang);
   const params = { weight: n(weightKg), target: n(targetKg) };
   if (goal === "gain" && targetKg <= weightKg) {
@@ -516,10 +516,9 @@ export function checkDirection(
 }
 
 /** What Spud says after the goal is flipped mid-question, and the target is asked again. */
-export function switchedLine(goal: Goal, lang: Lang, refusals?: OnboardingRefusalsContent): string {
+export function switchedLine(goal: Goal, lang: Lang, refusals: OnboardingRefusalsContent): string {
   // `lose` carries the pacing brake and is code on purpose: an edit must not turn it into "faster is better".
-  const copy = chatCopyFor(lang).switched;
-  return goal === "gain" ? refusals?.switched.gain ?? copy.gain : copy.lose;
+  return goal === "gain" ? refusals.switched.gain : chatCopyFor(lang).switched.lose;
 }
 
 /**
@@ -647,6 +646,7 @@ export function reconcileGoalEdit(
   current: Pick<Profile, "goal" | "weight_kg" | "target_weight_kg">,
   patch: { goal?: Goal; weight_kg?: number; target_weight_kg?: number },
   lang: Lang,
+  refusals: OnboardingRefusalsContent,
 ): GoalEdit {
   const goal = patch.goal ?? current.goal;
   const weightKg = patch.weight_kg ?? current.weight_kg;
@@ -655,10 +655,11 @@ export function reconcileGoalEdit(
   if (goal == null || goal === "maintain" || weightKg == null || targetKg == null) {
     return { patch, note: null };
   }
-  if (!checkDirection(goal, weightKg, targetKg, lang)) return { patch, note: null };
+  const refusal = checkDirection(goal, weightKg, targetKg, lang, refusals);
+  if (!refusal) return { patch, note: null };
 
   if (patch.target_weight_kg !== undefined) {
-    return { patch: null, note: checkDirection(goal, weightKg, targetKg, lang)!.line };
+    return { patch: null, note: refusal.line };
   }
   if (patch.goal !== undefined) {
     return {
