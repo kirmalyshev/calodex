@@ -1500,6 +1500,24 @@ describe("the referrals view", () => {
     expect(bounded.range).toEqual({ days: null, from: "2026-11-03T00:00:00.000Z", to: "2026-11-09T00:00:00.000Z" });
   });
 
+  it("reads a bound outside any plausible span as open on every ranged endpoint, never a 500", async () => {
+    const paths = [
+      "/admin/api/campaigns", "/admin/api/experiments", "/admin/api/funnel", "/admin/api/users",
+      "/admin/api/metrics", "/admin/api/referrals", "/admin/api/push/stats",
+    ];
+    const asks = [
+      "from=-005000-01-01T00:00:00Z", "to=+275760-09-13T00:00:00.000Z",
+      "from=1900-01-01T00:00:00Z&to=+100000-01-01T00:00:00Z", "from=nope&to=",
+    ];
+    for (const p of paths) for (const q of asks) {
+      const res = await admin("GET", `${p}?${q}`);
+      expect({ p, q, status: res.status }).toEqual({ p, q, status: 200 });
+    }
+    const echo = await (await admin("GET", "/admin/api/referrals?from=-005000-01-01T00:00:00Z&to=2026-11-09T00:00:00.000Z"))
+      .json() as { range: { from: string | null; to: string | null } };
+    expect(echo.range).toMatchObject({ from: null, to: "2026-11-09T00:00:00.000Z" });
+  });
+
   it("is on the page, in Operate after Campaigns", () => {
     expect(ADMIN_PAGE).toMatch(/data-nav="campaigns">Campaigns<\/a>\s*<a href="#referrals" data-nav="referrals">Referrals<\/a>/);
     expect(ADMIN_PAGE).toContain('<option value="referrals">Referrals</option>');

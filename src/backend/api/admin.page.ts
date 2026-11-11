@@ -322,7 +322,7 @@ pre { overflow-x: auto; max-width: 100%; }
 .aseg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(23,25,28,.08); }
 .aseg .rng { display: inline-flex; align-items: center; gap: 4px; padding: 0 2px; }
 .aseg .rng-l { font-size: 11px; color: var(--muted); }
-.aseg .rng input { height: 28px; width: 168px; padding: 0 6px; border: 0; border-radius: 7px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); font-size: 12px; color: var(--ink); }
+.aseg .rng input { height: 28px; width: 132px; padding: 0 6px; border: 0; border-radius: 7px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); font-size: 12px; color: var(--ink); }
 .aseg .rng-note { align-self: center; padding: 0 6px; font-size: 11px; color: var(--muted); white-space: nowrap; }
 .tab { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .kvs { display: flex; flex-direction: column; gap: 6px; }
@@ -345,6 +345,8 @@ button.quiet { box-shadow: none; color: var(--muted); }
 .nv > .card, .nv > p.muted { margin: 0; }
 .nv > p.muted { font-size: 12px; }
 .ahead .aseg { margin-left: auto; }
+.ahead { flex-wrap: wrap; }
+#head-window { flex-wrap: wrap; min-width: 0; }
 .akpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; min-width: 0; }
 .akpi.k3 { grid-template-columns: repeat(3, 1fr); }
 .akpi > div { background: var(--surface); border-radius: var(--r-card); box-shadow: 0 0 0 1px var(--hair); padding: 12px 14px; min-width: 0; }
@@ -382,7 +384,7 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .srow .t > span { font-size: 12px; color: var(--muted); }
 .nv.food { max-width: 720px; }
 .pb.flips { gap: 6px; }
-@media (max-width: 760px) { #head-window { display: none; } .abar.wide { width: 72px; flex-basis: 72px; } #view-numbers .ph b, #view-pushes .ph b, #view-funnel .ph b { white-space: nowrap; } #pushes-zone { display: none; } }
+@media (max-width: 760px) { #head-window { order: 3; width: 100%; margin-left: 0; } #range-zone, #range-note { white-space: normal; } .abar.wide { width: 72px; flex-basis: 72px; } #view-numbers .ph b, #view-pushes .ph b, #view-funnel .ph b { white-space: nowrap; } #pushes-zone { display: none; } }
 @media (max-width: 600px) {
   .fp .fp-st.fp-hd { display: none; }
   .fp .fp-st { grid-template-columns: 28px 1fr auto; grid-template-areas: "n nm cnt" ". bar bar" ". pc pc"; row-gap: 6px; }
@@ -1550,11 +1552,25 @@ details.how p { margin-top: 8px; }
   var range = { from: null, to: null };
   var rangeSet = false;   // the admin or a link named a window — until then the hash stays clean
 
-  // "YYYY-MM-DDTHH:MM" as datetime-local wants it, in the browser's zone.
+  // The boxes are calendar dates in the browser's zone, ONE rule: From is that day's first instant,
+  // To that day's last (the server's "to" is inclusive), both sent to the server as UTC instants.
+  // "YYYY-MM-DD" as <input type="date"> wants it.
   function localInput(d) {
     var p = function (n) { return (n < 10 ? "0" : "") + n; };
-    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   }
+  // new Date("2026-11-03") would be UTC midnight; a date box means the admin's own midnight.
+  function dayStart(v) {
+    var m = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(v || "");
+    if (!m) return null;
+    var d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function dayEnd(v) {
+    var d = dayStart(v);
+    return d ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0, -1) : null;
+  }
+  var ZONE = (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { return ""; } })();
 
   function rangeQS() {
     // An ask with both ends open is all: nothing means "no choice yet", when the API
@@ -1612,33 +1628,35 @@ details.how p { margin-top: 8px; }
       return w;
     };
     var from = document.createElement("input");
-    from.type = "datetime-local";
+    from.type = "date";
     from.id = "range-from";
     from.setAttribute("aria-label", "From");
     var to = document.createElement("input");
-    to.type = "datetime-local";
+    to.type = "date";
     to.id = "range-to";
     to.setAttribute("aria-label", "To");
     if (range.from) from.value = localInput(range.from);
     if (range.to) to.value = localInput(range.to);
     var change = function () {
-      var f = from.value ? new Date(from.value) : null;
-      var t = to.value ? new Date(to.value) : null;
-      if (f && isNaN(f.getTime())) f = null;
-      if (t && isNaN(t.getTime())) t = null;
-      applyRange(f, t);
+      applyRange(dayStart(from.value), dayEnd(to.value));
       run(id);
     };
     from.addEventListener("change", change);
     to.addEventListener("change", change);
-    var last24 = el("button", "", "Last 24 hours");
-    last24.id = "range-24h";
-    last24.addEventListener("click", function () {
-      var now = new Date();
-      from.value = localInput(new Date(now.getTime() - 86400000));
-      to.value = localInput(now);
-      applyRange(new Date(from.value), new Date(to.value));
-      run(id);
+    seg.appendChild(mk("From", from));
+    seg.appendChild(mk("To", to));
+    // Rolling windows ending now — "Last 24 hours" is now − 24h, not today.
+    [["range-24h", "Last 24 hours", 1], ["range-7d", "7 days", 7], ["range-30d", "30 days", 30]].forEach(function (p) {
+      var b = el("button", "", p[1]);
+      b.id = p[0];
+      b.addEventListener("click", function () {
+        var now = new Date(), f = new Date(now.getTime() - p[2] * 86400000);
+        from.value = localInput(f);
+        to.value = localInput(now);
+        applyRange(f, now);
+        run(id);
+      });
+      seg.appendChild(b);
     });
     var all = el("button", "", "All time");
     all.id = "range-all";
@@ -1648,13 +1666,13 @@ details.how p { margin-top: 8px; }
       applyRange(null, null);
       run(id);
     });
-    seg.appendChild(mk("From", from));
-    seg.appendChild(mk("To", to));
-    seg.appendChild(last24);
     seg.appendChild(all);
     rangeNoteEl = el("span", "rng-note", "");
     rangeNoteEl.id = "range-note";
     seg.appendChild(rangeNoteEl);
+    var zone = el("span", "rng-note", "Dates in " + (ZONE || "your browser's time zone") + ", sent as UTC");
+    zone.id = "range-zone";
+    seg.appendChild(zone);
     lastEcho = null;
     rangeNote();
   }
@@ -2134,7 +2152,8 @@ details.how p { margin-top: 8px; }
   });
   function syncHead() {
     var none = !campData || campData.campaigns.length === 0;
-    headActs.classList.toggle("hidden", location.hash !== "#campaigns" || !campData || campMode !== "list");
+    // The hash may carry the window (#campaigns?from=…), so the view is the part before "?".
+    headActs.classList.toggle("hidden", location.hash.split("?")[0] !== "#campaigns" || !campData || campMode !== "list");
     newCamp.classList.toggle("hidden", none);
   }
   window.addEventListener("hashchange", syncHead);
@@ -3819,7 +3838,11 @@ details.how p { margin-top: 8px; }
     paintBox($("state-" + id), $("body-" + id), kind, err, VIEWS[id].title.toLowerCase(), function () { run(id); }, false, VIEWS[id].kpis);
   }
 
+  // view id -> the rangeQS() it last loaded with: a ranged view opened under another window reads again.
+  var loadedRange = {};
+
   function run(id) {
+    loadedRange[id] = rangeQS();
     state[id] = "loading";
     paint(id, "loading");
     VIEWS[id].load().then(function () {
@@ -3853,8 +3876,12 @@ details.how p { margin-top: 8px; }
     });
     $("switcher").value = id;
     drawWindow(id);
+    // The window carries across sections: the nav's plain #pushes gets it back, so a reload or a
+    // copied link keeps it, and a view last read under another window reads again.
+    writeRangeToHash();
     setHead();
     window.scrollTo(0, 0);
+    if (id in RANGED && loadedRange[id] !== rangeQS()) delete state[id];
     if (!state[id]) run(id);
   }
 

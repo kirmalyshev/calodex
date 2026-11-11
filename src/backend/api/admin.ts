@@ -82,15 +82,18 @@ const isDate = (v: string | null): v is string => v !== null && isCalendarDate(v
  * `to` is a legal ask that reads as empty.
  */
 type RangeAsk = { days: number } | { from: Date | null; to: Date | null };
+const RANGE_MIN_MS = Date.UTC(2000, 0, 1), RANGE_MAX_MS = Date.UTC(2100, 0, 1);
 
 function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number }): RangeAsk;
 function rangeParam(url: URL, bounds: null): { from: Date | null; to: Date | null };
 function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number } | null): RangeAsk {
   const f = url.searchParams.get("from"), t = url.searchParams.get("to");
+  // A bound outside 2000–2100 reads as open too: Postgres refuses a timestamp before 4713 BC and
+  // `dateMinus` turns a 6-digit year into Invalid Date, so either was a 500 from a typed box.
   const instant = (v: string | null): Date | null => {
     if (v === null || v === "") return null;
     const ms = Date.parse(v);
-    return Number.isNaN(ms) ? null : new Date(ms);
+    return Number.isNaN(ms) || ms < RANGE_MIN_MS || ms >= RANGE_MAX_MS ? null : new Date(ms);
   };
   if (f !== null || t !== null) return { from: instant(f), to: instant(t) };
   // `all` is how the page says "no bounds on purpose": with no params at all a bounded

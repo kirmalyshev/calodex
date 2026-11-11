@@ -123,29 +123,45 @@ test("a hash carrying from/to makes every ranged view send them, and the control
     expect(q.get("from"), `${view} -> ${api}`).toBe(FROM);
     expect(q.get("to"), `${view} -> ${api}`).toBe(TO);
     // The same ask is still in the boxes — the control is filled, not spent.
-    await expect(page.locator("#range-from")).toHaveValue(/\d{4}-\d\d-\d\dT\d\d:\d\d/);
-    await expect(page.locator("#range-to")).toHaveValue(/\d{4}-\d\d-\d\dT\d\d:\d\d/);
+    await expect(page.locator("#range-from")).toHaveValue(/^\d{4}-\d\d-\d\d$/);
+    await expect(page.locator("#range-to")).toHaveValue(/^\d{4}-\d\d-\d\d$/);
   }
   expect(errors).toEqual([]);
 });
 
-test("typing a bound re-asks the server and writes the hash", async ({ page }) => {
+test("typing a date re-asks the server from the admin's own midnight, and writes the hash", async ({ page }) => {
   const errors = watchConsole(page);
   const calls: Calls = {};
   await stubAdmin(page, calls);
   await openAdmin(page, "funnel");
 
-  // The local-time the admin types is sent as the INSTANT — the browser's own zone converts it.
-  const from = page.locator("#range-from");
-  await from.fill("2026-11-03T18:00");
-  const instant = new Date(await from.inputValue()).toISOString();
+  // A date box is a calendar day in the browser's zone; the server gets that day's first instant.
+  await page.locator("#range-from").fill("2026-11-03");
+  const instant = await page.evaluate(() => new Date(2026, 10, 3).toISOString());
 
-  await expect.poll(() => calls.funnel?.length ?? 0).toBeGreaterThan(0);
-  expect(calls.funnel!.at(-1)!.get("from")).toBe(instant);
+  await expect.poll(() => calls.funnel?.at(-1)?.get("from") ?? null).toBe(instant);
   expect(calls.funnel!.at(-1)!.get("to")).toBeNull();   // an open end stays open
   expect(page.url()).toContain(`from=${encodeURIComponent(instant)}`);
   await expect(page.locator("#range-note")).toContainText("now");
+  await expect(page.locator("#range-zone")).toContainText("sent as UTC");
   expect(errors).toEqual([]);
+});
+
+test.describe("across a DST change", () => {
+  test.use({ timezoneId: "Europe/Berlin" });
+  test("To covers its whole day, the 25-hour one included", async ({ page }) => {
+    const errors = watchConsole(page);
+    const calls: Calls = {};
+    await stubAdmin(page, calls);
+    await openAdmin(page, "funnel");
+    // 25 Oct 2026 is the night Berlin leaves summer time: the day starts at UTC+2, ends at UTC+1.
+    await page.locator("#range-from").fill("2026-10-25");
+    await page.locator("#range-to").fill("2026-10-25");
+    await expect.poll(() => calls.funnel?.at(-1)?.get("to") ?? null).toBe("2026-10-25T22:59:59.999Z");
+    expect(calls.funnel!.at(-1)!.get("from")).toBe("2026-10-24T22:00:00.000Z");
+    await expect(page.locator("#range-zone")).toContainText("Europe/Berlin");
+    expect(errors).toEqual([]);
+  });
 });
 
 test("Last 24 hours is a rolling instant window, not the day table", async ({ page }) => {
@@ -160,11 +176,10 @@ test("Last 24 hours is a rolling instant window, not the day table", async ({ pa
   await expect.poll(() => calls["push/stats"]?.length ?? 0).toBeGreaterThan(0);
   const q = calls["push/stats"]!.at(-1)!;
   const from = Date.parse(q.get("from")!), to = Date.parse(q.get("to")!);
-  // A day is 86400 s — the ask is now-minus-a-day to now; the input keeps minutes, so the end can
-  // be up to a minute behind the click itself.
+  // A day is 86400 s — the ask is now-minus-a-day to now, to the millisecond.
   expect(to - from).toBe(86_400_000);
-  expect(to).toBeGreaterThanOrEqual(before - 60_000);
-  expect(to).toBeLessThanOrEqual(after + 60_000);
+  expect(to).toBeGreaterThanOrEqual(before);
+  expect(to).toBeLessThanOrEqual(after);
   expect(page.url()).toContain("from=");
   expect(errors).toEqual([]);
 });
@@ -218,5 +233,61 @@ test("a hash carrying all=1 asks for the unbounded window", async ({ page }) => 
   await expect(page.locator("#range-from")).toHaveValue("");
   await expect(page.locator("#range-to")).toHaveValue("");
   await expect(page.locator("#range-note")).toHaveText("All time");
+  expect(errors).toEqual([]);
+});
+
+// One case per ranged section: a preset changes the request that section sends and its URL.
+for (const [view, api] of Object.entries(VIEW_API)) {
+  test(`${view}: 7 days and 30 days re-ask ${api} and land in the URL`, async ({ page }) => {
+    const errors = watchConsole(page);
+    const calls: Calls = {};
+    await stubAdmin(page, calls);
+    await openAdmin(page, view);
+    for (const [id, days] of [["#range-7d", 7], ["#range-30d", 30]] as const) {
+      const n = calls[api]?.length ?? 0;
+      await page.locator(id).click();
+      await expect.poll(() => calls[api]?.length ?? 0).toBeGreaterThan(n);
+      const q = calls[api]!.at(-1)!;
+      expect(Date.parse(q.get("to")!) - Date.parse(q.get("from")!)).toBe(days * 86_400_000);
+      expect(page.url()).toContain(`#${view}?from=`);
+    }
+    expect(errors).toEqual([]);
+  });
+}
+
+test("the window carries to the next section, and a reload keeps it", async ({ page }) => {
+  const errors = watchConsole(page);
+  const calls: Calls = {};
+  await stubAdmin(page, calls);
+  await openAdmin(page, "pushes");
+  await expect.poll(() => calls["push/stats"]?.length ?? 0).toBe(1);   // read once, before any choice
+
+  await page.locator('[data-nav="funnel"]').first().click();
+  await page.locator("#range-from").fill("2026-11-03");
+  const instant = await page.evaluate(() => new Date(2026, 10, 3).toISOString());
+  await expect.poll(() => calls.funnel?.at(-1)?.get("from") ?? null).toBe(instant);
+
+  // Pushes was "ready" under the old window: it must read again, not show the old numbers.
+  await page.locator('[data-nav="pushes"]').first().click();
+  await expect.poll(() => calls["push/stats"]?.length ?? 0).toBe(2);
+  expect(calls["push/stats"]!.at(-1)!.get("from")).toBe(instant);
+  expect(page.url()).toContain(`#pushes?from=${encodeURIComponent(instant)}`);
+  await expect(page.locator("#range-from")).toHaveValue("2026-11-03");
+
+  await page.reload();
+  await expect(page.locator("#app")).toBeVisible();
+  await expect.poll(() => calls["push/stats"]?.length ?? 0).toBe(3);
+  expect(calls["push/stats"]!.at(-1)!.get("from")).toBe(instant);
+  await expect(page.locator("#range-from")).toHaveValue("2026-11-03");
+  expect(errors).toEqual([]);
+});
+
+test("Campaigns keeps its head actions under a ranged hash", async ({ page }) => {
+  const errors = watchConsole(page);
+  const calls: Calls = {};
+  await stubAdmin(page, calls);
+  await openAdmin(page, `campaigns?from=${encodeURIComponent(FROM)}&to=${encodeURIComponent(TO)}`);
+  await expect.poll(() => calls.campaigns?.length ?? 0).toBeGreaterThan(0);
+  await expect(page.getByRole("button", { name: "Stop all campaigns" })).toBeVisible();
   expect(errors).toEqual([]);
 });
