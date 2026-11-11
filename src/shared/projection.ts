@@ -92,7 +92,7 @@ export function projectGoal(p: Profile, basis: TargetBasis): GoalProjection | nu
  * the preview would print a rate the guards are about to refuse.
  */
 export function previewProjection(p: Profile, targetKg: number, pace: Pace): GoalProjection | null {
-  // An admin-reordered flow can put the target screen before activity. A stored target may let
+  // A stale server revision, or a profile reaching the preview without an activity. A stored target may let
   // `explainTargets` default the multiplier; a preview may not — it would be a date derived from
   // an answer nobody gave. No multiplier, no date.
   if (p.activity === null) return null;
