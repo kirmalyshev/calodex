@@ -8447,6 +8447,13 @@
           "lang": {
             "$ref": "#/components/schemas/Lang",
             "description": "Which language this revision is in (#358).\n\nSENT rather than assumed, and it is the same rule `Limits` follows: the client asked with `?lang=` or let the account answer, and only the server knows which it used. A client that assumed its own guess came back would cache German copy under `it` the first time a code it sent was one this server does not carry."
+          },
+          "order": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OnboardingPlace"
+            },
+            "description": "The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the default. Sent ONLY to a client that declared `?order=` at or above `ONBOARDING_ORDER_VERSION`; an older binary is never enrolled in an experiment with an ordered arm. A client walks `servedOrder(order)`, so an order it cannot validate is the default, never a broken walk."
           }
         },
         "required": [
