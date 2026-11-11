@@ -661,6 +661,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "description": "The order capability this client can walk (`ONBOARDING_ORDER_VERSION`). Absent is 0: no experiment with an ordered arm enrolls it, and `order` is never sent.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
