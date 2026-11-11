@@ -22,6 +22,7 @@ import type { MascotMood } from "../../shared/mascot.ts";
 // The one-meal flow's Spud lines are onboarding CONTENT (ieat-app#2757): the compiled-in revision
 // draws first, and the served one (the admin's words, or an experiment's) replaces it when it lands.
 import { onboardingContentFor } from "../../shared/onboarding-content.ts";
+import { usableFirstMeal } from "../../shared/onboarding.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
 import { UNIT_KCAL, kcalNumbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
@@ -473,7 +474,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
   const first = askStep();
   show(first);
   void api<OnboardingContentResponse>(`/onboarding?lang=${lang}`).then((res) => {
-    fm = res.content.firstMeal;
+    fm = usableFirstMeal(res?.content?.firstMeal, fm);
     if (stage.firstChild === first) show(askStep());
   }).catch(() => {});
   return wrap;

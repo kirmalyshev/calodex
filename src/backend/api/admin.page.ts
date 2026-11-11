@@ -1319,7 +1319,7 @@ details.how p { margin-top: 8px; }
   }
   function referralCard() {
     return blockCard("referral", "Referral", [
-      ["ask", "Question"], ["sub", "Sub line", true], ["field", "Field label"], ["applied", "Applied"],
+      ["ask", "Question"], ["field", "Field label"],
       ["unknown", "Unknown link", true], ["own", "Own link", true], ["already", "Already joined", true],
       ["paid", "Already paid", true], ["tryAgain", "Try again"], ["skip", "Skip"],
     ]);

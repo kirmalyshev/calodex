@@ -257,9 +257,7 @@ const FR: OnboardingContent = {
   signup: { heading: "Sauvegarde ton plan", line: "Ainsi ton plan et ton abonnement te suivent sur un nouveau téléphone, et tes repas sont conservés." },
   referral: {
     ask: "Un ami t'a envoyé un lien ?",
-    sub: "Facultatif. Rejoins eait avec ce lien et ta première semaine d'eait est gratuite.",
     field: "Lien d'invitation d'un ami",
-    applied: "Invitation appliquée. Ta semaine offerte commence maintenant.",
     unknown: "Ce lien ne correspond à personne. Vérifie-le, ou passe.",
     own: "C'est ton propre lien. Ici, c'est le lien d'un ami.",
     already: "Ce compte a déjà rejoint eait avec le lien d'un ami.",
@@ -504,9 +502,7 @@ const DE: OnboardingContent = {
   signup: { heading: "Sichere deinen Plan", line: "So wandern dein Plan und dein Abo mit auf ein neues Handy, und deine Mahlzeiten bleiben erhalten." },
   referral: {
     ask: "Hat dir ein Freund einen Link geschickt?",
-    sub: "Optional. Melde dich damit an, und deine erste Woche eait ist kostenlos.",
     field: "Einladungslink eines Freundes",
-    applied: "Einladung angewendet. Deine Gratiswoche beginnt jetzt.",
     unknown: "Dieser Link passt zu niemandem. Prüf ihn oder überspring.",
     own: "Das ist dein eigener Link. Hier gehört der Link eines Freundes hin.",
     already: "Dieses Konto ist schon mit dem Link eines Freundes beigetreten.",
@@ -751,9 +747,7 @@ const IT: OnboardingContent = {
   signup: { heading: "Salva il tuo piano", line: "Così il tuo piano e il tuo abbonamento ti seguono su un nuovo telefono, e i tuoi pasti restano salvati." },
   referral: {
     ask: "Un amico ti ha mandato un link?",
-    sub: "Facoltativo. Iscriviti con questo link e la tua prima settimana di eait è gratis.",
     field: "Link d'invito di un amico",
-    applied: "Invito applicato. La tua settimana gratis inizia ora.",
     unknown: "Questo link non corrisponde a nessuno. Controllalo, o salta.",
     own: "È il tuo link. Qui va il link di un amico.",
     already: "Questo account si è già iscritto con il link di un amico.",
@@ -998,9 +992,7 @@ const ES: OnboardingContent = {
   signup: { heading: "Guarda tu plan", line: "Así tu plan y tu suscripción te acompañan a un teléfono nuevo, y tus comidas se conservan." },
   referral: {
     ask: "¿Un amigo te envió un enlace?",
-    sub: "Opcional. Únete con él y tu primera semana de eait es gratis.",
     field: "Enlace de invitación de un amigo",
-    applied: "Invitación aplicada. Tu semana gratis empieza ahora.",
     unknown: "Ese enlace no coincide con nadie. Revísalo, u omite este paso.",
     own: "Ese es tu propio enlace. Aquí va el enlace de un amigo.",
     already: "Esta cuenta ya se unió con el enlace de un amigo.",
@@ -1245,9 +1237,7 @@ const VI: OnboardingContent = {
   signup: { heading: "Lưu gói của bạn", line: "Để gói và đăng ký của bạn đi theo bạn sang điện thoại mới, và các bữa ăn của bạn được giữ lại." },
   referral: {
     ask: "Bạn bè có gửi bạn liên kết không?",
-    sub: "Không bắt buộc. Tham gia bằng liên kết này và tuần đầu tiên dùng eait của bạn được miễn phí.",
     field: "Liên kết mời của bạn bè",
-    applied: "Đã áp dụng lời mời. Tuần miễn phí của bạn bắt đầu ngay.",
     unknown: "Liên kết này không khớp với ai. Hãy kiểm tra lại, hoặc bỏ qua.",
     own: "Đây là liên kết của chính bạn. Hãy dán liên kết của bạn bè vào đây.",
     already: "Tài khoản này đã tham gia bằng liên kết của một người bạn.",
@@ -1492,9 +1482,7 @@ const ID: OnboardingContent = {
   signup: { heading: "Simpan paketmu", line: "Agar paket dan langgananmu mengikutimu ke ponsel baru, dan makananmu tetap tersimpan." },
   referral: {
     ask: "Ada teman yang mengirimimu tautan?",
-    sub: "Opsional. Bergabung lewat tautan ini dan minggu pertamamu di eait gratis.",
     field: "Tautan undangan teman",
-    applied: "Undangan diterapkan. Minggu gratismu dimulai sekarang.",
     unknown: "Tautan itu tidak cocok dengan siapa pun. Periksa lagi, atau lewati.",
     own: "Itu tautanmu sendiri. Tautan teman ditaruh di sini.",
     already: "Akun ini sudah bergabung dengan tautan teman.",
@@ -1739,9 +1727,7 @@ const RU: OnboardingContent = {
   signup: { heading: "Сохрани свой план", line: "Так твой план и подписка переедут с тобой на новый телефон, а приёмы пищи сохранятся." },
   referral: {
     ask: "Друг прислал тебе ссылку?",
-    sub: "Необязательно. Присоединись по этой ссылке, и первая неделя eait будет бесплатной.",
     field: "Ссылка-приглашение от друга",
-    applied: "Приглашение принято. Твоя бесплатная неделя начинается сейчас.",
     unknown: "Эта ссылка ни с кем не совпадает. Проверь её или пропусти.",
     own: "Это твоя собственная ссылка. Сюда — ссылку друга.",
     already: "Этот аккаунт уже присоединился по ссылке друга.",
@@ -2096,9 +2082,7 @@ const TE: OnboardingContent = {
   signup: { heading: "మీ ప్లాన్‌ను సేవ్ చేయండి", line: "కాబట్టి మీ ప్లాన్ మరియు మీ సబ్‌స్క్రిప్షన్ కొత్త ఫోన్‌కు మీతో పాటు వస్తాయి మరియు మీ భోజనాలు నిలబడి ఉంటాయి." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -2453,9 +2437,7 @@ const TA: OnboardingContent = {
   signup: { heading: "உங்கள் பிளானைச் சேமியுங்கள்", line: "அதனால் உங்கள் பிளானும் சந்தாவும் புதிய தொலைபேசியில் உங்களுடன் வரும், உங்கள் உணவுகளும் பாதுகாக்கப்படும்." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -2810,9 +2792,7 @@ const PA: OnboardingContent = {
   signup: { heading: "ਆਪਣਾ ਪਲਾਨ ਸੇਵ ਕਰੋ", line: "ਤਾਂ ਜੋ ਤੁਹਾਡਾ ਪਲਾਨ ਅਤੇ ਤੁਹਾਡੀ ਸਬਸਕ੍ਰਿਪਸ਼ਨ ਨਵੇਂ ਫ਼ੋਨ 'ਤੇ ਤੁਹਾਡੇ ਨਾਲ ਆਵੇ, ਅਤੇ ਤੁਹਾਡੇ ਭੋਜਨ ਸੁਰੱਖਿਅਤ ਰਹਿਣ।" },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -3167,9 +3147,7 @@ const OR: OnboardingContent = {
   signup: { heading: "ଆପଣଙ୍କ ପ୍ଲାନ ସାଇତନ୍ତୁ", line: "ଯାହାଦ୍ୱାରା ଆପଣଙ୍କ ପ୍ଲାନ ଏବଂ ସବସ୍କ୍ରିପସନ ନୂଆ ଫୋନ୍‌କୁ ଆପଣଙ୍କ ସହ ଯିବ ଏବଂ ଆପଣଙ୍କ ଖାଦ୍ୟ ସୁରକ୍ଷିତ ରହିବ।" },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -3524,9 +3502,7 @@ const MR: OnboardingContent = {
   signup: { heading: "तुमचा प्लान जतन करा", line: "म्हणजे तुमचा प्लान आणि तुमचं सबस्क्रिप्शन नवीन फोनवर तुमच्यासोबत जाईल आणि तुमचं जेवण जतन केलं जाईल." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -3881,9 +3857,7 @@ const ML: OnboardingContent = {
   signup: { heading: "നിങ്ങളുടെ പ്ലാൻ സൂക്ഷിക്കൂ", line: "അതുവഴി നിങ്ങളുടെ പ്ലാനും സബ്സ്ക്രിപ്ഷനും പുതിയ ഫോണിലേക്ക് നിങ്ങളോടൊപ്പം വരും, നിങ്ങളുടെ ഭക്ഷണങ്ങളും സൂക്ഷിക്കപ്പെടും." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -4238,9 +4212,7 @@ const KN: OnboardingContent = {
   signup: { heading: "ನಿಮ್ಮ ಪ್ಲಾನ್ ಉಳಿಸಿ", line: "ಆದ್ದರಿಂದ ನಿಮ್ಮ ಪ್ಲಾನ್ ಮತ್ತು ನಿಮ್ಮ ಚಂದಾದಾರಿಕೆ ಹೊಸ ಫೋನ್‌ಗೆ ನಿಮ್ಮೊಂದಿಗೆ ಬರುತ್ತವೆ ಮತ್ತು ನಿಮ್ಮ ಊಟಗಳು ಉಳಿಸಲ್ಪಡುತ್ತವೆ." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -4595,9 +4567,7 @@ const GU: OnboardingContent = {
   signup: { heading: "તમારો પ્લાન સાચવો", line: "જેથી તમારો પ્લાન અને તમારું સબ્સ્ક્રિપ્શન નવા ફોન પર તમારી સાથે રહે, અને તમારા ભોજન જળવાયેલા રહે." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -4952,9 +4922,7 @@ const BN: OnboardingContent = {
   signup: { heading: "আপনার প্ল্যান সংরক্ষণ করুন", line: "যাতে আপনার প্ল্যান এবং সাবস্ক্রিপশন নতুন ফোনে আপনার সাথে থাকে এবং আপনার খাবারগুলো সংরক্ষিত থাকে।" },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -5309,9 +5277,7 @@ const PT_PT: OnboardingContent = {
   signup: { heading: "Guarda o teu plano", line: "Assim o teu plano e a tua subscrição seguem-te para um telemóvel novo e as tuas refeições ficam guardadas." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -5666,9 +5632,7 @@ const MS: OnboardingContent = {
   signup: { heading: "Simpan pelan anda", line: "Supaya pelan dan langganan anda mengikut anda ke telefon baharu, dan hidangan anda disimpan." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -6023,9 +5987,7 @@ const CA: OnboardingContent = {
   signup: { heading: "Desa el teu pla", line: "Així el teu pla i la teva subscripció et segueixen a un telèfon nou, i els teus àpats es conserven." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -6380,9 +6342,7 @@ const SL: OnboardingContent = {
   signup: { heading: "Shrani svoj paket", line: "Tako se tvoj paket in naročnina preselita s teboj na nov telefon, tvoji obroki pa ostanejo shranjeni." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -6737,9 +6697,7 @@ const HR: OnboardingContent = {
   signup: { heading: "Spremi svoj plan", line: "Tako tvoj plan i pretplata idu s tobom na novi telefon, a tvoji obroci ostaju sačuvani." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -7094,9 +7052,7 @@ const SK: OnboardingContent = {
   signup: { heading: "Ulož si svoj plán", line: "Aby s tebou tvoj plán aj predplatné prešli na nový telefón a tvoje jedlá ostali uložené." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -7451,9 +7407,7 @@ const NO: OnboardingContent = {
   signup: { heading: "Lagre planen din", line: "Slik følger planen og abonnementet ditt med over på en ny telefon, og måltidene dine blir lagret." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -7808,9 +7762,7 @@ const FI: OnboardingContent = {
   signup: { heading: "Tallenna tilauksesi", line: "Näin suunnitelmasi ja tilauksesi siirtyvät mukanasi uuteen puhelimeen ja ateriasi säilyvät." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -8165,9 +8117,7 @@ const DA: OnboardingContent = {
   signup: { heading: "Gem din plan", line: "Så følger din plan og dit abonnement med over på en ny telefon, og dine måltider bliver gemt." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -8522,9 +8472,7 @@ const HU: OnboardingContent = {
   signup: { heading: "Mentsd el a csomagodat", line: "Így a csomagod és az előfizetésed veled tart az új telefonodra, az ételeid pedig megmaradnak." },
   referral: {
     ask: "Küldött egy barátod linket?",
-    sub: "Nem kötelező. Ha vele csatlakozol, az eait első hete ingyenes.",
     field: "A barátod meghívólinkje",
-    applied: "Meghívó elfogadva. Az ingyenes heted most indul.",
     unknown: "Ez a link senkihez sem tartozik. Ellenőrizd, vagy hagyd ki.",
     own: "Ez a saját linked. Ide egy barátod linkje kell.",
     already: "Ez a fiók már csatlakozott egy barát linkjével.",
@@ -8879,9 +8827,7 @@ const EL: OnboardingContent = {
   signup: { heading: "Αποθήκευσε το πλάνο σου", line: "Έτσι το πλάνο και η συνδρομή σου σε ακολουθούν σε νέο τηλέφωνο και τα γεύματά σου διατηρούνται." },
   referral: {
     ask: "Σου έστειλε κάποιος φίλος σύνδεσμο;",
-    sub: "Προαιρετικό. Γράψου με αυτόν και η πρώτη σου εβδομάδα στο eait είναι δωρεάν.",
     field: "Σύνδεσμος πρόσκλησης φίλου",
-    applied: "Η πρόσκληση εφαρμόστηκε. Η δωρεάν εβδομάδα σου ξεκινά τώρα.",
     unknown: "Αυτός ο σύνδεσμος δεν αντιστοιχεί σε κανέναν. Έλεγξέ τον ή κάνε παράλειψη.",
     own: "Αυτός είναι ο δικός σου σύνδεσμος. Εδώ μπαίνει ο σύνδεσμος ενός φίλου.",
     already: "Αυτός ο λογαριασμός έχει ήδη γραφτεί με σύνδεσμο φίλου.",
@@ -9236,9 +9182,7 @@ const RO: OnboardingContent = {
   signup: { heading: "Salvează-ți planul", line: "Ca planul și abonamentul tău să te urmeze pe un telefon nou, iar mesele tale să fie păstrate." },
   referral: {
     ask: "Ți-a trimis un prieten un link?",
-    sub: "Opțional. Alătură-te cu el și prima săptămână de eait e gratuită.",
     field: "Linkul de invitație de la prieten",
-    applied: "Invitație aplicată. Săptămâna ta gratuită începe acum.",
     unknown: "Linkul nu corespunde nimănui. Verifică-l sau sari peste.",
     own: "Acesta e linkul tău. Aici pui linkul unui prieten.",
     already: "Acest cont s-a alăturat deja cu linkul unui prieten.",
@@ -9593,9 +9537,7 @@ const CS: OnboardingContent = {
   signup: { heading: "Ulož si svůj plán", line: "Aby s tebou tvůj plán i předplatné přešly na nový telefon a tvá jídla zůstala uložená." },
   referral: {
     ask: "Poslal ti kamarád odkaz?",
-    sub: "Nepovinné. Připoj se přes něj a první týden eait máš zdarma.",
     field: "Odkaz s pozvánkou od kamaráda",
-    applied: "Pozvánka uplatněna. Tvůj týden zdarma začíná teď.",
     unknown: "Tento odkaz nikomu nepatří. Zkontroluj ho, nebo přeskoč.",
     own: "To je tvůj vlastní odkaz. Sem patří odkaz kamaráda.",
     already: "Tento účet se už připojil přes odkaz kamaráda.",
@@ -9950,9 +9892,7 @@ const HI: OnboardingContent = {
   signup: { heading: "अपना प्लान सेव करें", line: "ताकि आपका प्लान और आपकी सदस्यता नए फ़ोन पर आपके साथ चले, और आपके भोजन सुरक्षित रहें।" },
   referral: {
     ask: "क्या किसी दोस्त ने आपको लिंक भेजा है?",
-    sub: "वैकल्पिक। इससे जुड़ें और eait का आपका पहला हफ़्ता मुफ़्त होगा।",
     field: "दोस्त का इनवाइट लिंक",
-    applied: "इनवाइट लागू हो गया। आपका मुफ़्त हफ़्ता अभी से शुरू।",
     unknown: "यह लिंक किसी से मेल नहीं खाता। इसे जाँचें, या स्किप करें।",
     own: "यह आपका अपना लिंक है। यहाँ किसी दोस्त का लिंक डालें।",
     already: "यह अकाउंट पहले ही किसी दोस्त के लिंक से जुड़ चुका है।",
@@ -10307,9 +10247,7 @@ const TH: OnboardingContent = {
   signup: { heading: "บันทึกแพลนของคุณ", line: "เพื่อให้แพลนและการสมัครสมาชิกของคุณติดตามคุณไปยังโทรศัพท์เครื่องใหม่ และมื้ออาหารของคุณจะถูกเก็บไว้" },
   referral: {
     ask: "มีเพื่อนส่งลิงก์มาให้ไหม?",
-    sub: "ไม่บังคับ สมัครด้วยลิงก์นี้แล้วสัปดาห์แรกของ eait จะฟรี",
     field: "ลิงก์คำเชิญจากเพื่อน",
-    applied: "ใช้คำเชิญแล้ว สัปดาห์ฟรีของคุณเริ่มตอนนี้",
     unknown: "ลิงก์นี้ไม่ตรงกับใครเลย ตรวจสอบอีกครั้ง หรือข้ามไป",
     own: "นี่คือลิงก์ของคุณเอง ใส่ลิงก์ของเพื่อนที่นี่",
     already: "บัญชีนี้เข้าร่วมด้วยลิงก์ของเพื่อนไปแล้ว",
@@ -10664,9 +10602,7 @@ const SV: OnboardingContent = {
   signup: { heading: "Spara din plan", line: "Så följer din plan och din prenumeration med till en ny telefon, och dina måltider sparas." },
   referral: {
     ask: "Har en vän skickat en länk till dig?",
-    sub: "Valfritt. Gå med via den så blir din första vecka med eait gratis.",
     field: "Vännens inbjudningslänk",
-    applied: "Inbjudan tillagd. Din gratisvecka börjar nu.",
     unknown: "Länken matchar ingen. Kolla den eller hoppa över.",
     own: "Det är din egen länk. En väns länk ska stå här.",
     already: "Det här kontot har redan gått med via en väns länk.",
@@ -11021,9 +10957,7 @@ const UK: OnboardingContent = {
   signup: { heading: "Збережи свій план", line: "Так твій план і підписка перейдуть з тобою на новий телефон, а прийоми їжі збережуться." },
   referral: {
     ask: "Друг надіслав тобі посилання?",
-    sub: "Необов'язково. Приєднуйся за ним — і перший тиждень eait безкоштовний.",
     field: "Посилання-запрошення від друга",
-    applied: "Запрошення застосовано. Твій безкоштовний тиждень починається зараз.",
     unknown: "Це посилання нікому не належить. Перевір його або пропусти.",
     own: "Це твоє власне посилання. Сюди — посилання друга.",
     already: "Цей акаунт уже приєднався за посиланням друга.",
@@ -11378,9 +11312,7 @@ const NL: OnboardingContent = {
   signup: { heading: "Bewaar je plan", line: "Zo gaan je plan en je abonnement mee naar een nieuwe telefoon en blijven je maaltijden bewaard." },
   referral: {
     ask: "Heeft een vriend je een link gestuurd?",
-    sub: "Optioneel. Meld je ermee aan en je eerste week eait is gratis.",
     field: "Uitnodigingslink van een vriend",
-    applied: "Uitnodiging toegepast. Je gratis week begint nu.",
     unknown: "Die link hoort bij niemand. Check hem, of sla over.",
     own: "Dat is je eigen link. Hier hoort de link van een vriend.",
     already: "Dit account is al aangemeld met de link van een vriend.",
@@ -11735,9 +11667,7 @@ const PL: OnboardingContent = {
   signup: { heading: "Zapisz swój plan", line: "Dzięki temu Twój plan i subskrypcja przejdą z Tobą na nowy telefon, a posiłki zostaną zachowane." },
   referral: {
     ask: "Masz link od znajomych?",
-    sub: "Opcjonalnie. Dołącz przez niego, a pierwszy tydzień eait będzie darmowy.",
     field: "Link z zaproszeniem od znajomych",
-    applied: "Zaproszenie przyjęte. Twój darmowy tydzień zaczyna się teraz.",
     unknown: "Ten link do nikogo nie pasuje. Sprawdź go albo pomiń.",
     own: "To twój własny link. Tu wpisz link od znajomych.",
     already: "To konto już dołączyło przez link od znajomych.",
@@ -12092,9 +12022,7 @@ const TR: OnboardingContent = {
   signup: { heading: "Planını kaydet", line: "Böylece planın ve aboneliğin yeni bir telefona taşınır, yemeklerin de korunur." },
   referral: {
     ask: "Bir arkadaşın sana bağlantı mı gönderdi?",
-    sub: "İsteğe bağlı. Onunla katıl, eait'teki ilk haftan ücretsiz olsun.",
     field: "Arkadaşının davet bağlantısı",
-    applied: "Davet uygulandı. Ücretsiz haftan şimdi başlıyor.",
     unknown: "Bu bağlantı kimseyle eşleşmiyor. Kontrol et ya da atla.",
     own: "Bu senin kendi bağlantın. Buraya bir arkadaşının bağlantısı gelir.",
     already: "Bu hesap zaten bir arkadaş bağlantısıyla katıldı.",
@@ -12449,9 +12377,7 @@ const ZH_HANT: OnboardingContent = {
   signup: { heading: "儲存你的方案", line: "這樣，你的方案和訂閱會跟隨你到新機，你的餐食記錄也會保留。" },
   referral: {
     ask: "有朋友傳連結給你嗎？",
-    sub: "選填。用連結加入，第一週 eait 免費。",
     field: "朋友的邀請連結",
-    applied: "邀請已套用，你的免費週從現在開始。",
     unknown: "這個連結找不到對應的人。請檢查一下，或略過。",
     own: "這是你自己的連結。這裡要填朋友的連結。",
     already: "這個帳號已經透過朋友的連結加入過了。",
@@ -12806,9 +12732,7 @@ const ZH_HANS: OnboardingContent = {
   signup: { heading: "保存你的方案", line: "这样，你的方案和订阅会跟随你到新手机，你的餐食记录也会保留。" },
   referral: {
     ask: "好友给你发过链接吗？",
-    sub: "可选。通过它加入，你的第一周 eait 免费。",
     field: "好友的邀请链接",
-    applied: "邀请已生效。你的免费周从现在开始。",
     unknown: "这个链接没有匹配到任何人。检查一下，或者跳过。",
     own: "这是你自己的链接。这里要填好友的链接。",
     already: "这个账户已经通过好友链接加入过了。",
@@ -13163,9 +13087,7 @@ const KO: OnboardingContent = {
   signup: { heading: "플랜 저장하기", line: "새 휴대폰으로 바꿔도 플랜과 구독이 그대로 따라오고, 식사 기록도 보관됩니다." },
   referral: {
     ask: "친구에게 링크를 받았나요?",
-    sub: "선택 사항이에요. 이 링크로 가입하면 eait 첫 주가 무료예요.",
     field: "친구의 초대 링크",
-    applied: "초대가 적용됐어요. 지금부터 무료 1주가 시작돼요.",
     unknown: "일치하는 사용자가 없는 링크예요. 확인하거나 건너뛰어 주세요.",
     own: "내 링크예요. 여기에는 친구의 링크를 넣어 주세요.",
     already: "이 계정은 이미 친구 링크로 가입했어요.",
@@ -13520,9 +13442,7 @@ const JA: OnboardingContent = {
   signup: { heading: "プランを保存", line: "新しいスマホに変えてもプランとサブスクリプションが引き継がれ、食事の記録も残ります。" },
   referral: {
     ask: "友だちからリンクが届きましたか？",
-    sub: "任意です。そのリンクで登録すると、eaitの最初の1週間が無料になります。",
     field: "友だちの招待リンク",
-    applied: "招待が適用されました。無料の1週間が今から始まります。",
     unknown: "このリンクに該当する人が見つかりません。確認するか、スキップしてください。",
     own: "これはあなた自身のリンクです。ここには友だちのリンクを入力してください。",
     already: "このアカウントはすでに友だちのリンクで登録済みです。",
@@ -13877,9 +13797,7 @@ const PT_BR: OnboardingContent = {
   signup: { heading: "Salve seu plano", line: "Assim seu plano e sua assinatura vão com você para um novo celular e suas refeições ficam salvas." },
   referral: {
     ask: "Um amigo te mandou um link?",
-    sub: "Opcional. Entre com ele e sua primeira semana de eait é grátis.",
     field: "Link de convite do amigo",
-    applied: "Convite aplicado. Sua semana grátis começa agora.",
     unknown: "Esse link não corresponde a ninguém. Confira ou pule.",
     own: "Esse é o seu próprio link. Aqui vai o link de um amigo.",
     already: "Esta conta já entrou com o link de um amigo.",

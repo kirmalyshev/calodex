@@ -8840,13 +8840,7 @@
           "ask": {
             "type": "string"
           },
-          "sub": {
-            "type": "string"
-          },
           "field": {
-            "type": "string"
-          },
-          "applied": {
             "type": "string"
           },
           "unknown": {
@@ -8870,9 +8864,7 @@
         },
         "required": [
           "ask",
-          "sub",
           "field",
-          "applied",
           "unknown",
           "own",
           "already",
@@ -8948,7 +8940,7 @@
           "line"
         ],
         "additionalProperties": false,
-        "description": "The account step, the referral step, the Apple Health offer, the Live Activity step and the first meal's beats (ieat-app#2757, area d). Every string is REQUIRED — none hides. What stays code: the provider buttons, terms and consent lines and `phoneCopyFor.email` (legal, shared with the standalone sign-in), the referral field's `eait.fit/r/…` placeholder and the Profile referral card, the Health sync diagram's chips and the dimmed Today backdrop, the camera and the first verdict's sheet."
+        "description": "The account step, the referral step, the Apple Health offer, the Live Activity step and the first meal's beats (ieat-app#2757, area d). Every string is REQUIRED — none hides. What stays code: the provider buttons, terms and consent lines and `phoneCopyFor.email` (legal, shared with the standalone sign-in), the referral field's `eait.fit/r/…` placeholder, the referral's `sub` and `applied` (the free-week lines — a paid-tier promise, like the cap and the floor) and the Profile referral card, the Health sync diagram's chips and the dimmed Today backdrop, the camera and the first verdict's sheet."
       },
       "OnboardingSummaryContent": {
         "type": "object",

@@ -516,13 +516,13 @@ export interface OnboardingPlanContent {
  * The account step, the referral step, the Apple Health offer, the Live Activity step and the first
  * meal's beats (ieat-app#2757, area d). Every string is REQUIRED — none hides. What stays code: the
  * provider buttons, terms and consent lines and `phoneCopyFor.email` (legal, shared with the
- * standalone sign-in), the referral field's `eait.fit/r/…` placeholder and the Profile referral
- * card, the Health sync diagram's chips and the dimmed Today backdrop, the camera and the first
+ * standalone sign-in), the referral field's `eait.fit/r/…` placeholder, the referral's `sub` and `applied` (the
+ * free-week lines — a paid-tier promise, like the cap and the floor) and the Profile referral card, the Health sync diagram's chips and the dimmed Today backdrop, the camera and the first
  * verdict's sheet.
  */
 export interface OnboardingSignupContent { heading: string; line: string }
 export interface OnboardingReferralContent {
-  ask: string; sub: string; field: string; applied: string; unknown: string;
+  ask: string; field: string; unknown: string;
   own: string; already: string; paid: string; tryAgain: string; skip: string;
 }
 export interface OnboardingHealthContent { title: string; body: string }
@@ -1290,9 +1290,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
   signup: { heading: "Save your plan", line: "So your plan and your subscription follow you to a new phone, and your meals are kept." },
   referral: {
     ask: "Did a friend send you a link?",
-    sub: "Optional. Join with it and your first week of eait is free.",
     field: "Friend's invite link",
-    applied: "Invite applied. Your free week starts now.",
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
@@ -1834,7 +1832,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     for (const k of keys) tmpl(b[k], `${key}.${k}`, { required: true, max: MAX_BODY });
   };
   strBlock("signup", ["heading", "line"]);
-  strBlock("referral", ["ask", "sub", "field", "applied", "unknown", "own", "already", "paid", "tryAgain", "skip"]);
+  strBlock("referral", ["ask", "field", "unknown", "own", "already", "paid", "tryAgain", "skip"]);
   strBlock("health", ["title", "body"]);
   strBlock("firstMeal", ["ask", "react", "photo", "tell", "keepGoing", "correct", "afterAsk"]);
   const la = raw.liveActivity as Record<string, unknown> | undefined;
@@ -1970,7 +1968,7 @@ export function usableContent(
     pace: usablePace(c.pace) ? c.pace : fallback.pace,
     plan: usablePlan(c.plan) ? c.plan : fallback.plan,
     signup: hasKeys(c.signup, ["heading", "line"]) ? c.signup : fallback.signup,
-    referral: hasKeys(c.referral, ["ask", "sub", "field", "applied", "unknown", "own", "already", "paid", "tryAgain", "skip"]) ? c.referral : fallback.referral,
+    referral: hasKeys(c.referral, ["ask", "field", "unknown", "own", "already", "paid", "tryAgain", "skip"]) ? c.referral : fallback.referral,
     health: hasKeys(c.health, ["title", "body"]) ? c.health : fallback.health,
     liveActivity: usableLiveActivity(c.liveActivity) ? c.liveActivity : fallback.liveActivity,
     firstMeal: hasKeys(c.firstMeal, ["ask", "react", "photo", "tell", "keepGoing", "correct", "afterAsk"]) ? c.firstMeal : fallback.firstMeal,
@@ -2029,6 +2027,15 @@ function usablePlan(p: OnboardingPlanContent | undefined): p is OnboardingPlanCo
     && hasKeys(p.first, ["title", "step"])
     && hasKeys(p.loader, ["goal", "lose", "gain"])
     && hasKeys(p.chart, ["estimateAria"]);
+}
+
+/**
+ * The first-meal words a client should draw: the served block when it is whole, else `fallback`.
+ * A failed, empty or partial answer must leave the compiled-in words on screen, never blank them.
+ */
+export function usableFirstMeal(served: unknown, fallback: OnboardingFirstMealContent): OnboardingFirstMealContent {
+  return hasKeys(served as OnboardingFirstMealContent | undefined, ["ask", "react", "photo", "tell", "keepGoing", "correct", "afterAsk"])
+    ? served as OnboardingFirstMealContent : fallback;
 }
 
 /** The Live Activity's three titles and its button — every one set. */

@@ -139,12 +139,7 @@ describe("the shipped copy", () => {
       .replace(/\bfree to try\b/g, "")
       .replace(/\b(a week|\d+ days?) free\b/g, "")
       // A "free text" instruction is about a box, not a claim about a price.
-      .replace(/\bfree text\b/g, "")
-      // The referral step's two lines about the friend's invite week (ieat-app#2757, area d): a
-      // dated, bounded week — the "N days free" form — that the phone has shipped since the step
-      // existed. Exact phrases, so a third "free" there is still caught.
-      .replace(/\byour first week of eait is free\b/g, "")
-      .replace(/\byour free week starts now\b/g, "");
+      .replace(/\bfree text\b/g, "");
     expect(unqualified).not.toMatch(/\bfree\b/);
   });
 

@@ -112,3 +112,14 @@ describe("the pages that are one template literal contain no backtick", () => {
     });
   }
 });
+
+describe("the first-meal screen's served words", () => {
+  it("draws the compiled copy first and lets a failed fetch change nothing", () => {
+    const src = code("screens/first-meal.ts");
+    expect(src.indexOf("show(first)")).toBeGreaterThan(-1);
+    expect(src.indexOf("show(first)")).toBeLessThan(src.indexOf("/onboarding?lang="));
+    expect(src).toContain("usableFirstMeal(res?.content?.firstMeal, fm)");
+    expect(src).toMatch(/\.catch\(\(\) => \{\}\)/);
+    expect(src).not.toMatch(/await api<OnboardingContentResponse>/);
+  });
+});

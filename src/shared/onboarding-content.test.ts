@@ -6,6 +6,8 @@ import {
   validateOnboardingContent,
 } from "./onboarding.ts";
 import { ONBOARDING_CONTENT, onboardingContentFor, usableContentFor } from "./onboarding-content.ts";
+import { genderedRussian } from "./lang.ts";
+import { usableFirstMeal } from "./onboarding.ts";
 import { signupCopyFor } from "./app/signup-copy.ts";
 import { chatCopyFor } from "./onboarding-chat-copy.ts";
 
@@ -107,6 +109,20 @@ describe("every language's onboarding content", () => {
       expect(c.health, lang).toEqual(chatCopyFor(lang).health);
       expect(c.firstMeal, lang).toEqual(chatCopyFor(lang).firstMeal);
     }
+  });
+
+  it("passes the Russian gender gate on the referral ask, and the gate still catches a verb that is not the friend's", () => {
+    expect(genderedRussian(onboardingContentFor("ru").referral)).toEqual([]);
+    expect(genderedRussian(["Друг прислал ссылку, а ты не открыл её"]).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the compiled first-meal words when the served block is missing, empty or partial", () => {
+    const own = onboardingContentFor("de").firstMeal;
+    for (const served of [undefined, null, {}, { ...own, ask: "" }, { ask: "x" }, "nope"]) {
+      expect(usableFirstMeal(served, own)).toBe(own);
+    }
+    const served = { ...own, ask: "Admin's ask" };
+    expect(usableFirstMeal(served, own)).toBe(served);
   });
 
   it("introduces no placeholder nothing fills", () => {
