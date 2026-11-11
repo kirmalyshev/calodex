@@ -1,4 +1,4 @@
-// Onboarding as a conversation: the order, the branches, and every sentence Spud says back.
+// Onboarding as a conversation: the default order, the branches, and every sentence Spud says back.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // WHY THIS IS SHARED AND PURE, AND WHY IT IS NOT ADMIN-EDITABLE
@@ -40,7 +40,7 @@ import { projectGoal, projectionMonth, previewProjection } from "./projection.ts
 import { kgToLb, type UnitSystem } from "./ui/units.ts";
 import { planCopyFor } from "./app/plan-copy.ts";
 import { chatCopyFor, type CardCopy } from "./onboarding-chat-copy.ts";
-import { DEFAULT_ORDER, REMOVABLE_PLACES } from "./onboarding-order.ts";
+import { REMOVABLE_PLACES, servedOrder } from "./onboarding-order.ts";
 import {
   ACTIVITY_LEVELS, COUNTED_BEFORE, PACES, SEXES, SITUATIONS, STREAK_GOALS,
 } from "./types.ts";
@@ -55,7 +55,7 @@ import {
 // ── The prompts ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Everything Spud asks or shows, in the order a user meets it (`ONBOARDING_PLACES`).
+ * Everything Spud asks or shows, in the DEFAULT order (`ONBOARDING_PLACES`); `promptsFor` applies an arm's.
  *
  * A prompt with a `field` fills a profile column and its answer survives the app being killed. A
  * prompt without one is conversation: asked while the run is live, skipped on a resume that has
@@ -164,17 +164,19 @@ export interface OnboardingSurface {
  * `country`: the phone reads it from the device region instead. And the Health offer is only
  * emitted on a surface that can answer it — `surface.health`.
  *
- * `order` is an experiment arm's (`onboarding-order.ts`) — pass it through `servedOrder` first, so
- * an order this binary cannot validate is the default rather than a broken walk. A beat the order
- * leaves out is not met; the tail past the sign-up keeps `CHAT_PROMPTS` order.
+ * `order` is an experiment arm's (`onboarding-order.ts`), as served. It goes through `servedOrder`
+ * HERE, so an order this client cannot validate is the default rather than a broken walk, whoever
+ * the caller is. A beat the order leaves out is not met; the tail past the sign-up keeps
+ * `CHAT_PROMPTS` order.
  */
 export function promptsFor(
   p: Profile,
   disabled: readonly OnboardingScreenId[] = [],
   surface: OnboardingSurface,
-  order: readonly OnboardingPlace[] = DEFAULT_ORDER,
+  served?: readonly string[],
 ): ChatPrompt[] {
   const off = new Set(disabled);
+  const order = servedOrder(served);
   const rank = (prompt: ChatPrompt) => {
     const at = order.indexOf(prompt.place);
     return at === -1 ? order.length + CHAT_PROMPTS.indexOf(prompt) : at;

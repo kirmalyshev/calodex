@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   DASH_PLACES, DEFAULT_ORDER, ONBOARDING_ORDER_VERSION, ONBOARDING_PLACES, ORDER_AFTER, REMOVABLE_PLACES,
-  dashPlaces, promptsFor, resumeAt, servedOrder, validateOnboardingOrder,
+  dashPlaces, orderFellBack, promptsFor, resumeAt, servedOrder, validateOnboardingOrder,
   type OnboardingPlace, type Profile,
 } from "./index.ts";
 
@@ -38,8 +38,7 @@ describe("the default order", () => {
 // Every edge, written out by hand rather than read off ORDER_AFTER, so deleting one goes red here.
 // [later, earlier, the reader that breaks without it]
 const EDGES: [OnboardingPlace, OnboardingPlace, string][] = [
-  ["weight", "age", "the under-16 stop refuses a minor before they give a body number"],
-  ["weight", "height", "the BMI floor reads the height"],
+  ["weight", "age", "the under-16 stop refuses a minor before they give their weight"],
   ["activity", "sex", "echo.rest is the BMR"],
   ["activity", "age", "echo.rest is the BMR"],
   ["activity", "height", "echo.rest is the BMR"],
@@ -64,10 +63,10 @@ const EDGES: [OnboardingPlace, OnboardingPlace, string][] = [
   ["barrier", "goal", "its options gain one named by the goal"],
   ["barrier", "counted", "stepApplies: 'never' skips it; its copy variant"],
   ["situation", "counted", "its copy variant"],
-  ["summary", "diet", "planRows"],
-  ["summary", "medical", "planRows"],
-  ["summary", "counted", "the plan is the end of the questions"],
 ];
+
+// The plan is the end of the questions: every place between the welcome and the plan comes first.
+const BEFORE_SUMMARY = DEFAULT_ORDER.filter((p) => !["welcome", "summary", "signup"].includes(p));
 
 describe("a hard edge", () => {
   for (const [later, earlier, why] of EDGES) {
@@ -76,6 +75,27 @@ describe("a hard edge", () => {
       expect(validateOnboardingOrder(moved(later, earlier))).toContainEqual({ place: later, rule: "must-follow", after: earlier });
     });
   }
+});
+
+describe("the plan", () => {
+  for (const q of BEFORE_SUMMARY) {
+    it(`refuses the plan before ${q}`, () => {
+      expect(validateOnboardingOrder(moved("summary", q))).toContainEqual({ place: "summary", rule: "must-follow", after: q });
+    });
+  }
+});
+
+describe("the rules", () => {
+  it("are exactly the edges above, at ONBOARDING_ORDER_VERSION 1 — change either, bump the version", () => {
+    // A client validates against its OWN copy of these rules; one on the old copy must stop being
+    // enrolled in an ordered arm, which only a version bump does (`onboarding-order.ts`).
+    const expected: Partial<Record<OnboardingPlace, OnboardingPlace[]>> = { summary: BEFORE_SUMMARY };
+    for (const [later, earlier] of EDGES) (expected[later] ??= []).push(earlier);
+    const sorted = (g: Partial<Record<string, readonly string[]>>) =>
+      Object.fromEntries(Object.entries(g).map(([k, v]) => [k, [...v!].sort()]));
+    expect(sorted(ORDER_AFTER)).toEqual(sorted(expected));
+    expect(ONBOARDING_ORDER_VERSION).toBe(1);
+  });
 });
 
 describe("what may move", () => {
@@ -139,8 +159,11 @@ describe("a served order", () => {
     expect(servedOrder(moved("pace", "target"))).toBe(DEFAULT_ORDER);
   });
 
-  it("is a capability the client declares", () => {
-    expect(Number.isInteger(ONBOARDING_ORDER_VERSION) && ONBOARDING_ORDER_VERSION > 0).toBe(true);
+  it("says when it fell back, so the funnel can tell that client from its arm", () => {
+    expect(orderFellBack(undefined)).toBe(false);
+    expect(orderFellBack(DEFAULT_ORDER)).toBe(false);
+    expect(orderFellBack(moved("pace", "target"))).toBe(true);
+    expect(orderFellBack([...DEFAULT_ORDER, "a-place-from-a-newer-server"])).toBe(true);
   });
 });
 
@@ -157,10 +180,19 @@ describe("the walk in an arm's order", () => {
   });
 
   it("resumes at the first unanswered field in THAT order", () => {
-    const heightFirst = moved("height", "sex");
-    const p = profile({ goal: "lose", height_cm: 170 });
-    const prompts = promptsFor(p, ["country"], { health: false }, heightFirst);
-    expect(prompts[resumeAt(prompts, p)]!.id).toBe("sex");
+    const p = profile({ goal: "lose", sex: "female" });
+    const at = (order?: readonly OnboardingPlace[]) => {
+      const prompts = promptsFor(p, ["country"], { health: false }, order);
+      return prompts[resumeAt(prompts, p)]!.id;
+    };
+    expect(at(moved("height", "sex"))).toBe("height_cm");
+    expect(at()).toBe("birth_year");
+  });
+
+  it("walks the default when handed an order it cannot validate — never a broken walk", () => {
+    const broken = DEFAULT_ORDER.filter((p) => p !== "diet");
+    expect(promptsFor(profile(), ["country"], { health: false }, broken))
+      .toEqual(promptsFor(profile(), ["country"], { health: false }));
   });
 
   it("draws a dash without the removed beat", () => {
