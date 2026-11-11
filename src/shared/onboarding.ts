@@ -132,11 +132,13 @@ export const ONBOARDING_INTERSTITIALS = [
 export type OnboardingInterstitial = (typeof ONBOARDING_INTERSTITIALS)[number];
 
 /**
- * Everywhere a user can be during onboarding, in the order they meet them.
+ * Everywhere a user can be during onboarding, in the DEFAULT order they meet them.
  *
  * The analytics vocabulary, and the row order of the admin's funnel table — so a drop between two
- * rows reads as a drop. Fixed in code now that the flow is a conversation: the questions are asked
- * in an order the replies depend on, so an admin cannot reorder them.
+ * rows reads as a drop. Fixed in code: the questions are asked in an order the replies depend on.
+ * An experiment arm may reorder the span from the welcome to the sign-up only within `ORDER_AFTER`
+ * (`onboarding-order.ts`), which names why each edge holds — and that arm's funnel reads in the
+ * arm's order, not this one.
  */
 export const ONBOARDING_PLACES = [
   "welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
@@ -145,8 +147,8 @@ export const ONBOARDING_PLACES = [
 export type OnboardingPlace = OnboardingScreenId | OnboardingInterstitial;
 
 /**
- * The progress dash's segments — the places between the welcome and the plan, in walk order
- * (`onboarding/*` boards, fourteen `<i>` each).
+ * The progress dash's segments — the places between the welcome and the plan, in the DEFAULT walk
+ * order (`onboarding/*` boards, fourteen `<i>` each). An arm's dash is `dashPlaces(order)`.
  *
  * The welcome is before the count; `signup`, `country`, `referral`, `health` and `streak` sit
  * past it (the phone asks the streak goal after the first verdict, the web after the plan). So

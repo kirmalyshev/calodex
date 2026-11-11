@@ -3347,27 +3347,29 @@ function contract(name: string, make: () => Promise<Store>) {
         const u1 = (await s.upsertDeviceUser(device(), "en")).userId;
         const u2 = (await s.upsertDeviceUser(device(), "en")).userId;
         const u3 = (await s.upsertDeviceUser(device(), "en")).userId;
-        await s.putOnboardingAssignment(u1, e.id, 41);
-        await s.putOnboardingAssignment(u2, e.id, 42);
+        const a1 = await s.putOnboardingAssignment(u1, e.id, 41);
+        const a2 = await s.putOnboardingAssignment(u2, e.id, 42);
         await s.putOnboardingAssignment(u3, e.id, 42);
-        const ev = (userId: string, over: Record<string, unknown> = {}) => ([{
+        // A run's `at` comes off the row the store stamped, never the host clock — a few ms of
+        // skew against the stamp once put every event outside the arm's window.
+        const ev = (userId: string, at: string, over: Record<string, unknown> = {}) => ([{
           id: crypto.randomUUID(), sessionId: "s-" + userId.slice(0, 4), place: "goal",
-          action: "view", contentVersion: 41, at: new Date().toISOString(), ...over,
+          action: "view", contentVersion: 41, at, ...over,
         }]);
         // u1's run renders its assigned 41 and completes; u2's renders 41 — fell back off 42;
         // u3 never opens onboarding at all.
-        await s.recordOnboardingEvents(u1, ev(u1) as never);
-        await s.recordOnboardingEvents(u1, ev(u1, { action: "complete" }) as never);
-        await s.recordOnboardingEvents(u2, ev(u2) as never);
+        await s.recordOnboardingEvents(u1, ev(u1, a1.assigned_at) as never);
+        await s.recordOnboardingEvents(u1, ev(u1, a1.assigned_at, { action: "complete" }) as never);
+        await s.recordOnboardingEvents(u2, ev(u2, a2.assigned_at) as never);
         // A run from BEFORE the assignment is the user's history, not this arm's result —
         // and so is a run after the experiment stopped.
         const u4 = (await s.upsertDeviceUser(device(), "en")).userId;
         await s.putOnboardingAssignment(u4, e.id, 41);
-        await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-old", at: "2000-01-01T00:00:00Z" }) as never);
+        await s.recordOnboardingEvents(u4, ev(u4, "2000-01-01T00:00:00Z", { sessionId: "s-old" }) as never);
         // And one after the experiment stopped — also outside the window.
         await s.startOnboardingExperiment(e.id);
         await s.stopOnboardingExperiment(e.id);
-        await s.recordOnboardingEvents(u4, ev(u4, { sessionId: "s-late", at: "2999-01-01T00:00:00Z" }) as never);
+        await s.recordOnboardingEvents(u4, ev(u4, "2999-01-01T00:00:00Z", { sessionId: "s-late" }) as never);
         const rows = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
         const v41 = rows.find((r) => r.variant_id === 41);
         const v42 = rows.find((r) => r.variant_id === 42);
@@ -3383,10 +3385,10 @@ function contract(name: string, make: () => Promise<Store>) {
         const staff = (await s.upsertDeviceUser(device(), "en")).userId;
         await s.setStaff(staff, true);
         for (const u of [user, staff]) {
-          await s.putOnboardingAssignment(u, e.id, 41);
+          const a = await s.putOnboardingAssignment(u, e.id, 41);
           await s.recordOnboardingEvents(u, [{
             id: crypto.randomUUID(), sessionId: "s-" + u, place: "goal",
-            action: "complete", contentVersion: 41, at: new Date().toISOString(),
+            action: "complete", contentVersion: 41, at: a.assigned_at,
           }] as never);
         }
         const rows = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });

@@ -1033,6 +1033,14 @@ export interface OnboardingContentResponse {
    * sent was one this server does not carry.
    */
   lang: Lang;
+  /**
+   * The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the
+   * default. The contract: a server sends it only to a client that declared `?order=` at or above
+   * `ONBOARDING_ORDER_VERSION`, and enrols an older client in no experiment with an ordered arm.
+   * Typed as strings because it is NOT yet trusted: a client hands it to `promptsFor`, which runs
+   * `servedOrder`, so an order it cannot validate is the default, never a broken walk.
+   */
+  order?: readonly string[];
 }
 
 /**
