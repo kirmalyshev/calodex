@@ -45,7 +45,7 @@ import {
   SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
-  adminMetrics, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
+  adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
   onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
@@ -77,15 +77,18 @@ const isDate = (v: string | null): v is string => v !== null && isCalendarDate(v
  *
  * `from`/`to` are instants — an ISO timestamp with a zone is what the page sends; either may be
  * absent, which is an open end. `?days=N` is the old spelling and stays: it clamps rather than
- * rejects, like `days` always did, and resolves to instants here so a store sees ONE shape. An
- * unparseable bound reads as open — a dashboard control, not an error page — and a `from` after
- * `to` is a legal ask that reads as empty.
+ * rejects, like `days` always did, and resolves to instants before the store so it sees ONE shape.
+ * On an endpoint whose default is unbounded (`bounds: null`) nothing still means everything, but a
+ * `days` ask names a window there too (#2779). An unparseable bound reads as open — a dashboard
+ * control, not an error page — and a `from` after `to` is a legal ask that reads as empty.
  */
 type RangeAsk = { days: number } | { from: Date | null; to: Date | null };
 const RANGE_MIN_MS = Date.UTC(2000, 0, 1), RANGE_MAX_MS = Date.UTC(2100, 0, 1);
 
-function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number }): RangeAsk;
-function rangeParam(url: URL, bounds: null): { from: Date | null; to: Date | null };
+// `days` on an endpoint that defaults unbounded still clamps: to the widest bound any time-based
+// endpoint takes, so an enormous ask reads as all time rather than resolving before the epoch.
+const OPEN_RANGE_MAX_DAYS = 400;
+
 function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number } | null): RangeAsk {
   const f = url.searchParams.get("from"), t = url.searchParams.get("to");
   // A bound outside 2000–2100 reads as open too: Postgres refuses a timestamp before 4713 BC and
@@ -99,7 +102,18 @@ function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number } |
   // `all` is how the page says "no bounds on purpose": with no params at all a bounded
   // endpoint falls back to its `days` default, so All time cannot just send nothing.
   if (url.searchParams.has("all")) return { from: null, to: null };
-  if (bounds === null) return { from: null, to: null };
+  // `?days=N` is the old spelling on EVERY time-based endpoint, the unbounded-by-default ones
+  // included: a bare days ask there names a window too, while nothing still means everything
+  // (#2779). An unparseable one is no ask — the unbounded default, like the bounded ones fall
+  // back to theirs.
+  if (bounds === null) {
+    const raw = url.searchParams.get("days");
+    if (raw === null) return { from: null, to: null };
+    const days = Number(raw);
+    return Number.isFinite(days)
+      ? { days: Math.min(OPEN_RANGE_MAX_DAYS, Math.max(1, Math.round(days))) }
+      : { from: null, to: null };
+  }
   const raw = Number(url.searchParams.get("days") ?? bounds.defaultDays);
   const days = Number.isFinite(raw)
     ? Math.min(bounds.maxDays, Math.max(1, Math.round(raw)))
@@ -285,8 +299,9 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // send per account. The global kill switch is `POST /admin/api/campaigns/kill`.
   if (pathname === "/admin/api/campaigns") {
     if (req.method === "GET") {
+      const ask = rangeParam(url, null);
       return json({
-        ...(await campaignOverview(deps, rangeParam(url, null))),
+        ...(await campaignOverview(deps, "days" in ask ? ask.days : ask)),
         options: {
           langs: LANGS, variants: CAMPAIGN_VARIANTS, statuses: CAMPAIGN_STATUSES,
           entitlement: ENTITLEMENT_STATES, streakBands: STREAK_BANDS, sinceLog: SINCE_LOG_BANDS,
@@ -385,10 +400,13 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // that answers false is a write against a running experiment, shown as the refusal it is.
   if (req.method === "GET" && pathname === "/admin/api/experiments") {
     const ask = rangeParam(url, null);
+    // A `days` ask resolves to instants here, like on the bounded endpoints — the echo carries the
+    // spelling the request used AND the bounds it filtered by.
+    const resolved = "days" in ask ? adminRangeOf(ask.days, 30) : ask;
     // `order` is what the arm order editor starts from and may remove (ieat-app#2788); the rules
     // themselves stay on the server, which refuses a bad order by row on the save.
     return json({
-      experiments: await onboardingExperiments(deps, ask), range: adminWindowEcho(ask),
+      experiments: await onboardingExperiments(deps, resolved), range: adminWindowEcho(resolved),
       order: { span: DEFAULT_ORDER, removable: REMOVABLE_PLACES },
     });
   }
@@ -463,11 +481,12 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     const limit = Number.isFinite(raw) ? Math.min(200, Math.max(1, Math.round(raw))) : 50;
     const q = url.searchParams.get("q") ?? "";
     const cursor = url.searchParams.get("cursor") ?? "";
+    const ask = rangeParam(url, null);
     return json(await adminUsers(deps, {
       limit,
       ...(q === "" ? {} : { q }),
       ...(cursor === "" ? {} : { cursor }),
-      ...rangeParam(url, null),
+      ...("days" in ask ? adminRangeOf(ask.days, 30) : ask),
     }));
   }
 

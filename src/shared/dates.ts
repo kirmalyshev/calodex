@@ -276,8 +276,10 @@ export function forgivingStreak(kcalByDate: ReadonlyMap<string, number>, today: 
 
 /**
  * What a time-based admin endpoint was asked for, echoed back in its answer (ieat-app#2776): the
- * resolved instant bounds — `from`/`to`, ISO UTC, both inclusive — or the `days` count it was
- * asked in, never both.
+ * resolved instant bounds — `from`/`to`, ISO UTC, both inclusive — and the `days` count when the
+ * ask was spelled that way. A `days` ask on an instant endpoint carries all three, so `days` names
+ * the spelling while the bounds say what it filtered by (#2779); a day-count endpoint (metrics)
+ * resolves `days` to calendar rows it cannot re-express as instants and echoes `days` alone.
  */
 export interface AdminWindowEcho {
   from: string | null;
