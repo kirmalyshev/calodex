@@ -527,6 +527,28 @@ describe("the blocks around the questions (ieat-app#2757)", () => {
     expect(bad((c) => { (c.firstMeal as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("firstMeal.bogus");
   });
 
+  it("refuses a refusals block that is missing, emptied or drops its figure (area e)", () => {
+    expect(bad((c) => { delete (c as unknown as Record<string, unknown>).refusals; return c; }).join(" ")).toContain("refusals is required");
+    expect(bad((c) => { c.refusals.invalid.age = ""; return c; }).join(" ")).toContain("refusals.invalid.age");
+    expect(bad((c) => { c.refusals.ambiguousAge.line = "Send all four digits."; return c; }).join(" ")).toContain("{year}");
+    expect(bad((c) => { c.refusals.ambiguousAge.confirm = "I'm older"; return c; }).join(" ")).toContain("{age}");
+    expect(bad((c) => { c.refusals.direction.gain = "That is not a gain {weight}"; return c; }).join(" ")).toContain("{target}");
+    expect(bad((c) => { c.refusals.direction.below = "A number below"; return c; }).join(" ")).toContain("{weight}");
+    expect(bad((c) => { c.refusals.switched.lose = "Switched {kg}"; return c; }).join(" ")).toContain("{kg}");
+    expect(bad((c) => { (c.refusals.direction as unknown as Record<string, unknown>).bogus = "x"; return c; }).join(" ")).toContain("refusals.direction.bogus");
+  });
+
+  it("keeps a stored pre-v28 revision's own blocks and fills refusals from this binary's language", () => {
+    const stored = clone(onboardingContentFor("de"));
+    stored.version = 27;
+    delete (stored as unknown as Record<string, unknown>).refusals;
+    stored.summary.cta = "Admin's own German words";
+    const served = usableContentFor("de", { de: stored });
+    expect(served.refusals).toEqual(onboardingContentFor("de").refusals);
+    expect(served.summary.cta).toBe("Admin's own German words");
+    expect(served.version).toBe(27);
+  });
+
   it("keeps a stored pre-v27 revision's own blocks and fills the area (d) blocks from this binary's language", () => {
     const stored = clone(onboardingContentFor("de"));
     stored.version = 26;

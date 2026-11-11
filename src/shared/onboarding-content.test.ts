@@ -8,6 +8,7 @@ import {
 import { ONBOARDING_CONTENT, onboardingContentFor, usableContentFor } from "./onboarding-content.ts";
 import { genderedRussian } from "./lang.ts";
 import { usableFirstMeal } from "./onboarding.ts";
+import { AMBIGUOUS_AGE, checkDirection, checkNumber, switchedLine } from "./onboarding-chat.ts";
 import { signupCopyFor } from "./app/signup-copy.ts";
 import { chatCopyFor } from "./onboarding-chat-copy.ts";
 
@@ -125,9 +126,26 @@ describe("every language's onboarding content", () => {
     expect(usableFirstMeal(served, own)).toBe(served);
   });
 
+  it("carries the refusals identical to the chat table the phone still reads, and the readers prefer the served ones", () => {
+    for (const lang of LANGS) {
+      const c = onboardingContentFor(lang).refusals, o = chatCopyFor(lang);
+      expect(c.invalid, lang).toEqual(o.invalid);
+      expect(c.ambiguousAge, lang).toEqual(o.ambiguousAge);
+      expect(c.direction, lang).toEqual(o.direction);
+      expect(c.switched, lang).toEqual(o.switched);
+    }
+    const r = structuredClone(onboardingContentFor("en").refusals);
+    r.invalid.age = "A"; r.ambiguousAge.confirm = "B {age}"; r.direction.switchToLose = "C"; r.switched.gain = "D";
+    expect((checkNumber("birth_year", "abc", "en", new Date(), r) as { line: string }).line).toBe("A");
+    expect(AMBIGUOUS_AGE("en", r).confirm(30)).toBe("B 30");
+    expect(checkDirection("gain", 80, 70, "en", r)!.switchLabel).toBe("C");
+    expect(switchedLine("gain", "en", r)).toBe("D");
+    expect(switchedLine("gain", "en")).toBe(chatCopyFor("en").switched.gain);
+  });
+
   it("introduces no placeholder nothing fills", () => {
     for (const lang of LANGS) {
-      const known = new Set(["floor", "share", "n", "rest", "burn", "delta", "weight", "pct", "rate", "from", "to", "target", "month", "kcal", "kg", "range", "g"]);
+      const known = new Set(["floor", "share", "n", "rest", "burn", "delta", "weight", "pct", "rate", "from", "to", "target", "month", "kcal", "kg", "range", "g", "year", "age"]);
       for (const [at, text] of Object.entries(flatten(onboardingContentFor(lang)))) {
         for (const m of text.matchAll(/\{(\w+)\}/g)) {
           expect(known.has(m[1]!), `${lang}.${at} uses {${m[1]}}`).toBe(true);
