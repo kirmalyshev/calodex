@@ -5583,7 +5583,9 @@ if (PG_URL) {
         "markCampaignRunning", "mergeUsers",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
-        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel", "onboardingFunnel",
+        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
+        // ieat-app#2788: the same admin read as the arm funnel above it, counted per place.
+        "onboardingExperimentPlaces", "onboardingFunnel",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,
