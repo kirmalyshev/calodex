@@ -153,6 +153,35 @@ describe("experiments (ieat-app#2669)", () => {
     expect((await admin("POST", `/admin/api/experiments/${experiment.id}/stop`, {})).status).toBe(200);
     expect((await admin("POST", `/admin/api/experiments/${experiment.id}/stop`, {})).status).toBe(422);
   });
+
+  it("saves an arm's order, refuses a bad one by row, and serves it only to a client that asked (ieat-app#2788)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
+    const order = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
+      "pace", "counted", "barrier", "situation", "medical", "diet", "summary", "signup"];
+    const swapped = order.map((p) => (p === "target" ? "pace" : p === "pace" ? "target" : p));
+    const refused = await admin("PUT", arm, { order: swapped });
+    expect(refused.status).toBe(422);
+    expect(await refused.json()).toMatchObject({
+      errors: expect.arrayContaining(["pace must come after target"]),
+      refusals: expect.arrayContaining([{ place: "pace", rule: "must-follow", after: "target" }]),
+    });
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/0`, { order })).status).toBe(422);
+    expect((await admin("PUT", arm, { order })).status).toBe(200);
+    // Control carries no weight, so the arm is the only one anybody rolls into.
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1] })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+
+    const older = await session();
+    const before = await (await admin("GET", "/v1/onboarding", undefined, older)).json() as { order?: unknown };
+    expect(before.order).toBeUndefined();
+    const newer = await session();
+    const served = await (await admin("GET", "/v1/onboarding?order=1", undefined, newer)).json() as { order?: unknown };
+    expect(served.order).toEqual(order);
+  });
 });
 
 describe("the admin is off unless somebody holds the role", () => {

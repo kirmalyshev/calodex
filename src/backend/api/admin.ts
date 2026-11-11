@@ -41,13 +41,13 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 import {
-  CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, ENTITLEMENT_STATES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
+  CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, DEFAULT_ORDER, ENTITLEMENT_STATES, REMOVABLE_PLACES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
   SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
   adminMetrics, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
-  onboardingExperiments, saveOnboardingVariant, setOnboardingExperiment,
+  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
   sendTestPush, pushOpenView, sendAdminPush,
@@ -385,7 +385,12 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // that answers false is a write against a running experiment, shown as the refusal it is.
   if (req.method === "GET" && pathname === "/admin/api/experiments") {
     const ask = rangeParam(url, null);
-    return json({ experiments: await onboardingExperiments(deps, ask), range: adminWindowEcho(ask) });
+    // `order` is what the arm order editor starts from and may remove (ieat-app#2788); the rules
+    // themselves stay on the server, which refuses a bad order by row on the save.
+    return json({
+      experiments: await onboardingExperiments(deps, ask), range: adminWindowEcho(ask),
+      order: { span: DEFAULT_ORDER, removable: REMOVABLE_PLACES },
+    });
   }
   if (req.method === "POST" && pathname === "/admin/api/experiments") {
     const body = await req.json().catch(() => null) as { lang?: unknown } | null;
@@ -407,9 +412,21 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
     }
     if (req.method === "PUT" && sub === "variants") {
-      const body = await req.json().catch(() => ({})) as { content?: unknown };
-      const result = await saveOnboardingVariant(deps, id, Number(expMatch[3]), body?.content);
-      return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, 422);
+      const body = (await req.json().catch(() => ({})) ?? {}) as { content?: unknown; order?: unknown };
+      const index = Number(expMatch[3]);
+      // An ORDER-only body is the order editor's save (ieat-app#2788): `null` clears it. A body with
+      // content is the copy editor's, as before — with an `order` beside it, both are written.
+      let version: number | undefined;
+      if (body.content !== undefined || !("order" in body)) {
+        const result = await saveOnboardingVariant(deps, id, index, body.content);
+        if (!result.ok) return json({ errors: result.errors }, 422);
+        version = result.version;
+      }
+      if ("order" in body) {
+        const result = await saveOnboardingVariantOrder(deps, id, index, body.order);
+        if (!result.ok) return json({ errors: result.errors, refusals: result.refusals ?? [] }, 422);
+      }
+      return json(version === undefined ? { ok: true } : { version });
     }
     if (req.method === "POST" && sub === "variants") {
       const result = await addOnboardingVariant(deps, id);
