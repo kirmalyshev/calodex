@@ -3935,6 +3935,7 @@ export async function postgresStore(
       const rows = await sql`
         select place,
                count(*) filter (where action = 'view')::int   as views,
+               count(distinct session_id) filter (where action = 'view')::int as people,
                count(*) filter (where action = 'answer')::int as answers,
                count(*) filter (where action = 'back')::int   as backs,
                count(*) filter (where action = 'reject')::int as rejects,
@@ -3951,6 +3952,7 @@ export async function postgresStore(
         rows: rows.map((r: Record<string, unknown>) => ({
           place: String(r.place),
           views: num(r.views),
+          people: num(r.people),
           answers: num(r.answers),
           backs: num(r.backs),
           rejects: num(r.rejects),

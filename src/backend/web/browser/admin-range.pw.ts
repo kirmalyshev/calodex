@@ -291,3 +291,24 @@ test("Campaigns keeps its head actions under a ranged hash", async ({ page }) =>
   await expect(page.getByRole("button", { name: "Stop all campaigns" })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("the funnel counts people, not showings, and a negative gap is not a drop", async ({ page }) => {
+  const errors = watchConsole(page);
+  await stubAdmin(page, {});
+  const row = (place: string, views: number, people: number) =>
+    ({ place, views, people, answers: 0, backs: 0, rejects: 0, medianMs: null });
+  // Registered after stubAdmin, so it wins for this one endpoint.
+  await page.route("**/admin/api/funnel**", (r) => r.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({
+      range: RANGE, contentVersion: 1, sessions: 4, completed: 1,
+      rows: [row("welcome", 5, 3), row("goal", 9, 2), row("sex", 4, 4)],
+    }),
+  }));
+  await openAdmin(page, "funnel");
+  await expect(page.locator(".fp-cnt")).toHaveText(["3", "2", "4", "1"]);
+  await expect(page.locator(".fp-gap").nth(0)).toContainText("1 left");
+  await expect(page.locator(".fp-gap").nth(1)).toContainText("+2 joined here");
+  await expect(page.locator(".fp-gap").nth(1)).not.toContainText("-");
+  expect(errors).toEqual([]);
+});

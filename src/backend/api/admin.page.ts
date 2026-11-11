@@ -2210,7 +2210,7 @@ details.how p { margin-top: 8px; }
       host.textContent = "";
       host.className = "card fp";
       if (!f.rows.length) { host.appendChild(el("p", "muted", "No onboarding runs in this window.")); return; }
-      var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.views }; });
+      var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.people }; });
       steps.push({ name: "Finished onboarding", id: "complete", n: f.completed, fin: true });
       var first = steps[0].n;
       var drops = steps.slice(1).map(function (s, i) { return steps[i].n - s.n; }).filter(function (d) { return d > 0; });
@@ -2240,8 +2240,11 @@ details.how p { margin-top: 8px; }
         var next = steps[i + 1];
         if (next) {
           var d = s.n - next.n;
-          var g = el("div", "fp-gap" + (worst.indexOf(d) !== -1 && d > 0 ? " fp-big" : ""), "\u25bc " + d + " left");
-          g.appendChild(el("em", "", "(" + pct1(d, s.n) + " of " + s.n + ")"));
+          // A run that began before the window shows up from its first step inside it, so the next
+          // step can hold MORE people than this one. That is not a drop, and "-5 left" reads as one.
+          var g = el("div", "fp-gap" + (worst.indexOf(d) !== -1 && d > 0 ? " fp-big" : ""),
+            d >= 0 ? "\u25bc " + d + " left" : "+" + (-d) + " joined here");
+          g.appendChild(el("em", "", d >= 0 ? "(" + pct1(d, s.n) + " of " + s.n + ")" : "(runs that began before this window)"));
           host.appendChild(g);
         }
       });

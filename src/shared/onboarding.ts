@@ -2225,7 +2225,10 @@ export function isReportableField(field: string): boolean {
 /** One row of the admin funnel: how a question performed. */
 export interface FunnelRow {
   place: OnboardingPlace;
+  /** Every showing of the screen, revisits included. */
   views: number;
+  /** Distinct onboarding runs that saw the screen: the funnel's step count. */
+  people: number;
   answers: number;
   backs: number;
   rejects: number;
