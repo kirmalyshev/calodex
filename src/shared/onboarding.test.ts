@@ -373,6 +373,76 @@ describe("the retired privacy promise cannot come back", () => {
   });
 });
 
+describe("the billing claims cannot be typed back in (ieat-app#2766)", () => {
+  // #2757 moved `firstMeal.ask/afterAsk` ("One meal on me") and `signup.line` (the subscription)
+  // into admin-editable content — before that, the free/trial/price rules were a test over the
+  // COMPILED English only, so an admin or an experiment variant could write "Free forever" or
+  // "Three meals on me" and nothing at the save refused it. The same rules the compiled copy is
+  // held to now run on every stored revision and variant.
+  const bad = (mutate: (c: OnboardingContent) => unknown) => {
+    const result = validateOnboardingContent(mutate(clone(DEFAULT_ONBOARDING_CONTENT)));
+    expect(result.ok).toBe(false);
+    return result.ok ? [] : result.errors;
+  };
+
+  it("refuses a bigger free allowance — 'Three meals on me' is not 'One meal on me'", () => {
+    const errors = bad((c) => {
+      c.firstMeal.ask = "Three meals on me. Photo, or just tell me?";
+      return c;
+    });
+    expect(errors.join("\n")).toContain("free-meals");
+    // The shipped promise is ONE, and stays allowed — word or digit.
+    const c = clone(DEFAULT_ONBOARDING_CONTENT);
+    c.firstMeal.ask = "1 meal on me. Photo, or just tell me?";
+    expect(validateOnboardingContent(c).ok).toBe(true);
+  });
+
+  it("refuses 'Free forever' and 'free trial' — 'free' qualifies or it does not appear", () => {
+    expect(bad((c) => { c.firstMeal.afterAsk = "Free forever, for every meal."; return c; })
+      .join("\n")).toContain("unqualified-free");
+    expect(bad((c) => { c.signup.line = "Start your free trial today."; return c; })
+      .join("\n")).toContain("unqualified-free");
+    // The three forms DECISIONS.md allows pass: "free to try", "N days free", "free text".
+    const c = clone(DEFAULT_ONBOARDING_CONTENT);
+    c.signup.line = "It is free to try — 3 days free, then the subscription.";
+    c.firstMeal.tell = "Tell me what you ate — free text or a photo.";
+    expect(validateOnboardingContent(c).ok).toBe(true);
+  });
+
+  it("refuses the promises the paywall retired — the card, the trial, the cancelling", () => {
+    expect(bad((c) => { c.summary.capNote = "Estimates. No card needed."; return c; })
+      .join("\n")).toContain("billing-promise");
+    expect(bad((c) => { c.referral.skip = "No trial, no fuss — skip"; return c; })
+      .join("\n")).toContain("billing-promise");
+    expect(bad((c) => { c.health.body = "Nothing to cancel later."; return c; })
+      .join("\n")).toContain("billing-promise");
+  });
+
+  it("refuses a named competitor and a quoted price", () => {
+    expect(bad((c) => { c.referral.ask = "Sent here from MyFitnessPal?"; return c; })
+      .join("\n")).toContain("competitor");
+    expect(bad((c) => { c.signup.line = "Only $4.99 a month."; return c; })
+      .join("\n")).toContain("price");
+    // The continental shape too — the figure first, the symbol after.
+    expect(bad((c) => { c.signup.line = "Nur 9,99 € im Monat."; return c; })
+      .join("\n")).toContain("price");
+  });
+
+  it("reads an experiment variant's lines, not only the block's own", () => {
+    const errors = bad((c) => {
+      const goal = c.screens.find((s) => s.id === "goal")!;
+      goal.asks.goal!.variants = { now: ["Free forever — which fits you?"] };
+      return c;
+    });
+    expect(errors.join("\n")).toContain("unqualified-free");
+  });
+
+  it("reads the welcome through the same list, on top of its full set", () => {
+    const errors = bad((c) => { c.welcome.lines = ["Free forever.", "Ready?"]; return c; });
+    expect(errors.join("\n")).toContain("unqualified-free");
+  });
+});
+
 describe("validation allows what an admin is meant to do", () => {
   const good = (mutate: (c: OnboardingContent) => OnboardingContent) => {
     const result = validateOnboardingContent(mutate(clone(DEFAULT_ONBOARDING_CONTENT)));
