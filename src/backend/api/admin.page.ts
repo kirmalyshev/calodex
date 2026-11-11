@@ -2216,7 +2216,7 @@ details.how p { margin-top: 8px; }
       kpi(kp, "Started", String(f.sessions), "", "");
       kpi(kp, "Finished", String(f.completed), "", "");
       kpi(kp, "Completion", pct1(f.completed, f.sessions), "", "");
-      $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding \u00b7 app content v" +
+      $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff excluded \u00b7 app content v" +
         f.contentVersion + " \u00b7 counted by people who reached each step";
       var host = $("funnel-path");
       host.textContent = "";

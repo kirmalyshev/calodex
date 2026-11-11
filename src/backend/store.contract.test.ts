@@ -3375,6 +3375,30 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(v42).toMatchObject({ assigned: 2, sessions: 1, completed: 0, fell_back: 1 });
       });
 
+      it("leaves a staff account out of every arm's numbers (#2783)", async () => {
+        const s = await open();
+        const e = exp({ id: `staff-arm-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const user = (await s.upsertDeviceUser(device(), "en")).userId;
+        const staff = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.setStaff(staff, true);
+        for (const u of [user, staff]) {
+          await s.putOnboardingAssignment(u, e.id, 41);
+          await s.recordOnboardingEvents(u, [{
+            id: crypto.randomUUID(), sessionId: "s-" + u, place: "goal",
+            action: "complete", contentVersion: 41, at: new Date().toISOString(),
+          }] as never);
+        }
+        const rows = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
+        expect(rows.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 1, sessions: 1, completed: 1 });
+        // An id staff by config alone (`campaignStaffIds`) is left out of the arms too.
+        const byList = await s.onboardingExperimentFunnel(e.id, { from: null, to: null }, [user]);
+        expect(byList.reduce((n, r) => n + r.assigned, 0)).toBe(0);
+        await s.setStaff(staff, false);
+        const back = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
+        expect(back.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 2, sessions: 2, completed: 2 });
+      });
+
       it("moves assignments on merge, keeping the account's own row on a collision", async () => {
         const s = await open();
         const anon = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -4756,6 +4780,44 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       clock = T0 + 4 * H; await s.recordOnboardingEvents(u, ev(5) as never);
       expect(await sessions() - base).toBe(3);
       expect((await s.onboardingFunnel({ from: range.to, to: range.from })).sessions).toBe(0);
+    });
+
+    it("leaves a staff account's onboarding events out of the funnel (#2783)", async () => {
+      const s = await open();
+      const staff = await s.createUser("en");
+      const user = await s.createUser("en");
+      await s.setStaff(staff, true);
+      const sid = `staff-funnel-${RUN}`;
+      const all = { from: null, to: null };
+      const goal = async () => (await s.onboardingFunnel(all)).rows.find((r) => r.place === "goal");
+      const base = { sessions: (await s.onboardingFunnel(all)).sessions, people: (await goal())?.people ?? 0, views: (await goal())?.views ?? 0 };
+      const ev = (who: string, n: number) => s.recordOnboardingEvents(who, [{
+        id: `${sid}-${who}-${n}`, sessionId: `${sid}-${who}`, place: "goal",
+        action: "view", contentVersion: 1, at: new Date().toISOString(),
+      }] as never);
+      const done = (who: string) => s.recordOnboardingEvents(who, [{
+        id: `${sid}-${who}-done`, sessionId: `${sid}-${who}`, place: "summary",
+        action: "complete", contentVersion: 1, at: new Date().toISOString(),
+      }] as never);
+      const baseDone = (await s.onboardingFunnel(all)).completed;
+      await ev(staff, 1);
+      await done(staff);
+      const f = await s.onboardingFunnel(all);
+      expect(f.sessions).toBe(base.sessions);
+      expect(f.completed).toBe(baseDone);
+      expect((await goal())?.people ?? 0).toBe(base.people);
+      expect((await goal())?.views ?? 0).toBe(base.views);
+      await ev(user, 1);
+      await done(user);
+      expect((await s.onboardingFunnel(all)).sessions).toBe(base.sessions + 1);
+      expect((await goal())?.people).toBe(base.people + 1);
+      expect((await s.onboardingFunnel(all)).completed).toBe(baseDone + 1);
+      // An id staff by config alone (`campaignStaffIds`), never flagged, is left out too.
+      expect((await s.onboardingFunnel(all, [user])).sessions).toBe(base.sessions);
+      // The flag is read at query time: un-flagging brings the account's earlier run back.
+      await s.setStaff(staff, false);
+      expect((await s.onboardingFunnel(all)).sessions).toBe(base.sessions + 2);
+      expect((await s.onboardingFunnel(all)).completed).toBe(baseDone + 2);
     });
 
     it("rows the push stats by send time, the day dated in the instance zone", async () => {
