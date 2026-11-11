@@ -5385,7 +5385,7 @@
           "health",
           "streak_goal_days"
         ],
-        "description": "Everything Spud asks or shows, in the order a user meets it (`ONBOARDING_PLACES`).\n\nA prompt with a `field` fills a profile column and its answer survives the app being killed. A prompt without one is conversation: asked while the run is live, skipped on a resume that has already passed it (see `resumeAt`)."
+        "description": "Everything Spud asks or shows, in the DEFAULT order (`ONBOARDING_PLACES`); `promptsFor` applies an arm's.\n\nA prompt with a `field` fills a profile column and its answer survives the app being killed. A prompt without one is conversation: asked while the run is live, skipped on a resume that has already passed it (see `resumeAt`)."
       },
       "ChatSpeaker": {
         "type": "string",
@@ -8451,9 +8451,9 @@
           "order": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OnboardingPlace"
+              "type": "string"
             },
-            "description": "The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the default. Sent ONLY to a client that declared `?order=` at or above `ONBOARDING_ORDER_VERSION`; an older binary is never enrolled in an experiment with an ordered arm. A client walks `servedOrder(order)`, so an order it cannot validate is the default, never a broken walk."
+            "description": "The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the default. The contract: a server sends it only to a client that declared `?order=` at or above `ONBOARDING_ORDER_VERSION`, and enrols an older client in no experiment with an ordered arm. Typed as strings because it is NOT yet trusted: a client hands it to `promptsFor`, which runs `servedOrder`, so an order it cannot validate is the default, never a broken walk."
           }
         },
         "required": [
