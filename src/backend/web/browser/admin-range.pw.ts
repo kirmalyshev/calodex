@@ -291,3 +291,26 @@ test("Campaigns keeps its head actions under a ranged hash", async ({ page }) =>
   await expect(page.getByRole("button", { name: "Stop all campaigns" })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("the presets sit on the boxes' centre line, and the chosen one reads as chosen", async ({ page }) => {
+  const errors = watchConsole(page);
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await stubAdmin(page, {});
+  await openAdmin(page, "funnel");
+  const mid = async (sel: string) => {
+    const b = (await page.locator(sel).boundingBox())!;
+    return b.y + b.height / 2;
+  };
+  expect(Math.abs(await mid("#range-7d") - await mid("#range-from"))).toBeLessThanOrEqual(1);
+  expect(Math.abs(await mid("#range-zone") - await mid("#range-from"))).toBeLessThanOrEqual(1);
+
+  await page.locator("#range-30d").click();
+  await expect(page.locator("#range-30d")).toHaveClass(/\bon\b/);
+  await expect(page.locator("#range-7d")).not.toHaveClass(/\bon\b/);
+  // The choice survives a section change, and typing a date clears it.
+  await page.locator('[data-nav="pushes"]').first().click();
+  await expect(page.locator("#range-30d")).toHaveClass(/\bon\b/);
+  await page.locator("#range-from").fill("2026-11-03");
+  await expect(page.locator("#range-30d")).not.toHaveClass(/\bon\b/);
+  expect(errors).toEqual([]);
+});
