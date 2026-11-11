@@ -10,7 +10,7 @@ import type {
 } from "./types.ts";
 import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
-import type { OnboardingContent, OnboardingEvent } from "./onboarding.ts";
+import type { OnboardingContent, OnboardingEvent, OnboardingPlace } from "./onboarding.ts";
 import type { TargetBasis } from "./targets.ts";
 import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
@@ -1033,6 +1033,13 @@ export interface OnboardingContentResponse {
    * sent was one this server does not carry.
    */
   lang: Lang;
+  /**
+   * The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the
+   * default. Sent ONLY to a client that declared `?order=` at or above `ONBOARDING_ORDER_VERSION`;
+   * an older binary is never enrolled in an experiment with an ordered arm. A client walks
+   * `servedOrder(order)`, so an order it cannot validate is the default, never a broken walk.
+   */
+  order?: OnboardingPlace[];
 }
 
 /**

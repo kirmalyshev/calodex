@@ -10,6 +10,7 @@ export * from "./onboarding.ts";
 export * from "./onboarding-chat-copy.ts";
 export * from "./onboarding-content.ts";
 export * from "./onboarding-chat.ts";
+export * from "./onboarding-order.ts";
 export * from "./contract.ts";
 export * from "./foods.ts";
 export * from "./perf.ts";

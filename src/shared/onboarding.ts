@@ -135,8 +135,9 @@ export type OnboardingInterstitial = (typeof ONBOARDING_INTERSTITIALS)[number];
  * Everywhere a user can be during onboarding, in the order they meet them.
  *
  * The analytics vocabulary, and the row order of the admin's funnel table — so a drop between two
- * rows reads as a drop. Fixed in code now that the flow is a conversation: the questions are asked
- * in an order the replies depend on, so an admin cannot reorder them.
+ * rows reads as a drop. This is the DEFAULT order, fixed in code: the questions are asked in an
+ * order the replies depend on. An experiment arm may reorder the span from the welcome to the
+ * sign-up only within `ORDER_AFTER` (`onboarding-order.ts`), which names each of those replies.
  */
 export const ONBOARDING_PLACES = [
   "welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
