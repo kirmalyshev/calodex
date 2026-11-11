@@ -1492,12 +1492,12 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   };
 
   /** A block of lines where every one may hide — 0 to `max`, empty entries allowed. */
-  const freeLines = (v: unknown, at: string, max: number) => {
+  const freeLines = (v: unknown, at: string, max: number, per = optLine) => {
     if (!Array.isArray(v) || v.length > max) {
       push(`${at} must be 0 to ${max} lines`);
       return;
     }
-    for (const [i, line] of v.entries()) optLine(line, `${at}[${i}]`);
+    for (const [i, line] of v.entries()) per(line, `${at}[${i}]`);
   };
 
   if (!Array.isArray(raw.screens)) {
@@ -1622,9 +1622,11 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   const wel = raw.welcome as Record<string, unknown> | undefined;
   if (typeof wel !== "object" || wel === null) push("welcome is required");
   else {
-    freeLines(wel.lines, "welcome.lines", MAX_WELCOME_LINES);
-    str(wel.cta, "welcome.cta", MAX_LABEL);
-    str(wel.signin, "welcome.signin", MAX_LABEL);
+    // The welcome's words take NO fills, so a `{…}` in any of them is a literal brace on the
+    // first screen a stranger reads — every field runs `tmpl` with the empty allowed set.
+    freeLines(wel.lines, "welcome.lines", MAX_WELCOME_LINES, (line, at) => tmpl(line, at, { max: MAX_LINE }));
+    tmpl(wel.cta, "welcome.cta", { required: true, max: MAX_LABEL });
+    tmpl(wel.signin, "welcome.signin", { required: true, max: MAX_LABEL });
     // The image is a key into the app's bundled registry, never a URL — an admin cannot point the
     // welcome at an upload (#2669). An app that does not know a newer key draws its default.
     if (wel.image !== undefined && !(WELCOME_IMAGE_KEYS as readonly string[]).includes(wel.image as string)) {

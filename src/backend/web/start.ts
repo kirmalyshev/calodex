@@ -531,7 +531,7 @@ function answerFor(
         raw = String(weightToKg("imperial", Number(value)));
       }
     }
-    const checked = checkNumber(field as NumberField, raw, profile.lang, new Date(), content.refusals);
+    const checked = checkNumber(field as NumberField, raw, profile.lang, { refusals: content.refusals });
     if (!checked.ok) {
       if ("underAge" in checked) return { kind: "under-age" };
       // "90" is 1990 typed the short way, or somebody who is ninety. Computing the wrong one is
@@ -1305,8 +1305,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
               name: "switch",
               value: answer.switchTo,
               label: answer.switchTo === "lose"
-                ? CHAT(profile.lang).direction.switchToLose
-                : CHAT(profile.lang).direction.switchToGain,
+                ? content.refusals.direction.switchToLose
+                : content.refusals.direction.switchToGain,
             }]
           : []);
       }

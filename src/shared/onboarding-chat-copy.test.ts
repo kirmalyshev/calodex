@@ -8,6 +8,7 @@ import {
   pacePreview, planRows, switchedLine,
 } from "./onboarding-chat.ts";
 import { DEFAULT_ONBOARDING_CONTENT } from "./onboarding.ts";
+import { onboardingContentFor } from "./onboarding-content.ts";
 
 // The words around the questions. `onboarding.ts`'s copy is admin-editable; this is not — the
 // refusals, the chart's accessible name and the captions carry numbers and branches a translator
@@ -17,7 +18,7 @@ import { DEFAULT_ONBOARDING_CONTENT } from "./onboarding.ts";
 describe("every language's chat copy", () => {
   it("has a refusal for every number field, so no refusal is wordless", () => {
     for (const lang of LANGS) {
-      const invalid = chatCopyFor(lang).invalid;
+      const invalid = onboardingContentFor(lang).refusals.invalid;
       for (const field of ["age", "height_cm", "weight_kg", "target_weight_kg"] as const) {
         expect(invalid[field]?.trim(), `${lang}.invalid.${field}`).toBeTruthy();
       }
@@ -38,7 +39,7 @@ describe("every language's chat copy", () => {
         expect(c.echo[key].trim(), `${lang}.echo.${key}`).toBeTruthy();
       }
       for (const key of ["title", "body"] as const) {
-        expect(c.health[key].trim(), `${lang}.health.${key}`).toBeTruthy();
+        expect(onboardingContentFor(lang).health[key].trim(), `${lang}.health.${key}`).toBeTruthy();
       }
     }
   });
@@ -71,18 +72,19 @@ describe("every language's chat copy", () => {
       const copy = chatCopyFor(lang);
       expect(copy.underAgeCard.title, lang).toContain("{age}");
       expect(copy.belowHealthy.body, lang).toContain("{kg}");
-      expect(copy.ambiguousAge.line, lang).toContain("{year}");
-      expect(copy.ambiguousAge.confirm, lang).toContain("{age}");
+      const rf = onboardingContentFor(lang).refusals;
+      expect(rf.ambiguousAge.line, lang).toContain("{year}");
+      expect(rf.ambiguousAge.confirm, lang).toContain("{age}");
       expect(copy.capNoteTail, lang).toContain("{kg}");
       for (const k of ["gain", "lose"] as const) {
-        expect(copy.direction[k], `${lang}.direction.${k}`).toContain("{weight}");
-        expect(copy.direction[k], `${lang}.direction.${k}`).toContain("{target}");
+        expect(rf.direction[k], `${lang}.direction.${k}`).toContain("{weight}");
+        expect(rf.direction[k], `${lang}.direction.${k}`).toContain("{target}");
       }
       // THE SWEEP ALONE DOES NOT HOLD THESE. The unknown-name half passes any name on the shared
       // list, so renaming `{weight}` to `{rate}` here would be green AND render a literal
       // `{rate}` on the pace screen. Each placeholder a reader fills is pinned by name.
-      expect(copy.direction.above, `${lang}.direction.above`).toContain("{weight}");
-      expect(copy.direction.below, `${lang}.direction.below`).toContain("{weight}");
+      expect(rf.direction.above, `${lang}.direction.above`).toContain("{weight}");
+      expect(rf.direction.below, `${lang}.direction.below`).toContain("{weight}");
       expect(copy.underAge.endedPlaceholder, `${lang}.underAge.endedPlaceholder`).toContain("{age}");
       expect(copy.underAge.stopped[1], `${lang}.underAge.stopped[1]`).toContain("{age}");
       // The pace line and its markers, the goal lines, the target ruler's markers.
@@ -120,13 +122,14 @@ describe("the readers of those tables", () => {
     for (const lang of LANGS) {
       const p = her(lang);
       const preview = pacePreview(p, "steady", today, lang, DEFAULT_ONBOARDING_CONTENT)!;
+      const rf = onboardingContentFor(lang).refusals;
       const said = [
-        switchedLine("gain", lang), switchedLine("lose", lang),
+        switchedLine("gain", lang, rf), switchedLine("lose", lang, rf),
         UNDER_AGE_CARD(lang).title,
         belowHealthyCard(58, lang).body,
-        AMBIGUOUS_AGE(lang).line(90), AMBIGUOUS_AGE(lang).confirm(90),
-        checkDirection("gain", 93, 88, lang)!.line,
-        checkDirection("lose", 93, 95, lang)!.line,
+        AMBIGUOUS_AGE(lang, rf).line(90), AMBIGUOUS_AGE(lang, rf).confirm(90),
+        checkDirection("gain", 93, 88, lang, rf)!.line,
+        checkDirection("lose", 93, 95, lang, rf)!.line,
         preview.line!,
         ...planRows(p, explainTargets(p, today).targets, DEFAULT_ONBOARDING_CONTENT, lang)
           .flatMap((r) => [r.label, r.value]),
@@ -148,15 +151,15 @@ describe("the readers of those tables", () => {
 
   it("refuses a bad number with words in the reader's language", () => {
     for (const lang of LANGS) {
-      const bad = checkNumber("height_cm", "nonsense", lang, new Date());
+      const bad = checkNumber("height_cm", "nonsense", lang, { refusals: onboardingContentFor(lang).refusals });
       expect(bad.ok).toBe(false);
-      if (!bad.ok && "line" in bad) expect(bad.line).toBe(chatCopyFor(lang).invalid.height_cm);
+      if (!bad.ok && "line" in bad) expect(bad.line).toBe(onboardingContentFor(lang).refusals.invalid.height_cm);
     }
   });
 
   it("writes its figures in the reader's grouping — the German never reads 1,454", () => {
-    expect(checkDirection("gain", 93.5, 90, "de")!.line).toContain("93,5");
-    expect(checkDirection("gain", 93.5, 90, "en")!.line).toContain("93.5");
+    expect(checkDirection("gain", 93.5, 90, "de", onboardingContentFor("de").refusals)!.line).toContain("93,5");
+    expect(checkDirection("gain", 93.5, 90, "en", onboardingContentFor("en").refusals)!.line).toContain("93.5");
   });
 
   it("carries no claim the linter would refuse — every new template, every language", () => {
@@ -170,7 +173,7 @@ describe("the readers of those tables", () => {
     // `planGoal` is out by S6's own published exemption — `CLAIM_EXEMPTIONS` names the qualified
     // key `CHAT_COPY.planGoal`, which is exactly this table flattened, so `lintCopy` alone would
     // not carry the qualifier through.
-    const EXEMPT = /^(direction|plan|planGoal|switched|goalEdit|belowHealthy|invalid|ambiguousAge|underAge|underAgeCard|capNoteTail|targetSuggestion|target)\./;
+    const EXEMPT = /^(plan|planGoal|switched|goalEdit|belowHealthy|underAge|underAgeCard|capNoteTail|targetSuggestion|target)\./;
     const FILL = {
       weight: "68kg", target: "68kg", delta: "6kg", month: "January 2027", kcal: "1,434",
       rate: "0.4kg", floor: "1,200", share: "20", age: "16", kg: "58", year: "1990",

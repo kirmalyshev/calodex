@@ -28,6 +28,8 @@ import { spudSvg } from "./mascot.ts";
 import { lbToKg } from "./ui/units.ts";
 import { onboardingContentFor } from "./onboarding-content.ts";
 
+const R = onboardingContentFor("en").refusals;
+
 function profile(over: Partial<Profile> = {}): Profile {
   return {
     user_id: "u1", lang: "en", goal: null, sex: null, birth_year: null, height_cm: null,
@@ -249,77 +251,77 @@ describe("the numbers", () => {
   const today = new Date("2026-08-26T00:00:00Z");
 
   it("takes a plain number and a comma decimal", () => {
-    expect(checkNumber("weight_kg", "93", "en", today)).toEqual({ ok: true, value: 93 });
-    expect(checkNumber("weight_kg", "93,5", "en", today)).toEqual({ ok: true, value: 93.5 });
-    expect(checkNumber("height_cm", "183cm", "en", today)).toEqual({ ok: true, value: 183 });
+    expect(checkNumber("weight_kg", "93", "en", { today, refusals: R })).toEqual({ ok: true, value: 93 });
+    expect(checkNumber("weight_kg", "93,5", "en", { today, refusals: R })).toEqual({ ok: true, value: 93.5 });
+    expect(checkNumber("height_cm", "183cm", "en", { today, refusals: R })).toEqual({ ok: true, value: 183 });
   });
 
   it("refuses in the design's words rather than the server's", () => {
-    expect(checkNumber("height_cm", "6", "en", today)).toEqual({ ok: false, line: "In centimetres — something like 175." });
-    expect(checkNumber("weight_kg", "nope", "en", today)).toEqual({ ok: false, line: "In kilograms — roughly is fine." });
-    expect(checkNumber("target_weight_kg", "900", "en", today)).toEqual({ ok: false, line: "A number in kg — like 70." });
+    expect(checkNumber("height_cm", "6", "en", { today, refusals: R })).toEqual({ ok: false, line: "In centimetres — something like 175." });
+    expect(checkNumber("weight_kg", "nope", "en", { today, refusals: R })).toEqual({ ok: false, line: "In kilograms — roughly is fine." });
+    expect(checkNumber("target_weight_kg", "900", "en", { today, refusals: R })).toEqual({ ok: false, line: "A number in kg — like 70." });
   });
 
   it("never accepts a value the server would refuse without words", () => {
-    expect(checkNumber("weight_kg", String(MIN_WEIGHT_KG - 1), "en", today).ok).toBe(false);
-    expect(checkNumber("target_weight_kg", String(MIN_WEIGHT_KG - 1), "en", today).ok).toBe(false);
-    expect(checkNumber("height_cm", "99", "en", today).ok).toBe(false);
-    expect(checkNumber("height_cm", "251", "en", today).ok).toBe(false);
+    expect(checkNumber("weight_kg", String(MIN_WEIGHT_KG - 1), "en", { today, refusals: R }).ok).toBe(false);
+    expect(checkNumber("target_weight_kg", String(MIN_WEIGHT_KG - 1), "en", { today, refusals: R }).ok).toBe(false);
+    expect(checkNumber("height_cm", "99", "en", { today, refusals: R }).ok).toBe(false);
+    expect(checkNumber("height_cm", "251", "en", { today, refusals: R }).ok).toBe(false);
   });
 
   it("reads an age and says so when the input is not one", () => {
-    expect(checkNumber("birth_year", "36", "en", today)).toEqual({ ok: true, value: 36 });
-    expect(checkNumber("birth_year", "36 years", "en", today)).toEqual({ ok: true, value: 36 });
-    expect(checkNumber("birth_year", "nope", "en", today).ok).toBe(false);
-    expect(checkNumber("birth_year", "-3", "en", today).ok).toBe(false);
-    expect(checkNumber("birth_year", "500", "en", today).ok).toBe(false);
+    expect(checkNumber("birth_year", "36", "en", { today, refusals: R })).toEqual({ ok: true, value: 36 });
+    expect(checkNumber("birth_year", "36 years", "en", { today, refusals: R })).toEqual({ ok: true, value: 36 });
+    expect(checkNumber("birth_year", "nope", "en", { today, refusals: R }).ok).toBe(false);
+    expect(checkNumber("birth_year", "-3", "en", { today, refusals: R }).ok).toBe(false);
+    expect(checkNumber("birth_year", "500", "en", { today, refusals: R }).ok).toBe(false);
   });
 
   it("takes a four-digit year as the year itself, whatever separator it came with", () => {
-    expect(checkNumber("birth_year", "1990", "en", today)).toEqual({ ok: true, value: 36 });
-    expect(checkNumber("birth_year", "1.990", "en", today)).toEqual({ ok: true, value: 36 });
-    expect(checkNumber("birth_year", "1,990", "en", today)).toEqual({ ok: true, value: 36 });
-    expect(checkNumber("birth_year", "1800", "en", today).ok).toBe(false);
+    expect(checkNumber("birth_year", "1990", "en", { today, refusals: R })).toEqual({ ok: true, value: 36 });
+    expect(checkNumber("birth_year", "1.990", "en", { today, refusals: R })).toEqual({ ok: true, value: 36 });
+    expect(checkNumber("birth_year", "1,990", "en", { today, refusals: R })).toEqual({ ok: true, value: 36 });
+    expect(checkNumber("birth_year", "1800", "en", { today, refusals: R }).ok).toBe(false);
   });
 
   it("stops on a plausible child's age and refuses a typo as a typo", () => {
-    expect(checkNumber("birth_year", String(MIN_AGE - 1), "en", today)).toEqual({ ok: false, underAge: true });
-    expect(checkNumber("birth_year", "5", "en", today)).toEqual({ ok: false, underAge: true });
-    expect(checkNumber("birth_year", String(MIN_AGE), "en", today)).toEqual({ ok: true, value: MIN_AGE });
+    expect(checkNumber("birth_year", String(MIN_AGE - 1), "en", { today, refusals: R })).toEqual({ ok: false, underAge: true });
+    expect(checkNumber("birth_year", "5", "en", { today, refusals: R })).toEqual({ ok: false, underAge: true });
+    expect(checkNumber("birth_year", String(MIN_AGE), "en", { today, refusals: R })).toEqual({ ok: true, value: MIN_AGE });
     for (const typo of ["0", "4", "-0.4", "3"]) {
-      const out = checkNumber("birth_year", typo, "en", today);
+      const out = checkNumber("birth_year", typo, "en", { today, refusals: R });
       expect(out.ok).toBe(false);
       expect("underAge" in out).toBe(false);
     }
   });
 
   it("asks before taking a high two-digit answer that could be a year shorthand", () => {
-    expect(checkNumber("birth_year", "90", "en", today)).toEqual({ ok: false, ambiguousAge: 90 });
-    expect(checkNumber("birth_year", "85", "en", today)).toEqual({ ok: false, ambiguousAge: 85 });
-    expect(checkNumber("birth_year", "100", "en", today)).toEqual({ ok: true, value: 100 });
-    expect(checkNumber("birth_year", "84", "en", today)).toEqual({ ok: true, value: 84 });
+    expect(checkNumber("birth_year", "90", "en", { today, refusals: R })).toEqual({ ok: false, ambiguousAge: 90 });
+    expect(checkNumber("birth_year", "85", "en", { today, refusals: R })).toEqual({ ok: false, ambiguousAge: 85 });
+    expect(checkNumber("birth_year", "100", "en", { today, refusals: R })).toEqual({ ok: true, value: 100 });
+    expect(checkNumber("birth_year", "84", "en", { today, refusals: R })).toEqual({ ok: true, value: 84 });
   });
 });
 
 describe("the goal weight", () => {
   it("catches a target that is not in the direction of the goal", () => {
-    const gain = checkDirection("gain", 93, 88, "en")!;
+    const gain = checkDirection("gain", 93, 88, "en", R)!;
     expect(gain.line).toContain("that's not a gain from here");
     expect(gain.switchTo).toBe("lose");
-    const lose = checkDirection("lose", 93, 95, "en")!;
+    const lose = checkDirection("lose", 93, 95, "en", R)!;
     expect(lose.line).toContain("that's not a loss from here");
     expect(lose.switchTo).toBe("gain");
   });
 
   it("catches the equal case, which is neither", () => {
-    expect(checkDirection("gain", 93, 93, "en")).not.toBeNull();
-    expect(checkDirection("lose", 93, 93, "en")).not.toBeNull();
+    expect(checkDirection("gain", 93, 93, "en", R)).not.toBeNull();
+    expect(checkDirection("lose", 93, 93, "en", R)).not.toBeNull();
   });
 
   it("lets a real target through", () => {
-    expect(checkDirection("lose", 93, 88, "en")).toBeNull();
-    expect(checkDirection("gain", 60, 66, "en")).toBeNull();
-    expect(checkDirection("maintain", 93, 93, "en")).toBeNull();
+    expect(checkDirection("lose", 93, 88, "en", R)).toBeNull();
+    expect(checkDirection("gain", 60, 66, "en", R)).toBeNull();
+    expect(checkDirection("maintain", 93, 93, "en", R)).toBeNull();
   });
 
   it("agrees with the guard that will refuse it", () => {
@@ -470,32 +472,32 @@ describe("reconcileGoalEdit", () => {
   const losing = { goal: "lose" as const, weight_kg: 94, target_weight_kg: 88 };
 
   test("a coherent edit passes straight through", () => {
-    expect(reconcileGoalEdit(losing, { target_weight_kg: 85 }, "en"))
+    expect(reconcileGoalEdit(losing, { target_weight_kg: 85 }, "en", R))
       .toEqual({ patch: { target_weight_kg: 85 }, note: null });
   });
 
   test("a contradictory TARGET is refused, in the words onboarding already uses", () => {
-    const out = reconcileGoalEdit(losing, { target_weight_kg: 99 }, "en");
+    const out = reconcileGoalEdit(losing, { target_weight_kg: 99 }, "en", R);
     expect(out.patch).toBeNull();
     expect(out.note).toContain("that's not a loss from here");
   });
 
   test("a contradictory GOAL wins and clears the target it invalidated", () => {
-    const out = reconcileGoalEdit(losing, { goal: "gain" }, "en");
+    const out = reconcileGoalEdit(losing, { goal: "gain" }, "en", R);
     expect(out.patch).toEqual({ goal: "gain", target_weight_kg: null });
     expect(out.note).toContain("cleared");
   });
 
   test("WEIGHT is a fact and is always recorded, even when it strands the target", () => {
-    const out = reconcileGoalEdit(losing, { weight_kg: 86 }, "en");
+    const out = reconcileGoalEdit(losing, { weight_kg: 86 }, "en", R);
     expect(out.patch).toEqual({ weight_kg: 86 });
     expect(out.note).toContain("worth setting a new one");
   });
 
   test("maintain has no target to contradict, and a half-filled profile is left alone", () => {
-    expect(reconcileGoalEdit({ goal: "maintain", weight_kg: 94, target_weight_kg: 88 }, { weight_kg: 99 }, "en").note)
+    expect(reconcileGoalEdit({ goal: "maintain", weight_kg: 94, target_weight_kg: 88 }, { weight_kg: 99 }, "en", R).note)
       .toBeNull();
-    expect(reconcileGoalEdit({ goal: "lose", weight_kg: null, target_weight_kg: null }, { goal: "gain" }, "en").note)
+    expect(reconcileGoalEdit({ goal: "lose", weight_kg: null, target_weight_kg: null }, { goal: "gain" }, "en", R).note)
       .toBeNull();
   });
 });
@@ -503,7 +505,7 @@ describe("reconcileGoalEdit", () => {
 describe("checkNumber as the guard in front of a profile patch", () => {
   test("never yields a value that would reach the wire as null", () => {
     for (const raw of [".", "..", "94..", "9.4.5", "  ", "", "abc", "-", ".5.", "1e9"]) {
-      const out = checkNumber("weight_kg", raw, "en");
+      const out = checkNumber("weight_kg", raw, "en", { refusals: R });
       if (out.ok) {
         expect(Number.isFinite(out.value)).toBe(true);
         expect(JSON.parse(JSON.stringify({ v: out.value })).v).not.toBeNull();
@@ -515,9 +517,9 @@ describe("checkNumber as the guard in front of a profile patch", () => {
   });
 
   test("still takes the numbers a person actually types", () => {
-    expect(checkNumber("weight_kg", "93", "en")).toEqual({ ok: true, value: 93 });
-    expect(checkNumber("weight_kg", "93,5", "en")).toEqual({ ok: true, value: 93.5 });
-    expect(checkNumber("target_weight_kg", "88.4", "en")).toEqual({ ok: true, value: 88.4 });
+    expect(checkNumber("weight_kg", "93", "en", { refusals: R })).toEqual({ ok: true, value: 93 });
+    expect(checkNumber("weight_kg", "93,5", "en", { refusals: R })).toEqual({ ok: true, value: 93.5 });
+    expect(checkNumber("target_weight_kg", "88.4", "en", { refusals: R })).toEqual({ ok: true, value: 88.4 });
   });
 });
 
@@ -573,7 +575,7 @@ describe("the age question (C2)", () => {
   it("asks for an age, and '32' is a valid answer to it", () => {
     const ask = content.screens.find((s) => s.id === "age")!.asks.birth_year!.lines.join(" ");
     expect(ask.toLowerCase()).toContain("age");
-    expect(checkNumber("birth_year", "32", "en", new Date("2026-08-26T00:00:00Z")))
+    expect(checkNumber("birth_year", "32", "en", { today: new Date("2026-08-26T00:00:00Z"), refusals: R }))
       .toEqual({ ok: true, value: 32 });
   });
 });
@@ -684,7 +686,7 @@ describe("the free meal's words and the stepper's labels", () => {
   it("are present in every language, and none of them is empty", () => {
     for (const lang of LANGS) {
       const c = chatCopyFor(lang);
-      for (const v of [...Object.values(c.firstMeal), ...Object.values(c.stepper)]) {
+      for (const v of [...Object.values(onboardingContentFor(lang).firstMeal), ...Object.values(c.stepper)]) {
         expect(typeof v).toBe("string");
         expect((v as string).trim()).not.toBe("");
       }

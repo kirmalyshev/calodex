@@ -1114,7 +1114,7 @@ describe("the numbers go through the shared checks, not this page's own", () => 
     const asked = await post("/start/q", { prompt: "birth_year", answer: "90" }, session);
     expect(asked.status).toBe(200);
     const html = await asked.text();
-    expect(html).toContain(AMBIGUOUS_AGE("en").line(90));
+    expect(html).toContain(AMBIGUOUS_AGE("en", DEFAULT_ONBOARDING_CONTENT.refusals).line(90));
     expect(html).toContain('name="age" value="90"');
     const userId = (await store.userIdForToken(session.split("=")[1]!))!;
     expect((await store.getProfile(userId))!.birth_year).toBeNull();
@@ -2893,8 +2893,8 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
       const signupHtml = await signup.text();
       expect(signupHtml, `${lang}.signup`).toContain(`<html lang="${lang}"`);
       // Arriving from the plan, the heading is iOS's "Save your plan" (#2565).
-      expect(signupHtml, `${lang}.signup heading`).toContain(escape(signupCopyFor(lang).savePlanHeading));
-      expect(signupHtml, `${lang}.signup line`).toContain(escape(signupCopyFor(lang).savePlanLine));
+      expect(signupHtml, `${lang}.signup heading`).toContain(escape(onboardingContentFor(lang).signup.heading));
+      expect(signupHtml, `${lang}.signup line`).toContain(escape(onboardingContentFor(lang).signup.line));
       expect(signupHtml, `${lang}.signup email`).toContain(escape(signupCopyFor(lang).continueEmail));
       // The consent line names both documents, in the language's own words — the placeholders a
       // translation could have dropped.

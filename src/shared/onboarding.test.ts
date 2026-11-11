@@ -304,6 +304,14 @@ describe("validation refuses what would break the app", () => {
     }).join(" ")).toContain("welcome.cta");
   });
 
+  it("a placeholder in any welcome word is refused — nothing fills it", () => {
+    // The welcome's words take no fills, so a `{…}` an admin types renders as a literal brace on
+    // the first screen a stranger reads.
+    expect(bad((c) => { c.welcome.cta = "Start {now}"; return c; }).join(" ")).toContain("welcome.cta");
+    expect(bad((c) => { c.welcome.signin = "I already have {one}"; return c; }).join(" ")).toContain("welcome.signin");
+    expect(bad((c) => { c.welcome.lines = ["Hi {name}"]; return c; }).join(" ")).toContain("welcome.lines");
+  });
+
   it("reports every problem at once, not the first", () => {
     const errors = bad((c) => {
       c.screens[0]!.asks.goal!.lines = [""];
