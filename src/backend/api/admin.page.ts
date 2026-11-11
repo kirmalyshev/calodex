@@ -320,7 +320,7 @@ pre { overflow-x: auto; max-width: 100%; }
 .aseg button { height: 28px; padding: 0 10px; border-radius: 7px; background: transparent; box-shadow: none; font-size: 12px; color: var(--muted); }
 .aseg button:hover { box-shadow: none; color: var(--ink); }
 .aseg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(23,25,28,.08); }
-.aseg .rng { display: inline-flex; align-items: center; gap: 4px; padding: 0 2px; }
+.aseg .rng { display: inline-flex; align-items: center; gap: 4px; padding: 0 2px; margin: 0; }
 .aseg .rng-l { font-size: 11px; color: var(--muted); }
 .aseg .rng input { height: 28px; width: 132px; padding: 0 6px; border: 0; border-radius: 7px; background: var(--surface); box-shadow: 0 0 0 1px var(--hair); font-size: 12px; color: var(--ink); }
 .aseg .rng-note { align-self: center; padding: 0 6px; font-size: 11px; color: var(--muted); white-space: nowrap; }
@@ -346,7 +346,7 @@ button.quiet { box-shadow: none; color: var(--muted); }
 .nv > p.muted { font-size: 12px; }
 .ahead .aseg { margin-left: auto; }
 .ahead { flex-wrap: wrap; }
-#head-window { flex-wrap: wrap; min-width: 0; }
+#head-window { flex-wrap: wrap; min-width: 0; align-items: center; }
 .akpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; min-width: 0; }
 .akpi.k3 { grid-template-columns: repeat(3, 1fr); }
 .akpi > div { background: var(--surface); border-radius: var(--r-card); box-shadow: 0 0 0 1px var(--hair); padding: 12px 14px; min-width: 0; }
@@ -1551,6 +1551,7 @@ details.how p { margin-top: 8px; }
   var RANGED = { numbers: 1, pushes: 1, funnel: 1, experiments: 1, campaigns: 1, referrals: 1, accounts: 1 };
   var range = { from: null, to: null };
   var rangeSet = false;   // the admin or a link named a window — until then the hash stays clean
+  var rangePreset = null; // the preset button that set the window ("range-7d"…), null once a box is typed
 
   // The boxes are calendar dates in the browser's zone, ONE rule: From is that day's first instant,
   // To that day's last (the server's "to" is inclusive), both sent to the server as UTC instants.
@@ -1637,7 +1638,12 @@ details.how p { margin-top: 8px; }
     to.setAttribute("aria-label", "To");
     if (range.from) from.value = localInput(range.from);
     if (range.to) to.value = localInput(range.to);
+    var mark = function () {
+      Array.prototype.forEach.call(seg.querySelectorAll("button"), function (b) { b.classList.toggle("on", b.id === rangePreset); });
+    };
     var change = function () {
+      rangePreset = null;
+      mark();
       applyRange(dayStart(from.value), dayEnd(to.value));
       run(id);
     };
@@ -1653,6 +1659,8 @@ details.how p { margin-top: 8px; }
         var now = new Date(), f = new Date(now.getTime() - p[2] * 86400000);
         from.value = localInput(f);
         to.value = localInput(now);
+        rangePreset = p[0];
+        mark();
         applyRange(f, now);
         run(id);
       });
@@ -1663,10 +1671,14 @@ details.how p { margin-top: 8px; }
     all.addEventListener("click", function () {
       from.value = "";
       to.value = "";
+      rangePreset = "range-all";
+      mark();
       applyRange(null, null);
       run(id);
     });
     seg.appendChild(all);
+    if (rangeSet && !range.from && !range.to) rangePreset = "range-all";
+    mark();
     rangeNoteEl = el("span", "rng-note", "");
     rangeNoteEl.id = "range-note";
     seg.appendChild(rangeNoteEl);
@@ -3898,9 +3910,11 @@ details.how p { margin-top: 8px; }
       var p = new URLSearchParams(h.slice(q + 1));
       var f = p.get("from"), t = p.get("to");
       var fd = f ? new Date(f) : null, td = t ? new Date(t) : null;
+      var before = rangeQS();
       range.from = fd && !isNaN(fd.getTime()) ? fd : null;
       range.to = td && !isNaN(td.getTime()) ? td : null;
       rangeSet = true;
+      if (rangeQS() !== before) rangePreset = null;   // a link names a window, not a button
       delete state[id];
     }
     // A nav into the onboarding view asks for the LIVE copy — the arm editor only opens from its
