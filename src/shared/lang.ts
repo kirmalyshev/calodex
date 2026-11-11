@@ -906,6 +906,8 @@ export function genderedRussian(root: unknown): { at: string; text: string }[] {
     for (let i = 0; i < tokens.length; i++) {
       const word = (tokens[i] ?? "").replace(/[^\p{L}]/gu, "");
       if (RU_NOT_A_VERB.has(word.toLowerCase())) continue;
+      // `Друг прислал …` agrees with the friend, a third person, and says nothing about the reader.
+      if (/^друг$/iu.test((tokens[i - 1] ?? "").replace(/[^\p{L}]/gu, ""))) continue;
       const alone = RU_GENDERED_ALONE.test(word);
       if (!alone && !RU_GENDERED_GATED.test(word)) continue;
       const second = nearest(RU_SECOND, i);

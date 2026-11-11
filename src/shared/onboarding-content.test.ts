@@ -6,6 +6,10 @@ import {
   validateOnboardingContent,
 } from "./onboarding.ts";
 import { ONBOARDING_CONTENT, onboardingContentFor, usableContentFor } from "./onboarding-content.ts";
+import { genderedRussian } from "./lang.ts";
+import { usableFirstMeal } from "./onboarding.ts";
+import { signupCopyFor } from "./app/signup-copy.ts";
+import { chatCopyFor } from "./onboarding-chat-copy.ts";
 
 // Onboarding is the one flow where a missing sentence is not a wart: `usableContent` drops a whole
 // revision that is missing an ask, because a question with nothing to ask it with is a conversation
@@ -96,6 +100,29 @@ describe("every language's onboarding content", () => {
       expect(c.plan.chart.estimateAria, lang).toContain("{from}");
       expect(c.plan.chart.estimateAria, lang).toContain("{to}");
     }
+  });
+
+  it("carries the area (d) words identical to the tables the phone still reads, in every language", () => {
+    for (const lang of LANGS) {
+      const c = onboardingContentFor(lang);
+      expect(c.signup, lang).toEqual({ heading: signupCopyFor(lang).savePlanHeading, line: signupCopyFor(lang).savePlanLine });
+      expect(c.health, lang).toEqual(chatCopyFor(lang).health);
+      expect(c.firstMeal, lang).toEqual(chatCopyFor(lang).firstMeal);
+    }
+  });
+
+  it("passes the Russian gender gate on the referral ask, and the gate still catches a verb that is not the friend's", () => {
+    expect(genderedRussian(onboardingContentFor("ru").referral)).toEqual([]);
+    expect(genderedRussian(["Друг прислал ссылку, а ты не открыл её"]).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the compiled first-meal words when the served block is missing, empty or partial", () => {
+    const own = onboardingContentFor("de").firstMeal;
+    for (const served of [undefined, null, {}, { ...own, ask: "" }, { ask: "x" }, "nope"]) {
+      expect(usableFirstMeal(served, own)).toBe(own);
+    }
+    const served = { ...own, ask: "Admin's ask" };
+    expect(usableFirstMeal(served, own)).toBe(served);
   });
 
   it("introduces no placeholder nothing fills", () => {

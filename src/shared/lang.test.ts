@@ -247,6 +247,8 @@ describe("genderedRussian — the check no English-reading reviewer could be", (
     // A verb agreeing with a masculine NOUN, not with the reader.
     "Хорошо — первый день начался. Ещё одно, прежде чем ты уйдёшь.",
     "Твой целевой вес больше не подходил к цели.",
+    // A third person: the verb agrees with the friend, not with the reader.
+    "Друг прислал тебе ссылку?",
     // Neuter is never a person; `самая` is the superlative.
     "Готово.", "Уйдёт само, как только получится.", "Самая низкая цель для твоего роста",
     // A unit that happens to end in -л.

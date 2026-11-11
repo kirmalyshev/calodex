@@ -293,7 +293,7 @@ export function askLines(
   }
   // `baseline`, `prelim`, `summary` and `signup` ask nothing — they are cards the client
   // draws — so an empty list is the right answer for them rather than a throw.
-  return [...(conversationAsks(lang)[prompt.id] ?? [])];
+  return prompt.id === "health" ? [content.health.title, content.health.body] : [];
 }
 
 /**
@@ -308,11 +308,6 @@ export function askPlaceholder(prompt: ChatPrompt, content: OnboardingContent): 
 
 /** The idle placeholder, everywhere a prompt does not name its own. */
 export const IDLE_PLACEHOLDER = (lang: Lang): string => chatCopyFor(lang).idlePlaceholder;
-
-const conversationAsks = (lang: Lang): Record<string, readonly string[]> =>
-  ({
-    health: [chatCopyFor(lang).health.title, chatCopyFor(lang).health.body],
-  });
 
 /** The one button under every screen that answers something — "Continue". */
 export const continueLabel = (lang: Lang): string => chatCopyFor(lang).continueLabel;

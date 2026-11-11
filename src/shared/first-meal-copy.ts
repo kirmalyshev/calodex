@@ -1,9 +1,8 @@
 // The free meal's sentences (v5, #42): the one meal on us after the plan, its verdict, and the ask
-// after it. ONE SOURCE, read two ways: the phone through `chatCopyFor(lang).firstMeal`, which IS
-// this table's entry, and the browser by importing this module by path. It lives apart from the
-// eight-language chat table because a module the browser imports ships whole — that table is
-// ~100 KB of a web bundle for seven sentences. So this file imports types and nothing else, and a
-// test in `first-meal-copy.test.ts` holds it to that.
+// after it. Since ieat-app#2757 (area d) the words live in `OnboardingContent.firstMeal` and the
+// browser reads them there; this table stays only because the phone's `chatCopyFor(lang).firstMeal`
+// still IS this table's entry, until the phone's half moves. It imports types and nothing else, and
+// a test in `first-meal-copy.test.ts` holds it to that.
 
 import type { Lang } from "./types.ts";
 
