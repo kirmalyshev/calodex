@@ -315,6 +315,108 @@ test("the presets sit on the boxes' centre line, and the chosen one reads as cho
   expect(errors).toEqual([]);
 });
 
+test("Back and Forward keep the Accounts pages already loaded — no fetch, no lost list", async ({ page }) => {
+  const errors = watchConsole(page);
+  const calls: Calls = {};
+  await stubAdmin(page, calls);
+
+  const user = (n: number) => ({
+    userId: `00000000-0000-0000-0000-00000000000${n}`, email: `u${n}@eait.test`,
+    createdAt: "2026-11-01T00:00:00.000Z", onboardedAt: "2026-11-01T00:00:00.000Z",
+    providers: ["web"], entitlement: null, bonusUntil: null, bankedDays: 0,
+    freeAnalyses: null, analysesToday: 0, spent: 0, lastSeen: "2026-11-09T00:00:00.000Z",
+    staff: false, pushDailyMax: null, pushOffers: true,
+    entitled: false, effective: 0,
+  });
+  // Registered after stubAdmin, so it wins for this one endpoint: two paged reads, then none.
+  await page.route("**/admin/api/users**", (r) => {
+    const q = new URL(r.request().url()).searchParams;
+    (calls.users ??= []).push(q);
+    const paged = q.get("cursor") === "c2"
+      ? { users: [user(3), user(4)], nextCursor: null }
+      : { users: [user(1), user(2)], nextCursor: "c2" };
+    return r.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ ...paged, range: echoOf("users", q) }) });
+  });
+
+  await openAdmin(page, "accounts");
+  await expect.poll(() => calls.users?.length ?? 0).toBe(1);
+  await page.locator("#users-more").click();
+  await expect.poll(() => calls.users?.length ?? 0).toBe(2);
+  expect(calls.users!.at(-1)!.get("cursor")).toBe("c2");
+  const rows = page.locator("#users tbody tr");
+  await expect(rows).toHaveCount(4);
+  await expect(page.locator("#users-status")).toHaveText("4 shown");
+
+  await page.locator('[data-nav="funnel"]').first().click();
+  await expect.poll(() => calls.funnel?.length ?? 0).toBe(1);
+
+  // Back is a hashchange, not a reload: a "ready" list must stand or the paged rows go (#2779).
+  await page.goBack();
+  await expect(page.locator("#view-title")).toHaveText("Accounts");
+  await expect.poll(() => calls.users?.length ?? 0).toBe(2);
+  await expect(rows).toHaveCount(4);
+  await expect(page.locator("#users-status")).toHaveText("4 shown");
+
+  await page.goForward();
+  await expect(page.locator("#view-title")).toHaveText("Funnel");
+  await expect.poll(() => calls.users?.length ?? 0).toBe(2);
+  expect(errors).toEqual([]);
+});
+
+test("clearing both date boxes selects All time on the spot", async ({ page }) => {
+  const errors = watchConsole(page);
+  const calls: Calls = {};
+  await stubAdmin(page, calls);
+  await openAdmin(page, "funnel");
+
+  await page.locator("#range-30d").click();
+  await expect(page.locator("#range-30d")).toHaveClass(/\bon\b/);
+
+  // One box emptied is a one-sided ask, not All time: no preset is lit.
+  await page.locator("#range-from").fill("");
+  await expect(page.locator("#range-30d")).not.toHaveClass(/\bon\b/);
+  await expect(page.locator("#range-all")).not.toHaveClass(/\bon\b/);
+
+  // Both empty IS the All time ask: the preset marks as the change lands, and the hash carries it.
+  await page.locator("#range-to").fill("");
+  await expect(page.locator("#range-all")).toHaveClass(/\bon\b/);
+  await expect(page.locator("#range-note")).toHaveText("All time");
+  expect(page.url()).toContain("#funnel?all=1");
+  await expect.poll(() => calls.funnel?.at(-1)?.get("all") ?? null).toBe("1");
+  expect(errors).toEqual([]);
+});
+
+test("the funnel names a pre-window run only when the echo bounds one", async ({ page }) => {
+  const errors = watchConsole(page);
+  const calls: Calls = {};
+  await stubAdmin(page, calls);
+  const row = (place: string, views: number, people: number) =>
+    ({ place, views, people, answers: 0, backs: 0, rejects: 0, medianMs: null });
+  // A step more people reach than the one before it; the echo answers what was asked.
+  await page.route("**/admin/api/funnel**", (r) => {
+    const q = new URL(r.request().url()).searchParams;
+    (calls.funnel ??= []).push(q);
+    return r.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({
+        range: echoOf("funnel", q), contentVersion: 1, sessions: 4, completed: 1,
+        rows: [row("welcome", 5, 3), row("goal", 9, 2), row("sex", 4, 4)],
+      }) });
+  });
+
+  await openAdmin(page, "funnel?all=1");
+  const gap = page.locator(".fp-gap").nth(1);
+  await expect(gap).toContainText("+2 joined here");
+  // Under All time there is no earlier window a run could have begun in — the bracket would lie.
+  await expect(gap).not.toContainText("before this window");
+
+  // The same rows under a bounded ask DO explain the join.
+  await page.locator("#range-7d").click();
+  await expect.poll(() => calls.funnel?.at(-1)?.get("from") ?? null).not.toBeNull();
+  await expect(page.locator(".fp-gap").nth(1)).toContainText("runs that began before this window");
+  expect(errors).toEqual([]);
+});
+
 test("the funnel counts people, not showings, and a negative gap is not a drop", async ({ page }) => {
   const errors = watchConsole(page);
   await stubAdmin(page, {});
