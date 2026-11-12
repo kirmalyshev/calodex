@@ -31,7 +31,7 @@ import {
   screenOptions, screenOptionValues, suggestionFirst,
   switchedLine, targetRange, TARGET_STEP_KG, threadCopyFor, weightToKg,
   LANGS_READY, acceptLang, acceptLanguageTags, countText, numbers, signupCopyFor, verdictPillLabel,
-  payCopyFor, paywallPrice, perMonth, ONBOARDING_ORDER_VERSION,
+  payCopyFor, paywallPrice, perMonth, ONBOARDING_ORDER_VERSION, orderFellBack,
   type ChatEntry, type ChatPrompt, type ChatPromptId, type CountryCode, type Diet, type Goal, type Lang,
   type Barrier, type CountedBefore, type MedicalTag, type NumberField, type OnboardingContent, type PatchProfileRequest,
   type Profile, type Situation, type StreakGoal, type UnitSystem,
@@ -368,30 +368,16 @@ async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Pr
   return ctx.hasWebApp ? "/" : CHAT_PATH;
 }
 
-/**
- * The questions this surface asks: every prompt that fills a profile field, in the app's order.
- *
- * `askCountry` is the browser's half of the rule the phone applies in `onboarding.tsx` — the group
- * is switched on now, and what decides who meets it is whether the client could answer it. Two
- * surfaces asking different questions behind one profile is the thing the test below has an
- * assertion against, so this takes the decision as an argument rather than making a second one.
- */
-function questionsFor(profile: Profile, content: OnboardingContent, askCountry = true): ChatPrompt[] {
-  const off = disabledScreens(content);
-  // { health: false } — a browser cannot read Apple Health, so the v5 offer never appears here.
-  return promptsFor(profile, askCountry ? off : [...off, "country"], { health: false })
-    .filter((p) => p.field !== undefined);
-}
-
-/**
- * The W2 walk — the field questions PLUS the two interstitials inside them (`baseline` after the
- * weight, `prelim` after the pace). The `welcome`, `summary`, `signup`, `country` and `streak`
- * places are out: the front door renders its own, the rest are the steps after this walk ends (the
- * plan, the streak goal, sign-up — W3).
- */
 /** The cards the walk draws between and after the questions; `summary` and `signup` are not. */
 const BEAT_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
 
+/**
+ * The W2 walk — the field questions PLUS the interstitials among them, in the SERVED order: an
+ * experiment arm may move `baseline` and remove `prelim` (ieat-app#2788), and `promptsFor` applies
+ * it; this only filters. The `welcome`, `summary`, `signup`, `country` and `streak` places are out:
+ * the front door renders its own, the rest are the steps after this walk ends (the plan, the streak
+ * goal, sign-up — W3).
+ */
 function walkFor(profile: Profile, content: OnboardingContent, order?: readonly string[]): ChatPrompt[] {
   const off = disabledScreens(content);
   return promptsFor(profile, [...off, "country", "streak"], { health: false }, order)
@@ -404,7 +390,7 @@ function walkFor(profile: Profile, content: OnboardingContent, order?: readonly 
  * an arm's order (`walkFor`) and draws its dash (ieat-app#2788), so it is enrolled like a phone that
  * can. A browser has no IANA zone the first render could trust, hence no `tz`.
  */
-function webSignals(lang: Lang, req: Request): OnboardingSignals {
+function webSignals(lang: Lang, req: Request): Pick<OnboardingSignals, "lang" | "surface" | "region" | "orderVersion"> {
   return { lang, surface: "web", region: browserRegion(req), orderVersion: ONBOARDING_ORDER_VERSION };
 }
 
@@ -1065,10 +1051,14 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // THE ACCOUNT'S LANGUAGE, and the copy fetched in it — or the browser's, on the one path that
   // runs before an account exists: the pre-account `/q` renders the blank profile in
   // `browserLang(req)`, which is also the language the first answer's account is born into.
-  // The words AND the arm's order (ieat-app#2788): this page walks it, so it declares it can.
-  const view = async (): Promise<{ profile: Profile; content: OnboardingContent; order?: readonly string[] }> => ({
-    profile, ...await onboardingServedFor(ctx.deps, userId, webSignals(profile.lang, req)),
-  });
+  // The words AND the arm's order (ieat-app#2788): this page walks it, so it declares it can. An
+  // order this build cannot validate walks the default (`servedOrder`) and is said in the log —
+  // /start sends no funnel events, so `fell_back` cannot count it.
+  const view = async (): Promise<{ profile: Profile; content: OnboardingContent; order?: readonly string[] }> => {
+    const served = await onboardingServedFor(ctx.deps, userId, webSignals(profile.lang, req));
+    if (orderFellBack(served.order)) console.error("[eait] /start: served order failed validation, walking the default");
+    return { profile, ...served };
+  };
 
   if (pathname === `${START_PREFIX}/q`) {
     const { profile, content, order } = await view();
@@ -1076,7 +1066,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // COUNTRY IS NOT A WALK QUESTION (S8): it waits for the sign-up and is asked on its own
     // screen after it (`/start/country`), preselected where the browser's languages already
     // answer it. The W2 walk keeps the field questions plus the `baseline` and `prelim`
-    // interstitials — `walkFor` is the one place that order lives.
+    // interstitials, in the served order — `walkFor` is the one place that walk is built.
     const walk = walkFor(profile, content, order);
     // `diet` and `medical` are the two prompts whose answer the profile cannot SHOW mid-run: a
     // Balanced pick stores no tag, and `medical` reads as answered only once `onboarded_at` lands
@@ -1134,7 +1124,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       return askAt(i, null, [], kg);
     }
 
-    // THE INTERSTITIALS: `baseline` after the weight and `prelim` after the pace.
+    // THE INTERSTITIALS: `baseline` and `prelim`, wherever the served order puts them.
     // They write nothing, so they are reached only by `?show=` — the POST of the question before
     // them redirects to it, and the page's Continue is a plain GET back to the walk. A `show`
     // that is not the next beat (an id the walk does not hold, or one sitting after the open
@@ -1923,7 +1913,7 @@ function renderQuestion(
     draft: draft ?? null,
     back: backBefore(walk, index),
     today: new Date(),
-    ...(order ? { order } : {}),
+    order,
   });
 }
 

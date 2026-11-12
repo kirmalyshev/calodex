@@ -700,6 +700,28 @@ describe("experiments (ieat-app#2669)", () => {
         "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup"];
       expect(await saveOnboardingVariantOrder(deps, e.id, 1, defaultOrder)).toEqual({ ok: true });
       expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toBeUndefined();
+      // One beat short of the default is an order, and is kept.
+      const noPrelim = defaultOrder.filter((p) => p !== "prelim");
+      expect(await saveOnboardingVariantOrder(deps, e.id, 1, noPrelim)).toEqual({ ok: true });
+      expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toEqual(noPrelim as never);
+    });
+
+    it("keeps an arm that does not open on the goal off the web — /start asks its first question before anyone is assigned", async () => {
+      const { startOnboardingExperiment } = await import("./onboarding.ts");
+      await store.setSwitch("onboarding.experiments", true, userId);
+      const sexFirst = ["welcome", "sex", "goal", ...ARM_ORDER.slice(3)];
+      for (const rules of [{}, { surfaces: ["web"] }]) {
+        const e = ordered(sexFirst);
+        e.rules = rules as never;
+        await store.putOnboardingExperiment(e as never);
+        expect(await startOnboardingExperiment(deps, e.id)).toEqual({
+          ok: false, errors: ['an arm that does not open on "goal" runs on the app only — set surfaces to ["app"]'],
+        });
+      }
+      const app = ordered(sexFirst);
+      app.rules = { surfaces: ["app"] } as never;
+      await store.putOnboardingExperiment(app as never);
+      expect(await startOnboardingExperiment(deps, app.id)).toEqual({ ok: true });
     });
 
     it("keeps the order when the arm's copy is saved, and refuses an order on a running arm", async () => {

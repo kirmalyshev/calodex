@@ -587,8 +587,8 @@ export interface OnboardingExperimentRules {
 }
 
 /**
- * One arm of an experiment: a whole `OnboardingContent` revision, an integer weight and, optionally,
- * an order (ieat-app#2788), control included. There is no separate variant id — the revision's `version` IS it, drawn from the same
+ * One arm of an experiment, control included: a whole `OnboardingContent` revision, an integer
+ * weight and — never on control — an order (ieat-app#2788). There is no separate variant id — the revision's `version` IS it, drawn from the same
  * counter `putOnboardingContent` uses, so the `content_version` every funnel event already carries
  * names the variant that produced it. Frozen once the experiment starts.
  */

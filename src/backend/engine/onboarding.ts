@@ -177,9 +177,8 @@ export async function assignVariant(
 /**
  * The copy this server serves — the assigned variant when one applies, control otherwise.
  *
- * `onboardingContent` with the experiment layer on top — `onboardingServedFor`'s words. The
- * callers are `web/start.ts` and `chat.ts` (ieat-app#2669); `GET /v1/onboarding` and `/start`'s walk
- * take `onboardingServedFor` itself, for the order beside them. A variant that fails the shape check the app runs
+ * The words half of `onboardingServedFor` — for a caller that needs no order: `web/start.ts`'s
+ * pages past the walk and `chat.ts` (ieat-app#2669). A variant that fails the shape check the app runs
  * falls back BLOCK BY BLOCK to control, through the same `usableContent` — an experiment that was
  * not saved for every field cannot produce a flow that skips a question.
  *
@@ -661,7 +660,8 @@ export function orderRefusalText(r: OrderRefusal): string {
 
 /**
  * Write a draft arm's ORDER (ieat-app#2788): `validateOnboardingOrder` on the write, so an order no
- * client can walk is refused here and never reaches one. `null` clears it back to the default. The
+ * client can walk is refused here and never reaches one. `null` clears it back to the default, and
+ * so does saving the default itself. The
  * control arm walks the live order by definition, so it takes none.
  */
 export async function saveOnboardingVariantOrder(
@@ -732,6 +732,16 @@ export async function startOnboardingExperiment(
   if (experiment.status !== "draft") return { ok: false, errors: ["only a draft can start"] };
   if (experiment.variants.every((v) => v.weight <= 0)) {
     return { ok: false, errors: ["no variant carries weight"] };
+  }
+  // ON THE WEB THE FIRST QUESTION IS ASKED BEFORE AN ACCOUNT EXISTS: /start's first answer is what
+  // creates one, so nobody is assigned until then and the first question is the default's. An arm
+  // that moves another question to the front would be walked "goal, then the arm" there — a
+  // sequence nobody designed, counted as the arm. Such an arm runs on the app (ieat-app#2788).
+  const surfaces = experiment.rules.surfaces ?? [];
+  const web = surfaces.length === 0 || surfaces.includes("web");
+  const first = DEFAULT_ORDER[1];
+  if (web && experiment.variants.some((v) => v.order !== undefined && v.order[1] !== first)) {
+    return { ok: false, errors: [`an arm that does not open on "${first}" runs on the app only — set surfaces to ["app"]`] };
   }
   // Re-validated at the start: a draft saved before a rule tightened must not reach a client that
   // validates against the new rules and walks the default inside the arm (ieat-app#2788).

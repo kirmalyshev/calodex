@@ -13,7 +13,7 @@ import {
 } from "@eait/shared";
 import type { ChatAppend, ChatIntent, ChatMessage } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
-import { onboardingContentFor } from "./onboarding.ts";
+import { onboardingContentFor, type OnboardingSignals } from "./onboarding.ts";
 
 const PAGE_DEFAULT = 50;
 const PAGE_MAX = 100;
@@ -167,7 +167,7 @@ export async function firstVerdict(
  */
 export async function appendLines(
   deps: EngineDeps, userId: string, lines: AppendLine[],
-  client: { orderVersion?: number } = {},
+  client: Pick<OnboardingSignals, "orderVersion"> = {},
 ): Promise<AppendLinesResponse> {
   const bad = { appended: 0, reason: "bad-line" } as const;
   if (lines.length > MAX_APPEND_LINES_PER_BATCH) return bad;

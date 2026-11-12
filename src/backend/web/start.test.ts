@@ -815,6 +815,7 @@ describe("the questions", () => {
       "activity", "baseline", "target", "pace", "diet", "medical", "summary", "signup"];
     const arm = structuredClone(DEFAULT_ONBOARDING_CONTENT);
     arm.version = 4242;
+    arm.screens.find((x) => x.id === "sex")!.asks.sex!.lines = ["The arm asks the sex question"];
     const id = crypto.randomUUID();
     await store.putOnboardingExperiment({
       id, lang: "en", status: "draft", rules: {}, created_by: crypto.randomUUID(),
@@ -830,6 +831,7 @@ describe("the questions", () => {
     const session = await signIn("ordered-arm");
     const asked: string[] = [];
     const beats: string[] = [];
+    let sexPage = "";
     let next = "/start/q";
     for (let i = 0; i < 40; i++) {
       const page = await get(next, session);
@@ -846,11 +848,16 @@ describe("the questions", () => {
       }
       const prompt = match[1]!;
       asked.push(prompt);
+      if (prompt === "sex") sexPage = html;
       const action = html.match(/action="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "/start/q";
       const res = await post(action, { prompt, answer: ANSWERS[prompt]! }, session);
       next = res.headers.get("location") ?? "/start/q";
       if (!next.startsWith("/start/q")) break;
     }
+    // The arm's words, its dash (15 segments without `prelim`: sex is the fifth) and its Back.
+    expect(sexPage).toContain("The arm asks the sex question");
+    expect(sexPage).toContain("--from:25%;--to:31.25%");
+    expect(sexPage).toContain('href="/start/q?edit=situations"');
     expect(asked).toEqual([
       "goal", "counted_before", "barriers", "situations", "sex", "birth_year", "height_cm", "weight_kg",
       "activity", "target_weight_kg", "pace", "diet", "medical",

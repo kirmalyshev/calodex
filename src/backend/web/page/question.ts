@@ -32,7 +32,7 @@ export interface Action { name: string; value: string; label: string }
 
 export interface QuestionView {
   /** The arm's order as served, for the dash (ieat-app#2788); absent is the default. */
-  order?: readonly string[];
+  order?: readonly string[] | undefined;
   prompt: ChatPrompt;
   profile: Profile;
   content: OnboardingContent;

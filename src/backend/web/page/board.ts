@@ -23,7 +23,8 @@ export function wtop(): string {
  * front door for the first; the interstitials draw the bar alone. The bar fills from the place
  * before to this one, so the last place (`summary`) stops short of full: sign-up is the 100 %.
  * `order` is the arm's as served (ieat-app#2788): the bar counts the places in the order this user
- * walks them, one segment fewer for a beat the arm removed.
+ * walks them, one segment fewer for a beat the arm removed. The pages past the walk (sign-up,
+ * referral) pass none: their bar is full either way, a fraction of a percent apart at most.
  */
 export function dash(place: OnboardingPlace, lang: Lang, back?: { href: string; label: string }, order?: readonly string[]): string {
   const places = dashPlaces(servedOrder(order));
