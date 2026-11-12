@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "ഞാൻ കഴിച്ചത് പറഞ്ഞുതരാം"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — ശ്രദ്ധിച്ചു, അത് കണക്കുകളിൽ ഉൾപ്പെടുത്തി."
 
@@ -266,11 +271,6 @@ msgstr "സത്യം പറഞ്ഞാൽ: ആ പ്ലേറ്റ് എ�
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "എന്റെ ആഴ്ച എങ്ങനെ പോകുന്നു?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "ഞാൻ കഴിച്ചത് പറഞ്ഞുതരാം"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

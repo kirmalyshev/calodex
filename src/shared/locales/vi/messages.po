@@ -115,6 +115,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Mình sẽ kể mình đã ăn gì"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — đã ghi nhận, nó nằm trong các con số rồi."
 
@@ -272,11 +277,6 @@ msgstr "Nói thật: đĩa đó mình đọc không rõ. Cứ xem {kcal} là ư�
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Tuần này thế nào?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Mình sẽ kể mình đã ăn gì"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

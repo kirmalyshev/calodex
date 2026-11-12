@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Θα σου πω απλώς τι έφαγα"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "«{note}» — σημειώθηκε, είναι μέσα στους αριθμούς."
 
@@ -266,11 +271,6 @@ msgstr "Ειλικρινά: δεν μπόρεσα να διαβάσω καλά �
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Πώς πάει η εβδομάδα μου;"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Θα σου πω απλώς τι έφαγα"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

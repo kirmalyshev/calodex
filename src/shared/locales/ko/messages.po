@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "먹은 걸 그냥 말로 할게요"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — 알겠어요, 숫자에 반영했어요."
 
@@ -266,11 +271,6 @@ msgstr "솔직히 말하면 이 접시는 잘 읽지 못했어요. 대략 {kcal}
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "이번 주는 어떻게 가고 있나요?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "먹은 걸 그냥 말로 할게요"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

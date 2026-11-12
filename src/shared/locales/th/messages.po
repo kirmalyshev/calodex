@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "ขอเล่าเลยว่ากินอะไรไป"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — รับทราบ รวมไว้ในตัวเลขแล้ว"
 
@@ -266,11 +271,6 @@ msgstr "บอกตรงๆ: เราอ่านจานนี้ได้�
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "สัปดาห์นี้ของฉันเป็นยังไงบ้าง?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "ขอเล่าเลยว่ากินอะไรไป"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

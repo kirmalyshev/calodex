@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Samo ću opisati obrok"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "„{note}” — primljeno, uračunato je u brojke."
 
@@ -266,11 +271,6 @@ msgstr "Iskreno: taj se tanjur nije dao dobro pročitati. Uzmi {kcal} kao grubu 
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Kako mi ide ovaj tjedan?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Samo ću opisati obrok"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

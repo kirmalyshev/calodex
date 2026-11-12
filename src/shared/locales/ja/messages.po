@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "食べたものを伝えるだけにします"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "「{note}」— 了解です、数字に反映しました。"
 
@@ -266,11 +271,6 @@ msgstr "正直に言うと、このお皿はうまく読み取れませんでし
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "今週の調子はどうですか？"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "食べたものを伝えるだけにします"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

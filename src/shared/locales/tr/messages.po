@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Ne yediğimi anlatayım"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — not ettim, sayılara işlendi."
 
@@ -266,11 +271,6 @@ msgstr "Dürüst yanıt: bu tabağı iyi okuyamadım. {kcal} değerini kaba bir 
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Haftam nasıl gidiyor?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Ne yediğimi anlatayım"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

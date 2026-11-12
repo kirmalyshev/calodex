@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "ਮੈਂ ਕੀ ਖਾਧਾ, ਬੱਸ ਉਹ ਦੱਸਣਾ ਹੈ"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — ਨੋਟ ਕਰ ਲਿਆ, ਇਹ ਨੰਬਰਾਂ ਵਿੱਚ ਸ਼ਾਮਲ ਹੈ।"
 
@@ -266,11 +271,6 @@ msgstr "ਸੱਚ ਦੱਸਾਂ: ਉਹ ਪਲੇਟ ਮੈਨੂੰ ਠੀਕ
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "ਮੇਰਾ ਹਫ਼ਤਾ ਕਿਵੇਂ ਚੱਲ ਰਿਹਾ ਹੈ?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "ਮੈਂ ਕੀ ਖਾਧਾ, ਬੱਸ ਉਹ ਦੱਸਣਾ ਹੈ"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

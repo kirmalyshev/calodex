@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "நான் சாப்பிட்டதைச் சொல்கிறேன்"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — குறித்துக்கொண்டேன், எண்களில் சேர்ந்துவிட்டது."
 
@@ -266,11 +271,6 @@ msgstr "நேர்மையாகச் சொன்னால்: அந்த
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "என் வாரம் எப்படிப் போகிறது?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "நான் சாப்பிட்டதைச் சொல்கிறேன்"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
