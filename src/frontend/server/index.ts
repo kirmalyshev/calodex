@@ -206,14 +206,23 @@ export function createWebApp(options: WebAppOptions = {}) {
     // backend's own address and the redirect above fires.
     headers.set("host", url.host);
     headers.delete("accept-encoding");
+    // ONE REQUEST, ONE SOCKET. `fetch` pools keep-alive connections, and the backend retires an
+    // idle one on its own clock: a request that draws a socket the server is mid-way through
+    // closing dies ECONNRESET without the server ever seeing it — the navigation the browser
+    // asked for is gone, and the spec waiting on that page times out (ieat-app#2759). `close`
+    // governs this hop only; on loopback a handshake is what certainty costs.
+    headers.set("connection", "close");
     const method = req.method;
     const body = method === "GET" || method === "HEAD" ? undefined : await req.arrayBuffer();
-    return await fetch(`${backendOrigin}${url.pathname}${url.search}`, {
+    const res = await fetch(`${backendOrigin}${url.pathname}${url.search}`, {
       method,
       headers,
       ...(body === undefined ? {} : { body }),
       redirect: "manual",
     });
+    // Hop-by-hop, and the hop is over: the answer above says nothing about the browser's socket.
+    res.headers.delete("connection");
+    return res;
   };
 
   const fetchHandler = async (req: Request): Promise<Response> => {
