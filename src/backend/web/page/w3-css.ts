@@ -155,6 +155,8 @@ export const W3_CSS = `
 .ob .sup .cta.apple { background: #000; color: #fff; }
 .ob .sup .cta.s { background: var(--surface); box-shadow: none; height: 56px; }
 .ob .sup .consent { display: flex; flex-direction: column; gap: 10px; }
+.ob .sup .consent p { margin: 0; font-size: 13px; line-height: 1.35; color: var(--muted);
+  font-weight: 500; }
 .ob .sup .consent label { display: flex; gap: 10px; align-items: flex-start; font-size: 13px;
   line-height: 1.35; color: var(--muted); font-weight: 500; cursor: pointer; }
 .ob .sup .consent input { flex: 0 0 20px; width: 20px; height: 20px; margin: 1px 0 0;

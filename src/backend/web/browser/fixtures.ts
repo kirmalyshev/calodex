@@ -53,15 +53,14 @@ const ANSWERS: Record<string, string> = {
 
 /**
  * Sign in the way a person does under S8: the welcome's "I already have an account" door, the
- * terms tick the button requires, and the provider's own page after it. `subject` is the
+ * consent the form carries, and the provider's own page after it. `subject` is the
  * account: two are two people.
  */
 export async function signIn(page: Page, subject: string, provider: "apple" | "google" = "google") {
   await page.goto("/start");
   await page.getByRole("link", { name: /already have an account/i }).click();
   await expect(page).toHaveURL(/\/start\/signup/);
-  // The consent is what the button submits — the kickoff refuses a POST without it.
-  await page.locator('input[name="terms"]').check();
+  // The consent rides the submit hidden — the kickoff refuses a POST without it.
   await page.getByRole("button", { name: new RegExp(`Continue with ${provider}`, "i") }).click();
   // The demo authorize screen, standing where Apple's or Google's would be.
   await page.getByRole("textbox").fill(subject);

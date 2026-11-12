@@ -25,20 +25,17 @@ test("answers before an account, the plan before the sign-up, and the first meal
   await onboard(page);
   await expect(page.locator(".pln .hd")).toContainText("Goal:");
 
-  // The plan's way on is the sign-up screen, which asks for the two boxes AND the provider.
+  // The plan's way on is the sign-up screen, which carries the consent AND the provider.
   await page.getByRole("link", { name: "Continue", exact: true }).click();
   // The streak goal sits between the plan and the sign-up, 14 already picked.
   await expect(page).toHaveURL(/\/start\/streak/);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page).toHaveURL(/\/start\/signup/);
-  await expect(page.locator('input[name="terms"]')).toBeVisible();
+  // The byline IS the agreement — `terms` rides the submit hidden; only marketing is a box, and
+  // an unticked one.
+  await expect(page.locator('input[name="terms"]')).toHaveValue("yes");
   await expect(page.locator('input[name="marketing"]')).toBeVisible();
 
-  // A button pressed with the box unticked goes nowhere — the consent is what the kickoff checks.
-  await page.getByRole("button", { name: /Continue with Google/i }).click();
-  await expect(page).toHaveURL(/\/start\/signup/);
-
-  await page.locator('input[name="terms"]').check();
   await page.getByRole("button", { name: /Continue with Google/i }).click();
   // The demo authorize screen, standing where Google's would be.
   await page.getByRole("textbox").fill(`pw-s8-${Date.now()}`);
