@@ -1,7 +1,7 @@
 // Chat's own styles — the boards' transcript (`web/chat*.html`, `states-*.html`; pro.css's
 // `.thread`/`.me`/`.them`/`.ts`/`.mb` measurements verbatim). What the boards share — the
 // composer row, `.ib`, `.bar`, the type helpers, `.card` — is `shell.css.ts`'s; the kit's `.say`,
-// `.spud`, `.gname`, `.macs`, `.vs`, `.opt`, `.card.flat`, `.hero`, `.stamp` arrive from
+// `.gname`, `.macs`, `.vs`, `.opt`, `.card.flat`, `.hero`, `.stamp` arrive from
 // `kitCss()`; the verbs (`rise`, `grow`) are `motionCss`'s.
 
 import { MOTION } from "../../shared/design.ts";
@@ -19,10 +19,10 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
 
 /* #1520 — Telegram's bubbles on the kit's tokens. Both sides are bubbles: hers on the accent tint at
    the right, Spud's on --chat-bubble at the left, radius 17. A run of one side's lines is a group:
-   2 px apart (8 when the side changes), inner corners 6, the tail and his face on the run's LAST
-   line only — drawn from the siblings, so a row never needs to know its neighbours. The time sits
-   inside, bottom-right, sharing the last line when it fits. Starter and suggestion cards are not
-   bubbles and do not break his run's face. */
+   2 px apart (8 when the side changes), inner corners 6, the tail and the app icon on the run's
+   LAST line only — drawn from the siblings, so a row never needs to know its neighbours. The time
+   sits inside, bottom-right, sharing the last line when it fits. Starter and suggestion cards are
+   not bubbles and do not break his run's mark. */
 #app:has(.chat), .wmain:has(.chat) { background: var(--chat-ground); }
 .thread { gap: 2px; padding: 8px 12px 4px; }
 .thread > li.me + li.them, .thread > li.them + li.me { margin-top: 8px; }
@@ -42,7 +42,7 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
 .say { display: flex; gap: 6px; align-items: flex-end; }
 .say > .bub { flex: 1; min-width: 0; background: var(--chat-bubble); border-radius: 17px; padding: 6px 12px 7px;
   position: relative; box-shadow: 0 1px 1px rgba(23, 25, 28, .07); }
-.say .spud { width: 28px; height: 28px; flex: 0 0 28px; }
+.say .eait { width: 28px; height: 28px; flex: 0 0 28px; }
 .say .saygap { width: 28px; flex: 0 0 28px; }
 .say .say-p, .say .saytitle { display: inline; }
 .say .say-hi { font-size: 19px; }
@@ -52,7 +52,7 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
 .me .ts { color: var(--accent); }
 .me.mealb .ts, .me.failed .ts, .me.refused .ts, .me.pending .ts, .them .mb + .say-p + .ts { float: none; top: 0; margin: 4px 0 0; text-align: right; }
 
-/* the run: inner corners, his face only on the last of his bubbles, the tails */
+/* the run: inner corners, the app icon only on the last of his bubbles, the tails */
 .thread > li.me:has(+ li.me) { border-bottom-right-radius: 6px; }
 .thread > li.me + li.me { border-top-right-radius: 6px; }
 .thread > li.them:has(+ li.them:not(.opts, .sug)) .bub { border-bottom-left-radius: 6px; }

@@ -21,6 +21,7 @@ import {
   type VerdictTone, type WeekDayRow,
 } from "../shared/ui/kit.ts";
 import { fill } from "../shared/lang.ts";
+import { brandSvg } from "../shared/ui/icons.ts";
 import { payCopyFor } from "../shared/app/pay-copy.ts";
 import { lang, names } from "./shell.ts";
 
@@ -123,6 +124,12 @@ export const spudAvatarEl = (
 ): Element => kitEl(spudAvatarMarkup(mood, o));
 
 export const gabieAvatarEl = (): Element => kitEl(gabieAvatarMarkup());
+
+/** The coach's mark in the thread (#2813): the app icon at 28 — the same `brandSvg` the shell's
+    wordmark parses — where a `.say` used to hang Spud's disc. `svg()`, not `kitEl`: the art is a
+    string of ours with nothing to escape, and the element keeps its SVG namespace. */
+export const eaitIconEl = (): Element =>
+  new DOMParser().parseFromString(brandSvg("eait", { size: 28, class: "eait" }), "image/svg+xml").documentElement;
 
 export const gabieNameEl = (name: string): Element => kitEl(gabieNameMarkup(name));
 

@@ -22,7 +22,7 @@ test("first open draws Spud's greeting and the three starters, in the struggles'
   // An empty stored thread is the boards' `chat-empty`: the greeting is her first AND newest line.
   await expect(page.locator(".thread .gname")).toHaveCount(0);
   await expect(page.locator(".thread")).toContainText("Tell me what you ate, or ask me anything.");
-  await expect(page.locator(".thread .spud")).toHaveCount(1);
+  await expect(page.locator(".thread .eait")).toHaveCount(1);
   const starters = page.locator(".opts .opt .ot");
   await expect(starters).toHaveText([
     "How's my week going?", "What's a lighter swap for dinner?", "Am I getting enough protein?",
@@ -110,14 +110,14 @@ test("a proposal's No resolves the card and logs nothing", async ({ inWebApp: pa
   expect(((await day.json()) as DayResponse).meals).toHaveLength(0);
 });
 
-test("a question is answered by Spud, with his face on the newest line", async ({ inWebApp: page }) => {
+test("a question is answered by Spud, with the app icon on the newest line", async ({ inWebApp: page }) => {
   await page.getByPlaceholder(ASK).fill("how did my week go?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   const answer = page.locator(".thread li.them", { hasText: "Demo answer" });
   await expect(answer).toBeVisible();
   await expect(answer.locator(".say")).toBeVisible();
-  // Her disc sits beside her newest line — the one just answered; her name was on the first.
-  await expect(answer.locator(".spud")).toHaveCount(1);
+  // The mark sits beside her newest line — the one just answered; her name was on the first.
+  await expect(answer.locator(".eait")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Log it" })).toHaveCount(0);
 });
 
