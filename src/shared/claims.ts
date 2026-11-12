@@ -444,7 +444,7 @@ export function normalizeForMatch(text: string): string {
 }
 
 /**
- * THE ONE EXEMPTION, published (S6; Kirill's decision, DIRECTION §"the plan as a graph").
+ * THE EXEMPTIONS, published (S6; Kirill's decision, DIRECTION §"the plan as a graph").
  *
  * The plan graph draws "Goal: lose 6kg by January 2027" — the user's own stated goal, restated
  * with the plan's own `projectGoal` month. `weight-promise` cannot tell that from a marketing
@@ -453,12 +453,18 @@ export function normalizeForMatch(text: string): string {
  * The same words under any other field name are still refused: the landing stays gated, the rest
  * of `PAGE_COPY` stays gated, notifications and `WEB_COPY` stay gated.
  *
+ * `PAY_COPY.goalCtaPhone.lose` is the same case (ieat-app#2816): the subscribe dock's one button
+ * restates the goal SHE answered in onboarding — "Start losing weight" is her own words back at
+ * her, not a promise of a result — and it names no number. The `gain`/`maintain`/`none` leaves
+ * stay fully gated; only `lose` trips the rule.
+ *
  * Keyed by a QUALIFIED name — `TABLE.key` — on purpose: a bare `planGoal` in some other table
  * must not drift under an exemption written for this one, and every other rule still reads the
  * exempted field (a "Goal: lose 6kg, guaranteed" is still refused).
  */
 export const CLAIM_EXEMPTIONS: Readonly<Record<string, readonly string[]>> = {
   "CHAT_COPY.planGoal": ["weight-promise"],
+  "PAY_COPY.goalCtaPhone.lose": ["weight-promise"],
 };
 
 /**

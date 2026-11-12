@@ -21,9 +21,9 @@ const KEYS = [
   "storeThanks", "catchingUp",
   "welcomeTitle", "welcomeSub", "welcomeBack",
   "subscribingPhone",
-  "dockTitlePhone", "subscribePhone",
+  "goalCtaPhone", "subscribePhone",
   "trialEnds", "trialEndsNote", "trialEndsCancel", "renewsLabelPhone",
-  "lapsedTitlePhone", "resubscribePhone",
+  "lapsedTitlePhone",
   "closeLabel", "restoreLink", "termsLink", "privacyLink",
 ] as const;
 
@@ -33,7 +33,10 @@ describe("PAY_COPY", () => {
       const copy = PAY_COPY[lang];
       expect(copy, lang).toBeDefined();
       for (const key of KEYS) {
-        expect(copy![key].length, `${lang}.${key}`).toBeGreaterThan(0);
+        const value = copy![key as keyof typeof copy];
+        for (const [sub, text] of typeof value === "object" ? Object.entries(value) : [["", value]]) {
+          expect((text as string).length, `${lang}.${key}${sub ? "." + sub : ""}`).toBeGreaterThan(0);
+        }
       }
     }
   });
@@ -107,8 +110,8 @@ describe("PAY_COPY", () => {
     expect(en.welcomeTitle).toBe("You’re all set");
     expect(en.welcomeSub).toBe("Every meal gets an honest answer now, and your plan moves when your weight does.");
     expect(en.welcomeBack).toBe("Back to today");
-    // pay-dock (phone)
-    expect(en.dockTitlePhone).toBe("Subscribe to log your meals");
+    // pay-dock / pay-lapsed (phone, ieat-app#2816): one full-width goal-worded button
+    expect(en.goalCtaPhone).toEqual({ lose: "Start losing weight", gain: "Start gaining weight", maintain: "Keep my weight", none: "Count calories" });
     expect(en.subscribePhone).toBe("Subscribe");
     // pay-trial-ends (phone and web): the one reminder, named from the board
     expect(en.trialEnds).toBe("Your free trial ends tomorrow");
@@ -117,7 +120,6 @@ describe("PAY_COPY", () => {
     expect(en.renewsLabelPhone).toBe("Renews");
     // pay-lapsed (phone)
     expect(en.lapsedTitlePhone).toBe("Your subscription has ended");
-    expect(en.resubscribePhone).toBe("Resubscribe");
     // every modal board's chrome and the legal footer
     expect(en.closeLabel).toBe("Close");
     expect(en.restoreLink).toBe("Restore");
@@ -130,7 +132,13 @@ describe("PAY_COPY", () => {
     // exactly what `exclusivity`/`guarantee` exist to stop, so the sweep runs here by name rather
     // than trusting a reviewer to notice.
     for (const lang of LANGS) {
-      expect(lintCopy({ ...PAY_COPY[lang]! }), lang).toEqual([]);
+      // Flatten nested records so CLAIM_EXEMPTIONS can name a leaf (`PAY_COPY.goalCtaPhone.lose`).
+      const fields: Record<string, string> = {};
+      for (const [key, value] of Object.entries(PAY_COPY[lang]!)) {
+        if (typeof value === "object") for (const [sub, text] of Object.entries(value)) fields[`PAY_COPY.${key}.${sub}`] = text as string;
+        else fields[`PAY_COPY.${key}`] = value;
+      }
+      expect(lintCopy(fields), lang).toEqual([]);
     }
   });
 });
