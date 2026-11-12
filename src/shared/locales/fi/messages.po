@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Kerron vain, mitä söin"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "”{note}” – huomioitu, se on luvuissa."
 
@@ -266,11 +271,6 @@ msgstr "Rehellisesti: en saanut lautasesta hyvää selvää. Pidä {kcal} karkea
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Miten viikkoni sujuu?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Kerron vain, mitä söin"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

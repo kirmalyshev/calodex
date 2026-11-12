@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "我直接告诉你我吃了什么"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}”——记下了，已计入数据。"
 
@@ -266,11 +271,6 @@ msgstr "说实话：这盘我没看太清楚。把{kcal}当作粗略估计，在
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "我这周进展如何？"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "我直接告诉你我吃了什么"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

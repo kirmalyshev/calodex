@@ -115,6 +115,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Ich sage dir einfach, was ich gegessen habe"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "„{note}“ — notiert, es steckt in den Zahlen."
 
@@ -272,11 +277,6 @@ msgstr "Ehrliche Antwort: den Teller konnte ich nicht gut lesen. Nimm {kcal} als
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Wie läuft meine Woche?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Ich sage dir einfach, was ich gegessen habe"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

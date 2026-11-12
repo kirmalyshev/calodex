@@ -35,7 +35,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 import { i18nFor, type I18n } from "./i18n.ts";
-import type { Lang, Struggle } from "./types.ts";
+import type { Lang, StarterKey } from "./types.ts";
 import type { PendingPhoto } from "./stream.ts";
 // Type-only: `chat.ts` imports this file. Keying `scripted` by the id set rather than by
 // `string` is what lets `scriptedLine` drop its `!` — a language that forgets an id is a
@@ -52,8 +52,8 @@ export interface ThreadCopy {
    * fills from this, never a literal.
    */
   coach: { name: string };
-  /** One starter per struggle, plus `eatmore` for a gainer; `startersFor` in `chat.ts` picks and orders them for a profile. */
-  coachStarters: Record<Struggle | "eatmore", string>;
+  /** One starter per `StarterKey`; `startersFor` in `chat.ts` picks and orders them for a profile. */
+  coachStarters: Record<StarterKey, string>;
   /**
    * WHOLE SENTENCES, never fragments joined by code.
    *
@@ -112,7 +112,6 @@ const THREAD = (i18n: I18n): ThreadCopy => ({
     consistency: i18n._("thread.coachStarters.consistency", undefined, { message: "How's my week going?" }),
     habits: i18n._("thread.coachStarters.habits", undefined, { message: "What's a lighter swap for dinner?" }),
     support: i18n._("thread.coachStarters.support", undefined, { message: "Am I getting enough protein?" }),
-    busy: i18n._("thread.coachStarters.busy", undefined, { message: "I'll just tell you what I ate" }),
     ideas: i18n._("thread.coachStarters.ideas", undefined, { message: "What should I eat tonight?" }),
     eatmore: i18n._("thread.coachStarters.eatmore", undefined, { message: "What's an easy way to eat more today?" }),
   },

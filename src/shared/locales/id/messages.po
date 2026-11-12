@@ -115,6 +115,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Aku kasih tahu saja apa yang kumakan"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — dicatat, sudah masuk ke angkanya."
 
@@ -272,11 +277,6 @@ msgstr "Jawaban jujur: aku tidak bisa membaca piring itu dengan jelas. Anggap {k
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Bagaimana mingguku?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Aku kasih tahu saja apa yang kumakan"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

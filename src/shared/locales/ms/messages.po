@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Saya beritahu saja apa yang saya makan"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — diambil kira, ia sudah ada dalam angka."
 
@@ -266,11 +271,6 @@ msgstr "Jawapan jujur: saya tidak dapat membaca pinggan itu dengan baik. Anggap 
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Bagaimana minggu saya setakat ini?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Saya beritahu saja apa yang saya makan"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

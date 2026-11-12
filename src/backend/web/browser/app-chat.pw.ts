@@ -39,7 +39,7 @@ test("the starters follow the account's picks, its own first", async ({ inWebApp
   });
   await page.reload();
   await expect(page.locator(".opts .opt .ot")).toHaveText([
-    "I'll just tell you what I ate", "What should I eat tonight?", "How's my week going?",
+    "How's my week going?", "What should I eat tonight?", "What's a lighter swap for dinner?",
   ]);
 });
 

@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Len ti napíšem, čo bolo na tanieri"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "„{note}“ — beriem na vedomie, už je to v číslach."
 
@@ -266,11 +271,6 @@ msgstr "Úprimne: tanier sa mi nepodarilo dobre prečítať. Ber {kcal} ako hrub
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Ako mi ide tento týždeň?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Len ti napíšem, čo bolo na tanieri"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

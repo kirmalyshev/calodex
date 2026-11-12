@@ -115,6 +115,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Te digo lo que he comido y ya"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "«{note}» — anotado, está en los números."
 
@@ -272,11 +277,6 @@ msgstr "Respuesta honesta: ese plato no lo leí bien. Toma {kcal} como estimaci�
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "¿Cómo va mi semana?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Te digo lo que he comido y ya"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

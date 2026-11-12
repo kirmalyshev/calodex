@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Ik vertel je gewoon wat ik heb gegeten"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — genoteerd, het zit in de cijfers."
 
@@ -266,11 +271,6 @@ msgstr "Eerlijk antwoord: ik kon dat bord niet goed lezen. Zie {kcal} als een ru
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Hoe gaat mijn week?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Ik vertel je gewoon wat ik heb gegeten"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

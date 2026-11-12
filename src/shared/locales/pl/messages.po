@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Po prostu opiszę ci mój posiłek"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "„{note}” — zanotowane, jest już w liczbach."
 
@@ -266,11 +271,6 @@ msgstr "Szczerze: nie udało mi się dobrze odczytać tego talerza. Traktuj {kca
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Jak mi idzie w tym tygodniu?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Po prostu opiszę ci mój posiłek"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
