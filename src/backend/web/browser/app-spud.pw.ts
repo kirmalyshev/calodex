@@ -16,7 +16,7 @@ test("the chat asks its one question, and the photo input lives behind a labelle
   expect(box!.height).toBeLessThanOrEqual(1);
 });
 
-test("Spud's disc sits beside his newest line only, and mine are right-side lines", async ({ inWebApp: page }) => {
+test("the coach's mark sits beside his newest line only, and mine are right-side lines", async ({ inWebApp: page }) => {
   const words = page.locator(".compose .box");
   await page.goto("/#/chat");
   await words.fill("how did my week go?");
@@ -26,10 +26,10 @@ test("Spud's disc sits beside his newest line only, and mine are right-side line
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.locator(".thread li.them .say-p")).toHaveCount(2);
 
-  // One disc, on the LAST of her lines — the older one keeps her column's spacer in its place.
+  // One icon, on the LAST of her lines — the older one keeps her column's spacer in its place.
   // #1520: his face on the last of each RUN — her line between his two answers ends the first run.
-  await expect(page.locator(".thread .spud")).toHaveCount(2);
-  await expect(page.locator(".thread li.them:has(.say)").last().locator(".spud")).toHaveCount(1);
+  await expect(page.locator(".thread .eait")).toHaveCount(2);
+  await expect(page.locator(".thread li.them:has(.say)").last().locator(".eait")).toHaveCount(1);
   await expect(page.locator(".thread .saygap")).toHaveCount(0);
   // And her name above the FIRST of them — the boards' rule (design-pro, #94).
   await expect(page.locator(".thread .gname")).toHaveCount(0);
