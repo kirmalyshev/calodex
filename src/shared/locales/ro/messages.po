@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Îți spun pur și simplu ce am mâncat"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "„{note}” — notat, e inclus în cifre."
 
@@ -266,11 +271,6 @@ msgstr "Sincer: n-am putut citi bine farfuria asta. Ia {kcal} ca estimare aproxi
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Cum merge săptămâna mea?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Îți spun pur și simplu ce am mâncat"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

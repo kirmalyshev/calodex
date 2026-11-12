@@ -102,12 +102,12 @@ describe("CHAT_SCREEN_COPY", () => {
   });
 
   it("pairs each starter with its board icon, the keys in the same order as startersFor", () => {
-    // `too_long` earns `busy` and `no_idea` earns `ideas`; list order leads, consistency fills.
+    // `too_long` earns `consistency` and `no_idea` earns `ideas`; list order leads, habits fills.
     const rows = starterRowsFor({ barriers: ["no_idea", "too_long"], situations: [], goal: "lose" }, "en" as Lang);
     expect(rows.map((r) => r.text)).toEqual([
-      "I'll just tell you what I ate", "What should I eat tonight?", "How's my week going?",
+      "How's my week going?", "What should I eat tonight?", "What's a lighter swap for dinner?",
     ]);
-    expect(rows.map((r) => STARTER_ICONS[r.key])).toEqual(["busy", "ideas", "consistency"]);
+    expect(rows.map((r) => STARTER_ICONS[r.key])).toEqual(["consistency", "ideas", "habits"]);
   });
 
   it("gives a coach row the starter's icon, a named macro's icon, or ideas", () => {

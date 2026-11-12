@@ -115,6 +115,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "I'll just tell you what I ate"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — noted, it's in the numbers."
 
@@ -272,11 +277,6 @@ msgstr "Honest answer: I couldn't read that plate well. Take {kcal} as a rough g
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "How's my week going?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "I'll just tell you what I ate"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

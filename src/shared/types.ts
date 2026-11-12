@@ -103,26 +103,30 @@ export const SITUATIONS = ["workdays", "eating_out", "cooking", "snacks", "eveni
 export type Situation = (typeof SITUATIONS)[number];
 
 /**
- * The starter keys: the five shipped ones keyed by the struggle each replaced (`STARTER_FOR_PICK`
- * holds the mapping), plus `eatmore` — the gainer's starter, offered only where a gainer's pick
- * earns it. A key is what a starter IS, not what asked for it: two different picks can earn the
- * same one, which is why the rows dedupe.
+ * The starter keys: four keyed by the struggle each replaced (`STARTER_FOR_PICK` holds the
+ * mapping — the fifth, `busy`'s "I'll just tell you what I ate", was retired on ieat-app#2814:
+ * a chip that only describes sending is a chip that does nothing where sending is gated), plus
+ * `eatmore` — the gainer's starter, offered only where a gainer's pick earns it. A key is what a
+ * starter IS, not what asked for it: two different picks can earn the same one, which is why the
+ * rows dedupe. `Struggle` keeps `busy`: it is the stored vocabulary, not a starter.
  */
-export type StarterKey = Struggle | "eatmore";
-export const STARTER_KEYS: readonly StarterKey[] = [...STRUGGLES, "eatmore"];
+export type StarterKey = Exclude<Struggle, "busy"> | "eatmore";
+export const STARTER_KEYS: readonly StarterKey[] = ["consistency", "habits", "support", "ideas", "eatmore"];
 
 /**
  * Which starter a barrier or situation pick earns (polish §3.4, the reader re-mapped). Several
- * picks earn the same starter: "I forgot" and "Evenings and weekends" both earn the week review.
- * In `types.ts` rather than beside a reader, because BOTH starter tables consume it — the
- * catalog's `starterRowsFor` (`chat.ts`) and the bundle's `starterRows` (`app/chat-copy.ts`),
- * and a second copy of the mapping is the drift the rows' dedupe exists to prevent.
+ * picks earn the same starter: "I forgot" and "Evenings and weekends" both earn the week review,
+ * and the two that earned the retired `busy` — "It took too long" and "Busy workdays" — join it,
+ * as the other time answers do. In `types.ts` rather than beside a reader, because BOTH starter
+ * tables consume it — the catalog's `starterRowsFor` (`chat.ts`) and the bundle's `starterRows`
+ * (`app/chat-copy.ts`), and a second copy of the mapping is the drift the rows' dedupe exists to
+ * prevent.
  */
 export const STARTER_FOR_PICK: Record<Barrier | Situation, StarterKey> = {
-  too_long: "busy", forgot: "consistency", invisible: "consistency",
+  too_long: "consistency", forgot: "consistency", invisible: "consistency",
   no_idea: "ideas", stressful: "habits", nobody: "support",
   creeping: "consistency", not_enough: "eatmore",
-  workdays: "busy", eating_out: "habits", cooking: "habits",
+  workdays: "consistency", eating_out: "habits", cooking: "habits",
   snacks: "habits", evenings: "consistency",
 };
 

@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "నేను తిన్నది మీకు చెప్పేస్తాను"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "“{note}” — గమనించాను, ఇది లెక్కల్లో చేరింది."
 
@@ -266,11 +271,6 @@ msgstr "నిజం చెప్పాలంటే: ఆ ప్లేట్‌�
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "నా వారం ఎలా సాగుతోంది?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "నేను తిన్నది మీకు చెప్పేస్తాను"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

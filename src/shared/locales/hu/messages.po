@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Csak elmondom, mit ettem"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "„{note}” — megjegyeztem, benne van a számokban."
 
@@ -266,11 +271,6 @@ msgstr "Őszintén: ezt a tányért nem tudtam jól kiolvasni. Vedd durva becsl�
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Hogy halad a hetem?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Csak elmondom, mit ettem"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -140,10 +140,10 @@ describe("coach", () => {
       "How's my week going?", "What's a lighter swap for dinner?", "Am I getting enough protein?",
     ]);
     expect(startersFor({ barriers: [], situations: [], goal: "lose" }, "en")).toEqual(startersFor(none, "en"));
-    // Picked ones lead, in vocabulary order rather than tap order — `too_long` (busy) before
-    // `no_idea` (ideas), however they were tapped.
+    // Picked ones lead, in vocabulary order rather than tap order — `too_long` (consistency)
+    // before `no_idea` (ideas), however they were tapped.
     expect(startersFor({ barriers: ["no_idea", "too_long"], situations: [], goal: "lose" }, "en")).toEqual([
-      "I'll just tell you what I ate", "What should I eat tonight?", "How's my week going?",
+      "How's my week going?", "What should I eat tonight?", "What's a lighter swap for dinner?",
     ]);
     // Every pick earns a starter, and more than three still answer three.
     expect(startersFor({ barriers: [...BARRIERS].reverse(), situations: [], goal: "lose" }, "en")).toHaveLength(3);

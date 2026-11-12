@@ -109,6 +109,11 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Jeg forteller deg bare hva jeg spiste"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.noted"
 msgstr "«{note}» — notert, det er med i tallene."
 
@@ -266,11 +271,6 @@ msgstr "Ærlig svar: Jeg klarte ikke å lese den tallerkenen godt. Ta {kcal} som
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.consistency"
 msgstr "Hvordan går uken min?"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coachStarters.busy"
-msgstr "Jeg forteller deg bare hva jeg spiste"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
