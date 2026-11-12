@@ -27,7 +27,7 @@ import type {
 } from "@eait/shared/contract";
 import { ApiError, Unauthenticated, api, apiBlob } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
-import { blobSrc, gramMacsEl, optionRowEl, spudAvatarEl, verdictListEl } from "../kit.ts";
+import { blobSrc, eaitIconEl, gramMacsEl, optionRowEl, verdictListEl } from "../kit.ts";
 import { failureOf, outbox } from "../outbox.ts";
 import { shrinkPhotos } from "../photo.ts";
 import { updateFor } from "../queue.ts";
@@ -128,7 +128,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     const list = el("ul", "thread");
     // #1520, Telegram's thread: HER bubble carries what happened to her send — the meal it logged,
     // the proposal it made, the refusal or failure it met — and Spud's lines are his bubbles. The
-    // grouping (2/8 px, inner corners, his face and the tail on a run's last line) is the CSS's,
+    // grouping (2/8 px, inner corners, the icon and the tail on a run's last line) is the CSS's,
     // off the siblings; this loop only decides what each bubble holds.
     let lastMe: HTMLElement | null = null;
     let idx = 0;
@@ -310,18 +310,18 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
       col.append(el("p", "saytitle", copy().loadFailed));
       const again = smallCta(copy().tryAgain, () => turn(async () => {}));
       col.append(again);
-      say.append(spudAvatarEl("care"), col);
+      say.append(eaitIconEl(), col);
       fail.append(say);
       clear(thread).append(fail);
       throw unread;
     }
-    // His face on the LAST of each run of his bubbles only; the older ones keep the disc's room.
+    // His mark on the LAST of each run of his bubbles only; the older ones keep the slot's room.
     for (const li of list.querySelectorAll<HTMLElement>(":scope > li.them")) {
       const next = li.nextElementSibling;
-      const spud = li.querySelector(":scope > .say > .spud");
-      if (spud !== null && next !== null && next.matches("li.them:not(.opts, .sug)")) {
+      const icon = li.querySelector(":scope > .say > .eait");
+      if (icon !== null && next !== null && next.matches("li.them:not(.opts, .sug)")) {
         const gap = el("span", "saygap"); gap.setAttribute("aria-hidden", "true");
-        spud.replaceWith(gap);
+        icon.replaceWith(gap);
       }
     }
     // The scroller is the list on a wide page and the page column (`.wmain`) on a narrow one, so
@@ -377,15 +377,13 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
 
   // ── The pieces ────────────────────────────────────────────────────────────────────────────
 
-  /** The coach's bubble (#1520): his face beside it — the CSS shows it on a run's last line only —
-      and no name line. `body` fills the bubble. The disc follows the answer (DIRECTION §6): a
-      failure face is `care`, everything else `happy`. */
-  const sayBlock = (body: (col: HTMLElement) => void,
-    mood: Parameters<typeof spudAvatarEl>[0] = "happy"): HTMLElement => {
+  /** The coach's bubble (#1520): the app icon beside it (#2813) — the CSS shows it on a run's
+      last line only — and no name line. `body` fills the bubble. */
+  const sayBlock = (body: (col: HTMLElement) => void): HTMLElement => {
     const say = el("div", "say");
     const col = el("div", "bub");
     body(col);
-    say.append(spudAvatarEl(mood), col);
+    say.append(eaitIconEl(), col);
     return say;
   };
 
@@ -488,7 +486,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
   };
 
   /** The boards' busy state ("web-chat-busy", #70): HER line is a thread line from the instant she
-      taps Send — words or the photo's own thumb and caption — and under it his face with the three
+      taps Send — words or the photo's own thumb and caption — and under it his mark with the three
       typing dots. The draw that follows the send replaces both; the caller's finally removes them
       for the path that never reaches one. */
   const showBusy = (entry: Parameters<typeof sendOrKeep>[0]): (() => void) => {
