@@ -27,7 +27,6 @@
 // its own is a review problem, and the review is the PR.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-import { branded } from "./brand.ts";
 import { t, type Localized } from "./lang.ts";
 import type { Lang } from "./types.ts";
 import { DEFAULT_ONBOARDING_CONTENT, usableContent, type OnboardingContent } from "./onboarding.ts";
@@ -14807,12 +14806,11 @@ export const onboardingContentFor = (lang: Lang): OnboardingContent => t(lang)(O
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
 export function usableContentFor(lang: Lang, stored: unknown): OnboardingContent {
-  const fallback = onboardingContentFor(lang);
+  // RAW, tokens and all: the admin editor, an experiment's clone and a draft all read this, and a
+  // branded copy saved back would write the brand's name into the stored row as plain text.
+  // The paths that serve readers brand the result (`onboardingServedFor`).
+  const fallback = ONBOARDING_CONTENT[lang] ?? ONBOARDING_CONTENT.en;
   if (typeof stored !== "object" || stored === null) return fallback;
-  return branded(usableStored(lang, stored, fallback));
-}
-
-function usableStored(lang: Lang, stored: object, fallback: OnboardingContent): OnboardingContent {
   // A bare revision — the shape saved before this branch. English, and nothing else.
   const legacy = Array.isArray((stored as { screens?: unknown }).screens);
   const candidate = legacy ? (lang === "en" ? stored : undefined) : (stored as Record<string, unknown>)[lang];
