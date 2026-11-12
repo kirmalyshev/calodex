@@ -1198,9 +1198,10 @@ export interface Store {
   /**
    * Record the consent a sign-up call carried.
    *
-   * `terms` is the required box; a call reaches this only having ticked it (the routes refuse
-   * otherwise), so `terms_accepted_at` is written every time — the stamp is WHEN they agreed, and
-   * a re-agreement is a new agreement. `marketing` is the optional box and works one way only: a
+   * `terms` is the required consent; a call reaches this only having given it (the routes refuse
+   * otherwise). `terms_accepted_at` is the FIRST acceptance and never moves — a later sign-in
+   * carries the same consent again (continuing is the agreement now, ieat-app#2806), and a
+   * re-agreement must not rewrite when they first agreed. `marketing` is the optional box and works one way only: a
    * tick sets `marketing_consent_at`, an unticked box leaves it alone — the absence of a tick on a
    * screen the box starts empty on is not a withdrawal, and a returning sign-in must not erase a
    * consent that already stands.

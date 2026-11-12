@@ -2418,11 +2418,12 @@ export async function postgresStore(
     },
 
     async recordConsent(userId, consent) {
-      // One statement: `terms_accepted_at` is stamped on every call that reaches this — the routes
-      // refuse one without the box ticked — and `marketing_consent_at` only ever moves forward:
+      // One statement: `terms_accepted_at` is the FIRST stamp — the routes refuse a call without
+      // the consent, and every later sign-in carries it again, so only a null column takes now() —
+      // and `marketing_consent_at` only ever moves forward:
       // an unticked box is the absence of a new consent, not a withdrawal of a stored one.
       await sql`update users set
-          terms_accepted_at = now(),
+          terms_accepted_at = coalesce(terms_accepted_at, now()),
           marketing_consent_at = case when ${consent.marketing} then now() else marketing_consent_at end
         where id = ${userId}`;
     },

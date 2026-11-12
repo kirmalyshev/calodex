@@ -53,9 +53,9 @@ export async function signInWithProvider(
    */
   lang: Lang,
   /**
-   * The sign-up screen's two boxes (S8). `terms` is required — a call without it is refused before
+   * The sign-up consent (S8). `terms` is required — a call without it is refused before
    * the token is even verified, cheaply. Whichever account the person lands on carries the stamps:
-   * the terms date on every call, the marketing date only when its box was ticked.
+   * the FIRST terms date stands (ieat-app#2806), the marketing date only when its box was ticked.
    */
   consent: { terms: boolean; marketing: boolean },
 ): Promise<AuthProviderResponse> {

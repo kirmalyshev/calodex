@@ -594,12 +594,13 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async recordConsent(userId, consent) {
       if (!users.has(userId)) return;
-      // `terms` is stamped every time — a call only reaches this having ticked the box — and the
+      // `terms` is the FIRST stamp — a call only reaches this carrying the consent, which every
+      // sign-in now does, so an existing stamp stands — and the
       // marketing stamp only moves forward: an unticked box is no new consent, not a withdrawal
       // (the box starts empty on every screen; a deliberate switch-off is a settings act).
       const prior = consents.get(userId) ?? { termsAcceptedAt: null, marketingConsentAt: null };
       consents.set(userId, {
-        termsAcceptedAt: new Date().toISOString(),
+        termsAcceptedAt: prior.termsAcceptedAt ?? new Date().toISOString(),
         marketingConsentAt: consent.marketing ? new Date().toISOString() : prior.marketingConsentAt,
       });
     },
