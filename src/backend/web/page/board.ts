@@ -6,7 +6,7 @@
 // The boards are `product/design/pro/onboarding/web/00-welcome.html … 14b-medical.html`; the
 // markup names are theirs (`.wtop`, `.dash`, `.say`, `.opt`…) so the two cannot quietly drift.
 
-import { dashIndex, DASH_PLACES, type Lang, type OnboardingPlace } from "@eait/shared";
+import { dashPlaces, servedOrder, type Lang, type OnboardingPlace } from "@eait/shared";
 import { brandSvg } from "@eait/shared/ui/icons";
 import { escape } from "./shell.ts";
 
@@ -22,11 +22,14 @@ export function wtop(): string {
  * question you should reach again, so a re-askable page passes `back` — the previous question, the
  * front door for the first; the interstitials draw the bar alone. The bar fills from the place
  * before to this one, so the last place (`summary`) stops short of full: sign-up is the 100 %.
+ * `order` is the arm's as served (ieat-app#2788): the bar counts the places in the order this user
+ * walks them, one segment fewer for a beat the arm removed.
  */
-export function dash(place: OnboardingPlace, lang: Lang, back?: { href: string; label: string }): string {
+export function dash(place: OnboardingPlace, lang: Lang, back?: { href: string; label: string }, order?: readonly string[]): string {
+  const places = dashPlaces(servedOrder(order));
   // A place past the count (the sign-up) is the bar full.
-  const at = dashIndex(place) === -1 ? DASH_PLACES.length : dashIndex(place);
-  const pct = (n: number) => `${+(n / (DASH_PLACES.length + 1) * 100).toFixed(2)}%`;
+  const at = places.indexOf(place) === -1 ? places.length : places.indexOf(place);
+  const pct = (n: number) => `${+(n / (places.length + 1) * 100).toFixed(2)}%`;
   const arrow = back
     ? `<a class="wback" href="${escape(back.href)}" aria-label="${escape(back.label)}"><i class="ico i-back" aria-hidden="true"></i></a>`
     : "";

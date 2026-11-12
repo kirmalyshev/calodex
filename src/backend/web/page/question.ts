@@ -31,6 +31,8 @@ const headline = (lines: readonly string[]): string => {
 export interface Action { name: string; value: string; label: string }
 
 export interface QuestionView {
+  /** The arm's order as served, for the dash (ieat-app#2788); absent is the default. */
+  order?: readonly string[];
   prompt: ChatPrompt;
   profile: Profile;
   content: OnboardingContent;
@@ -63,7 +65,7 @@ function page(v: QuestionView, opts: { seg?: string; control: string; foot?: str
   ).join("");
   const body = `${wtop()}
 <div class="wmain one q${v.prompt.place === "streak" ? " pastbar" : ""}"><div class="wcol">
-${v.prompt.place === "streak" ? "" : dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
+${v.prompt.place === "streak" ? "" : dash(v.prompt.place, v.lang, { href: v.back, label: pageCopyFor(v.lang).back }, v.order)}
 ${say(v.lines, opts.sub)}
 ${opts.echo ? `<p class="qecho">${escape(opts.echo)}</p>` : ""}
 ${error}

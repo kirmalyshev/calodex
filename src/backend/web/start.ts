@@ -31,7 +31,7 @@ import {
   screenOptions, screenOptionValues, suggestionFirst,
   switchedLine, targetRange, TARGET_STEP_KG, threadCopyFor, weightToKg,
   LANGS_READY, acceptLang, acceptLanguageTags, countText, numbers, signupCopyFor, verdictPillLabel,
-  payCopyFor, paywallPrice, perMonth,
+  payCopyFor, paywallPrice, perMonth, ONBOARDING_ORDER_VERSION,
   type ChatEntry, type ChatPrompt, type ChatPromptId, type CountryCode, type Diet, type Goal, type Lang,
   type Barrier, type CountedBefore, type MedicalTag, type NumberField, type OnboardingContent, type PatchProfileRequest,
   type Profile, type Situation, type StreakGoal, type UnitSystem,
@@ -45,9 +45,9 @@ import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
-  onboardingContentFor, mintPairingCode, patchProfile, profileView,
+  onboardingContentFor, onboardingServedFor, mintPairingCode, patchProfile, profileView,
   sendEmailCode, signInWithProvider, verifyEmailCode,
-  EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail,
+  EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
 } from "../engine/index.ts";
 import { blankProfile, type Store } from "../store.ts";
@@ -392,12 +392,21 @@ function questionsFor(profile: Profile, content: OnboardingContent, askCountry =
 /** The cards the walk draws between and after the questions; `summary` and `signup` are not. */
 const BEAT_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
 
-function walkFor(profile: Profile, content: OnboardingContent): ChatPrompt[] {
+function walkFor(profile: Profile, content: OnboardingContent, order?: readonly string[]): ChatPrompt[] {
   const off = disabledScreens(content);
-  return promptsFor(profile, [...off, "country", "streak"], { health: false })
+  return promptsFor(profile, [...off, "country", "streak"], { health: false }, order)
     .filter((p) => p.field !== undefined || BEAT_PLACES.includes(p.place));
 }
 
+
+/**
+ * What this page tells the engine about the browser. The ORDER capability is declared: /start walks
+ * an arm's order (`walkFor`) and draws its dash (ieat-app#2788), so it is enrolled like a phone that
+ * can. A browser has no IANA zone the first render could trust, hence no `tz`.
+ */
+function webSignals(lang: Lang, req: Request): OnboardingSignals {
+  return { lang, surface: "web", region: browserRegion(req), orderVersion: ONBOARDING_ORDER_VERSION };
+}
 
 /** A tag's region: the first two-letter subtag after the language, so "zh-Hans-CN" still answers. */
 const regionOf = (tag: string): string | undefined =>
@@ -615,7 +624,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // one page that runs before there is an account to ask. Everything past it reads
     // `profile.lang`, which the first answer's account seeds from this same signal.
     const lang = browserLang(req);
-    const content = await onboardingContentFor(ctx.deps, userId, { lang, surface: "web", region: browserRegion(req) });
+    const content = await onboardingContentFor(ctx.deps, userId, webSignals(lang, req));
     return html(frontDoor(content, {
       q: `${START_PREFIX}/q`,
       signup: `${START_PREFIX}/signup`,
@@ -743,9 +752,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       termsHref: config.termsUrl === "" ? null : config.termsUrl,
       privacyHref: config.landingUrl === "" ? null : `${config.landingUrl}/privacy`,
       fromPlan: profile !== null,
-      signup: profile === null ? null : (await onboardingContentFor(ctx.deps, userId, {
-        lang, surface: "web", region: browserRegion(req),
-      })).signup,
+      signup: profile === null ? null : (await onboardingContentFor(ctx.deps, userId, webSignals(lang, req))).signup,
       lang,
     }), 200, {
       // The consent POST answers with a 303 to the provider's own origin — and `form-action`
@@ -1058,20 +1065,19 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // THE ACCOUNT'S LANGUAGE, and the copy fetched in it — or the browser's, on the one path that
   // runs before an account exists: the pre-account `/q` renders the blank profile in
   // `browserLang(req)`, which is also the language the first answer's account is born into.
-  const view = async (): Promise<{ profile: Profile; content: OnboardingContent }> => ({
-    profile, content: await onboardingContentFor(ctx.deps, userId, {
-      lang: profile.lang, surface: "web", region: browserRegion(req),
-    }),
+  // The words AND the arm's order (ieat-app#2788): this page walks it, so it declares it can.
+  const view = async (): Promise<{ profile: Profile; content: OnboardingContent; order?: readonly string[] }> => ({
+    profile, ...await onboardingServedFor(ctx.deps, userId, webSignals(profile.lang, req)),
   });
 
   if (pathname === `${START_PREFIX}/q`) {
-    const { profile, content } = await view();
+    const { profile, content, order } = await view();
 
     // COUNTRY IS NOT A WALK QUESTION (S8): it waits for the sign-up and is asked on its own
     // screen after it (`/start/country`), preselected where the browser's languages already
     // answer it. The W2 walk keeps the field questions plus the `baseline` and `prelim`
     // interstitials — `walkFor` is the one place that order lives.
-    const walk = walkFor(profile, content);
+    const walk = walkFor(profile, content, order);
     // `diet` and `medical` are the two prompts whose answer the profile cannot SHOW mid-run: a
     // Balanced pick stores no tag, and `medical` reads as answered only once `onboarded_at` lands
     // — the binding's resume rule, which a mid-walk request cannot tell from "was just answered".
@@ -1116,7 +1122,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       html(renderQuestion(
         walk, index, profile, content, error, actions, draftKg ?? draft,
         typed ?? (index === openIndex ? undefined : currentAnswer(walk[index]!, profile)),
-        askPath, units,
+        askPath, units, order,
       ));
     const ask = (error: string | null, actions: Action[] = [], draftKg?: number) =>
       askAt(openIndex, error, actions, draftKg);
@@ -1146,7 +1152,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const following = walk[i + 1];
       const onward = following !== undefined && following.kind === "auto"
         ? `${askPath}${askPath.includes("?") ? "&" : "?"}show=${following.id}` : askPath;
-      return html(interstitial(auto.place as Parameters<typeof interstitial>[0], profile, content, profile.lang, onward, backBefore(walk, i)));
+      return html(interstitial(auto.place as Parameters<typeof interstitial>[0], profile, content, profile.lang, onward, backBefore(walk, i), order));
     }
 
     if (req.method === "GET") {
@@ -1212,7 +1218,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
           postedUnits === "metric" || postedUnits === "imperial" ? postedUnits : units, form);
         const retry = (error: string | null, actions: Action[] = []) =>
           html(renderQuestion(walk, walk.indexOf(open), profile, content, error, actions, undefined,
-            typed.length > 0 ? typed : undefined, askPath, units));
+            typed.length > 0 ? typed : undefined, askPath, units, order));
         if (answer.kind === "missing") return retry(pageCopyFor(profile.lang).answerRequired);
         if (answer.kind === "ambiguous-age") {
           const age = AMBIGUOUS_AGE(profile.lang, content.refusals);
@@ -1476,9 +1482,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   if (pathname === STREAK_PATH) {
     const signup = `${START_PREFIX}/signup`;
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
-    const content = await onboardingContentFor(ctx.deps, userId, {
-      lang: profile.lang, surface: "web", region: browserRegion(req),
-    });
+    const content = await onboardingContentFor(ctx.deps, userId, webSignals(profile.lang, req));
     const prompt = promptById("streak_goal_days")!;
     const units = profile.units ?? "metric";
     const ask = (error: string | null) => html(renderQuestion(
@@ -1700,9 +1704,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // The page's every figure is the engine's: `profileView` already ran `explainTargets`, and the
     // headline is the plan card's own — `planHeadline`, the S6-exempt sentence, which the renderer
     // computes over that same basis rather than retyping a number.
-    const content = await onboardingContentFor(ctx.deps, userId, {
-      lang: profile.lang, surface: "web", region: browserRegion(req),
-    });
+    const { content, order } = await onboardingServedFor(ctx.deps, userId, webSignals(profile.lang, req));
     // The plan's own dash is `dash("summary")` inside the renderer — the walk's last segment.
     return html(plan({
       profile: full.profile,
@@ -1711,7 +1713,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       projection: projectGoal(full.profile, full.basis),
       content,
       next: STREAK_PATH,
-      back: backBefore(walkFor(full.profile, content), Infinity),
+      back: backBefore(walkFor(full.profile, content, order), Infinity),
+      order,
       hasWebApp: ctx.hasWebApp,
       lang: profile.lang,
     }));
@@ -1898,6 +1901,7 @@ function renderQuestion(
   current?: readonly string[],
   action = `${START_PREFIX}/q`,
   units: UnitSystem = "metric",
+  order?: readonly string[],
 ): string {
   const prompt = walk[index]!;
   const lang = profile.lang;
@@ -1919,6 +1923,7 @@ function renderQuestion(
     draft: draft ?? null,
     back: backBefore(walk, index),
     today: new Date(),
+    ...(order ? { order } : {}),
   });
 }
 

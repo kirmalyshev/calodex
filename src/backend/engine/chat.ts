@@ -165,7 +165,10 @@ export async function firstVerdict(
  * What the APP may append: the user's own words, and Spud's scripted lines by id. All-or-nothing,
  * and never assistant prose — the client names a line, the server owns the words.
  */
-export async function appendLines(deps: EngineDeps, userId: string, lines: AppendLine[]): Promise<AppendLinesResponse> {
+export async function appendLines(
+  deps: EngineDeps, userId: string, lines: AppendLine[],
+  client: { orderVersion?: number } = {},
+): Promise<AppendLinesResponse> {
   const bad = { appended: 0, reason: "bad-line" } as const;
   if (lines.length > MAX_APPEND_LINES_PER_BATCH) return bad;
   if (lines.length > 0 && (await deps.store.countUserChat(userId)) + lines.length > MAX_THREAD_LINES) {
@@ -179,7 +182,7 @@ export async function appendLines(deps: EngineDeps, userId: string, lines: Appen
   const needsAsk = said.some((l) => "ask" in l);
   const profile = needsAsk || said.some((l) => "scripted" in l) ? await deps.store.getProfile(userId) : null;
   const lang: Lang = profile?.lang ?? "en";
-  const asked = needsAsk ? await askResolver(deps, userId, profile) : null;
+  const asked = needsAsk ? await askResolver(deps, userId, profile, client.orderVersion) : null;
 
   const out: ChatAppend[] = [];
   for (const l of lines) {
@@ -228,12 +231,15 @@ async function askResolver(
   deps: EngineDeps,
   userId: string,
   profile: Profile | null,
+  orderVersion: number | undefined,
 ): Promise<(ref: { prompt: string; line: number }) => string | null> {
   // The PROFILE is the caller's, and the content is fetched in ITS language: the thread must hold
   // the question in the language the account is being asked in, not in the server's default.
   // The chat has no `tz`/`region` of its own to send — experiments that need them do not enroll
-  // here, which is exactly what "unknown means not eligible" is for.
-  const content = await onboardingContentFor(deps, userId, { lang: profile?.lang ?? "en", surface: "app" });
+  // here, which is exactly what "unknown means not eligible" is for. The ORDER capability is the
+  // phone's own (`?order=` on the lines route, ieat-app#2788): a build that cannot walk an ordered
+  // arm it holds was shown the live copy, so that is the line the thread must quote.
+  const content = await onboardingContentFor(deps, userId, { lang: profile?.lang ?? "en", surface: "app", orderVersion: orderVersion ?? 0 });
   return (ref) => {
     if (!profile) return null;
     if (typeof ref !== "object" || ref === null) return null;

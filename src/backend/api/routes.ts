@@ -819,12 +819,11 @@ export function createRouter(
         // (ieat-app#2669): a request without them is still answered — missing means "not
         // eligible", never an error. `?order=` is the order capability (ieat-app#2788): absent or
         // not a number is 0, which no experiment with an ordered arm enrolls.
-        const orderVersion = Number(url.searchParams.get("order") ?? 0);
         const served = await onboardingServedFor(deps, userId, {
           lang, surface: "app",
           region: url.searchParams.get("region"),
           tz: url.searchParams.get("tz"),
-          orderVersion: Number.isFinite(orderVersion) ? orderVersion : 0,
+          orderVersion: orderVersionOf(url),
         });
         return json({
           content: served.content,
@@ -1009,7 +1008,8 @@ export function createRouter(
         if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
         const body = await req.json() as AppendLinesRequest;
         if (!Array.isArray(body?.lines)) return json({ error: "lines required" }, 400);
-        const out = await appendLines(deps, userId, body.lines);
+        // `?order=` as on `GET /v1/onboarding`: the thread quotes the ask line THIS build was shown.
+        const out = await appendLines(deps, userId, body.lines, { orderVersion: orderVersionOf(url) });
         if (body.lines.length > 0 && out.appended === 0) return json({ error: out.reason ?? "bad-line" }, 400);
         return json(out satisfies AppendLinesResponse);
       }
@@ -1424,4 +1424,10 @@ export function createRouter(
       return json({ error: "internal" }, 500);
     }
   };
+}
+
+/** The order capability a client declared with `?order=` (ieat-app#2788): absent or not a number is 0. */
+function orderVersionOf(url: URL): number {
+  const n = Number(url.searchParams.get("order") ?? 0);
+  return Number.isFinite(n) ? n : 0;
 }

@@ -76,6 +76,7 @@ export function interstitial(
   lang: Lang,
   continueHref: string,
   back: string,
+  order?: readonly string[],
 ): string {
   const beats = content.beats;
   const inner = place === "baseline" ? baselineCards(profile, content, lang) : prelimCards(profile, content, lang);
@@ -85,7 +86,7 @@ export function interstitial(
       : beats.prelim.title;
   const body = `${wtop()}
 <div class="wmain one q mom"><div class="wcol">
-${dash(place, lang, { href: back, label: pageCopyFor(lang).back })}
+${dash(place, lang, { href: back, label: pageCopyFor(lang).back }, order)}
 <div class="igroup">
 ${say([title])}
 ${inner}
