@@ -15,11 +15,12 @@ import { escape, shell } from "./shell.ts";
  * The pieces (19, ieat-app#2050): the heading — "Save your progress" when the person comes from
  * their plan, the product's promise when they come to sign in — no picture, the provider
  * buttons — Apple in black with its own mark, Google on the surface with the four-colour G —
- * and the two consent boxes, tickable but never pre-ticked.
+ * the "by continuing" line under them, and the one consent box, marketing, never pre-ticked.
  *
  * THE PROVIDER BUTTONS ARE SUBMITS OF ONE FORM, not links: the kickoff is a POST now, because it
- * is the tick that makes the kickoff legal. `formaction` names the provider so the consent boxes
- * share the one form.
+ * is the consent that makes the kickoff legal — and `terms` rides the form hidden: continuing IS
+ * the agreement (ieat-app#2806), so no honest submit can miss it and the kickoff still refuses
+ * one crafted without it. `formaction` names the provider so the one form serves them both.
  *
  * No pairing card: two providers fill the page's one decision.
  */
