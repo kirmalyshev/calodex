@@ -334,7 +334,7 @@ export type { PushPlatform };
 export interface PushToken {
   token: string;
   platform: PushPlatform;
-  /** Which brand's app registered it: the words a push to this device is written in. */
+  /** Which brand's app registered this token (the last registration wins). Stored and returned; nothing reads it when a push is composed yet. Rows older than the column read as `eait`. */
   app: AppId;
 }
 
