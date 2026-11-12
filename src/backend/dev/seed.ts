@@ -880,13 +880,14 @@ export async function seedOrderedExperiment(store: Store): Promise<OnboardingExp
     created_by: admin, created_at: new Date().toISOString(), started_at: null, stopped_at: null, revision: 1,
   };
   await store.putOnboardingExperiment(experiment);
-  await store.startOnboardingExperiment(experiment.id);
+  if (!(await store.startOnboardingExperiment(experiment.id))) throw new Error("the ordered experiment did not start");
+  // The switch stays on after a stop: on a demo server nothing else reads it, and the next start needs it.
   await store.setSwitch("onboarding.experiments", true, admin);
-  return (await store.runningOnboardingExperiment(SEEDED_ORDER_LANG))!;
+  return { ...experiment, status: "running" };
 }
 
-/** Stop it again — the flow's last step. False when none was running. */
+/** Stop it again — the flow's last step. False when none was running, or the one running carries no order (somebody else's). */
 export async function stopOrderedExperiment(store: Store): Promise<boolean> {
   const running = await store.runningOnboardingExperiment(SEEDED_ORDER_LANG);
-  return running ? store.stopOnboardingExperiment(running.id) : false;
+  return running && running.variants.some((v) => v.order) ? store.stopOnboardingExperiment(running.id) : false;
 }
