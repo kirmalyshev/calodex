@@ -545,6 +545,18 @@ const handle: typeof router = demo
         return Response.json(fault);
       }
 
+      // The ordered experiment one e2e flow walks (ieat-app#2788): POST starts it (idempotent),
+      // DELETE stops it. `dev/seed.ts` says why it is on demand rather than seeded at boot.
+      if (url.pathname === "/demo/order-experiment") {
+        const { seedOrderedExperiment, stopOrderedExperiment } = await import("./dev/seed.ts");
+        if (req.method === "POST") {
+          const e = await seedOrderedExperiment(store);
+          return Response.json({ id: e.id, lang: e.lang, order: e.variants.find((v) => v.order)?.order ?? null });
+        }
+        if (req.method === "DELETE") return Response.json({ stopped: await stopOrderedExperiment(store) });
+        return new Response("method not allowed", { status: 405 });
+      }
+
       const fault = takeDemoFault(url.pathname, req.method);
       if (fault !== null) {
         if (fault.kind === "answer" || fault.kind === "malformed") return demoFaultResponse(fault);

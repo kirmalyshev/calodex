@@ -446,3 +446,32 @@ describe("the shipped prompts", () => {
     expect((await loadPrompts(store)).coach).toBe("You are terse.");
   });
 });
+
+describe("the ordered experiment the e2e flow walks (ieat-app#2788)", () => {
+  test("is a valid arm, opens on the goal, app-only, and is what a capable phone in that language is served", async () => {
+    const { SEEDED_ORDER, SEEDED_ORDER_LANG, seedOrderedExperiment, stopOrderedExperiment } = await import("./seed.ts");
+    const { validateOnboardingOrder } = await import("@eait/shared");
+    const { onboardingServedFor } = await import("../engine/index.ts");
+    expect(validateOnboardingOrder(SEEDED_ORDER)).toEqual([]);
+    expect(SEEDED_ORDER[1]).toBe("goal");
+
+    const store = memoryStore();
+    const deps: EngineDeps = { store, config: configDefaults(), llm: demoPorts(), push: fakePush(), mail: logMail() };
+    const e = await seedOrderedExperiment(store);
+    expect(e.status).toBe("running");
+    expect(e.rules).toEqual({ surfaces: ["app"] });
+    // Idempotent: a second POST from a retried flow finds the one already running.
+    expect((await seedOrderedExperiment(store)).id).toBe(e.id);
+
+    const userId = await store.createUser(SEEDED_ORDER_LANG);
+    const served = await onboardingServedFor(deps, userId, { lang: SEEDED_ORDER_LANG, surface: "app", orderVersion: 1 });
+    expect(served.order).toEqual(SEEDED_ORDER);
+    // Every other language, and every client that cannot walk an order, is untouched.
+    const en = await store.createUser("en");
+    expect((await onboardingServedFor(deps, en, { lang: "en", surface: "app", orderVersion: 1 })).order).toBeUndefined();
+
+    expect(await stopOrderedExperiment(store)).toBe(true);
+    expect(await store.runningOnboardingExperiment(SEEDED_ORDER_LANG)).toBeNull();
+    expect(await stopOrderedExperiment(store)).toBe(false);
+  });
+});

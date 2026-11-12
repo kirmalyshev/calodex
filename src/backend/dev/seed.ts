@@ -21,14 +21,14 @@
 // against `store.memory.ts` with no database running.
 
 import {
-  explainTargets, healthScore, verdictsFromTargets, visibleVerdicts,
-  type Lang, type MealItem, type MealRecord,
+  explainTargets, healthScore, usableContentFor, verdictsFromTargets, visibleVerdicts,
+  type Lang, type MealItem, type MealRecord, type OnboardingPlace,
 } from "@eait/shared";
 import {
   localDate, dateMinus, emptyHealthDay, firstVerdictLines, zonedMidnight, FIXTURE_THREAD,
   type HealthDay,
 } from "@eait/shared";
-import type { ChatAppend, ProfilePatch, Store } from "../store.ts";
+import type { ChatAppend, OnboardingExperiment, ProfilePatch, Store } from "../store.ts";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 
@@ -841,3 +841,53 @@ export async function seedDevData(store: Store, opts: SeedOptions): Promise<Seed
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
+
+// ── The ordered experiment an e2e flow walks (ieat-app#2788) ─────────────────────────────────
+//
+// An arm order no device has walked is the risk the app's order support ships with, so one flow
+// walks one. It cannot be seeded at boot: every `--demo` server would then onboard every reader of
+// that language in the arm, the locale screenshots among them. So it is started and stopped on
+// demand, through `/demo/order-experiment` (composed under `--demo` in `index.ts`, never routed by a
+// production process), in ONE language no suite flow onboards in, app-only, and against the `Store`
+// interface like everything else here.
+
+/** The arm: counted first, `prelim` removed, medical before diet — so completion lands on `diet`. */
+export const SEEDED_ORDER: OnboardingPlace[] = [
+  "welcome", "goal", "counted", "barrier", "situation", "sex", "age", "height", "weight", "activity",
+  "baseline", "target", "pace", "medical", "diet", "summary", "signup",
+];
+/** The one language the flow switches to on the welcome; no other flow onboards in it. */
+export const SEEDED_ORDER_LANG: Lang = "it";
+
+/**
+ * Start the ordered experiment, or return the one already running for the language — a retried flow
+ * posts twice. Control carries no weight, so every capable phone that opens onboarding in the
+ * language is in the arm; the arm's words are the live copy's under a version of its own, which is
+ * what keeps its funnel rows apart.
+ */
+export async function seedOrderedExperiment(store: Store): Promise<OnboardingExperiment> {
+  const running = await store.runningOnboardingExperiment(SEEDED_ORDER_LANG);
+  if (running) return running;
+  const control = usableContentFor(SEEDED_ORDER_LANG, await store.getOnboardingContent());
+  const version = await store.bumpOnboardingContentVersion(control.version + 1);
+  const admin = crypto.randomUUID();
+  const experiment: OnboardingExperiment = {
+    id: crypto.randomUUID(), lang: SEEDED_ORDER_LANG, status: "draft", rules: { surfaces: ["app"] },
+    variants: [
+      { control: true, weight: 0, content: control },
+      { weight: 1, content: { ...structuredClone(control), version }, order: SEEDED_ORDER },
+    ],
+    created_by: admin, created_at: new Date().toISOString(), started_at: null, stopped_at: null, revision: 1,
+  };
+  await store.putOnboardingExperiment(experiment);
+  if (!(await store.startOnboardingExperiment(experiment.id))) throw new Error("the ordered experiment did not start");
+  // The switch stays on after a stop: on a demo server nothing else reads it, and the next start needs it.
+  await store.setSwitch("onboarding.experiments", true, admin);
+  return { ...experiment, status: "running" };
+}
+
+/** Stop it again — the flow's last step. False when none was running, or the one running carries no order (somebody else's). */
+export async function stopOrderedExperiment(store: Store): Promise<boolean> {
+  const running = await store.runningOnboardingExperiment(SEEDED_ORDER_LANG);
+  return running && running.variants.some((v) => v.order) ? store.stopOnboardingExperiment(running.id) : false;
+}
