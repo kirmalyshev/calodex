@@ -11,9 +11,9 @@ import {
   COUNTRY_CODES, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
   ONBOARDING_PLACES, countryFromRegion, isReportableField, isTimezone, localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
-  validateOnboardingContent,
+  DEFAULT_ORDER, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
-  type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace,
+  type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
@@ -47,7 +47,8 @@ export async function onboardingContent(deps: EngineDeps, lang: Lang): Promise<O
 
 // ── Experiments (ieat-app#2669) ───────────────────────────────────────────────────────────────
 //
-// A variant is a whole OnboardingContent revision for one language, stored on an experiment row
+// A variant is a whole OnboardingContent revision for one language (and, optionally, an order of
+// the places, ieat-app#2788), stored on an experiment row
 // and picked server-side — the `content_version` every funnel event already carries IS the
 // variant id, so nothing in the event table had to change.
 
@@ -60,7 +61,16 @@ export interface OnboardingSignals {
   region?: string | null;
   /** The device's IANA zone, for a local-hours rule. Unknown or absent means "not eligible". */
   tz?: string | null;
+  /**
+   * The order capability the client declared (`?order=`, ieat-app#2788). Below
+   * `ONBOARDING_ORDER_VERSION` — absent included — it is enrolled in no experiment with an ordered
+   * arm, and an arm it already holds serves it the live copy.
+   */
+  orderVersion?: number;
 }
+
+/** Whether this client can walk an arm's order. */
+const readsOrder = (signals: OnboardingSignals): boolean => (signals.orderVersion ?? 0) >= ONBOARDING_ORDER_VERSION;
 
 /**
  * FNV-1a over `userId:experimentId` — the pick inside the weights.
@@ -148,14 +158,18 @@ export async function assignVariant(
     }
 
     if (!eligible(experiment.rules, signals, at)) return null;
+    // An ordered arm closes the WHOLE experiment to a client that cannot walk it, rather than handing
+    // it control: control would then be the arm the old builds are in, and the arms would stop
+    // comparing like with like.
+    if (experiment.variants.some((v) => v.order) && !readsOrder(signals)) return null;
     const picked = pickVariant(experiment.variants, hashPick(userId, experiment.id));
     if (!picked) return null;
 
     const row = await deps.store.putOnboardingAssignment(userId, experiment.id, picked.content.version);
     const variant = experiment.variants.find((v) => v.content.version === row.variant_id);
     return variant ? { experiment, variant } : null;
-  } catch {
-    console.error(`[eait] onboarding experiment read failed for ${signals.lang}`);
+  } catch (err) {
+    console.error(`[eait] onboarding experiment read failed for ${signals.lang}`, err);
     return null;
   }
 }
@@ -163,8 +177,8 @@ export async function assignVariant(
 /**
  * The copy this server serves — the assigned variant when one applies, control otherwise.
  *
- * `onboardingContent` with the experiment layer on top; the callers are `GET /v1/onboarding`,
- * `web/start.ts` and `chat.ts` (ieat-app#2669). A variant that fails the shape check the app runs
+ * `onboardingContent` with the experiment layer on top; the callers are `web/start.ts` and
+ * `chat.ts` (ieat-app#2669), and `onboardingServedFor` for `GET /v1/onboarding`. A variant that fails the shape check the app runs
  * falls back BLOCK BY BLOCK to control, through the same `usableContent` — an experiment that was
  * not saved for every field cannot produce a flow that skips a question.
  *
@@ -176,11 +190,36 @@ export async function onboardingContentFor(
   userId: string | null,
   signals: OnboardingSignals,
 ): Promise<OnboardingContent> {
+  // The WORDS, for a reader that walks nothing — the chat resolving a stored ask line, a page
+  // rendering one screen. An ordered arm's words stay the arm's here whatever the caller can walk:
+  // the thread must quote what the user was actually shown (ieat-app#2788). Only the client that
+  // WALKS the flow, `onboardingServedFor`, falls back to the live copy.
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
   if (userId === null) return control;
   const assigned = await assignVariant(deps, userId, signals);
   if (!assigned) return control;
   return usableContent(assigned.variant.content, control);
+}
+
+/**
+ * `onboardingContentFor` with the arm's ORDER beside the words (ieat-app#2788) — what
+ * `GET /v1/onboarding` answers. The order is only ever handed to a client that declared it can walk
+ * one. A client below that holding an ordered arm already (assigned on another surface or a newer
+ * build) gets the live copy and no order: the words of an arm walked in the wrong order would be a
+ * third arm nobody designed, and its events then count as fell back, beside the arm's rate.
+ */
+export async function onboardingServedFor(
+  deps: EngineDeps,
+  userId: string | null,
+  signals: OnboardingSignals,
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[] }> {
+  const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
+  if (userId === null) return { content: control };
+  const assigned = await assignVariant(deps, userId, signals);
+  if (!assigned) return { content: control };
+  const { order } = assigned.variant;
+  if (order && !readsOrder(signals)) return { content: control };
+  return { content: usableContent(assigned.variant.content, control), ...(order ? { order } : {}) };
 }
 
 /**
@@ -319,7 +358,7 @@ export async function adminMetrics(
   };
 }
 
-/** The funnel, in the order the screens are actually shown. */
+/** The funnel, in the DEFAULT order the screens are shown in. */
 export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { days?: number } | number): Promise<OnboardingFunnel> {
   const ask = adminRangeOf(range, 30, 365);
   const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds);
@@ -331,9 +370,9 @@ export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { d
     DEFAULT_ONBOARDING_CONTENT.version,
     ...Object.values(set).map((c) => c?.version).filter((v): v is number => typeof v === "number"),
   );
-  // The order a person meets them in, which is what makes a drop between two rows readable as a
-  // drop. It is fixed in code now: the chat asks in an order its own replies depend on, so there is
-  // no admin ordering left to follow.
+  // The DEFAULT order a person meets them in, which is what makes a drop between two rows readable
+  // as a drop. While an experiment with an ordered arm runs this mixes arms walked in other orders;
+  // each arm's own table (`onboardingExperiments`) reads in that arm's order (ieat-app#2788).
   const order = ONBOARDING_PLACES as readonly OnboardingPlace[];
   const byPlace = new Map(agg.rows.map((r) => [r.place, r]));
 
@@ -386,7 +425,21 @@ export interface OnboardingExperimentView {
     variant: OnboardingVariant;
     stats: { assigned: number; sessions: number; completed: number; completed_users: number;
              fell_back: number; rate: number | null; ci: { lo: number; hi: number } | null };
+    /**
+     * This arm's place funnel, in THIS arm's order (ieat-app#2788): its span (`order`, else the
+     * default), then the fixed tail. Only runs that rendered this arm are counted — a run that fell
+     * back walked another order, and is the arm's `fell_back` instead — so a drop between two rows
+     * is a drop between two things those users met in that sequence. A beat the arm removed has no
+     * row rather than a zero.
+     */
+    places: FunnelRow[];
   }[];
+}
+
+/** An arm's places in its order: the span it walks, then the tail no arm moves. */
+function armPlaces(variant: OnboardingVariant): OnboardingPlace[] {
+  const tail = ONBOARDING_PLACES.slice(DEFAULT_ORDER.length);
+  return [...(variant.order ?? DEFAULT_ORDER), ...tail];
 }
 
 /** Every experiment with its per-variant funnel — the admin's list. */
@@ -405,6 +458,7 @@ export async function onboardingExperiments(
   for (const experiment of list) {
     const control = experiment.status === "draft" ? usableContentFor(experiment.lang, stored) : null;
     const funnel = await deps.store.onboardingExperimentFunnel(experiment.id, ask, deps.config.campaignStaffIds);
+    const placeRows = await deps.store.onboardingExperimentPlaces(experiment.id, ask, deps.config.campaignStaffIds);
     const arms = experiment.variants.map((variant) => {
       if (control !== null) {
         const filled = usableContent(variant.content, control);
@@ -426,7 +480,15 @@ export async function onboardingExperiments(
             rate: row.completed_users / row.assigned,
             ci: wilsonInterval(row.completed_users, row.assigned),
           };
-      return { variant, stats };
+      const mine = new Map(placeRows.filter((r) => r.variant_id === variant.content.version).map((r) => [r.place, r]));
+      const places: FunnelRow[] = armPlaces(variant).map((place) => {
+        const r = mine.get(place);
+        return {
+          place, views: r?.views ?? 0, people: r?.people ?? 0, answers: r?.answers ?? 0,
+          backs: r?.backs ?? 0, rejects: r?.rejects ?? 0, medianMs: r?.medianMs ?? null,
+        };
+      });
+      return { variant, stats, places };
     });
     out.push({ experiment, arms });
   }
@@ -588,6 +650,51 @@ export async function saveOnboardingVariant(
     : { ok: false, errors: ["the experiment changed under you — reload the page"] };
 }
 
+/** One order refusal, worded for the admin — the row it names is where the editor shows it. */
+export function orderRefusalText(r: OrderRefusal): string {
+  switch (r.rule) {
+    case "must-follow": return `${r.place} must come after ${r.after}`;
+    case "not-a-list": return "the order must be a list of places";
+    case "unknown": return `${r.place} is not a place an arm can order`;
+    case "duplicate": return `${r.place} is listed twice`;
+    case "missing": return `${r.place} is a question and cannot be left out`;
+    case "fixed": return r.place === "welcome" ? "the welcome must come first" : "the sign-up must come straight after the plan";
+  }
+}
+
+/**
+ * Write a draft arm's ORDER (ieat-app#2788): `validateOnboardingOrder` on the write, so an order no
+ * client can walk is refused here and never reaches one. `null` clears it back to the default. The
+ * control arm walks the live order by definition, so it takes none.
+ */
+export async function saveOnboardingVariantOrder(
+  deps: EngineDeps, id: string, index: number, order: unknown,
+): Promise<{ ok: true } | { ok: false; errors: string[]; refusals?: OrderRefusal[] }> {
+  const experiment = (await deps.store.listOnboardingExperiments()).find((e) => e.id === id);
+  if (!experiment) return { ok: false, errors: ["experiment not found"] };
+  if (!Number.isInteger(index) || index < 0 || index >= experiment.variants.length) {
+    return { ok: false, errors: ["no such variant"] };
+  }
+  if (experiment.variants[index]!.control) {
+    return { ok: false, errors: ["the control arm walks the live order — it takes no order of its own"] };
+  }
+  if (experiment.status !== "draft") return { ok: false, errors: ["only a draft's arms take an order — a running arm is frozen"] };
+  let next: readonly OnboardingPlace[] | undefined;
+  if (order !== null) {
+    const refusals = validateOnboardingOrder(order);
+    if (refusals.length > 0) return { ok: false, errors: refusals.map(orderRefusalText), refusals };
+    // Exactly what a client walks: `servedOrder` narrows a validated list without a cast.
+    next = servedOrder(order);
+  }
+  experiment.variants = experiment.variants.map((v, i) => {
+    if (i !== index) return v;
+    const { order: _old, ...rest } = v;
+    return next ? { ...rest, order: next } : rest;
+  });
+  const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
+  return wrote ? { ok: true } : { ok: false, errors: ["the experiment changed under you — reload the page"] };
+}
+
 /** Clone the control arm — the editor's "add a variant" is a copy of the copy that serves. */
 export async function addOnboardingVariant(
   deps: EngineDeps, id: string,
@@ -625,6 +732,19 @@ export async function startOnboardingExperiment(
   if (experiment.status !== "draft") return { ok: false, errors: ["only a draft can start"] };
   if (experiment.variants.every((v) => v.weight <= 0)) {
     return { ok: false, errors: ["no variant carries weight"] };
+  }
+  // The web cannot walk an order yet (ieat-app#2788 C), so it would enrol nobody there and say
+  // nothing: an ordered arm runs on the app alone, and the targeting has to say so.
+  const surfaces = experiment.rules.surfaces ?? [];
+  if (experiment.variants.some((v) => v.order) && !(surfaces.length === 1 && surfaces[0] === "app")) {
+    return { ok: false, errors: ["an ordered arm runs on the app only for now — set surfaces to [\"app\"]"] };
+  }
+  // Re-validated at the start: a draft saved before a rule tightened must not reach a client that
+  // validates against the new rules and walks the default inside the arm (ieat-app#2788).
+  for (const [i, v] of experiment.variants.entries()) {
+    if (v.order === undefined) continue;
+    const refusals = validateOnboardingOrder(v.order);
+    if (refusals.length > 0) return { ok: false, errors: refusals.map((r) => `arm ${i}: ${orderRefusalText(r)}`) };
   }
   // A running card that enrolls nobody is worse than a refused start: the switch is the gate the
   // enrolment reads, so start only once it is on.

@@ -16,7 +16,7 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingPlace, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
@@ -587,8 +587,8 @@ export interface OnboardingExperimentRules {
 }
 
 /**
- * One arm of an experiment: a whole `OnboardingContent` revision and an integer weight, control
- * included. There is no separate variant id — the revision's `version` IS it, drawn from the same
+ * One arm of an experiment: a whole `OnboardingContent` revision, an integer weight and, optionally,
+ * an order (ieat-app#2788), control included. There is no separate variant id — the revision's `version` IS it, drawn from the same
  * counter `putOnboardingContent` uses, so the `content_version` every funnel event already carries
  * names the variant that produced it. Frozen once the experiment starts.
  */
@@ -597,6 +597,13 @@ export interface OnboardingVariant {
   control?: boolean;
   weight: number;
   content: OnboardingContent;
+  /**
+   * The order this arm walks the span from the welcome to the sign-up in (ieat-app#2788), absent for
+   * the default. Validated by `validateOnboardingOrder` when it is SAVED and again at the start, so a
+   * stored one is valid against the rules in force when its experiment started — a rule change
+   * bumps `ONBOARDING_ORDER_VERSION`, which takes the old clients out; never on the control arm.
+   */
+  order?: readonly OnboardingPlace[];
 }
 
 export type OnboardingExperimentStatus = "draft" | "running" | "stopped";
@@ -633,6 +640,12 @@ export interface OnboardingAssignment {
 }
 
 /** One arm's numbers in an experiment's funnel, grouped by the assigned variant. */
+/** One arm's count at one place (`onboardingExperimentPlaces`). `place` is raw event data. */
+export interface OnboardingExperimentPlaceRow extends FunnelRowCounts {
+  variant_id: number;
+}
+type FunnelRowCounts = FunnelAggregate["rows"][number];
+
 export interface OnboardingExperimentFunnelRow {
   variant_id: number;
   /** Users holding this assignment — the intention-to-treat denominator. */
@@ -1616,6 +1629,14 @@ export interface Store {
    * A staff-flagged account's assignment is left out (#2783), so `assigned` is not every assignment row.
    */
   onboardingExperimentFunnel(experimentId: string, range: AdminRange, staffIds?: string[]): Promise<OnboardingExperimentFunnelRow[]>;
+  /**
+   * The same population and window as `onboardingExperimentFunnel` — by assignment, from the
+   * assignment to the stop, narrowed by `range`, staff out — but only the runs that RENDERED the
+   * assigned arm (a fell-back run walked another order), counted per PLACE, one row per
+   * `(variant_id, place)` that has an event (ieat-app#2788). The engine lays each arm's rows out in
+   * that arm's own order; a place with no event has no row.
+   */
+  onboardingExperimentPlaces(experimentId: string, range: AdminRange, staffIds?: string[]): Promise<OnboardingExperimentPlaceRow[]>;
   /**
    * Take the next revision number off the shared counter WITHOUT installing copy — a variant's
    * version comes off the same counter the admin saves do, so a content_version always names ONE

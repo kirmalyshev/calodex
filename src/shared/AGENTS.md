@@ -344,7 +344,8 @@ will ever use it, it does not belong here — put it in that side and keep this 
 - **Onboarding is plain screens, one question each, and the design is `product/design/onboarding/`**
   (ruled in `product/design/DIRECTION.md` § The onboarding flow). `copy.md` quotes every sentence
   the phone shows, in English: change both in the same change. The answers are asked one at a time
-  in `ONBOARDING_STEPS` order; `diet` and `medical` are two views of the one `restrictions` column.
+  in the arm's order, `DEFAULT_ORDER` otherwise; `diet` and `medical` are two views of the one
+  `restrictions` column.
   **A question earns its place by having a reader.** Why now, the hardest moment and eating out
   were cut on 2026-08-26 because nothing in `src/` read back what they wrote — the user pays for a
   question like that and never sees it come back. `struggles` survived because it picks the
@@ -357,7 +358,8 @@ will ever use it, it does not belong here — put it in that side and keep this 
   one entry per bubble), the option labels, the front door and the plan — fully editable in the
   backend admin. `validateOnboardingContent` enforces that boundary ON THE WRITE, so bad copy never
   reaches a phone; an admin can rewrite every question and cannot produce a target computed from a
-  value nobody chose.
+  value nobody chose. An experiment arm may change their ORDER within `ORDER_AFTER`
+  (`onboarding-order.ts`), validated on the save; it cannot add, drop or reword a question.
 - **The REPLIES and the support cards are code, not copy.** `src/shared/onboarding-chat.ts` holds
   the branch logic. An admin text box in front of a health statistic is an unsubstantiated claim
   one typo away from every phone, with no gate in front of it — the thing `landing/claims.ts`

@@ -33,8 +33,8 @@ const OTHER_QUESTIONS = DEFAULT_ORDER.filter(
 /**
  * What each place must come AFTER, and why. A predecessor an arm removed (a beat) is no constraint.
  *
- *   weight    a rule: the under-16 stop refuses a minor before they give their weight. Height may
- *             still come before age — sex, age and height are free among themselves (#2788, ruled)
+ *   height,   a rule: the under-16 stop refuses a minor before they give a body number, so age
+ *   weight    comes first (ieat-app#2788, Kirill, 12 Nov). Sex is free among them
  *   activity  its echo is the resting burn (BMR): sex, age, height, weight
  *   target    a maintainer skips it (goal); checkDirection (weight); the BMI floor (height); its echo
  *             is the TDEE (activity)
@@ -50,6 +50,7 @@ const OTHER_QUESTIONS = DEFAULT_ORDER.filter(
  *             explainTargets the target inputs; the rest follow the rule
  */
 export const ORDER_AFTER: Readonly<Partial<Record<OnboardingPlace, readonly OnboardingPlace[]>>> = {
+  height: ["age"],
   weight: ["age"],
   activity: ["sex", "age", "height", "weight"],
   target: ["goal", "height", "weight", "activity"],

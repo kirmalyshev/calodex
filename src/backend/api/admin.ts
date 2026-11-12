@@ -41,13 +41,13 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 import {
-  CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, ENTITLEMENT_STATES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
+  CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, DEFAULT_ORDER, ENTITLEMENT_STATES, REMOVABLE_PLACES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
   SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
   adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
-  onboardingExperiments, saveOnboardingVariant, setOnboardingExperiment,
+  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
   sendTestPush, pushOpenView, sendAdminPush,
@@ -403,7 +403,12 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     // A `days` ask resolves to instants here, like on the bounded endpoints — the echo carries the
     // spelling the request used AND the bounds it filtered by.
     const resolved = "days" in ask ? adminRangeOf(ask.days, 30) : ask;
-    return json({ experiments: await onboardingExperiments(deps, resolved), range: adminWindowEcho(resolved) });
+    // `order` is what the arm order editor starts from and may remove (ieat-app#2788); the rules
+    // themselves stay on the server, which refuses a bad order by row on the save.
+    return json({
+      experiments: await onboardingExperiments(deps, resolved), range: adminWindowEcho(resolved),
+      order: { span: DEFAULT_ORDER, removable: REMOVABLE_PLACES },
+    });
   }
   if (req.method === "POST" && pathname === "/admin/api/experiments") {
     const body = await req.json().catch(() => null) as { lang?: unknown } | null;
@@ -425,8 +430,18 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
     }
     if (req.method === "PUT" && sub === "variants") {
-      const body = await req.json().catch(() => ({})) as { content?: unknown };
-      const result = await saveOnboardingVariant(deps, id, Number(expMatch[3]), body?.content);
+      const raw: unknown = await req.json().catch(() => ({}));
+      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown };
+      const index = Number(expMatch[3]);
+      // Two editors, two bodies, never both (ieat-app#2788): `{order}` is the order editor's save
+      // (`null` clears it), anything else the copy editor's. A body carrying both is refused rather
+      // than half-written — a content save is committed before an order could be refused.
+      if ("order" in body) {
+        if (body.content !== undefined) return json({ errors: ["send the copy or the order, not both"] }, 422);
+        const result = await saveOnboardingVariantOrder(deps, id, index, body.order);
+        return result.ok ? json({ ok: true }) : json({ errors: result.errors, refusals: result.refusals ?? [] }, 422);
+      }
+      const result = await saveOnboardingVariant(deps, id, index, body.content);
       return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, 422);
     }
     if (req.method === "POST" && sub === "variants") {

@@ -139,9 +139,10 @@ already exist. Auto-create shipped once and it was silent data loss.
   `src/backend/api/routes.ts` that calls ONE engine function, then the client method on each client.
 - New product logic → `src/backend/engine/`. If a route needs logic the engine does not expose, the
   logic goes in the engine.
-- New onboarding question → a field on `Profile`, a step in `ONBOARDING_STEPS` (the order is
-  load-bearing — the replies read what came before), an entry in `SCREEN_FIELDS` (respecting the
-  two-field cap), an `asks` entry in `DEFAULT_ONBOARDING_CONTENT`, and a prompt in `CHAT_PROMPTS`
+- New onboarding question → a field on `Profile`, a step in `ONBOARDING_STEPS` (the DEFAULT order;
+  an experiment arm may reorder within `ORDER_AFTER`, and a new question adds its edges there), an
+  entry in `SCREEN_FIELDS` (respecting the two-field cap), an `asks` entry in
+  `DEFAULT_ONBOARDING_CONTENT`, and a prompt in `CHAT_PROMPTS`
   with its `kind`. A question that collects NO profile field needs a READER first, named before it
   is written.
 - New LLM capability → a port type in `src/backend/llm/port.ts`, a prompt in `prompt.ts`, an

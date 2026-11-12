@@ -426,6 +426,10 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 #view-experiments .exp-row.first { margin-top: 0; }
 #view-experiments .exp-rules { flex: 1; min-width: 0; }
 #view-experiments .exp-weights { width: 130px; }
+#view-experiments .exp-order { margin-top: 12px; }
+#view-experiments .exp-order ol { margin: 4px 0; padding-left: 22px; }
+#view-experiments .exp-order li { margin: 2px 0; }
+#view-experiments .order-error.bad { color: var(--bad); }
 
 /* Onboarding copy: a sub-nav across its four sections, one section at a time. */
 .obsplit { display: flex; gap: 16px; align-items: flex-start; }
@@ -820,8 +824,8 @@ details.how p { margin-top: 8px; }
           <summary>How saving works</summary>
           <p class="muted">
             Every word Spud says to POSE a question, plus the option labels, the front door, the plan, the sign-up, the referral, Apple Health, the Live Activity and the first meal.
-            The <em>questions</em> are fixed in code — they feed the calorie target — and so is their order,
-            and so are Spud's replies and the support cards, which carry citations. Saving bumps the content
+            The <em>questions</em> are fixed in code — they feed the calorie target — and so is their default
+            order (an experiment arm may reorder them, in Experiments), and so are Spud's replies and the support cards, which carry citations. Saving bumps the content
             version, which is what the funnel is grouped by.
           </p>
           <p class="muted">
@@ -3627,6 +3631,103 @@ details.how p { margin-top: 8px; }
   // variantEdit points at instead of the live copy. A running experiment is frozen — every write
   // a stale page makes answers 422 and the card re-renders.
   var experiments = [];
+  // The arm order editor (ieat-app#2788): the span and the removable beats come from the server,
+  // and an unsaved order lives here per "experiment:arm" until Save. The RULES are not copied in —
+  // the server refuses a bad order and names the row, and this page only shows where.
+  var orderRules = null;
+  var orderDraft = {};
+
+  function orderPanel(e, i, arm) {
+    var key = e.id + ":" + i;
+    var list = orderDraft[key] || (orderDraft[key] = (arm.variant.order || orderRules.span).slice());
+    var html = '<div class="exp-order" data-order-key="' + esc(key) + '"><p><strong>Order \u00b7 variant ' + (i + 1) + '</strong>'
+      + (arm.variant.order ? '' : ' <span class="muted">default</span>') + '</p><ol>';
+    list.forEach(function (p, j) {
+      html += '<li data-place="' + esc(p) + '">' + esc(p)
+        + ' <button class="small" data-up="' + j + '" aria-label="Move ' + esc(p) + ' up">Up</button>'
+        + ' <button class="small" data-down="' + j + '" aria-label="Move ' + esc(p) + ' down">Down</button>'
+        + (orderRules.removable.indexOf(p) !== -1 ? ' <button class="small" data-drop="' + j + '">Remove</button>' : '')
+        + ' <span class="order-error"></span></li>';
+    });
+    html += '</ol><div class="exp-row">';
+    orderRules.removable.forEach(function (p) {
+      if (list.indexOf(p) === -1) html += '<button class="small" data-add="' + esc(p) + '">Add ' + esc(p) + ' back</button>';
+    });
+    return html + '<button class="small" data-order-save="' + i + '">Save order</button>'
+      + '<button class="small" data-order-reset="' + i + '">Default order</button></div></div>';
+  }
+
+  function wireOrder(card, e) {
+    card.querySelectorAll("[data-order-key]").forEach(function (panel) {
+      var key = panel.getAttribute("data-order-key");
+      var i = Number(key.slice(key.lastIndexOf(":") + 1));
+      var list = orderDraft[key];
+      var move = function (j, by) {
+        var k = j + by;
+        if (k < 0 || k >= list.length) return;
+        var t = list[j]; list[j] = list[k]; list[k] = t;
+        renderExperiments();
+      };
+      panel.querySelectorAll("[data-up]").forEach(function (b) {
+        b.addEventListener("click", function () { move(Number(b.getAttribute("data-up")), -1); });
+      });
+      panel.querySelectorAll("[data-down]").forEach(function (b) {
+        b.addEventListener("click", function () { move(Number(b.getAttribute("data-down")), 1); });
+      });
+      panel.querySelectorAll("[data-drop]").forEach(function (b) {
+        b.addEventListener("click", function () { list.splice(Number(b.getAttribute("data-drop")), 1); renderExperiments(); });
+      });
+      panel.querySelectorAll("[data-add]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          // Back where the default order has it: before the first later place still in the list.
+          var p = b.getAttribute("data-add");
+          var later = orderRules.span.slice(orderRules.span.indexOf(p) + 1);
+          var at = list.findIndex(function (q) { return later.indexOf(q) !== -1; });
+          list.splice(at === -1 ? list.length : at, 0, p);
+          renderExperiments();
+        });
+      });
+      var path = "/admin/api/experiments/" + encodeURIComponent(e.id) + "/variants/" + i;
+      var done = function () { delete orderDraft[key]; return loadExperiments(); };
+      panel.querySelector("[data-order-save]").addEventListener("click", function () {
+        api("PUT", path, { order: list }).then(done, function (err) { orderRefused(panel, err); });
+      });
+      panel.querySelector("[data-order-reset]").addEventListener("click", function () {
+        api("PUT", path, { order: null }).then(done, function (err) { orderRefused(panel, err); });
+      });
+    });
+  }
+
+  // A refusal is shown on the row it names, and listed in the view's box; nothing reloads, so the
+  // order the admin was arranging is still on screen to fix.
+  function orderRefused(panel, err) {
+    var body = err && err.body ? err.body : {};
+    var errors = body.errors || [String(err && err.message || err)];
+    // No row named: the refusal is about the experiment itself (it moved, it started), so the order
+    // being arranged is stale — drop this experiment's drafts and reload what the server has.
+    if (!body.refusals || body.refusals.length === 0) {
+      var prefix = panel.getAttribute("data-order-key").replace(/:[0-9]+$/, ":");
+      Object.keys(orderDraft).forEach(function (k) { if (k.indexOf(prefix) === 0) delete orderDraft[k]; });
+      expErrors(err);
+      return;
+    }
+    body.refusals.forEach(function (r, n) {
+      var row = panel.querySelector('li[data-place="' + String(r.place).replace(/"/g, "") + '"] .order-error');
+      if (row) { row.textContent = errors[n] || r.rule; row.classList.add("bad"); }
+    });
+    showExpErrors(errors);
+  }
+
+  function placesTable(i, arm) {
+    var html = '<details><summary>Places \u00b7 ' + (arm.variant.control ? "control" : "variant " + (i + 1))
+      + ' <span class="muted">in this arm\u2019s order</span></summary><table><thead><tr><th>place</th>'
+      + '<th class="r">people</th><th class="r">answers</th><th class="r">backs</th><th class="r">median</th></tr></thead><tbody>';
+    (arm.places || []).forEach(function (r) {
+      html += '<tr><td>' + esc(r.place) + '</td><td class="r">' + r.people + '</td><td class="r">' + r.answers
+        + '</td><td class="r">' + r.backs + '</td><td class="r">' + (r.medianMs === null ? "\u2014" : r.medianMs + " ms") + '</td></tr>';
+    });
+    return html + '</tbody></table></details>';
+  }
   var variantEdit = null;
 
   function esc(v) {
@@ -3645,6 +3746,7 @@ details.how p { margin-top: 8px; }
       return api("GET", "/admin/api/experiments" + rangeQuery());
     }).then(function (res) {
       experiments = res.experiments || [];
+      orderRules = res.order || null;
       lastEcho = res.range;
       rangeNote();
       $("experiments-scope").textContent = echoLabel(res.range) + " \u00b7 per-arm numbers count assignments and events inside the window";
@@ -3710,6 +3812,12 @@ details.how p { margin-top: 8px; }
         var n = measured.reduce(function (t, a) { return t + a.stats.sessions; }, 0);
         arms += '<p class="muted">n=' + n + (overlap ? ", intervals overlap: no conclusion" : ", intervals separated") + '</p>';
       }
+      view.arms.forEach(function (arm, i) {
+        if (arm.variant.control) return;
+        if (e.status === "draft" && orderRules) arms += orderPanel(e, i, arm);
+        else if (arm.variant.order) arms += '<p class="muted">order \u00b7 variant ' + (i + 1) + ': ' + esc(arm.variant.order.join(" \u2192 ")) + '</p>';
+      });
+      view.arms.forEach(function (arm, i) { arms += placesTable(i, arm); });
       var actions = '';
       if (e.status === "draft") {
         actions = '<div class="exp-row">'
@@ -3725,6 +3833,7 @@ details.how p { margin-top: 8px; }
           + '<button class="warn" data-stop="' + esc(e.id) + '">Stop</button></div>';
       }
       card.innerHTML = head + arms + actions;
+      wireOrder(card, e);
       card.querySelectorAll("[data-edit]").forEach(function (b) {
         b.addEventListener("click", function () { editVariant(e.id, Number(b.getAttribute("data-edit"))); });
       });
@@ -3749,14 +3858,17 @@ details.how p { margin-top: 8px; }
   function expErrors(e) {
     // Its own box inside THIS view — the editor's #errors lives inside #view-onboarding, hidden
     // while this view is up. And a refresh either way: a refusal can mean the row moved.
+    showExpErrors(e && e.body && e.body.errors ? e.body.errors : [String(e && e.message || e)]);
+    loadExperiments();
+  }
+
+  function showExpErrors(list) {
     var box = $("exp-errors");
     box.classList.remove("hidden");
     box.querySelector("ul").textContent = "";
-    var list = e && e.body && e.body.errors ? e.body.errors : [String(e && e.message || e)];
     list.forEach(function (m) {
       var li = document.createElement("li"); li.textContent = m; box.querySelector("ul").appendChild(li);
     });
-    loadExperiments();
   }
 
   function saveTargeting(id) {

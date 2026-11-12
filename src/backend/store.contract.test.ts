@@ -3401,6 +3401,56 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(back.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 2, sessions: 2, completed: 2 });
       });
 
+      it("keeps an arm's order, and counts each arm's places inside the arm's own window (ieat-app#2788)", async () => {
+        const s = await open();
+        const order = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
+          "pace", "counted", "barrier", "situation", "medical", "diet", "summary", "signup"];
+        const e = exp({
+          id: `places-${RUN}`,
+          variants: [
+            { control: true, weight: 1, content: { version: 41 } as never },
+            { weight: 1, content: { version: 42 } as never, order },
+          ],
+        });
+        await s.putOnboardingExperiment(e as never); created.push(e.id);
+        expect((await s.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toEqual(order as never);
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const staff = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.setStaff(staff, true);
+        for (const who of [u, staff]) {
+          await s.putOnboardingAssignment(who, e.id, 42);
+          const at = new Date().toISOString();
+          await s.recordOnboardingEvents(who, [
+            { id: crypto.randomUUID(), sessionId: "p-" + who, place: "medical", action: "view", contentVersion: 42, at },
+            { id: crypto.randomUUID(), sessionId: "p-" + who, place: "medical", action: "answer", contentVersion: 42, at, ms: 800 },
+            { id: crypto.randomUUID(), sessionId: "p-old-" + who, place: "goal", action: "view", contentVersion: 42, at: "2000-01-01T00:00:00Z" },
+          ] as never);
+        }
+        // A second arm with its own user; a run of u's that fell back to 41 is not 42's row.
+        const v = (await s.upsertDeviceUser(device(), "en")).userId;
+        await s.putOnboardingAssignment(v, e.id, 41);
+        const now = new Date().toISOString();
+        await s.recordOnboardingEvents(v, [
+          { id: crypto.randomUUID(), sessionId: "p-v", place: "goal", action: "view", contentVersion: 41, at: now },
+        ] as never);
+        await s.recordOnboardingEvents(u, [
+          { id: crypto.randomUUID(), sessionId: "p-fell", place: "diet", action: "view", contentVersion: 41, at: now },
+        ] as never);
+        // And a run after the stop is the user's history, not the arm's.
+        await s.startOnboardingExperiment(e.id);
+        await s.stopOnboardingExperiment(e.id);
+        await s.recordOnboardingEvents(u, [
+          { id: crypto.randomUUID(), sessionId: "p-late", place: "goal", action: "view", contentVersion: 42, at: "2999-01-01T00:00:00Z" },
+        ] as never);
+        const key = (r: { variant_id: number; place: string }) => `${r.variant_id}:${r.place}`;
+        const rows = await s.onboardingExperimentPlaces(e.id, { from: null, to: null });
+        expect(rows.map(key).sort()).toEqual(["41:goal", "42:medical"]);
+        expect(rows.find((r) => r.variant_id === 42)).toMatchObject({ place: "medical", views: 1, people: 1, answers: 1, medianMs: 800 });
+        // An id staff by config alone is left out as well.
+        expect((await s.onboardingExperimentPlaces(e.id, { from: null, to: null }, [u])).map(key)).toEqual(["41:goal"]);
+        await s.setStaff(staff, false);
+      });
+
       it("moves assignments on merge, keeping the account's own row on a collision", async () => {
         const s = await open();
         const anon = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -5635,7 +5685,9 @@ if (PG_URL) {
         "markCampaignRunning", "mergeUsers",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
-        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel", "onboardingFunnel",
+        "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
+        // ieat-app#2788: the same admin read as the arm funnel above it, counted per place.
+        "onboardingExperimentPlaces", "onboardingFunnel",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,

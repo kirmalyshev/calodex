@@ -38,7 +38,8 @@ describe("the default order", () => {
 // Every edge, written out by hand rather than read off ORDER_AFTER, so deleting one goes red here.
 // [later, earlier, the reader that breaks without it]
 const EDGES: [OnboardingPlace, OnboardingPlace, string][] = [
-  ["weight", "age", "the under-16 stop refuses a minor before they give their weight"],
+  ["height", "age", "the under-16 stop refuses a minor before they give a body number (Kirill, 12 Nov)"],
+  ["weight", "age", "the under-16 stop refuses a minor before they give a body number"],
   ["activity", "sex", "echo.rest is the BMR"],
   ["activity", "age", "echo.rest is the BMR"],
   ["activity", "height", "echo.rest is the BMR"],
@@ -134,9 +135,9 @@ describe("the rules", () => {
 });
 
 describe("what may move", () => {
-  it("sex, age and height among themselves", () => {
-    expect(validateOnboardingOrder(moved("height", "sex"))).toEqual([]);
+  it("sex anywhere before the burn it feeds; age before height", () => {
     expect(validateOnboardingOrder(moved("age", "sex"))).toEqual([]);
+    expect(validateOnboardingOrder(moved("sex", "weight"))).toEqual([]);
   });
 
   it("the counted questions anywhere after the goal", () => {
@@ -192,7 +193,7 @@ describe("what is refused", () => {
 
 describe("a served order", () => {
   it("is used when it is valid", () => {
-    const order = moved("height", "sex");
+    const order = moved("sex", "weight");
     expect(servedOrder(order)).toEqual(order);
   });
 
@@ -222,13 +223,13 @@ describe("the walk in an arm's order", () => {
   });
 
   it("resumes at the first unanswered field in THAT order", () => {
-    const p = profile({ goal: "lose", sex: "female" });
+    const p = profile({ goal: "lose", birth_year: 1990 });
     const at = (order?: readonly OnboardingPlace[]) => {
       const prompts = promptsFor(p, ["country"], { health: false }, order);
       return prompts[resumeAt(prompts, p)]!.id;
     };
-    expect(at(moved("height", "sex"))).toBe("height_cm");
-    expect(at()).toBe("birth_year");
+    expect(at(moved("sex", "weight"))).toBe("height_cm");
+    expect(at()).toBe("sex");
   });
 
   it("walks the default when handed an order it cannot validate — never a broken walk", () => {
