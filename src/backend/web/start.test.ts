@@ -423,22 +423,23 @@ describe("the sign-up screen", () => {
     expect(html).toContain("Continue with Apple");
     expect(html).toContain("Continue with Google");
     expect(html.indexOf("/start/auth/apple")).toBeLessThan(html.indexOf("/start/auth/google"));
-    // The boxes, and both of them bound to the form the buttons submit (`form=` keeps them below
-    // the buttons, where the board draws them).
-    expect(html).toContain('name="terms"');
+    // The consent rides hidden in the form the buttons submit; the marketing box stays an opt-in
+    // below the buttons (`form=` keeps it there, where the board draws it).
+    expect(html).toContain('<input type="hidden" name="terms" value="yes">');
     expect(html).toContain('name="marketing"');
     expect(html).toContain('form="signup"');
     expect(html).toContain(signupCopyFor("en").signUpHeading);
   });
 
-  it("is the board: no picture, the marks on the buttons, the boxes unticked", async () => {
+  it("is the board: no picture, the marks on the buttons, the box unticked", async () => {
     const html = await (await get("/start/signup")).text();
     expect(html).not.toContain('/start/assets/img/icon.webp');
     // Apple in black, Google secondary — the buttons carry the brands' own artwork.
     expect(html).toContain('class="cta apple"');
     expect(html.indexOf('cta apple')).toBeLessThan(html.indexOf('cta s"'));
-    // Both boxes drawn but NEITHER ticked — consent is a choice, not a default.
-    expect(html.match(/name="terms"[^>]*checked/g) ?? []).toHaveLength(0);
+    // The byline is a line, not a box — continuing IS the agreement — and the marketing box is
+    // drawn but never ticked: marketing consent is a choice, not a default.
+    expect(html).not.toContain('type="checkbox" name="terms"');
     expect(html.match(/name="marketing"[^>]*checked/g) ?? []).toHaveLength(0);
     // No pairing card and no email button: the board's two providers fill the page's one
     // decision (the email code flow still answers at /start/email for whoever reaches it).
@@ -484,7 +485,7 @@ describe("signing in", () => {
     expect(res.headers.getSetCookie()).toEqual([]);
   });
 
-  it("sends a POST without the terms tick back to the screen, starting nothing", async () => {
+  it("sends a POST without the consent field back to the screen, starting nothing", async () => {
     const res = await post("/start/auth/google", {});
     expect(res.status).toBe(303);
     expect(res.headers.get("location")).toBe("/start/signup?error=terms");

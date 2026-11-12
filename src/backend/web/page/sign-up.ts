@@ -64,11 +64,12 @@ ${v.fromPlan ? dash("signup", v.lang, { href: "/start/plan", label: pageCopyFor(
 ${v.signup ? `<p class="sub">${escape(v.signup.line)}</p>` : ""}
 ${v.error ? `<p class="notice" role="alert">${escape(v.error)}</p>` : ""}
 <form id="signup" method="post">
+  <input type="hidden" name="terms" value="yes">
 ${v.providers.map((p) =>
   `  <button class="cta ${p.id === "apple" ? "apple" : "s"}" type="submit" formaction="${escape(p.action)}">${mark(p.id)}${escape(p.label)}</button>`,
 ).join("\n")}${email}</form>
 <div class="consent">
-  <label><input type="checkbox" name="terms" value="yes" form="signup"><span>${termsLabel}</span></label>
+  <p>${termsLabel}</p>
   <label><input type="checkbox" name="marketing" value="yes" form="signup"><span>${escape(SIGNUP_COPY.consentMarketing)}</span></label>
 </div>
 </div>

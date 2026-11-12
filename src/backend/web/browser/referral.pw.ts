@@ -24,7 +24,6 @@ test("a friend's link: invite page, the walk, the step prefilled, applied", asyn
   // The streak goal sits between the plan and the sign-up, 14 already picked.
   await expect(page).toHaveURL(/\/start\/streak/);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await page.locator('input[name="terms"]').check();
   await page.getByRole("button", { name: /Continue with Google/i }).click();
   await page.getByRole("textbox").fill(`pw-ref-${Date.now()}`);
   await page.getByRole("button").click();

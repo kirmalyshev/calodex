@@ -624,8 +624,8 @@ export function createRouter(
         if (typeof body.idToken !== "string" || !body.idToken) {
           return json({ error: "idToken required" }, 400);
         }
-        // The terms box is required (S8) — refused here, before `verify` spends a JWKS fetch, and
-        // 400 rather than an AuthError 401 so a client can tell "tick the box" from "bad token".
+        // The consent is required (S8) — refused here, before `verify` spends a JWKS fetch, and
+        // 400 rather than an AuthError 401 so a client can tell "consent missing" from "bad token".
         if (body.terms !== true) {
           return json({ error: "terms-required" }, 400);
         }

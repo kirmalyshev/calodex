@@ -69,7 +69,6 @@ test.describe("a browser that is not English", () => {
     // broken. The provider buttons are one door in (S8): the sign-up screen, in the same language.
     await page.getByRole("link", { name: "Ich habe schon ein Konto" }).click();
     await expect(page).toHaveURL(/\/start\/signup/);
-    await page.locator('input[name="terms"]').check();
     await page.getByRole("button", { name: /Weiter mit google/i }).click();
     await page.getByRole("textbox").fill(`pw-lang-de-${Date.now()}`);
     await page.getByRole("button").click();

@@ -25,21 +25,19 @@ test("the whole W3 walk: plan, sign-up, country, first meal — and back", async
   await expect(page.locator(".pln .kcb")).toContainText("kcal");
   await expect(page.locator(".pln .pib")).toContainText("Saturated fat");
 
-  // ── The sign-up: terms required, marketing optional ─────────────────────────────────────
+  // ── The sign-up: the byline consents, marketing stays an opt-in ─────────────────────────
   await page.getByRole("link", { name: "Continue", exact: true }).click();
   // The streak goal sits between the plan and the sign-up, 14 already picked.
   await expect(page).toHaveURL(/\/start\/streak/);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page).toHaveURL(/\/start\/signup/);
   await expect(page.getByRole("heading", { name: "Save your plan" })).toBeVisible();
-  await expect(page.locator('input[name="terms"]')).not.toBeChecked();
+  // `terms` rides the submit hidden — continuing is the agreement — and the marketing box is
+  // drawn unticked: marketing consent is a choice, not a default.
+  await expect(page.locator('input[name="terms"]')).toHaveValue("yes");
   await expect(page.locator('input[name="marketing"]')).not.toBeChecked();
-  // Unticked goes nowhere.
-  await page.getByRole("button", { name: /Continue with Google/i }).click();
-  await expect(page).toHaveURL(/\/start\/signup/);
-  // Both boxes ticked — the marketing one is what the engine stamps onto the account
+  // The marketing tick is what the engine stamps onto the account
   // (identity.test.ts asserts `marketing_consent_at`; here the tick rides the real submit).
-  await page.locator('input[name="terms"]').check();
   await page.locator('input[name="marketing"]').check();
   // The tick is read back on the wire (#162): `form.get("marketing")` on the kickoff POST is what
   // mints the consent cookie's "m" segment, and the callback turns it into `marketing_consent_at`
@@ -95,7 +93,6 @@ test("the whole W3 walk: plan, sign-up, country, first meal — and back", async
   const returning = await other.newPage();
   await returning.goto("/start");
   await returning.getByRole("link", { name: /already have an account/i }).click();
-  await returning.locator('input[name="terms"]').check();
   await returning.getByRole("button", { name: /Continue with Google/i }).click();
   await returning.getByRole("textbox").fill(subject); // the same identity
   await returning.getByRole("button").click();

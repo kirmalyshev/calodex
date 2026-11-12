@@ -749,16 +749,17 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     });
   }
 
-  // THE KICKOFF IS A POST — the consent boxes ride the form, and a cookie the callback reads is
-  // only ever minted by a request that carried the tick. GET on the same path goes back to the
-  // screen rather than starting anything: a sign-in started without consent is not started at all.
+  // THE KICKOFF IS A POST — the consent rides the form (terms hidden: the byline's "by continuing"
+  // IS the agreement, ieat-app#2806), and a cookie the callback reads is only ever minted by a
+  // request that carried it. GET on the same path goes back to the screen rather than starting
+  // anything: a sign-in started without consent is not started at all.
   const postedAuth = req.method === "POST" ? AUTH_PATH.exec(pathname) : null;
   if (postedAuth && postedAuth[2] === undefined) {
     const name = postedAuth[1] as WebProvider;
     const provider = usable[name];
     if (!provider) return notFound();
     const form = await req.formData().catch(() => null);
-    // The required box, enforced on the server: the screen's tick is a suggestion, the POST is the
+    // The required consent, enforced on the server: the form carries it hidden, the POST is the
     // fact. The fourth cookie segment carries the optional box's answer — terms is implied, since
     // this cookie cannot exist without it.
     if (form === null || form.get("terms") === null) return seeOther(`${START_PREFIX}/signup?error=terms`);
@@ -866,8 +867,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
 
   // ── Sign in with email (#569): the third provider ────────────────────────────────────────
   //
-  // THE KICKOFF IS A POST FOR THE SAME REASON THE OAUTH ONE IS: the terms tick is what makes it
-  // legal, and `eait_emailc` is the consent record only a ticked box can mint — this surface's
+  // THE KICKOFF IS A POST FOR THE SAME REASON THE OAUTH ONE IS: the consent is what makes it
+  // legal, and `eait_emailc` is the consent record only a form carrying it can mint — this surface's
   // `eait_oauth`, minus the provider round trip the mail replaces. `eait_email` holds the
   // address a live code was sent to plus the send time — the countdown's source — and a code
   // page with neither is a page naming a code nobody sent, sent back to the page that sends one.
