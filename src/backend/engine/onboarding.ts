@@ -177,8 +177,8 @@ export async function assignVariant(
 /**
  * The copy this server serves — the assigned variant when one applies, control otherwise.
  *
- * `onboardingContent` with the experiment layer on top; the callers are `web/start.ts` and
- * `chat.ts` (ieat-app#2669), and `onboardingServedFor` for `GET /v1/onboarding`. A variant that fails the shape check the app runs
+ * The words half of `onboardingServedFor` — for a caller that needs no order: `web/start.ts`'s
+ * pages past the walk and `chat.ts` (ieat-app#2669). A variant that fails the shape check the app runs
  * falls back BLOCK BY BLOCK to control, through the same `usableContent` — an experiment that was
  * not saved for every field cannot produce a flow that skips a question.
  *
@@ -190,15 +190,11 @@ export async function onboardingContentFor(
   userId: string | null,
   signals: OnboardingSignals,
 ): Promise<OnboardingContent> {
-  // The WORDS, for a reader that walks nothing — the chat resolving a stored ask line, a page
-  // rendering one screen. An ordered arm's words stay the arm's here whatever the caller can walk:
-  // the thread must quote what the user was actually shown (ieat-app#2788). Only the client that
-  // WALKS the flow, `onboardingServedFor`, falls back to the live copy.
-  const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
-  if (userId === null) return control;
-  const assigned = await assignVariant(deps, userId, signals);
-  if (!assigned) return control;
-  return usableContent(assigned.variant.content, control);
+  // The WORDS a client with these signals is shown — the same rule as the order, so a reader quoting
+  // them (the chat resolving a stored ask line, a /start page) says what that client's screen said
+  // (ieat-app#2788). A caller that cannot walk an ordered arm it holds reads the live copy, because
+  // that is what such a client renders.
+  return (await onboardingServedFor(deps, userId, signals)).content;
 }
 
 /**
@@ -664,7 +660,8 @@ export function orderRefusalText(r: OrderRefusal): string {
 
 /**
  * Write a draft arm's ORDER (ieat-app#2788): `validateOnboardingOrder` on the write, so an order no
- * client can walk is refused here and never reaches one. `null` clears it back to the default. The
+ * client can walk is refused here and never reaches one. `null` clears it back to the default, and
+ * so does saving the default itself. The
  * control arm walks the live order by definition, so it takes none.
  */
 export async function saveOnboardingVariantOrder(
@@ -683,8 +680,11 @@ export async function saveOnboardingVariantOrder(
   if (order !== null) {
     const refusals = validateOnboardingOrder(order);
     if (refusals.length > 0) return { ok: false, errors: refusals.map(orderRefusalText), refusals };
-    // Exactly what a client walks: `servedOrder` narrows a validated list without a cast.
-    next = servedOrder(order);
+    // Exactly what a client walks: `servedOrder` narrows a validated list without a cast. The
+    // default itself is stored as NO order — an arm holding a copy of it would keep the copy when
+    // the default moves, and would read as "ordered" to the capability gate for nothing.
+    const walked = servedOrder(order);
+    next = walked.every((p, i) => p === DEFAULT_ORDER[i]) && walked.length === DEFAULT_ORDER.length ? undefined : walked;
   }
   experiment.variants = experiment.variants.map((v, i) => {
     if (i !== index) return v;
@@ -733,11 +733,15 @@ export async function startOnboardingExperiment(
   if (experiment.variants.every((v) => v.weight <= 0)) {
     return { ok: false, errors: ["no variant carries weight"] };
   }
-  // The web cannot walk an order yet (ieat-app#2788 C), so it would enrol nobody there and say
-  // nothing: an ordered arm runs on the app alone, and the targeting has to say so.
+  // ON THE WEB THE FIRST QUESTION IS ASKED BEFORE AN ACCOUNT EXISTS: /start's first answer is what
+  // creates one, so nobody is assigned until then and the first question is the default's. An arm
+  // that moves another question to the front would be walked "goal, then the arm" there — a
+  // sequence nobody designed, counted as the arm. Such an arm runs on the app (ieat-app#2788).
   const surfaces = experiment.rules.surfaces ?? [];
-  if (experiment.variants.some((v) => v.order) && !(surfaces.length === 1 && surfaces[0] === "app")) {
-    return { ok: false, errors: ["an ordered arm runs on the app only for now — set surfaces to [\"app\"]"] };
+  const web = surfaces.length === 0 || surfaces.includes("web");
+  const first = DEFAULT_ORDER[1];
+  if (web && experiment.variants.some((v) => v.order !== undefined && v.order[1] !== first)) {
+    return { ok: false, errors: [`an arm that does not open on "${first}" runs on the app only — set surfaces to ["app"]`] };
   }
   // Re-validated at the start: a draft saved before a rule tightened must not reach a client that
   // validates against the new rules and walks the default inside the arm (ieat-app#2788).

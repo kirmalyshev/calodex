@@ -683,16 +683,42 @@ describe("experiments (ieat-app#2669)", () => {
       expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.status).toBe("draft");
     });
 
-    it("refuses to start an ordered experiment the web could be targeted by — /start walks no order yet", async () => {
+    it("starts an ordered experiment on the web too, now that /start walks the order", async () => {
       const { startOnboardingExperiment } = await import("./onboarding.ts");
       await store.setSwitch("onboarding.experiments", true, userId);
-      for (const rules of [{}, { surfaces: ["app", "web"] }]) {
-        const e = ordered();
+      const e = ordered();
+      e.rules = { surfaces: ["app", "web"] } as never;
+      await store.putOnboardingExperiment(e as never);
+      expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: true });
+    });
+
+    it("stores no order for an unchanged default: the arm walks the live order, not a copy of it", async () => {
+      const { saveOnboardingVariantOrder } = await import("./onboarding.ts");
+      const e = ordered();
+      await store.putOnboardingExperiment(e as never);
+      const defaultOrder = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
+        "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup"];
+      expect(await saveOnboardingVariantOrder(deps, e.id, 1, defaultOrder)).toEqual({ ok: true });
+      expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toBeUndefined();
+      // One beat short of the default is an order, and is kept.
+      const noPrelim = defaultOrder.filter((p) => p !== "prelim");
+      expect(await saveOnboardingVariantOrder(deps, e.id, 1, noPrelim)).toEqual({ ok: true });
+      expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toEqual(noPrelim as never);
+    });
+
+    it("keeps an arm that does not open on the goal off the web — /start asks its first question before anyone is assigned", async () => {
+      const { startOnboardingExperiment } = await import("./onboarding.ts");
+      await store.setSwitch("onboarding.experiments", true, userId);
+      const sexFirst = ["welcome", "sex", "goal", ...ARM_ORDER.slice(3)];
+      for (const rules of [{}, { surfaces: ["web"] }]) {
+        const e = ordered(sexFirst);
         e.rules = rules as never;
         await store.putOnboardingExperiment(e as never);
-        expect((await startOnboardingExperiment(deps, e.id)).ok).toBe(false);
+        expect(await startOnboardingExperiment(deps, e.id)).toEqual({
+          ok: false, errors: ['an arm that does not open on "goal" runs on the app only — set surfaces to ["app"]'],
+        });
       }
-      const app = ordered();
+      const app = ordered(sexFirst);
       app.rules = { surfaces: ["app"] } as never;
       await store.putOnboardingExperiment(app as never);
       expect(await startOnboardingExperiment(deps, app.id)).toEqual({ ok: true });
@@ -734,9 +760,24 @@ describe("experiments (ieat-app#2669)", () => {
       const older = await onboardingServedFor(deps, userId, signals);
       expect(older.content.welcome.cta).not.toBe("Variant");
       expect(older.order).toBeUndefined();
-      // A reader that walks nothing — the chat quoting a stored ask line — gets the words the user
-      // was shown, whatever it can walk.
-      expect((await onboardingContentFor(deps, userId, signals)).welcome.cta).toBe("Variant");
+      // The words follow the same rule: what a client with these signals was shown.
+      expect((await onboardingContentFor(deps, userId, signals)).welcome.cta).not.toBe("Variant");
+      expect((await onboardingContentFor(deps, userId, capable)).welcome.cta).toBe("Variant");
+    });
+
+    it("quotes in the thread the ask line the phone showed — the arm's to a capable one, the live copy's to an older one", async () => {
+      const armed = ordered();
+      armed.variants[1]!.content.screens.find((s) => s.id === "goal")!.asks.goal!.lines = ["The arm asks the goal"];
+      await startExperiment(armed);
+      await store.patchProfile(userId, { lang: "en" });
+      const said = async () => (await store.chatBefore(userId, null, 10)).map((m) => m.text);
+      expect(await appendLines(deps, userId, [{ role: "assistant", ask: { prompt: "goal", line: 0 } }], { orderVersion: 1 }))
+        .toEqual({ appended: 1 });
+      expect(await said()).toContain("The arm asks the goal");
+      // The same account on a build that cannot walk the order was shown the live copy's line.
+      expect(await appendLines(deps, userId, [{ role: "assistant", ask: { prompt: "goal", line: 0 } }]))
+        .toEqual({ appended: 1 });
+      expect((await said()).filter((t) => t === "The arm asks the goal")).toHaveLength(1);
     });
 
     it("reads each arm's place funnel in that arm's order, without a beat it removed", async () => {

@@ -2723,6 +2723,17 @@
       "post": {
         "operationId": "post_messagesLines",
         "summary": "The user's own words and Spud's scripted lines, by id. Not charged.",
+        "parameters": [
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "description": "The order capability, the SAME value sent to `GET /v1/onboarding`: an onboarding ask line is quoted in the words a client with it was shown, so a different value quotes a line the screen did not show.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {

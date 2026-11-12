@@ -11,6 +11,8 @@ import { escape, shell } from "./shell.ts";
 
 /** The plan reveal (#402, restyled for ieat-app#2050): the loader, the goal, the cards, Continue — every figure the engine's. */
 export interface PlanView {
+  /** The arm's order as served, for the dash (ieat-app#2788); absent is the default. */
+  order?: readonly string[] | undefined;
   profile: Profile;
   targets: FoodTargets;
   basis: TargetBasis;
@@ -56,7 +58,7 @@ export function plan(v: PlanView): string {
 ${loader(v, COPY, goal)}
 <div class="wmain one pw"><div class="wcol">
 <div class="pln rv ldg" style="--ld:${sec(LOADER_S)}">
-${dash("summary", v.lang, { href: v.back, label: pageCopyFor(v.lang).back })}
+${dash("summary", v.lang, { href: v.back, label: pageCopyFor(v.lang).back }, v.order)}
 <div class="ok rise" style="--d:.05s"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
 <h1 class="hd rise" style="--d:.15s">${escape(headline)}</h1>
 <div class="pgrid${left ? "" : " solo"}">
