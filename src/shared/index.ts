@@ -26,6 +26,7 @@ export * from "./entitlement.ts";
 export * from "./referral.ts";
 export * from "./chat.ts";
 export * from "./chat-copy.ts";
+export * from "./brand.ts";
 export * from "./lang.ts";
 // The Lingui runtime. Exported because copy is migrating OUT of the `Localized<T>` tables and into
 // the catalogs: a module that renders a migrated string needs `i18nFor`, and it may not reach past

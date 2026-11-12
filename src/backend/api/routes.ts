@@ -28,7 +28,7 @@ import {
   MAX_FOOD_QUERY, FOOD_LOG_MAX_GRAMS, normalizeBarcode, type FoodSearchResponse, type ProductResponse,
   type ReferralRedeemRequest, type ReferralSharedRequest,
 } from "@eait/shared";
-import { acceptLang, narrowLang } from "@eait/shared";
+import { APP_HEADER, acceptLang, narrowLang, parseApp } from "@eait/shared";
 import { appLinkLanding, html } from "../web/page.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
 import { emailSignInEnabled } from "../mail/choose.ts";
@@ -946,7 +946,7 @@ export function createRouter(
         const body = await req.json().catch(() => null);
         if (req.method === "POST") {
           if (!isPushTokenRequest(body)) return json({ error: "push token required" }, 400);
-          await store.putPushToken(userId, pushTokenFrom(body.platform, body.token)!, body.platform);
+          await store.putPushToken(userId, pushTokenFrom(body.platform, body.token)!, body.platform, parseApp(req.headers.get(APP_HEADER)));
           if (isTimezone(body.timezone)) await store.setTimezone(userId, body.timezone);
           // Counted, never quoted: the value is the caller's and the log is nobody's business.
           else if (body.timezone !== undefined) console.log("[eait] push token: ignored a timezone this runtime cannot date with");

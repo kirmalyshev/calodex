@@ -20,7 +20,7 @@ import type {
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -1170,9 +1170,11 @@ create table if not exists push_tokens (
   token      text primary key,
   user_id    uuid not null references users(id) on delete cascade,
   platform   text not null,
+  app        text not null default 'eait',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table push_tokens add column if not exists app text not null default 'eait';
 create index if not exists push_tokens_user_idx on push_tokens(user_id);
 
 -- The admin-edited notification copy. ONE row, pinned to id = 1, exactly like onboarding_content.
@@ -4438,14 +4440,14 @@ export async function postgresStore(
                       order by used_at desc limit 1)`;
     },
 
-    async putPushToken(userId, token, platform) {
+    async putPushToken(userId, token, platform, app = "eait") {
       // The token is the key, so a device that signs into another account MOVES rather than
       // duplicating. `updated_at` is what a future sweep of dead installations would read.
       await sql`
-        insert into push_tokens (token, user_id, platform, created_at, updated_at)
-        values (${token}, ${userId}, ${platform}, ${new Date(now())}, ${new Date(now())})
+        insert into push_tokens (token, user_id, platform, app, created_at, updated_at)
+        values (${token}, ${userId}, ${platform}, ${app}, ${new Date(now())}, ${new Date(now())})
         on conflict (token) do update
-          set user_id = excluded.user_id, platform = excluded.platform, updated_at = excluded.updated_at`;
+          set user_id = excluded.user_id, platform = excluded.platform, app = excluded.app, updated_at = excluded.updated_at`;
     },
 
     async dropPushToken(userId, token) {
@@ -4456,10 +4458,11 @@ export async function postgresStore(
 
     async pushTokensFor(userId) {
       const rows = await sql`
-        select token, platform from push_tokens where user_id = ${userId} order by created_at`;
+        select token, platform, app from push_tokens where user_id = ${userId} order by created_at`;
       return (rows as Record<string, unknown>[]).map((r) => ({
         token: r.token as string,
         platform: r.platform as PushPlatform,
+        app: parseApp(r.app as string),
       }));
     },
 
