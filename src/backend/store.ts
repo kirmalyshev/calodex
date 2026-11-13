@@ -565,11 +565,11 @@ export interface FunnelAggregate {
    * record older than that describes a payment this run did not cause.
    */
   paid: {
-    /** Runs in the window whose account went on to hold an entitlement record. */
+    /** Runs in the window whose account went on to hold an entitlement record — counted per RUN, so an account that onboarded twice converts twice. */
     converted: number;
-    /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. */
+    /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. An OVERLAY — a trialing monthly run counts here AND in `products`. */
     trial: number;
-    /** The products the converted hold — `lifetime_product_id`, else `product_id`, per run. */
+    /** The products the converted hold — `lifetime_product_id`, else `product_id`, per run. Sums to `converted`. */
     products: { productId: string; lifetime: boolean; n: number }[];
     /**
      * Median ms from a converted run's first event to the earliest instant either grant
@@ -633,7 +633,13 @@ export interface AdminOnboardingAccount {
   completed: boolean;
   /** The earliest view's stamp inside `range` of a screen that presents the paywall (`summary`, `health`), or null. */
   sawPaywallAt: string | null;
-  /** `least(expires_event_at, lifetime_event_at)`: the earliest instant either grant clock holds. */
+  /**
+   * `least(expires_event_at, lifetime_event_at)`: the earliest instant either grant clock
+   * holds, carried so the engine can order it against `startedAt` and `sawPaywallAt` — the
+   * same comparison `aggregateFunnel` makes for `paid.converted`; a change to the conversion
+   * rule must move both. Each clock keeps its LATEST event, so for a renewal it is the
+   * renewal's stamp (the caveat `FunnelAggregate.paid.medianMs` spells out).
+   */
   entitledAt: string | null;
   /** The account's entitlement record, or null. `entitlementLive` reads whether it is live. */
   entitlement: StoredEntitlement | null;
@@ -642,9 +648,10 @@ export interface AdminOnboardingAccount {
 }
 
 export interface AdminOnboardingFlowQuery {
-  /** Present → ONE account's flow, `events` filled. Absent → every account, paged. */
+  /** Present → ONE account's flow, `events` filled; `cursor`/`limit`/`staffIds` are ignored then. Absent → every account, paged. */
   userId?: string;
   range: AdminRange;
+  /** Accounts staff by config (`campaignStaffIds`), excluded from the list beside the flag. */
   staffIds?: string[];
   /** The last row of the previous page, opaque — keyset over (startedAt, userId), newest first. */
   cursor?: string;

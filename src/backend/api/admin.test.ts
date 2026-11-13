@@ -674,6 +674,73 @@ describe("the account list", () => {
   });
 });
 
+// The per-account funnel (calodex#812): the same window and population as the aggregate's,
+// one row per account, and one account's stored journal behind it.
+describe("the per-account funnel", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  const seen = async (userId: string, sid: string, over: Record<string, unknown>) =>
+    store.recordOnboardingEvents(userId, [{
+      id: `${sid}-e`, sessionId: sid, place: "goal", action: "view",
+      contentVersion: 1, at: new Date().toISOString(), ...over,
+    } as never]);
+
+  it("lists accounts newest first, reads one account's journal, and answers 404 for nobody", async () => {
+    const u = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    await seen(u, "s1", {});
+
+    const page = await (await admin("GET", "/admin/api/funnel/users?days=30")).json() as {
+      accounts: { userId: string; sessions: number; completed: boolean }[];
+      nextCursor: string | null; range: { days: number };
+    };
+    expect(page.range).toMatchObject({ days: 30 });
+    const row = page.accounts.find((a) => a.userId === u)!;
+    expect(row.sessions).toBe(1);
+    expect(row.completed).toBe(false);
+
+    const one = await (await admin("GET", `/admin/api/users/${u}/onboarding`)).json() as {
+      userId: string; events: { place: string; action: string }[];
+    };
+    expect(one.userId).toBe(u);
+    expect(one.events.map((e) => `${e.place}:${e.action}`)).toEqual(["goal:view"]);
+
+    expect((await admin("GET", `/admin/api/users/${crypto.randomUUID()}/onboarding`)).status).toBe(404);
+    // A valid-uuid shape that names nobody answers an empty journal's 404, not a crash.
+    expect((await admin("GET", "/admin/api/users/not-a-uuid/onboarding")).status).toBe(404);
+  });
+
+  it("verdicts: paywall seen only when no grant predates it; paid reads the record, not an event", async () => {
+    const free = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const before = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const after = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const t0 = Date.now();
+    const at = (ms: number) => new Date(t0 + ms).toISOString();
+    for (const [u, sid] of [[free, "f"], [before, "b"], [after, "a"]] as const) {
+      await seen(u, sid, { id: `${sid}-e1`, place: "summary", at: at(10000) });
+      await seen(u, sid, { id: `${sid}-e2`, action: "complete", at: at(20000) });
+    }
+    // Paying BEFORE the paywall screen: walked past it, so the chip stays off.
+    await store.putEntitlement(before, {
+      expiresAt: at(86400000), productId: "monthly_499", eventAt: at(5000) });
+    // Paying AFTER it: the screen stood in the run's path.
+    await store.putEntitlement(after, {
+      expiresAt: at(86400000), productId: "yearly_2999", eventAt: at(30000) });
+
+    const body = await (await admin("GET", "/admin/api/funnel/users")).json() as {
+      accounts: { userId: string; paywall: boolean;
+        paid: { kind: string; productId: string; msFromStart: number | null } | null }[];
+    };
+    const rows = Object.fromEntries(body.accounts.map((a) => [a.userId, a]));
+    expect(rows[free]!.paywall).toBe(true);
+    expect(rows[free]!.paid).toBeNull();
+    expect(rows[before]!.paywall).toBe(false);
+    // Already paying when the run began: the record says so, but this run did not convert it.
+    expect(rows[before]!.paid).toMatchObject({ kind: "monthly", productId: "monthly_499", msFromStart: null });
+    expect(rows[after]!.paywall).toBe(true);
+    expect(rows[after]!.paid).toMatchObject({ kind: "yearly", productId: "yearly_2999", msFromStart: 20000 });
+  });
+});
+
 // The window every time-based endpoint reads over (ieat-app#2776, follow-ups #2779). These are
 // HTTP tests, not echo tests: the echo was already proven, what was not proven is that `from`/`to`
 // — and a resolved `days` on an endpoint that defaults unbounded — actually filter the rows.

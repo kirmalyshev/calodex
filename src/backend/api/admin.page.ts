@@ -2288,7 +2288,8 @@ details.how p { margin-top: 8px; }
       var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.people }; });
       steps.push({ name: "Finished onboarding", id: "complete", n: f.completed, fin: true });
       // The funnel's last step (#812): of the starters, the runs whose account's own entitlement
-      // record shows a payment — the server's record, never a client event.
+      // record's earliest grant lands at or after the run's start — the server's record, never a
+      // client event; a record older than that is a payment this run did not cause.
       steps.push({ name: "Converted to paid", id: "paid", n: f.paid.converted, fin: true });
       var first = steps[0].n;
       var drops = steps.slice(1).map(function (s, i) { return steps[i].n - s.n; }).filter(function (d) { return d > 0; });
@@ -2333,7 +2334,9 @@ details.how p { margin-top: 8px; }
       // split — a trial period is named one because the store keeps the flag.
       if (f.paid.converted > 0) {
         var bits = [];
-        if (f.paid.trial) bits.push(f.paid.trial + " on a trial");
+        // "trial" is an overlay on the plan columns (a trialing monthly counts in both), so it
+        // reads "of which" — the plan numbers alone sum to the converted count.
+        if (f.paid.trial) bits.push("of which " + f.paid.trial + " on a trial");
         if (f.paid.monthly) bits.push(f.paid.monthly + " monthly");
         if (f.paid.yearly) bits.push(f.paid.yearly + " yearly");
         if (f.paid.lifetime) bits.push(f.paid.lifetime + " lifetime");
@@ -2366,7 +2369,7 @@ details.how p { margin-top: 8px; }
   function paidLabel(p) {
     if (!p) return "";
     var text = { trial: "trial", monthly: "monthly", yearly: "yearly", lifetime: "lifetime", other: "paid" }[p.kind] || p.kind;
-    return p.msFromStart !== null ? text + " · " + dur(p.msFromStart) : text;
+    return p.msFromStart != null ? text + " · " + dur(p.msFromStart) : text;
   }
 
   function loadFunnelUsers() {
@@ -2391,21 +2394,23 @@ details.how p { margin-top: 8px; }
     var path = "/admin/api/funnel/users" + (q ? q + "&" : "?") + "limit=50"
       + (funnelPage.cursor ? "&cursor=" + encodeURIComponent(funnelPage.cursor) : "");
     funnelPage.more.disabled = true;
+    var failed = function (e) {
+      funnelPage.more.disabled = false;
+      funnelPage.status.textContent = "failed: " + e.message;
+    };
     api("GET", path).then(function (page) {
+      if (!page || !Array.isArray(page.accounts)) throw new Error("bad funnel/users answer");
       funnelPage.more.disabled = false;
       funnelPage.cursor = page.nextCursor;
       funnelPage.more.classList.toggle("hidden", !page.nextCursor);
       funnelPage.status.textContent = "";
-      var accounts = page.accounts || [];
+      var accounts = page.accounts;
       if (!accounts.length && !funnelPage.list.children.length) {
         funnelPage.status.textContent = "No onboarding runs in this window.";
         return;
       }
       accounts.forEach(function (a) { funnelPage.list.appendChild(funnelRow(a)); });
-    }, function (e) {
-      funnelPage.more.disabled = false;
-      funnelPage.status.textContent = "failed: " + e.message;
-    });
+    }).catch(failed);
   }
 
   function funnelRow(a) {
@@ -2439,8 +2444,9 @@ details.how p { margin-top: 8px; }
     box.appendChild(el("p", "muted", "Loading…"));
     wrap.appendChild(box);
     api("GET", "/admin/api/users/" + encodeURIComponent(userId) + "/onboarding").then(function (view) {
+      if (!view || !Array.isArray(view.events)) throw new Error("bad onboarding answer");
       renderFlow(box, view);
-    }, function (e) {
+    }).catch(function (e) {
       box.textContent = "";
       box.appendChild(el("p", "muted", "failed: " + e.message));
     });
@@ -2455,7 +2461,8 @@ details.how p { margin-top: 8px; }
     host.textContent = "";
     var sessions = [];
     var byId = {};
-    (view.events || []).forEach(function (e) {
+    var events = Array.isArray(view.events) ? view.events : [];
+    events.forEach(function (e) {
       var s = byId[e.sessionId];
       if (!s) { s = { id: e.sessionId, events: [] }; byId[e.sessionId] = s; sessions.push(s); }
       s.events.push(e);
@@ -3154,7 +3161,7 @@ details.how p { margin-top: 8px; }
   // A READ, and the widest one in the product: every account, with the address on it. The server
   // checks the role on every request under /admin, so nothing here is a permission — it is a table.
   // A row opens the detail pane: profile (with the staff switch and the per-account sample),
-  // thread, diary, and the push composer. Every value reaches the DOM through textContent: an
+  // thread, diary, onboarding, and the push composer. Every value reaches the DOM through textContent: an
   // address somebody typed at a provider is still somebody's text.
 
   var usersCursor = null;
@@ -3319,8 +3326,14 @@ details.how p { margin-top: 8px; }
   function loadUserOnboarding() {
     var u = sel;
     paintBox($("onboarding-state"), $("onboarding-body"), "loading");
+    var failed = function (e) {
+      if (sel !== u) return;
+      loadedTab.onboarding = null;
+      paintBox($("onboarding-state"), $("onboarding-body"), "error", e, "this account", loadUserOnboarding, true);
+    };
     return api("GET", "/admin/api/users/" + encodeURIComponent(u.userId) + "/onboarding").then(function (view) {
       if (sel !== u) return;
+      if (!view || !Array.isArray(view.events)) throw new Error("bad onboarding answer");
       var sum = $("onboarding-summary");
       sum.textContent = "";
       var row = el("div", "fa-row");
@@ -3338,11 +3351,7 @@ details.how p { margin-top: 8px; }
       sum.appendChild(row);
       renderFlow($("onboarding-flow"), view);
       paintBox($("onboarding-state"), $("onboarding-body"), "ready");
-    }, function (e) {
-      if (sel !== u) return;
-      loadedTab.onboarding = null;
-      paintBox($("onboarding-state"), $("onboarding-body"), "error", e, "this account", loadUserOnboarding, true);
-    });
+    }).catch(failed);
   }
 
   // A privilege change is asked about first, both ways: staff can open this page and change every

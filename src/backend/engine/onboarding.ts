@@ -20,7 +20,7 @@ import { switchOn } from "./switches.ts";
 import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 
-/** Every place an event may name — the questions, and the three places that are not questions. */
+/** Every place an event may name — the questions, and the interstitial places between them. */
 const PLACES: readonly string[] = ONBOARDING_PLACES;
 
 /**
@@ -407,9 +407,10 @@ export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { d
 }
 
 /**
- * Which plan a stored product id names — the same test the web client's renewal line and
- * `referralRewardDays` apply: `month` means monthly, `year|annual` yearly, anything else is
- * reported as itself rather than guessed. A lifetime unlock is its own column, not a name test.
+ * Which plan a stored product id names — the same month-beats-year test the web client's
+ * renewal line and `referralRewardDays` apply (minus the latter's config ceiling): `month`
+ * means monthly, `year|annual` yearly, anything else is reported as itself rather than
+ * guessed. A lifetime unlock is its own column, not a name test.
  */
 export function productPlan(productId: string, lifetimeProductId: string | null): "lifetime" | "monthly" | "yearly" | "other" {
   if (lifetimeProductId !== null) return "lifetime";
@@ -423,8 +424,7 @@ function paidStep(paid: FunnelAggregate["paid"]): OnboardingFunnel["paid"] {
   const out = { converted: paid.converted, trial: paid.trial, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: paid.medianMs };
   for (const p of paid.products) {
     if (p.lifetime) { out.lifetime += p.n; continue; }
-    const plan = productPlan(p.productId, null);
-    out[plan === "other" ? "other" : plan] += p.n;
+    out[productPlan(p.productId, null)] += p.n;
   }
   return out;
 }
@@ -446,13 +446,19 @@ export interface AdminOnboardingUserRow {
    * The paywall stood in this run's path: a screen that presents it (`summary`, `health`) was
    * seen and no recorded grant predates that view — an already-entitled account is walked past
    * it instead. The store records no paywall event of its own; this is the honest read of one.
+   * The caveat `paid.medianMs` carries applies here too: each grant clock keeps its LATEST
+   * event, so a renewal after the run reads "entitled after the view" for an account that was
+   * already paying when it saw the screen.
    */
   paywall: boolean;
   /**
    * The account's conversion state off its server-side record, or null — `trial` when the
-   * current period is one, else the plan the product id names. `msFromStart` is the time from
-   * this run's start to the earliest recorded grant event; null when the grant predates the
-   * run (the record says "already paying", not "this run converted").
+   * current period is one, else the plan the product id names (the exclusive kind; the
+   * aggregate's `paid.trial` is instead an OVERLAY counted beside its plan). `msFromStart` is
+   * the time from this run's start to the earliest instant either grant clock holds — exactly
+   * the first grant only when nothing newer overwrote its clock, and null when the grant
+   * predates the run (the record says "already paying", not "this run converted"), when the
+   * record holds no grant clock, or when the run has no events in the window.
    */
   paid: { kind: "trial" | "monthly" | "yearly" | "lifetime" | "other"; productId: string; msFromStart: number | null } | null;
 }
@@ -470,7 +476,8 @@ function flowRow(a: AdminOnboardingAccount): AdminOnboardingUserRow {
     userId: a.userId, lang: a.lang, country: a.country,
     startedAt: a.startedAt, lastPlace: a.lastPlace,
     sessions: a.sessions, completed: a.completed,
-    paywall: a.sawPaywallAt !== null && (a.entitledAt === null || a.entitledAt > a.sawPaywallAt),
+    paywall: a.sawPaywallAt !== null && (a.entitlement === null
+      || (a.entitledAt !== null && Date.parse(a.entitledAt) > Date.parse(a.sawPaywallAt))),
     paid,
   };
 }

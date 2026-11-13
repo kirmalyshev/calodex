@@ -2251,9 +2251,9 @@ export interface OnboardingFunnel {
    * the run's first event: a record older than that describes a payment this run did not cause.
    */
   paid: {
-    /** Runs in the window whose account went on to hold an entitlement record. */
+    /** Runs in the window whose account went on to hold an entitlement record — counted per RUN, so an account that onboarded twice converts twice. */
     converted: number;
-    /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. */
+    /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. An OVERLAY — a trialing monthly run counts here AND in `monthly`, so the plan columns plus `trial` sum past `converted`. */
     trial: number;
     /** Of `converted`: a lifetime unlock is held. */
     lifetime: number;
