@@ -1,7 +1,7 @@
 // The fragments more than one screen draws: Spud's mark, his typed lines, the slim top bar.
 
 import { spudSvg } from "@eait/shared/mascot";
-import type { Lang } from "@eait/shared";
+import { currentBrand, type Lang } from "@eait/shared";
 import { pageCopyFor, type PageCopy } from "../copy.ts";
 import { escape } from "./shell.ts";
 
@@ -19,4 +19,4 @@ export const askBubbles = (lines: readonly string[]): string =>
 
 /** The design's slim top bar: the wordmark, and the reassurance that the phone can take over. */
 export const topBar = (PAGE_COPY: PageCopy): string =>
-  `<div class="wbar"><strong>eait</strong><small>${escape(PAGE_COPY.topBarNote)}</small></div>`;
+  `<div class="wbar"><strong>${escape(currentBrand().name)}</strong><small>${escape(PAGE_COPY.topBarNote)}</small></div>`;
