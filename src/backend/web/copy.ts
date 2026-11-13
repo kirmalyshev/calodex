@@ -3632,7 +3632,7 @@ const SV: PageCopy = {
   chatSend: "Skicka",
   progress: "Fråga {step} av {total}",
   back: "Tillbaka",
-  spudAlt: "Spud, {app}s maskot",
+  spudAlt: "Spud, {apps} maskot",
   cardMacros: "{kcal}{unit} · {protein} g protein",
   chatProposalLead: "Jag loggar det här — stämmer det?",
   chatAMeal: "En måltid",

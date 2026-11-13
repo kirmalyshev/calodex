@@ -35,7 +35,7 @@ export const knownApp = (raw?: string | null): AppId | null => ((APPS as readonl
 /** `knownApp`, falling back to the default brand: for copy, where a wrong word beats a refusal. */
 export const parseApp = (raw?: string | null): AppId => knownApp(raw) ?? "eait";
 
-export const BRAND_TOKENS = ["app", "domain"] as const;
+export const BRAND_TOKENS = ["app", "domain", "app_gs", "apps"] as const;
 
 let source: () => Brand = () => BRANDS.eait;
 /**
@@ -47,7 +47,27 @@ export const setBrandSource = (src: () => Brand): void => { source = src; };
 export const currentBrand = (): Brand => source();
 
 const cache = new WeakMap<object, Map<AppId, unknown>>();
-const fill = (s: string, b: Brand): string => (s.includes("{") ? s.replaceAll("{app}", b.name).replaceAll("{domain}", b.domain) : s);
+// Grammar that bends around the name (ieat-app#2837). `eait` starts with a vowel and ends in "t",
+// so every form below is a no-op for it; a name that starts with a consonant or ends in a sibilant
+// gets the form that language needs. fr/ca `d'{app}` -> "de Calodex"; hu `az {app}` -> "a Calodex",
+// `{app}-tel` -> "Calodex-szel". Two tokens carry the genitive, which differs by language:
+// `{app_gs}` German (eaits / Calodex'), `{apps}` Scandinavian (eaits / Calodex).
+const VOWEL_START = /^[aeiouyhàáâäåæèéêëìíîïòóôöøùúûüœ]/i;
+const SIBILANT_END = /[sßxz]$/i;
+
+const fill = (s: string, b: Brand): string => {
+  if (!s.includes("{")) return s;
+  let o = s;
+  if (!VOWEL_START.test(b.name)) {
+    o = o.replace(/\b(d|qu)'\{app\}/gi, "$1e {app}").replace(/\b(az) \{app\}/gi, (_, w: string) => `${w.slice(0, -1)} {app}`);
+  }
+  if (SIBILANT_END.test(b.name)) o = o.replaceAll("{app}-tel", "{app}-szel");
+  return o
+    .replaceAll("{app_gs}", b.name + (SIBILANT_END.test(b.name) ? "'" : "s"))
+    .replaceAll("{apps}", b.name + (SIBILANT_END.test(b.name) ? "" : "s"))
+    .replaceAll("{app}", b.name)
+    .replaceAll("{domain}", b.domain);
+};
 
 export function branded<T>(v: T, b: Brand = source()): T {
   if (typeof v === "string") return fill(v, b) as T;

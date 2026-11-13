@@ -568,7 +568,7 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     signUpHeading: "Fotografera det du äter, få ett ärligt svar",
     saveHeading: "Spara dina framsteg",
     signInMealHeading: "Logga in för att spara den här måltiden",
-    termsLabel: "Genom att fortsätta godkänner du {app}s {terms} och {privacy}",
+    termsLabel: "Genom att fortsätta godkänner du {apps} {terms} och {privacy}",
     termsLink: "Villkor",
     privacyLink: "Integritetspolicy",
     consentMarketing: "Skicka mig tips och nya funktioner från {app}",
