@@ -29,7 +29,7 @@
 
 import { t, type Localized } from "./lang.ts";
 import type { Lang } from "./types.ts";
-import { DEFAULT_ONBOARDING_CONTENT, usableContent, type OnboardingContent } from "./onboarding.ts";
+import { DEFAULT_ONBOARDING_CONTENT_RAW, DEFAULT_ONBOARDING_CONTENT, usableContent, type OnboardingContent } from "./onboarding.ts";
 
 // ── Français ─────────────────────────────────────────────────────────────────────────────────
 
@@ -14762,7 +14762,7 @@ const PT_BR: OnboardingContent = {
 };
 
 export const ONBOARDING_CONTENT: Localized<OnboardingContent> = {
-  en: DEFAULT_ONBOARDING_CONTENT,
+  en: DEFAULT_ONBOARDING_CONTENT_RAW,
   fr: FR,
   de: DE,
   it: IT,
@@ -14782,7 +14782,7 @@ export const ONBOARDING_CONTENT: Localized<OnboardingContent> = {
  */
 export type OnboardingContentSet = Partial<Record<Lang, OnboardingContent>>;
 
-/** The compiled-in copy for one language. English for one nobody has written yet. */
+/** The compiled-in copy for one language. English for one nobody has written yet. Brand filled; `usableContentFor` is the raw one. */
 export const onboardingContentFor = (lang: Lang): OnboardingContent => t(lang)(ONBOARDING_CONTENT);
 
 /**

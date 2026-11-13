@@ -154,7 +154,7 @@ describe("every language's onboarding content", () => {
 
   it("is English for a language nobody has written, never undefined", () => {
     expect(onboardingContentFor("en")).toEqual(branded(ONBOARDING_CONTENT.en));
-    expect(DEFAULT_ONBOARDING_CONTENT).toBe(ONBOARDING_CONTENT.en);
+    expect(DEFAULT_ONBOARDING_CONTENT).toEqual(branded(ONBOARDING_CONTENT.en));
   });
 
   it("says nothing that is false where the line now stands (#50)", () => {

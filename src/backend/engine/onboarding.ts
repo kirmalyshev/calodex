@@ -720,7 +720,7 @@ export async function addOnboardingVariant(
   // validator cannot save (ieat-app#2757).
   const floor = compiledContentFor(experiment.lang).version + 1;
   const version = await deps.store.bumpOnboardingContentVersion(floor);
-  const content = usableContent(structuredClone(control.content), compiledContentFor(experiment.lang));
+  const content = usableContent(structuredClone(control.content), usableContentFor(experiment.lang, null));
   experiment.variants = [
     ...experiment.variants,
     { weight: control.weight, content: { ...content, version } },

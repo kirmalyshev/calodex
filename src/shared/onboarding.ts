@@ -31,7 +31,7 @@
 // so it can render the next question without a round trip. One implementation, so they cannot
 // disagree about what "next" means.
 
-import { BRAND_TOKENS } from "./brand.ts";
+import { BRAND_TOKENS, branded } from "./brand.ts";
 import type { AdminWindowEcho } from "./dates.ts";
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
 import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
@@ -953,7 +953,7 @@ export const PLAN_CHART_TICKS_MS = { area: 600, endDot: 1100, targetChip: 1200 }
  * `product/design/onboarding/copy.md` quotes every sentence below that the phone shows; change both
  * in the same change.
  */
-export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
+export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   // Bumped whenever a word below changes, which is what makes the funnel readable: events carry the
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
@@ -2249,3 +2249,6 @@ export interface OnboardingFunnel {
   contentVersion: number;
   rows: FunnelRow[];
 }
+
+/** The compiled-in English flow with the brand filled: what a client draws before the server answers. The raw table, tokens intact, is `DEFAULT_ONBOARDING_CONTENT_RAW`. */
+export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = branded(DEFAULT_ONBOARDING_CONTENT_RAW);

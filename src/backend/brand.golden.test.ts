@@ -12,7 +12,7 @@ import * as onboarding from "../shared/onboarding-content.ts";
 // ieat-app#2821: with brand `eait` every accessor matching NAME_RE, in the modules listed below,
 // returns what it returned before the brand became a value. One sha256 per accessor and language, so a
 // mismatch names the accessor and language, not the text. `brand.golden.txt` was generated on main
-// (re-hashed at e9c983c); UPDATE_GOLDEN=1 rewrites it, and a missing file fails rather than re-baselines.
+// (re-hashed at e9c983c, payCopyFor at 8ffd68e); the second test serves everything under a probe brand and fails on any leftover `eait`. UPDATE_GOLDEN=1 rewrites it, and a missing file fails rather than re-baselines.
 const NAME_RE = /(CopyFor|AppCopy|^scoresCopy|^bmiCopy|^onboardingContentFor|^usableContentFor)$/;
 const FILE = new URL("./brand.golden.txt", import.meta.url).pathname;
 
