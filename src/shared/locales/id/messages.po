@@ -206,7 +206,7 @@ msgstr "Membandingkan dengan rencanamu"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Terhubung ke akun {app} yang masuk lewat"
+msgstr "Terhubung ke akun {app_name} yang masuk lewat"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -286,7 +286,7 @@ msgstr "Kalau ada yang meleset, bilang saja — \"nasinya setengah\", \"tanpa al
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Tautan undangan untuk anggota baru, dan akun ini sudah membeli {app}."
+msgstr "Tautan undangan untuk anggota baru, dan akun ini sudah membeli {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -446,7 +446,7 @@ msgstr "Kode ini sudah kedaluwarsa. Minta yang baru di web atau di aplikasi."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Kodenya salah. Cek email terbaru dari {app}."
+msgstr "Kodenya salah. Cek email terbaru dari {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -546,7 +546,7 @@ msgstr "Akun ini belum masuk — masuk dengan Apple atau Google di web, lalu kir
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Ini {app} yang baru. Makanan dan fotomu disimpan di akun {app}-mu: masuk lewat web lalu tekan Hubungkan Telegram di halaman rencanamu."
+msgstr "Ini {app_name} yang baru. Makanan dan fotomu disimpan di akun {app_name}-mu: masuk lewat web lalu tekan Hubungkan Telegram di halaman rencanamu."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

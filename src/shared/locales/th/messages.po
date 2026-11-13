@@ -200,7 +200,7 @@ msgstr "กำลังเทียบกับแผนของคุณ"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "เชื่อมต่อกับบัญชี {app} ที่ลงชื่อเข้าใช้ด้วย"
+msgstr "เชื่อมต่อกับบัญชี {app_name} ที่ลงชื่อเข้าใช้ด้วย"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "ถ้ามีอะไรไม่ตรง บอกได้เล�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "ลิงก์คำเชิญมีไว้สำหรับสมาชิกใหม่ และบัญชีนี้ซื้อ {app} ไปแล้ว"
+msgstr "ลิงก์คำเชิญมีไว้สำหรับสมาชิกใหม่ และบัญชีนี้ซื้อ {app_name} ไปแล้ว"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "รหัสนั้นหมดอายุแล้ว ขอรห�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "รหัสไม่ถูกต้อง เช็กอีเมลล่าสุดจาก {app}"
+msgstr "รหัสไม่ถูกต้อง เช็กอีเมลล่าสุดจาก {app_name}"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "บัญชีนี้ยังไม่ได้ลงชื่อเ
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "นี่คือ {app} ใหม่ มื้ออาหารและรูปของคุณเก็บไว้ในบัญชี {app}: ลงชื่อเข้าใช้บนเว็บแล้วกด เชื่อมต่อ Telegram ในแผนของคุณ"
+msgstr "นี่คือ {app_name} ใหม่ มื้ออาหารและรูปของคุณเก็บไว้ในบัญชี {app_name}: ลงชื่อเข้าใช้บนเว็บแล้วกด เชื่อมต่อ Telegram ในแผนของคุณ"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

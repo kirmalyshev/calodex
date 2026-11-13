@@ -200,7 +200,7 @@ msgstr "Menyemak berbanding pelan anda"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Disambungkan ke akaun {app} yang didaftar masuk dengan"
+msgstr "Disambungkan ke akaun {app_name} yang didaftar masuk dengan"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Jika ada yang tidak kena, beritahu — \"separuh nasi\", \"tanpa avokado
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Pautan jemputan untuk ahli baharu, dan akaun ini sudah membeli {app}."
+msgstr "Pautan jemputan untuk ahli baharu, dan akaun ini sudah membeli {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Kod itu sudah tamat tempoh. Minta kod baharu di web atau dalam aplikasi.
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Kod itu tidak betul. Semak e-mel terbaharu daripada {app}."
+msgstr "Kod itu tidak betul. Semak e-mel terbaharu daripada {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Akaun ini belum didaftar masuk — daftar masuk dengan Apple atau Google
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Ini {app} yang baharu. Hidangan dan foto anda tersimpan dalam akaun {app} anda: daftar masuk di web dan tekan Sambungkan Telegram pada pelan anda."
+msgstr "Ini {app_name} yang baharu. Hidangan dan foto anda tersimpan dalam akaun {app_name} anda: daftar masuk di web dan tekan Sambungkan Telegram pada pelan anda."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

@@ -200,7 +200,7 @@ msgstr "Comparando com seu plano"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Este Telegram está conectado à conta {app} com login de"
+msgstr "Este Telegram está conectado à conta {app_name} com login de"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Se algo estiver errado, me diga — \"metade do arroz\", \"sem abacate\"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Links de convite são para novos membros, e esta conta já comprou o {app}."
+msgstr "Links de convite são para novos membros, e esta conta já comprou o {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Esse código expirou. Peça um novo na web ou no app."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Esse código não está certo. Confira o e-mail mais recente do {app}."
+msgstr "Esse código não está certo. Confira o e-mail mais recente do {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Esta conta ainda não fez login — entre com Apple ou Google na web e d
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Este é o novo {app}. Suas refeições e fotos ficam na sua conta {app}: entre na web e toque em Conectar Telegram no seu plano."
+msgstr "Este é o novo {app_name}. Suas refeições e fotos ficam na sua conta {app_name}: entre na web e toque em Conectar Telegram no seu plano."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

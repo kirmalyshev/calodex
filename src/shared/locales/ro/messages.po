@@ -200,7 +200,7 @@ msgstr "Compar cu planul tău"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Conectat la contul {app} autentificat cu"
+msgstr "Conectat la contul {app_name} autentificat cu"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Dacă ceva nu e în regulă, spune — „jumătate din orez”, „făr
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Linkurile de invitație sunt pentru membri noi, iar acest cont a cumpărat deja {app}."
+msgstr "Linkurile de invitație sunt pentru membri noi, iar acest cont a cumpărat deja {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Codul a expirat. Cere unul nou pe web sau în aplicație."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Codul nu e corect. Verifică cel mai recent e-mail de la {app}."
+msgstr "Codul nu e corect. Verifică cel mai recent e-mail de la {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Acest cont nu e încă autentificat — conectează-te cu Apple sau Goog
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Acesta e noul {app}. Mesele și fotografiile tale sunt păstrate în contul tău {app}: conectează-te pe web și apasă Conectează Telegram pe planul tău."
+msgstr "Acesta e noul {app_name}. Mesele și fotografiile tale sunt păstrate în contul tău {app_name}: conectează-te pe web și apasă Conectează Telegram pe planul tău."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

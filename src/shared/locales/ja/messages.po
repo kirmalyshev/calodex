@@ -200,7 +200,7 @@ msgstr "プランと照らし合わせています"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "{app}アカウントに接続しました。サインイン方法："
+msgstr "{app_name}アカウントに接続しました。サインイン方法："
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "違うところがあれば教えてください。「ごはんは半分
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "招待リンクは新規メンバー向けです。このアカウントはすでに{app}を購入済みです。"
+msgstr "招待リンクは新規メンバー向けです。このアカウントはすでに{app_name}を購入済みです。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "そのコードは期限切れです。Webまたはアプリで新しい
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "そのコードは正しくありません。{app}からの最新のメールを確認してください。"
+msgstr "そのコードは正しくありません。{app_name}からの最新のメールを確認してください。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "このアカウントはまだサインインしていません。Webで
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "新しい{app}です。食事と写真は{app}アカウントに保存されます。Webでサインインし、プランの画面で「Telegramと連携」を押してください。"
+msgstr "新しい{app_name}です。食事と写真は{app_name}アカウントに保存されます。Webでサインインし、プランの画面で「Telegramと連携」を押してください。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

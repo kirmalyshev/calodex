@@ -200,7 +200,7 @@ msgstr "ನಿಮ್ಮ ಪ್ಲಾನ್‌ನೊಂದಿಗೆ ಹೋಲಿ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "ಇದರ ಮೂಲಕ ಸೈನ್ ಇನ್ ಆದ {app} ಖಾತೆಗೆ ಸಂಪರ್ಕಗೊಂಡಿದೆ:"
+msgstr "ಇದರ ಮೂಲಕ ಸೈನ್ ಇನ್ ಆದ {app_name} ಖಾತೆಗೆ ಸಂಪರ್ಕಗೊಂಡಿದೆ:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "ಏನಾದರೂ ತಪ್ಪಿದ್ದರೆ, ಹೇಳಿ — \"�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "ಆಹ್ವಾನ ಲಿಂಕ್‌ಗಳು ಹೊಸ ಸದಸ್ಯರಿಗಾಗಿ, ಮತ್ತು ಈ ಖಾತೆ ಈಗಾಗಲೇ {app} ಖರೀದಿಸಿದೆ."
+msgstr "ಆಹ್ವಾನ ಲಿಂಕ್‌ಗಳು ಹೊಸ ಸದಸ್ಯರಿಗಾಗಿ, ಮತ್ತು ಈ ಖಾತೆ ಈಗಾಗಲೇ {app_name} ಖರೀದಿಸಿದೆ."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "ಆ ಕೋಡ್ ಅವಧಿ ಮೀರಿದೆ. ವೆಬ್‌ನಲ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "ಆ ಕೋಡ್ ಸರಿಯಿಲ್ಲ. {app} ನಿಂದ ಬಂದ ಇತ್ತೀಚಿನ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ."
+msgstr "ಆ ಕೋಡ್ ಸರಿಯಿಲ್ಲ. {app_name} ನಿಂದ ಬಂದ ಇತ್ತೀಚಿನ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "ಈ ಖಾತೆಗೆ ಇನ್ನೂ ಸೈನ್ ಇನ್ ಆಗಿ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "ಇದು ಹೊಸ {app}. ನಿಮ್ಮ ಊಟಗಳು ಮತ್ತು ಫೋಟೋಗಳು ನಿಮ್ಮ {app} ಖಾತೆಯಲ್ಲಿವೆ: ವೆಬ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಪ್ಲಾನ್‌ನಲ್ಲಿ Telegram ಸಂಪರ್ಕಿಸಿ ಒತ್ತಿ."
+msgstr "ಇದು ಹೊಸ {app_name}. ನಿಮ್ಮ ಊಟಗಳು ಮತ್ತು ಫೋಟೋಗಳು ನಿಮ್ಮ {app_name} ಖಾತೆಯಲ್ಲಿವೆ: ವೆಬ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತು ನಿಮ್ಮ ಪ್ಲಾನ್‌ನಲ್ಲಿ Telegram ಸಂಪರ್ಕಿಸಿ ಒತ್ತಿ."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

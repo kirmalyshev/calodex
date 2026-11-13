@@ -200,7 +200,7 @@ msgstr "Porovnávám s tvým plánem"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Připojeno k účtu {app} přihlášenému přes"
+msgstr "Připojeno k účtu {app_name} přihlášenému přes"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Jestli něco nesedí, řekni — „polovina rýže“, „bez avokáda�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Pozvánky jsou pro nové členy a tenhle účet už {app} koupil."
+msgstr "Pozvánky jsou pro nové členy a tenhle účet už {app_name} koupil."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Platnost kódu vypršela. Požádej o nový na webu nebo v aplikaci."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Tento kód nesedí. Podívej se do nejnovějšího e-mailu od {app}."
+msgstr "Tento kód nesedí. Podívej se do nejnovějšího e-mailu od {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Tento účet ještě není přihlášený — přihlas se na webu přes 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Tohle je nový {app}. Tvoje jídla a fotky jsou uložené v tvém účtu {app}: přihlas se na webu a na stránce plánu stiskni Připojit Telegram."
+msgstr "Tohle je nový {app_name}. Tvoje jídla a fotky jsou uložené v tvém účtu {app_name}: přihlas se na webu a na stránce plánu stiskni Připojit Telegram."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

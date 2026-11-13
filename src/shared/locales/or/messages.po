@@ -200,7 +200,7 @@ msgstr "ଆପଣଙ୍କ ପ୍ଲାନ୍ ସହ ମିଳାଯାଉଛି
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "ଏହା ସହ ସାଇନ୍ ଇନ୍ ଥିବା {app} ଆକାଉଣ୍ଟ ସହ ସଂଯୁକ୍ତ"
+msgstr "ଏହା ସହ ସାଇନ୍ ଇନ୍ ଥିବା {app_name} ଆକାଉଣ୍ଟ ସହ ସଂଯୁକ୍ତ"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "କିଛି ଭୁଲ୍ ଥିଲେ କୁହନ୍ତୁ — \"ଅ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "ଇନଭାଇଟ୍ ଲିଙ୍କ୍ ନୂଆ ସଦସ୍ୟଙ୍କ ପାଇଁ, ଏବଂ ଏହି ଆକାଉଣ୍ଟ ପୂର୍ବରୁ {app} କିଣିସାରିଛି।"
+msgstr "ଇନଭାଇଟ୍ ଲିଙ୍କ୍ ନୂଆ ସଦସ୍ୟଙ୍କ ପାଇଁ, ଏବଂ ଏହି ଆକାଉଣ୍ଟ ପୂର୍ବରୁ {app_name} କିଣିସାରିଛି।"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "ସେହି କୋଡ୍‌ର ମିଆଦ ସରିଗଲା। ୱ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "ସେହି କୋଡ୍ ଠିକ୍ ନୁହେଁ। {app} ର ସବୁଠୁ ନୂଆ ଇମେଲ୍ ଯାଞ୍ଚ କରନ୍ତୁ।"
+msgstr "ସେହି କୋଡ୍ ଠିକ୍ ନୁହେଁ। {app_name} ର ସବୁଠୁ ନୂଆ ଇମେଲ୍ ଯାଞ୍ଚ କରନ୍ତୁ।"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "ଏହି ଆକାଉଣ୍ଟ ଏପର୍ଯ୍ୟନ୍ତ ସାଇ
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "ଏହା ନୂଆ {app}। ଆପଣଙ୍କ ଭୋଜନ ଓ ଫଟୋ ଆପଣଙ୍କ {app} ଆକାଉଣ୍ଟରେ ରଖାଯାଏ: ୱେବ୍‌ରେ ସାଇନ୍ ଇନ୍ କରି ଆପଣଙ୍କ ପ୍ଲାନ୍‌ରେ “Telegram ସଂଯୋଗ କରନ୍ତୁ” ଦବାନ୍ତୁ।"
+msgstr "ଏହା ନୂଆ {app_name}। ଆପଣଙ୍କ ଭୋଜନ ଓ ଫଟୋ ଆପଣଙ୍କ {app_name} ଆକାଉଣ୍ଟରେ ରଖାଯାଏ: ୱେବ୍‌ରେ ସାଇନ୍ ଇନ୍ କରି ଆପଣଙ୍କ ପ୍ଲାନ୍‌ରେ “Telegram ସଂଯୋଗ କରନ୍ତୁ” ଦବାନ୍ତୁ।"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

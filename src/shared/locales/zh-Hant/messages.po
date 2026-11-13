@@ -200,7 +200,7 @@ msgstr "正在對照你的計畫"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "已連接至 {app} 帳號，登入方式："
+msgstr "已連接至 {app_name} 帳號，登入方式："
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "如果有不對的地方，直接說，例如「飯減半」、「不要
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "邀請連結僅限新會員使用，而這個帳號已經購買過 {app}。"
+msgstr "邀請連結僅限新會員使用，而這個帳號已經購買過 {app_name}。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "這個驗證碼已過期。請在網頁或 App 上索取新的驗證碼�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "驗證碼不正確。請查看 {app} 最新寄來的電子郵件。"
+msgstr "驗證碼不正確。請查看 {app_name} 最新寄來的電子郵件。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "這個帳號還沒登入，請先在網頁上使用 Apple 或 Google 登
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "這是新的 {app}。你的餐點和照片都保存在你的 {app} 帳號中：請在網頁上登入，並在你的計畫頁面按「連接 Telegram」。"
+msgstr "這是新的 {app_name}。你的餐點和照片都保存在你的 {app_name} 帳號中：請在網頁上登入，並在你的計畫頁面按「連接 Telegram」。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

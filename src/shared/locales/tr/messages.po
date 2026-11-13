@@ -200,7 +200,7 @@ msgstr "Planınla karşılaştırılıyor"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "{app} hesabına bağlandı, giriş yöntemi:"
+msgstr "{app_name} hesabına bağlandı, giriş yöntemi:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Bir şey yanlışsa söyle — “pilavın yarısı”, “avokado yok�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Davet bağlantıları yeni üyeler içindir ve bu hesap {app}'i zaten satın aldı."
+msgstr "Davet bağlantıları yeni üyeler içindir ve bu hesap {app_name}'i zaten satın aldı."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Bu kodun süresi doldu. Web'de ya da uygulamada yenisini iste."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Bu kod doğru değil. {app}'ten gelen en yeni e-postaya bak."
+msgstr "Bu kod doğru değil. {app_name}'ten gelen en yeni e-postaya bak."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Bu hesaba henüz giriş yapılmadı — web'de Apple veya Google ile gir
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Bu yeni {app}. Öğünlerin ve fotoğrafların {app} hesabında saklanıyor: web'de giriş yap ve planında Telegram'ı Bağla'ya bas."
+msgstr "Bu yeni {app_name}. Öğünlerin ve fotoğrafların {app_name} hesabında saklanıyor: web'de giriş yap ve planında Telegram'ı Bağla'ya bas."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

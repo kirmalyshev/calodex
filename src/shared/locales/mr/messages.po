@@ -200,7 +200,7 @@ msgstr "तुमच्या प्लॅनशी तुलना केली
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "ज्याने साइन इन केले आहे त्या {app} अकाउंटशी कनेक्टेड:"
+msgstr "ज्याने साइन इन केले आहे त्या {app_name} अकाउंटशी कनेक्टेड:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "काही चुकले असल्यास सांगा — \
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "आमंत्रण लिंक नवीन सदस्यांसाठी आहेत, आणि या अकाउंटने आधीच {app} खरेदी केले आहे."
+msgstr "आमंत्रण लिंक नवीन सदस्यांसाठी आहेत, आणि या अकाउंटने आधीच {app_name} खरेदी केले आहे."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "तो कोड कालबाह्य झाला आहे. वे
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "तो कोड बरोबर नाही. {app} कडून आलेला सर्वात नवीन ईमेल तपासा."
+msgstr "तो कोड बरोबर नाही. {app_name} कडून आलेला सर्वात नवीन ईमेल तपासा."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "या अकाउंटमध्ये अजून साइन इ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "हे नवीन {app} आहे. तुमची जेवणे आणि फोटो तुमच्या {app} अकाउंटमध्ये ठेवलेले आहेत: वेबवर साइन इन करा आणि तुमच्या प्लॅनवर Telegram जोडा दाबा."
+msgstr "हे नवीन {app_name} आहे. तुमची जेवणे आणि फोटो तुमच्या {app_name} अकाउंटमध्ये ठेवलेले आहेत: वेबवर साइन इन करा आणि तुमच्या प्लॅनवर Telegram जोडा दाबा."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

@@ -200,7 +200,7 @@ msgstr "আপনার প্ল্যানের সঙ্গে মেলা
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "{app} অ্যাকাউন্টে সংযুক্ত, সাইন ইনের মাধ্যম"
+msgstr "{app_name} অ্যাকাউন্টে সংযুক্ত, সাইন ইনের মাধ্যম"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "কিছু ভুল থাকলে বলুন — \"ভাত অ�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "আমন্ত্রণ লিংক নতুন সদস্যদের জন্য, আর এই অ্যাকাউন্ট ইতিমধ্যে {app} কিনেছে।"
+msgstr "আমন্ত্রণ লিংক নতুন সদস্যদের জন্য, আর এই অ্যাকাউন্ট ইতিমধ্যে {app_name} কিনেছে।"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "ওই কোডের মেয়াদ শেষ। ওয়েব�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "ওই কোডটি ঠিক নয়। {app}-এর সবচেয়ে নতুন ইমেইল দেখুন।"
+msgstr "ওই কোডটি ঠিক নয়। {app_name}-এর সবচেয়ে নতুন ইমেইল দেখুন।"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "এই অ্যাকাউন্টে এখনও সাইন ই�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "এটা নতুন {app}। আপনার খাবার আর ছবি আপনার {app} অ্যাকাউন্টে রাখা আছে: ওয়েবে সাইন ইন করে আপনার প্ল্যানে ‘Telegram সংযুক্ত করুন’ চাপুন।"
+msgstr "এটা নতুন {app_name}। আপনার খাবার আর ছবি আপনার {app_name} অ্যাকাউন্টে রাখা আছে: ওয়েবে সাইন ইন করে আপনার প্ল্যানে ‘Telegram সংযুক্ত করুন’ চাপুন।"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

@@ -206,7 +206,7 @@ msgstr "Confronto con il tuo piano"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Questo Telegram è collegato all'account {app} con cui hai fatto accesso tramite"
+msgstr "Questo Telegram è collegato all'account {app_name} con cui hai fatto accesso tramite"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -286,7 +286,7 @@ msgstr "Se qualcosa non torna, dimmelo — «metà del riso», «niente avocado�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "I link d'invito sono per i nuovi iscritti, e questo account ha già acquistato {app}."
+msgstr "I link d'invito sono per i nuovi iscritti, e questo account ha già acquistato {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -446,7 +446,7 @@ msgstr "Questo codice è scaduto. Chiedine uno nuovo sul web o nell'app."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Il codice non è giusto. Controlla l'ultima email di {app}."
+msgstr "Il codice non è giusto. Controlla l'ultima email di {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -546,7 +546,7 @@ msgstr "Questo account non è ancora collegato — accedi con Apple o Google sul
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Questo è il nuovo {app}. I tuoi pasti e le tue foto stanno nel tuo account {app}: accedi sul web e premi Collega Telegram dal tuo piano."
+msgstr "Questo è il nuovo {app_name}. I tuoi pasti e le tue foto stanno nel tuo account {app_name}: accedi sul web e premi Collega Telegram dal tuo piano."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
