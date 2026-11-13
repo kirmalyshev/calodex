@@ -4098,6 +4098,8 @@ export async function postgresStore(
 
       if (userId !== undefined) {
         // ONE account, scoped by the argument — a staff account named outright is answered too.
+        // A client-supplied id: absent, not a type error at the column (the memory store says empty).
+        if (!UUID.test(userId)) return { rows: [], nextCursor: null };
         const summary = await sql`
           select u.id as user_id, u.lang, u.country,
                  u.entitlement_expires_at, u.entitlement_product_id, u.entitlement_event_at,
@@ -4133,12 +4135,14 @@ export async function postgresStore(
       }
 
       // The admin's list: the same population and window as `onboardingFunnel`, one row per
-      // account, newest start first, keyset-paged on (started, user_id).
-      const bounded = Math.min(Math.max(1, Math.trunc(limit ?? 50)), 200);
+      // account, newest start first, keyset-paged on (started, user_id). A malformed cursor is
+      // an empty page, never a 500 at the cast — `adminListUsers`'s rule, one check further.
+      const bounded = Math.min(Math.max(1, Math.trunc(Number.isFinite(limit) ? limit! : 50)), 200);
       const configStaff = uuidArray(staffIds);
       const curAt = cursor === undefined ? null : cursor.slice(0, cursor.lastIndexOf("~"));
       const curId = cursor === undefined ? null : cursor.slice(cursor.lastIndexOf("~") + 1);
-      if (cursor !== undefined && (curAt === "" || curId === "" || !UUID.test(curId!))) {
+      if (cursor !== undefined && (curAt === null || curId === null
+        || !Number.isFinite(Date.parse(curAt)) || !UUID.test(curId))) {
         return { rows: [], nextCursor: null };
       }
 
@@ -4157,7 +4161,7 @@ export async function postgresStore(
            and not u.staff
            and e.user_id <> all(${configStaff}::uuid[])
          group by e.user_id, u.id
-        having ${cursor === undefined} or (min(e.at), e.user_id::text) < (${curAt}::timestamptz, ${curId})
+        having ${cursor === undefined} or (min(e.at), e.user_id) < (${curAt}::timestamptz, ${curId}::uuid)
          order by min(e.at) desc, e.user_id desc
          limit ${bounded + 1}`;
 

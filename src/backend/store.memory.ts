@@ -147,6 +147,9 @@ function legacyLanguageMap(stored: unknown): Record<string, unknown> {
 /** A subscription end that is not there: the epoch stands in for -Infinity, the same thing `extend`'s skipped dates are. */
 const EPOCH = new Date(0).toISOString();
 
+/** The same shape `store.pg.ts` checks client-supplied ids and cursors against. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Where the dated week and a folded bank run out, mirroring `greatest(bonus_until, expires_at)` in
  * `store.pg.ts`'s fold: Postgres's `greatest` IGNORES a null subscription end and runs the bank from
@@ -597,7 +600,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const funnelGrant = (userId: string): FunnelGrant | null => {
     const e = entitlements.get(userId);
     if (e === undefined || e.eventAt === "") return null;
-    const clocks = [e.expiresEventAt, e.lifetimeEventAt].filter((x): x is string => x !== null).sort();
+    const clocks = [e.expiresEventAt, e.lifetimeEventAt].filter((x): x is string => x !== null)
+      .sort((a, b) => Date.parse(a) - Date.parse(b) || a.localeCompare(b));
     return {
       firstGrantAt: clocks[0] ?? null,
       trial: e.trial === true,
@@ -1821,9 +1825,12 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const hi = range.to?.getTime() ?? Infinity;
       const inRange = (e: StoredEvent) => e.receivedAt >= lo && e.receivedAt <= hi;
       // The event order the store returns — client stamp first, then the arrival the batch
-      // carried, then the id settling a tie, exactly as Postgres orders the same read.
+      // carried, then the id settling a tie, exactly as Postgres orders the same read. Postgres
+      // compares `at` as a timestamp, so the parsed instant leads and the raw string is the tiebreak.
+      const stamp = (s: string) => { const t = Date.parse(s); return Number.isNaN(t) ? 0 : t; };
       const ordered = (evs: StoredEvent[]) => [...evs].sort(
-        (a, b) => a.at.localeCompare(b.at) || a.receivedAt - b.receivedAt || a.id.localeCompare(b.id));
+        (a, b) => (stamp(a.at) - stamp(b.at)) || a.at.localeCompare(b.at)
+          || a.receivedAt - b.receivedAt || a.id.localeCompare(b.id));
       const toAccount = (uid: string, evs: StoredEvent[]): AdminOnboardingAccount => {
         const p = users.get(uid);
         const g = funnelGrant(uid);
@@ -1862,15 +1869,30 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         const l = byUser.get(e.userId);
         if (l) l.push(e); else byUser.set(e.userId, [e]);
       }
-      const rows = [...byUser.entries()].map(([uid, evs]) => toAccount(uid, evs))
-        .sort((a, b) => (b.startedAt ?? "").localeCompare(a.startedAt ?? "")
+      // The Postgres read is a join on users — an event with no account behind it is not a row.
+      const rows = [...byUser.entries()].filter(([uid]) => users.has(uid))
+        .map(([uid, evs]) => toAccount(uid, evs))
+        .sort((a, b) => (stamp(b.startedAt ?? "") - stamp(a.startedAt ?? ""))
+          || (b.startedAt ?? "").localeCompare(a.startedAt ?? "")
           || (a.userId < b.userId ? 1 : a.userId > b.userId ? -1 : 0));
-      const bounded = Math.min(Math.max(1, Math.trunc(limit ?? 50)), 200);
+      const bounded = Math.min(Math.max(1, Math.trunc(Number.isFinite(limit) ? limit! : 50)), 200);
+      // A keyset cursor names a position, not a row: a valid cursor for a row that is gone still
+      // continues after that position, exactly as Postgres' `(started, user_id) < (cur)` does. A
+      // malformed one is an empty page, never a throw — `adminListUsers`'s rule.
+      const tilde = cursor === undefined ? -1 : cursor.lastIndexOf("~");
+      const curAt = tilde < 0 ? null : cursor!.slice(0, tilde);
+      const curId = tilde < 0 ? null : cursor!.slice(tilde + 1);
+      if (cursor !== undefined && (curAt === null || curId === null
+        || !Number.isFinite(Date.parse(curAt)) || !UUID.test(curId))) {
+        return { rows: [], nextCursor: null };
+      }
+      const curAtMs = curAt === null ? 0 : stamp(curAt);
+      const curIdLc = curId === null ? null : curId.toLowerCase();
       const after = cursor === undefined ? 0
-        : rows.findIndex((r) => `${r.startedAt}~${r.userId}` === cursor) + 1;
-      // An unknown cursor is an empty page, never the first one — `adminListUsers`'s rule.
-      if (cursor !== undefined && after === 0) return { rows: [], nextCursor: null };
-      const page = rows.slice(after, after + bounded);
+        : rows.findIndex((r) => stamp(r.startedAt ?? "") < curAtMs
+          || (stamp(r.startedAt ?? "") === curAtMs && r.userId.toLowerCase() < curIdLc!));
+      // -1: the cursor's position is past the last row — nothing follows it.
+      const page = after < 0 ? [] : rows.slice(after, after + bounded);
       const last = page[page.length - 1];
       return {
         rows: page,

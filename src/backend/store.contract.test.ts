@@ -3254,6 +3254,94 @@ function contract(name: string, make: () => Promise<Store>) {
       }
       const gone = await s.adminOnboardingFlow({ range: { from: null, to: null }, cursor: "not-a-cursor" });
       expect(gone.rows).toEqual([]);
+
+      // A half-formed cursor — good uuid half, unusable stamp half — is the same empty page on
+      // both stores, never a 500 at Postgres' `::timestamptz` cast.
+      const halfFormed = await s.adminOnboardingFlow({
+        range: { from: null, to: null }, cursor: `garbage~${u2}` });
+      expect(halfFormed.rows).toEqual([]);
+      expect(halfFormed.nextCursor).toBeNull();
+
+      // The cursor is a POSITION, not a row lookup: a cursor naming u2's start continues the
+      // walk after that position even with u2 out of the population (here through `staffIds`),
+      // where an exact-match store would answer the empty page.
+      const rest2 = await s.adminOnboardingFlow({
+        range: { from: null, to: null }, limit: 50, cursor: `${newer}~${u2}`, staffIds: [u2] });
+      expect(rest2.rows.some((r) => r.userId === u2)).toBe(false);
+      expect(rest2.rows.some((r) => r.userId === u1)).toBe(true);
+
+      // A named account with no events in the window still answers: the row, empty journal.
+      const quiet = (await s.upsertDeviceUser(device(), "en")).userId;
+      const none = await s.adminOnboardingFlow({ userId: quiet, range: { from: null, to: null } });
+      expect(none.rows.length).toBe(1);
+      expect(none.rows[0]!.startedAt).toBeNull();
+      expect(none.rows[0]!.sessions).toBe(0);
+      expect(none.rows[0]!.events).toEqual([]);
+      // And a userId naming nobody is an empty answer, not an error — both stores.
+      expect((await s.adminOnboardingFlow({
+        userId: crypto.randomUUID(), range: { from: null, to: null } })).rows).toEqual([]);
+      expect((await s.adminOnboardingFlow({
+        userId: "not-a-uuid", range: { from: null, to: null } })).rows).toEqual([]);
+    });
+
+    it("counts conversion to paid off the entitlement record, per run (#812)", async () => {
+      const s = await open();
+      const t0 = Date.now();
+      const isoAt = (ms: number) => new Date(t0 + ms).toISOString();
+      const run = `paid-${RUN}`;
+      const ev = (sid: string, n: number, over: Record<string, unknown>) => ({
+        id: `${run}-${sid}-${n}`, sessionId: `${run}-${sid}`, place: "goal" as const,
+        action: "view" as const, contentVersion: 1, at: isoAt(0), ...over,
+      });
+      // Window on `received_at` from this test's start: every earlier test's events arrived
+      // before it, so the funnel's `paid` block here is this fixture's alone — absolute counts.
+      const range = { from: new Date(t0), to: null };
+
+      const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+      const uConv = await mk(), uTrial = await mk(), uLife = await mk(),
+        uEdge = await mk(), uPre = await mk(), uTwo = await mk(),
+        uStaff = await mk(), uCfg = await mk();
+
+      await s.recordOnboardingEvents(uConv, [ev("conv", 1, {})] as never);
+      await s.recordOnboardingEvents(uTrial, [ev("trial", 1, {})] as never);
+      await s.recordOnboardingEvents(uLife, [ev("life", 1, {})] as never);
+      await s.recordOnboardingEvents(uEdge, [ev("edge", 1, {})] as never);
+      await s.recordOnboardingEvents(uPre, [ev("pre", 1, {})] as never);
+      // ONE account, TWO runs — conversion counts per run, not per account.
+      await s.recordOnboardingEvents(uTwo, [
+        ev("two-a", 1, {}), ev("two-b", 1, { at: isoAt(600000) }),
+      ] as never);
+      await s.recordOnboardingEvents(uStaff, [ev("stf", 1, {})] as never);
+      await s.recordOnboardingEvents(uCfg, [ev("cfg", 1, {})] as never);
+      await s.setStaff(uStaff, true);
+
+      const sub = (pid: string, eventAt: string, extra: Record<string, unknown> = {}) => ({
+        expiresAt: isoAt(86400000), productId: pid, eventAt, ...extra,
+      });
+      // Grants at or after the run's start convert it; one before does not.
+      await s.putEntitlement(uConv, sub(`m-${RUN}`, isoAt(1800000)));
+      await s.putEntitlement(uTrial, sub(`t-${RUN}`, isoAt(3600000), { trial: true }));
+      await s.putEntitlement(uLife, {
+        lifetimeProductId: `l-${RUN}`, productId: `l-${RUN}`, eventAt: isoAt(7200000) });
+      await s.putEntitlement(uEdge, sub(`e-${RUN}`, isoAt(0)));   // exactly at start — `>=` converts
+      await s.putEntitlement(uPre, sub(`p-${RUN}`, isoAt(-3600000))); // predates the run — not caused by it
+      await s.putEntitlement(uTwo, sub(`m-${RUN}`, isoAt(2400000)));
+      await s.putEntitlement(uStaff, sub(`s-${RUN}`, isoAt(1800000)));
+      await s.putEntitlement(uCfg, sub(`c-${RUN}`, isoAt(1800000)));
+
+      const f = await s.onboardingFunnel(range, [uCfg]);
+      // uConv + uTwo(×2 runs) + uTrial + uLife + uEdge convert; uPre, uStaff and uCfg do not.
+      expect(f.paid.converted).toBe(6);
+      // `trial` is an overlay: the trialing run counts here AND in its product's row.
+      expect(f.paid.trial).toBe(1);
+      const products = Object.fromEntries(f.paid.products.map((p) => [`${p.lifetime}|${p.productId}`, p.n]));
+      expect(products[`false|m-${RUN}`]).toBe(3);   // uConv + uTwo's two runs, one product id
+      expect(products[`false|t-${RUN}`]).toBe(1);
+      expect(products[`true|l-${RUN}`]).toBe(1);
+      expect(products[`false|e-${RUN}`]).toBe(1);
+      // Deltas to grant: [0, 1800000, 1800000, 2400000, 3600000, 7200000] — even count, so the
+      // two middles' mean. `percentile_cont` and the hand median must both say 2100000.
+      expect(f.paid.medianMs).toBe(2100000);
     });
 
     // ── Onboarding experiments (ieat-app#2669) ───────────────────────────────────────────────
