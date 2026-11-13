@@ -6,7 +6,7 @@
 // `rg "\p{L}['’]\{app\}|\{app\}[\p{L}'’-]"` — French/Catalan elision, Korean particles, Turkish
 // vowel harmony, Finnish/Hungarian case endings, Indic suffixes after a hyphen.
 
-export const APPS = ["eait"] as const;
+export const APPS = ["eait", "calodex"] as const;
 export type AppId = (typeof APPS)[number];
 
 export interface Brand {
@@ -19,6 +19,8 @@ export interface Brand {
 
 export const BRANDS: Readonly<Record<AppId, Brand>> = {
   eait: { app: "eait", name: "eait", storeName: "eait", domain: "eait.fit", mailFrom: "eait <login@eait.fit>" },
+  // Domain and sender stay on eait.fit until calodex.fit DNS is live (ieat-app#2822). Same App Store record.
+  calodex: { app: "calodex", name: "Calodex", storeName: "Calodex: AI calorie tracker", domain: "eait.fit", mailFrom: "Calodex <login@eait.fit>" },
 };
 
 /**
