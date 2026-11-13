@@ -6,7 +6,7 @@
 // first paid period, because a sign-up is free to farm and a payment is not. Both weeks land in
 // `users.bonus_until`, the third grant `entitlementLive` counts.
 
-import { normalizeReferralCode, type AdminWindowEcho, type ProfileResponse, type ReferralView } from "@eait/shared";
+import { currentBrand, normalizeReferralCode, type AdminWindowEcho, type ProfileResponse, type ReferralView } from "@eait/shared";
 import type { Config } from "../config.ts";
 import type { AdminRange, ReferralStats } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
@@ -30,8 +30,11 @@ export function referralRewardDays(config: Config, productId: string): number {
   return /year|annual/i.test(productId) && !/month/i.test(productId) ? 14 : 7;
 }
 
-/** Where the link points: the landing page, else the web app, else this API. */
-const linkBase = (c: Config): string => c.landingUrl || c.publicWebUrl || c.publicApiUrl;
+/** Where the link points: a non-default brand's own domain; the default's landing, else the web app, else this API. */
+const linkBase = (c: Config): string => {
+  const b = currentBrand();
+  return b.app === "eait" ? c.landingUrl || c.publicWebUrl || c.publicApiUrl : `https://${b.domain}`;
+};
 
 /** An account's invite link — `<origin>/r/<code>`. */
 export const referralLink = (c: Config, code: string): string => `${linkBase(c)}/r/${code}`;
