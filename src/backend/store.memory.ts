@@ -1836,7 +1836,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           lastPlace: sorted[sorted.length - 1]?.place ?? null,
           sessions: new Set(evs.map((e) => e.sessionId)).size,
           completed: evs.some((e) => e.action === "complete"),
-          sawPaywallAt: sorted.find((e) => e.action === "view" && e.place === "summary" || e.place === "health")?.at ?? null,
+          sawPaywallAt: sorted.find((e) => e.action === "view" && (e.place === "summary" || e.place === "health"))?.at ?? null,
           entitledAt: g === null ? null : g.firstGrantAt,
           entitlement: g === null ? null : storedEntitlement(uid),
         };
