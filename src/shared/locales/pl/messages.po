@@ -200,7 +200,7 @@ msgstr "Porównanie z twoim planem"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Połączono z kontem {app} zalogowanym przez"
+msgstr "Połączono z kontem {app_name} zalogowanym przez"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Jeśli coś się nie zgadza, napisz — „pół ryżu”, „bez awokad
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Linki z zaproszeniem są dla nowych osób, a to konto już kupiło {app}."
+msgstr "Linki z zaproszeniem są dla nowych osób, a to konto już kupiło {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Ten kod wygasł. Poproś o nowy w przeglądarce lub w aplikacji."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Ten kod jest nieprawidłowy. Sprawdź najnowszy e-mail od {app}."
+msgstr "Ten kod jest nieprawidłowy. Sprawdź najnowszy e-mail od {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "To konto nie jest jeszcze zalogowane — zaloguj się przez Apple lub Go
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "To nowe {app}. Twoje posiłki i zdjęcia są na twoim koncie {app}: zaloguj się w przeglądarce i naciśnij „Połącz z Telegramem” w swoim planie."
+msgstr "To nowe {app_name}. Twoje posiłki i zdjęcia są na twoim koncie {app_name}: zaloguj się w przeglądarce i naciśnij „Połącz z Telegramem” w swoim planie."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

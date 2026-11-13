@@ -200,7 +200,7 @@ msgstr "Verrataan suunnitelmaasi"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Yhdistetty {app}-tiliin, kirjautumistapa:"
+msgstr "Yhdistetty {app_name}-tiliin, kirjautumistapa:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Jos jokin on pielessä, kerro – \"puolet riisistä\", \"ei avokadoa\" 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Kutsulinkit ovat uusille jäsenille, ja tällä tilillä on jo ostettu {app}."
+msgstr "Kutsulinkit ovat uusille jäsenille, ja tällä tilillä on jo ostettu {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Koodi on vanhentunut. Pyydä uusi verkossa tai sovelluksessa."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Koodi ei ole oikein. Tarkista uusin {app}-sähköposti."
+msgstr "Koodi ei ole oikein. Tarkista uusin {app_name}-sähköposti."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Tälle tilille ei ole vielä kirjauduttu – kirjaudu verkossa Applella 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Tämä on uusi {app}. Ateriasi ja kuvasi säilytetään {app}-tililläsi: kirjaudu verkossa ja paina suunnitelmassasi Yhdistä Telegram."
+msgstr "Tämä on uusi {app_name}. Ateriasi ja kuvasi säilytetään {app_name}-tililläsi: kirjaudu verkossa ja paina suunnitelmassasi Yhdistä Telegram."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

@@ -200,7 +200,7 @@ msgstr "Jämför med din plan"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Ansluten till {app}-kontot som är inloggat med"
+msgstr "Ansluten till {app_name}-kontot som är inloggat med"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Om något inte stämmer, säg det — ”halva riset”, ”ingen avokad
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Inbjudningslänkar är för nya medlemmar, och det här kontot har redan köpt {app}."
+msgstr "Inbjudningslänkar är för nya medlemmar, och det här kontot har redan köpt {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Koden har gått ut. Be om en ny på webben eller i appen."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Koden stämmer inte. Kolla det senaste mejlet från {app}."
+msgstr "Koden stämmer inte. Kolla det senaste mejlet från {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Det här kontot är inte inloggat än — logga in med Apple eller Googl
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Det här är nya {app}. Dina måltider och foton finns i ditt {app}-konto: logga in på webben och tryck på Anslut Telegram på din plan."
+msgstr "Det här är nya {app_name}. Dina måltider och foton finns i ditt {app_name}-konto: logga in på webben och tryck på Anslut Telegram på din plan."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

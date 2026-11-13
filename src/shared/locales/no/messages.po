@@ -200,7 +200,7 @@ msgstr "Sjekker mot planen din"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Koblet til {app}-kontoen som er pålogget med"
+msgstr "Koblet til {app_name}-kontoen som er pålogget med"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Hvis noe er feil, si ifra — «halvparten av risen», «uten avokado» 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Invitasjonslenker er for nye medlemmer, og denne kontoen har allerede kjøpt {app}."
+msgstr "Invitasjonslenker er for nye medlemmer, og denne kontoen har allerede kjøpt {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Den koden har utløpt. Be om en ny på nettet eller i appen."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Den koden stemmer ikke. Sjekk den nyeste e-posten fra {app}."
+msgstr "Den koden stemmer ikke. Sjekk den nyeste e-posten fra {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Denne kontoen er ikke pålogget ennå — logg på med Apple eller Googl
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Dette er den nye {app}. Måltidene og bildene dine ligger i {app}-kontoen din: logg på via nettet og trykk Koble til Telegram på planen din."
+msgstr "Dette er den nye {app_name}. Måltidene og bildene dine ligger i {app_name}-kontoen din: logg på via nettet og trykk Koble til Telegram på planen din."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

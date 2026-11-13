@@ -21,7 +21,7 @@ function flatten(node: unknown, at = "", out: Record<string, string> = {}): Reco
   return out;
 }
 
-const placeholders = (s: string): string[] => [...new Set((s.match(/\{\w+\}/g) ?? []).map((x) => x.replace(/^\{(d_app|qu_app|app_s|az|Az|app_tel|nouvel)\}$/, "{app}")))].sort();
+const placeholders = (s: string): string[] => [...new Set((s.match(/\{\w+\}/g) ?? []).map((x) => x.replace(/^\{(d_app_name|qu_app_name|app_name_s|az|Az|app_name_tel|nouvel)\}$/, "{app_name}")))].sort();
 
 describe("YOU_COPY", () => {
   it("says the same keys in every language", () => {

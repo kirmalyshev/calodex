@@ -1,4 +1,4 @@
-// The app's brand as a value (ieat-app#2821). Copy carries `{app}` and `{domain}`; `branded` fills
+// The app's brand as a value (ieat-app#2821). Copy carries `{app_name}` and `{domain}`; `branded` fills
 // them where copy is resolved (`t` in lang.ts, `onboardingServedFor`, and the exported `DEFAULT_ONBOARDING_CONTENT`), so every accessor keeps its `(lang)` signature.
 // This file imports nothing at runtime: lang.ts ships in the browser bundle and on Hermes.
 //
@@ -35,22 +35,22 @@ export const knownApp = (raw?: string | null): AppId | null => ((APPS as readonl
 /** `knownApp`, falling back to the default brand: for copy, where a wrong word beats a refusal. */
 export const parseApp = (raw?: string | null): AppId => knownApp(raw) ?? "eait";
 
-export const BRAND_TOKENS = ["app", "domain", "d_app", "qu_app", "app_s", "az", "Az", "app_tel", "nouvel"] as const;
+export const BRAND_TOKENS = ["app_name", "domain", "d_app_name", "qu_app_name", "app_name_s", "az", "Az", "app_name_tel", "nouvel"] as const;
 
-/** What each token stands for. `d_app`/`qu_app` elide before a vowel or h (French, Catalan); `app_s` is the genitive ending (Swedish, Danish, Norwegian, German), an apostrophe after s, x or z. `az`/`Az` are the Hungarian definite article for the name ("az eait", "a Calodex"), `nouvel` the French "new" before the name ("nouvel eait", "nouveau Calodex"), `app_tel` its instrumental ("eait-tel", "Calodex-szel"). */
+/** What each token stands for. `d_app_name`/`qu_app_name` elide before a vowel or h (French, Catalan); `app_name_s` is the genitive ending (Swedish, Danish, Norwegian, German), an apostrophe after s, x or z. `az`/`Az` are the Hungarian definite article for the name ("az eait", "a Calodex"), `nouvel` the French "new" before the name ("nouvel eait", "nouveau Calodex"), `app_name_tel` its instrumental ("eait-tel", "Calodex-szel"). */
 export const brandValues = (b: Brand = source()): Record<(typeof BRAND_TOKENS)[number], string> => {
   const elide = /^[aeiouhàâäéèêëîïôöùûüœ]/i.test(b.name);
   const huVowel = /^[aeiouáéíóöőúüű]/i.test(b.name);
   return {
-    app: b.name,
+    app_name: b.name,
     domain: b.domain,
-    d_app: elide ? `d'${b.name}` : `de ${b.name}`,
-    qu_app: elide ? `qu'${b.name}` : `que ${b.name}`,
-    app_s: /[sxz]$/i.test(b.name) ? "'" : "s",
+    d_app_name: elide ? `d'${b.name}` : `de ${b.name}`,
+    qu_app_name: elide ? `qu'${b.name}` : `que ${b.name}`,
+    app_name_s: /[sxz]$/i.test(b.name) ? "'" : "s",
     nouvel: elide ? "nouvel" : "nouveau",
     az: huVowel ? "az" : "a",
     Az: huVowel ? "Az" : "A",
-    app_tel: `${b.name}-${/[sxz]$/i.test(b.name) ? "szel" : "tel"}`,
+    app_name_tel: `${b.name}-${/[sxz]$/i.test(b.name) ? "szel" : "tel"}`,
   };
 };
 
@@ -67,7 +67,7 @@ const cache = new WeakMap<object, Map<AppId, unknown>>();
 const fill = (s: string, b: Brand): string => {
   if (!s.includes("{")) return s;
   const v = brandValues(b);
-  return s.replace(/\{(app|domain|d_app|qu_app|app_s|az|Az|app_tel|nouvel)\}/g, (_, k: keyof typeof v) => v[k]);
+  return s.replace(/\{(app_name|domain|d_app_name|qu_app_name|app_name_s|az|Az|app_name_tel|nouvel)\}/g, (_, k: keyof typeof v) => v[k]);
 };
 
 export function branded<T>(v: T, b: Brand = source()): T {
