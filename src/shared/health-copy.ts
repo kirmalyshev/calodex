@@ -1333,7 +1333,7 @@ export const HEALTH_SCREEN_COPY: Localized<HealthScreenCopy> = {
     },
     notice: {
       notReachingTitle: "Les repas n'arrivent pas dans Santé",
-      notReachingBody: "Tes graphiques ne sont pas en cause. Active les catégories Nutrition d'{app} dans Santé.",
+      notReachingBody: "Tes graphiques ne sont pas en cause. Active les catégories Nutrition {d_app} dans Santé.",
       offTitle: "{app} est désactivé dans Santé",
       offBody: "Ton journal n'est pas touché ; les graphiques ici lisent ce que Santé partage avec {app}.",
       nothingTitle: "Encore rien enregistré",
@@ -1344,7 +1344,7 @@ export const HEALTH_SCREEN_COPY: Localized<HealthScreenCopy> = {
       tryAgain: "Réessayer",
       openHealth: "Ouvrir Santé",
       askAgain: "Redemander à Santé",
-      readsMoreTitle: "Santé en montre plus qu'{app} ne lit",
+      readsMoreTitle: "Santé en montre plus {qu_app} ne lit",
       readsMoreBody: "{app} ne voit que les catégories que tu actives pour lui.",
       path: "Dans Santé : ta photo en haut à droite › Apps › {app}. Ou Réglages › Confidentialité et sécurité › Santé › {app}.",
       pathSpoken: "Dans Santé, touche ta photo en haut à droite, puis Apps, puis {app}. Ou ouvre Réglages, Confidentialité et sécurité, Santé, {app}.",
@@ -1420,7 +1420,7 @@ export const HEALTH_SCREEN_COPY: Localized<HealthScreenCopy> = {
     },
     notice: {
       notReachingTitle: "Mahlzeiten kommen nicht in Health an",
-      notReachingBody: "Deine Diagramme sind in Ordnung. Schalte {app}s Ernährungs-Kategorien in Health ein.",
+      notReachingBody: "Deine Diagramme sind in Ordnung. Schalte {app}{app_s} Ernährungs-Kategorien in Health ein.",
       offTitle: "{app} ist in Health ausgeschaltet",
       offBody: "Dein Tagebuch bleibt unberührt; die Diagramme hier lesen, was Health mit {app} teilt.",
       nothingTitle: "Noch nichts aufgezeichnet",
@@ -2899,7 +2899,7 @@ export const HEALTH_SCREEN_COPY: Localized<HealthScreenCopy> = {
     },
     notice: {
       notReachingTitle: "Els àpats no arriben a Salut",
-      notReachingBody: "Els gràfics estan bé. Activa les categories de Nutrició d'{app} a Salut.",
+      notReachingBody: "Els gràfics estan bé. Activa les categories de Nutrició {d_app} a Salut.",
       offTitle: "{app} està desactivat a Salut",
       offBody: "El teu diari no es veu afectat; aquí els gràfics llegeixen el que Salut comparteix amb {app}.",
       nothingTitle: "Encara no hi ha res registrat",
@@ -3421,7 +3421,7 @@ export const HEALTH_SCREEN_COPY: Localized<HealthScreenCopy> = {
     },
     notice: {
       notReachingTitle: "Måltider når ikke frem til Sundhed",
-      notReachingBody: "Dine diagrammer er fine. Slå {app}s kategorier under Ernæring til i Sundhed.",
+      notReachingBody: "Dine diagrammer er fine. Slå {app}{app_s} kategorier under Ernæring til i Sundhed.",
       offTitle: "{app} er slået fra i Sundhed",
       offBody: "Din dagbog påvirkes ikke; diagrammerne her læser det, Sundhed deler med {app}.",
       nothingTitle: "Intet registreret endnu",
@@ -4030,7 +4030,7 @@ export const HEALTH_SCREEN_COPY: Localized<HealthScreenCopy> = {
     },
     notice: {
       notReachingTitle: "Måltiderna kommer inte fram till Hälsa",
-      notReachingBody: "Dina diagram är okej. Slå på {app}s kategorier under Näring i Hälsa.",
+      notReachingBody: "Dina diagram är okej. Slå på {app}{app_s} kategorier under Näring i Hälsa.",
       offTitle: "{app} är avstängt i Hälsa",
       offBody: "Din dagbok påverkas inte; diagrammen här visar det som Hälsa delar med {app}.",
       nothingTitle: "Inget registrerat än",

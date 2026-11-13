@@ -200,7 +200,7 @@ msgstr "Összevetés a terveddel"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Összekapcsolva ezzel az eait-fiókkal, bejelentkezés módja:"
+msgstr "Összekapcsolva ezzel az {app}-fiókkal, bejelentkezés módja:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Ha valami nem stimmel, szólj — „fele annyi rizs”, „avokádó n�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "A meghívólinkek új tagoknak szólnak, ez a fiók pedig már megvásárolta az eait-et."
+msgstr "A meghívólinkek új tagoknak szólnak, ez a fiók pedig már megvásárolta az {app}-et."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Ez a kód lejárt. Kérj újat a weben vagy az appban."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Ez a kód nem jó. Nézd meg az eait legutóbbi e-mailjét."
+msgstr "Ez a kód nem jó. Nézd meg az {app} legutóbbi e-mailjét."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Ez a fiók még nincs bejelentkezve — jelentkezz be Apple-lel vagy Goo
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Ez az új eait. Az étkezéseid és fotóid az eait-fiókodban vannak: jelentkezz be a weben, és a terveden nyomd meg a Telegram összekapcsolása gombot."
+msgstr "Ez az új {app}. Az étkezéseid és fotóid az {app}-fiókodban vannak: jelentkezz be a weben, és a terveden nyomd meg a Telegram összekapcsolása gombot."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

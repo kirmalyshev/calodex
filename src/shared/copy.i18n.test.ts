@@ -88,11 +88,12 @@ describe("the compiled catalogs, held to the rules the tables are held to", () =
     //
     // This is the worst shape a translation bug has: the sentence reads, parses, passes the
     // completeness check, and the only thing wrong is the number that is not there.
-    const source = catalogArgs("en");
+    const brandArg = (a: string[]): string[] => [...new Set(a.map((x) => (/^(d_app|qu_app|app_s)$/.test(x) ? "app" : x)))].sort();
+    const source = Object.fromEntries(Object.entries(catalogArgs("en")).map(([k, v]) => [k, brandArg(v)]));
     for (const lang of LANGS) {
       if (lang === "en") continue;
       for (const [id, expected] of Object.entries(source)) {
-        expect(catalogArgs(lang)[id] ?? [], `${lang}/${id}`).toEqual(expected);
+        expect(brandArg(catalogArgs(lang)[id] ?? []), `${lang}/${id}`).toEqual(expected);
       }
     }
   });

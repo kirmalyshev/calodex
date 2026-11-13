@@ -206,7 +206,7 @@ msgstr "Comparaison avec ton plan"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Ce Telegram est connecté au compte eait ouvert avec"
+msgstr "Ce Telegram est connecté au compte {app} ouvert avec"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -286,7 +286,7 @@ msgstr "Si quelque chose cloche, dis-le — \"la moitié du riz\", \"pas d'avoca
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Les liens d'invitation sont pour les nouveaux membres, et ce compte a déjà acheté eait."
+msgstr "Les liens d'invitation sont pour les nouveaux membres, et ce compte a déjà acheté {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -446,7 +446,7 @@ msgstr "Ce code a expiré. Demande-en un nouveau sur le web ou dans l'app."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Ce n'est pas le bon code. Regarde le dernier e-mail d'eait."
+msgstr "Ce n'est pas le bon code. Regarde le dernier e-mail {d_app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -546,7 +546,7 @@ msgstr "Ce compte n'est pas encore connecté — connecte-toi avec Apple ou Goog
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Voici le nouvel eait. Tes repas et tes photos sont gardés dans ton compte eait : connecte-toi sur le web et appuie sur Connecter Telegram depuis ton plan."
+msgstr "Voici le nouvel {app}. Tes repas et tes photos sont gardés dans ton compte {app} : connecte-toi sur le web et appuie sur Connecter Telegram depuis ton plan."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

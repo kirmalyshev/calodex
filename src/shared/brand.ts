@@ -33,7 +33,19 @@ export const knownApp = (raw?: string | null): AppId | null => ((APPS as readonl
 /** `knownApp`, falling back to the default brand: for copy, where a wrong word beats a refusal. */
 export const parseApp = (raw?: string | null): AppId => knownApp(raw) ?? "eait";
 
-export const BRAND_TOKENS = ["app", "domain"] as const;
+export const BRAND_TOKENS = ["app", "domain", "d_app", "qu_app", "app_s"] as const;
+
+/** What each token stands for. `d_app`/`qu_app` elide before a vowel or h (French, Catalan); `app_s` is the genitive ending (Swedish, Danish, Norwegian, German), an apostrophe after s, x or z. */
+export const brandValues = (b: Brand = source()): Record<(typeof BRAND_TOKENS)[number], string> => {
+  const elide = /^[aeiouhàâäéèêëîïôöùûüœ]/i.test(b.name);
+  return {
+    app: b.name,
+    domain: b.domain,
+    d_app: elide ? `d'${b.name}` : `de ${b.name}`,
+    qu_app: elide ? `qu'${b.name}` : `que ${b.name}`,
+    app_s: /[sxz]$/i.test(b.name) ? "'" : "s",
+  };
+};
 
 let source: () => Brand = () => BRANDS.eait;
 /**
@@ -45,7 +57,11 @@ export const setBrandSource = (src: () => Brand): void => { source = src; };
 export const currentBrand = (): Brand => source();
 
 const cache = new WeakMap<object, Map<AppId, unknown>>();
-const fill = (s: string, b: Brand): string => (s.includes("{") ? s.replaceAll("{app}", b.name).replaceAll("{domain}", b.domain) : s);
+const fill = (s: string, b: Brand): string => {
+  if (!s.includes("{")) return s;
+  const v = brandValues(b);
+  return s.replace(/\{(app|domain|d_app|qu_app|app_s)\}/g, (_, k: keyof typeof v) => v[k]);
+};
 
 export function branded<T>(v: T, b: Brand = source()): T {
   if (typeof v === "string") return fill(v, b) as T;

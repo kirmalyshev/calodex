@@ -206,7 +206,7 @@ msgstr "Mit deinem Plan abgleichen"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Verbunden mit dem eait-Konto, angemeldet mit"
+msgstr "Verbunden mit dem {app}-Konto, angemeldet mit"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -286,7 +286,7 @@ msgstr "Wenn etwas nicht stimmt, sag es — „halber Reis“, „keine Avocado�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Einladungslinks sind für neue Mitglieder, und dieses Konto hat eait schon gekauft."
+msgstr "Einladungslinks sind für neue Mitglieder, und dieses Konto hat {app} schon gekauft."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -446,7 +446,7 @@ msgstr "Dieser Code ist abgelaufen. Lass dir einen neuen im Web oder in der App 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Der Code stimmt nicht. Schau in die neueste E-Mail von eait."
+msgstr "Der Code stimmt nicht. Schau in die neueste E-Mail von {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -546,7 +546,7 @@ msgstr "Dieses Konto ist noch nicht angemeldet — melde dich im Web mit Apple o
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Das ist das neue eait. Deine Mahlzeiten und Fotos liegen in deinem eait-Konto: melde dich im Web an und drück auf deinem Plan auf Telegram verbinden."
+msgstr "Das ist das neue {app}. Deine Mahlzeiten und Fotos liegen in deinem {app}-Konto: melde dich im Web an und drück auf deinem Plan auf Telegram verbinden."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

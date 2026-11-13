@@ -200,7 +200,7 @@ msgstr "正在对照你的计划"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "已连接到通过以下方式登录的 eait 账户"
+msgstr "已连接到通过以下方式登录的 {app} 账户"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "如有不对，直接说——“米饭减半”“没有牛油果”—
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "邀请链接仅限新成员使用，而这个账户已经购买过 eait。"
+msgstr "邀请链接仅限新成员使用，而这个账户已经购买过 {app}。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "该验证码已过期。请在网页或 App 中重新获取。"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "验证码不对。查看 eait 发来的最新邮件。"
+msgstr "验证码不对。查看 {app} 发来的最新邮件。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "此账户尚未登录——请先在网页上通过 Apple 或 Google 登
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "这是全新的 eait。你的餐食和照片保存在你的 eait 账户中：请在网页上登录，并在你的计划页面点击“连接 Telegram”。"
+msgstr "这是全新的 {app}。你的餐食和照片保存在你的 {app} 账户中：请在网页上登录，并在你的计划页面点击“连接 Telegram”。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

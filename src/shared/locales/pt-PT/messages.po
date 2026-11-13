@@ -200,7 +200,7 @@ msgstr "A comparar com o teu plano"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Ligado à conta eait com sessão iniciada com"
+msgstr "Ligado à conta {app} com sessão iniciada com"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Se algo estiver errado, diz-me — \"metade do arroz\", \"sem abacate\" 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "As ligações de convite são para novos membros, e esta conta já comprou o eait."
+msgstr "As ligações de convite são para novos membros, e esta conta já comprou o {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Esse código expirou. Pede um novo na web ou na app."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Esse código não está certo. Vê o e-mail mais recente do eait."
+msgstr "Esse código não está certo. Vê o e-mail mais recente do {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Esta conta ainda não tem sessão iniciada — inicia sessão com a Appl
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Este é o novo eait. As tuas refeições e fotos ficam na tua conta eait: inicia sessão na web e toca em Ligar Telegram no teu plano."
+msgstr "Este é o novo {app}. As tuas refeições e fotos ficam na tua conta {app}: inicia sessão na web e toca em Ligar Telegram no teu plano."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

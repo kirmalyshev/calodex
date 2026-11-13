@@ -200,7 +200,7 @@ msgstr "உங்கள் திட்டத்துடன் சரிபா�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "இந்த முறையில் உள்நுழைந்த eait கணக்குடன் இணைக்கப்பட்டது:"
+msgstr "இந்த முறையில் உள்நுழைந்த {app} கணக்குடன் இணைக்கப்பட்டது:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "ஏதாவது தவறாக இருந்தால் சொல
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "அழைப்பு இணைப்புகள் புதிய உறுப்பினர்களுக்கானவை, இந்தக் கணக்கு ஏற்கெனவே eait-ஐ வாங்கியுள்ளது."
+msgstr "அழைப்பு இணைப்புகள் புதிய உறுப்பினர்களுக்கானவை, இந்தக் கணக்கு ஏற்கெனவே {app}-ஐ வாங்கியுள்ளது."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "அந்தக் குறியீடு காலாவதியா�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "அந்தக் குறியீடு சரியில்லை. eait-இலிருந்து வந்த புதிய மின்னஞ்சலைப் பாருங்கள்."
+msgstr "அந்தக் குறியீடு சரியில்லை. {app}-இலிருந்து வந்த புதிய மின்னஞ்சலைப் பாருங்கள்."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "இந்தக் கணக்கில் இன்னும் உள
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "இது புதிய eait. உங்கள் உணவுகளும் புகைப்படங்களும் உங்கள் eait கணக்கில் உள்ளன: இணையத்தில் உள்நுழைந்து, உங்கள் திட்டத்தில் Telegram-ஐ இணை என்பதை அழுத்துங்கள்."
+msgstr "இது புதிய {app}. உங்கள் உணவுகளும் புகைப்படங்களும் உங்கள் {app} கணக்கில் உள்ளன: இணையத்தில் உள்நுழைந்து, உங்கள் திட்டத்தில் Telegram-ஐ இணை என்பதை அழுத்துங்கள்."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

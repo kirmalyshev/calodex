@@ -206,7 +206,7 @@ msgstr "Đối chiếu với kế hoạch của bạn"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Đã kết nối với tài khoản eait đăng nhập bằng"
+msgstr "Đã kết nối với tài khoản {app} đăng nhập bằng"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -286,7 +286,7 @@ msgstr "Có gì sai thì cứ nói — “một nửa cơm thôi”, “không c
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Liên kết mời dành cho thành viên mới, và tài khoản này đã mua eait."
+msgstr "Liên kết mời dành cho thành viên mới, và tài khoản này đã mua {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -446,7 +446,7 @@ msgstr "Mã này đã hết hạn. Hãy lấy mã mới trên web hoặc trong �
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Mã chưa đúng. Kiểm tra email mới nhất từ eait."
+msgstr "Mã chưa đúng. Kiểm tra email mới nhất từ {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -546,7 +546,7 @@ msgstr "Tài khoản này chưa đăng nhập — đăng nhập bằng Apple ho�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Đây là eait mới. Bữa ăn và ảnh của bạn được lưu trong tài khoản eait: đăng nhập trên web rồi bấm Kết nối Telegram ở trang kế hoạch."
+msgstr "Đây là {app} mới. Bữa ăn và ảnh của bạn được lưu trong tài khoản {app}: đăng nhập trên web rồi bấm Kết nối Telegram ở trang kế hoạch."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

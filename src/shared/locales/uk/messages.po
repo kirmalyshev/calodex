@@ -200,7 +200,7 @@ msgstr "Звіряємо з твоїм планом"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Підключено до акаунта eait, вхід через"
+msgstr "Підключено до акаунта {app}, вхід через"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Якщо щось не так, скажи — «половина рис�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Посилання-запрошення — для нових учасників, а на цьому акаунті вже є покупка eait."
+msgstr "Посилання-запрошення — для нових учасників, а на цьому акаунті вже є покупка {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Термін дії коду минув. Отримай новий на 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Код неправильний. Перевір найновіший лист від eait."
+msgstr "Код неправильний. Перевір найновіший лист від {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "У цей акаунт ще не виконано вхід — увій�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Це новий eait. Твої прийоми їжі та фото зберігаються в акаунті eait: увійди на сайті й натисни «Підключити Telegram» на сторінці плану."
+msgstr "Це новий {app}. Твої прийоми їжі та фото зберігаються в акаунті {app}: увійди на сайті й натисни «Підключити Telegram» на сторінці плану."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

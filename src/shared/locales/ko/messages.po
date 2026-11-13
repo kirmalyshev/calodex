@@ -200,7 +200,7 @@ msgstr "플랜과 비교하는 중"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "다음으로 로그인한 eait 계정에 연결됐어요:"
+msgstr "다음으로 로그인한 {app} 계정에 연결됐어요:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "틀린 게 있으면 말해 주세요. “밥 절반”, “아보카도
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "초대 링크는 신규 회원용인데, 이 계정은 이미 eait을 구매했어요."
+msgstr "초대 링크는 신규 회원용인데, 이 계정은 이미 {app}을 구매했어요."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "코드가 만료됐어요. 웹이나 앱에서 새 코드를 요청하�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "코드가 맞지 않아요. eait에서 온 최신 이메일을 확인하세요."
+msgstr "코드가 맞지 않아요. {app}에서 온 최신 이메일을 확인하세요."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "이 계정은 아직 로그인되지 않았어요. 웹에서 Apple 또�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "새로워진 eait이에요. 식사와 사진은 eait 계정에 보관돼요. 웹에서 로그인한 뒤 플랜 화면에서 Telegram 연결을 누르세요."
+msgstr "새로워진 {app}이에요. 식사와 사진은 {app} 계정에 보관돼요. 웹에서 로그인한 뒤 플랜 화면에서 Telegram 연결을 누르세요."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

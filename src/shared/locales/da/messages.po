@@ -200,7 +200,7 @@ msgstr "Tjekker mod din plan"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Forbundet til eait-kontoen, der er logget ind med"
+msgstr "Forbundet til {app}-kontoen, der er logget ind med"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Hvis noget er forkert, så sig det — »halvdelen af risene«, »ingen 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Invitationslinks er til nye medlemmer, og denne konto har allerede købt eait."
+msgstr "Invitationslinks er til nye medlemmer, og denne konto har allerede købt {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Den kode er udløbet. Bed om en ny på nettet eller i appen."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Den kode er forkert. Tjek den nyeste e-mail fra eait."
+msgstr "Den kode er forkert. Tjek den nyeste e-mail fra {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Denne konto er ikke logget ind endnu — log ind med Apple eller Google 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Dette er det nye eait. Dine måltider og fotos ligger på din eait-konto: log ind på nettet, og tryk på Forbind Telegram på din plan."
+msgstr "Dette er det nye {app}. Dine måltider og fotos ligger på din {app}-konto: log ind på nettet, og tryk på Forbind Telegram på din plan."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
