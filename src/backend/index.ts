@@ -29,6 +29,7 @@ import { memoryStore } from "./store.memory.ts";
 import { postgresStore } from "./store.pg.ts";
 import type { Store } from "./store.ts";
 import { createBot, superviseBot } from "./telegram/bot.ts";
+import { installBrandSource, withRequestBrand } from "./brand.ts";
 
 const demo = process.argv.includes("--demo");
 /**
@@ -593,6 +594,7 @@ const handle: typeof router = demo
 // Every replica runs queued jobs: the claim is in Postgres, so which one takes a job does not matter.
 startJobs(deps);
 
+installBrandSource();
 const server = Bun.serve({
   port: config.port,
   // Loopback by default. A process that binds 0.0.0.0 because nobody said otherwise is how a build
@@ -605,7 +607,7 @@ const server = Bun.serve({
   // `X-Forwarded-For`. In production every request has one — Caddy is the only way in — so this is
   // the local-development path, where it is the difference between per-address limits and one
   // shared bucket called "unknown".
-  fetch: (req, server) => handle(req, server),
+  fetch: (req, server) => withRequestBrand(req, () => handle(req, server)),
 });
 
 // The banner NAMES both halves, because they are chosen separately now: a server that says

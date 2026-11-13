@@ -7,6 +7,7 @@
 // entry — there is no English fallback to hide behind. en + ru are the board's words (Kirill's);
 // the other 40 are drafts for the localizer pass (`~/eait-fleet/strings-914.md`).
 
+import { branded } from "../brand.ts";
 import type { Lang } from "../types.ts";
 
 export interface MicroGoalsCopy {
@@ -357,4 +358,4 @@ export const MICRO_GOALS_COPY: Record<Lang, MicroGoalsCopy> = {
   },
 };
 
-export const microGoalsCopyFor = (lang: Lang): MicroGoalsCopy => MICRO_GOALS_COPY[lang];
+export const microGoalsCopyFor = (lang: Lang): MicroGoalsCopy => branded(MICRO_GOALS_COPY[lang]);

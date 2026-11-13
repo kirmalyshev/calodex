@@ -11,7 +11,7 @@
 // call. There is no method here that can reach a row without being told whose it is.
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { PushPlatform, CampaignStatus, CampaignTemplateKey, PushKind, Segment, PushOpenAction, SendKind, SendLogState } from "@eait/shared";
+import type { AppId, PushPlatform, CampaignStatus, CampaignTemplateKey, PushKind, Segment, PushOpenAction, SendKind, SendLogState } from "@eait/shared";
 import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
@@ -334,6 +334,8 @@ export type { PushPlatform };
 export interface PushToken {
   token: string;
   platform: PushPlatform;
+  /** Which brand's app registered this token (the last registration wins). Stored and returned; nothing reads it when a push is composed yet. Rows older than the column read as `eait`. */
+  app: AppId;
 }
 
 /** A line to append to the thread. The shapes are the wire's (`ChatEntry`), minus what the store assigns. */
@@ -1363,7 +1365,7 @@ export interface Store {
    * every launch, because a token changes on reinstall, on a restore from backup, and whenever
    * Apple reissues one.
    */
-  putPushToken(userId: string, token: string, platform: PushPlatform): Promise<void>;
+  putPushToken(userId: string, token: string, platform: PushPlatform, app?: AppId): Promise<void>;
   /** Scoped. True when this call removed one of THIS account's tokens. */
   dropPushToken(userId: string, token: string): Promise<boolean>;
   /** Scoped. Every device this account can be reached on. */

@@ -14,6 +14,7 @@
 // have. `numbers` and `monthYear` below are the only two shapes this product needs, and every
 // figure in every sentence goes through one of them rather than through a hand-written table.
 
+import { branded } from "./brand.ts";
 import { dateMinus, localDate } from "./dates.ts";
 import { LANGS, type Lang } from "./types.ts";
 
@@ -36,7 +37,7 @@ export type Localized<T> = { en: T } & Partial<Record<Lang, T>>;
  * Release build rather than a red box — the failure `AGENTS.md` records from the `as MealAnalysis`
  * casts. `en` is required by the type, so this cannot return undefined.
  */
-export const t = (lang: Lang) => <T>(entry: Localized<T>): T => entry[lang] ?? entry.en;
+export const t = (lang: Lang) => <T>(entry: Localized<T>): T => branded(entry[lang] ?? entry.en);
 
 // The type itself, re-exported so a `ui/` module — which may not reach `types.ts` — can still
 // name the language it formats in (ui.test.ts's allow-list is `./`, palette, design, lang).

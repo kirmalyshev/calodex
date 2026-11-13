@@ -31,6 +31,7 @@
 // so it can render the next question without a round trip. One implementation, so they cannot
 // disagree about what "next" means.
 
+import { BRAND_TOKENS } from "./brand.ts";
 import type { AdminWindowEcho } from "./dates.ts";
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
 import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
@@ -1487,7 +1488,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     if (v.length > max) { push(`${at} is over ${max} characters`); return; }
     const found = [...v.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
     for (const ph of found) {
-      if (!allowed.includes(ph)) push(`${at} has {${ph}}, which nothing fills`);
+      if (!allowed.includes(ph) && !(BRAND_TOKENS as readonly string[]).includes(ph)) push(`${at} has {${ph}}, which nothing fills`);
     }
     for (const ph of requiredPh) {
       if (v !== "" && !found.includes(ph)) push(`${at} drops {${ph}} — the figure it stands for disappears`);

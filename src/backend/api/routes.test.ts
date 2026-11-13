@@ -2001,7 +2001,7 @@ describe("push tokens", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ registered: true });
     const userId = (await store.userIdForToken(t))!;
-    expect(await store.pushTokensFor(userId)).toEqual([{ token: pushToken, platform: "ios" }]);
+    expect(await store.pushTokensFor(userId)).toEqual([{ token: pushToken, platform: "ios", app: "eait" }]);
   });
 
   it("stores the zone the app reports on open, and ignores one it cannot use", async () => {

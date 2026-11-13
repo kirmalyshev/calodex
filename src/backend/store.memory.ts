@@ -4,7 +4,7 @@
 // are enforced here exactly as they are in Postgres, so a test that proves "another user's meal id
 // resolves to null" is proving something about the engine rather than about a mock's mood.
 
-import type { MealReminders } from "@eait/shared";
+import type { AppId, MealReminders } from "@eait/shared";
 import { FOOD_SOURCE_IDS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import type {
   DayTotals, FoodRef, HealthDay, Lang, MealRecord, NotificationCopySet, OffProduct,
@@ -314,7 +314,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const pushTemplateId = (r: Pick<PushTemplateRow, "key" | "lang" | "variant">) => `${r.key}/${r.lang}/${r.variant}`;
   // Keyed by the TOKEN, exactly as Postgres is: a token is an installation, so registering it under
   // a second account moves it rather than adding a row.
-  const pushTokens = new Map<string, { userId: string; platform: PushPlatform }>();
+  const pushTokens = new Map<string, { userId: string; platform: PushPlatform; app: AppId }>();
   const analyses: {
     id: string; userId: string; date: string; scope: "photo" | "text"; costUsd: number | null; unpricedCalls: number;
     /** Settled-turn timings, written by `recordTiming`; undefined until one lands. */
@@ -1359,8 +1359,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return true;
     },
 
-    async putPushToken(userId, token, platform) {
-      pushTokens.set(token, { userId, platform });
+    async putPushToken(userId, token, platform, app = "eait") {
+      pushTokens.set(token, { userId, platform, app });
     },
 
     async dropPushToken(userId, token) {
@@ -1373,7 +1373,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async pushTokensFor(userId) {
       const out: PushToken[] = [];
       for (const [token, row] of pushTokens) {
-        if (row.userId === userId) out.push({ token, platform: row.platform });
+        if (row.userId === userId) out.push({ token, platform: row.platform, app: row.app });
       }
       return out;
     },

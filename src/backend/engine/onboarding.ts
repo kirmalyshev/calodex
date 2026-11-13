@@ -8,7 +8,7 @@
 // derives the same "what comes next" without asking. This module owns storage and aggregation only.
 
 import {
-  COUNTRY_CODES, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
+  COUNTRY_CODES, branded, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
   ONBOARDING_PLACES, countryFromRegion, isReportableField, isTimezone, localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   DEFAULT_ORDER, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
@@ -210,6 +210,17 @@ export async function onboardingServedFor(
   signals: OnboardingSignals,
 ): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[] }> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
+  const served = await servedRaw(deps, userId, signals, control);
+  // The ONE place stored and variant copy is branded: the editor and the clone read it raw.
+  return { ...served, content: branded(served.content) };
+}
+
+async function servedRaw(
+  deps: EngineDeps,
+  userId: string | null,
+  signals: OnboardingSignals,
+  control: OnboardingContent,
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[] }> {
   if (userId === null) return { content: control };
   const assigned = await assignVariant(deps, userId, signals);
   if (!assigned) return { content: control };

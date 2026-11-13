@@ -14806,7 +14806,10 @@ export const onboardingContentFor = (lang: Lang): OnboardingContent => t(lang)(O
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
 export function usableContentFor(lang: Lang, stored: unknown): OnboardingContent {
-  const fallback = onboardingContentFor(lang);
+  // RAW, tokens and all: the admin editor, an experiment's clone and a draft all read this, and a
+  // branded copy saved back would write the brand's name into the stored row as plain text.
+  // The paths that serve readers brand the result (`onboardingServedFor`).
+  const fallback = ONBOARDING_CONTENT[lang] ?? ONBOARDING_CONTENT.en;
   if (typeof stored !== "object" || stored === null) return fallback;
   // A bare revision — the shape saved before this branch. English, and nothing else.
   const legacy = Array.isArray((stored as { screens?: unknown }).screens);

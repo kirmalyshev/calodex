@@ -10,6 +10,7 @@
 // EVERY LANGUAGE, ALWAYS: a `Record<Lang, ...>`, so `typecheck` names the language that lacks an
 // entry. The words are drafts for the localizer pass (`~/eait-fleet/strings-2149.md`).
 
+import { branded } from "../brand.ts";
 import type { Lang } from "../types.ts";
 
 export interface RemindersWebCopy {
@@ -63,4 +64,4 @@ export const REMINDERS_WEB_COPY: Record<Lang, RemindersWebCopy> = {
   te: { note: "రిమైండర్‌లు మీ iPhoneకు మరియు ఈ బ్రౌజర్‌కు వస్తాయి.", prompt: "ఈ రిమైండర్‌లను ఈ బ్రౌజర్‌లో పొందండి", button: "నోటిఫికేషన్‌లను ఆన్ చేయండి" },
 };
 
-export const remindersWebCopyFor = (lang: Lang): RemindersWebCopy => REMINDERS_WEB_COPY[lang];
+export const remindersWebCopyFor = (lang: Lang): RemindersWebCopy => branded(REMINDERS_WEB_COPY[lang]);

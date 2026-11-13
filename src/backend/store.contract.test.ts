@@ -1137,7 +1137,7 @@ function contract(name: string, make: () => Promise<Store>) {
       const token = `ExponentPushToken[${RUN}-idem]`;
       await s.putPushToken(userId, token, "ios");
       await s.putPushToken(userId, token, "ios");
-      expect(await s.pushTokensFor(userId)).toEqual([{ token, platform: "ios" }]);
+      expect(await s.pushTokensFor(userId)).toEqual([{ token, platform: "ios", app: "eait" }]);
     });
 
     it("scopes tokens to their owner", async () => {
@@ -1156,7 +1156,7 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.putPushToken(first, token, "ios");
       await s.putPushToken(second, token, "ios");
       expect(await s.pushTokensFor(first)).toEqual([]);
-      expect(await s.pushTokensFor(second)).toEqual([{ token, platform: "ios" }]);
+      expect(await s.pushTokensFor(second)).toEqual([{ token, platform: "ios", app: "eait" }]);
     });
 
     it("drops a token, and refuses to drop one that is not this account's", async () => {
@@ -1542,7 +1542,7 @@ function contract(name: string, make: () => Promise<Store>) {
       // deleted precisely because moving one would let a signed-out session back in. Deleting this
       // instead would cost the user their evening line until their next launch; leaving it on the
       // dead account would send it to a phone whose owner is now somebody else.
-      expect(await s.pushTokensFor(real)).toEqual([{ token, platform: "ios" }]);
+      expect(await s.pushTokensFor(real)).toEqual([{ token, platform: "ios", app: "eait" }]);
       expect(await s.pushTokensFor(anon)).toEqual([]);
       expect((await s.pushAudience()).map((r) => r.userId)).not.toContain(anon);
     });
