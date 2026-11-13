@@ -3245,7 +3245,7 @@ details.how p { margin-top: 8px; }
 
   var TABS = {
     profile: function () { return loadProfile(); },
-    onboarding: function () { return loadOnboarding(); },
+    onboarding: function () { return loadUserOnboarding(); },
     thread: function () { return loadChat(false); },
     diary: function () { return loadDiary(true); },
     push: function () {}
@@ -3316,7 +3316,7 @@ details.how p { margin-top: 8px; }
    * The account's onboarding journal (calodex#812) — the same read the funnel list's expansion
    * makes, drawn by the same renderer: every stored event, grouped by run.
    */
-  function loadOnboarding() {
+  function loadUserOnboarding() {
     var u = sel;
     paintBox($("onboarding-state"), $("onboarding-body"), "loading");
     return api("GET", "/admin/api/users/" + encodeURIComponent(u.userId) + "/onboarding").then(function (view) {
@@ -3341,7 +3341,7 @@ details.how p { margin-top: 8px; }
     }, function (e) {
       if (sel !== u) return;
       loadedTab.onboarding = null;
-      paintBox($("onboarding-state"), $("onboarding-body"), "error", e, "this account", loadOnboarding, true);
+      paintBox($("onboarding-state"), $("onboarding-body"), "error", e, "this account", loadUserOnboarding, true);
     });
   }
 

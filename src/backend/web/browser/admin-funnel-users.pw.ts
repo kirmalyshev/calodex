@@ -107,3 +107,53 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
 
   expect(errors).toEqual([]);
 });
+
+test("the account page's Onboarding tab reads the same journal", async ({ page }) => {
+  const errors = watchConsole(page);
+  await stub(page);
+  // The list, then the account's profile and cap — the pane loads them before the tab answers.
+  await page.route("**/admin/api/users**", (r) => {
+    const p = new URL(r.request().url()).pathname;
+    if (p.endsWith("/onboarding")) return r.fulfill(json(JOURNAL));
+    if (p.endsWith("/cap")) return r.fulfill(json({ freeAnalyses: null, spent: 0, effective: 20 }));
+    if (p.endsWith(`/${USER}`)) return r.fulfill(json({
+      createdAt: "2026-11-01T00:00:00.000Z", providers: ["apple"], lang: "en",
+      timezone: "Europe/Berlin", streakDays: 3, staff: false,
+      onboardedAt: "2026-11-08T10:01:00.000Z", entitled: true,
+      entitlement: { trial: false, expiresAt: "2026-12-08T00:00:00.000Z", lifetimeProductId: null },
+      targets: { kcal: 2100, goal: "lose", paceKgPerWeek: -0.5 },
+    }));
+    return r.fulfill(json({
+      users: [{
+        userId: USER, email: "user@example.com", createdAt: "2026-11-01T00:00:00.000Z",
+        providers: ["apple"], spent: 0, effective: 20, analysesToday: 0,
+        lastSeen: "2026-11-10T10:00:00.000Z", pushDailyMax: null, pushOffers: false,
+        staff: false, streakDays: 3, entitled: true, onboardedAt: "2026-11-08T10:01:00.000Z",
+        lang: "en", country: "de",
+      }],
+      nextCursor: null, range: RANGE,
+    }));
+  });
+  await page.route("**/admin/api/campaigns**", (r) => r.fulfill(json({
+    killed: false, campaigns: [], copy: [], range: RANGE,
+    options: { langs: ["en"], variants: ["default"], statuses: ["draft"], entitlement: [], streakBands: [], sinceLog: [], staffCount: 0 },
+  })));
+
+  await page.goto("/admin#accounts");
+  await expect(page.locator("#app")).toBeVisible();
+  await page.locator("#users tbody tr").first().click();
+  await page.locator('[data-tab="onboarding"]').click();
+
+  // The tab must load THIS account's stored journal — once upon a time it loaded the copy
+  // editor's answer instead, because the tab's loader shared loadOnboarding's name.
+  const flow = page.locator("#onboarding-flow");
+  await expect(flow.locator(".fl-ev")).toHaveCount(7);
+  await expect(flow).toContainText("back-step");
+  await expect(flow.locator(".chip", { hasText: "again" })).toHaveCount(1);
+  await expect(page.locator("#onboarding-summary")).toContainText("monthly · 2h");
+  expect(errors).toEqual([]);
+});
+
+function json(body: unknown) {
+  return { status: 200, contentType: "application/json", body: JSON.stringify(body) } as const;
+}
