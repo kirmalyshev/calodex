@@ -558,6 +558,28 @@ export interface FunnelAggregate {
   sessions: number;
   /** Runs that reached the end. */
   completed: number;
+  /**
+   * Conversion to paid (#812) — the funnel's last step, read off the SERVER's entitlement
+   * record (`users.entitlement_*`), never off a client event. A run counts as converted when
+   * its account's earliest recorded grant event came at or after the run's first event: a
+   * record older than that describes a payment this run did not cause.
+   */
+  paid: {
+    /** Runs in the window whose account went on to hold an entitlement record. */
+    converted: number;
+    /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. */
+    trial: number;
+    /** The products the converted hold — `lifetime_product_id`, else `product_id`, per run. */
+    products: { productId: string; lifetime: boolean; n: number }[];
+    /**
+     * Median ms from a converted run's first event to the earliest instant either grant
+     * clock holds (`least(expires_event_at, lifetime_event_at)`). Each grant's clock keeps
+     * its LATEST event, so for a renewal the figure is measured to that renewal — the first
+     * entitlement is only exactly the first when nothing newer overwrote it. Null when
+     * nothing converted.
+     */
+    medianMs: number | null;
+  };
   rows: {
     place: string;
     /** Every time the screen was shown — a person who went back and returned counts twice. */
@@ -570,6 +592,69 @@ export interface FunnelAggregate {
     /** Median time on screen before an answer, in ms. Null when nothing was answered. */
     medianMs: number | null;
   }[];
+}
+
+// ── The per-account funnel (#812) ────────────────────────────────────────────────────────────
+
+/**
+ * One stored onboarding event, as the admin's per-account timeline reads it.
+ * `value` stays enumerated: the column stores nothing else by design — numeric answers
+ * live in the profile the write produced, not here.
+ */
+export interface AdminOnboardingEvent {
+  sessionId: string;
+  place: string;
+  action: string;
+  /** ms on screen before the event, where the client sent one. */
+  ms: number | null;
+  field: string | null;
+  /** The enumerated choice an `answer` recorded, or null. */
+  value: string | null;
+  /** Client clock, ISO — when the screen was seen, not when the batch arrived. */
+  at: string;
+}
+
+/**
+ * One account's onboarding flow as the admin's per-account funnel lists it (#812).
+ * RAW, like `AdminUserRow`: whether the record is live, or the paywall stood in this
+ * run's path, is the engine's call — made from `entitlement`, `entitledAt`, `sawPaywallAt`.
+ */
+export interface AdminOnboardingAccount {
+  userId: string;
+  lang: string;
+  country: string | null;
+  /** The account's earliest event stamp inside `range` — the start the row shows. Null when a named account sent nothing. */
+  startedAt: string | null;
+  /** The place of the account's latest event inside `range` — the last screen reached. Null like `startedAt`. */
+  lastPlace: string | null;
+  /** Distinct `session_id` inside `range` — a second run (a reinstall) counts its own. */
+  sessions: number;
+  /** A `complete` action exists inside `range` — onboarding finished. */
+  completed: boolean;
+  /** The earliest view's stamp inside `range` of a screen that presents the paywall (`summary`, `health`), or null. */
+  sawPaywallAt: string | null;
+  /** `least(expires_event_at, lifetime_event_at)`: the earliest instant either grant clock holds. */
+  entitledAt: string | null;
+  /** The account's entitlement record, or null. `entitlementLive` reads whether it is live. */
+  entitlement: StoredEntitlement | null;
+  /** Every stored event in `range`, oldest first — filled only when `userId` was named. */
+  events?: AdminOnboardingEvent[];
+}
+
+export interface AdminOnboardingFlowQuery {
+  /** Present → ONE account's flow, `events` filled. Absent → every account, paged. */
+  userId?: string;
+  range: AdminRange;
+  staffIds?: string[];
+  /** The last row of the previous page, opaque — keyset over (startedAt, userId), newest first. */
+  cursor?: string;
+  limit?: number;
+}
+
+export interface AdminOnboardingPage {
+  rows: AdminOnboardingAccount[];
+  /** Present when another page exists behind these rows. */
+  nextCursor: string | null;
 }
 
 // ── Onboarding experiments (ieat-app#2669) ─────────────────────────────────────────────────────
@@ -1577,6 +1662,18 @@ export interface Store {
   /** The funnel inside `range` (#2776), aggregated. Reads every user except staff-flagged ones (#2783) — this is the admin's view.
    * `staffIds` are accounts staff by config (`campaignStaffIds`), left out beside the flag. */
   onboardingFunnel(range: AdminRange, staffIds?: string[]): Promise<FunnelAggregate>;
+  /**
+   * The per-account funnel (#812). `userId` absent → every account that sent an onboarding
+   * event inside `range`, newest first, keyset-paged — the same population as
+   * `onboardingFunnel`, so staff-flagged accounts and config `staffIds` stay out. `userId`
+   * present → ONE account, scoped by the argument, its `events` filled: the Accounts
+   * detail's read, where a staff account is the admin's own choice and is answered too.
+   *
+   * UNSCOPED in SCOPE, like `onboardingFunnel` itself: this is the admin's read over every
+   * account, and the `userId` argument narrows the same read rather than declaring a
+   * different scope — the same shape `adminListUsers`' `q` takes.
+   */
+  adminOnboardingFlow(query: AdminOnboardingFlowQuery): Promise<AdminOnboardingPage>;
   /**
    * How many accounts finished onboarding in the last `hours` — the loader's "43 people are building
    * their plan with eait" (ieat-app#2050). A count over every user and nothing else: no id, no

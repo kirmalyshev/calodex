@@ -23,6 +23,7 @@ import { type ChatMessage,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
+  type AdminOnboardingAccount, type AdminOnboardingEvent,
 } from "./store.ts";
 
 /** A stored funnel event: what the client sent, plus who and when we received it. */
@@ -42,21 +43,39 @@ function median(values: number[]): number | null {
   return s.length % 2 === 1 ? s[mid]! : Math.round((s[mid - 1]! + s[mid]!) / 2);
 }
 
+/** What `aggregateFunnel` needs of an account's entitlement record: the earliest instant either grant clock holds, and the rest of the record's shape. */
+export interface FunnelGrant {
+  firstGrantAt: string | null;
+  trial: boolean;
+  lifetime: boolean;
+  productId: string;
+}
+
 /**
  * Aggregate raw events into the admin's funnel. Shared by both stores' unit of meaning.
  *
  * The Postgres store does this in SQL rather than calling this function — but it must produce the
  * same numbers, and `store.contract.test.ts` runs the same assertions against both. A median that
  * differs between implementations is a metric that means nothing.
+ *
+ * `grantOf` reads the account's own entitlement record — the paid step's only source (#812). A
+ * run counts as converted when its earliest recorded grant came at or after the run's first event.
  */
-export function aggregateFunnel(events: StoredEvent[]): FunnelAggregate {
+export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string) => FunnelGrant | null = () => null): FunnelAggregate {
   const byPlace = new Map<string, { views: number; people: Set<string>; answers: number; backs: number; rejects: number; ms: number[] }>();
   const sessions = new Set<string>();
   const completed = new Set<string>();
+  // `(user_id, session_id)` — the pair Postgres groups by, so two accounts reusing one session
+  // string are two runs here exactly as they are there.
+  const runs = new Map<string, { userId: string; started: number }>();
 
   for (const e of events) {
     sessions.add(e.sessionId);
     if (e.action === "complete") completed.add(e.sessionId);
+    const key = `${e.userId}|${e.sessionId}`;
+    const t = Date.parse(e.at);
+    const r = runs.get(key);
+    if (r === undefined || t < r.started) runs.set(key, { userId: e.userId, started: r === undefined ? t : Math.min(r.started, t) });
     const row = byPlace.get(e.place) ?? { views: 0, people: new Set<string>(), answers: 0, backs: 0, rejects: 0, ms: [] };
     if (e.action === "view") { row.views++; row.people.add(e.sessionId); }
     if (e.action === "answer") {
@@ -68,9 +87,34 @@ export function aggregateFunnel(events: StoredEvent[]): FunnelAggregate {
     byPlace.set(e.place, row);
   }
 
+  let converted = 0, trial = 0;
+  const deltas: number[] = [];
+  // Keyed `lifetime|product` — the same id answering both grant kinds is two rows, as SQL's
+  // `group by product, trial, is_lifetime` makes it.
+  const products = new Map<string, { productId: string; lifetime: boolean; n: number }>();
+  for (const run of runs.values()) {
+    const g = grantOf(run.userId);
+    if (g === null || g.firstGrantAt === null) continue;
+    const gt = Date.parse(g.firstGrantAt);
+    if (!(gt >= run.started)) continue;
+    converted++;
+    if (g.trial && !g.lifetime) trial++;
+    const key = `${g.lifetime}|${g.productId}`;
+    const p = products.get(key);
+    if (p) p.n++; else products.set(key, { productId: g.productId, lifetime: g.lifetime, n: 1 });
+    deltas.push(gt - run.started);
+  }
+
   return {
     sessions: sessions.size,
     completed: completed.size,
+    paid: {
+      converted,
+      trial,
+      products: [...products.values()]
+        .sort((a, b) => b.n - a.n || a.productId.localeCompare(b.productId)),
+      medianMs: median(deltas),
+    },
     rows: [...byPlace.entries()].map(([place, r]) => ({
       place, views: r.views, people: r.people.size, answers: r.answers, backs: r.backs, rejects: r.rejects,
       medianMs: median(r.ms),
@@ -541,6 +585,24 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     return {
       expiresAt: e.expiresAt, lifetimeProductId: e.lifetimeProductId,
       productId: e.productId, eventAt: e.eventAt, trial: e.trial === true,
+    };
+  };
+
+  /**
+   * `least(expires_event_at, lifetime_event_at)` plus the record's shape — the funnel's paid
+   * step (#812) in the shape `aggregateFunnel` and the per-account read share. Null when the
+   * account holds no record, exactly as `getEntitlement` decides it (the record's own stamp,
+   * not either grant, is what proves one).
+   */
+  const funnelGrant = (userId: string): FunnelGrant | null => {
+    const e = entitlements.get(userId);
+    if (e === undefined || e.eventAt === "") return null;
+    const clocks = [e.expiresEventAt, e.lifetimeEventAt].filter((x): x is string => x !== null).sort();
+    return {
+      firstGrantAt: clocks[0] ?? null,
+      trial: e.trial === true,
+      lifetime: e.lifetimeProductId !== null,
+      productId: e.lifetimeProductId ?? e.productId,
     };
   };
 
@@ -1747,8 +1809,73 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async onboardingFunnel(range, staffIds = []) {
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
-      return aggregateFunnel([...onboardingEvents.values()]
-        .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)));
+      return aggregateFunnel(
+        [...onboardingEvents.values()]
+          .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)),
+        funnelGrant);
+    },
+
+    async adminOnboardingFlow(query) {
+      const { userId, range, staffIds = [], cursor, limit } = query;
+      const lo = range.from?.getTime() ?? -Infinity;
+      const hi = range.to?.getTime() ?? Infinity;
+      const inRange = (e: StoredEvent) => e.receivedAt >= lo && e.receivedAt <= hi;
+      // The event order the store returns — client stamp first, then the arrival the batch
+      // carried, then the id settling a tie, exactly as Postgres orders the same read.
+      const ordered = (evs: StoredEvent[]) => [...evs].sort(
+        (a, b) => a.at.localeCompare(b.at) || a.receivedAt - b.receivedAt || a.id.localeCompare(b.id));
+      const toAccount = (uid: string, evs: StoredEvent[]): AdminOnboardingAccount => {
+        const p = users.get(uid);
+        const g = funnelGrant(uid);
+        const sorted = ordered(evs);
+        return {
+          userId: uid,
+          lang: p?.lang ?? "en",
+          country: p?.country ?? null,
+          startedAt: sorted[0]?.at ?? null,
+          lastPlace: sorted[sorted.length - 1]?.place ?? null,
+          sessions: new Set(evs.map((e) => e.sessionId)).size,
+          completed: evs.some((e) => e.action === "complete"),
+          sawPaywallAt: sorted.find((e) => e.action === "view" && e.place === "summary" || e.place === "health")?.at ?? null,
+          entitledAt: g === null ? null : g.firstGrantAt,
+          entitlement: g === null ? null : storedEntitlement(uid),
+        };
+      };
+
+      if (userId !== undefined) {
+        // ONE account, scoped by the argument — a staff account named outright is answered too.
+        if (!users.has(userId)) return { rows: [], nextCursor: null };
+        const evs = ordered([...onboardingEvents.values()].filter((e) => e.userId === userId && inRange(e)));
+        const toEvent = (e: StoredEvent): AdminOnboardingEvent => ({
+          sessionId: e.sessionId, place: e.place, action: e.action,
+          ms: typeof e.ms === "number" ? e.ms : null,
+          field: e.field ?? null, value: e.value ?? null, at: e.at,
+        });
+        return { rows: [{ ...toAccount(userId, evs), events: evs.map(toEvent) }], nextCursor: null };
+      }
+
+      // The admin's list: the same population and window as `onboardingFunnel`, one row per
+      // account, newest start first, keyset-paged on (started, user_id) like `adminListUsers`.
+      const byUser = new Map<string, StoredEvent[]>();
+      for (const e of onboardingEvents.values()) {
+        if (!inRange(e) || staffSet.has(e.userId) || staffIds.includes(e.userId)) continue;
+        const l = byUser.get(e.userId);
+        if (l) l.push(e); else byUser.set(e.userId, [e]);
+      }
+      const rows = [...byUser.entries()].map(([uid, evs]) => toAccount(uid, evs))
+        .sort((a, b) => (b.startedAt ?? "").localeCompare(a.startedAt ?? "")
+          || (a.userId < b.userId ? 1 : a.userId > b.userId ? -1 : 0));
+      const bounded = Math.min(Math.max(1, Math.trunc(limit ?? 50)), 200);
+      const after = cursor === undefined ? 0
+        : rows.findIndex((r) => `${r.startedAt}~${r.userId}` === cursor) + 1;
+      // An unknown cursor is an empty page, never the first one — `adminListUsers`'s rule.
+      if (cursor !== undefined && after === 0) return { rows: [], nextCursor: null };
+      const page = rows.slice(after, after + bounded);
+      const last = page[page.length - 1];
+      return {
+        rows: page,
+        nextCursor: rows.length > after + page.length && last ? `${last.startedAt}~${last.userId}` : null,
+      };
     },
 
     async listOnboardingExperiments() {

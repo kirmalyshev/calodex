@@ -30,6 +30,7 @@ import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
+  type AdminOnboardingAccount, type AdminOnboardingEvent,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto,
@@ -1794,6 +1795,9 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   adminListUsers: "unscoped",
   adminMetrics: "unscoped",
   onboardingFunnel: "unscoped",
+  // The per-account funnel (#812): the admin's read over every account, like `onboardingFunnel`
+  // itself — `userId` inside the query narrows the same read to one account for the Accounts detail.
+  adminOnboardingFlow: "unscoped",
   // The loader's people counter: one number over every account, no row of anybody's comes back.
   countOnboardedSince: "unscoped",
   pushAudience: "unscoped",
@@ -4003,9 +4007,56 @@ export async function postgresStore(
           and onboarding_events.user_id <> all(${configStaff}::uuid[])
         group by place`;
 
+      // Conversion to paid (#812), the funnel's last step. The same population and window,
+      // joined onto the account's own entitlement record — `users.entitlement_*`, the server's
+      // rows only. A run converted when the earliest instant either grant clock holds came at
+      // or after the run's first event: a record older than that is a payment this run did not
+      // cause. Each grant's clock keeps its LATEST event, so `first_grant` is exactly the first
+      // only when nothing newer overwrote it — the caveat `medianMs` carries.
+      const paidRows = await sql`
+        with runs as (
+          select e.user_id, e.session_id, min(e.at) as started,
+                 least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
+                 u.entitlement_trial as trial,
+                 u.entitlement_lifetime_product_id as lifetime,
+                 coalesce(u.entitlement_lifetime_product_id, u.entitlement_product_id) as product
+            from onboarding_events e join users u on u.id = e.user_id
+           where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
+             and not u.staff
+             and e.user_id <> all(${configStaff}::uuid[])
+           group by e.user_id, e.session_id, u.id
+        ),
+        conv as (
+          select product, trial, lifetime,
+                 extract(epoch from (first_grant - started)) * 1000 as delta_ms
+            from runs
+           where first_grant is not null and first_grant >= started
+        )
+        select (select percentile_cont(0.5) within group (order by delta_ms) from conv) as median_ms,
+               coalesce(product, '') as product, trial, lifetime is not null as is_lifetime,
+               count(*)::int as n
+          from conv
+         group by product, trial, is_lifetime`;
+
       return {
         sessions: num(totals[0]?.sessions),
         completed: num(totals[0]?.completed),
+        paid: {
+          converted: paidRows.reduce((s: number, r: Record<string, unknown>) => s + num(r.n), 0),
+          trial: paidRows.reduce((s: number, r: Record<string, unknown>) => s + (r.trial === true && r.is_lifetime !== true ? num(r.n) : 0), 0),
+          // The SQL groups on (product, trial, is_lifetime) so `trial` can be counted; the
+          // answer carries (product, lifetime) — the same merge the memory store keys on.
+          products: [...paidRows.reduce((m: Map<string, { productId: string; lifetime: boolean; n: number }>, r: Record<string, unknown>) => {
+            const key = `${r.is_lifetime === true}|${String(r.product)}`;
+            const p = m.get(key);
+            if (p) p.n += num(r.n);
+            else m.set(key, { productId: String(r.product), lifetime: r.is_lifetime === true, n: num(r.n) });
+            return m;
+          }, new Map<string, { productId: string; lifetime: boolean; n: number }>()).values()]
+            .sort((a, b) => b.n - a.n || a.productId.localeCompare(b.productId)),
+          medianMs: paidRows[0]?.median_ms === null || paidRows[0]?.median_ms === undefined
+            ? null : Math.round(Number(paidRows[0].median_ms)),
+        },
         rows: rows.map((r: Record<string, unknown>) => ({
           place: String(r.place),
           views: num(r.views),
@@ -4015,6 +4066,106 @@ export async function postgresStore(
           rejects: num(r.rejects),
           medianMs: r.median_ms === null || r.median_ms === undefined ? null : Math.round(Number(r.median_ms)),
         })),
+      };
+    },
+
+    async adminOnboardingFlow(query) {
+      const { userId, range, staffIds = [], cursor, limit } = query;
+      const { from: lo, to: hi } = range;
+      const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
+      const toAccount = (r: Record<string, unknown>, events?: AdminOnboardingEvent[]): AdminOnboardingAccount => {
+        const hasRecord = r.entitlement_event_at !== null && r.entitlement_event_at !== undefined;
+        return {
+          userId: String(r.user_id),
+          lang: String(r.lang),
+          country: (r.country as string | null) ?? null,
+          startedAt: iso(r.started_at),
+          lastPlace: (r.last_place as string | null) ?? null,
+          sessions: num(r.sessions),
+          completed: r.completed === true,
+          sawPaywallAt: iso(r.paywall_at),
+          entitledAt: hasRecord ? iso(r.first_grant) : null,
+          entitlement: !hasRecord ? null : {
+            expiresAt: iso(r.entitlement_expires_at),
+            lifetimeProductId: (r.entitlement_lifetime_product_id as string | null) ?? null,
+            productId: (r.entitlement_product_id as string | null) ?? "",
+            eventAt: iso(r.entitlement_event_at)!,
+            trial: r.entitlement_trial === true,
+          },
+          ...(events === undefined ? {} : { events }),
+        };
+      };
+
+      if (userId !== undefined) {
+        // ONE account, scoped by the argument — a staff account named outright is answered too.
+        const summary = await sql`
+          select u.id as user_id, u.lang, u.country,
+                 u.entitlement_expires_at, u.entitlement_product_id, u.entitlement_event_at,
+                 u.entitlement_lifetime_product_id, u.entitlement_trial,
+                 least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
+                 min(e.at) as started_at,
+                 count(distinct e.session_id)::int as sessions,
+                 bool_or(e.action = 'complete') as completed,
+                 min(e.at) filter (where e.action = 'view' and e.place in ('summary','health')) as paywall_at,
+                 (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] as last_place
+            from users u left join onboarding_events e
+              on e.user_id = u.id
+             and (${lo === null} or e.received_at >= ${lo})
+             and (${hi === null} or e.received_at <= ${hi})
+           where u.id = ${userId}
+           group by u.id`;
+        if (summary.length === 0) return { rows: [], nextCursor: null };
+        const events = await sql`
+          select session_id, place, action, ms, field, value, at
+            from onboarding_events
+           where user_id = ${userId}
+             and (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
+           order by at asc, received_at asc, id asc`;
+        return {
+          rows: [toAccount(summary[0] as Record<string, unknown>, events.map((r: Record<string, unknown>) => ({
+            sessionId: String(r.session_id), place: String(r.place), action: String(r.action),
+            ms: r.ms === null || r.ms === undefined ? null : num(r.ms),
+            field: (r.field as string | null) ?? null, value: (r.value as string | null) ?? null,
+            at: iso(r.at)!,
+          })))],
+          nextCursor: null,
+        };
+      }
+
+      // The admin's list: the same population and window as `onboardingFunnel`, one row per
+      // account, newest start first, keyset-paged on (started, user_id).
+      const bounded = Math.min(Math.max(1, Math.trunc(limit ?? 50)), 200);
+      const configStaff = uuidArray(staffIds);
+      const curAt = cursor === undefined ? null : cursor.slice(0, cursor.lastIndexOf("~"));
+      const curId = cursor === undefined ? null : cursor.slice(cursor.lastIndexOf("~") + 1);
+      if (cursor !== undefined && (curAt === "" || curId === "" || !UUID.test(curId!))) {
+        return { rows: [], nextCursor: null };
+      }
+
+      const rows = await sql`
+        select e.user_id, u.lang, u.country,
+               u.entitlement_expires_at, u.entitlement_product_id, u.entitlement_event_at,
+               u.entitlement_lifetime_product_id, u.entitlement_trial,
+               least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
+               min(e.at) as started_at,
+               count(distinct e.session_id)::int as sessions,
+               bool_or(e.action = 'complete') as completed,
+               min(e.at) filter (where e.action = 'view' and e.place in ('summary','health')) as paywall_at,
+               (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] as last_place
+          from onboarding_events e join users u on u.id = e.user_id
+         where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
+           and not u.staff
+           and e.user_id <> all(${configStaff}::uuid[])
+         group by e.user_id, u.id
+        having ${cursor === undefined} or (min(e.at), e.user_id::text) < (${curAt}::timestamptz, ${curId})
+         order by min(e.at) desc, e.user_id desc
+         limit ${bounded + 1}`;
+
+      const page = rows.slice(0, bounded);
+      const last = page[page.length - 1] as Record<string, unknown> | undefined;
+      return {
+        rows: page.map((r: Record<string, unknown>) => toAccount(r)),
+        nextCursor: rows.length > bounded && last ? `${iso(last.started_at)}~${last.user_id}` : null,
       };
     },
 
