@@ -122,6 +122,18 @@ describe("the icon set", () => {
     expect(BRAND_ICONS["apple-health"].viewBox).toBe("0 0 24 24");
   });
 
+  // ieat-app#2873: the Bowl · Poke tile is the emerald #16A06A (picked against the top calorie
+  // trackers), the fruit #A8E6C8 so it stays visible on it — and NOT the UI accent #1E6B3C,
+  // which stayed.
+  test("eait is the emerald tile with the mint fruit", () => {
+    const e = brandSvg("eait");
+    expect(e).toContain('fill="#16A06A"');
+    expect(e).toContain('fill="#A8E6C8"');
+    expect(e).toContain('stroke="#16A06A"');
+    expect(e).not.toContain("#1E6B3C");
+    expect(e).not.toContain("#5BB37E");
+  });
+
   test("opts.size sets width and height", () => {
     expect(iconSvg("home", { size: 22 })).toContain('width="22" height="22"');
     expect(iconSvg("home")).not.toContain(' width="');
