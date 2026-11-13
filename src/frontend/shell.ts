@@ -37,6 +37,7 @@ import { localDate, windowStart } from "../shared/dates.ts";
 import { mealNames } from "../shared/meal-names.ts";
 import type { Lang } from "../shared/types.ts";
 import type { MealAnalysis, MealProposed, MealRecord } from "@eait/shared";
+import { currentBrand } from "../shared/brand.ts";
 import type {
   ChatEntry, MessageResponse, OUTCOME_UNKNOWN, PendingResponse, PhotoLast,
   DayResponse, DaysResponse, ProfileResponse, ROUTES,
@@ -181,7 +182,7 @@ function chrome(route: string | null, right?: HTMLElement): HTMLElement {
   const brand = el("span", "brand");
   const wm = el("span", "wm");
   wm.append(new DOMParser().parseFromString(brandSvg("eait"), "image/svg+xml").documentElement);
-  brand.append(wm, "eait");
+  brand.append(wm, currentBrand().name);
   bar.append(brand);
   if (route === null) return bar;
   const SCOPY = shellCopyFor(lang);
@@ -219,7 +220,7 @@ function chrome(route: string | null, right?: HTMLElement): HTMLElement {
 /** The front door for anybody this browser cannot prove is signed in. */
 function signInScreen(): HTMLElement {
   const box = el("section", "card");
-  box.append(el("h1", "", "eait"));
+  box.append(el("h1", "", currentBrand().name));
   box.append(el("p", "muted", COPY.signedOutLead));
   // A LINK, NOT A FETCH. `/start` is a server-rendered flow that ends by setting the session
   // cookie, and it is the only thing on this origin that can authenticate anybody.

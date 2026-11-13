@@ -32,7 +32,7 @@ const dump = (v: unknown): string => {
   return JSON.stringify(v) ?? "undefined";
 };
 
-const lines = (): string[] => {
+const lines = (sink?: (id: string, body: string) => void): string[] => {
   const out: string[] = [];
   const mods: Record<string, Record<string, unknown>> = { shared, mail, web, front, reminders, scores, onboarding };
   for (const [m, ns] of Object.entries(mods)) {
@@ -43,9 +43,10 @@ const lines = (): string[] => {
         try {
           const call = fn as (l: string, stored?: unknown) => unknown;
           body = name === "usableContentFor"
-            ? [null, {}, { [lang]: call("en", null) }].map((x) => dump(call(lang, x))).join("|")
+            ? [null, {}, { [lang]: call("en", null) }].map((x) => dump(shared.branded(call(lang, x)))).join("|")
             : dump(call(lang));
         } catch (e) { flagged++; body = `throws:${(e as Error).message}`; }
+        sink?.(`${m}.${name} ${lang}`, body);
         out.push(`${m}.${name} ${lang} ${createHash("sha256").update(body).digest("hex").slice(0, 16)}`);
       }
     }
@@ -62,4 +63,12 @@ test("copy under the default brand is unchanged", () => {
   const diff = now.split("\n").filter((l) => !was.includes(l));
   expect(diff).toEqual([]);
   expect(now.split("\n").length).toBe(was.length);
+});
+
+test("a probe brand leaves no default name in the copy it serves", () => {
+  const probe = { app: "probe" as never, name: "ZZapp", storeName: "ZZapp", domain: "zz.example", mailFrom: "ZZapp <x@zz.example>" } as const;
+  shared.setBrandSource(() => probe);
+  const left: string[] = [];
+  try { lines((id, body) => { if (body.includes("eait")) left.push(id); }); } finally { shared.setBrandSource(() => shared.BRANDS.eait); }
+  expect(left).toEqual([]);
 });

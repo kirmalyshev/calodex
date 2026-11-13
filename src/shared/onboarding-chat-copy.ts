@@ -159,7 +159,7 @@ const EN: ChatCopy = {
   continueLabel: "Continue",
   saveKept: "Couldn't save that. Your answer is still here. Continue sends it again.",
   underAgeCard:  {
-    title: "eait is for {age} and over",
+    title: "{app} is for {age} and over",
     body: "The way this app sets calorie targets is not designed for a body that is still growing.",
   },
   underAge:  {
@@ -170,7 +170,7 @@ const EN: ChatCopy = {
       "Then this is where we stop. I'm deleting everything you told me.",
       "Come back at {age} and I'll be around.",
     ],
-    endedPlaceholder: "eait is for {age} and over",
+    endedPlaceholder: "{app} is for {age} and over",
   },
   belowHealthy:  {
     title: "I can't set that as a target",
@@ -222,7 +222,7 @@ const EN: ChatCopy = {
     days: "Your days burn {burn}kcal",
   },
   chart: {
-    byEait: "with eait",
+    byEait: "with {app}",
     weightTrend: "Weight trend",
     without: "Without",
     now: "Now",
@@ -254,7 +254,7 @@ const FR: ChatCopy = {
   continueLabel: "Continuer",
   saveKept: "Impossible d'enregistrer. Ta réponse est toujours là. Continuer l'envoie à nouveau.",
   underAgeCard:  {
-    title: "eait, c'est à partir de {age} ans",
+    title: "{app}, c'est à partir de {age} ans",
     body: "La façon dont cette app fixe les objectifs caloriques n'est pas conçue pour un corps qui grandit encore.",
   },
   underAge:  {
@@ -265,7 +265,7 @@ const FR: ChatCopy = {
       "Alors on s'arrête ici. J'efface tout ce que tu m'as dit.",
       "Reviens à {age} ans, je serai là.",
     ],
-    endedPlaceholder: "eait, c'est à partir de {age} ans",
+    endedPlaceholder: "{app}, c'est à partir de {age} ans",
   },
   belowHealthy:  {
     title: "Je ne peux pas fixer ça comme objectif",
@@ -315,7 +315,7 @@ const FR: ChatCopy = {
     days: "Tes journées brûlent {burn}kcal",
   },
   chart: {
-    byEait: "avec eait",
+    byEait: "avec {app}",
     weightTrend: "Tendance du poids",
     without: "Sans",
     now: "Maintenant",
@@ -347,7 +347,7 @@ const DE: ChatCopy = {
   continueLabel: "Weiter",
   saveKept: "Das konnte nicht gespeichert werden. Deine Antwort ist noch da. Mit Weiter wird sie erneut gesendet.",
   underAgeCard:  {
-    title: "eait ist ab {age}",
+    title: "{app} ist ab {age}",
     body: "Die Art, wie diese App Kalorienziele setzt, ist nicht für einen Körper gedacht, der noch wächst.",
   },
   underAge:  {
@@ -358,7 +358,7 @@ const DE: ChatCopy = {
       "Dann hören wir hier auf. Ich lösche alles, was du mir gesagt hast.",
       "Komm mit {age} wieder, ich bin da.",
     ],
-    endedPlaceholder: "eait ist ab {age}",
+    endedPlaceholder: "{app} ist ab {age}",
   },
   belowHealthy:  {
     title: "Das kann ich nicht als Ziel setzen",
@@ -408,7 +408,7 @@ const DE: ChatCopy = {
     days: "Deine Tage verbrennen {burn}kcal",
   },
   chart: {
-    byEait: "mit eait",
+    byEait: "mit {app}",
     weightTrend: "Gewichtstrend",
     without: "Ohne",
     now: "Jetzt",
@@ -440,7 +440,7 @@ const IT: ChatCopy = {
   continueLabel: "Continua",
   saveKept: "Non è stato possibile salvare. La tua risposta è ancora qui. Con Continua viene inviata di nuovo.",
   underAgeCard:  {
-    title: "eait è da {age} anni in su",
+    title: "{app} è da {age} anni in su",
     body: "Il modo in cui questa app fissa gli obiettivi calorici non è pensato per un corpo che sta ancora crescendo.",
   },
   underAge:  {
@@ -451,7 +451,7 @@ const IT: ChatCopy = {
       "Allora ci fermiamo qui. Sto cancellando tutto quello che mi hai detto.",
       "Torna a {age} anni e io ci sarò.",
     ],
-    endedPlaceholder: "eait è da {age} anni in su",
+    endedPlaceholder: "{app} è da {age} anni in su",
   },
   belowHealthy:  {
     title: "Non posso impostarlo come obiettivo",
@@ -501,7 +501,7 @@ const IT: ChatCopy = {
     days: "Le tue giornate bruciano {burn}kcal",
   },
   chart: {
-    byEait: "con eait",
+    byEait: "con {app}",
     weightTrend: "Andamento del peso",
     without: "Senza",
     now: "Ora",
@@ -533,7 +533,7 @@ const ES: ChatCopy = {
   continueLabel: "Continuar",
   saveKept: "No se pudo guardar. Tu respuesta sigue aquí. Con Continuar se envía otra vez.",
   underAgeCard:  {
-    title: "eait es para {age} años en adelante",
+    title: "{app} es para {age} años en adelante",
     body: "La forma en que esta app fija objetivos de calorías no está pensada para un cuerpo que todavía está creciendo.",
   },
   underAge:  {
@@ -544,7 +544,7 @@ const ES: ChatCopy = {
       "Entonces aquí lo dejamos. Estoy borrando todo lo que me has contado.",
       "Vuelve a los {age} y aquí estaré.",
     ],
-    endedPlaceholder: "eait es para {age} años en adelante",
+    endedPlaceholder: "{app} es para {age} años en adelante",
   },
   belowHealthy:  {
     title: "No puedo poner eso como objetivo",
@@ -594,7 +594,7 @@ const ES: ChatCopy = {
     days: "Tus días queman {burn}kcal",
   },
   chart: {
-    byEait: "con eait",
+    byEait: "con {app}",
     weightTrend: "Tendencia del peso",
     without: "Sin",
     now: "Ahora",
@@ -626,7 +626,7 @@ const VI: ChatCopy = {
   continueLabel: "Tiếp tục",
   saveKept: "Không lưu được. Câu trả lời của bạn vẫn còn đây. Bấm Tiếp tục để gửi lại.",
   underAgeCard:  {
-    title: "eait dành cho {age} tuổi trở lên",
+    title: "{app} dành cho {age} tuổi trở lên",
     body: "Cách ứng dụng này đặt mục tiêu calo không được thiết kế cho một cơ thể vẫn đang lớn.",
   },
   underAge:  {
@@ -637,7 +637,7 @@ const VI: ChatCopy = {
       "Vậy thì chúng mình dừng ở đây. Mình đang xóa mọi điều bạn đã kể.",
       "Quay lại khi {age} tuổi nhé, mình vẫn ở đây.",
     ],
-    endedPlaceholder: "eait dành cho {age} tuổi trở lên",
+    endedPlaceholder: "{app} dành cho {age} tuổi trở lên",
   },
   belowHealthy:  {
     title: "Mình không đặt được mức đó làm mục tiêu",
@@ -687,7 +687,7 @@ const VI: ChatCopy = {
     days: "Những ngày của bạn đốt {burn}kcal",
   },
   chart: {
-    byEait: "với eait",
+    byEait: "với {app}",
     weightTrend: "Xu hướng cân nặng",
     without: "Không có kế hoạch",
     now: "Hiện tại",
@@ -719,7 +719,7 @@ const ID: ChatCopy = {
   continueLabel: "Lanjutkan",
   saveKept: "Tidak bisa disimpan. Jawabanmu masih di sini. Lanjutkan akan mengirimnya lagi.",
   underAgeCard:  {
-    title: "eait untuk usia {age} ke atas",
+    title: "{app} untuk usia {age} ke atas",
     body: "Cara aplikasi ini menetapkan target kalori tidak dirancang untuk tubuh yang masih tumbuh.",
   },
   underAge:  {
@@ -730,7 +730,7 @@ const ID: ChatCopy = {
       "Kalau begitu kita berhenti di sini. Aku sedang menghapus semua yang kamu ceritakan.",
       "Datang lagi saat {age} tahun, aku akan ada di sini.",
     ],
-    endedPlaceholder: "eait untuk usia {age} ke atas",
+    endedPlaceholder: "{app} untuk usia {age} ke atas",
   },
   belowHealthy:  {
     title: "Aku tidak bisa menetapkan itu sebagai target",
@@ -780,7 +780,7 @@ const ID: ChatCopy = {
     days: "Harimu membakar {burn}kcal",
   },
   chart: {
-    byEait: "dengan eait",
+    byEait: "dengan {app}",
     weightTrend: "Tren berat badan",
     without: "Tanpa",
     now: "Sekarang",
@@ -812,7 +812,7 @@ const RU: ChatCopy = {
   continueLabel: "Продолжить",
   saveKept: "Не удалось сохранить. Твой ответ всё ещё здесь. «Продолжить» отправит его снова.",
   underAgeCard:  {
-    title: "eait — с {age} лет",
+    title: "{app} — с {age} лет",
     body: "То, как это приложение ставит цели по калориям, не рассчитано на тело, которое ещё растёт.",
   },
   underAge:  {
@@ -823,7 +823,7 @@ const RU: ChatCopy = {
       "Тогда на этом мы остановимся. Я удаляю все твои ответы.",
       "Возвращайся в {age} — я буду здесь.",
     ],
-    endedPlaceholder: "eait — с {age} лет",
+    endedPlaceholder: "{app} — с {age} лет",
   },
   belowHealthy:  {
     title: "Не могу поставить это как цель",
@@ -875,7 +875,7 @@ const RU: ChatCopy = {
     days: "Твои дни сжигают {burn}ккал",
   },
   chart: {
-    byEait: "с eait",
+    byEait: "с {app}",
     weightTrend: "Динамика веса",
     without: "Без",
     now: "Сейчас",
@@ -912,7 +912,7 @@ const TE: ChatCopy = {
   continueLabel: "కొనసాగించండి",
   saveKept: "అది సేవ్ కాలేదు. మీ సమాధానం ఇంకా ఇక్కడే ఉంది. \"కొనసాగించండి\" నొక్కితే అది మళ్ళీ పంపబడుతుంది.",
   underAgeCard:  {
-    title: "eait {age} ఏళ్లు, అంతకంటే ఎక్కువ వయసు వారి కోసం",
+    title: "{app} {age} ఏళ్లు, అంతకంటే ఎక్కువ వయసు వారి కోసం",
     body: "ఈ యాప్ కేలరీ లక్ష్యాలను నిర్ణయించే విధానం ఇంకా ఎదుగుతున్న శరీరం కోసం రూపొందించబడలేదు.",
   },
   underAge:  {
@@ -923,7 +923,7 @@ const TE: ChatCopy = {
       "అయితే మనం ఇక్కడే ఆగుదాం. మీరు చెప్పినవన్నీ తొలగిస్తున్నాను.",
       "{age} ఏళ్లు వచ్చాక తిరిగి రండి, నేను ఇక్కడే ఉంటాను.",
     ],
-    endedPlaceholder: "eait {age} ఏళ్లు, అంతకంటే ఎక్కువ వయసు వారి కోసం",
+    endedPlaceholder: "{app} {age} ఏళ్లు, అంతకంటే ఎక్కువ వయసు వారి కోసం",
   },
   belowHealthy:  {
     title: "దాన్ని లక్ష్యంగా పెట్టలేను",
@@ -975,7 +975,7 @@ const TE: ChatCopy = {
     days: "మీ రోజులు {burn}kcal ఖర్చు చేస్తాయి",
   },
   chart: {
-    byEait: "eaitతో",
+    byEait: "{app}తో",
     weightTrend: "బరువు ధోరణి",
     without: "లేకుండా",
     now: "ఇప్పుడు",
@@ -1007,7 +1007,7 @@ const TA: ChatCopy = {
   continueLabel: "தொடர்க",
   saveKept: "அதைச் சேமிக்க முடியவில்லை. உங்கள் பதில் இன்னும் இங்கே உள்ளது. தொடர்க என்பதை அழுத்தினால் மீண்டும் அனுப்பப்படும்.",
   underAgeCard:  {
-    title: "eait {age} வயது மற்றும் அதற்கு மேற்பட்டவர்களுக்கானது",
+    title: "{app} {age} வயது மற்றும் அதற்கு மேற்பட்டவர்களுக்கானது",
     body: "இந்த ஆப் கலோரி இலக்குகளை அமைக்கும் முறை, இன்னும் வளர்ந்து வரும் உடலுக்காக வடிவமைக்கப்படவில்லை.",
   },
   underAge:  {
@@ -1018,7 +1018,7 @@ const TA: ChatCopy = {
       "அப்படியென்றால் இங்கே நிறுத்துகிறோம். நீங்கள் சொன்ன அனைத்தையும் நீக்குகிறேன்.",
       "{age} வயதில் திரும்பி வாருங்கள், நான் இங்கே இருப்பேன்.",
     ],
-    endedPlaceholder: "eait {age} வயது மற்றும் அதற்கு மேற்பட்டவர்களுக்கானது",
+    endedPlaceholder: "{app} {age} வயது மற்றும் அதற்கு மேற்பட்டவர்களுக்கானது",
   },
   belowHealthy:  {
     title: "அதை இலக்காக அமைக்க முடியாது",
@@ -1070,7 +1070,7 @@ const TA: ChatCopy = {
     days: "உங்கள் நாட்கள் {burn}kcal எரிக்கின்றன",
   },
   chart: {
-    byEait: "eait உடன்",
+    byEait: "{app} உடன்",
     weightTrend: "எடைப் போக்கு",
     without: "இல்லாமல்",
     now: "இப்போது",
@@ -1102,7 +1102,7 @@ const PA: ChatCopy = {
   continueLabel: "ਜਾਰੀ ਰੱਖੋ",
   saveKept: "ਇਹ ਸੇਵ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਤੁਹਾਡਾ ਜਵਾਬ ਹਾਲੇ ਵੀ ਇੱਥੇ ਹੈ। ਜਾਰੀ ਰੱਖੋ ਦਬਾਉਣ 'ਤੇ ਇਹ ਦੁਬਾਰਾ ਭੇਜਿਆ ਜਾਵੇਗਾ।",
   underAgeCard:  {
-    title: "eait {age} ਸਾਲ ਅਤੇ ਉਸ ਤੋਂ ਵੱਧ ਉਮਰ ਲਈ ਹੈ",
+    title: "{app} {age} ਸਾਲ ਅਤੇ ਉਸ ਤੋਂ ਵੱਧ ਉਮਰ ਲਈ ਹੈ",
     body: "ਇਹ ਐਪ ਜਿਸ ਤਰ੍ਹਾਂ ਕੈਲੋਰੀ ਟੀਚੇ ਤੈਅ ਕਰਦੀ ਹੈ, ਉਹ ਵਧ ਰਹੇ ਸਰੀਰ ਲਈ ਨਹੀਂ ਬਣਿਆ।",
   },
   underAge:  {
@@ -1113,7 +1113,7 @@ const PA: ChatCopy = {
       "ਤਾਂ ਅਸੀਂ ਇੱਥੇ ਹੀ ਰੁਕਦੇ ਹਾਂ। ਤੁਹਾਡੀ ਦੱਸੀ ਹਰ ਗੱਲ ਡਿਲੀਟ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ।",
       "{age} ਸਾਲ ਦੀ ਉਮਰ ਵਿੱਚ ਵਾਪਸ ਆਓ, ਮੈਂ ਇੱਥੇ ਹੀ ਹਾਂ।",
     ],
-    endedPlaceholder: "eait {age} ਸਾਲ ਅਤੇ ਉਸ ਤੋਂ ਵੱਧ ਉਮਰ ਲਈ ਹੈ",
+    endedPlaceholder: "{app} {age} ਸਾਲ ਅਤੇ ਉਸ ਤੋਂ ਵੱਧ ਉਮਰ ਲਈ ਹੈ",
   },
   belowHealthy:  {
     title: "ਇਸ ਨੂੰ ਟੀਚਾ ਨਹੀਂ ਬਣਾਇਆ ਜਾ ਸਕਦਾ",
@@ -1165,7 +1165,7 @@ const PA: ChatCopy = {
     days: "ਤੁਹਾਡੇ ਦਿਨ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹਨ",
   },
   chart: {
-    byEait: "eait ਨਾਲ",
+    byEait: "{app} ਨਾਲ",
     weightTrend: "ਭਾਰ ਦਾ ਰੁਝਾਨ",
     without: "ਬਿਨਾਂ",
     now: "ਹੁਣ",
@@ -1197,7 +1197,7 @@ const OR: ChatCopy = {
   continueLabel: "ଜାରି ରଖନ୍ତୁ",
   saveKept: "ଏହା ସେଭ୍ ହୋଇପାରିଲା ନାହିଁ। ଆପଣଙ୍କ ଉତ୍ତର ଏଠାରେ ଅଛି। “ଜାରି ରଖନ୍ତୁ” ଦବାଇଲେ ଏହା ପୁଣି ପଠାହେବ।",
   underAgeCard:  {
-    title: "eait {age} ବର୍ଷ ଓ ତଦୂର୍ଧ୍ୱ ପାଇଁ",
+    title: "{app} {age} ବର୍ଷ ଓ ତଦୂର୍ଧ୍ୱ ପାଇଁ",
     body: "ଏହି ଆପ୍ ଯେଉଁ ଉପାୟରେ କ୍ୟାଲୋରୀ ଲକ୍ଷ୍ୟ ସ୍ଥିର କରେ, ତାହା ଏବେ ବି ବଢ଼ୁଥିବା ଶରୀର ପାଇଁ ତିଆରି ନୁହେଁ।",
   },
   underAge:  {
@@ -1208,7 +1208,7 @@ const OR: ChatCopy = {
       "ତେବେ ଆମେ ଏଠାରେ ରହିଯିବା। ଆପଣ ମୋତେ କହିଥିବା ସବୁକିଛି ମୁଁ ଡିଲିଟ୍ କରୁଛି।",
       "{age} ବର୍ଷ ହେଲେ ଫେରି ଆସନ୍ତୁ, ମୁଁ ଏଠାରେ ଥିବି।",
     ],
-    endedPlaceholder: "eait {age} ବର୍ଷ ଓ ତଦୂର୍ଧ୍ୱ ପାଇଁ",
+    endedPlaceholder: "{app} {age} ବର୍ଷ ଓ ତଦୂର୍ଧ୍ୱ ପାଇଁ",
   },
   belowHealthy:  {
     title: "ମୁଁ ତାହାକୁ ଲକ୍ଷ୍ୟ ଭାବେ ସେଟ୍ କରିପାରିବି ନାହିଁ",
@@ -1260,7 +1260,7 @@ const OR: ChatCopy = {
     days: "ଆପଣଙ୍କ ଦିନ {burn}kcal ଖର୍ଚ୍ଚ କରେ",
   },
   chart: {
-    byEait: "eait ସହ",
+    byEait: "{app} ସହ",
     weightTrend: "ଓଜନ ଧାରା",
     without: "ବିନା",
     now: "ଏବେ",
@@ -1292,7 +1292,7 @@ const MR: ChatCopy = {
   continueLabel: "पुढे जा",
   saveKept: "हे सेव्ह करता आले नाही. तुमचे उत्तर अजून इथेच आहे. पुढे जा दाबल्यास ते पुन्हा पाठवले जाईल.",
   underAgeCard:  {
-    title: "eait {age} आणि त्यापुढील वयासाठी आहे",
+    title: "{app} {age} आणि त्यापुढील वयासाठी आहे",
     body: "हे ॲप ज्या पद्धतीने कॅलरी लक्ष्य ठरवते, ती अजून वाढत असलेल्या शरीरासाठी बनवलेली नाही.",
   },
   underAge:  {
@@ -1303,7 +1303,7 @@ const MR: ChatCopy = {
       "मग आपण इथेच थांबूया. तुम्ही मला सांगितलेले सर्व मी हटवत आहे.",
       "वय {age} झाल्यावर परत या, मी इथेच असेन.",
     ],
-    endedPlaceholder: "eait {age} आणि त्यापुढील वयासाठी आहे",
+    endedPlaceholder: "{app} {age} आणि त्यापुढील वयासाठी आहे",
   },
   belowHealthy:  {
     title: "हे लक्ष्य म्हणून ठेवता येत नाही",
@@ -1355,7 +1355,7 @@ const MR: ChatCopy = {
     days: "तुमचे दिवस {burn}kcal खर्च करतात",
   },
   chart: {
-    byEait: "eait सोबत",
+    byEait: "{app} सोबत",
     weightTrend: "वजनाचा कल",
     without: "विना",
     now: "आता",
@@ -1387,7 +1387,7 @@ const ML: ChatCopy = {
   continueLabel: "തുടരുക",
   saveKept: "അത് സംരക്ഷിക്കാനായില്ല. നിങ്ങളുടെ ഉത്തരം ഇപ്പോഴും ഇവിടെയുണ്ട്. തുടരുക അമർത്തിയാൽ അത് വീണ്ടും അയയ്ക്കും.",
   underAgeCard:  {
-    title: "eait {age} വയസ്സും അതിനു മുകളിലുമുള്ളവർക്കുള്ളതാണ്",
+    title: "{app} {age} വയസ്സും അതിനു മുകളിലുമുള്ളവർക്കുള്ളതാണ്",
     body: "ഈ ആപ്പ് കലോറി ലക്ഷ്യങ്ങൾ നിശ്ചയിക്കുന്ന രീതി ഇപ്പോഴും വളരുന്ന ശരീരത്തിനായി രൂപകൽപ്പന ചെയ്തതല്ല.",
   },
   underAge:  {
@@ -1398,7 +1398,7 @@ const ML: ChatCopy = {
       "എങ്കിൽ നമ്മൾ ഇവിടെ നിർത്തുന്നു. നിങ്ങൾ എന്നോട് പറഞ്ഞതെല്ലാം ഞാൻ ഇല്ലാതാക്കുന്നു.",
       "{age} വയസ്സാകുമ്പോൾ തിരികെ വരൂ, ഞാൻ ഇവിടെയുണ്ടാകും.",
     ],
-    endedPlaceholder: "eait {age} വയസ്സും അതിനു മുകളിലുമുള്ളവർക്കുള്ളതാണ്",
+    endedPlaceholder: "{app} {age} വയസ്സും അതിനു മുകളിലുമുള്ളവർക്കുള്ളതാണ്",
   },
   belowHealthy:  {
     title: "അത് ലക്ഷ്യമായി വയ്ക്കാൻ എനിക്കാവില്ല",
@@ -1450,7 +1450,7 @@ const ML: ChatCopy = {
     days: "നിങ്ങളുടെ ദിവസങ്ങൾ {burn}kcal ചെലവഴിക്കുന്നു",
   },
   chart: {
-    byEait: "eait-നൊപ്പം",
+    byEait: "{app}-നൊപ്പം",
     weightTrend: "ഭാരത്തിന്റെ പ്രവണത",
     without: "ഇല്ലാതെ",
     now: "ഇപ്പോൾ",
@@ -1482,7 +1482,7 @@ const KN: ChatCopy = {
   continueLabel: "ಮುಂದುವರಿಸಿ",
   saveKept: "ಅದನ್ನು ಉಳಿಸಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಉತ್ತರ ಇನ್ನೂ ಇಲ್ಲೇ ಇದೆ. ಮುಂದುವರಿಸಿ ಒತ್ತಿದರೆ ಅದು ಮತ್ತೆ ಕಳುಹಿಸಲ್ಪಡುತ್ತದೆ.",
   underAgeCard:  {
-    title: "eait {age} ವರ್ಷ ಮತ್ತು ಅದಕ್ಕಿಂತ ಮೇಲ್ಪಟ್ಟವರಿಗಾಗಿ",
+    title: "{app} {age} ವರ್ಷ ಮತ್ತು ಅದಕ್ಕಿಂತ ಮೇಲ್ಪಟ್ಟವರಿಗಾಗಿ",
     body: "ಈ ಆ್ಯಪ್ ಕ್ಯಾಲೊರಿ ಗುರಿಗಳನ್ನು ಹೊಂದಿಸುವ ರೀತಿ ಇನ್ನೂ ಬೆಳೆಯುತ್ತಿರುವ ದೇಹಕ್ಕಾಗಿ ರೂಪಿಸಲಾಗಿಲ್ಲ.",
   },
   underAge:  {
@@ -1493,7 +1493,7 @@ const KN: ChatCopy = {
       "ಹಾಗಾದರೆ ನಾವು ಇಲ್ಲಿಗೆ ನಿಲ್ಲಿಸುತ್ತೇವೆ. ನೀವು ಹೇಳಿದ ಎಲ್ಲವನ್ನೂ ನಾನು ಅಳಿಸುತ್ತಿದ್ದೇನೆ.",
       "{age} ವರ್ಷವಾದಾಗ ಮತ್ತೆ ಬನ್ನಿ, ನಾನು ಇಲ್ಲೇ ಇರುತ್ತೇನೆ.",
     ],
-    endedPlaceholder: "eait {age} ವರ್ಷ ಮತ್ತು ಅದಕ್ಕಿಂತ ಮೇಲ್ಪಟ್ಟವರಿಗಾಗಿ",
+    endedPlaceholder: "{app} {age} ವರ್ಷ ಮತ್ತು ಅದಕ್ಕಿಂತ ಮೇಲ್ಪಟ್ಟವರಿಗಾಗಿ",
   },
   belowHealthy:  {
     title: "ಅದನ್ನು ಗುರಿಯಾಗಿ ಹೊಂದಿಸಲು ನನಗೆ ಸಾಧ್ಯವಿಲ್ಲ",
@@ -1545,7 +1545,7 @@ const KN: ChatCopy = {
     days: "ನಿಮ್ಮ ದಿನಗಳು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತವೆ",
   },
   chart: {
-    byEait: "eait ಜೊತೆ",
+    byEait: "{app} ಜೊತೆ",
     weightTrend: "ತೂಕದ ಪ್ರವೃತ್ತಿ",
     without: "ಇಲ್ಲದೆ",
     now: "ಈಗ",
@@ -1577,7 +1577,7 @@ const GU: ChatCopy = {
   continueLabel: "ચાલુ રાખો",
   saveKept: "આ સેવ ન થઈ શક્યું. તમારો જવાબ હજી અહીં જ છે. ચાલુ રાખો દબાવતાં તે ફરીથી મોકલાશે.",
   underAgeCard:  {
-    title: "eait {age} અને તેથી વધુ ઉંમરના લોકો માટે છે",
+    title: "{app} {age} અને તેથી વધુ ઉંમરના લોકો માટે છે",
     body: "આ ઍપ જે રીતે કેલરી લક્ષ્ય નક્કી કરે છે, તે હજી વિકસતા શરીર માટે બનાવાયેલી નથી.",
   },
   underAge:  {
@@ -1588,7 +1588,7 @@ const GU: ChatCopy = {
       "તો આપણે અહીં જ અટકીએ છીએ. તમે કહેલી દરેક વાત ડિલીટ થઈ રહી છે.",
       "{age} વર્ષની ઉંમરે ફરી આવજો, હું અહીં જ હોઈશ.",
     ],
-    endedPlaceholder: "eait {age} અને તેથી વધુ ઉંમરના લોકો માટે છે",
+    endedPlaceholder: "{app} {age} અને તેથી વધુ ઉંમરના લોકો માટે છે",
   },
   belowHealthy:  {
     title: "આને લક્ષ્ય તરીકે સેટ કરી શકાય નહીં",
@@ -1640,7 +1640,7 @@ const GU: ChatCopy = {
     days: "તમારા દિવસો {burn}kcal ખર્ચે છે",
   },
   chart: {
-    byEait: "eait સાથે",
+    byEait: "{app} સાથે",
     weightTrend: "વજનનો ટ્રેન્ડ",
     without: "વિના",
     now: "અત્યારે",
@@ -1672,7 +1672,7 @@ const BN: ChatCopy = {
   continueLabel: "চালিয়ে যান",
   saveKept: "এটি সেভ করা যায়নি। আপনার উত্তর এখনও এখানে আছে। চালিয়ে যান চাপলে আবার পাঠানো হবে।",
   underAgeCard:  {
-    title: "eait {age} বছর ও তার বেশি বয়সীদের জন্য",
+    title: "{app} {age} বছর ও তার বেশি বয়সীদের জন্য",
     body: "এই অ্যাপ যেভাবে ক্যালরির লক্ষ্যমাত্রা ঠিক করে, তা এখনও বেড়ে ওঠা শরীরের জন্য তৈরি নয়।",
   },
   underAge:  {
@@ -1683,7 +1683,7 @@ const BN: ChatCopy = {
       "তাহলে এখানেই থামছি। আপনি যা যা বলেছেন সব মুছে ফেলছি।",
       "{age} বছর বয়সে ফিরে আসুন, আমি থাকব।",
     ],
-    endedPlaceholder: "eait {age} বছর ও তার বেশি বয়সীদের জন্য",
+    endedPlaceholder: "{app} {age} বছর ও তার বেশি বয়সীদের জন্য",
   },
   belowHealthy:  {
     title: "এটাকে লক্ষ্য হিসেবে রাখতে পারছি না",
@@ -1735,7 +1735,7 @@ const BN: ChatCopy = {
     days: "আপনার দিনগুলো {burn}kcal খরচ করে",
   },
   chart: {
-    byEait: "eait-এর সঙ্গে",
+    byEait: "{app}-এর সঙ্গে",
     weightTrend: "ওজনের প্রবণতা",
     without: "ছাড়া",
     now: "এখন",
@@ -1767,7 +1767,7 @@ const PT_PT: ChatCopy = {
   continueLabel: "Continuar",
   saveKept: "Não foi possível guardar. A tua resposta continua aqui. Continuar envia-a de novo.",
   underAgeCard:  {
-    title: "O eait é para quem tem {age} anos ou mais",
+    title: "O {app} é para quem tem {age} anos ou mais",
     body: "A forma como esta app define os alvos de calorias não foi pensada para um corpo que ainda está a crescer.",
   },
   underAge:  {
@@ -1778,7 +1778,7 @@ const PT_PT: ChatCopy = {
       "Então paramos aqui. Vou apagar tudo o que me contaste.",
       "Volta quando tiveres {age} anos e eu ando por cá.",
     ],
-    endedPlaceholder: "O eait é para quem tem {age} anos ou mais",
+    endedPlaceholder: "O {app} é para quem tem {age} anos ou mais",
   },
   belowHealthy:  {
     title: "Não posso definir isso como alvo",
@@ -1830,7 +1830,7 @@ const PT_PT: ChatCopy = {
     days: "Os teus dias gastam {burn}kcal",
   },
   chart: {
-    byEait: "com o eait",
+    byEait: "com o {app}",
     weightTrend: "Tendência do peso",
     without: "Sem",
     now: "Agora",
@@ -1862,7 +1862,7 @@ const MS: ChatCopy = {
   continueLabel: "Teruskan",
   saveKept: "Itu tidak dapat disimpan. Jawapan anda masih ada di sini. Teruskan akan menghantarnya semula.",
   underAgeCard:  {
-    title: "eait untuk {age} tahun ke atas",
+    title: "{app} untuk {age} tahun ke atas",
     body: "Cara aplikasi ini menetapkan sasaran kalori tidak direka untuk badan yang masih membesar.",
   },
   underAge:  {
@@ -1873,7 +1873,7 @@ const MS: ChatCopy = {
       "Kalau begitu, kita berhenti di sini. Saya memadam semua yang anda beritahu saya.",
       "Kembalilah pada umur {age} tahun, saya masih ada.",
     ],
-    endedPlaceholder: "eait untuk {age} tahun ke atas",
+    endedPlaceholder: "{app} untuk {age} tahun ke atas",
   },
   belowHealthy:  {
     title: "Saya tidak boleh menetapkan itu sebagai sasaran",
@@ -1925,7 +1925,7 @@ const MS: ChatCopy = {
     days: "Hari-hari anda membakar {burn}kcal",
   },
   chart: {
-    byEait: "dengan eait",
+    byEait: "dengan {app}",
     weightTrend: "Trend berat",
     without: "Tanpa",
     now: "Sekarang",
@@ -1957,7 +1957,7 @@ const CA: ChatCopy = {
   continueLabel: "Continua",
   saveKept: "No s'ha pogut desar. La teva resposta encara és aquí. Amb Continua, s'envia de nou.",
   underAgeCard:  {
-    title: "eait és a partir dels {age} anys",
+    title: "{app} és a partir dels {age} anys",
     body: "La manera com aquesta app fixa els objectius de calories no està pensada per a un cos que encara creix.",
   },
   underAge:  {
@@ -1968,7 +1968,7 @@ const CA: ChatCopy = {
       "Llavors aquí ens aturem. Elimino tot el que m'has dit.",
       "Torna quan tinguis {age} anys i aquí seré.",
     ],
-    endedPlaceholder: "eait és a partir dels {age} anys",
+    endedPlaceholder: "{app} és a partir dels {age} anys",
   },
   belowHealthy:  {
     title: "No puc fixar això com a objectiu",
@@ -2020,7 +2020,7 @@ const CA: ChatCopy = {
     days: "Els teus dies cremen {burn}kcal",
   },
   chart: {
-    byEait: "amb eait",
+    byEait: "amb {app}",
     weightTrend: "Tendència del pes",
     without: "Sense",
     now: "Ara",
@@ -2052,7 +2052,7 @@ const SL: ChatCopy = {
   continueLabel: "Nadaljuj",
   saveKept: "Tega ni bilo mogoče shraniti. Tvoj odgovor je še vedno tu. Gumb Nadaljuj ga pošlje znova.",
   underAgeCard:  {
-    title: "eait je za starost od {age} let naprej",
+    title: "{app} je za starost od {age} let naprej",
     body: "Način, kako ta aplikacija določa ciljne vrednosti kalorij, ni zasnovan za telo, ki še raste.",
   },
   underAge:  {
@@ -2063,7 +2063,7 @@ const SL: ChatCopy = {
       "Potem se tu ustaviva. Brišem vse tvoje odgovore.",
       "Vrni se pri {age} letih, tu bom.",
     ],
-    endedPlaceholder: "eait je za starost od {age} let naprej",
+    endedPlaceholder: "{app} je za starost od {age} let naprej",
   },
   belowHealthy:  {
     title: "Tega ne morem nastaviti kot ciljno težo",
@@ -2115,7 +2115,7 @@ const SL: ChatCopy = {
     days: "Tvoji dnevi porabijo {burn}kcal",
   },
   chart: {
-    byEait: "z eait",
+    byEait: "z {app}",
     weightTrend: "Gibanje teže",
     without: "Brez",
     now: "Zdaj",
@@ -2147,7 +2147,7 @@ const HR: ChatCopy = {
   continueLabel: "Nastavi",
   saveKept: "To se nije moglo spremiti. Odgovor je još tu. Dodirom na Nastavi šalje se ponovno.",
   underAgeCard:  {
-    title: "eait je za dob {age}+",
+    title: "{app} je za dob {age}+",
     body: "Način na koji ova aplikacija postavlja kalorijske ciljeve nije namijenjen tijelu koje još raste.",
   },
   underAge:  {
@@ -2158,7 +2158,7 @@ const HR: ChatCopy = {
       "Onda ovdje stajemo. Brišem sve tvoje odgovore.",
       "Vrati se s {age} — bit ću tu.",
     ],
-    endedPlaceholder: "eait je za dob {age}+",
+    endedPlaceholder: "{app} je za dob {age}+",
   },
   belowHealthy:  {
     title: "To ne mogu postaviti kao ciljnu težinu",
@@ -2210,7 +2210,7 @@ const HR: ChatCopy = {
     days: "Tvoji dani troše {burn}kcal",
   },
   chart: {
-    byEait: "uz eait",
+    byEait: "uz {app}",
     weightTrend: "Kretanje težine",
     without: "Bez",
     now: "Sada",
@@ -2242,7 +2242,7 @@ const SK: ChatCopy = {
   continueLabel: "Pokračovať",
   saveKept: "Nepodarilo sa to uložiť. Tvoja odpoveď je stále tu. Ťuknutím na Pokračovať ju pošleš znova.",
   underAgeCard:  {
-    title: "eait je od {age} rokov",
+    title: "{app} je od {age} rokov",
     body: "Spôsob, akým táto aplikácia nastavuje kalorické normy, nie je určený pre telo, ktoré ešte rastie.",
   },
   underAge:  {
@@ -2253,7 +2253,7 @@ const SK: ChatCopy = {
       "Tak tu končíme. Mažem všetky tvoje odpovede.",
       "Vráť sa, keď budeš mať {age}, budem tu.",
     ],
-    endedPlaceholder: "eait je od {age} rokov",
+    endedPlaceholder: "{app} je od {age} rokov",
   },
   belowHealthy:  {
     title: "Toto ako cieľ nastaviť nemôžem",
@@ -2305,7 +2305,7 @@ const SK: ChatCopy = {
     days: "Tvoje dni spália {burn}kcal",
   },
   chart: {
-    byEait: "s eait",
+    byEait: "s {app}",
     weightTrend: "Vývoj váhy",
     without: "Bez",
     now: "Teraz",
@@ -2337,7 +2337,7 @@ const NO: ChatCopy = {
   continueLabel: "Fortsett",
   saveKept: "Det kunne ikke lagres. Svaret ditt er fortsatt her. Fortsett sender det på nytt.",
   underAgeCard:  {
-    title: "eait er for {age} år og oppover",
+    title: "{app} er for {age} år og oppover",
     body: "Måten denne appen setter kalorirammer på, er ikke laget for en kropp som fortsatt vokser.",
   },
   underAge:  {
@@ -2348,7 +2348,7 @@ const NO: ChatCopy = {
       "Da stopper vi her. Jeg sletter alt du har fortalt meg.",
       "Kom tilbake når du er {age}, så er jeg her.",
     ],
-    endedPlaceholder: "eait er for {age} år og oppover",
+    endedPlaceholder: "{app} er for {age} år og oppover",
   },
   belowHealthy:  {
     title: "Den målvekten kan jeg ikke sette",
@@ -2400,7 +2400,7 @@ const NO: ChatCopy = {
     days: "Dagene dine forbrenner {burn}kcal",
   },
   chart: {
-    byEait: "med eait",
+    byEait: "med {app}",
     weightTrend: "Vekttrend",
     without: "Uten",
     now: "Nå",
@@ -2432,7 +2432,7 @@ const FI: ChatCopy = {
   continueLabel: "Jatka",
   saveKept: "Tallennus epäonnistui. Vastauksesi on yhä tässä. Jatka lähettää sen uudelleen.",
   underAgeCard:  {
-    title: "eait on {age} vuotta täyttäneille",
+    title: "{app} on {age} vuotta täyttäneille",
     body: "Tapa, jolla tämä sovellus asettaa kalorien tavoitetasot, ei sovi vielä kasvavalle keholle.",
   },
   underAge:  {
@@ -2443,7 +2443,7 @@ const FI: ChatCopy = {
       "Sitten lopetamme tähän. Poistan kaiken, mitä kerroit minulle.",
       "Palaa, kun olet {age}, olen täällä.",
     ],
-    endedPlaceholder: "eait on {age} vuotta täyttäneille",
+    endedPlaceholder: "{app} on {age} vuotta täyttäneille",
   },
   belowHealthy:  {
     title: "En voi asettaa tuota tavoitepainoksi",
@@ -2495,7 +2495,7 @@ const FI: ChatCopy = {
     days: "Päiväsi kuluttavat {burn}kcal",
   },
   chart: {
-    byEait: "eait-sovelluksella",
+    byEait: "{app}-sovelluksella",
     weightTrend: "Painon kehitys",
     without: "Ilman",
     now: "Nyt",
@@ -2527,7 +2527,7 @@ const DA: ChatCopy = {
   continueLabel: "Fortsæt",
   saveKept: "Det kunne ikke gemmes. Dit svar er her stadig. Fortsæt sender det igen.",
   underAgeCard:  {
-    title: "eait er fra {age} år",
+    title: "{app} er fra {age} år",
     body: "Den måde, appen sætter kaloriemål på, er ikke lavet til en krop, der stadig vokser.",
   },
   underAge:  {
@@ -2538,7 +2538,7 @@ const DA: ChatCopy = {
       "Så stopper vi her. Jeg sletter alt, hvad du har fortalt mig.",
       "Kom tilbage, når du er {age}, så er jeg her.",
     ],
-    endedPlaceholder: "eait er fra {age} år",
+    endedPlaceholder: "{app} er fra {age} år",
   },
   belowHealthy:  {
     title: "Det kan jeg ikke sætte som målvægt",
@@ -2590,7 +2590,7 @@ const DA: ChatCopy = {
     days: "Dine dage forbrænder {burn}kcal",
   },
   chart: {
-    byEait: "med eait",
+    byEait: "med {app}",
     weightTrend: "Vægtudvikling",
     without: "Uden",
     now: "Nu",
@@ -2622,7 +2622,7 @@ const HU: ChatCopy = {
   continueLabel: "Tovább",
   saveKept: "Ezt nem sikerült menteni. A válaszod még itt van. A Tovább újra elküldi.",
   underAgeCard:  {
-    title: "Az eait {age} éves kortól használható",
+    title: "Az {app} {age} éves kortól használható",
     body: "Az app kalóriacél-számítása nem olyan szervezetre készült, amely még növésben van.",
   },
   underAge:  {
@@ -2633,7 +2633,7 @@ const HU: ChatCopy = {
       "Akkor itt megállunk. Törlöm mindazt, amit elmondtál.",
       "Gyere vissza {age} évesen, itt leszek.",
     ],
-    endedPlaceholder: "Az eait {age} éves kortól használható",
+    endedPlaceholder: "Az {app} {age} éves kortól használható",
   },
   belowHealthy:  {
     title: "Ezt nem tudom célként beállítani",
@@ -2685,7 +2685,7 @@ const HU: ChatCopy = {
     days: "A napjaid elégetnek {burn}kcal-t",
   },
   chart: {
-    byEait: "az eait-tel",
+    byEait: "az {app}-tel",
     weightTrend: "Testsúlytrend",
     without: "Nélküle",
     now: "Most",
@@ -2717,7 +2717,7 @@ const EL: ChatCopy = {
   continueLabel: "Συνέχεια",
   saveKept: "Δεν ήταν δυνατή η αποθήκευση. Η απάντησή σου είναι ακόμα εδώ. Πάτα Συνέχεια για να σταλεί ξανά.",
   underAgeCard:  {
-    title: "Το eait είναι για ηλικίες {age} και άνω",
+    title: "Το {app} είναι για ηλικίες {age} και άνω",
     body: "Ο τρόπος που αυτή η εφαρμογή ορίζει στόχους θερμίδων δεν είναι σχεδιασμένος για σώμα που ακόμα αναπτύσσεται.",
   },
   underAge:  {
@@ -2728,7 +2728,7 @@ const EL: ChatCopy = {
       "Τότε σταματάμε εδώ. Διαγράφω όλα όσα μου είπες.",
       "Έλα ξανά στα {age} και θα είμαι εδώ.",
     ],
-    endedPlaceholder: "Το eait είναι για ηλικίες {age} και άνω",
+    endedPlaceholder: "Το {app} είναι για ηλικίες {age} και άνω",
   },
   belowHealthy:  {
     title: "Δεν μπορώ να το ορίσω ως στόχο",
@@ -2780,7 +2780,7 @@ const EL: ChatCopy = {
     days: "Οι μέρες σου καίνε {burn}kcal",
   },
   chart: {
-    byEait: "με το eait",
+    byEait: "με το {app}",
     weightTrend: "Τάση βάρους",
     without: "Χωρίς",
     now: "Τώρα",
@@ -2812,7 +2812,7 @@ const RO: ChatCopy = {
   continueLabel: "Continuă",
   saveKept: "Nu s-a putut salva. Răspunsul tău e încă aici. Continuă îl trimite din nou.",
   underAgeCard:  {
-    title: "eait e de la {age} ani",
+    title: "{app} e de la {age} ani",
     body: "Modul în care aplicația stabilește țintele de calorii nu e gândit pentru un corp aflat încă în creștere.",
   },
   underAge:  {
@@ -2823,7 +2823,7 @@ const RO: ChatCopy = {
       "Atunci ne oprim aici. Șterg tot ce mi-ai spus.",
       "Revino la {age} ani și o să fiu aici.",
     ],
-    endedPlaceholder: "eait e de la {age} ani",
+    endedPlaceholder: "{app} e de la {age} ani",
   },
   belowHealthy:  {
     title: "Nu pot seta asta ca țintă",
@@ -2875,7 +2875,7 @@ const RO: ChatCopy = {
     days: "Zilele tale ard {burn}kcal",
   },
   chart: {
-    byEait: "cu eait",
+    byEait: "cu {app}",
     weightTrend: "Tendința greutății",
     without: "Fără",
     now: "Acum",
@@ -2907,7 +2907,7 @@ const CS: ChatCopy = {
   continueLabel: "Pokračovat",
   saveKept: "Nepodařilo se to uložit. Tvoje odpověď tu pořád je. Tlačítko Pokračovat ji odešle znovu.",
   underAgeCard:  {
-    title: "eait je od {age} let",
+    title: "{app} je od {age} let",
     body: "Způsob, jakým aplikace nastavuje kalorické cíle, není určen pro tělo, které ještě roste.",
   },
   underAge:  {
@@ -2918,7 +2918,7 @@ const CS: ChatCopy = {
       "Tak tady končíme. Mažu všechny tvoje odpovědi.",
       "Vrať se, až ti bude {age}, budu tu.",
     ],
-    endedPlaceholder: "eait je od {age} let",
+    endedPlaceholder: "{app} je od {age} let",
   },
   belowHealthy:  {
     title: "Tohle jako cíl nastavit nemůžu",
@@ -2970,7 +2970,7 @@ const CS: ChatCopy = {
     days: "Tvoje dny spálí {burn}kcal",
   },
   chart: {
-    byEait: "s eait",
+    byEait: "s {app}",
     weightTrend: "Vývoj váhy",
     without: "Bez",
     now: "Teď",
@@ -3002,7 +3002,7 @@ const HI: ChatCopy = {
   continueLabel: "जारी रखें",
   saveKept: "यह सेव नहीं हो सका। आपका जवाब अभी भी यहीं है। जारी रखें दबाने पर यह फिर से भेजा जाएगा।",
   underAgeCard:  {
-    title: "eait {age} साल और उससे ज़्यादा उम्र के लिए है",
+    title: "{app} {age} साल और उससे ज़्यादा उम्र के लिए है",
     body: "यह ऐप जिस तरह कैलोरी लक्ष्य तय करता है, वह बढ़ते हुए शरीर के लिए नहीं बना है।",
   },
   underAge:  {
@@ -3013,7 +3013,7 @@ const HI: ChatCopy = {
       "तो हम यहीं रुकते हैं। आपकी बताई हर बात डिलीट की जा रही है।",
       "{age} की उम्र में वापस आइए, मैं यहीं हूँ।",
     ],
-    endedPlaceholder: "eait {age} साल और उससे ज़्यादा उम्र के लिए है",
+    endedPlaceholder: "{app} {age} साल और उससे ज़्यादा उम्र के लिए है",
   },
   belowHealthy:  {
     title: "इसे लक्ष्य नहीं बनाया जा सकता",
@@ -3065,7 +3065,7 @@ const HI: ChatCopy = {
     days: "आपके दिन {burn}kcal खर्च करते हैं",
   },
   chart: {
-    byEait: "eait के साथ",
+    byEait: "{app} के साथ",
     weightTrend: "वज़न का रुझान",
     without: "बिना",
     now: "अभी",
@@ -3097,7 +3097,7 @@ const TH: ChatCopy = {
   continueLabel: "ต่อไป",
   saveKept: "บันทึกไม่สำเร็จ คำตอบของคุณยังอยู่ แตะ ต่อไป เพื่อส่งอีกครั้ง",
   underAgeCard:  {
-    title: "eait สำหรับผู้ที่อายุ {age} ปีขึ้นไป",
+    title: "{app} สำหรับผู้ที่อายุ {age} ปีขึ้นไป",
     body: "วิธีที่แอปนี้ตั้งเป้าแคลอรีไม่ได้ออกแบบมาสำหรับร่างกายที่ยังเติบโตอยู่",
   },
   underAge:  {
@@ -3108,7 +3108,7 @@ const TH: ChatCopy = {
       "งั้นเราหยุดกันตรงนี้ เรากำลังลบทุกอย่างที่คุณบอกมา",
       "กลับมาตอนอายุ {age} นะ เรายังอยู่ตรงนี้",
     ],
-    endedPlaceholder: "eait สำหรับผู้ที่อายุ {age} ปีขึ้นไป",
+    endedPlaceholder: "{app} สำหรับผู้ที่อายุ {age} ปีขึ้นไป",
   },
   belowHealthy:  {
     title: "เราตั้งค่านั้นเป็นเป้าไม่ได้",
@@ -3160,7 +3160,7 @@ const TH: ChatCopy = {
     days: "วันของคุณเผาผลาญ {burn}kcal",
   },
   chart: {
-    byEait: "ใช้ eait",
+    byEait: "ใช้ {app}",
     weightTrend: "แนวโน้มน้ำหนัก",
     without: "ไม่ใช้",
     now: "ตอนนี้",
@@ -3192,7 +3192,7 @@ const SV: ChatCopy = {
   continueLabel: "Fortsätt",
   saveKept: "Kunde inte spara det. Ditt svar finns kvar. Fortsätt skickar det igen.",
   underAgeCard:  {
-    title: "eait är för {age} år och uppåt",
+    title: "{app} är för {age} år och uppåt",
     body: "Sättet appen sätter kalorimål på är inte gjort för en kropp som fortfarande växer.",
   },
   underAge:  {
@@ -3203,7 +3203,7 @@ const SV: ChatCopy = {
       "Då slutar vi här. Jag raderar allt du har berättat.",
       "Kom tillbaka när du är {age}, så finns jag här.",
     ],
-    endedPlaceholder: "eait är för {age} år och uppåt",
+    endedPlaceholder: "{app} är för {age} år och uppåt",
   },
   belowHealthy:  {
     title: "Det kan jag inte sätta som mål",
@@ -3255,7 +3255,7 @@ const SV: ChatCopy = {
     days: "Dina dagar förbränner {burn}kcal",
   },
   chart: {
-    byEait: "med eait",
+    byEait: "med {app}",
     weightTrend: "Viktkurva",
     without: "Utan",
     now: "Nu",
@@ -3287,7 +3287,7 @@ const UK: ChatCopy = {
   continueLabel: "Продовжити",
   saveKept: "Не вдалося зберегти. Твоя відповідь усе ще тут. «Продовжити» надішле її знову.",
   underAgeCard:  {
-    title: "eait — від {age} років",
+    title: "{app} — від {age} років",
     body: "Те, як ця програма ставить цілі за калоріями, не розраховане на тіло, яке ще росте.",
   },
   underAge:  {
@@ -3298,7 +3298,7 @@ const UK: ChatCopy = {
       "Тоді на цьому зупинимося. Я видаляю всі твої відповіді.",
       "Повертайся, коли тобі буде {age}, — я буду тут.",
     ],
-    endedPlaceholder: "eait — від {age} років",
+    endedPlaceholder: "{app} — від {age} років",
   },
   belowHealthy:  {
     title: "Не можу поставити це як мету",
@@ -3350,7 +3350,7 @@ const UK: ChatCopy = {
     days: "Твої дні спалюють {burn}ккал",
   },
   chart: {
-    byEait: "з eait",
+    byEait: "з {app}",
     weightTrend: "Динаміка ваги",
     without: "Без",
     now: "Зараз",
@@ -3382,7 +3382,7 @@ const NL: ChatCopy = {
   continueLabel: "Verder",
   saveKept: "Dat kon niet worden opgeslagen. Je antwoord staat er nog. Met Verder stuur je het opnieuw.",
   underAgeCard:  {
-    title: "eait is voor {age} jaar en ouder",
+    title: "{app} is voor {age} jaar en ouder",
     body: "De manier waarop deze app caloriedoelen stelt, is niet bedoeld voor een lichaam dat nog groeit.",
   },
   underAge:  {
@@ -3393,7 +3393,7 @@ const NL: ChatCopy = {
       "Dan stoppen we hier. Ik verwijder alles wat je me hebt verteld.",
       "Kom terug als je {age} bent, dan ben ik er.",
     ],
-    endedPlaceholder: "eait is voor {age} jaar en ouder",
+    endedPlaceholder: "{app} is voor {age} jaar en ouder",
   },
   belowHealthy:  {
     title: "Dat kan ik niet als doel instellen",
@@ -3445,7 +3445,7 @@ const NL: ChatCopy = {
     days: "Je dagen verbranden {burn}kcal",
   },
   chart: {
-    byEait: "met eait",
+    byEait: "met {app}",
     weightTrend: "Gewichtstrend",
     without: "Zonder",
     now: "Nu",
@@ -3477,7 +3477,7 @@ const PL: ChatCopy = {
   continueLabel: "Dalej",
   saveKept: "Nie udało się tego zapisać. Twoja odpowiedź wciąż tu jest. „Dalej” wyśle ją ponownie.",
   underAgeCard:  {
-    title: "eait jest dla osób od {age} lat",
+    title: "{app} jest dla osób od {age} lat",
     body: "Sposób, w jaki ta aplikacja ustala cele kaloryczne, nie jest przeznaczony dla ciała, które wciąż rośnie.",
   },
   underAge:  {
@@ -3488,7 +3488,7 @@ const PL: ChatCopy = {
       "W takim razie tu kończymy. Usuwam wszystkie twoje odpowiedzi.",
       "Wróć, gdy skończysz {age} lat — będę tu.",
     ],
-    endedPlaceholder: "eait jest dla osób od {age} lat",
+    endedPlaceholder: "{app} jest dla osób od {age} lat",
   },
   belowHealthy:  {
     title: "Nie mogę ustawić tego jako celu",
@@ -3540,7 +3540,7 @@ const PL: ChatCopy = {
     days: "Twoje dni spalają {burn}kcal",
   },
   chart: {
-    byEait: "z eait",
+    byEait: "z {app}",
     weightTrend: "Trend wagi",
     without: "Bez",
     now: "Teraz",
@@ -3572,7 +3572,7 @@ const TR: ChatCopy = {
   continueLabel: "Devam",
   saveKept: "Kaydedilemedi. Yanıtın hâlâ burada. Devam onu tekrar gönderir.",
   underAgeCard:  {
-    title: "eait {age} yaş ve üzeri içindir",
+    title: "{app} {age} yaş ve üzeri içindir",
     body: "Bu uygulamanın kalori hedeflerini belirleme şekli, hâlâ büyüyen bir vücut için tasarlanmadı.",
   },
   underAge:  {
@@ -3583,7 +3583,7 @@ const TR: ChatCopy = {
       "O zaman burada duruyoruz. Bana anlattığın her şeyi siliyorum.",
       "{age} yaşında geri gel, ben buralarda olurum.",
     ],
-    endedPlaceholder: "eait {age} yaş ve üzeri içindir",
+    endedPlaceholder: "{app} {age} yaş ve üzeri içindir",
   },
   belowHealthy:  {
     title: "Bunu hedef olarak koyamam",
@@ -3635,7 +3635,7 @@ const TR: ChatCopy = {
     days: "Günlerin {burn}kcal yakar",
   },
   chart: {
-    byEait: "eait ile",
+    byEait: "{app} ile",
     weightTrend: "Kilo eğilimi",
     without: "Olmadan",
     now: "Şimdi",
@@ -3667,7 +3667,7 @@ const ZH_HANT: ChatCopy = {
   continueLabel: "繼續",
   saveKept: "無法儲存。你的答案還在，按「繼續」會再傳送一次。",
   underAgeCard:  {
-    title: "eait 適用於 {age} 歲以上",
+    title: "{app} 適用於 {age} 歲以上",
     body: "這個 App 設定熱量目標的方式，並不是為仍在發育的身體設計的。",
   },
   underAge:  {
@@ -3678,7 +3678,7 @@ const ZH_HANT: ChatCopy = {
       "那我們就到這裡。我會刪除你告訴我的所有資料。",
       "等你 {age} 歲再回來，我會在這裡。",
     ],
-    endedPlaceholder: "eait 適用於 {age} 歲以上",
+    endedPlaceholder: "{app} 適用於 {age} 歲以上",
   },
   belowHealthy:  {
     title: "我無法把它設為目標",
@@ -3730,7 +3730,7 @@ const ZH_HANT: ChatCopy = {
     days: "你的日子消耗 {burn}大卡",
   },
   chart: {
-    byEait: "使用 eait",
+    byEait: "使用 {app}",
     weightTrend: "體重趨勢",
     without: "不使用",
     now: "現在",
@@ -3762,7 +3762,7 @@ const ZH_HANS: ChatCopy = {
   continueLabel: "继续",
   saveKept: "无法保存。你的回答还在，点击“继续”会再次发送。",
   underAgeCard:  {
-    title: "eait 仅供{age}岁及以上人士使用",
+    title: "{app} 仅供{age}岁及以上人士使用",
     body: "本 App 设定热量目标的方式，并不适用于仍在生长发育的身体。",
   },
   underAge:  {
@@ -3773,7 +3773,7 @@ const ZH_HANS: ChatCopy = {
       "那我们就到此为止。我会删除你告诉我的所有内容。",
       "等你{age}岁时再回来，我会在这里。",
     ],
-    endedPlaceholder: "eait 仅供{age}岁及以上人士使用",
+    endedPlaceholder: "{app} 仅供{age}岁及以上人士使用",
   },
   belowHealthy:  {
     title: "我无法把这个设为目标",
@@ -3825,7 +3825,7 @@ const ZH_HANS: ChatCopy = {
     days: "你的日子消耗 {burn}千卡",
   },
   chart: {
-    byEait: "使用 eait",
+    byEait: "使用 {app}",
     weightTrend: "体重趋势",
     without: "不使用",
     now: "现在",
@@ -3857,7 +3857,7 @@ const KO: ChatCopy = {
   continueLabel: "계속",
   saveKept: "저장하지 못했어요. 답변은 그대로 있어요. 계속을 누르면 다시 보내요.",
   underAgeCard:  {
-    title: "eait은 {age}세 이상을 위한 앱이에요",
+    title: "{app}은 {age}세 이상을 위한 앱이에요",
     body: "이 앱의 칼로리 목표 설정 방식은 아직 성장 중인 몸을 위해 만들어지지 않았어요.",
   },
   underAge:  {
@@ -3868,7 +3868,7 @@ const KO: ChatCopy = {
       "그럼 여기서 멈출게요. 알려 준 내용은 모두 삭제할게요.",
       "{age}세가 되면 다시 와 주세요. 기다리고 있을게요.",
     ],
-    endedPlaceholder: "eait은 {age}세 이상을 위한 앱이에요",
+    endedPlaceholder: "{app}은 {age}세 이상을 위한 앱이에요",
   },
   belowHealthy:  {
     title: "그 목표는 설정할 수 없어요",
@@ -3920,7 +3920,7 @@ const KO: ChatCopy = {
     days: "하루에는 {burn}kcal를 써요",
   },
   chart: {
-    byEait: "eait과 함께",
+    byEait: "{app}과 함께",
     weightTrend: "체중 추이",
     without: "없이",
     now: "현재",
@@ -3952,7 +3952,7 @@ const JA: ChatCopy = {
   continueLabel: "続ける",
   saveKept: "保存できませんでした。回答は残っています。「続ける」でもう一度送信します。",
   underAgeCard:  {
-    title: "eaitは{age}歳以上が対象です",
+    title: "{app}は{age}歳以上が対象です",
     body: "このアプリのカロリー目標の設定方法は、まだ成長中の体向けには作られていません。",
   },
   underAge:  {
@@ -3963,7 +3963,7 @@ const JA: ChatCopy = {
       "それでは、ここで終わりにします。教えてもらった内容はすべて削除します。",
       "{age}歳になったらまた来てください。待っています。",
     ],
-    endedPlaceholder: "eaitは{age}歳以上が対象です",
+    endedPlaceholder: "{app}は{age}歳以上が対象です",
   },
   belowHealthy:  {
     title: "その目標は設定できません",
@@ -4015,7 +4015,7 @@ const JA: ChatCopy = {
     days: "あなたの一日は{burn}kcalを消費します",
   },
   chart: {
-    byEait: "eaitあり",
+    byEait: "{app}あり",
     weightTrend: "体重の推移",
     without: "なし",
     now: "現在",
@@ -4047,7 +4047,7 @@ const PT_BR: ChatCopy = {
   continueLabel: "Continuar",
   saveKept: "Não foi possível salvar. Sua resposta continua aqui. Continuar envia de novo.",
   underAgeCard:  {
-    title: "O eait é para quem tem {age} anos ou mais",
+    title: "O {app} é para quem tem {age} anos ou mais",
     body: "O jeito como este app define metas de calorias não foi feito para um corpo que ainda está crescendo.",
   },
   underAge:  {
@@ -4058,7 +4058,7 @@ const PT_BR: ChatCopy = {
       "Então paramos aqui. Vou apagar tudo o que você me contou.",
       "Volte quando tiver {age} anos e eu vou estar por aqui.",
     ],
-    endedPlaceholder: "O eait é para quem tem {age} anos ou mais",
+    endedPlaceholder: "O {app} é para quem tem {age} anos ou mais",
   },
   belowHealthy:  {
     title: "Não posso definir isso como meta",
@@ -4110,7 +4110,7 @@ const PT_BR: ChatCopy = {
     days: "Seus dias gastam {burn}kcal",
   },
   chart: {
-    byEait: "com o eait",
+    byEait: "com o {app}",
     weightTrend: "Tendência do peso",
     without: "Sem",
     now: "Agora",

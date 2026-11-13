@@ -34,12 +34,13 @@ import { chatHistory, day, handleText, linkTelegram, saveOnboardingContent } fro
 import { createRouter } from "../api/routes.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
-import { escape, PAGE_COPY } from "./page.ts";
+import { escape } from "./page.ts";
 import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
 import { pageCopyFor } from "./copy.ts";
 import { targetFloor } from "./page/question.ts";
 import { createWebApp } from "../../frontend/server/index.ts";
 import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
+const PAGE_COPY = pageCopyFor("en");
 
 const WEB_CLIENT = "web.apps.googleusercontent.com";
 const SERVICE_ID = "fit.eait.web";

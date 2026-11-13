@@ -1302,7 +1302,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     satFat: { label: "Saturated fat", asked: "Saturated fat · you asked", perDay: "≤ {g} a day" },
     first: {
       title: "Your first step",
-      step: "Photograph your next meal. eait checks it against {kcal}kcal.",
+      step: "Photograph your next meal. {app} checks it against {kcal}kcal.",
     },
     loader: { goal: "Your goal", lose: "−{kg} by {month}", gain: "+{kg} by {month}" },
     chart: { estimateAria: "Estimated weight: {from} now, {to} around {month}" },
@@ -1314,7 +1314,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
-    paid: "Invite links are for new members, and this account has already bought eait.",
+    paid: "Invite links are for new members, and this account has already bought {app}.",
     tryAgain: "Try again",
     skip: "Skip",
   },
