@@ -19,8 +19,8 @@ export interface Brand {
 
 export const BRANDS: Readonly<Record<AppId, Brand>> = {
   eait: { app: "eait", name: "eait", storeName: "eait", domain: "eait.fit", mailFrom: "eait <login@eait.fit>" },
-  // Domain and sender stay on eait.fit until calodex.fit DNS is live (ieat-app#2822). Same App Store record.
-  calodex: { app: "calodex", name: "Calodex", storeName: "Calodex: AI calorie tracker", domain: "eait.fit", mailFrom: "Calodex <login@eait.fit>" },
+  // The sender stays on eait.fit until calodex.app has a verified mail domain (ieat-app#2840). Same App Store record.
+  calodex: { app: "calodex", name: "Calodex", storeName: "Calodex: AI calorie tracker", domain: "calodex.app", mailFrom: "Calodex <login@eait.fit>" },
 };
 
 /**
