@@ -24,6 +24,7 @@ const WEB_MODULES = new Set([
   "app/",              // the per-surface Localized copy tables (shell-copy, home-copy, …)
   "ui/",               // the generated markup/tokens/icons — ui.test.ts pins their own imports
   "lang.ts",
+  "brand.ts",
   "palette.ts",
   "design.ts",
   "mascot.ts",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { LANGS, type Lang } from "./types.ts";
 import { LANG_LABEL } from "./lang.ts";
+import { branded } from "./brand.ts";
 import {
   DEFAULT_ONBOARDING_CONTENT, ONBOARDING_SCREENS, SCREEN_FIELDS, optionLabel, screenOptionValues,
   validateOnboardingContent,
@@ -152,8 +153,8 @@ describe("every language's onboarding content", () => {
   });
 
   it("is English for a language nobody has written, never undefined", () => {
-    expect(onboardingContentFor("en")).toBe(ONBOARDING_CONTENT.en);
-    expect(DEFAULT_ONBOARDING_CONTENT).toBe(ONBOARDING_CONTENT.en);
+    expect(onboardingContentFor("en")).toEqual(branded(ONBOARDING_CONTENT.en));
+    expect(DEFAULT_ONBOARDING_CONTENT).toEqual(branded(ONBOARDING_CONTENT.en));
   });
 
   it("says nothing that is false where the line now stands (#50)", () => {

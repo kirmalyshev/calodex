@@ -6,6 +6,7 @@
 // .toBe(false)` below is one of those failures caught at the save rather than on a phone.
 
 import { describe, expect, it } from "bun:test";
+import { branded } from "./brand.ts";
 import {
   DEFAULT_ONBOARDING_CONTENT, ONBOARDING_INTERSTITIALS, ONBOARDING_PLACES, ONBOARDING_SCREENS,
   ONBOARDING_STEPS,
@@ -632,7 +633,7 @@ describe("the blocks around the questions (ieat-app#2757)", () => {
     stored.version = 26;
     for (const k of ["signup", "referral", "health", "liveActivity", "firstMeal"]) delete (stored as unknown as Record<string, unknown>)[k];
     stored.summary.cta = "Admin's own German words";
-    const served = usableContentFor("de", { de: stored });
+    const served = branded(usableContentFor("de", { de: stored }));
     const own = onboardingContentFor("de");
     expect([served.signup, served.referral, served.health, served.liveActivity, served.firstMeal])
       .toEqual([own.signup, own.referral, own.health, own.liveActivity, own.firstMeal]);
@@ -645,7 +646,7 @@ describe("the blocks around the questions (ieat-app#2757)", () => {
     stored.version = 25;
     delete (stored as { plan?: unknown }).plan;
     stored.summary.cta = "Admin's own German words";
-    const served = usableContentFor("de", { de: stored });
+    const served = branded(usableContentFor("de", { de: stored }));
     expect(served.plan).toEqual(onboardingContentFor("de").plan);
     expect(served.summary.cta).toBe("Admin's own German words");
     expect(served.version).toBe(25);

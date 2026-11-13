@@ -31,7 +31,7 @@
 // so it can render the next question without a round trip. One implementation, so they cannot
 // disagree about what "next" means.
 
-import { BRAND_TOKENS } from "./brand.ts";
+import { BRAND_TOKENS, branded } from "./brand.ts";
 import type { AdminWindowEcho } from "./dates.ts";
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
 import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
@@ -953,7 +953,7 @@ export const PLAN_CHART_TICKS_MS = { area: 600, endDot: 1100, targetChip: 1200 }
  * `product/design/onboarding/copy.md` quotes every sentence below that the phone shows; change both
  * in the same change.
  */
-export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
+export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   // Bumped whenever a word below changes, which is what makes the funnel readable: events carry the
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
@@ -1302,7 +1302,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     satFat: { label: "Saturated fat", asked: "Saturated fat · you asked", perDay: "≤ {g} a day" },
     first: {
       title: "Your first step",
-      step: "Photograph your next meal. eait checks it against {kcal}kcal.",
+      step: "Photograph your next meal. {app} checks it against {kcal}kcal.",
     },
     loader: { goal: "Your goal", lose: "−{kg} by {month}", gain: "+{kg} by {month}" },
     chart: { estimateAria: "Estimated weight: {from} now, {to} around {month}" },
@@ -1314,7 +1314,7 @@ export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = {
     unknown: "That link doesn't match anyone. Check it, or skip.",
     own: "That's your own link. A friend's link goes here.",
     already: "This account already joined with a friend's link.",
-    paid: "Invite links are for new members, and this account has already bought eait.",
+    paid: "Invite links are for new members, and this account has already bought {app}.",
     tryAgain: "Try again",
     skip: "Skip",
   },
@@ -2249,3 +2249,6 @@ export interface OnboardingFunnel {
   contentVersion: number;
   rows: FunnelRow[];
 }
+
+/** The compiled-in English flow with the brand filled: what a client draws before the server answers. The raw table, tokens intact, is `DEFAULT_ONBOARDING_CONTENT_RAW`. */
+export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = branded(DEFAULT_ONBOARDING_CONTENT_RAW);

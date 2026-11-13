@@ -1,5 +1,5 @@
 // The app's brand as a value (ieat-app#2821). Copy carries `{app}` and `{domain}`; `branded` fills
-// them where copy is resolved (`t` in lang.ts), so every accessor keeps its `(lang)` signature.
+// them where copy is resolved (`t` in lang.ts, `onboardingServedFor`, and the exported `DEFAULT_ONBOARDING_CONTENT`), so every accessor keeps its `(lang)` signature.
 // This file imports nothing at runtime: lang.ts ships in the browser bundle and on Hermes.
 //
 // Grammar that assumes today's name, to review per language when a second brand has one:

@@ -7,7 +7,7 @@
 //
 // No SDK: the whole surface this needs is one POST, and a dependency is a second place to keep.
 
-import type { Lang } from "@eait/shared";
+import { BRANDS, currentBrand, type Lang } from "@eait/shared";
 import { mailCopyFor } from "./copy.ts";
 import type { MailPort } from "./port.ts";
 
@@ -28,7 +28,7 @@ export function resendMail(opts: { apiKey: string; from: string }): MailPort {
           authorization: `Bearer ${opts.apiKey}`,
         },
         body: JSON.stringify({
-          from: opts.from,
+          from: currentBrand().app === "eait" ? opts.from : BRANDS[currentBrand().app].mailFrom,
           to: [to],
           subject: fill(copy.subject),
           text: fill(copy.text),
