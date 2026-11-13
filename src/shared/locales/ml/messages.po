@@ -200,7 +200,7 @@ msgstr "നിങ്ങളുടെ പ്ലാനുമായി ഒത്ത�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "ഇതുപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത eait അക്കൗണ്ടുമായി കണക്റ്റ് ചെയ്തു:"
+msgstr "ഇതുപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത {app} അക്കൗണ്ടുമായി കണക്റ്റ് ചെയ്തു:"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "എന്തെങ്കിലും തെറ്റാണെങ്ക�
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "ക്ഷണ ലിങ്കുകൾ പുതിയ അംഗങ്ങൾക്കുള്ളതാണ്, ഈ അക്കൗണ്ട് ഇതിനകം eait വാങ്ങിയിട്ടുണ്ട്."
+msgstr "ക്ഷണ ലിങ്കുകൾ പുതിയ അംഗങ്ങൾക്കുള്ളതാണ്, ഈ അക്കൗണ്ട് ഇതിനകം {app} വാങ്ങിയിട്ടുണ്ട്."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "ആ കോഡിന്റെ കാലാവധി കഴിഞ്ഞു
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "ആ കോഡ് ശരിയല്ല. eait-ൽ നിന്നുള്ള ഏറ്റവും പുതിയ ഇമെയിൽ പരിശോധിക്കൂ."
+msgstr "ആ കോഡ് ശരിയല്ല. {app}-ൽ നിന്നുള്ള ഏറ്റവും പുതിയ ഇമെയിൽ പരിശോധിക്കൂ."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "ഈ അക്കൗണ്ടിൽ ഇതുവരെ സൈൻ ഇൻ �
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "ഇതാണ് പുതിയ eait. നിങ്ങളുടെ ഭക്ഷണങ്ങളും ഫോട്ടോകളും നിങ്ങളുടെ eait അക്കൗണ്ടിലുണ്ട്: വെബിൽ സൈൻ ഇൻ ചെയ്ത് നിങ്ങളുടെ പ്ലാനിൽ Telegram കണക്റ്റ് ചെയ്യുക അമർത്തൂ."
+msgstr "ഇതാണ് പുതിയ {app}. നിങ്ങളുടെ ഭക്ഷണങ്ങളും ഫോട്ടോകളും നിങ്ങളുടെ {app} അക്കൗണ്ടിലുണ്ട്: വെബിൽ സൈൻ ഇൻ ചെയ്ത് നിങ്ങളുടെ പ്ലാനിൽ Telegram കണക്റ്റ് ചെയ്യുക അമർത്തൂ."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

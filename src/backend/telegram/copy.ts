@@ -32,7 +32,7 @@
 // `--strict` did it and the claim was tested and was false.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-import { i18nFor, type I18n, type Lang } from "@eait/shared";
+import { brandValues, i18nFor, type I18n, type Lang } from "@eait/shared";
 
 export interface TelegramCopy {
   stranger: string;
@@ -71,9 +71,9 @@ export interface TelegramCopy {
 }
 
 const COPY = (i18n: I18n): TelegramCopy => ({
-  stranger: i18n._("tg.stranger", undefined, { message: "This is the new eait. Your meals and photos are kept in your eait account: sign in on the web and press Connect Telegram on your plan." }),
+  stranger: i18n._("tg.stranger", brandValues(), { message: "This is the new {app}. Your meals and photos are kept in your {app} account: sign in on the web and press Connect Telegram on your plan." }),
   signIn: i18n._("tg.signIn", undefined, { message: "Sign in" }),
-  connectedLead: i18n._("tg.connectedLead", undefined, { message: "Connected to the eait account signed in with" }),
+  connectedLead: i18n._("tg.connectedLead", brandValues(), { message: "Connected to the {app} account signed in with" }),
   viaApp: i18n._("tg.viaApp", undefined, { message: "the app" }),
   connectedTail: (v: { coach: string }) => i18n._("tg.connectedTail", v, { message: "Send a photo of a meal, tell me what you ate, or ask {coach} a question." }),
   notYours: i18n._("tg.notYours", undefined, { message: "Not your account? Sign in to your own on the web and press Connect Telegram there — this Telegram moves to it." }),
@@ -114,13 +114,13 @@ const COPY = (i18n: I18n): TelegramCopy => ({
     "meal-changed": i18n._("tg.refusal.meal-changed", undefined, { message: "That meal just changed. Look again, then say it once more." }),
     // The email sign-in's two refusals (#569). The bot never reaches them — a `Refusal` it would
     // say needs the route's own words, and `REFUSAL_STATUS` is one list for every transport.
-    "code-wrong": i18n._("tg.refusal.code-wrong", undefined, { message: "That code isn't right. Check the newest email from eait." }),
+    "code-wrong": i18n._("tg.refusal.code-wrong", brandValues(), { message: "That code isn't right. Check the newest email from {app}." }),
     "code-dead": i18n._("tg.refusal.code-dead", undefined, { message: "That code has expired. Ask for a new one on the web or in the app." }),
     // Refer a friend (#899) — the same: the bot never redeems a code, the list is shared.
     "referral-unknown": i18n._("tg.refusal.referral-unknown", undefined, { message: "That invite link doesn't match anyone. Check it, or skip." }),
     "referral-own": i18n._("tg.refusal.referral-own", undefined, { message: "That's your own invite link. A friend's link goes here." }),
     "referral-already": i18n._("tg.refusal.referral-already", undefined, { message: "This account already joined with a friend's link." }),
-    "referral-paid": i18n._("tg.refusal.referral-paid", undefined, { message: "Invite links are for new members, and this account has already bought eait." }),
+    "referral-paid": i18n._("tg.refusal.referral-paid", brandValues(), { message: "Invite links are for new members, and this account has already bought {app}." }),
   },
 });
 

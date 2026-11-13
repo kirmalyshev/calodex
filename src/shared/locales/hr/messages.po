@@ -200,7 +200,7 @@ msgstr "Usporedba s tvojim planom"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Povezano s eait računom prijavljenim putem"
+msgstr "Povezano s {app} računom prijavljenim putem"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Ako nešto ne štima, reci — „pola riže”, „bez avokada” — i
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Pozivne poveznice su za nove članove, a ovaj je račun već kupio eait."
+msgstr "Pozivne poveznice su za nove članove, a ovaj je račun već kupio {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Taj je kod istekao. Zatraži novi na webu ili u aplikaciji."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Taj kod nije točan. Provjeri najnoviju poruku e-pošte od eait."
+msgstr "Taj kod nije točan. Provjeri najnoviju poruku e-pošte od {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Ovaj račun još nije prijavljen — prijavi se na webu uz Apple ili Goo
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Ovo je novi eait. Tvoji obroci i fotografije čuvaju se na tvom eait računu: prijavi se na webu i na svom planu pritisni Poveži Telegram."
+msgstr "Ovo je novi {app}. Tvoji obroci i fotografije čuvaju se na tvom {app} računu: prijavi se na webu i na svom planu pritisni Poveži Telegram."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

@@ -533,9 +533,9 @@ export const YOU_COPY: Localized<YouCopy> = {
     account: "Compte",
     referral: {
       label: "Parrainer un ami",
-      body: "Envoie ton lien à un ami. Il reçoit une semaine d'{app} gratuite. Tu reçois une semaine gratuite quand il prend le Mensuel, et 2 s'il prend l'Annuel.",
+      body: "Envoie ton lien à un ami. Il reçoit une semaine {d_app} gratuite. Tu reçois une semaine gratuite quand il prend le Mensuel, et 2 s'il prend l'Annuel.",
       share: "Partager le lien",
-      shareText: "Une semaine d'{app} gratuite : {link}",
+      shareText: "Une semaine {d_app} gratuite : {link}",
       copied: "Lien copié",
       friendsJoined: { one: "{n} ami inscrit", other: "{n} amis inscrits" },
       friendsSubscribed: { one: "{n} abonné", other: "{n} abonnés" },
@@ -3017,9 +3017,9 @@ export const YOU_COPY: Localized<YouCopy> = {
     account: "Compte",
     referral: {
       label: "Convida un amic",
-      body: "Envia el teu enllaç a un amic: tindrà una setmana d'{app} gratis. Tu en guanyes una de gratis quan contracti el Mensual, i 2 si contracta l'Anual.",
+      body: "Envia el teu enllaç a un amic: tindrà una setmana {d_app} gratis. Tu en guanyes una de gratis quan contracti el Mensual, i 2 si contracta l'Anual.",
       share: "Comparteix l'enllaç",
-      shareText: "Una setmana d'{app} gratis: {link}",
+      shareText: "Una setmana {d_app} gratis: {link}",
       copied: "Enllaç copiat",
       friendsJoined: { one: "{n} amic s'hi ha unit", other: "{n} amics s'hi han unit" },
       friendsSubscribed: { other: "{n} amb subscripció" },

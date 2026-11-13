@@ -116,9 +116,9 @@ export const MAIL_COPY: Localized<MailCopy> = {
     html: "<p>Kod daftar masuk {app} anda:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>Ia sah selama 10 minit.</p><p>Jika anda tidak meminta e-mel ini, abaikannya.</p>",
   },
   ca: {
-    subject: "{code} és el teu codi d'inici de sessió d'{app}",
-    text: "El teu codi d'inici de sessió d'{app} és {code}.\n\nFunciona durant 10 minuts.\n\nSi no has demanat aquest correu, ignora'l.",
-    html: "<p>El teu codi d'inici de sessió d'{app}:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>Funciona durant 10 minuts.</p><p>Si no has demanat aquest correu, ignora'l.</p>",
+    subject: "{code} és el teu codi d'inici de sessió {d_app}",
+    text: "El teu codi d'inici de sessió {d_app} és {code}.\n\nFunciona durant 10 minuts.\n\nSi no has demanat aquest correu, ignora'l.",
+    html: "<p>El teu codi d'inici de sessió {d_app}:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>Funciona durant 10 minuts.</p><p>Si no has demanat aquest correu, ignora'l.</p>",
   },
   sl: {
     subject: "{code} je tvoja koda za prijavo v {app}",

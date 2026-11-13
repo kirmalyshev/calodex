@@ -200,7 +200,7 @@ msgstr "Έλεγχος με το πλάνο σου"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Συνδέθηκε με τον λογαριασμό eait με είσοδο μέσω"
+msgstr "Συνδέθηκε με τον λογαριασμό {app} με είσοδο μέσω"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Αν κάτι δεν ταιριάζει, πες το — «μισό ρύ
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Οι σύνδεσμοι πρόσκλησης είναι για νέα μέλη, και αυτός ο λογαριασμός έχει ήδη αγοράσει το eait."
+msgstr "Οι σύνδεσμοι πρόσκλησης είναι για νέα μέλη, και αυτός ο λογαριασμός έχει ήδη αγοράσει το {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Αυτός ο κωδικός έληξε. Ζήτα νέο στο web ή �
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Αυτός ο κωδικός δεν είναι σωστός. Έλεγξε το πιο πρόσφατο email από το eait."
+msgstr "Αυτός ο κωδικός δεν είναι σωστός. Έλεγξε το πιο πρόσφατο email από το {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Αυτός ο λογαριασμός δεν έχει συνδεθεί α
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Αυτό είναι το νέο eait. Τα γεύματα και οι φωτογραφίες σου φυλάσσονται στον λογαριασμό σου eait: συνδέσου στο web και πάτα Σύνδεση Telegram στο πλάνο σου."
+msgstr "Αυτό είναι το νέο {app}. Τα γεύματα και οι φωτογραφίες σου φυλάσσονται στον λογαριασμό σου {app}: συνδέσου στο web και πάτα Σύνδεση Telegram στο πλάνο σου."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

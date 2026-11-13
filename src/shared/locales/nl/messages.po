@@ -200,7 +200,7 @@ msgstr "Vergelijken met je plan"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Gekoppeld aan het eait-account dat is ingelogd met"
+msgstr "Gekoppeld aan het {app}-account dat is ingelogd met"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Klopt er iets niet, zeg het — “halve rijst”, “geen avocado” �
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Uitnodigingslinks zijn voor nieuwe leden, en dit account heeft eait al gekocht."
+msgstr "Uitnodigingslinks zijn voor nieuwe leden, en dit account heeft {app} al gekocht."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Die code is verlopen. Vraag een nieuwe aan op het web of in de app."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Die code klopt niet. Check de nieuwste e-mail van eait."
+msgstr "Die code klopt niet. Check de nieuwste e-mail van {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Dit account is nog niet ingelogd — log op het web in met Apple of Goog
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Dit is de nieuwe eait. Je maaltijden en foto's staan in je eait-account: log in op het web en druk bij je plan op Koppel Telegram."
+msgstr "Dit is de nieuwe {app}. Je maaltijden en foto's staan in je {app}-account: log in op het web en druk bij je plan op Koppel Telegram."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

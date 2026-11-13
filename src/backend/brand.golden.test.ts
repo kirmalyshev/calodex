@@ -4,6 +4,7 @@ import { expect, test } from "bun:test";
 import * as shared from "@eait/shared";
 import * as mail from "./mail/copy.ts";
 import * as web from "./web/copy.ts";
+import * as telegram from "./telegram/copy.ts";
 import * as front from "../frontend/copy.ts";
 import * as reminders from "../shared/app/reminders-web-copy.ts";
 import * as scores from "../shared/scores-copy.ts";
@@ -34,7 +35,7 @@ const dump = (v: unknown): string => {
 
 const lines = (sink?: (id: string, body: string) => void): string[] => {
   const out: string[] = [];
-  const mods: Record<string, Record<string, unknown>> = { shared, mail, web, front, reminders, scores, onboarding };
+  const mods: Record<string, Record<string, unknown>> = { shared, mail, web, telegram, front, reminders, scores, onboarding };
   for (const [m, ns] of Object.entries(mods)) {
     for (const [name, fn] of Object.entries(ns).sort(([a], [b]) => a.localeCompare(b))) {
       if (typeof fn !== "function" || !NAME_RE.test(name)) continue;
@@ -66,9 +67,9 @@ test("copy under the default brand is unchanged", () => {
 });
 
 test("a probe brand leaves no default name in the copy it serves", () => {
-  const probe = { app: "probe" as never, name: "ZZapp", storeName: "ZZapp", domain: "zz.example", mailFrom: "ZZapp <x@zz.example>" } as const;
+  const probe = { app: "probe" as never, name: "Zapex", storeName: "Zapex", domain: "zz.example", mailFrom: "Zapex <x@zz.example>" } as const;
   shared.setBrandSource(() => probe);
   const left: string[] = [];
-  try { lines((id, body) => { if (body.includes("eait")) left.push(id); }); } finally { shared.setBrandSource(() => shared.BRANDS.eait); }
+  try { lines((id, body) => { if (body.includes("eait") || /d'Zapex|qu'Zapex|Zapexs|\{(app|domain|d_app|qu_app|app_s)\}/.test(body)) left.push(id); }); } finally { shared.setBrandSource(() => shared.BRANDS.eait); }
   expect(left).toEqual([]);
 });

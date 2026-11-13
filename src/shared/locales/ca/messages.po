@@ -200,7 +200,7 @@ msgstr "Comparant amb el teu pla"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.connectedLead"
-msgstr "Connectat al compte d'eait amb sessió iniciada amb"
+msgstr "Connectat al compte {d_app} amb sessió iniciada amb"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -280,7 +280,7 @@ msgstr "Si alguna cosa no quadra, digues-ho — «la meitat de l'arròs», «sen
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.referral-paid"
-msgstr "Els enllaços d'invitació són per a membres nous, i aquest compte ja ha comprat eait."
+msgstr "Els enllaços d'invitació són per a membres nous, i aquest compte ja ha comprat {app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -440,7 +440,7 @@ msgstr "Aquest codi ha caducat. Demana'n un de nou al web o a l'app."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.code-wrong"
-msgstr "Aquest codi no és correcte. Mira el correu més recent d'eait."
+msgstr "Aquest codi no és correcte. Mira el correu més recent {d_app}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -540,7 +540,7 @@ msgstr "Aquest compte encara no té la sessió iniciada — inicia sessió amb A
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Aquest és el nou eait. Els teus àpats i fotos es conserven al teu compte d'eait: inicia sessió al web i prem Connecta Telegram al teu pla."
+msgstr "Aquest és el nou {app}. Els teus àpats i fotos es conserven al teu compte {d_app}: inicia sessió al web i prem Connecta Telegram al teu pla."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

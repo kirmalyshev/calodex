@@ -23,6 +23,7 @@
 // image does.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
+import { currentBrand } from "../../shared/brand.ts";
 import { lightVars } from "../../shared/palette.ts";
 import { fontFaces, motionCss } from "../../shared/design.ts";
 import { iconCss } from "../../shared/ui/icons.ts";
@@ -79,7 +80,7 @@ function shell(nonce: string, posthogKey: string): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>eait</title>
+<title>${currentBrand().name}</title>
 <!-- An empty data: icon, so the browser does not ask for /favicon.ico on every page load. It is
      not that the icon is missing: an anonymous request for an unknown path on this origin is
      answered 401 by resolveUserId before anything can 404 it, so every load logged "Failed to
