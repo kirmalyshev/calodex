@@ -406,7 +406,7 @@ export const PLAN_COPY: Localized<PlanCopy> = {
     method: "A terved a Mifflin–St Jeor-egyenletből indul ki az életkorod, magasságod, súlyod, nemed és aktivitásod alapján. Minden új mérés újraszámolja.",
     methodSource: "Forrás: Mifflin et al., Am J Clin Nutr, 1990",
     goalLose: "Cél: −{kg} · határidő: {month}", goalGain: "Cél: +{kg} · határidő: {month}", startWeight: "Kezdő súly", goalWeight: "Célsúly", activity: "Aktivitás", target: "Célérték",
-    targetLose: "−{kg} · határidő: {month}", targetGain: "+{kg} · határidő: {month}", firstTitle: "Az első lépésed", firstStep: "Fotózd le a következő étkezésedet. Az {app} {kcal}kcal-hoz hasonlítja.",
+    targetLose: "−{kg} · határidő: {month}", targetGain: "+{kg} · határidő: {month}", firstTitle: "Az első lépésed", firstStep: "Fotózd le a következő étkezésedet. {Az} {app} {kcal}kcal-hoz hasonlítja.",
     howCalc: "Így számoljuk a tervedet",
     yourGoal: "A célod", loaderLose: "−{kg} · határidő: {month}", loaderGain: "+{kg} · határidő: {month}",
     basedOn: "A válaszaid alapján", satFatAsked: "Telített zsír · te kérted", satFatPerDay: "≤ {g} naponta",

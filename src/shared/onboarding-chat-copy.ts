@@ -2622,7 +2622,7 @@ const HU: ChatCopy = {
   continueLabel: "Tovább",
   saveKept: "Ezt nem sikerült menteni. A válaszod még itt van. A Tovább újra elküldi.",
   underAgeCard:  {
-    title: "Az {app} {age} éves kortól használható",
+    title: "{Az} {app} {age} éves kortól használható",
     body: "Az app kalóriacél-számítása nem olyan szervezetre készült, amely még növésben van.",
   },
   underAge:  {
@@ -2633,7 +2633,7 @@ const HU: ChatCopy = {
       "Akkor itt megállunk. Törlöm mindazt, amit elmondtál.",
       "Gyere vissza {age} évesen, itt leszek.",
     ],
-    endedPlaceholder: "Az {app} {age} éves kortól használható",
+    endedPlaceholder: "{Az} {app} {age} éves kortól használható",
   },
   belowHealthy:  {
     title: "Ezt nem tudom célként beállítani",
@@ -2685,7 +2685,7 @@ const HU: ChatCopy = {
     days: "A napjaid elégetnek {burn}kcal-t",
   },
   chart: {
-    byEait: "az {app}-tel",
+    byEait: "{az} {app_tel}",
     weightTrend: "Testsúlytrend",
     without: "Nélküle",
     now: "Most",

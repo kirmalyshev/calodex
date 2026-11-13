@@ -1685,7 +1685,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     plansHeroAlt: "Lazac, rizs és zöldség egy tányéron",
     planYearly: "Éves",
     planMonthly: "Havi",
-    introTitle: "Próbáld ki az {app}-et ingyen {days} napig",
+    introTitle: "Próbáld ki {az} {app}-et ingyen {days} napig",
     introSalmon: "Lazac",
     introRice: "Rizs",
     introBroccoli: "Brokkoli",

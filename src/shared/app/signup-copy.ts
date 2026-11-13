@@ -472,10 +472,10 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     signUpHeading: "Fotózd le, amit eszel, és kapj őszinte választ",
     saveHeading: "Mentsd el a haladásodat",
     signInMealHeading: "Jelentkezz be az étkezés rögzítéséhez",
-    termsLabel: "Folytatással elfogadod az {app} {terms} és {privacy}",
+    termsLabel: "Folytatással elfogadod {az} {app} {terms} és {privacy}",
     termsLink: "Felhasználási feltételeit",
     privacyLink: "Adatvédelmi irányelveit",
-    consentMarketing: "Kérek tippeket és újdonságokat az {app}-től",
+    consentMarketing: "Kérek tippeket és újdonságokat {az} {app}-től",
     errorTerms: "A folytatáshoz fogadd el a Felhasználási feltételeket és az Adatvédelmi irányelveket.",
   },
 

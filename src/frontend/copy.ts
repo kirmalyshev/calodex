@@ -2668,7 +2668,7 @@ const HU: WebCopy = {
   floorClear: "Biztonságos minimum {floor}kcal · felette vagy",
   floorHeld: "A biztonságos minimumon tartva: {floor}kcal",
   colTime: "Idő", colMeal: "Étkezés", colKcal: "kcal",
-  connectHealth: "Kapcsold össze az Egészség appot az {app} iPhone-appjában, és a súlyod naprakészen tartja ezt a célértéket.",
+  connectHealth: "Kapcsold össze az Egészség appot {az} {app} iPhone-appjában, és a súlyod naprakészen tartja ezt a célértéket.",
   weightLine: "Súly: {kg} kg.",
   weightLineWhen: "Súly: {kg} kg, frissítve: {when}.",
   nothingToday: "Ma még nincs rögzítve semmi.",
