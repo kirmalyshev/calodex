@@ -546,7 +546,7 @@ msgstr "Ce compte n'est pas encore connecté — connecte-toi avec Apple ou Goog
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.stranger"
-msgstr "Voici le nouvel {app}. Tes repas et tes photos sont gardés dans ton compte {app} : connecte-toi sur le web et appuie sur Connecter Telegram depuis ton plan."
+msgstr "Voici le {nouvel} {app}. Tes repas et tes photos sont gardés dans ton compte {app} : connecte-toi sur le web et appuie sur Connecter Telegram depuis ton plan."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

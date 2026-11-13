@@ -35,17 +35,22 @@ export const knownApp = (raw?: string | null): AppId | null => ((APPS as readonl
 /** `knownApp`, falling back to the default brand: for copy, where a wrong word beats a refusal. */
 export const parseApp = (raw?: string | null): AppId => knownApp(raw) ?? "eait";
 
-export const BRAND_TOKENS = ["app", "domain", "d_app", "qu_app", "app_s"] as const;
+export const BRAND_TOKENS = ["app", "domain", "d_app", "qu_app", "app_s", "az", "Az", "app_tel", "nouvel"] as const;
 
-/** What each token stands for. `d_app`/`qu_app` elide before a vowel or h (French, Catalan); `app_s` is the genitive ending (Swedish, Danish, Norwegian, German), an apostrophe after s, x or z. */
+/** What each token stands for. `d_app`/`qu_app` elide before a vowel or h (French, Catalan); `app_s` is the genitive ending (Swedish, Danish, Norwegian, German), an apostrophe after s, x or z. `az`/`Az` are the Hungarian definite article for the name ("az eait", "a Calodex"), `nouvel` the French "new" before the name ("nouvel eait", "nouveau Calodex"), `app_tel` its instrumental ("eait-tel", "Calodex-szel"). */
 export const brandValues = (b: Brand = source()): Record<(typeof BRAND_TOKENS)[number], string> => {
   const elide = /^[aeiouhàâäéèêëîïôöùûüœ]/i.test(b.name);
+  const huVowel = /^[aeiouáéíóöőúüű]/i.test(b.name);
   return {
     app: b.name,
     domain: b.domain,
     d_app: elide ? `d'${b.name}` : `de ${b.name}`,
     qu_app: elide ? `qu'${b.name}` : `que ${b.name}`,
     app_s: /[sxz]$/i.test(b.name) ? "'" : "s",
+    nouvel: elide ? "nouvel" : "nouveau",
+    az: huVowel ? "az" : "a",
+    Az: huVowel ? "Az" : "A",
+    app_tel: `${b.name}-${/[sxz]$/i.test(b.name) ? "szel" : "tel"}`,
   };
 };
 
@@ -62,7 +67,7 @@ const cache = new WeakMap<object, Map<AppId, unknown>>();
 const fill = (s: string, b: Brand): string => {
   if (!s.includes("{")) return s;
   const v = brandValues(b);
-  return s.replace(/\{(app|domain|d_app|qu_app|app_s)\}/g, (_, k: keyof typeof v) => v[k]);
+  return s.replace(/\{(app|domain|d_app|qu_app|app_s|az|Az|app_tel|nouvel)\}/g, (_, k: keyof typeof v) => v[k]);
 };
 
 export function branded<T>(v: T, b: Brand = source()): T {

@@ -70,6 +70,6 @@ test("a probe brand leaves no default name in the copy it serves", () => {
   const probe = { app: "probe" as never, name: "Zapex", storeName: "Zapex", domain: "zz.example", mailFrom: "Zapex <x@zz.example>" } as const;
   shared.setBrandSource(() => probe);
   const left: string[] = [];
-  try { lines((id, body) => { if (body.includes("eait") || /d'Zapex|qu'Zapex|Zapexs|\{(app|domain|d_app|qu_app|app_s)\}/.test(body)) left.push(id); }); } finally { shared.setBrandSource(() => shared.BRANDS.eait); }
+  try { lines((id, body) => { if (body.includes("eait") || /d'Zapex|qu'Zapex|Zapexs|\{(app|domain|d_app|qu_app|app_s|az|Az|app_tel|nouvel)\}/.test(body)) left.push(id); }); } finally { shared.setBrandSource(() => shared.BRANDS.eait); }
   expect(left).toEqual([]);
 });

@@ -2964,7 +2964,7 @@ const HU: PageCopy = {
   frontDoorLead:
     "Itt hozd létre a fiókodat, aztán nyisd meg az appot már bejelentkezve. Nagyjából három perc.",
   welcomeDemoAlt:
-    "Az {app} használat közben: egy gabonás tál fotója, három felismert hozzávaló a kcal-értékükkel, és a makrók: {kcal}kcal, a kalória a terven belül",
+    "{Az} {app} használat közben: egy gabonás tál fotója, három felismert hozzávaló a kcal-értékükkel, és a makrók: {kcal}kcal, a kalória a terven belül",
   chatHeading: "A csevegésed",
   chatEmpty: "Itt még nincs semmi. Amit az appban mondasz, itt is megjelenik, és fordítva.",
   chatMealGone: "Ez az étkezés már nincs a naplóban.",
@@ -2972,7 +2972,7 @@ const HU: PageCopy = {
   chatSend: "Küldés",
   progress: "{step}. kérdés / {total}",
   back: "Vissza",
-  spudAlt: "Spud, az {app} kabalája",
+  spudAlt: "Spud, {az} {app} kabalája",
   cardMacros: "{kcal}{unit} · {protein} g fehérje",
   chatProposalLead: "Ezt rögzítem – stimmel?",
   chatAMeal: "Egy étkezés",
@@ -3013,7 +3013,7 @@ const HU: PageCopy = {
   ageBelowMinimum: "Csak felnőtteknek tudunk tervet készíteni – ellenőrizd az évet.",
   outOfRange: "Erre az értékre nem tudunk tervet készíteni. Próbáld újra.",
   /** `<title>` per page. A browser tab in the wrong language is the first thing anybody sees. */
-  titleStart: "Kezdés az {app}-tel",
+  titleStart: "Kezdés {az} {app_tel}",
   titlePlan: "A terved",
   titleChat: "Csevegés",
   stepperSuggested: "Célsúly · javasolt",
@@ -3046,7 +3046,7 @@ const HU: PageCopy = {
   emailCodeHeading: "Nézd meg a postafiókodat",
   emailCodeLead: "Írd be a 6 jegyű kódot, amit erre a címre küldtünk: {email}. 10 percig érvényes.",
   emailCodeLabel: "A 6 jegyű kód",
-  emailCodeWrong: "Ez a kód nem jó. Nézd meg az {app} legutóbbi e-mailjét.",
+  emailCodeWrong: "Ez a kód nem jó. Nézd meg {az} {app} legutóbbi e-mailjét.",
   emailCodeDead: "Ez a kód lejárt. Kérj újat a folytatáshoz.",
   emailCodeNew: "Új kód küldése",
   emailResendWait: "Újraküldés ennyi múlva: {time}",
@@ -3059,7 +3059,7 @@ const HU: PageCopy = {
   inviteWeb: "Kezdés a weben",
   inviteCopied: "A meghívó ({link}) ki van másolva az apphoz.",
   referralAsk: "Küldött egy barátod linket?",
-  referralLead: "Nem kötelező. Ha vele csatlakozol, az {app} első hete ingyenes.",
+  referralLead: "Nem kötelező. Ha vele csatlakozol, {az} {app} első hete ingyenes.",
   referralField: "A barátod meghívólinkje",
   referralSkip: "Kihagyás",
   referralTryAgain: "Próbáld újra",
@@ -3067,7 +3067,7 @@ const HU: PageCopy = {
   referralUnknown: "Ez a link senkihez sem tartozik. Ellenőrizd, vagy hagyd ki.",
   referralOwn: "Ez a saját linked. Ide egy barátod linkje kell.",
   referralAlready: "Ez a fiók már csatlakozott egy barát linkjével.",
-  referralPaid: "A meghívólinkek új tagoknak szólnak, és ez a fiók már megvásárolta az {app}-et.",
+  referralPaid: "A meghívólinkek új tagoknak szólnak, és ez a fiók már megvásárolta {az} {app}-et.",
 };
 
 const EL: PageCopy = {
@@ -4778,7 +4778,7 @@ export const APPLINK_COPY_BY_LANG: Localized<AppLinkCopy> = {
   cs: { title: "Ještě jeden krok", lead: "Klepnutím dokončete přihlášení do {app}.", link: "Zpět do {app}", install: "Nemáte na tomto zařízení {app}? Nainstalujte aplikaci a přihlaste se znovu." },
   ro: { title: "Încă un pas", lead: "Atinge pentru a finaliza conectarea la {app}.", link: "Înapoi la {app}", install: "Nu ai {app} pe acest dispozitiv? Instalează aplicația și conectează-te din nou." },
   el: { title: "Ένα βήμα ακόμη", lead: "Πάτα για να ολοκληρώσεις τη σύνδεση στο {app}.", link: "Πίσω στο {app}", install: "Δεν υπάρχει {app} σε αυτή τη συσκευή; Εγκατάστησε την εφαρμογή και σύνδεσου ξανά." },
-  hu: { title: "Még egy lépés", lead: "Koppints az {app}-bejelentkezés befejezéséhez.", link: "Vissza az {app}be", install: "Nincs {app} ezen a készüléken? Telepítsd az alkalmazást és jelentkezz be újra." },
+  hu: { title: "Még egy lépés", lead: "Koppints {az} {app}-bejelentkezés befejezéséhez.", link: "Vissza {az} {app}be", install: "Nincs {app} ezen a készüléken? Telepítsd az alkalmazást és jelentkezz be újra." },
   da: { title: "Et skridt tilbage", lead: "Tryk for at fuldføre login til {app}.", link: "Tilbage til {app}", install: "Ingen {app} på denne enhed? Installér appen og log ind igen." },
   fi: { title: "Vielä yksi vaihe", lead: "Viimeistele {app}-kirjautuminen napauttamalla.", link: "Takaisin {app}iin", install: "Ei {app}ia tällä laitteella? Asenna sovellus ja kirjaudu uudelleen." },
   no: { title: "Ett steg igjen", lead: "Trykk for å fullføre innloggingen til {app}.", link: "Tilbake til {app}", install: "Ingen {app} på denne enheten? Installer appen og logg inn igjen." },

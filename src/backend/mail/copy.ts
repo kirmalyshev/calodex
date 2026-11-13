@@ -151,9 +151,9 @@ export const MAIL_COPY: Localized<MailCopy> = {
     html: "<p>Din loginkode til {app}:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>Den virker i 10 minutter.</p><p>Hvis du ikke har bedt om denne e-mail, kan du ignorere den.</p>",
   },
   hu: {
-    subject: "{code} – az {app} bejelentkezési kódod",
-    text: "Az {app} bejelentkezési kódod: {code}.\n\n10 percig érvényes.\n\nHa nem te kérted ezt az e-mailt, hagyd figyelmen kívül.",
-    html: "<p>Az {app} bejelentkezési kódod:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>10 percig érvényes.</p><p>Ha nem te kérted ezt az e-mailt, hagyd figyelmen kívül.</p>",
+    subject: "{code} – {az} {app} bejelentkezési kódod",
+    text: "{Az} {app} bejelentkezési kódod: {code}.\n\n10 percig érvényes.\n\nHa nem te kérted ezt az e-mailt, hagyd figyelmen kívül.",
+    html: "<p>{Az} {app} bejelentkezési kódod:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>10 percig érvényes.</p><p>Ha nem te kérted ezt az e-mailt, hagyd figyelmen kívül.</p>",
   },
   el: {
     subject: "{code}: ο κωδικός σύνδεσής σου στο {app}",
