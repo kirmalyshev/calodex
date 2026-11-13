@@ -199,8 +199,9 @@ describe("the admin is off unless somebody holds the role", () => {
     //
     // The property survives the move from a shared token, and gains something: deleting the last
     // admin account switches the surface off, which no environment variable could do.
-    for (const path of ["/admin", "/admin/api/content", "/admin/api/funnel", "/admin/api/prompts", "/admin/api/push-templates", "/admin/api/campaigns", "/admin/api/referrals",
-      "/admin/api/users/00000000-0000-4000-8000-000000000000/cap"]) {
+    for (const path of ["/admin", "/admin/api/content", "/admin/api/funnel", "/admin/api/funnel/users", "/admin/api/prompts", "/admin/api/push-templates", "/admin/api/campaigns", "/admin/api/referrals",
+      "/admin/api/users/00000000-0000-4000-8000-000000000000/cap",
+      "/admin/api/users/00000000-0000-4000-8000-000000000000/onboarding"]) {
       expect((await admin("GET", path)).status).toBe(404);
     }
     expect((await admin("PUT", "/admin/api/content", { content: {} })).status).toBe(404);
@@ -242,7 +243,8 @@ describe("the admin credential", () => {
     // withholding. An anonymous request gets 401 above, because the public page already proves the
     // route exists and confusing the person who IS allowed in buys nothing.
     const token = await session();
-    for (const path of ["/admin/api/content", "/admin/api/funnel", "/admin/api/prompts", "/admin/api/push-templates"]) {
+    for (const path of ["/admin/api/content", "/admin/api/funnel", "/admin/api/funnel/users", "/admin/api/prompts", "/admin/api/push-templates",
+      "/admin/api/users/00000000-0000-4000-8000-000000000000/onboarding"]) {
       const res = await handle(new Request(url(path), {
         headers: { authorization: `Bearer ${token}` },
       }));
@@ -1605,8 +1607,8 @@ describe("the referrals view", () => {
 
   it("reads a bound outside any plausible span as open on every ranged endpoint, never a 500", async () => {
     const paths = [
-      "/admin/api/campaigns", "/admin/api/experiments", "/admin/api/funnel", "/admin/api/users",
-      "/admin/api/metrics", "/admin/api/referrals", "/admin/api/push/stats",
+      "/admin/api/campaigns", "/admin/api/experiments", "/admin/api/funnel", "/admin/api/funnel/users",
+      "/admin/api/users", "/admin/api/metrics", "/admin/api/referrals", "/admin/api/push/stats",
     ];
     const asks = [
       "from=-005000-01-01T00:00:00Z", "to=+275760-09-13T00:00:00.000Z",
