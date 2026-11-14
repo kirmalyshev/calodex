@@ -117,7 +117,7 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(row).toHaveAttribute("aria-expanded", "true");
   const flow = page.locator(".fa-open");
   await expect(flow).toContainText("Run 1");
-  await expect(flow).toContainText("↩ back");
+  await expect(flow).toContainText("went back");
   // The second `goal` view is the revisit: exactly one "seen again" mark.
   await expect(flow.locator(".chip", { hasText: "seen again" })).toHaveCount(1);
   await expect(flow).toContainText("lose");
@@ -172,7 +172,7 @@ test("the account page's Onboarding tab reads the same journal", async ({ page }
   // editor's answer instead, because the tab's loader shared loadOnboarding's name.
   const flow = page.locator("#onboarding-flow");
   await expect(flow.locator(".fl-ev")).toHaveCount(7);
-  await expect(flow).toContainText("↩ back");
+  await expect(flow).toContainText("went back");
   await expect(flow.locator(".chip", { hasText: "seen again" })).toHaveCount(1);
   await expect(page.locator("#onboarding-summary")).toContainText("monthly · 2h");
   expect(errors).toEqual([]);

@@ -2614,20 +2614,17 @@ details.how p { margin-top: 8px; }
         line.appendChild(nm);
         var acts = el("span", "fl-a");
         var idx = PLACE_INDEX[e.place];
-        // One mark for a step back (#814): a recorded "back" action IS the "↩ back" tag; a
-        // view of a screen behind the previous one gets it too — the chat emits no "back".
-        if (e.action === "back") {
+        // One mark for a step back (#814): a recorded "back" action reads "went back"; a
+        // view of a screen behind the previous one is the "↩ back" tag — never both on
+        // one event, and the chat emits no "back" for the tag to need one.
+        var act = el("span", "", ACTION_WORDS[e.action] || e.action);
+        if (e.action === "answer" && e.value) {
+          act.appendChild(document.createTextNode(" "));
+          act.appendChild(el("em", "", e.value));
+        }
+        acts.appendChild(act);
+        if (e.action === "view" && idx !== undefined && prev >= 0 && idx < prev) {
           acts.appendChild(el("span", "chip w", "↩ back"));
-        } else {
-          var act = el("span", "", ACTION_WORDS[e.action] || e.action);
-          if (e.action === "answer" && e.value) {
-            act.appendChild(document.createTextNode(" "));
-            act.appendChild(el("em", "", e.value));
-          }
-          acts.appendChild(act);
-          if (e.action === "view" && idx !== undefined && prev >= 0 && idx < prev) {
-            acts.appendChild(el("span", "chip w", "↩ back"));
-          }
         }
         if (idx !== undefined) prev = idx;
         if (e.action === "view" && seen[e.place]) acts.appendChild(el("span", "chip n", "seen again"));
