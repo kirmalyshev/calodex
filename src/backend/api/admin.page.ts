@@ -374,6 +374,8 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .fp .fp-bar i { display: block; height: 100%; background: var(--accent); }
 .fp .fp-gap { margin-left: 38px; height: 22px; display: flex; align-items: center; padding-left: 12px; border-left: 2px solid var(--bad); font-size: 12px; color: var(--bad); }
 .fp .fp-gap.fp-big { background: var(--bad-tint); font-weight: 600; border-radius: 0 6px 6px 0; }
+.fp .fp-gap.fp-jump { cursor: pointer; }
+.fp .fp-gap.fp-jump:hover { text-decoration: underline; }
 .fp .fp-gap em { font-style: normal; color: var(--muted); margin-left: 6px; }
 .fp .fp-st.fp-fin .fp-nm { color: var(--accent); }
 .fp .fp-st.fp-fin .fp-n { background: var(--accent); color: #fff; }
@@ -381,7 +383,10 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .fp .fp-pay { margin: 2px 0 4px 38px; padding-top: 8px; border-top: 1px dashed var(--hair); font-size: 12px; }
 /* The per-account funnel + one account's flow (#812). */
 .fa { padding: 4px 0 8px; }
+.fa-box { padding: 6px 14px; }
 .fa-h { padding: 10px 14px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--hair); }
+.fa-filter { padding: 8px 14px 0; }
+.fa-filter .chip { cursor: pointer; }
 .fa-row { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; padding: 10px 14px; border-bottom: 1px solid var(--hair); cursor: pointer; }
 .fa-row:hover { background: var(--bg); }
 .fa-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -406,10 +411,11 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .fl-s { padding: 8px 0; }
 .fl-s + .fl-s { border-top: 1px dashed var(--hair); }
 .fl-h { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-bottom: 4px; }
-.fl-ev { display: grid; grid-template-columns: minmax(110px, 1.2fr) auto minmax(70px, 1fr) 44px; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 13px; }
+.fl-ev { display: grid; grid-template-columns: minmax(110px, 1.2fr) auto 44px; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 13px; }
 .fl-p { font-weight: 600; }
-.fl-a { display: inline-flex; gap: 4px; }
-.fl-v { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.fl-p small { display: block; font-weight: 400; font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.fl-a { display: inline-flex; gap: 4px; align-items: baseline; }
+.fl-a em { font-style: normal; color: var(--muted); }
 .fl-t { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 .srow { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--hair); }
 .srow:last-child { border-bottom: 0; }
@@ -617,7 +623,7 @@ details.how p { margin-top: 8px; }
     <div class="card" id="funnel-path"></div>
     <p class="muted">Between steps: people who reached the step above and never reached the next. Red marks the three biggest drops.</p>
     <div class="card fa" id="funnel-users"></div>
-    <p class="muted">Each row is one account that started onboarding in this window. Click a row for the screens it saw, in order — the last column is the server&#39;s own payment record, not a client event.</p>
+    <p class="muted" id="funnel-users-cap">Each row is one account that started onboarding in this window. Click a row for the screens it saw, in order — the last column is the server&#39;s own payment record, not a client event.</p>
   </div></div>
 </section>
 
@@ -2281,6 +2287,26 @@ details.how p { margin-top: 8px; }
     referral: "Gave a referral code", health: "Saw the health connect screen"
   };
 
+  // The journal names the screen, not what reaching it meant (#814): "Goal · viewed" — a
+  // STEP_NAMES phrase beside "view" read as the answer ("Chose a goal · view"). A place the
+  // map predates falls back to its id, capitalized for the line and raw underneath it.
+  var PLACE_SHORT = {
+    welcome: "Welcome", goal: "Goal", sex: "Sex", twice: "Sex check", age: "Age",
+    height: "Height", weight: "Weight", baseline: "Usual weight", activity: "Activity",
+    target: "Target weight", possible: "Possible", pace: "Pace", prelim: "Early plan",
+    counted: "Counted before", barrier: "Barriers", situation: "Situations", struggles: "Struggles",
+    diet: "Diet", medical: "Medical", ontrack: "On track", how: "How it works",
+    summary: "Plan", signup: "Sign up", country: "Country", referral: "Referral",
+    health: "Health", streak: "Streak"
+  };
+  // The funnel's own order (ONBOARDING_PLACES) — a screen ahead of the previous one on the
+  // path back is a back-step whether or not a "back" action survives in the journal.
+  var PLACE_INDEX = {};
+  ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
+   "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary",
+   "signup", "country", "referral", "health", "streak"].forEach(function (p, i) { PLACE_INDEX[p] = i; });
+  var ACTION_WORDS = { view: "viewed", answer: "answered", back: "went back", reject: "declined", complete: "finished", leave: "left" };
+
   function loadFunnel() {
     return api("GET", "/admin/api/funnel" + rangeQuery()).then(function (f) {
       lastEcho = f.range;
@@ -2299,6 +2325,7 @@ details.how p { margin-top: 8px; }
       if (!f.rows.length) {
         host.appendChild(el("p", "muted", "No onboarding runs in this window."));
         $("funnel-users").classList.add("hidden");
+        $("funnel-users-cap").classList.add("hidden");
         return;
       }
       var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.people }; });
@@ -2349,6 +2376,19 @@ details.how p { margin-top: 8px; }
           // negative gap is a step only some runs reach, and the claim would be a lie (#2779).
           if (d >= 0) g.appendChild(el("em", "", "(" + pct1(d, s.n) + " of " + s.n + ")"));
           else if (f.range && f.range.from) g.appendChild(el("em", "", "(runs that began before this window)"));
+          // A drop drills into the list below (#814): who has this screen as their last.
+          // The "complete"/"paid" rows name outcomes, not screens — nothing to filter on.
+          if (!s.fin && d >= 0) {
+            g.classList.add("fp-jump");
+            g.setAttribute("role", "button");
+            g.setAttribute("tabindex", "0");
+            var jump = function () { funnelPage.leftAt = s.id; loadFunnelUsers(); };
+            g.addEventListener("click", jump);
+            g.addEventListener("keydown", function (ev) {
+              if (ev.target !== g) return;
+              if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); jump(); }
+            });
+          }
           host.appendChild(g);
         }
       });
@@ -2385,31 +2425,50 @@ details.how p { margin-top: 8px; }
   // onboarding; a click opens the stored journal — every event, grouped by run — fetched through
   // the same endpoint the Accounts pane's Onboarding tab reads.
 
-  var funnelPage = { cursor: null, list: null, foot: null, more: null, status: null };
+  var funnelPage = { cursor: null, list: null, foot: null, more: null, status: null, leftAt: null };
 
   // The paid column's label off the server's own record — "trial" when the current period is
   // one, and the lapsed record named rather than read as a live one: "trial ended",
   // "cancelled" (the record can't tell cancel from expiry — the plan chip alone would claim
-  // somebody still paying).
+  // somebody still paying). A lapsed record keeps its plan and time-to-grant beside the
+  // state (#814): "cancelled · yearly · 2d" — the conversion happened, which is the
+  // funnel's question; the bare state would read as if the payment never did.
   function paidLabel(p) {
     if (!p) return "";
-    if (!p.live) return p.kind === "trial" ? "trial ended" : "cancelled";
-    var text = { trial: "trial", monthly: "monthly", yearly: "yearly", lifetime: "lifetime", other: "paid" }[p.kind] || p.kind;
+    var plan = { trial: "trial", monthly: "monthly", yearly: "yearly", lifetime: "lifetime", other: "paid" }[p.kind] || p.kind;
+    var text = p.live ? plan : (p.kind === "trial" ? "trial ended" : "cancelled · " + plan);
     return p.msFromStart != null ? text + " · " + dur(p.msFromStart) : text;
   }
 
   function loadFunnelUsers() {
     var host = $("funnel-users");
     host.classList.remove("hidden");
+    $("funnel-users-cap").classList.remove("hidden");
     host.textContent = "";
     host.appendChild(el("div", "fa-h", "By account"));
+    // The step table's drill-down (#814): a removable chip names the screen the list is
+    // filtered to — the people whose run's last screen it is and who never finished.
+    if (funnelPage.leftAt) {
+      var chip = el("span", "chip n", "Left at: " + (STEP_NAMES[funnelPage.leftAt] || funnelPage.leftAt) + " ×");
+      chip.setAttribute("role", "button");
+      chip.setAttribute("tabindex", "0");
+      var clear = function () { funnelPage.leftAt = null; loadFunnelUsers(); };
+      chip.addEventListener("click", clear);
+      chip.addEventListener("keydown", function (e) {
+        if (e.target !== chip) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); clear(); }
+      });
+      var frow = el("div", "fa-filter");
+      frow.appendChild(chip);
+      host.appendChild(frow);
+    }
     var th = el("div", "fa-th");
     ["Account", "Lang", "Country", "Started", "Last screen", "Outcome", ""].forEach(function (t) {
       th.appendChild(el("span", "", t));
     });
     host.appendChild(th);
     funnelPage.cursor = null;
-    funnelPage.state = el("div", "");
+    funnelPage.state = el("div", "fa-box");
     funnelPage.body = el("div", "hidden");
     funnelPage.list = el("div", "fa-list");
     funnelPage.body.appendChild(funnelPage.list);
@@ -2429,13 +2488,14 @@ details.how p { margin-top: 8px; }
   function fetchFunnelUsers() {
     var q = rangeQuery();
     var path = "/admin/api/funnel/users" + (q ? q + "&" : "?") + "limit=50"
-      + (funnelPage.cursor ? "&cursor=" + encodeURIComponent(funnelPage.cursor) : "");
+      + (funnelPage.cursor ? "&cursor=" + encodeURIComponent(funnelPage.cursor) : "")
+      + (funnelPage.leftAt ? "&leftAt=" + encodeURIComponent(funnelPage.leftAt) : "");
     funnelPage.more.disabled = true;
     var failed = function (e) {
       funnelPage.more.disabled = false;
       // Rows already on screen stay; a first-page miss paints the card's own error state.
       if (!funnelPage.list.children.length) {
-        paintBox(funnelPage.state, funnelPage.body, "error", e, "these accounts", loadFunnelUsers, true);
+        paintBox(funnelPage.state, funnelPage.body, "error", e, "these accounts", loadFunnelUsers, "page");
         return;
       }
       funnelPage.status.textContent = "";
@@ -2520,9 +2580,12 @@ details.how p { margin-top: 8px; }
   }
 
   /**
-   * One account's stored journal (#812): every event oldest first, grouped by run
-   * (session_id). A "view" of a screen already seen in this run is a revisit; a "back"
-   * action is a back-step — both are marked, because the verbs are the only record there is.
+   * One account's stored journal (#812, words in #814): every event oldest first, grouped by
+   * run (session_id). A line names the SCREEN and says the action as a word — "Goal · viewed",
+   * "Goal · answered lose" — so a plain view never reads as the answer. A screen further back
+   * than the one before it is "↩ back"; a view of a screen already seen in this run is
+   * "seen again" — both in words, not colour alone, because the verbs are the only record
+   * there is.
    */
   function renderFlow(host, view) {
     host.textContent = "";
@@ -2537,20 +2600,40 @@ details.how p { margin-top: 8px; }
     if (!sessions.length) { host.appendChild(el("p", "muted", "No onboarding events. Accounts that onboarded on the web (/start) send none.")); return; }
     sessions.forEach(function (s, i) {
       var box = el("div", "fl-s");
-      box.appendChild(el("div", "fl-h", "run " + (i + 1) + " · session " + s.id.slice(0, 8) + " · " + atLabel(s.events[0].at)));
+      var ver = s.events[0].contentVersion;
+      box.appendChild(el("div", "fl-h", "Run " + (i + 1) + " · " + atLabel(s.events[0].at)
+        + (Number.isInteger(ver) ? " · content v" + ver : "")));
       var seen = {};
+      var prev = -1;
       var finished = s.events.some(function (e) { return e.action === "complete"; });
       s.events.forEach(function (e, j) {
         var line = el("div", "fl-ev");
-        line.appendChild(el("span", "fl-p", STEP_NAMES[e.place] || e.place));
+        var nm = el("span", "fl-p", PLACE_SHORT[e.place]
+          || e.place.charAt(0).toUpperCase() + e.place.slice(1));
+        nm.appendChild(el("small", "", e.place));
+        line.appendChild(nm);
         var acts = el("span", "fl-a");
-        acts.appendChild(el("span", "chip n", e.action));
-        if (e.action === "back") acts.appendChild(el("span", "chip w", "back-step"));
-        if (e.action === "view" && seen[e.place]) acts.appendChild(el("span", "chip w", "again"));
+        var idx = PLACE_INDEX[e.place];
+        // One mark for a step back (#814): a recorded "back" action IS the "↩ back" tag; a
+        // view of a screen behind the previous one gets it too — the chat emits no "back".
+        if (e.action === "back") {
+          acts.appendChild(el("span", "chip w", "↩ back"));
+        } else {
+          var act = el("span", "", ACTION_WORDS[e.action] || e.action);
+          if (e.action === "answer" && e.value) {
+            act.appendChild(document.createTextNode(" "));
+            act.appendChild(el("em", "", e.value));
+          }
+          acts.appendChild(act);
+          if (e.action === "view" && idx !== undefined && prev >= 0 && idx < prev) {
+            acts.appendChild(el("span", "chip w", "↩ back"));
+          }
+        }
+        if (idx !== undefined) prev = idx;
+        if (e.action === "view" && seen[e.place]) acts.appendChild(el("span", "chip n", "seen again"));
         if (e.action === "view") seen[e.place] = true;
         if (!finished && j === s.events.length - 1) acts.appendChild(el("span", "chip b", "left here"));
         line.appendChild(acts);
-        line.appendChild(el("span", "fl-v", e.value !== null ? e.value : ""));
         line.appendChild(el("span", "fl-t", e.ms !== null ? Math.round(e.ms / 1000) + "s" : ""));
         box.appendChild(line);
       });
@@ -3384,7 +3467,7 @@ details.how p { margin-top: 8px; }
     }, function (e) {
       if (sel !== u) return;
       loadedTab.profile = null;
-      paintBox($("pane-state"), $("pane-body"), "error", e, "this account", loadProfile, true);
+      paintBox($("pane-state"), $("pane-body"), "error", e, "this account", loadProfile, "account");
     });
   }
 
@@ -3398,7 +3481,7 @@ details.how p { margin-top: 8px; }
     var failed = function (e) {
       if (sel !== u) return;
       loadedTab.onboarding = null;
-      paintBox($("onboarding-state"), $("onboarding-body"), "error", e, "this account", loadUserOnboarding, true);
+      paintBox($("onboarding-state"), $("onboarding-body"), "error", e, "this account", loadUserOnboarding, "account");
     };
     return api("GET", "/admin/api/users/" + encodeURIComponent(u.userId) + "/onboarding").then(function (view) {
       if (sel !== u) return;
@@ -3716,7 +3799,7 @@ details.how p { margin-top: 8px; }
       if (!sel || sel.userId !== userId) return;
       if (older) { $("chat-status").textContent = "failed: " + e.message; return; }
       loadedTab.thread = null;
-      paintBox($("thread-state"), $("thread-body"), "error", e, "the thread", function () { loadedTab.thread = userId; loadChat(false); }, true);
+      paintBox($("thread-state"), $("thread-body"), "error", e, "the thread", function () { loadedTab.thread = userId; loadChat(false); }, "account");
     });
   }
 
@@ -3839,7 +3922,7 @@ details.how p { margin-top: 8px; }
       if (!sel || sel.userId !== userId) return;
       if (!first) { $("diary-status").textContent = "failed: " + e.message; return; }
       loadedTab.diary = null;
-      paintBox($("diary-state"), $("diary-body"), "error", e, "the diary", function () { loadedTab.diary = userId; loadDiary(true); }, true);
+      paintBox($("diary-state"), $("diary-body"), "error", e, "the diary", function () { loadedTab.diary = userId; loadDiary(true); }, "account");
     });
   }
 
@@ -4284,7 +4367,7 @@ details.how p { margin-top: 8px; }
     return bar;
   }
 
-  function paintBox(box, body, kind, err, what, retry, inner, kpis) {
+  function paintBox(box, body, kind, err, what, retry, scope, kpis) {
     box.textContent = "";
     body.classList.toggle("hidden", kind !== "ready");
     if (kind === "loading") box.appendChild(skeleton(kpis));
@@ -4292,7 +4375,7 @@ details.how p { margin-top: 8px; }
     box.appendChild(errBar(err, what, retry));
     var note = document.createElement("p");
     note.className = "muted";
-    note.textContent = inner ? "Only this part failed. The rest of the account is unaffected." : "Only this view failed. The others load on their own.";
+    note.textContent = scope ? "Only this part failed. The rest of the " + scope + " is unaffected." : "Only this view failed. The others load on their own.";
     box.appendChild(note);
   }
 
