@@ -275,6 +275,7 @@ button.dd:hover { filter: brightness(1.08); box-shadow: none; }
 .aerr { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bad-tint); color: var(--bad); font-weight: 500; border-radius: var(--r-ctl); }
 .aerr .sp { flex: 1; }
 .aerr button { color: var(--ink); }
+.aerr-note { margin: 8px 14px 0; }
 .errors { background: var(--bad-tint); color: var(--bad); border-radius: var(--r-ctl); padding: 12px 14px; margin-bottom: 14px; }
 .errors ul { margin: 6px 0 0; padding-left: 18px; }
 .errors li { font-size: 13px; }
@@ -411,10 +412,10 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .fl-s { padding: 8px 0; }
 .fl-s + .fl-s { border-top: 1px dashed var(--hair); }
 .fl-h { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-bottom: 4px; }
-.fl-ev { display: grid; grid-template-columns: minmax(110px, 1.2fr) auto 44px; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 13px; }
-.fl-p { font-weight: 600; }
+.fl-ev { display: grid; grid-template-columns: 180px 1fr 44px; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 13px; }
+.fl-p { font-weight: 600; min-width: 0; }
 .fl-p small { display: block; font-weight: 400; font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.fl-a { display: inline-flex; gap: 4px; align-items: baseline; }
+.fl-a { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: baseline; min-width: 0; }
 .fl-a em { font-style: normal; color: var(--muted); }
 .fl-t { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 .srow { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--hair); }
@@ -2299,12 +2300,6 @@ details.how p { margin-top: 8px; }
     summary: "Plan", signup: "Sign up", country: "Country", referral: "Referral",
     health: "Health", streak: "Streak"
   };
-  // The funnel's own order (ONBOARDING_PLACES) — a screen ahead of the previous one on the
-  // path back is a back-step whether or not a "back" action survives in the journal.
-  var PLACE_INDEX = {};
-  ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
-   "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary",
-   "signup", "country", "referral", "health", "streak"].forEach(function (p, i) { PLACE_INDEX[p] = i; });
   var ACTION_WORDS = { view: "viewed", answer: "answered", back: "went back", reject: "declined", complete: "finished", leave: "left" };
 
   function loadFunnel() {
@@ -2382,7 +2377,11 @@ details.how p { margin-top: 8px; }
             g.classList.add("fp-jump");
             g.setAttribute("role", "button");
             g.setAttribute("tabindex", "0");
-            var jump = function () { funnelPage.leftAt = s.id; loadFunnelUsers(); };
+            var jump = function () {
+              funnelPage.leftAt = s.id;
+              loadFunnelUsers();
+              $("funnel-users").scrollIntoView({ block: "start" });
+            };
             g.addEventListener("click", jump);
             g.addEventListener("keydown", function (ev) {
               if (ev.target !== g) return;
@@ -2582,10 +2581,11 @@ details.how p { margin-top: 8px; }
   /**
    * One account's stored journal (#812, words in #814): every event oldest first, grouped by
    * run (session_id). A line names the SCREEN and says the action as a word — "Goal · viewed",
-   * "Goal · answered lose" — so a plain view never reads as the answer. A screen further back
-   * than the one before it is "↩ back"; a view of a screen already seen in this run is
-   * "seen again" — both in words, not colour alone, because the verbs are the only record
-   * there is.
+   * "Goal · answered lose" — so a plain view never reads as the answer. A repeat view that
+   * follows a "back" action is "↩ back"; any other repeat in the same run is "seen again" —
+   * the run's own events, never the funnel's step order, so a reordered experiment arm does
+   * not read as going back. Both marks in words, not colour alone, because the verbs are the
+   * only record there is.
    */
   function renderFlow(host, view) {
     host.textContent = "";
@@ -2604,7 +2604,7 @@ details.how p { margin-top: 8px; }
       box.appendChild(el("div", "fl-h", "Run " + (i + 1) + " · " + atLabel(s.events[0].at)
         + (Number.isInteger(ver) ? " · content v" + ver : "")));
       var seen = {};
-      var prev = -1;
+      var prevBack = false;
       var finished = s.events.some(function (e) { return e.action === "complete"; });
       s.events.forEach(function (e, j) {
         var line = el("div", "fl-ev");
@@ -2613,21 +2613,22 @@ details.how p { margin-top: 8px; }
         nm.appendChild(el("small", "", e.place));
         line.appendChild(nm);
         var acts = el("span", "fl-a");
-        var idx = PLACE_INDEX[e.place];
-        // One mark for a step back (#814): a recorded "back" action reads "went back"; a
-        // view of a screen behind the previous one is the "↩ back" tag — never both on
-        // one event, and the chat emits no "back" for the tag to need one.
+        // One mark for a step back (#814): a recorded "back" action reads "went back", and
+        // the repeat view right after it is the "↩ back" tag — the run's own events say it,
+        // so a reordered experiment arm never reads as going back. A repeat view that did
+        // not follow a back is "seen again". Never more than one mark on an event.
         var act = el("span", "", ACTION_WORDS[e.action] || e.action);
         if (e.action === "answer" && e.value) {
           act.appendChild(document.createTextNode(" "));
           act.appendChild(el("em", "", e.value));
         }
         acts.appendChild(act);
-        if (e.action === "view" && idx !== undefined && prev >= 0 && idx < prev) {
-          acts.appendChild(el("span", "chip w", "↩ back"));
+        if (e.action === "view" && seen[e.place]) {
+          acts.appendChild(prevBack
+            ? el("span", "chip w", "↩ back")
+            : el("span", "chip n", "seen again"));
         }
-        if (idx !== undefined) prev = idx;
-        if (e.action === "view" && seen[e.place]) acts.appendChild(el("span", "chip n", "seen again"));
+        prevBack = e.action === "back";
         if (e.action === "view") seen[e.place] = true;
         if (!finished && j === s.events.length - 1) acts.appendChild(el("span", "chip b", "left here"));
         line.appendChild(acts);
@@ -4371,7 +4372,7 @@ details.how p { margin-top: 8px; }
     if (kind !== "error") return;
     box.appendChild(errBar(err, what, retry));
     var note = document.createElement("p");
-    note.className = "muted";
+    note.className = "muted aerr-note";
     note.textContent = scope ? "Only this part failed. The rest of the " + scope + " is unaffected." : "Only this view failed. The others load on their own.";
     box.appendChild(note);
   }

@@ -118,8 +118,8 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   const flow = page.locator(".fa-open");
   await expect(flow).toContainText("Run 1");
   await expect(flow).toContainText("went back");
-  // The second `goal` view is the revisit: exactly one "seen again" mark.
-  await expect(flow.locator(".chip", { hasText: "seen again" })).toHaveCount(1);
+  // The second `goal` view follows a `back` action: exactly one "↩ back" mark.
+  await expect(flow.locator(".chip", { hasText: "↩ back" })).toHaveCount(1);
   await expect(flow).toContainText("lose");
   await expect(flow).toContainText("4s");
 
@@ -173,7 +173,7 @@ test("the account page's Onboarding tab reads the same journal", async ({ page }
   const flow = page.locator("#onboarding-flow");
   await expect(flow.locator(".fl-ev")).toHaveCount(7);
   await expect(flow).toContainText("went back");
-  await expect(flow.locator(".chip", { hasText: "seen again" })).toHaveCount(1);
+  await expect(flow.locator(".chip", { hasText: "↩ back" })).toHaveCount(1);
   await expect(page.locator("#onboarding-summary")).toContainText("monthly · 2h");
   expect(errors).toEqual([]);
 });
