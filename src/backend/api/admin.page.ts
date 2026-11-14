@@ -412,7 +412,7 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .fl-s { padding: 8px 0; }
 .fl-s + .fl-s { border-top: 1px dashed var(--hair); }
 .fl-h { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-bottom: 4px; }
-.fl-ev { display: grid; grid-template-columns: 180px 1fr 44px; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 13px; }
+.fl-ev { display: grid; grid-template-columns: minmax(90px, 180px) 1fr 44px; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 13px; }
 .fl-p { font-weight: 600; min-width: 0; }
 .fl-p small { display: block; font-weight: 400; font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .fl-a { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: baseline; min-width: 0; }
