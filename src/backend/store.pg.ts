@@ -4070,7 +4070,7 @@ export async function postgresStore(
     },
 
     async adminOnboardingFlow(query) {
-      const { userId, range, staffIds = [], cursor, limit } = query;
+      const { userId, range, staffIds = [], cursor, limit, leftAt } = query;
       const { from: lo, to: hi } = range;
       const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
       const toAccount = (r: Record<string, unknown>, events?: AdminOnboardingEvent[]): AdminOnboardingAccount => {
@@ -4121,7 +4121,7 @@ export async function postgresStore(
            group by u.id`;
         if (summary.length === 0) return { rows: [], nextCursor: null };
         const events = await sql`
-          select session_id, place, action, ms, field, value, at
+          select session_id, place, action, content_version, ms, field, value, at
             from onboarding_events
            where user_id = ${userId}
              and (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
@@ -4131,6 +4131,7 @@ export async function postgresStore(
             sessionId: String(r.session_id), place: String(r.place), action: String(r.action),
             ms: r.ms === null || r.ms === undefined ? null : num(r.ms),
             field: (r.field as string | null) ?? null, value: (r.value as string | null) ?? null,
+            contentVersion: num(r.content_version),
             at: iso(r.at)!,
           })))],
           nextCursor: null,
@@ -4165,7 +4166,10 @@ export async function postgresStore(
            and not u.staff
            and e.user_id <> all(${configStaff}::uuid[])
          group by e.user_id, u.id
-        having ${cursor === undefined} or (min(e.at), e.user_id) < (${curAt}::timestamptz, ${curId}::uuid)
+        having (${leftAt === undefined} or (
+                 (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] = ${leftAt ?? ""}
+                 and not bool_or(e.action = 'complete')))
+           and (${cursor === undefined} or (min(e.at), e.user_id) < (${curAt}::timestamptz, ${curId}::uuid))
          order by min(e.at) desc, e.user_id desc
          limit ${bounded + 1}`;
 

@@ -499,13 +499,14 @@ function flowRow(a: AdminOnboardingAccount, now: number): AdminOnboardingUserRow
  */
 export async function adminOnboardingUsers(
   deps: EngineDeps,
-  query: { range?: AdminRange & { days?: number } | number; cursor?: string; limit?: number },
+  query: { range?: AdminRange & { days?: number } | number; cursor?: string; limit?: number; leftAt?: string },
 ): Promise<{ accounts: AdminOnboardingUserRow[]; nextCursor: string | null; range: AdminWindowEcho }> {
   const ask = adminRangeOf(query.range ?? 30, 30, 365);
   const page = await deps.store.adminOnboardingFlow({
     range: ask, staffIds: deps.config.campaignStaffIds,
     ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
     ...(query.limit !== undefined ? { limit: query.limit } : {}),
+    ...(query.leftAt !== undefined ? { leftAt: query.leftAt } : {}),
   });
   const now = Date.now();
   return { accounts: page.rows.map((a) => flowRow(a, now)), nextCursor: page.nextCursor, range: adminWindowEcho(ask) };

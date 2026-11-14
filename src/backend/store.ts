@@ -610,6 +610,8 @@ export interface AdminOnboardingEvent {
   field: string | null;
   /** The enumerated choice an `answer` recorded, or null. */
   value: string | null;
+  /** The app content revision the event was stamped with — the run header's "content vN". */
+  contentVersion: number;
   /** Client clock, ISO — when the screen was seen, not when the batch arrived. */
   at: string;
 }
@@ -663,6 +665,12 @@ export interface AdminOnboardingFlowQuery {
   /** The last row of the previous page, opaque — keyset over (startedAt, userId), newest first. */
   cursor?: string;
   limit?: number;
+  /**
+   * List mode only: only accounts whose run LEFT at this place — their last screen is it and
+   * no `complete` event closed the run. The funnel's "▼ N left" drill-down (#814); a value no
+   * screen has is an empty page, not an error.
+   */
+  leftAt?: string;
 }
 
 export interface AdminOnboardingPage {

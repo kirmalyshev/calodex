@@ -472,6 +472,7 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     return json(await adminOnboardingUsers(deps, {
       range: "days" in ask ? ask.days : ask,
       ...(url.searchParams.get("cursor") !== null ? { cursor: url.searchParams.get("cursor")! } : {}),
+      ...(url.searchParams.get("leftAt") !== null ? { leftAt: url.searchParams.get("leftAt")! } : {}),
       ...(Number.isSafeInteger(limit) && limit > 0 ? { limit } : {}),
     }));
   }
