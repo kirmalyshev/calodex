@@ -2471,7 +2471,6 @@ details.how p { margin-top: 8px; }
     link.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); openActor(a.userId); });
     row.appendChild(link);
     var meta = [langLabel[a.lang] || a.lang, a.country].filter(Boolean).join(" · ");
-    if (a.sessions > 1) meta += (meta ? " · " : "") + a.sessions + " runs";
     row.appendChild(el("span", "muted meta", meta || "—"));
     row.appendChild(el("span", "cl", langLabel[a.lang] || a.lang || "—"));
     row.appendChild(el("span", "cc", a.country || "—"));
