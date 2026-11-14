@@ -9,7 +9,8 @@
 
 import {
   COUNTRY_CODES, branded, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
-  ONBOARDING_PLACES, countryFromRegion, isReportableField, isTimezone, localDate, localTime,
+  ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone,
+  localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   DEFAULT_ORDER, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
@@ -17,10 +18,11 @@ import {
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
-import type { AdminMetrics, AdminRange, OnboardingExperiment, OnboardingVariant } from "../store.ts";
+import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
+import { referralBonusOf } from "./entitlement.ts";
 
-/** Every place an event may name — the questions, and the three places that are not questions. */
+/** Every place an event may name — the questions, and the interstitial places between them. */
 const PLACES: readonly string[] = ONBOARDING_PLACES;
 
 /**
@@ -399,10 +401,129 @@ export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { d
   return {
     sessions: agg.sessions,
     completed: agg.completed,
+    paid: paidStep(agg.paid),
     range: adminWindowEcho(ask),
     contentVersion,
     rows,
   };
+}
+
+/**
+ * Which plan a stored product id names — the same month-beats-year test the web client's
+ * renewal line and `referralRewardDays` apply (minus the latter's config ceiling): `month`
+ * means monthly, `year|annual` yearly, anything else is reported as itself rather than
+ * guessed. A lifetime unlock is its own column, not a name test.
+ */
+export function productPlan(productId: string, lifetimeProductId: string | null): "lifetime" | "monthly" | "yearly" | "other" {
+  if (lifetimeProductId !== null) return "lifetime";
+  if (/month/i.test(productId)) return "monthly";
+  if (/year|annual/i.test(productId)) return "yearly";
+  return "other";
+}
+
+/** The aggregate's product counts classified into the funnel's paid step. */
+function paidStep(paid: FunnelAggregate["paid"]): OnboardingFunnel["paid"] {
+  const out = { converted: paid.converted, trial: paid.trial, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: paid.medianMs };
+  for (const p of paid.products) {
+    if (p.lifetime) { out.lifetime += p.n; continue; }
+    out[productPlan(p.productId, null)] += p.n;
+  }
+  return out;
+}
+
+/**
+ * One row of the per-account funnel (kirmalyshev/calodex#812) — who started, how far they
+ * got, and what their account's own entitlement record says. `paywall` and `paid` are the
+ * engine's verdicts over the store's raw fields.
+ */
+export interface AdminOnboardingUserRow {
+  userId: string;
+  lang: string;
+  country: string | null;
+  startedAt: string | null;
+  lastPlace: string | null;
+  sessions: number;
+  completed: boolean;
+  /**
+   * The paywall stood in this run's path: a screen that presents it (`summary`, `health`) was
+   * seen and no recorded grant predates that view — an already-entitled account is walked past
+   * it instead. The store records no paywall event of its own; this is the honest read of one.
+   * The caveat `paid.medianMs` carries applies here too: each grant clock keeps its LATEST
+   * event, so a renewal after the run reads "entitled after the view" for an account that was
+   * already paying when it saw the screen.
+   */
+  paywall: boolean;
+  /**
+   * The account's conversion state off its server-side record, or null — `trial` when the
+   * current period is one, else the plan the product id names (the exclusive kind; the
+   * aggregate's `paid.trial` is instead an OVERLAY counted beside its plan). `msFromStart` is
+   * the time from this run's start to the earliest instant either grant clock holds — exactly
+   * the first grant only when nothing newer overwrote its clock, and null when the grant
+   * predates the run (the record says "already paying", not "this run converted"), when the
+   * record holds no grant clock, or when the run has no events in the window.
+   *
+   * `live` is whether the record still ENTITLES, not whether it exists — a record outlives
+   * the access it granted. For a trial the gate is `entitlementActive` on its own expiry: a
+   * bonus week beside it makes the account entitled, never makes the trial still running.
+   * For a paid plan it is `entitlementLive` whole — a cancelled monthly beside a dated
+   * referral week or a banked bank still reads live, the way `adminUsers`' `entitled` does.
+   */
+  paid: { kind: "trial" | "monthly" | "yearly" | "lifetime" | "other"; productId: string; msFromStart: number | null; live: boolean } | null;
+}
+
+function flowRow(a: AdminOnboardingAccount, now: number): AdminOnboardingUserRow {
+  let paid: AdminOnboardingUserRow["paid"] = null;
+  const e = a.entitlement;
+  if (e !== null) {
+    const kind = e.trial === true && e.lifetimeProductId === null
+      ? "trial" : productPlan(e.productId, e.lifetimeProductId);
+    const live = kind === "trial" ? entitlementActive(e.expiresAt, now)
+      : entitlementLive(e, now, referralBonusOf(e, a.bonusUntil, a.bankedDays, now).end);
+    const delta = a.entitledAt !== null && a.startedAt !== null
+      ? Date.parse(a.entitledAt) - Date.parse(a.startedAt) : null;
+    paid = { kind, live, productId: e.lifetimeProductId ?? e.productId, msFromStart: delta !== null && delta >= 0 ? delta : null };
+  }
+  return {
+    userId: a.userId, lang: a.lang, country: a.country,
+    startedAt: a.startedAt, lastPlace: a.lastPlace,
+    sessions: a.sessions, completed: a.completed,
+    paywall: a.sawPaywallAt !== null && (a.entitlement === null
+      || (a.entitledAt !== null && Date.parse(a.entitledAt) > Date.parse(a.sawPaywallAt))),
+    paid,
+  };
+}
+
+/**
+ * The per-account funnel list (kirmalyshev/calodex#812): the same window and the same
+ * staff-excluded population as `onboardingFunnel`, one row per account, newest first.
+ */
+export async function adminOnboardingUsers(
+  deps: EngineDeps,
+  query: { range?: AdminRange & { days?: number } | number; cursor?: string; limit?: number },
+): Promise<{ accounts: AdminOnboardingUserRow[]; nextCursor: string | null; range: AdminWindowEcho }> {
+  const ask = adminRangeOf(query.range ?? 30, 30, 365);
+  const page = await deps.store.adminOnboardingFlow({
+    range: ask, staffIds: deps.config.campaignStaffIds,
+    ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
+    ...(query.limit !== undefined ? { limit: query.limit } : {}),
+  });
+  const now = Date.now();
+  return { accounts: page.rows.map((a) => flowRow(a, now)), nextCursor: page.nextCursor, range: adminWindowEcho(ask) };
+}
+
+/**
+ * ONE account's onboarding flow, for the Accounts detail and the funnel list's expansion
+ * (kirmalyshev/calodex#812): the summary row plus every stored event, oldest first — the
+ * client groups them by `session_id`. Scoped by the `userId` argument; a staff account named
+ * outright is answered, as every other account-detail read answers it. Null when no such account.
+ */
+export async function adminUserOnboarding(
+  deps: EngineDeps, userId: string,
+): Promise<(AdminOnboardingUserRow & { events: AdminOnboardingEvent[] }) | null> {
+  const { rows } = await deps.store.adminOnboardingFlow({ userId, range: { from: null, to: null } });
+  const a = rows[0];
+  if (a === undefined) return null;
+  return { ...flowRow(a, Date.now()), events: a.events ?? [] };
 }
 
 

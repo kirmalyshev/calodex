@@ -3189,6 +3189,189 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await views()).toBe(before);
     });
 
+    // ── The per-account funnel (calodex#812) ──────────────────────────────────────────────────
+
+    it("adminOnboardingFlow lists accounts newest first, staff out, and reads one account's journal", async () => {
+      const s = await open();
+      const u1 = (await s.upsertDeviceUser(device(), "en")).userId;
+      const u2 = (await s.upsertDeviceUser(device(), "de")).userId;
+      const staff = (await s.upsertDeviceUser(device(), "en")).userId;
+      const run = `flow-${RUN}`;
+      // u1's run is the OLDER one; u2's is newest — the list must order u2 first.
+      const older = new Date(Date.now() - 60000).toISOString();
+      const newer = new Date().toISOString();
+      const ev = (sid: string, n: number, over: Record<string, unknown>) => ({
+        id: `${run}-${sid}-${n}`, sessionId: `${run}-${sid}`, place: "goal" as const,
+        action: "view" as const, contentVersion: 1, at: older, ...over,
+      });
+      await s.recordOnboardingEvents(u1, [
+        ev("one", 1, {}),
+        ev("one", 2, { place: "summary", action: "view", at: older }),
+        ev("one", 3, { action: "complete", at: older }),
+      ] as never);
+      await s.recordOnboardingEvents(u2, [ev("two", 1, { at: newer })] as never);
+      await s.recordOnboardingEvents(staff, [ev("staff", 1, { at: newer })] as never);
+      await s.setStaff(staff, true);
+      // u1 paid AFTER starting: the earliest recorded grant lands at or after the run's start.
+      const grantAt = new Date(Date.now() - 30000).toISOString();
+      await s.putEntitlement(u1, {
+        expiresAt: new Date(Date.now() + 86400000 * 30).toISOString(),
+        productId: "monthly_499", eventAt: grantAt,
+      });
+
+      const page = await s.adminOnboardingFlow({ range: { from: null, to: null } });
+      const r1 = page.rows.find((r) => r.userId === u1);
+      const r2 = page.rows.find((r) => r.userId === u2);
+      expect(r1).toBeDefined(); expect(r2).toBeDefined();
+      // Newest first: u2's run started later, so it must sit ahead of u1's wherever they land.
+      expect(page.rows.findIndex((r) => r.userId === u2)).toBeLessThan(page.rows.findIndex((r) => r.userId === u1));
+      // A staff-flagged account stays out of the list — `onboardingFunnel`'s population.
+      expect(page.rows.some((r) => r.userId === staff)).toBe(false);
+      expect(r1!.sessions).toBe(1);
+      expect(r1!.completed).toBe(true);
+      expect(r1!.lastPlace).toBe("goal");
+      expect(r1!.sawPaywallAt).not.toBeNull();
+      expect(r1!.entitlement?.productId).toBe("monthly_499");
+      expect(r1!.entitledAt).toBe(grantAt);
+      expect(r2!.entitlement).toBeNull();
+
+      // ONE account's journal, scoped by the argument — the staff one answers too.
+      const one = await s.adminOnboardingFlow({ userId: u1, range: { from: null, to: null } });
+      expect(one.rows.length).toBe(1);
+      expect(one.rows[0]!.events!.map((e) => `${e.place}:${e.action}`))
+        .toEqual(["goal:view", "summary:view", "goal:complete"]);
+      const staffOne = await s.adminOnboardingFlow({ userId: staff, range: { from: null, to: null } });
+      expect(staffOne.rows.length).toBe(1);
+      expect(staffOne.rows[0]!.events!.length).toBe(1);
+
+      // Keyset paging: the first page's tail continues, and an unknown cursor is an empty page.
+      const first = await s.adminOnboardingFlow({ range: { from: null, to: null }, limit: 1 });
+      expect(first.rows.length).toBe(1);
+      if (first.nextCursor !== null) {
+        const rest = await s.adminOnboardingFlow({ range: { from: null, to: null }, limit: 1, cursor: first.nextCursor });
+        expect(rest.rows.length).toBe(1);
+        expect(rest.rows[0]!.userId).not.toBe(first.rows[0]!.userId);
+      }
+      const gone = await s.adminOnboardingFlow({ range: { from: null, to: null }, cursor: "not-a-cursor" });
+      expect(gone.rows).toEqual([]);
+
+      // A half-formed cursor — good uuid half, unusable stamp half — is the same empty page on
+      // both stores, never a 500 at Postgres' `::timestamptz` cast.
+      const halfFormed = await s.adminOnboardingFlow({
+        range: { from: null, to: null }, cursor: `garbage~${u2}` });
+      expect(halfFormed.rows).toEqual([]);
+      expect(halfFormed.nextCursor).toBeNull();
+
+      // The cursor is a POSITION, not a row lookup: a cursor naming u2's start continues the
+      // walk after that position even with u2 out of the population (here through `staffIds`),
+      // where an exact-match store would answer the empty page.
+      const rest2 = await s.adminOnboardingFlow({
+        range: { from: null, to: null }, limit: 50, cursor: `${newer}~${u2}`, staffIds: [u2] });
+      expect(rest2.rows.some((r) => r.userId === u2)).toBe(false);
+      expect(rest2.rows.some((r) => r.userId === u1)).toBe(true);
+
+      // A named account with no events in the window still answers: the row, empty journal.
+      const quiet = (await s.upsertDeviceUser(device(), "en")).userId;
+      const none = await s.adminOnboardingFlow({ userId: quiet, range: { from: null, to: null } });
+      expect(none.rows.length).toBe(1);
+      expect(none.rows[0]!.startedAt).toBeNull();
+      expect(none.rows[0]!.sessions).toBe(0);
+      expect(none.rows[0]!.events).toEqual([]);
+      // And a userId naming nobody is an empty answer, not an error — both stores.
+      expect((await s.adminOnboardingFlow({
+        userId: crypto.randomUUID(), range: { from: null, to: null } })).rows).toEqual([]);
+      expect((await s.adminOnboardingFlow({
+        userId: "not-a-uuid", range: { from: null, to: null } })).rows).toEqual([]);
+    });
+
+    it("carries the bonus fields and a lapsed record RAW — liveness is the engine's call", async () => {
+      const s = await open();
+      const referrer = (await s.upsertDeviceUser(device(), "en")).userId;
+      const bonus = (await s.upsertDeviceUser(device(), "en")).userId;
+      const lapsed = (await s.upsertDeviceUser(device(), "en")).userId;
+      const at = new Date().toISOString();
+      const ev = (tag: string) => [{ id: `${tag}-${RUN}`, sessionId: `${tag}-${RUN}`,
+        place: "goal" as const, action: "view" as const, contentVersion: 1, at }] as never;
+      await s.recordOnboardingEvents(bonus, ev(`bon-${RUN}`));
+      await s.recordOnboardingEvents(lapsed, ev(`lap-${RUN}`));
+      expect(await s.redeemReferral(bonus, (await s.referralOf(referrer))!.code, 7)).toBe("ok");
+      // A grant whose expiry already ran out: the record still exists, and the row must carry
+      // it — `hasRecord` is the event stamp's presence, not the clock's position; the engine
+      // reads "cancelled" off what this row returns.
+      await s.putEntitlement(lapsed, {
+        expiresAt: new Date(Date.now() - 86400000).toISOString(),
+        productId: "monthly_499", eventAt: new Date(Date.now() - 2 * 86400000).toISOString() });
+      const page = await s.adminOnboardingFlow({ range: { from: null, to: null } });
+      const rb = page.rows.find((r) => r.userId === bonus)!;
+      const rl = page.rows.find((r) => r.userId === lapsed)!;
+      expect(rb.bonusUntil).not.toBeNull();
+      expect(rb.bankedDays).toBe(0);
+      expect(rl.bonusUntil).toBeNull();
+      expect(rl.bankedDays).toBe(0);
+      expect(rl.entitlement).not.toBeNull();
+      expect(rl.entitlement!.expiresAt).not.toBeNull();
+    });
+
+    it("counts conversion to paid off the entitlement record, per run (#812)", async () => {
+      const s = await open();
+      const t0 = Date.now();
+      const isoAt = (ms: number) => new Date(t0 + ms).toISOString();
+      const run = `paid-${RUN}`;
+      const ev = (sid: string, n: number, over: Record<string, unknown>) => ({
+        id: `${run}-${sid}-${n}`, sessionId: `${run}-${sid}`, place: "goal" as const,
+        action: "view" as const, contentVersion: 1, at: isoAt(0), ...over,
+      });
+      // Window on `received_at` from this test's start: every earlier test's events arrived
+      // before it, so the funnel's `paid` block here is this fixture's alone — absolute counts.
+      const range = { from: new Date(t0), to: null };
+
+      const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+      const uConv = await mk(), uTrial = await mk(), uLife = await mk(),
+        uEdge = await mk(), uPre = await mk(), uTwo = await mk(),
+        uStaff = await mk(), uCfg = await mk();
+
+      await s.recordOnboardingEvents(uConv, [ev("conv", 1, {})] as never);
+      await s.recordOnboardingEvents(uTrial, [ev("trial", 1, {})] as never);
+      await s.recordOnboardingEvents(uLife, [ev("life", 1, {})] as never);
+      await s.recordOnboardingEvents(uEdge, [ev("edge", 1, {})] as never);
+      await s.recordOnboardingEvents(uPre, [ev("pre", 1, {})] as never);
+      // ONE account, TWO runs — conversion counts per run, not per account.
+      await s.recordOnboardingEvents(uTwo, [
+        ev("two-a", 1, {}), ev("two-b", 1, { at: isoAt(600000) }),
+      ] as never);
+      await s.recordOnboardingEvents(uStaff, [ev("stf", 1, {})] as never);
+      await s.recordOnboardingEvents(uCfg, [ev("cfg", 1, {})] as never);
+      await s.setStaff(uStaff, true);
+
+      const sub = (pid: string, eventAt: string, extra: Record<string, unknown> = {}) => ({
+        expiresAt: isoAt(86400000), productId: pid, eventAt, ...extra,
+      });
+      // Grants at or after the run's start convert it; one before does not.
+      await s.putEntitlement(uConv, sub(`m-${RUN}`, isoAt(1800000)));
+      await s.putEntitlement(uTrial, sub(`t-${RUN}`, isoAt(3600000), { trial: true }));
+      await s.putEntitlement(uLife, {
+        lifetimeProductId: `l-${RUN}`, productId: `l-${RUN}`, eventAt: isoAt(7200000) });
+      await s.putEntitlement(uEdge, sub(`e-${RUN}`, isoAt(0)));   // exactly at start — `>=` converts
+      await s.putEntitlement(uPre, sub(`p-${RUN}`, isoAt(-3600000))); // predates the run — not caused by it
+      await s.putEntitlement(uTwo, sub(`m-${RUN}`, isoAt(2400000)));
+      await s.putEntitlement(uStaff, sub(`s-${RUN}`, isoAt(1800000)));
+      await s.putEntitlement(uCfg, sub(`c-${RUN}`, isoAt(1800000)));
+
+      const f = await s.onboardingFunnel(range, [uCfg]);
+      // uConv + uTwo(×2 runs) + uTrial + uLife + uEdge convert; uPre, uStaff and uCfg do not.
+      expect(f.paid.converted).toBe(6);
+      // `trial` is an overlay: the trialing run counts here AND in its product's row.
+      expect(f.paid.trial).toBe(1);
+      const products = Object.fromEntries(f.paid.products.map((p) => [`${p.lifetime}|${p.productId}`, p.n]));
+      expect(products[`false|m-${RUN}`]).toBe(3);   // uConv + uTwo's two runs, one product id
+      expect(products[`false|t-${RUN}`]).toBe(1);
+      expect(products[`true|l-${RUN}`]).toBe(1);
+      expect(products[`false|e-${RUN}`]).toBe(1);
+      // Deltas to grant: [0, 1800000, 1800000, 2400000, 3600000, 7200000] — even count, so the
+      // two middles' mean. `percentile_cont` and the hand median must both say 2100000.
+      expect(f.paid.medianMs).toBe(2100000);
+    });
+
     // ── Onboarding experiments (ieat-app#2669) ───────────────────────────────────────────────
     //
     // The experiment row is global, like the switches above it — a `running` one left behind would
@@ -5034,8 +5217,10 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       const s = await open();
       const u = await s.createUser("en");
       // Far-future days keyed to this run: an analysis count is global, so a re-run on the
-      // same database must not find its own rows again.
-      const base = Date.parse("2044-01-01T00:00:00Z") + (RUN.charCodeAt(2) % 300) * 86_400_000;
+      // same database must not find its own rows again. The keyspace is the run id's whole
+      // hex — a single charCode gave 16 possible bases, and one run in sixteen reread the
+      // last run's rows (measured here, on a shared test database).
+      const base = Date.parse("2044-01-01T00:00:00Z") + (parseInt(RUN, 16) % 2000) * 86_400_000;
       const day1 = new Date(base).toISOString().slice(0, 10);
       const day2 = new Date(base + 86_400_000).toISOString().slice(0, 10);
       await s.recordAnalysis(u, day1, "photo");
@@ -5674,7 +5859,11 @@ if (PG_URL) {
         .map(([name]) => name)
         .sort();
       expect(unscoped).toEqual([
-        "adminListUsers", "adminMetrics", "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
+        "adminListUsers", "adminMetrics",
+        // #812: the per-account onboarding flow — the admin's own cross-account read, like the
+        // funnel above it; staff exclusion is the method's job, the route names the account.
+        "adminOnboardingFlow",
+        "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
         "countOnboardedSince", "createCampaign", "createUser", "expireJobs", "foodById",
         "forgetJobs", "forgetTurnOutcomes", "getCampaign", "getNotificationCopy", "getOnboardingContent",
         "getPrompts",

@@ -57,8 +57,8 @@ export {
   resetOnboardingContent, recordOnboardingEvents, sanitizeExperimentRules, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment, wilsonInterval,
   adminMetrics,
-  onboardingFunnel,
-  type OnboardingExperimentView, type OnboardingSignals,
+  onboardingFunnel, adminOnboardingUsers, adminUserOnboarding,
+  type AdminOnboardingUserRow, type OnboardingExperimentView, type OnboardingSignals,
 } from "./onboarding.ts";
 export { adminSwitches, saveSwitch, type FlipView, type SwitchView } from "./switches.ts";
 export { livePrompts, promptHistory, savePrompt, type PromptView, type PromptSave } from "./prompts.ts";

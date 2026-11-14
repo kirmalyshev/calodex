@@ -72,7 +72,13 @@ const BODIES: Record<string, unknown> = {
     latency: { n: 0, queue: { p50: null, p95: null }, firstItem: { p50: null, p95: null }, total: { p50: null, p95: null } },
   },
   "push/stats": { range: RANGE, timezone: "UTC", rows: [] },
-  "funnel": { range: RANGE, contentVersion: 1, sessions: 0, completed: 0, rows: [] },
+  "funnel": {
+    range: RANGE, contentVersion: 1, sessions: 0, completed: 0,
+    paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
+    rows: [],
+  },
+  // The funnel view's per-account list — it asks with the same range the aggregate asked with.
+  "funnel/users": { range: RANGE, nextCursor: null, accounts: [] },
   "experiments": { experiments: [], range: RANGE },
   "campaigns": {
     killed: false, campaigns: [], copy: [], range: RANGE,
@@ -395,11 +401,14 @@ test("the funnel names a pre-window run only when the echo bounds one", async ({
     ({ place, views, people, answers: 0, backs: 0, rejects: 0, medianMs: null });
   // A step more people reach than the one before it; the echo answers what was asked.
   await page.route("**/admin/api/funnel**", (r) => {
+    // The glob also matches funnel/users — pass anything else through to the earlier stub.
+    if (!new URL(r.request().url()).pathname.endsWith("/admin/api/funnel")) return r.fallback();
     const q = new URL(r.request().url()).searchParams;
     (calls.funnel ??= []).push(q);
     return r.fulfill({ status: 200, contentType: "application/json",
       body: JSON.stringify({
         range: echoOf("funnel", q), contentVersion: 1, sessions: 4, completed: 1,
+        paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
         rows: [row("welcome", 5, 3), row("goal", 9, 2), row("sex", 4, 4)],
       }) });
   });
@@ -422,16 +431,22 @@ test("the funnel counts people, not showings, and a negative gap is not a drop",
   await stubAdmin(page, {});
   const row = (place: string, views: number, people: number) =>
     ({ place, views, people, answers: 0, backs: 0, rejects: 0, medianMs: null });
-  // Registered after stubAdmin, so it wins for this one endpoint.
-  await page.route("**/admin/api/funnel**", (r) => r.fulfill({
-    status: 200, contentType: "application/json",
-    body: JSON.stringify({
-      range: RANGE, contentVersion: 1, sessions: 4, completed: 1,
-      rows: [row("welcome", 5, 3), row("goal", 9, 2), row("sex", 4, 4)],
-    }),
-  }));
+  // Registered after stubAdmin, so it wins for this one endpoint — funnel/users still falls
+  // through to the earlier stub.
+  await page.route("**/admin/api/funnel**", (r) => {
+    if (!new URL(r.request().url()).pathname.endsWith("/admin/api/funnel")) return r.fallback();
+    return r.fulfill({
+      status: 200, contentType: "application/json",
+      body: JSON.stringify({
+        range: RANGE, contentVersion: 1, sessions: 4, completed: 1,
+        paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
+        rows: [row("welcome", 5, 3), row("goal", 9, 2), row("sex", 4, 4)],
+      }),
+    });
+  });
   await openAdmin(page, "funnel");
-  await expect(page.locator(".fp-cnt")).toHaveText(["3", "2", "4", "1"]);
+  // The last count is the paid step appended after "finished" — none converted in this stub.
+  await expect(page.locator(".fp-cnt")).toHaveText(["3", "2", "4", "1", "0"]);
   await expect(page.locator(".fp-gap").nth(0)).toContainText("1 left");
   await expect(page.locator(".fp-gap").nth(1)).toContainText("+2 joined here");
   await expect(page.locator(".fp-gap").nth(1)).not.toContainText("-");

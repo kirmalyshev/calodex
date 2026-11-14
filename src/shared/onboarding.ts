@@ -2244,6 +2244,31 @@ export interface OnboardingFunnel {
   sessions: number;
   /** Runs that reached `complete`. */
   completed: number;
+  /**
+   * Conversion to paid (kirmalyshev/calodex#812) — the funnel's last step, read off the
+   * server's entitlement record (`users.entitlement_*`), never off a client event. A run
+   * counts as converted when its account's earliest recorded grant event came at or after
+   * the run's first event: a record older than that describes a payment this run did not cause.
+   */
+  paid: {
+    /** Runs in the window whose account went on to hold an entitlement record — counted per RUN, so an account that onboarded twice converts twice. */
+    converted: number;
+    /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. An OVERLAY — a trialing monthly run counts here AND in `monthly`, so the plan columns plus `trial` sum past `converted`. */
+    trial: number;
+    /** Of `converted`: a lifetime unlock is held. */
+    lifetime: number;
+    /** Of `converted`, not lifetime: the subscription product's id names "month" / "year|annual" / neither. */
+    monthly: number;
+    yearly: number;
+    other: number;
+    /**
+     * Median ms from a converted run's first event to the earliest instant either grant
+     * clock holds. Each grant's clock keeps its LATEST event, so for a renewal the figure
+     * is measured to that renewal — the first entitlement is exactly the first only when
+     * nothing newer overwrote it. Null when nothing converted.
+     */
+    medianMs: number | null;
+  };
   /** The window this was read over (ieat-app#2776) — instants for the range control, `days` for `?days=N`. */
   range: AdminWindowEcho;
   contentVersion: number;

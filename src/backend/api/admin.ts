@@ -49,7 +49,7 @@ import {
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
   onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
-  onboardingFunnel, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
+  onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
   sendTestPush, pushOpenView, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
@@ -462,6 +462,26 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   if (req.method === "GET" && pathname === "/admin/api/funnel") {
     const ask = rangeParam(url, { defaultDays: 30, maxDays: 365 });
     return json(await onboardingFunnel(deps, "days" in ask ? ask.days : ask));
+  }
+
+  // The per-account funnel (kirmalyshev/calodex#812): the same range control and the same
+  // staff-excluded population as the path above it, one row per account, newest first.
+  if (req.method === "GET" && pathname === "/admin/api/funnel/users") {
+    const ask = rangeParam(url, { defaultDays: 30, maxDays: 365 });
+    const limit = Number(url.searchParams.get("limit") ?? 50);
+    return json(await adminOnboardingUsers(deps, {
+      range: "days" in ask ? ask.days : ask,
+      ...(url.searchParams.get("cursor") !== null ? { cursor: url.searchParams.get("cursor")! } : {}),
+      ...(Number.isSafeInteger(limit) && limit > 0 ? { limit } : {}),
+    }));
+  }
+
+  // ONE account's onboarding flow — the Accounts detail's timeline, and what a funnel row's
+  // expansion fetches. The uuid is matched before it reaches Postgres, like the diary below.
+  const onboarding = pathname.match(/^\/admin\/api\/users\/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\/onboarding$/);
+  if (onboarding && req.method === "GET") {
+    const view = await adminUserOnboarding(deps, onboarding[1]!);
+    return view ? json(view) : notFound();
   }
 
   // ── The accounts ───────────────────────────────────────────────────────────────────────────

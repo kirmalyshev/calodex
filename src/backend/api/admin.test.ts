@@ -199,8 +199,9 @@ describe("the admin is off unless somebody holds the role", () => {
     //
     // The property survives the move from a shared token, and gains something: deleting the last
     // admin account switches the surface off, which no environment variable could do.
-    for (const path of ["/admin", "/admin/api/content", "/admin/api/funnel", "/admin/api/prompts", "/admin/api/push-templates", "/admin/api/campaigns", "/admin/api/referrals",
-      "/admin/api/users/00000000-0000-4000-8000-000000000000/cap"]) {
+    for (const path of ["/admin", "/admin/api/content", "/admin/api/funnel", "/admin/api/funnel/users", "/admin/api/prompts", "/admin/api/push-templates", "/admin/api/campaigns", "/admin/api/referrals",
+      "/admin/api/users/00000000-0000-4000-8000-000000000000/cap",
+      "/admin/api/users/00000000-0000-4000-8000-000000000000/onboarding"]) {
       expect((await admin("GET", path)).status).toBe(404);
     }
     expect((await admin("PUT", "/admin/api/content", { content: {} })).status).toBe(404);
@@ -242,7 +243,8 @@ describe("the admin credential", () => {
     // withholding. An anonymous request gets 401 above, because the public page already proves the
     // route exists and confusing the person who IS allowed in buys nothing.
     const token = await session();
-    for (const path of ["/admin/api/content", "/admin/api/funnel", "/admin/api/prompts", "/admin/api/push-templates"]) {
+    for (const path of ["/admin/api/content", "/admin/api/funnel", "/admin/api/funnel/users", "/admin/api/prompts", "/admin/api/push-templates",
+      "/admin/api/users/00000000-0000-4000-8000-000000000000/onboarding"]) {
       const res = await handle(new Request(url(path), {
         headers: { authorization: `Bearer ${token}` },
       }));
@@ -669,6 +671,103 @@ describe("the account list", () => {
   it("gives an anonymous request a 401 and no rows", async () => {
     const res = await admin("GET", "/admin/api/users", undefined, "");
     expect(res.status).toBe(401);
+  });
+});
+
+// The per-account funnel (calodex#812): the same window and population as the aggregate's,
+// one row per account, and one account's stored journal behind it.
+describe("the per-account funnel", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  const seen = async (userId: string, sid: string, over: Record<string, unknown>) =>
+    store.recordOnboardingEvents(userId, [{
+      id: `${sid}-e`, sessionId: sid, place: "goal", action: "view",
+      contentVersion: 1, at: new Date().toISOString(), ...over,
+    } as never]);
+
+  it("lists accounts newest first, reads one account's journal, and answers 404 for nobody", async () => {
+    const u = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    await seen(u, "s1", {});
+
+    const page = await (await admin("GET", "/admin/api/funnel/users?days=30")).json() as {
+      accounts: { userId: string; sessions: number; completed: boolean }[];
+      nextCursor: string | null; range: { days: number };
+    };
+    expect(page.range).toMatchObject({ days: 30 });
+    const row = page.accounts.find((a) => a.userId === u)!;
+    expect(row.sessions).toBe(1);
+    expect(row.completed).toBe(false);
+
+    const one = await (await admin("GET", `/admin/api/users/${u}/onboarding`)).json() as {
+      userId: string; events: { place: string; action: string }[];
+    };
+    expect(one.userId).toBe(u);
+    expect(one.events.map((e) => `${e.place}:${e.action}`)).toEqual(["goal:view"]);
+
+    expect((await admin("GET", `/admin/api/users/${crypto.randomUUID()}/onboarding`)).status).toBe(404);
+    // A valid-uuid shape that names nobody answers an empty journal's 404, not a crash.
+    expect((await admin("GET", "/admin/api/users/not-a-uuid/onboarding")).status).toBe(404);
+  });
+
+  it("verdicts: paywall seen only when no grant predates it; paid reads the record, not an event", async () => {
+    const free = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const before = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const after = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const t0 = Date.now();
+    const at = (ms: number) => new Date(t0 + ms).toISOString();
+    for (const [u, sid] of [[free, "f"], [before, "b"], [after, "a"]] as const) {
+      await seen(u, sid, { id: `${sid}-e1`, place: "summary", at: at(10000) });
+      await seen(u, sid, { id: `${sid}-e2`, action: "complete", at: at(20000) });
+    }
+    // Paying BEFORE the paywall screen: walked past it, so the chip stays off.
+    await store.putEntitlement(before, {
+      expiresAt: at(86400000), productId: "monthly_499", eventAt: at(5000) });
+    // Paying AFTER it: the screen stood in the run's path.
+    await store.putEntitlement(after, {
+      expiresAt: at(86400000), productId: "yearly_2999", eventAt: at(30000) });
+
+    const body = await (await admin("GET", "/admin/api/funnel/users")).json() as {
+      accounts: { userId: string; paywall: boolean;
+        paid: { kind: string; productId: string; msFromStart: number | null } | null }[];
+    };
+    const rows = Object.fromEntries(body.accounts.map((a) => [a.userId, a]));
+    expect(rows[free]!.paywall).toBe(true);
+    expect(rows[free]!.paid).toBeNull();
+    expect(rows[before]!.paywall).toBe(false);
+    // Already paying when the run began: the record says so, but this run did not convert it.
+    expect(rows[before]!.paid).toMatchObject({ kind: "monthly", productId: "monthly_499", msFromStart: null });
+    expect(rows[after]!.paywall).toBe(true);
+    expect(rows[after]!.paid).toMatchObject({ kind: "yearly", productId: "yearly_2999", msFromStart: 20000, live: true });
+  });
+
+  it("names a record that lapsed rather than reading it as live", async () => {
+    const churned = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const expired = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const live = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    // Onboarded ten days ago, so the grants' expiry stamps can sit in the past below `now`.
+    const t0 = Date.now() - 10 * 86400000;
+    const at = (ms: number) => new Date(t0 + ms).toISOString();
+    for (const [u, sid] of [[churned, "c"], [expired, "x"], [live, "l"]] as const) {
+      await seen(u, sid, { id: `${sid}-e1`, place: "summary", at: at(10000) });
+      await seen(u, sid, { id: `${sid}-e2`, action: "complete", at: at(20000) });
+    }
+    // A three-day trial that lapsed without converting: the record exists, nothing is live —
+    // the row must not read "trial" forever.
+    await store.putEntitlement(churned, {
+      expiresAt: at(3 * 86400000), productId: "monthly_499", eventAt: at(30000), trial: true });
+    // A monthly that ran out: the record says what it was, the row must not claim it still pays.
+    await store.putEntitlement(expired, {
+      expiresAt: at(5 * 86400000), productId: "monthly_499", eventAt: at(30000) });
+    await store.putEntitlement(live, {
+      expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(), productId: "monthly_499", eventAt: at(30000) });
+
+    const body = await (await admin("GET", "/admin/api/funnel/users")).json() as {
+      accounts: { userId: string; paid: { kind: string; live: boolean } | null }[];
+    };
+    const rows = Object.fromEntries(body.accounts.map((a) => [a.userId, a]));
+    expect(rows[churned]!.paid).toMatchObject({ kind: "trial", live: false });
+    expect(rows[expired]!.paid).toMatchObject({ kind: "monthly", live: false });
+    expect(rows[live]!.paid).toMatchObject({ kind: "monthly", live: true });
   });
 });
 
@@ -1605,8 +1704,8 @@ describe("the referrals view", () => {
 
   it("reads a bound outside any plausible span as open on every ranged endpoint, never a 500", async () => {
     const paths = [
-      "/admin/api/campaigns", "/admin/api/experiments", "/admin/api/funnel", "/admin/api/users",
-      "/admin/api/metrics", "/admin/api/referrals", "/admin/api/push/stats",
+      "/admin/api/campaigns", "/admin/api/experiments", "/admin/api/funnel", "/admin/api/funnel/users",
+      "/admin/api/users", "/admin/api/metrics", "/admin/api/referrals", "/admin/api/push/stats",
     ];
     const asks = [
       "from=-005000-01-01T00:00:00Z", "to=+275760-09-13T00:00:00.000Z",
