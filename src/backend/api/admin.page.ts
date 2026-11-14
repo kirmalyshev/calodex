@@ -316,7 +316,8 @@ pre { overflow-x: auto; max-width: 100%; }
 }
 .apane > .ph .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .amono { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
-.aseg { display: inline-flex; align-self: flex-start; max-width: 100%; padding: 2px; border-radius: 9px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--hair); }
+.aseg { display: inline-flex; align-self: flex-start; max-width: 100%; overflow-x: auto; padding: 2px; border-radius: 9px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--hair); }
+.aseg button { flex: none; }
 .aseg button { height: 28px; padding: 0 10px; border-radius: 7px; background: transparent; box-shadow: none; font-size: 12px; color: var(--muted); }
 .aseg button:hover { box-shadow: none; color: var(--ink); }
 .aseg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(23,25,28,.08); }
@@ -383,11 +384,22 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .fa-h { padding: 10px 14px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--hair); }
 .fa-row { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; padding: 10px 14px; border-bottom: 1px solid var(--hair); cursor: pointer; }
 .fa-row:hover { background: var(--bg); }
+.fa-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .fa-row .id { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
-.fa-row .w { flex: 1 1 120px; min-width: 0; }
-.fa-row .s { font-size: 13px; }
+.fa-row .meta, .fa-sum .meta { flex: 1 1 120px; min-width: 0; }
+.fa-row .s, .fa-sum .s { font-size: 13px; }
 .fa-flags { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .fa-chev { color: var(--muted); }
+.fa-sum { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; padding: 10px 14px; }
+.fa-th { display: none; }
+/* Above a phone's width the account rows sit on the Accounts table's grid, one column each —
+   the stacked flex line stays for narrow, where wrapping is what reads. */
+@media (min-width: 721px) {
+  .fa-th, .fa-row { display: grid; grid-template-columns: 92px 100px 64px 150px minmax(80px,1fr) auto 14px; column-gap: 12px; align-items: baseline; }
+  .fa-th { display: grid; padding: 8px 14px 4px; border-bottom: 1px solid var(--hair); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .fa-row .meta { display: none; }
+}
+@media (max-width: 720px) { .fa-row .cl, .fa-row .cc { display: none; } }
 .fa-open { border-bottom: 1px solid var(--hair); padding: 4px 14px 12px; background: var(--bg); }
 .fa-foot { display: flex; align-items: center; gap: 12px; padding: 8px 14px 2px; }
 .fl { padding: 4px 14px 10px; }
@@ -2278,13 +2290,17 @@ details.how p { margin-top: 8px; }
       kpi(kp, "Started", String(f.sessions), "", "");
       kpi(kp, "Finished", String(f.completed), "", "");
       kpi(kp, "Completion", pct1(f.completed, f.sessions), "", "");
-      kpi(kp, "Converted", String(f.paid.converted), "", pct1(f.paid.converted, f.sessions) + " of starters");
+      kpi(kp, "Converted", String(f.paid.converted), "", f.sessions ? pct1(f.paid.converted, f.sessions) + " of starters" : "");
       $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff excluded \u00b7 app content v" +
         f.contentVersion + " \u00b7 counted by people who reached each step";
       var host = $("funnel-path");
       host.textContent = "";
       host.className = "card fp";
-      if (!f.rows.length) { host.appendChild(el("p", "muted", "No onboarding runs in this window.")); loadFunnelUsers(); return; }
+      if (!f.rows.length) {
+        host.appendChild(el("p", "muted", "No onboarding runs in this window."));
+        $("funnel-users").classList.add("hidden");
+        return;
+      }
       var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.people }; });
       steps.push({ name: "Finished onboarding", id: "complete", n: f.completed, fin: true });
       // The funnel's last step (#812): of the starters, the runs whose account's own entitlement
@@ -2292,7 +2308,13 @@ details.how p { margin-top: 8px; }
       // client event; a record older than that is a payment this run did not cause.
       steps.push({ name: "Converted to paid", id: "paid", n: f.paid.converted, fin: true });
       var first = steps[0].n;
-      var drops = steps.slice(1).map(function (s, i) { return steps[i].n - s.n; }).filter(function (d) { return d > 0; });
+      // The gap into "paid" never ranks as a worst drop: not reaching it is not abandoning
+      // onboarding, and a red "17 left" there would crowd out the three drops that are.
+      var drops = [];
+      steps.forEach(function (s, i) {
+        var next = steps[i + 1];
+        if (next && next.id !== "paid") { var d = s.n - next.n; if (d > 0) drops.push(d); }
+      });
       var worst = drops.slice().sort(function (a, b) { return b - a; }).slice(0, 3);
       var hd = el("div", "fp-st fp-hd");
       ["", "Step", "", "People", "% of first", "% of prev"].forEach(function (t, i) { hd.appendChild(el("span", i > 2 ? "fp-r" : "", t)); });
@@ -2374,18 +2396,29 @@ details.how p { margin-top: 8px; }
 
   function loadFunnelUsers() {
     var host = $("funnel-users");
+    host.classList.remove("hidden");
     host.textContent = "";
     host.appendChild(el("div", "fa-h", "By account"));
+    var th = el("div", "fa-th");
+    ["Account", "Lang", "Country", "Started", "Last screen", "Outcome", ""].forEach(function (t) {
+      th.appendChild(el("span", "", t));
+    });
+    host.appendChild(th);
     funnelPage.cursor = null;
+    funnelPage.state = el("div", "");
+    funnelPage.body = el("div", "hidden");
     funnelPage.list = el("div", "fa-list");
-    host.appendChild(funnelPage.list);
+    funnelPage.body.appendChild(funnelPage.list);
     funnelPage.foot = el("div", "fa-foot");
     funnelPage.more = el("button", "small", "Load more");
     funnelPage.more.addEventListener("click", fetchFunnelUsers);
     funnelPage.status = el("span", "muted", "");
     funnelPage.foot.appendChild(funnelPage.more);
     funnelPage.foot.appendChild(funnelPage.status);
-    host.appendChild(funnelPage.foot);
+    funnelPage.body.appendChild(funnelPage.foot);
+    host.appendChild(funnelPage.state);
+    host.appendChild(funnelPage.body);
+    paintBox(funnelPage.state, funnelPage.body, "loading");
     fetchFunnelUsers();
   }
 
@@ -2396,7 +2429,13 @@ details.how p { margin-top: 8px; }
     funnelPage.more.disabled = true;
     var failed = function (e) {
       funnelPage.more.disabled = false;
-      funnelPage.status.textContent = "failed: " + e.message;
+      // Rows already on screen stay; a first-page miss paints the card's own error state.
+      if (!funnelPage.list.children.length) {
+        paintBox(funnelPage.state, funnelPage.body, "error", e, "these accounts", loadFunnelUsers, true);
+        return;
+      }
+      funnelPage.status.textContent = "";
+      funnelPage.status.appendChild(errBar(e, "the next page", fetchFunnelUsers));
     };
     api("GET", path).then(function (page) {
       if (!page || !Array.isArray(page.accounts)) throw new Error("bad funnel/users answer");
@@ -2407,15 +2446,25 @@ details.how p { margin-top: 8px; }
       var accounts = page.accounts;
       if (!accounts.length && !funnelPage.list.children.length) {
         funnelPage.status.textContent = "No onboarding runs in this window.";
-        return;
       }
       accounts.forEach(function (a) { funnelPage.list.appendChild(funnelRow(a)); });
+      paintBox(funnelPage.state, funnelPage.body, "ready");
     }).catch(failed);
+  }
+
+  /** What the run came to — one outcome word, red when the account simply stopped turning up. */
+  function outcomeChip(a, flags) {
+    if (a.completed) { flags.appendChild(el("span", "chip g", "finished")); return; }
+    flags.appendChild(el("span", "chip b",
+      a.lastPlace ? "left at " + (STEP_NAMES[a.lastPlace] || a.lastPlace) : "left early"));
   }
 
   function funnelRow(a) {
     var wrap = el("div", "fa-i");
     var row = el("div", "fa-row");
+    row.setAttribute("role", "button");
+    row.setAttribute("tabindex", "0");
+    row.setAttribute("aria-expanded", "false");
     var link = el("a", "id", a.userId.slice(0, 8));
     link.setAttribute("href", "#accounts");
     link.setAttribute("title", a.userId);
@@ -2423,33 +2472,48 @@ details.how p { margin-top: 8px; }
     row.appendChild(link);
     var meta = [langLabel[a.lang] || a.lang, a.country].filter(Boolean).join(" · ");
     if (a.sessions > 1) meta += (meta ? " · " : "") + a.sessions + " runs";
-    row.appendChild(el("span", "muted w", meta || "—"));
-    row.appendChild(el("span", "muted s", a.startedAt ? atLabel(a.startedAt) : "—"));
+    row.appendChild(el("span", "muted meta", meta || "—"));
+    row.appendChild(el("span", "cl", langLabel[a.lang] || a.lang || "—"));
+    row.appendChild(el("span", "cc", a.country || "—"));
+    var started = a.startedAt ? atLabel(a.startedAt) : "—";
+    if (a.sessions > 1) started += " · " + a.sessions + " runs";
+    row.appendChild(el("span", "muted s", started));
     row.appendChild(el("span", "s", a.lastPlace ? (STEP_NAMES[a.lastPlace] || a.lastPlace) : "—"));
     var flags = el("span", "fa-flags");
-    if (a.completed) flags.appendChild(el("span", "chip g", "finished"));
+    outcomeChip(a, flags);
     if (a.paywall) flags.appendChild(el("span", "chip n", "paywall"));
+    flags.appendChild(el("span", "chip " + (a.paid ? (a.paid.kind === "trial" ? "w" : "g") : ""), paidLabel(a.paid)));
     row.appendChild(flags);
-    row.appendChild(el("span", "chip " + (a.paid ? (a.paid.kind === "trial" ? "w" : "g") : ""), paidLabel(a.paid)));
     row.appendChild(el("span", "fa-chev", "\u25be"));
-    row.addEventListener("click", function () { toggleFlow(wrap, a.userId); });
+    var toggle = function () { toggleFlow(wrap, a.userId); };
+    row.addEventListener("click", toggle);
+    row.addEventListener("keydown", function (e) {
+      if (e.target !== row) return;
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
     wrap.appendChild(row);
     return wrap;
   }
 
   function toggleFlow(wrap, userId) {
     var open = wrap.querySelector(".fa-open");
-    if (open) { open.remove(); return; }
+    var row = wrap.querySelector(".fa-row");
+    if (open) { open.remove(); row.setAttribute("aria-expanded", "false"); return; }
+    row.setAttribute("aria-expanded", "true");
     var box = el("div", "fa-open");
-    box.appendChild(el("p", "muted", "Loading…"));
     wrap.appendChild(box);
-    api("GET", "/admin/api/users/" + encodeURIComponent(userId) + "/onboarding").then(function (view) {
-      if (!view || !Array.isArray(view.events)) throw new Error("bad onboarding answer");
-      renderFlow(box, view);
-    }).catch(function (e) {
+    var load = function () {
       box.textContent = "";
-      box.appendChild(el("p", "muted", "failed: " + e.message));
-    });
+      box.appendChild(skeleton());
+      api("GET", "/admin/api/users/" + encodeURIComponent(userId) + "/onboarding").then(function (view) {
+        if (!view || !Array.isArray(view.events)) throw new Error("bad onboarding answer");
+        renderFlow(box, view);
+      }).catch(function (e) {
+        box.textContent = "";
+        box.appendChild(errBar(e, "this journal", load));
+      });
+    };
+    load();
   }
 
   /**
@@ -2467,12 +2531,13 @@ details.how p { margin-top: 8px; }
       if (!s) { s = { id: e.sessionId, events: [] }; byId[e.sessionId] = s; sessions.push(s); }
       s.events.push(e);
     });
-    if (!sessions.length) { host.appendChild(el("p", "muted", "No onboarding events stored.")); return; }
+    if (!sessions.length) { host.appendChild(el("p", "muted", "No onboarding events. Accounts that onboarded on the web (/start) send none.")); return; }
     sessions.forEach(function (s, i) {
       var box = el("div", "fl-s");
       box.appendChild(el("div", "fl-h", "run " + (i + 1) + " · session " + s.id.slice(0, 8) + " · " + atLabel(s.events[0].at)));
       var seen = {};
-      s.events.forEach(function (e) {
+      var finished = s.events.some(function (e) { return e.action === "complete"; });
+      s.events.forEach(function (e, j) {
         var line = el("div", "fl-ev");
         line.appendChild(el("span", "fl-p", STEP_NAMES[e.place] || e.place));
         var acts = el("span", "fl-a");
@@ -2480,6 +2545,7 @@ details.how p { margin-top: 8px; }
         if (e.action === "back") acts.appendChild(el("span", "chip w", "back-step"));
         if (e.action === "view" && seen[e.place]) acts.appendChild(el("span", "chip w", "again"));
         if (e.action === "view") seen[e.place] = true;
+        if (!finished && j === s.events.length - 1) acts.appendChild(el("span", "chip b", "left here"));
         line.appendChild(acts);
         line.appendChild(el("span", "fl-v", e.value !== null ? e.value : ""));
         line.appendChild(el("span", "fl-t", e.ms !== null ? Math.round(e.ms / 1000) + "s" : ""));
@@ -3336,19 +3402,20 @@ details.how p { margin-top: 8px; }
       if (!view || !Array.isArray(view.events)) throw new Error("bad onboarding answer");
       var sum = $("onboarding-summary");
       sum.textContent = "";
-      var row = el("div", "fa-row");
-      row.style.cursor = "default";
-      var meta = [langLabel[view.lang] || view.lang, view.country].filter(Boolean).join(" · ");
-      if (view.sessions > 1) meta += (meta ? " · " : "") + view.sessions + " runs";
-      row.appendChild(el("span", "muted w", meta || "—"));
-      row.appendChild(el("span", "muted s", view.startedAt ? atLabel(view.startedAt) : "—"));
-      row.appendChild(el("span", "s", view.lastPlace ? (STEP_NAMES[view.lastPlace] || view.lastPlace) : "—"));
-      var flags = el("span", "fa-flags");
-      if (view.completed) flags.appendChild(el("span", "chip g", "finished"));
-      if (view.paywall) flags.appendChild(el("span", "chip n", "paywall"));
-      row.appendChild(flags);
-      row.appendChild(el("span", "chip " + (view.paid ? (view.paid.kind === "trial" ? "w" : "g") : ""), paidLabel(view.paid)));
-      sum.appendChild(row);
+      if (view.events.length) {
+        var row = el("div", "fa-sum");
+        var meta = [langLabel[view.lang] || view.lang, view.country].filter(Boolean).join(" · ");
+        if (view.sessions > 1) meta += (meta ? " · " : "") + view.sessions + " runs";
+        row.appendChild(el("span", "muted meta", meta || "—"));
+        row.appendChild(el("span", "muted s", view.startedAt ? atLabel(view.startedAt) : "—"));
+        row.appendChild(el("span", "s", view.lastPlace ? (STEP_NAMES[view.lastPlace] || view.lastPlace) : "—"));
+        var flags = el("span", "fa-flags");
+        outcomeChip(view, flags);
+        if (view.paywall) flags.appendChild(el("span", "chip n", "paywall"));
+        flags.appendChild(el("span", "chip " + (view.paid ? (view.paid.kind === "trial" ? "w" : "g") : ""), paidLabel(view.paid)));
+        row.appendChild(flags);
+        sum.appendChild(row);
+      }
       renderFlow($("onboarding-flow"), view);
       paintBox($("onboarding-state"), $("onboarding-body"), "ready");
     }).catch(failed);
@@ -4196,11 +4263,8 @@ details.how p { margin-top: 8px; }
 
   // One state box and the body it stands in for: loading, error with a way to try again, or the
   // body itself. The views and the account pane both draw theirs through this.
-  function paintBox(box, body, kind, err, what, retry, inner, kpis) {
-    box.textContent = "";
-    body.classList.toggle("hidden", kind !== "ready");
-    if (kind === "loading") box.appendChild(skeleton(kpis));
-    if (kind !== "error") return;
+  /** The "Couldn't load … Try again" bar — the same one paintBox draws, for a pane of its own. */
+  function errBar(err, what, retry) {
     var bar = document.createElement("div");
     bar.className = "aerr";
     var msg = document.createElement("span");
@@ -4214,7 +4278,15 @@ details.how p { margin-top: 8px; }
     bar.appendChild(msg);
     bar.appendChild(sp);
     bar.appendChild(again);
-    box.appendChild(bar);
+    return bar;
+  }
+
+  function paintBox(box, body, kind, err, what, retry, inner, kpis) {
+    box.textContent = "";
+    body.classList.toggle("hidden", kind !== "ready");
+    if (kind === "loading") box.appendChild(skeleton(kpis));
+    if (kind !== "error") return;
+    box.appendChild(errBar(err, what, retry));
     var note = document.createElement("p");
     note.className = "muted";
     note.textContent = inner ? "Only this part failed. The rest of the account is unaffected." : "Only this view failed. The others load on their own.";

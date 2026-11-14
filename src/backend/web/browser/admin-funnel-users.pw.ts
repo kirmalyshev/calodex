@@ -34,6 +34,10 @@ const ACCOUNTS = {
     userId: USER, lang: "en", country: "de", startedAt: "2026-11-08T10:00:00.000Z",
     lastPlace: "summary", sessions: 1, completed: true, paywall: true,
     paid: { kind: "monthly", productId: "monthly_499", msFromStart: 7200000 },
+  }, {
+    userId: "99999999-8888-7777-6666-555555555555", lang: "de", country: "at",
+    startedAt: "2026-11-07T09:00:00.000Z", lastPlace: "goal", sessions: 2,
+    completed: false, paywall: false, paid: null,
   }],
 };
 
@@ -94,9 +98,15 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(row).toContainText("paywall");
   await expect(row).toContainText("monthly · 2h");
 
+  // A run that stopped before finishing says so — the last screen alone read as an outcome.
+  const quit = page.locator("#funnel-users .fa-row", { hasText: "99999999" });
+  await expect(quit).toContainText("left at Chose a goal");
+
   // Expanding fetches the journal: every event in order, grouped by run, with the revisit and
   // the back-step marked — and never an innerHTML sink on the way (server data is textContent).
+  await expect(row).toHaveAttribute("aria-expanded", "false");
   await row.click();
+  await expect(row).toHaveAttribute("aria-expanded", "true");
   const flow = page.locator(".fa-open");
   await expect(flow).toContainText("run 1");
   await expect(flow).toContainText("back-step");
@@ -104,6 +114,12 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(flow.locator(".chip", { hasText: "again" })).toHaveCount(1);
   await expect(flow).toContainText("lose");
   await expect(flow).toContainText("4s");
+
+  // The row is a keyboard button too: Enter opens, Enter again closes.
+  await row.click();
+  await expect(page.locator(".fa-open")).toHaveCount(0);
+  await row.press("Enter");
+  await expect(page.locator(".fa-open .fl-ev").first()).toBeVisible();
 
   expect(errors).toEqual([]);
 });
