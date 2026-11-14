@@ -3284,6 +3284,34 @@ function contract(name: string, make: () => Promise<Store>) {
         userId: "not-a-uuid", range: { from: null, to: null } })).rows).toEqual([]);
     });
 
+    it("carries the bonus fields and a lapsed record RAW — liveness is the engine's call", async () => {
+      const s = await open();
+      const referrer = (await s.upsertDeviceUser(device(), "en")).userId;
+      const bonus = (await s.upsertDeviceUser(device(), "en")).userId;
+      const lapsed = (await s.upsertDeviceUser(device(), "en")).userId;
+      const at = new Date().toISOString();
+      const ev = (tag: string) => [{ id: `${tag}-${RUN}`, sessionId: `${tag}-${RUN}`,
+        place: "goal" as const, action: "view" as const, contentVersion: 1, at }] as never;
+      await s.recordOnboardingEvents(bonus, ev(`bon-${RUN}`));
+      await s.recordOnboardingEvents(lapsed, ev(`lap-${RUN}`));
+      expect(await s.redeemReferral(bonus, (await s.referralOf(referrer))!.code, 7)).toBe("ok");
+      // A grant whose expiry already ran out: the record still exists, and the row must carry
+      // it — `hasRecord` is the event stamp's presence, not the clock's position; the engine
+      // reads "cancelled" off what this row returns.
+      await s.putEntitlement(lapsed, {
+        expiresAt: new Date(Date.now() - 86400000).toISOString(),
+        productId: "monthly_499", eventAt: new Date(Date.now() - 2 * 86400000).toISOString() });
+      const page = await s.adminOnboardingFlow({ range: { from: null, to: null } });
+      const rb = page.rows.find((r) => r.userId === bonus)!;
+      const rl = page.rows.find((r) => r.userId === lapsed)!;
+      expect(rb.bonusUntil).not.toBeNull();
+      expect(rb.bankedDays).toBe(0);
+      expect(rl.bonusUntil).toBeNull();
+      expect(rl.bankedDays).toBe(0);
+      expect(rl.entitlement).not.toBeNull();
+      expect(rl.entitlement!.expiresAt).not.toBeNull();
+    });
+
     it("counts conversion to paid off the entitlement record, per run (#812)", async () => {
       const s = await open();
       const t0 = Date.now();

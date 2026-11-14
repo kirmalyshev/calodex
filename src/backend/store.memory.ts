@@ -1846,6 +1846,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           sawPaywallAt: sorted.find((e) => e.action === "view" && (e.place === "summary" || e.place === "health"))?.at ?? null,
           entitledAt: g === null ? null : g.firstGrantAt,
           entitlement: g === null ? null : storedEntitlement(uid),
+          bonusUntil: bonusUntil.get(uid) ?? null,
+          bankedDays: bankedDays.get(uid) ?? 0,
         };
       };
 

@@ -9,7 +9,8 @@
 
 import {
   COUNTRY_CODES, branded, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
-  ONBOARDING_PLACES, countryFromRegion, isReportableField, isTimezone, localDate, localTime,
+  ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone,
+  localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   DEFAULT_ORDER, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
@@ -19,6 +20,7 @@ import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
 import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
+import { referralBonusOf } from "./entitlement.ts";
 
 /** Every place an event may name — the questions, and the interstitial places between them. */
 const PLACES: readonly string[] = ONBOARDING_PLACES;
@@ -459,18 +461,27 @@ export interface AdminOnboardingUserRow {
    * the first grant only when nothing newer overwrote its clock, and null when the grant
    * predates the run (the record says "already paying", not "this run converted"), when the
    * record holds no grant clock, or when the run has no events in the window.
+   *
+   * `live` is whether the record still ENTITLES, not whether it exists — a record outlives
+   * the access it granted. For a trial the gate is `entitlementActive` on its own expiry: a
+   * bonus week beside it makes the account entitled, never makes the trial still running.
+   * For a paid plan it is `entitlementLive` whole — a cancelled monthly beside a dated
+   * referral week or a banked bank still reads live, the way `adminUsers`' `entitled` does.
    */
-  paid: { kind: "trial" | "monthly" | "yearly" | "lifetime" | "other"; productId: string; msFromStart: number | null } | null;
+  paid: { kind: "trial" | "monthly" | "yearly" | "lifetime" | "other"; productId: string; msFromStart: number | null; live: boolean } | null;
 }
 
-function flowRow(a: AdminOnboardingAccount): AdminOnboardingUserRow {
+function flowRow(a: AdminOnboardingAccount, now: number): AdminOnboardingUserRow {
   let paid: AdminOnboardingUserRow["paid"] = null;
-  if (a.entitlement !== null) {
-    const kind = a.entitlement.trial === true && a.entitlement.lifetimeProductId === null
-      ? "trial" : productPlan(a.entitlement.productId, a.entitlement.lifetimeProductId);
+  const e = a.entitlement;
+  if (e !== null) {
+    const kind = e.trial === true && e.lifetimeProductId === null
+      ? "trial" : productPlan(e.productId, e.lifetimeProductId);
+    const live = kind === "trial" ? entitlementActive(e.expiresAt, now)
+      : entitlementLive(e, now, referralBonusOf(e, a.bonusUntil, a.bankedDays, now).end);
     const delta = a.entitledAt !== null && a.startedAt !== null
       ? Date.parse(a.entitledAt) - Date.parse(a.startedAt) : null;
-    paid = { kind, productId: a.entitlement.lifetimeProductId ?? a.entitlement.productId, msFromStart: delta !== null && delta >= 0 ? delta : null };
+    paid = { kind, live, productId: e.lifetimeProductId ?? e.productId, msFromStart: delta !== null && delta >= 0 ? delta : null };
   }
   return {
     userId: a.userId, lang: a.lang, country: a.country,
@@ -496,7 +507,8 @@ export async function adminOnboardingUsers(
     ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
     ...(query.limit !== undefined ? { limit: query.limit } : {}),
   });
-  return { accounts: page.rows.map(flowRow), nextCursor: page.nextCursor, range: adminWindowEcho(ask) };
+  const now = Date.now();
+  return { accounts: page.rows.map((a) => flowRow(a, now)), nextCursor: page.nextCursor, range: adminWindowEcho(ask) };
 }
 
 /**
@@ -511,7 +523,7 @@ export async function adminUserOnboarding(
   const { rows } = await deps.store.adminOnboardingFlow({ userId, range: { from: null, to: null } });
   const a = rows[0];
   if (a === undefined) return null;
-  return { ...flowRow(a), events: a.events ?? [] };
+  return { ...flowRow(a, Date.now()), events: a.events ?? [] };
 }
 
 

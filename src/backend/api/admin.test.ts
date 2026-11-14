@@ -737,7 +737,37 @@ describe("the per-account funnel", () => {
     // Already paying when the run began: the record says so, but this run did not convert it.
     expect(rows[before]!.paid).toMatchObject({ kind: "monthly", productId: "monthly_499", msFromStart: null });
     expect(rows[after]!.paywall).toBe(true);
-    expect(rows[after]!.paid).toMatchObject({ kind: "yearly", productId: "yearly_2999", msFromStart: 20000 });
+    expect(rows[after]!.paid).toMatchObject({ kind: "yearly", productId: "yearly_2999", msFromStart: 20000, live: true });
+  });
+
+  it("names a record that lapsed rather than reading it as live", async () => {
+    const churned = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const expired = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const live = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    // Onboarded ten days ago, so the grants' expiry stamps can sit in the past below `now`.
+    const t0 = Date.now() - 10 * 86400000;
+    const at = (ms: number) => new Date(t0 + ms).toISOString();
+    for (const [u, sid] of [[churned, "c"], [expired, "x"], [live, "l"]] as const) {
+      await seen(u, sid, { id: `${sid}-e1`, place: "summary", at: at(10000) });
+      await seen(u, sid, { id: `${sid}-e2`, action: "complete", at: at(20000) });
+    }
+    // A three-day trial that lapsed without converting: the record exists, nothing is live —
+    // the row must not read "trial" forever.
+    await store.putEntitlement(churned, {
+      expiresAt: at(3 * 86400000), productId: "monthly_499", eventAt: at(30000), trial: true });
+    // A monthly that ran out: the record says what it was, the row must not claim it still pays.
+    await store.putEntitlement(expired, {
+      expiresAt: at(5 * 86400000), productId: "monthly_499", eventAt: at(30000) });
+    await store.putEntitlement(live, {
+      expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(), productId: "monthly_499", eventAt: at(30000) });
+
+    const body = await (await admin("GET", "/admin/api/funnel/users")).json() as {
+      accounts: { userId: string; paid: { kind: string; live: boolean } | null }[];
+    };
+    const rows = Object.fromEntries(body.accounts.map((a) => [a.userId, a]));
+    expect(rows[churned]!.paid).toMatchObject({ kind: "trial", live: false });
+    expect(rows[expired]!.paid).toMatchObject({ kind: "monthly", live: false });
+    expect(rows[live]!.paid).toMatchObject({ kind: "monthly", live: true });
   });
 });
 

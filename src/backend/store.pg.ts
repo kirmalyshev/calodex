@@ -4092,6 +4092,8 @@ export async function postgresStore(
             eventAt: iso(r.entitlement_event_at)!,
             trial: r.entitlement_trial === true,
           },
+          bonusUntil: iso(r.bonus_until),
+          bankedDays: num(r.referral_banked_days ?? 0),
           ...(events === undefined ? {} : { events }),
         };
       };
@@ -4104,6 +4106,7 @@ export async function postgresStore(
           select u.id as user_id, u.lang, u.country,
                  u.entitlement_expires_at, u.entitlement_product_id, u.entitlement_event_at,
                  u.entitlement_lifetime_product_id, u.entitlement_trial,
+                 u.bonus_until, u.referral_banked_days,
                  least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
                  min(e.at) as started_at,
                  count(distinct e.session_id)::int as sessions,
@@ -4150,6 +4153,7 @@ export async function postgresStore(
         select e.user_id, u.lang, u.country,
                u.entitlement_expires_at, u.entitlement_product_id, u.entitlement_event_at,
                u.entitlement_lifetime_product_id, u.entitlement_trial,
+               u.bonus_until, u.referral_banked_days,
                least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
                min(e.at) as started_at,
                count(distinct e.session_id)::int as sessions,

@@ -2387,9 +2387,13 @@ details.how p { margin-top: 8px; }
 
   var funnelPage = { cursor: null, list: null, foot: null, more: null, status: null };
 
-  /** The paid column's label off the server's own record — "trial" when the current period is one. */
+  // The paid column's label off the server's own record — "trial" when the current period is
+  // one, and the lapsed record named rather than read as a live one: "trial ended",
+  // "cancelled" (the record can't tell cancel from expiry — the plan chip alone would claim
+  // somebody still paying).
   function paidLabel(p) {
     if (!p) return "";
+    if (!p.live) return p.kind === "trial" ? "trial ended" : "cancelled";
     var text = { trial: "trial", monthly: "monthly", yearly: "yearly", lifetime: "lifetime", other: "paid" }[p.kind] || p.kind;
     return p.msFromStart != null ? text + " · " + dur(p.msFromStart) : text;
   }
@@ -2481,7 +2485,7 @@ details.how p { margin-top: 8px; }
     var flags = el("span", "fa-flags");
     outcomeChip(a, flags);
     if (a.paywall) flags.appendChild(el("span", "chip n", "paywall"));
-    flags.appendChild(el("span", "chip " + (a.paid ? (a.paid.kind === "trial" ? "w" : "g") : ""), paidLabel(a.paid)));
+    flags.appendChild(el("span", "chip " + (a.paid ? (a.paid.live ? (a.paid.kind === "trial" ? "w" : "g") : "n") : ""), paidLabel(a.paid)));
     row.appendChild(flags);
     row.appendChild(el("span", "fa-chev", "\u25be"));
     var toggle = function () { toggleFlow(wrap, a.userId); };
@@ -3411,7 +3415,7 @@ details.how p { margin-top: 8px; }
         var flags = el("span", "fa-flags");
         outcomeChip(view, flags);
         if (view.paywall) flags.appendChild(el("span", "chip n", "paywall"));
-        flags.appendChild(el("span", "chip " + (view.paid ? (view.paid.kind === "trial" ? "w" : "g") : ""), paidLabel(view.paid)));
+        flags.appendChild(el("span", "chip " + (view.paid ? (view.paid.live ? (view.paid.kind === "trial" ? "w" : "g") : "n") : ""), paidLabel(view.paid)));
         row.appendChild(flags);
         sum.appendChild(row);
       }

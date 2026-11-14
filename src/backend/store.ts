@@ -643,6 +643,13 @@ export interface AdminOnboardingAccount {
   entitledAt: string | null;
   /** The account's entitlement record, or null. `entitlementLive` reads whether it is live. */
   entitlement: StoredEntitlement | null;
+  /**
+   * `users.bonus_until` and `users.referral_banked_days` — the third input `entitlementLive`
+   * takes, through `referralBonusOf`: a record that lapsed is still "live" while a dated
+   * referral week or a banked bank carries the account, and the funnel's row has to know.
+   */
+  bonusUntil: string | null;
+  bankedDays: number;
   /** Every stored event in `range`, oldest first — filled only when `userId` was named. */
   events?: AdminOnboardingEvent[];
 }

@@ -33,11 +33,16 @@ const ACCOUNTS = {
   accounts: [{
     userId: USER, lang: "en", country: "de", startedAt: "2026-11-08T10:00:00.000Z",
     lastPlace: "summary", sessions: 1, completed: true, paywall: true,
-    paid: { kind: "monthly", productId: "monthly_499", msFromStart: 7200000 },
+    paid: { kind: "monthly", productId: "monthly_499", msFromStart: 7200000, live: true },
   }, {
     userId: "99999999-8888-7777-6666-555555555555", lang: "de", country: "at",
     startedAt: "2026-11-07T09:00:00.000Z", lastPlace: "goal", sessions: 2,
     completed: false, paywall: false, paid: null,
+  }, {
+    userId: "77777777-6666-5555-4444-333333333333", lang: "en", country: "gb",
+    startedAt: "2026-11-06T08:00:00.000Z", lastPlace: "summary", sessions: 1,
+    completed: true, paywall: true,
+    paid: { kind: "trial", productId: "monthly_499", msFromStart: 60000, live: false },
   }],
 };
 
@@ -101,6 +106,9 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   // A run that stopped before finishing says so — the last screen alone read as an outcome.
   const quit = page.locator("#funnel-users .fa-row", { hasText: "99999999" });
   await expect(quit).toContainText("left at Chose a goal");
+
+  // A record that lapsed is named, not read as still paying.
+  await expect(page.locator("#funnel-users .fa-row", { hasText: "77777777" })).toContainText("trial ended");
 
   // Expanding fetches the journal: every event in order, grouped by run, with the revisit and
   // the back-step marked — and never an innerHTML sink on the way (server data is textContent).
