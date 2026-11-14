@@ -3284,6 +3284,60 @@ function contract(name: string, make: () => Promise<Store>) {
         userId: "not-a-uuid", range: { from: null, to: null } })).rows).toEqual([]);
     });
 
+    it("adminOnboardingFlow's leftAt keeps only accounts whose run's last screen it is (#814)", async () => {
+      const s = await open();
+      const t0 = Date.now();
+      const isoAt = (ms: number) => new Date(t0 + ms).toISOString();
+      const run = `left-${RUN}`;
+      const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+      // `barrier` is a screen no other fixture leaves anybody on, so the filtered population
+      // is this test's alone — the unfiltered list stays instance-wide.
+      const ev = (who: string, n: number, over: Record<string, unknown>) => ({
+        id: `${run}-${who}-${n}`, sessionId: `${run}-${who}`, place: "barrier" as const,
+        action: "view" as const, contentVersion: 42, at: isoAt(0), ...over,
+      });
+      // A and A2 stopped ON barrier — the drill-down's rows, A2's run the newer one. B went
+      // on to finish; C's last screen is barrier too but a `complete` closed the run on it —
+      // a finished run is not a drop, whatever screen it ended on.
+      const uA = await mk(), uA2 = await mk(), uB = await mk(), uC = await mk();
+      await s.recordOnboardingEvents(uA, [ev("a", 1, { at: isoAt(1000) })] as never);
+      await s.recordOnboardingEvents(uA2, [ev("a2", 1, { at: isoAt(2000) })] as never);
+      await s.recordOnboardingEvents(uB, [
+        ev("b", 1, { at: isoAt(3000) }),
+        ev("b", 2, { place: "summary", action: "complete", at: isoAt(4000) }),
+      ] as never);
+      await s.recordOnboardingEvents(uC, [
+        ev("c", 1, { at: isoAt(5000) }),
+        ev("c", 2, { action: "complete", at: isoAt(6000) }),
+      ] as never);
+
+      const range = { from: null, to: null };
+      const page = await s.adminOnboardingFlow({ range, leftAt: "barrier" });
+      const ids = page.rows.map((r) => r.userId);
+      expect(ids).toContain(uA);
+      expect(ids).toContain(uA2);
+      expect(ids).not.toContain(uB);
+      expect(ids).not.toContain(uC);
+
+      // A place no screen has is an empty page, not an error.
+      expect((await s.adminOnboardingFlow({ range, leftAt: "nowhere" })).rows).toEqual([]);
+
+      // The filter composes with the keyset: limit 1 pages A2 then A, nobody skipped.
+      const first = await s.adminOnboardingFlow({ range, leftAt: "barrier", limit: 1 });
+      expect(first.rows.length).toBe(1);
+      expect(first.rows[0]!.userId).toBe(uA2);
+      expect(first.nextCursor).not.toBeNull();
+      const rest = await s.adminOnboardingFlow({
+        range, leftAt: "barrier", limit: 1, cursor: first.nextCursor! });
+      expect(rest.rows.map((r) => r.userId)).toEqual([uA]);
+      expect(rest.nextCursor).toBeNull();
+
+      // The journal's events carry the revision the run was stamped with — the run header's
+      // "content vN" reads this field, and the Postgres select names the column now.
+      const one = await s.adminOnboardingFlow({ userId: uA, range });
+      expect(one.rows[0]!.events!.map((e) => e.contentVersion)).toEqual([42]);
+    });
+
     it("carries the bonus fields and a lapsed record RAW — liveness is the engine's call", async () => {
       const s = await open();
       const referrer = (await s.upsertDeviceUser(device(), "en")).userId;
