@@ -3,7 +3,7 @@
 // Same reason this file exists as admin-range.pw.ts: the admin page is one template literal, so
 // no compiler and no unit test ever runs its script. Under test is the page's own rendering —
 // every /admin/api/* answer is stubbed: the aggregate's paid step, the per-account list, and the
-// stored journal an expanded row draws, with its revisit and back-step marks.
+// stored journal an expanded row draws, with its revisit and back marks.
 
 import { expect, test, type Page } from "@playwright/test";
 import { adminPage } from "../../api/admin.page.ts";
@@ -49,13 +49,13 @@ const ACCOUNTS = {
 const JOURNAL = {
   ...ACCOUNTS.accounts[0],
   events: [
-    { sessionId: "sess-aaaa-1", place: "welcome", action: "view", ms: null, field: null, value: null, at: "2026-11-08T10:00:00.000Z" },
-    { sessionId: "sess-aaaa-1", place: "goal", action: "view", ms: null, field: null, value: null, at: "2026-11-08T10:00:05.000Z" },
-    { sessionId: "sess-aaaa-1", place: "goal", action: "answer", ms: 4200, field: "goal", value: "lose", at: "2026-11-08T10:00:09.000Z" },
-    { sessionId: "sess-aaaa-1", place: "goal", action: "back", ms: null, field: null, value: null, at: "2026-11-08T10:00:12.000Z" },
-    { sessionId: "sess-aaaa-1", place: "goal", action: "view", ms: null, field: null, value: null, at: "2026-11-08T10:00:15.000Z" },
-    { sessionId: "sess-aaaa-1", place: "summary", action: "view", ms: null, field: null, value: null, at: "2026-11-08T10:00:30.000Z" },
-    { sessionId: "sess-aaaa-1", place: "summary", action: "complete", ms: null, field: null, value: null, at: "2026-11-08T10:01:00.000Z" },
+    { sessionId: "sess-aaaa-1", place: "welcome", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:00.000Z" },
+    { sessionId: "sess-aaaa-1", place: "goal", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:05.000Z" },
+    { sessionId: "sess-aaaa-1", place: "goal", action: "answer", contentVersion: 7, ms: 4200, field: "goal", value: "lose", at: "2026-11-08T10:00:09.000Z" },
+    { sessionId: "sess-aaaa-1", place: "goal", action: "back", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:12.000Z" },
+    { sessionId: "sess-aaaa-1", place: "goal", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:15.000Z" },
+    { sessionId: "sess-aaaa-1", place: "summary", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:30.000Z" },
+    { sessionId: "sess-aaaa-1", place: "summary", action: "complete", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:01:00.000Z" },
   ],
 };
 
@@ -111,15 +111,15 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(page.locator("#funnel-users .fa-row", { hasText: "77777777" })).toContainText("trial ended");
 
   // Expanding fetches the journal: every event in order, grouped by run, with the revisit and
-  // the back-step marked — and never an innerHTML sink on the way (server data is textContent).
+  // the back marked — and never an innerHTML sink on the way (server data is textContent).
   await expect(row).toHaveAttribute("aria-expanded", "false");
   await row.click();
   await expect(row).toHaveAttribute("aria-expanded", "true");
   const flow = page.locator(".fa-open");
-  await expect(flow).toContainText("run 1");
-  await expect(flow).toContainText("back-step");
-  // The second `goal` view is the revisit: exactly one "again" mark.
-  await expect(flow.locator(".chip", { hasText: "again" })).toHaveCount(1);
+  await expect(flow).toContainText("Run 1");
+  await expect(flow).toContainText("↩ back");
+  // The second `goal` view is the revisit: exactly one "seen again" mark.
+  await expect(flow.locator(".chip", { hasText: "seen again" })).toHaveCount(1);
   await expect(flow).toContainText("lose");
   await expect(flow).toContainText("4s");
 
@@ -172,8 +172,8 @@ test("the account page's Onboarding tab reads the same journal", async ({ page }
   // editor's answer instead, because the tab's loader shared loadOnboarding's name.
   const flow = page.locator("#onboarding-flow");
   await expect(flow.locator(".fl-ev")).toHaveCount(7);
-  await expect(flow).toContainText("back-step");
-  await expect(flow.locator(".chip", { hasText: "again" })).toHaveCount(1);
+  await expect(flow).toContainText("↩ back");
+  await expect(flow.locator(".chip", { hasText: "seen again" })).toHaveCount(1);
   await expect(page.locator("#onboarding-summary")).toContainText("monthly · 2h");
   expect(errors).toEqual([]);
 });
