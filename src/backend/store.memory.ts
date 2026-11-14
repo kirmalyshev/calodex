@@ -1820,7 +1820,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async adminOnboardingFlow(query) {
-      const { userId, range, staffIds = [], cursor, limit } = query;
+      const { userId, range, staffIds = [], cursor, limit, leftAt } = query;
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
       const inRange = (e: StoredEvent) => e.receivedAt >= lo && e.receivedAt <= hi;
@@ -1858,7 +1858,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         const toEvent = (e: StoredEvent): AdminOnboardingEvent => ({
           sessionId: e.sessionId, place: e.place, action: e.action,
           ms: typeof e.ms === "number" ? e.ms : null,
-          field: e.field ?? null, value: e.value ?? null, at: e.at,
+          field: e.field ?? null, value: e.value ?? null, contentVersion: e.contentVersion, at: e.at,
         });
         return { rows: [{ ...toAccount(userId, evs), events: evs.map(toEvent) }], nextCursor: null };
       }
@@ -1874,6 +1874,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // The Postgres read is a join on users — an event with no account behind it is not a row.
       const rows = [...byUser.entries()].filter(([uid]) => users.has(uid))
         .map(([uid, evs]) => toAccount(uid, evs))
+        // The "▼ N left" drill-down (#814): the run's last screen is the place and no
+        // `complete` closed it — the same predicate the Postgres HAVING applies.
+        .filter((a) => leftAt === undefined || (a.lastPlace === leftAt && !a.completed))
         .sort((a, b) => (stamp(b.startedAt ?? "") - stamp(a.startedAt ?? ""))
           || (b.startedAt ?? "").localeCompare(a.startedAt ?? "")
           || (a.userId < b.userId ? 1 : a.userId > b.userId ? -1 : 0));
