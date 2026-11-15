@@ -178,6 +178,62 @@ test("the account page's Onboarding tab reads the same journal", async ({ page }
   expect(errors).toEqual([]);
 });
 
+// Testers (ieat-app#2899): out of the funnel unless the box is ticked; the channel and a sandbox
+// grant are chips on the row, and the account list filters by channel.
+test("the include-testers box re-reads the funnel with testers=1, and a tester row carries its chips", async ({ page }) => {
+  const errors = watchConsole(page);
+  await stub(page);
+  const tester = { ...ACCOUNTS.accounts[0], channel: "testflight", sandbox: true };
+  await page.route("**/admin/api/funnel/users**", (r) => r.fulfill(json({ ...ACCOUNTS, accounts: [tester] })));
+  await page.goto("/admin#funnel");
+  await expect(page.locator("#funnel-scope")).toContainText("staff and known testers excluded");
+  const row = page.locator("#funnel-users .fa-row", { hasText: USER.slice(0, 8) });
+  await expect(row.locator(".chip", { hasText: "TestFlight" })).toBeVisible();
+  await expect(row.locator(".chip", { hasText: "sandbox" })).toBeVisible();
+
+  const withTesters = (path: RegExp) => page.waitForRequest((q) =>
+    path.test(new URL(q.url()).pathname) && new URL(q.url()).searchParams.get("testers") === "1");
+  const agg = withTesters(/\/admin\/api\/funnel$/);
+  const list = withTesters(/\/admin\/api\/funnel\/users$/);
+  await page.locator("#funnel-testers").check();
+  await agg;
+  await list;
+  await expect(page.locator("#funnel-scope")).not.toContainText("known testers");
+  expect(errors).toEqual([]);
+});
+
+test("the channel select re-reads the account list with channel=, and a row carries its chips", async ({ page }) => {
+  const errors = watchConsole(page);
+  await stub(page);
+  await page.route("**/admin/api/users**", (r) => r.fulfill(json({
+    users: [{
+      userId: USER, email: "user@example.com", createdAt: "2026-11-01T00:00:00.000Z",
+      providers: ["apple"], spent: 0, effective: 20, analysesToday: 0,
+      lastSeen: "2026-11-10T10:00:00.000Z", pushDailyMax: null, pushOffers: false,
+      staff: false, streakDays: 3, entitled: true, onboardedAt: "2026-11-08T10:01:00.000Z",
+      lang: "en", country: "de", channel: "testflight", channelFirst: "testflight",
+      entitlement: { trial: false, expiresAt: "2026-12-08T00:00:00.000Z", lifetimeProductId: null, sandbox: true },
+    }],
+    nextCursor: null, range: RANGE,
+  })));
+  await page.route("**/admin/api/campaigns**", (r) => r.fulfill(json({
+    killed: false, campaigns: [], copy: [], range: RANGE,
+    options: { langs: ["en"], variants: ["default"], statuses: ["draft"], entitlement: [], streakBands: [], sinceLog: [], staffCount: 0 },
+  })));
+  await page.goto("/admin#accounts");
+  const first = page.locator("#users tbody tr").first();
+  await expect(first.locator(".chip", { hasText: "TestFlight" })).toBeVisible();
+  await expect(first.locator(".chip", { hasText: "sandbox" })).toBeVisible();
+
+  const filtered = page.waitForRequest((q) => {
+    const u = new URL(q.url());
+    return u.pathname === "/admin/api/users" && u.searchParams.get("channel") === "testflight";
+  });
+  await page.locator("#users-channel").selectOption("testflight");
+  await filtered;
+  expect(errors).toEqual([]);
+});
+
 function json(body: unknown) {
   return { status: 200, contentType: "application/json", body: JSON.stringify(body) } as const;
 }
