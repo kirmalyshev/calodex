@@ -771,9 +771,6 @@ describe("the per-account funnel", () => {
   });
 });
 
-// The window every time-based endpoint reads over (ieat-app#2776, follow-ups #2779). These are
-// HTTP tests, not echo tests: the echo was already proven, what was not proven is that `from`/`to`
-// — and a resolved `days` on an endpoint that defaults unbounded — actually filter the rows.
 describe("testers and channels (ieat-app#2899)", () => {
   beforeEach(async () => { await mountWithAdmin(); });
 
@@ -830,6 +827,9 @@ describe("testers and channels (ieat-app#2899)", () => {
   });
 });
 
+// The window every time-based endpoint reads over (ieat-app#2776, follow-ups #2779). These are
+// HTTP tests, not echo tests: the echo was already proven, what was not proven is that `from`/`to`
+// — and a resolved `days` on an endpoint that defaults unbounded — actually filter the rows.
 describe("the window on the wire", () => {
   // Clock-injected so an account can be stamped BEFORE now — `created_at` is what the bounds and
   // the resolved `days` filter on, and "everything stamped now" cannot tell a filter from an echo.

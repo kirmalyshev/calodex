@@ -3447,7 +3447,9 @@ function contract(name: string, make: () => Promise<Store>) {
         // Unchanged: still the same pair.
         await s.setChannel(u, "appstore");
         expect(await row(s, u)).toMatchObject({ channel: "appstore", channelFirst: "testflight" });
-        await s.setChannel(crypto.randomUUID(), "dev");
+        const nobody = crypto.randomUUID();
+        await s.setChannel(nobody, "dev");
+        expect(await row(s, nobody)).toBeUndefined();
       });
 
       it("filters the accounts list by latest channel, `unknown` being none reported", async () => {
@@ -3515,6 +3517,12 @@ function contract(name: string, make: () => Promise<Store>) {
         await s.putEntitlement(anon2, { lifetimeProductId: "lifetime", productId: "lifetime", eventAt: "2026-11-15T10:00:00.000Z", sandbox: true });
         await s.mergeUsers(anon2, real2);
         expect((await s.getEntitlement(real2))?.sandbox).toBe(true);
+        // A newer PRODUCTION grant merged onto a sandbox one clears the destination's flag.
+        const anon3 = await mk(), real3 = await mk();
+        await s.putEntitlement(real3, { expiresAt: "2026-11-17T10:00:00.000Z", productId: "yearly", eventAt: "2026-11-15T10:00:00.000Z", sandbox: true });
+        await s.putEntitlement(anon3, { expiresAt: "2027-11-16T12:00:00.000Z", productId: "yearly", eventAt: "2026-11-16T12:00:00.000Z", sandbox: false });
+        await s.mergeUsers(anon3, real3);
+        expect("sandbox" in (await s.getEntitlement(real3))!).toBe(false);
       });
 
       it("carries the sandbox flag on a transfer, and a production grant clears the destination's", async () => {
