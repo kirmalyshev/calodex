@@ -161,6 +161,23 @@ describe("deliveries this server ignores", () => {
     expect((await profile(staged.token)).entitlement.active).toBe(true);
   });
 
+  // The admin's tester read (ieat-app#2899) keys off the environment of the latest applied grant.
+  it("records a SANDBOX grant as sandbox, and a PRODUCTION one as not", async () => {
+    mount({ ...base, revenueCatWebhookToken: TOKEN, revenueCatAcceptSandbox: true });
+    const sbx = await account();
+    await deliver(purchase(sbx.userId, { environment: "SANDBOX" }));
+    expect((await store.getEntitlement(sbx.userId))?.sandbox).toBe(true);
+
+    const prod = await account();
+    await deliver(purchase(prod.userId, { environment: "PRODUCTION" }));
+    expect(await store.getEntitlement(prod.userId)).not.toBeNull();
+    expect("sandbox" in (await store.getEntitlement(prod.userId))!).toBe(false);
+
+    // A later PRODUCTION delivery on the sandbox account is now the latest grant.
+    await deliver(purchase(sbx.userId, { type: "RENEWAL", environment: "PRODUCTION", event_timestamp_ms: Date.now() + 1000 }));
+    expect("sandbox" in (await store.getEntitlement(sbx.userId))!).toBe(false);
+  });
+
   // A project can carry a lifetime unlock or an internal comp alongside the paid tier. Treating
   // "any entitlement at all" as this one would sell the tier to whoever holds any of them.
   it("ignores an event about a different entitlement", async () => {

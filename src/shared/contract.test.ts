@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+  CHANNEL_HEADER, DISTRIBUTION_CHANNELS, parseChannel,
   MAX_HEALTH_DAYS_PER_BATCH, MAX_ITEM_NAME, MAX_MEAL_AMOUNT, MAX_MEAL_ITEMS, healthDayBatches,
   healthDaysFrom, healthSyncLanded, isEditMealRequest, isPushOpenRequest, isRedateMealRequest, pushOpenFrom, ROUTES, webPushSubscription,
 } from "./contract.ts";
@@ -185,5 +186,21 @@ describe("webPushSubscription", () => {
     expect(a).not.toBeNull();
     expect(b).toBe(a);
     expect(webPushSubscription(a)).toBe(a);
+  });
+});
+
+// The channel header (ieat-app#2899) is client-reported and classifies accounts in the admin; a
+// value it does not name exactly is a newer or foreign client and stores nothing.
+describe("parseChannel", () => {
+  it("names the header and accepts exactly the three channels", () => {
+    expect(CHANNEL_HEADER).toBe("x-eait-channel");
+    expect([...DISTRIBUTION_CHANNELS]).toEqual(["appstore", "testflight", "dev"]);
+    for (const c of DISTRIBUTION_CHANNELS) expect(parseChannel(c)).toBe(c);
+  });
+
+  it("refuses anything else: other words, case variants, padding, null and non-strings", () => {
+    for (const v of ["", "unknown", "AppStore", "TESTFLIGHT", "Dev", " dev", "dev ", "enterprise", null, undefined, 1, ["dev"]]) {
+      expect(parseChannel(v)).toBeNull();
+    }
   });
 });

@@ -771,6 +771,62 @@ describe("the per-account funnel", () => {
   });
 });
 
+describe("testers and channels (ieat-app#2899)", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  const user = async () => (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+  const started = (userId: string) => store.recordOnboardingEvents(userId, [{
+    id: `${userId}-e`, sessionId: `${userId}-s`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString(),
+  } as never]);
+
+  it("keeps testers out of the funnel and its per-account list unless `testers=1`", async () => {
+    const tf = await user(), sbx = await user(), real = await user();
+    await store.setChannel(tf, "testflight");
+    await store.setChannel(real, "appstore");
+    await store.putEntitlement(sbx, { expiresAt: new Date(Date.now() + 86400000).toISOString(), productId: "yearly", eventAt: new Date().toISOString(), sandbox: true });
+    for (const u of [tf, sbx, real]) await started(u);
+
+    const sessions = async (q: string) => ((await (await admin("GET", `/admin/api/funnel${q}`)).json()) as { sessions: number }).sessions;
+    expect(await sessions("")).toBe(1);
+    expect(await sessions("?testers=1")).toBe(3);
+    // Only `1` opts in.
+    expect(await sessions("?testers=true")).toBe(1);
+    expect(await sessions("?days=30&testers=1")).toBe(3);
+
+    type Row = { userId: string; channel: string | null; sandbox: boolean };
+    const accounts = async (q: string) =>
+      ((await (await admin("GET", `/admin/api/funnel/users${q}`)).json()) as { accounts: Row[] }).accounts;
+    expect((await accounts("")).map((a) => a.userId)).toEqual([real]);
+    const all = await accounts("?testers=1");
+    expect(all.map((a) => a.userId).sort()).toEqual([tf, sbx, real].sort());
+    expect(all.find((a) => a.userId === tf)).toMatchObject({ channel: "testflight", sandbox: false });
+    expect(all.find((a) => a.userId === sbx)).toMatchObject({ channel: null, sandbox: true });
+    expect(all.find((a) => a.userId === real)).toMatchObject({ channel: "appstore", sandbox: false });
+  });
+
+  it("filters the account list by `channel`, and ignores a value it does not know", async () => {
+    const app = await user(), tf = await user(), dv = await user(), none = await user();
+    await store.setChannel(app, "appstore");
+    await store.setChannel(tf, "testflight");
+    await store.setChannel(dv, "dev");
+    const ids = async (q: string) => {
+      const res = await admin("GET", `/admin/api/users?limit=50${q}`);
+      expect(res.status).toBe(200);
+      return ((await res.json()) as { users: { userId: string }[] }).users.map((u) => u.userId);
+    };
+    expect(await ids("&channel=appstore")).toEqual([app]);
+    expect(await ids("&channel=testflight")).toEqual([tf]);
+    expect(await ids("&channel=dev")).toEqual([dv]);
+    // `unknown` is "none reported" — the admin's own account among them.
+    const unknown = await ids("&channel=unknown");
+    expect(unknown).toContain(none);
+    expect(unknown.some((id) => [app, tf, dv].includes(id))).toBe(false);
+    const all = (await ids("")).sort();
+    for (const q of ["&channel=bogus", "&channel=TestFlight", "&channel="]) expect((await ids(q)).sort()).toEqual(all);
+    expect(all).toEqual(expect.arrayContaining([app, tf, dv, none]));
+  });
+});
+
 // The window every time-based endpoint reads over (ieat-app#2776, follow-ups #2779). These are
 // HTTP tests, not echo tests: the echo was already proven, what was not proven is that `from`/`to`
 // — and a resolved `days` on an endpoint that defaults unbounded — actually filter the rows.

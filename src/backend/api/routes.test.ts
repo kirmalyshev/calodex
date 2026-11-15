@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, setSystemTime } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import {
-  HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
+  CHANNEL_HEADER, HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
   dateMinus, localDate, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
   type DaysResponse, type MealRecord, type ProfileResponse, type MealProposed, type PendingMealsResponse,
   type ChatEntry, type WeightsResponse,
@@ -221,6 +221,41 @@ describe("profile", () => {
     expect(view.onboarded).toBe(true);
     expect(view.basis.tdee).toBeGreaterThan(0);
     expect(view.targets.kcal).toBeGreaterThanOrEqual(1200);
+  });
+
+  // The distribution channel (ieat-app#2899) rides on the profile read, best-effort.
+  describe("the x-eait-channel header", () => {
+    const getWith = (token: string, channel?: string) => handle(new Request(url(ROUTES.profile), {
+      headers: { authorization: `Bearer ${token}`, ...(channel === undefined ? {} : { [CHANNEL_HEADER]: channel }) },
+    }));
+    const stored = async () => {
+      const rows = (await store.adminListUsers({ limit: 10, today: "2026-11-15" })).rows;
+      expect(rows.length).toBe(1);
+      return { channel: rows[0]!.channel, channelFirst: rows[0]!.channelFirst };
+    };
+
+    it("stores a known channel", async () => {
+      const token = await session();
+      expect((await getWith(token, "testflight")).status).toBe(200);
+      expect(await stored()).toEqual({ channel: "testflight", channelFirst: "testflight" });
+    });
+
+    it("stores nothing for an unknown value or no header, and still answers the profile", async () => {
+      const token = await session();
+      for (const v of ["TestFlight", "enterprise", ""]) {
+        const res = await getWith(token, v);
+        expect(res.status).toBe(200);
+        expect(((await res.json()) as ProfileResponse).onboarded).toBe(true);
+      }
+      expect((await getWith(token)).status).toBe(200);
+      expect(await stored()).toEqual({ channel: null, channelFirst: null });
+    });
+
+    it("answers the profile when the channel write fails", async () => {
+      const token = await session();
+      store.setChannel = async () => { throw new Error("down"); };
+      expect((await getWith(token, "dev")).status).toBe(200);
+    });
   });
 
   // #77. The paywall is operator configuration the client is TOLD — computed and formatted
