@@ -305,6 +305,7 @@ pre { overflow-x: auto; max-width: 100%; }
 .split > .acol { flex: 1; min-width: 0; }
 .sbar { display: flex; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--hair); }
 .sbar input { flex: 1; }
+.sbar select { width: auto; flex: none; }
 .foot { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--muted); }
 .foot.flat { padding: 10px 0 0; border-top: 0; }
 .foot .grow { flex: 1; }
