@@ -20,7 +20,7 @@ import type {
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -677,6 +677,50 @@ alter table users add column if not exists entitlement_event_at   timestamptz;
 -- this column existed reads as -- and false is the safe direction: a trial reminder that never
 -- arrives beats one telling somebody who pays that "the free trial ends".
 alter table users add column if not exists entitlement_trial boolean not null default false;
+-- How the app was distributed (ieat-app#2899), as the app reports it in x-eait-channel: the latest
+-- in channel, the first ever in channel_first. CLIENT-REPORTED, so it classifies accounts in the
+-- admin and gates nothing. NO BACKFILL: nothing on the server ever recorded the channel --
+-- push_tokens.app is the BRAND, not the channel -- so every existing account starts unknown.
+alter table users add column if not exists channel text check (channel in ('appstore', 'testflight', 'dev'));
+alter table users add column if not exists channel_first text check (channel_first in ('appstore', 'testflight', 'dev'));
+-- Whether the most recently applied grant came from RevenueCat's SANDBOX. Added with its repair in
+-- one step, so the heuristic below runs exactly once, on rows written BEFORE the column existed;
+-- every grant written after that carries its own event's flag.
+--
+-- THE REPAIR, from a read-only look at production's entitlement records (6 records, read
+-- 2026-11-15): a paid monthly or yearly period there is ~720h or ~8760h and the free trial is 72h,
+-- while a TestFlight subscription renews DAILY. So a subscription record, not a trial and not a
+-- lifetime, whose expiry sits between 1 and 48 hours after its own event is most likely sandbox.
+-- BOUNDED to events before 2026-11-16, the window that evidence covers: a real subscriber who
+-- turns auto-renew off in the last 48h of a period matches the same shape, and none could before
+-- then, because the first App Store build went live on 2026-11-13. CEILING, all left false: a
+-- record last written by an EXPIRATION (expiry at about its event time, real or sandbox), a
+-- sandbox-tester account renewing every few minutes, and a sandbox trial.
+do $do$
+declare marked integer;
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = current_schema()
+      and table_name = 'users' and column_name = 'entitlement_sandbox'
+  ) then
+    alter table users add column entitlement_sandbox boolean not null default false;
+    update users set entitlement_sandbox = true
+     where not entitlement_trial and entitlement_lifetime_product_id is null
+       and entitlement_expires_at is not null and entitlement_expires_event_at is not null
+       and entitlement_expires_event_at < timestamptz '2026-11-16 00:00:00+00'
+       and entitlement_expires_at - entitlement_expires_event_at between interval '1 hour' and interval '48 hours';
+    get diagnostics marked = row_count;
+    raise notice 'entitlement_sandbox repair: % rows marked sandbox', marked;
+  end if;
+end
+$do$;
+-- THE tester definition, held once (isTester in store.ts is the memory store's copy): a TestFlight
+-- or development build as last reported, or a sandbox grant. The funnel and paid conversion leave
+-- these accounts out by default; the experiment numbers always. A generated column added with
+-- "if not exists" keeps the expression it was created with: changing the rule is a drop and re-add.
+alter table users add column if not exists tester boolean
+  generated always as (coalesce(channel in ('testflight', 'dev'), false) or entitlement_sandbox) stored;
 -- The analyses the admin granted one account before a subscription is required. Null means none
 -- (ieat-app#2364: there is no default sample).
 alter table users add column if not exists free_analyses integer;
@@ -1919,6 +1963,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   dropPushToken: 0,
   pushTokensFor: 0,
   setTimezone: 0,
+  setChannel: 0,
   timezoneOf: 0,
   claimPushSlot: 0,
   pushSlotFree: 0,
@@ -2664,7 +2709,7 @@ export async function postgresStore(
       }));
     },
 
-    async adminListUsers({ q, limit, cursor, today, from, to }) {
+    async adminListUsers({ q, limit, cursor, today, from, to, channel }) {
       const bounded = Math.min(Math.max(1, Math.trunc(limit)), ADMIN_USER_PAGE_MAX);
 
       // ── THE FILTER, AND WHY IT IS TWO EXACT MATCHES ────────────────────────────────────────
@@ -2695,7 +2740,8 @@ export async function postgresStore(
       const rows = await sql`
         select u.id, u.created_at, u.onboarded_at, u.free_analyses, u.staff, u.push_daily_max, (u.push_offers_at is not null) as push_offers,
                u.entitlement_expires_at, u.entitlement_lifetime_product_id,
-               u.entitlement_product_id, u.entitlement_event_at, u.entitlement_trial, u.bonus_until, u.referral_banked_days,
+               u.entitlement_product_id, u.entitlement_event_at, u.entitlement_trial, u.entitlement_sandbox, u.bonus_until, u.referral_banked_days,
+               u.channel, u.channel_first,
                (select array_agg(i.provider order by i.linked_at asc)
                   from identities i where i.user_id = u.id) as providers,
                (select i.email from identities i
@@ -2712,6 +2758,7 @@ export async function postgresStore(
                             where i.user_id = u.id and lower(i.email) = ${needle.toLowerCase()}))
            and (${from == null} or u.created_at >= ${from ?? null})
            and (${to == null} or u.created_at <= ${to ?? null})
+           and (${channel === undefined} or u.channel is not distinct from ${channel === "unknown" ? null : channel ?? null})
            and (${cursor === undefined}
                 or (u.created_at, u.id::text) < (${at}::timestamptz, ${afterId}))
          order by u.created_at desc, u.id desc
@@ -2737,6 +2784,7 @@ export async function postgresStore(
             productId: String(r.entitlement_product_id ?? ""),
             eventAt: new Date(r.entitlement_event_at as string).toISOString(),
             trial: r.entitlement_trial === true,
+            ...(r.entitlement_sandbox === true ? { sandbox: true } : {}),
           },
           bonusUntil: r.bonus_until === null ? null : new Date(r.bonus_until as string).toISOString(),
           bankedDays: num(r.referral_banked_days),
@@ -2748,6 +2796,8 @@ export async function postgresStore(
           staff: r.staff === true,
           pushDailyMax: r.push_daily_max === null || r.push_daily_max === undefined ? null : num(r.push_daily_max),
           pushOffers: r.push_offers === true,
+          channel: parseChannel(r.channel),
+          channelFirst: parseChannel(r.channel_first),
         })),
         nextCursor: more && last
           ? `${new Date(last.created_at as string).toISOString()}~${String(last.id)}`
@@ -2985,6 +3035,7 @@ export async function postgresStore(
             entitlement_expires_at       = from_u.entitlement_expires_at,
             entitlement_expires_event_at = from_u.entitlement_expires_event_at,
             entitlement_trial            = from_u.entitlement_trial,
+            entitlement_sandbox          = from_u.entitlement_sandbox,
             entitlement_product_id       = from_u.entitlement_product_id
           from users from_u
           where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
@@ -2994,7 +3045,8 @@ export async function postgresStore(
         await tx`
           update users into_u set
             entitlement_lifetime_product_id = from_u.entitlement_lifetime_product_id,
-            entitlement_lifetime_event_at   = from_u.entitlement_lifetime_event_at
+            entitlement_lifetime_event_at   = from_u.entitlement_lifetime_event_at,
+            entitlement_sandbox             = from_u.entitlement_sandbox
           from users from_u
           where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
             and from_u.entitlement_lifetime_event_at is not null
@@ -3369,7 +3421,7 @@ export async function postgresStore(
     async getEntitlement(userId) {
       const rows = await sql`
         select entitlement_expires_at, entitlement_product_id, entitlement_event_at,
-               entitlement_lifetime_product_id, entitlement_trial
+               entitlement_lifetime_product_id, entitlement_trial, entitlement_sandbox
         from users where id = ${userId}`;
       const r = rows[0];
       // `entitlement_event_at` is what proves a record exists, NOT either grant: an account can
@@ -3384,6 +3436,7 @@ export async function postgresStore(
         productId: (r.entitlement_product_id as string | null) ?? "",
         eventAt: new Date(r.entitlement_event_at as string).toISOString(),
         trial: r.entitlement_trial === true,
+        ...(r.entitlement_sandbox === true ? { sandbox: true } : {}),
       };
     },
 
@@ -3393,7 +3446,7 @@ export async function postgresStore(
       // decision reads only rows this transaction holds, so a concurrent delivery waits for it.
       return await inTx(async (tx) => {
         const rows = await tx`
-          select id, entitlement_expires_at, entitlement_expires_event_at, entitlement_trial,
+          select id, entitlement_expires_at, entitlement_expires_event_at, entitlement_trial, entitlement_sandbox,
                  entitlement_product_id, entitlement_lifetime_product_id, entitlement_lifetime_event_at,
                  entitlement_event_at
           from users where id in (${fromUserId}, ${intoUserId}) for update`;
@@ -3407,6 +3460,7 @@ export async function postgresStore(
             trial: r.entitlement_trial === true, productId: (r.entitlement_product_id as string | null) ?? "",
             lifetimeProductId: (r.entitlement_lifetime_product_id as string | null) ?? null,
             lifetimeEventAt: iso(r.entitlement_lifetime_event_at), eventAt: iso(r.entitlement_event_at)!,
+            sandbox: r.entitlement_sandbox === true,
           };
         };
         const from = read(fromUserId);
@@ -3419,7 +3473,7 @@ export async function postgresStore(
           await tx`
             update users set
               entitlement_expires_at = ${at(e.expiresAt)}, entitlement_expires_event_at = ${at(e.expiresEventAt)},
-              entitlement_trial = ${e.trial === true}, entitlement_product_id = ${e.productId},
+              entitlement_trial = ${e.trial === true}, entitlement_sandbox = ${e.sandbox === true}, entitlement_product_id = ${e.productId},
               entitlement_lifetime_product_id = ${e.lifetimeProductId},
               entitlement_lifetime_event_at = ${at(e.lifetimeEventAt)}, entitlement_event_at = ${new Date(e.eventAt)}
             where id = ${id}`;
@@ -3454,6 +3508,7 @@ export async function postgresStore(
             entitlement_expires_event_at = ${eventAt},
             entitlement_product_id       = ${patch.productId},
             entitlement_trial            = ${patch.trial === true},
+            entitlement_sandbox          = ${patch.sandbox === true},
             entitlement_event_at = greatest(coalesce(entitlement_event_at, ${eventAt}), ${eventAt})
           where id = ${userId}
             and (entitlement_expires_event_at is null or entitlement_expires_event_at < ${eventAt})
@@ -3472,6 +3527,7 @@ export async function postgresStore(
         update users set
           entitlement_lifetime_product_id = ${patch.lifetimeProductId},
           entitlement_lifetime_event_at   = ${eventAt},
+          entitlement_sandbox             = ${patch.sandbox === true},
           entitlement_event_at = greatest(coalesce(entitlement_event_at, ${eventAt}), ${eventAt})
         where id = ${userId}
           and (entitlement_lifetime_event_at is null or entitlement_lifetime_event_at < ${eventAt})
@@ -3787,7 +3843,7 @@ export async function postgresStore(
           and (${lo === null} or e.at >= ${lo})
           and (${hi === null} or e.at <= ${hi})
         where a.experiment_id = ${experimentId}
-          and not exists (select 1 from users u where u.id = a.user_id and u.staff)
+          and not exists (select 1 from users u where u.id = a.user_id and (u.staff or u.tester))
           and a.user_id <> all(${configStaff}::uuid[])
           and (${lo === null} or a.assigned_at >= ${lo})
           and (${hi === null} or a.assigned_at <= ${hi})
@@ -3959,7 +4015,7 @@ export async function postgresStore(
           and (${lo === null} or e.at >= ${lo})
           and (${hi === null} or e.at <= ${hi})
         where a.experiment_id = ${experimentId}
-          and not exists (select 1 from users u where u.id = a.user_id and u.staff)
+          and not exists (select 1 from users u where u.id = a.user_id and (u.staff or u.tester))
           and a.user_id <> all(${configStaff}::uuid[])
           and (${lo === null} or a.assigned_at >= ${lo})
           and (${hi === null} or a.assigned_at <= ${hi})
@@ -3976,7 +4032,7 @@ export async function postgresStore(
       }));
     },
 
-    async onboardingFunnel(range, staffIds = []): Promise<FunnelAggregate> {
+    async onboardingFunnel(range, staffIds = [], includeTesters = false): Promise<FunnelAggregate> {
       const { from: lo, to: hi } = range;
       const configStaff = uuidArray(staffIds);
       // Staff accounts (admin-flagged) are not users; their runs stay out (#2783).
@@ -3986,7 +4042,7 @@ export async function postgresStore(
                count(distinct session_id) filter (where action = 'complete')::int as completed
         from onboarding_events
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
-          and not exists (select 1 from users u where u.id = onboarding_events.user_id and u.staff)
+          and not exists (select 1 from users u where u.id = onboarding_events.user_id and (u.staff or (not ${includeTesters} and u.tester)))
           and onboarding_events.user_id <> all(${configStaff}::uuid[])`;
 
       // `percentile_cont` over the answer rows only — a median that included view events would be
@@ -4003,7 +4059,7 @@ export async function postgresStore(
                ) filter (where action = 'answer' and ms is not null) as median_ms
         from onboarding_events
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
-          and not exists (select 1 from users u where u.id = onboarding_events.user_id and u.staff)
+          and not exists (select 1 from users u where u.id = onboarding_events.user_id and (u.staff or (not ${includeTesters} and u.tester)))
           and onboarding_events.user_id <> all(${configStaff}::uuid[])
         group by place`;
 
@@ -4022,7 +4078,7 @@ export async function postgresStore(
                  coalesce(u.entitlement_lifetime_product_id, u.entitlement_product_id) as product
             from onboarding_events e join users u on u.id = e.user_id
            where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
-             and not u.staff
+             and not u.staff and (${includeTesters} or not u.tester)
              and e.user_id <> all(${configStaff}::uuid[])
            group by e.user_id, e.session_id, u.id
         ),
@@ -4070,7 +4126,7 @@ export async function postgresStore(
     },
 
     async adminOnboardingFlow(query) {
-      const { userId, range, staffIds = [], cursor, limit, leftAt } = query;
+      const { userId, range, staffIds = [], cursor, limit, leftAt, includeTesters = false } = query;
       const { from: lo, to: hi } = range;
       const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
       const toAccount = (r: Record<string, unknown>, events?: AdminOnboardingEvent[]): AdminOnboardingAccount => {
@@ -4091,9 +4147,11 @@ export async function postgresStore(
             productId: (r.entitlement_product_id as string | null) ?? "",
             eventAt: iso(r.entitlement_event_at)!,
             trial: r.entitlement_trial === true,
+            ...(r.entitlement_sandbox === true ? { sandbox: true } : {}),
           },
           bonusUntil: iso(r.bonus_until),
           bankedDays: num(r.referral_banked_days ?? 0),
+          channel: parseChannel(r.channel),
           ...(events === undefined ? {} : { events }),
         };
       };
@@ -4105,7 +4163,7 @@ export async function postgresStore(
         const summary = await sql`
           select u.id as user_id, u.lang, u.country,
                  u.entitlement_expires_at, u.entitlement_product_id, u.entitlement_event_at,
-                 u.entitlement_lifetime_product_id, u.entitlement_trial,
+                 u.entitlement_lifetime_product_id, u.entitlement_trial, u.entitlement_sandbox, u.channel,
                  u.bonus_until, u.referral_banked_days,
                  least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
                  min(e.at) as started_at,
@@ -4153,7 +4211,7 @@ export async function postgresStore(
       const rows = await sql`
         select e.user_id, u.lang, u.country,
                u.entitlement_expires_at, u.entitlement_product_id, u.entitlement_event_at,
-               u.entitlement_lifetime_product_id, u.entitlement_trial,
+               u.entitlement_lifetime_product_id, u.entitlement_trial, u.entitlement_sandbox, u.channel,
                u.bonus_until, u.referral_banked_days,
                least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
                min(e.at) as started_at,
@@ -4163,7 +4221,7 @@ export async function postgresStore(
                (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] as last_place
           from onboarding_events e join users u on u.id = e.user_id
          where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
-           and not u.staff
+           and not u.staff and (${includeTesters} or not u.tester)
            and e.user_id <> all(${configStaff}::uuid[])
          group by e.user_id, u.id
         having (${leftAt === undefined} or (
@@ -4643,6 +4701,12 @@ export async function postgresStore(
     async timezoneOf(userId) {
       const rows = await sql`select timezone from users where id = ${userId}`;
       return ((rows[0] as Record<string, unknown> | undefined)?.timezone as string | null | undefined) ?? null;
+    },
+
+    async setChannel(userId, channel) {
+      await sql`
+        update users set channel = ${channel}, channel_first = coalesce(channel_first, ${channel})
+        where id = ${userId} and channel is distinct from ${channel}`;
     },
 
     async setTimezone(userId, timezone) {

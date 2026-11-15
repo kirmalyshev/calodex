@@ -305,6 +305,7 @@ pre { overflow-x: auto; max-width: 100%; }
 .split > .acol { flex: 1; min-width: 0; }
 .sbar { display: flex; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--hair); }
 .sbar input { flex: 1; }
+.sbar select { width: auto; flex: none; }
 .foot { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--muted); }
 .foot.flat { padding: 10px 0 0; border-top: 0; }
 .foot .grow { flex: 1; }
@@ -621,6 +622,7 @@ details.how p { margin-top: 8px; }
   <div class="vbody hidden" id="body-funnel"><div class="nv">
       <div class="akpi" id="funnel-kpi"></div>
     <p class="muted" id="funnel-scope"></p>
+    <label class="muted"><input type="checkbox" id="funnel-testers"> Include testers (TestFlight, dev, sandbox)</label>
     <div class="card" id="funnel-path"></div>
     <p class="muted">Between steps: people who reached the step above and never reached the next. Red marks the three biggest drops.</p>
     <div class="card fa" id="funnel-users"></div>
@@ -725,6 +727,13 @@ details.how p { margin-top: 8px; }
           <div class="sbar">
             <input type="text" id="users-q" placeholder="email address, or the start of a user id"
                    autocomplete="off" spellcheck="false" aria-label="Search accounts">
+            <select id="users-channel" aria-label="Channel">
+              <option value="">All</option>
+              <option value="appstore">App Store</option>
+              <option value="testflight">TestFlight</option>
+              <option value="dev">Dev</option>
+              <option value="unknown">Unknown</option>
+            </select>
             <button id="users-search">Search</button>
           </div>
           <div class="scrollx" id="users-wrap"><table id="users">
@@ -764,6 +773,7 @@ details.how p { margin-top: 8px; }
                 <div class="kv"><span class="muted">Plan</span><span id="p-plan"></span></div>
                 <div class="kv"><span class="muted">Language</span><span id="p-lang"></span></div>
                 <div class="kv"><span class="muted">Subscription</span><span class="chip n" id="p-sub"></span></div>
+                <div class="kv"><span class="muted">Channel</span><span id="p-channel"></span></div>
                 <div class="kv"><span class="muted">Streak</span><span id="p-streak"></span></div>
               </div>
               <div class="kv sect">
@@ -2302,8 +2312,16 @@ details.how p { margin-top: 8px; }
   };
   var ACTION_WORDS = { view: "viewed", answer: "answered", back: "went back", reject: "declined", complete: "finished", leave: "left" };
 
+  // TestFlight, dev and sandbox accounts are left out of the funnel unless this is ticked (ieat-app#2899).
+  function funnelQuery() {
+    var q = rangeQS();
+    if ($("funnel-testers").checked) q += (q ? "&" : "") + "testers=1";
+    return q ? "?" + q : "";
+  }
+  $("funnel-testers").addEventListener("change", function () { run("funnel"); });
+
   function loadFunnel() {
-    return api("GET", "/admin/api/funnel" + rangeQuery()).then(function (f) {
+    return api("GET", "/admin/api/funnel" + funnelQuery()).then(function (f) {
       lastEcho = f.range;
       rangeNote();
       var kp = $("funnel-kpi");
@@ -2312,7 +2330,8 @@ details.how p { margin-top: 8px; }
       kpi(kp, "Finished", String(f.completed), "", "");
       kpi(kp, "Completion", pct1(f.completed, f.sessions), "", "");
       kpi(kp, "Converted", String(f.paid.converted), "", f.sessions ? pct1(f.paid.converted, f.sessions) + " of starters" : "");
-      $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff excluded \u00b7 app content v" +
+      $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff" +
+        ($("funnel-testers").checked ? "" : " and known testers") + " excluded \u00b7 app content v" +
         f.contentVersion + " \u00b7 counted by people who reached each step";
       var host = $("funnel-path");
       host.textContent = "";
@@ -2485,7 +2504,7 @@ details.how p { margin-top: 8px; }
   }
 
   function fetchFunnelUsers() {
-    var q = rangeQuery();
+    var q = funnelQuery();
     var path = "/admin/api/funnel/users" + (q ? q + "&" : "?") + "limit=50"
       + (funnelPage.cursor ? "&cursor=" + encodeURIComponent(funnelPage.cursor) : "")
       + (funnelPage.leftAt ? "&leftAt=" + encodeURIComponent(funnelPage.leftAt) : "");
@@ -2513,6 +2532,13 @@ details.how p { margin-top: 8px; }
       accounts.forEach(function (a) { funnelPage.list.appendChild(funnelRow(a)); });
       paintBox(funnelPage.state, funnelPage.body, "ready");
     }).catch(failed);
+  }
+
+  // How the app was distributed and whether the grant was sandbox (ieat-app#2899): nothing when unknown.
+  var CHANNEL_NAMES = { appstore: "App Store", testflight: "TestFlight", dev: "Dev" };
+  function channelChips(into, channel, sandbox) {
+    if (CHANNEL_NAMES[channel]) into.appendChild(el("span", "chip n", CHANNEL_NAMES[channel]));
+    if (sandbox) into.appendChild(el("span", "chip w", "sandbox"));
   }
 
   /** What the run came to — one outcome word, red when the account simply stopped turning up. */
@@ -2545,6 +2571,7 @@ details.how p { margin-top: 8px; }
     outcomeChip(a, flags);
     if (a.paywall) flags.appendChild(el("span", "chip n", "paywall"));
     flags.appendChild(el("span", "chip " + (a.paid ? (a.paid.live ? (a.paid.kind === "trial" ? "w" : "g") : "n") : ""), paidLabel(a.paid)));
+    channelChips(flags, a.channel, a.sandbox);
     row.appendChild(flags);
     row.appendChild(el("span", "fa-chev", "\u25be"));
     var toggle = function () { toggleFlow(wrap, a.userId); };
@@ -3447,6 +3474,11 @@ details.how p { margin-top: 8px; }
     chip.className = "chip " + paid.cls;
     chip.textContent = paid.long;
     $("p-streak").textContent = s.streakDays + (s.streakDays === 1 ? " day" : " days");
+    var ch = $("p-channel");
+    ch.textContent = "";
+    channelChips(ch, s.channel, !!(s.entitlement && s.entitlement.sandbox));
+    if (s.channelFirst && s.channelFirst !== s.channel) ch.appendChild(el("span", "muted", " first " + (CHANNEL_NAMES[s.channelFirst] || s.channelFirst)));
+    if (!ch.childNodes.length) ch.textContent = "unknown";
     paintStaff(s.staff);
     $("staff-error").classList.add("hidden");
     showCap(cap);
@@ -3655,8 +3687,10 @@ details.how p { margin-top: 8px; }
     var chip = document.createElement("span");
     chip.className = "chip " + paid.cls;
     chip.textContent = paid.text;
+    var who = el("span", "", (u.email || shortId(u.userId)) + " ");
+    channelChips(who, u.channel, !!(u.entitlement && u.entitlement.sandbox));
     var cells = [
-      u.email || shortId(u.userId),
+      who,
       dmon(u.createdAt),
       via(u),
       chip,
@@ -3681,6 +3715,7 @@ details.how p { margin-top: 8px; }
     var q = $("users-q").value.trim();
     var path = "/admin/api/users?limit=50";
     if (q) path += "&q=" + encodeURIComponent(q);
+    if ($("users-channel").value) path += "&channel=" + encodeURIComponent($("users-channel").value);
     if (rangeQS()) path += "&" + rangeQS();
     if (append && usersCursor) path += "&cursor=" + encodeURIComponent(usersCursor);
     return api("GET", path).then(function (page) {
@@ -3715,6 +3750,7 @@ details.how p { margin-top: 8px; }
     if (e.key === "Enter") usersAgain(false);
   });
   $("users-more").addEventListener("click", function () { usersAgain(true); });
+  $("users-channel").addEventListener("change", function () { usersAgain(false); });
 
   // ── One account's thread (#376) ────────────────────────────────────────────────────────────
   //

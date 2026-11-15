@@ -14,7 +14,7 @@ import {
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   DEFAULT_ORDER, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
-  type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
+  type DistributionChannel, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
@@ -368,9 +368,12 @@ export async function adminMetrics(
 }
 
 /** The funnel, in the DEFAULT order the screens are shown in. */
-export async function onboardingFunnel(deps: EngineDeps, range: AdminRange & { days?: number } | number): Promise<OnboardingFunnel> {
+export async function onboardingFunnel(
+  deps: EngineDeps, range: AdminRange & { days?: number } | number, includeTesters = false,
+): Promise<OnboardingFunnel> {
   const ask = adminRangeOf(range, 30, 365);
-  const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds);
+  // TESTERS out unless asked (ieat-app#2899): a TestFlight sandbox purchase is not a conversion.
+  const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds, includeTesters);
   // THE NEWEST REVISION IN ANY LANGUAGE, because the counter is one counter (`store.putOnboardingContent`) and
   // this row names which words the numbers below were collected against. Reading English's alone
   // would report a stale number on a host whose last edit was German.
@@ -469,6 +472,10 @@ export interface AdminOnboardingUserRow {
    * referral week or a banked bank still reads live, the way `adminUsers`' `entitled` does.
    */
   paid: { kind: "trial" | "monthly" | "yearly" | "lifetime" | "other"; productId: string; msFromStart: number | null; live: boolean } | null;
+  /** How the app was distributed, as it last reported (ieat-app#2899); null before a build sent one. */
+  channel: DistributionChannel | null;
+  /** The record's latest grant came from RevenueCat's sandbox. */
+  sandbox: boolean;
 }
 
 function flowRow(a: AdminOnboardingAccount, now: number): AdminOnboardingUserRow {
@@ -490,6 +497,8 @@ function flowRow(a: AdminOnboardingAccount, now: number): AdminOnboardingUserRow
     paywall: a.sawPaywallAt !== null && (a.entitlement === null
       || (a.entitledAt !== null && Date.parse(a.entitledAt) > Date.parse(a.sawPaywallAt))),
     paid,
+    channel: a.channel,
+    sandbox: a.entitlement?.sandbox === true,
   };
 }
 
@@ -499,7 +508,7 @@ function flowRow(a: AdminOnboardingAccount, now: number): AdminOnboardingUserRow
  */
 export async function adminOnboardingUsers(
   deps: EngineDeps,
-  query: { range?: AdminRange & { days?: number } | number; cursor?: string; limit?: number; leftAt?: string },
+  query: { range?: AdminRange & { days?: number } | number; cursor?: string; limit?: number; leftAt?: string; includeTesters?: boolean },
 ): Promise<{ accounts: AdminOnboardingUserRow[]; nextCursor: string | null; range: AdminWindowEcho }> {
   const ask = adminRangeOf(query.range ?? 30, 30, 365);
   const page = await deps.store.adminOnboardingFlow({
@@ -507,6 +516,7 @@ export async function adminOnboardingUsers(
     ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
     ...(query.limit !== undefined ? { limit: query.limit } : {}),
     ...(query.leftAt !== undefined ? { leftAt: query.leftAt } : {}),
+    ...(query.includeTesters === true ? { includeTesters: true } : {}),
   });
   const now = Date.now();
   return { accounts: page.rows.map((a) => flowRow(a, now)), nextCursor: page.nextCursor, range: adminWindowEcho(ask) };

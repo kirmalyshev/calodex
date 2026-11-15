@@ -42,7 +42,7 @@
 
 import {
   CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, DEFAULT_ORDER, ENTITLEMENT_STATES, REMOVABLE_PLACES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
-  SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, screenIsOptional, type Lang,
+  SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, parseChannel, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
   adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
@@ -461,7 +461,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
 
   if (req.method === "GET" && pathname === "/admin/api/funnel") {
     const ask = rangeParam(url, { defaultDays: 30, maxDays: 365 });
-    return json(await onboardingFunnel(deps, "days" in ask ? ask.days : ask));
+    // `testers=1` keeps TestFlight, dev and sandbox accounts in (ieat-app#2899); out by default.
+    return json(await onboardingFunnel(deps, "days" in ask ? ask.days : ask, url.searchParams.get("testers") === "1"));
   }
 
   // The per-account funnel (kirmalyshev/calodex#812): the same range control and the same
@@ -474,6 +475,7 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       ...(url.searchParams.get("cursor") !== null ? { cursor: url.searchParams.get("cursor")! } : {}),
       ...(url.searchParams.get("leftAt") !== null ? { leftAt: url.searchParams.get("leftAt")! } : {}),
       ...(Number.isSafeInteger(limit) && limit > 0 ? { limit } : {}),
+      ...(url.searchParams.get("testers") === "1" ? { includeTesters: true } : {}),
     }));
   }
 
@@ -503,8 +505,12 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     const q = url.searchParams.get("q") ?? "";
     const cursor = url.searchParams.get("cursor") ?? "";
     const ask = rangeParam(url, null);
+    // `channel` (ieat-app#2899): a value outside the four is ignored, like a silly `limit`.
+    const channel = url.searchParams.get("channel");
+    const ch = channel === "unknown" ? "unknown" : parseChannel(channel);
     return json(await adminUsers(deps, {
       limit,
+      ...(ch === null ? {} : { channel: ch }),
       ...(q === "" ? {} : { q }),
       ...(cursor === "" ? {} : { cursor }),
       ...("days" in ask ? adminRangeOf(ask.days, 30) : ask),

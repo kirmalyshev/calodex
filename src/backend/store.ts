@@ -11,7 +11,7 @@
 // call. There is no method here that can reach a row without being told whose it is.
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { AppId, PushPlatform, CampaignStatus, CampaignTemplateKey, PushKind, Segment, PushOpenAction, SendKind, SendLogState } from "@eait/shared";
+import type { AppId, DistributionChannel, PushPlatform, CampaignStatus, CampaignTemplateKey, PushKind, Segment, PushOpenAction, SendKind, SendLogState } from "@eait/shared";
 import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
@@ -245,6 +245,9 @@ export interface StoredEntitlement {
   /** Whether the current subscription period is a free trial. Absent on rows written before the
    *  field existed; both implementations read that back as false. See `EntitlementPatch.trial`. */
   trial?: boolean;
+  /** The most recently applied grant came from RevenueCat's SANDBOX (TestFlight, Test Store), ieat-app#2899.
+   *  Present only when true — both implementations leave it off otherwise. Decides nothing but the admin's tester read. */
+  sandbox?: boolean;
 }
 
 /**
@@ -278,6 +281,9 @@ export interface EntitlementPatch {
    * is a smaller failure than a wrong one that does.
    */
   trial?: boolean;
+  /** The event came from RevenueCat's SANDBOX environment. Written on every applied patch, so it
+   *  describes the most recently applied grant. Absent reads as false. */
+  sandbox?: boolean;
 }
 
 /**
@@ -652,6 +658,8 @@ export interface AdminOnboardingAccount {
    */
   bonusUntil: string | null;
   bankedDays: number;
+  /** `users.channel`: how the app last reported it was distributed, null before a build sent one (ieat-app#2899). */
+  channel: DistributionChannel | null;
   /** Every stored event in `range`, oldest first — filled only when `userId` was named. */
   events?: AdminOnboardingEvent[];
 }
@@ -671,6 +679,8 @@ export interface AdminOnboardingFlowQuery {
    * screen has is an empty page, not an error.
    */
   leftAt?: string;
+  /** List mode only: keep TESTERS (`isTester`) in. Absent or false leaves them out, beside staff. */
+  includeTesters?: boolean;
 }
 
 export interface AdminOnboardingPage {
@@ -855,6 +865,9 @@ export interface AdminUserRow {
   pushDailyMax: number | null;
   /** `users.push_offers_at` is set: the account may be sent promotional pushes. */
   pushOffers: boolean;
+  /** `users.channel` — the latest channel the app reported — and `users.channel_first`, the first. Null before a build sent one. */
+  channel: DistributionChannel | null;
+  channelFirst: DistributionChannel | null;
 }
 
 /**
@@ -886,6 +899,8 @@ export interface AdminUserQuery {
   /** Sign-up bounds (#2776): `created_at` inside both, inclusive. Null or absent leaves an end open. */
   from?: Date | null;
   to?: Date | null;
+  /** Only accounts whose latest `channel` is this one; `unknown` is "none reported". Absent: all. */
+  channel?: DistributionChannel | "unknown";
 }
 
 export interface AdminUserPage {
@@ -896,6 +911,15 @@ export interface AdminUserPage {
 
 /** Nothing may ask for a bigger page than this, whatever it passes. */
 export const ADMIN_USER_PAGE_MAX = 200;
+
+/**
+ * THE tester definition (ieat-app#2899): an account whose app last reported a TestFlight or
+ * development build, or whose latest grant came from RevenueCat's sandbox. The funnel and paid
+ * conversion leave testers out by default; the experiment numbers always. Postgres holds the same predicate once, as the
+ * generated column `users.tester`; the memory store calls this.
+ */
+export const isTester = (channel: DistributionChannel | null, sandbox: boolean): boolean =>
+  channel === "testflight" || channel === "dev" || sandbox;
 
 /**
  * The longest window the metrics may cover, whatever is asked for.
@@ -1487,6 +1511,9 @@ export interface Store {
   timezoneOf(userId: string): Promise<string | null>;
   /** Scoped. Store the zone the app reported on open (already validated by the caller). */
   setTimezone(userId: string, timezone: string): Promise<void>;
+  /** Scoped. Store the distribution channel the app reported (ieat-app#2899): the latest wins, the
+   *  first is kept. A no-op write when it has not changed. */
+  setChannel(userId: string, channel: DistributionChannel): Promise<void>;
 
   /**
    * Claim a send for this account on `localDate` (its own local day). The sender is keyed by what
@@ -1682,8 +1709,9 @@ export interface Store {
    */
   recordOnboardingEvents(userId: string, events: OnboardingEvent[]): Promise<number>;
   /** The funnel inside `range` (#2776), aggregated. Reads every user except staff-flagged ones (#2783) — this is the admin's view.
-   * `staffIds` are accounts staff by config (`campaignStaffIds`), left out beside the flag. */
-  onboardingFunnel(range: AdminRange, staffIds?: string[]): Promise<FunnelAggregate>;
+   * `staffIds` are accounts staff by config (`campaignStaffIds`), left out beside the flag.
+   * TESTERS (`isTester`) are left out too unless `includeTesters` (ieat-app#2899). */
+  onboardingFunnel(range: AdminRange, staffIds?: string[], includeTesters?: boolean): Promise<FunnelAggregate>;
   /**
    * The per-account funnel (#812). `userId` absent → every account that sent an onboarding
    * event inside `range`, newest first, keyset-paged — the same population as
@@ -1749,6 +1777,7 @@ export interface Store {
    * `range` (#2776) NARROWS inside the experiment's own started→stopped window; it never widens
    * it — an assignment or an event outside the range is out, whatever the window's own bounds say.
    * A staff-flagged account's assignment is left out (#2783), so `assigned` is not every assignment row.
+   * So is a tester's (`isTester`, ieat-app#2899), always.
    */
   onboardingExperimentFunnel(experimentId: string, range: AdminRange, staffIds?: string[]): Promise<OnboardingExperimentFunnelRow[]>;
   /**
@@ -2336,6 +2365,8 @@ export function planTransfer(
       } : {}),
       ...(takeLife ? { lifetimeProductId: from.lifetimeProductId, lifetimeEventAt: stamp(into?.lifetimeEventAt) } : {}),
       eventAt: stamp(into?.eventAt),
+      // Something moved, so the most recently applied grant on the destination is the source's.
+      sandbox: from.sandbox === true,
     },
     from: {
       ...from,

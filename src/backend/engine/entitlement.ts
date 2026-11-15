@@ -13,7 +13,7 @@
 import {
   DIARY_WINDOW_DAYS, KCAL_PER_KG, entitlementActive, entitlementLive, explainTargets, forgivingStreak, localDate,
   referralBonusEnd,
-  trialDaysLeft, windowStart, type AdminWindowEcho, type Entitlement, type Goal, type Lang,
+  trialDaysLeft, windowStart, type AdminWindowEcho, type DistributionChannel, type Entitlement, type Goal, type Lang,
 } from "@eait/shared";
 import type { Config } from "../config.ts";
 import type { AdminUserRow, EntitlementPatch, StoredEntitlement } from "../store.ts";
@@ -91,7 +91,7 @@ export interface AdminUsers {
  */
 export async function adminUsers(
   deps: EngineDeps,
-  query: { q?: string; limit: number; cursor?: string; from?: Date | null; to?: Date | null; days?: number },
+  query: { q?: string; limit: number; cursor?: string; from?: Date | null; to?: Date | null; days?: number; channel?: DistributionChannel | "unknown" },
 ): Promise<AdminUsers> {
   const page = await deps.store.adminListUsers({
     ...query, today: localDate(deps.config.timezone),
@@ -333,7 +333,7 @@ export async function applyRevenueCatEvent(
   // statement whose WHERE clause carries both conditions, and splitting the reason would mean a
   // second query asking a question nothing acts on. Both are ordinary, and both answer 200.
   const eventAt = new Date(event.eventTimestampMs).toISOString();
-  const written = await deps.store.putEntitlement(event.appUserId, { ...patch, productId: event.productId, eventAt });
+  const written = await deps.store.putEntitlement(event.appUserId, { ...patch, productId: event.productId, eventAt, sandbox: event.sandbox });
   await referralReward(deps, event, eventAt);
   return written ? { applied: true } : { applied: false, reason: "not-applied" };
 }
