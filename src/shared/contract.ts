@@ -1395,7 +1395,8 @@ export interface PushTokenRequest {
  * The request header naming how this binary was distributed (ieat-app#2899), the sibling of
  * `APP_HEADER`. It exists because TestFlight and development installs were counted beside App
  * Store users in the admin's funnel and paid conversion — a sandbox purchase on a tester's phone
- * read as the first paid subscription. Absent or unknown means an older build: nothing is stored.
+ * read as the first paid subscription. Absent means an older build; an unrecognised value (a newer or
+ * foreign client) is dropped. Either way nothing is stored.
  * CLIENT-REPORTED, so it classifies accounts in the admin and gates nothing else, ever.
  */
 export const CHANNEL_HEADER = "x-eait-channel";

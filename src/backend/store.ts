@@ -913,9 +913,9 @@ export interface AdminUserPage {
 export const ADMIN_USER_PAGE_MAX = 200;
 
 /**
- * THE tester definition (ieat-app#2899): an account whose app reported a TestFlight or development
- * build, or whose latest grant came from RevenueCat's sandbox. The funnel, paid conversion and the
- * experiment numbers leave testers out by default. Postgres holds the same predicate once, as the
+ * THE tester definition (ieat-app#2899): an account whose app last reported a TestFlight or
+ * development build, or whose latest grant came from RevenueCat's sandbox. The funnel and paid
+ * conversion leave testers out by default; the experiment numbers always. Postgres holds the same predicate once, as the
  * generated column `users.tester`; the memory store calls this.
  */
 export const isTester = (channel: DistributionChannel | null, sandbox: boolean): boolean =>

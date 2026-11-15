@@ -685,15 +685,19 @@ alter table users add column if not exists channel text check (channel in ('apps
 alter table users add column if not exists channel_first text check (channel_first in ('appstore', 'testflight', 'dev'));
 -- Whether the most recently applied grant came from RevenueCat's SANDBOX. Added with its repair in
 -- one step, so the heuristic below runs exactly once, on rows written BEFORE the column existed;
--- every row after that carries what the webhook said.
+-- every grant written after that carries its own event's flag.
 --
--- THE REPAIR, from a read-only look at production's entitlement records (6, 2026-11-15): a paid
--- monthly or yearly period there is ~720h or ~8760h and the free trial is 72h, while a sandbox
--- subscription renews DAILY. So a subscription record, not a trial and not a lifetime, whose
--- expiry sits between 1 and 48 hours after its own event can only be sandbox. Under an hour is
--- ambiguous -- an EXPIRATION carries an expiry at about its event time, real or sandbox -- and
--- stays false. CEILING: a sandbox record last written by such an expiration is missed.
+-- THE REPAIR, from a read-only look at production's entitlement records (6 records, read
+-- 2026-11-15): a paid monthly or yearly period there is ~720h or ~8760h and the free trial is 72h,
+-- while a TestFlight subscription renews DAILY. So a subscription record, not a trial and not a
+-- lifetime, whose expiry sits between 1 and 48 hours after its own event is most likely sandbox.
+-- BOUNDED to events before 2026-11-16, the window that evidence covers: a real subscriber who
+-- turns auto-renew off in the last 48h of a period matches the same shape, and none could before
+-- then, because the first App Store build went live on 2026-11-13. CEILING, all left false: a
+-- record last written by an EXPIRATION (expiry at about its event time, real or sandbox), a
+-- sandbox-tester account renewing every few minutes, and a sandbox trial.
 do $do$
+declare marked integer;
 begin
   if not exists (
     select 1 from information_schema.columns
@@ -704,13 +708,17 @@ begin
     update users set entitlement_sandbox = true
      where not entitlement_trial and entitlement_lifetime_product_id is null
        and entitlement_expires_at is not null and entitlement_expires_event_at is not null
+       and entitlement_expires_event_at < timestamptz '2026-11-16 00:00:00+00'
        and entitlement_expires_at - entitlement_expires_event_at between interval '1 hour' and interval '48 hours';
+    get diagnostics marked = row_count;
+    raise notice 'entitlement_sandbox repair: % rows marked sandbox', marked;
   end if;
 end
 $do$;
 -- THE tester definition, held once (isTester in store.ts is the memory store's copy): a TestFlight
--- or development build, or a sandbox grant. The funnel, paid conversion and the experiments leave
--- these accounts out by default.
+-- or development build as last reported, or a sandbox grant. The funnel and paid conversion leave
+-- these accounts out by default; the experiment numbers always. A generated column added with
+-- "if not exists" keeps the expression it was created with: changing the rule is a drop and re-add.
 alter table users add column if not exists tester boolean
   generated always as (coalesce(channel in ('testflight', 'dev'), false) or entitlement_sandbox) stored;
 -- The analyses the admin granted one account before a subscription is required. Null means none

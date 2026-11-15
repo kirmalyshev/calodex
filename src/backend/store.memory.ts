@@ -1179,6 +1179,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // own role is the answer; carrying one across would let an anonymous session hand an admin
       // grant to somebody else's account. Postgres gets this for free by not listing the column.
       roles.delete(fromUserId);
+      channels.delete(fromUserId);
       // The merged-away zone and slots were handled above (the zone only fills a gap); what is left
       // of it dies with the row, as Postgres drops it.
       const fromZone = timezones.get(fromUserId);

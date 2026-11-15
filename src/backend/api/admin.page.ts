@@ -621,7 +621,7 @@ details.how p { margin-top: 8px; }
   <div class="vbody hidden" id="body-funnel"><div class="nv">
       <div class="akpi" id="funnel-kpi"></div>
     <p class="muted" id="funnel-scope"></p>
-    <label class="muted"><input type="checkbox" id="funnel-testers"> Include TestFlight &amp; dev</label>
+    <label class="muted"><input type="checkbox" id="funnel-testers"> Include testers (TestFlight, dev, sandbox)</label>
     <div class="card" id="funnel-path"></div>
     <p class="muted">Between steps: people who reached the step above and never reached the next. Red marks the three biggest drops.</p>
     <div class="card fa" id="funnel-users"></div>
@@ -2317,7 +2317,7 @@ details.how p { margin-top: 8px; }
     if ($("funnel-testers").checked) q += (q ? "&" : "") + "testers=1";
     return q ? "?" + q : "";
   }
-  $("funnel-testers").addEventListener("change", function () { loadFunnel(); });
+  $("funnel-testers").addEventListener("change", function () { run("funnel"); });
 
   function loadFunnel() {
     return api("GET", "/admin/api/funnel" + funnelQuery()).then(function (f) {
@@ -2330,7 +2330,7 @@ details.how p { margin-top: 8px; }
       kpi(kp, "Completion", pct1(f.completed, f.sessions), "", "");
       kpi(kp, "Converted", String(f.paid.converted), "", f.sessions ? pct1(f.paid.converted, f.sessions) + " of starters" : "");
       $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff" +
-        ($("funnel-testers").checked ? "" : " and testers") + " excluded \u00b7 app content v" +
+        ($("funnel-testers").checked ? "" : " and known testers") + " excluded \u00b7 app content v" +
         f.contentVersion + " \u00b7 counted by people who reached each step";
       var host = $("funnel-path");
       host.textContent = "";
