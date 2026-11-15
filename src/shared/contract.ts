@@ -1391,6 +1391,23 @@ export interface PushTokenRequest {
   timezone?: string;
 }
 
+/**
+ * The request header naming how this binary was distributed (ieat-app#2899), the sibling of
+ * `APP_HEADER`. It exists because TestFlight and development installs were counted beside App
+ * Store users in the admin's funnel and paid conversion — a sandbox purchase on a tester's phone
+ * read as the first paid subscription. Absent or unknown means an older build: nothing is stored.
+ * CLIENT-REPORTED, so it classifies accounts in the admin and gates nothing else, ever.
+ */
+export const CHANNEL_HEADER = "x-eait-channel";
+
+export const DISTRIBUTION_CHANNELS = ["appstore", "testflight", "dev"] as const;
+export type DistributionChannel = (typeof DISTRIBUTION_CHANNELS)[number];
+
+/** The channel a header or column names, or null when it names none. */
+export function parseChannel(v: unknown): DistributionChannel | null {
+  return (DISTRIBUTION_CHANNELS as readonly unknown[]).includes(v) ? (v as DistributionChannel) : null;
+}
+
 /** A bound on a value that is stored per device and re-sent on every launch. Expo's are ~40 chars. */
 export const MAX_PUSH_TOKEN = 200;
 

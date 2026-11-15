@@ -4,7 +4,7 @@
 // are enforced here exactly as they are in Postgres, so a test that proves "another user's meal id
 // resolves to null" is proving something about the engine rather than about a mock's mood.
 
-import type { AppId, MealReminders } from "@eait/shared";
+import type { AppId, DistributionChannel, MealReminders } from "@eait/shared";
 import { FOOD_SOURCE_IDS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import type {
   DayTotals, FoodRef, HealthDay, Lang, MealRecord, NotificationCopySet, OffProduct,
@@ -19,7 +19,7 @@ import { buildFoodIndex } from "./food-index.ts";
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
-  PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
+  PORTION_PRIOR_ROWS, blankProfile, isTester, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
@@ -196,6 +196,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const roles = new Map<string, Role>();
   /** `users.staff`; a second set here for the same reason `roles` is a map. */
   const staffSet = new Set<string>();
+  /** `users.channel` / `users.channel_first` (ieat-app#2899), a map for the reason `roles` is one. */
+  const channels = new Map<string, { latest: DistributionChannel; first: DistributionChannel }>();
+  /** `users.tester`, the generated column Postgres holds — `isTester` over the same two inputs. */
+  const tester = (userId: string): boolean =>
+    isTester(channels.get(userId)?.latest ?? null, entitlements.get(userId)?.sandbox === true);
   /**
    * The sign-up consent stamps (S8). Postgres keeps them as columns on `users`; here it is a map,
    * keyed the same way and gone when the account is. An absent entry is "never given" — the two
@@ -492,6 +497,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     // account would be handed to whoever the id belonged to next.
     roles.delete(userId);
     staffSet.delete(userId);
+    channels.delete(userId);
     // Same again (S8): consent stamps are `users` columns in Postgres and a map here — an account
     // that consented and was deleted keeps neither the record nor the timestamp.
     consents.delete(userId);
@@ -588,6 +594,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     return {
       expiresAt: e.expiresAt, lifetimeProductId: e.lifetimeProductId,
       productId: e.productId, eventAt: e.eventAt, trial: e.trial === true,
+      ...(e.sandbox === true ? { sandbox: true } : {}),
     };
   };
 
@@ -820,7 +827,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .map((i) => ({ provider: i.provider, linkedAt: i.linkedAt }));
     },
 
-    async adminListUsers({ q, limit, cursor, today, from, to }) {
+    async adminListUsers({ q, limit, cursor, today, from, to, channel }) {
       const bounded = Math.min(Math.max(1, Math.trunc(limit)), ADMIN_USER_PAGE_MAX);
       const wanted = matchingUsers(q);
       if (wanted !== null && wanted.length === 0) return { rows: [], nextCursor: null };
@@ -828,7 +835,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const ordered = [...users.keys()]
         .filter((id) => (wanted === null || wanted.includes(id))
           && (from == null || (createdAt.get(id) ?? 0) >= from.getTime())
-          && (to == null || (createdAt.get(id) ?? 0) <= to.getTime()))
+          && (to == null || (createdAt.get(id) ?? 0) <= to.getTime())
+          && (channel === undefined || (channels.get(id)?.latest ?? "unknown") === channel))
         .map((id) => ({ id, at: createdAt.get(id) ?? 0 }))
         // Newest first, the id settling a tie, exactly as Postgres orders it — two accounts made in
         // the same millisecond must come back in ONE order or the cursor skips a row.
@@ -863,6 +871,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           staff: staffSet.has(id),
           pushDailyMax: pushDailyMax.get(id) ?? null,
           pushOffers: pushOffers.has(id),
+          channel: channels.get(id)?.latest ?? null,
+          channelFirst: channels.get(id)?.first ?? null,
         };
       });
       const last = page[page.length - 1];
@@ -1065,6 +1075,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           expiresEventAt: takeSub ? from.expiresEventAt : into?.expiresEventAt ?? null,
           // The period's trial flag belongs to the period, so it travels with it or not at all.
           trial: takeSub ? from.trial === true : into?.trial === true,
+          // Postgres copies the flag in both grant statements: whichever grant moved brings it.
+          sandbox: takeSub || takeLife ? from.sandbox === true : into?.sandbox === true,
           lifetimeProductId: takeLife ? from.lifetimeProductId : into?.lifetimeProductId ?? null,
           lifetimeEventAt: takeLife ? from.lifetimeEventAt : into?.lifetimeEventAt ?? null,
           // The subscription's id travels with the subscription; a lifetime never names it.
@@ -1402,6 +1414,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           // answered undefined where the other answers false is a divergence only the contract
           // test would notice.
           trial: patch.trial === true,
+          sandbox: patch.sandbox === true,
         });
         return true;
       }
@@ -1421,6 +1434,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         eventAt: newest(current?.eventAt, patch.eventAt),
         // A lifetime event says nothing about the subscription's period.
         trial: current?.trial ?? false,
+        sandbox: patch.sandbox === true,
       });
       return true;
     },
@@ -1456,6 +1470,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async timezoneOf(userId) {
       return timezones.get(userId) ?? null;
+    },
+
+    async setChannel(userId, channel) {
+      if (users.has(userId)) channels.set(userId, { latest: channel, first: channels.get(userId)?.first ?? channel });
     },
 
     async setTimezone(userId, timezone) {
@@ -1810,17 +1828,18 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return [...users.values()].filter((u) => u.onboarded_at && Date.parse(u.onboarded_at) >= since).length;
     },
 
-    async onboardingFunnel(range, staffIds = []) {
+    async onboardingFunnel(range, staffIds = [], includeTesters = false) {
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
       return aggregateFunnel(
         [...onboardingEvents.values()]
-          .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)),
+          .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)
+            && (includeTesters || !tester(e.userId))),
         funnelGrant);
     },
 
     async adminOnboardingFlow(query) {
-      const { userId, range, staffIds = [], cursor, limit, leftAt } = query;
+      const { userId, range, staffIds = [], cursor, limit, leftAt, includeTesters = false } = query;
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
       const inRange = (e: StoredEvent) => e.receivedAt >= lo && e.receivedAt <= hi;
@@ -1848,6 +1867,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           entitlement: g === null ? null : storedEntitlement(uid),
           bonusUntil: bonusUntil.get(uid) ?? null,
           bankedDays: bankedDays.get(uid) ?? 0,
+          channel: channels.get(uid)?.latest ?? null,
         };
       };
 
@@ -1867,7 +1887,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // account, newest start first, keyset-paged on (started, user_id) like `adminListUsers`.
       const byUser = new Map<string, StoredEvent[]>();
       for (const e of onboardingEvents.values()) {
-        if (!inRange(e) || staffSet.has(e.userId) || staffIds.includes(e.userId)) continue;
+        if (!inRange(e) || staffSet.has(e.userId) || staffIds.includes(e.userId) || (!includeTesters && tester(e.userId))) continue;
         const l = byUser.get(e.userId);
         if (l) l.push(e); else byUser.set(e.userId, [e]);
       }
@@ -1990,7 +2010,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const experiment = onboardingExperiments.get(experimentId);
       const out = new Map<number, OnboardingExperimentFunnelRow>();
       for (const a of onboardingAssignments.values()) {
-        if (a.experiment_id !== experimentId || staffSet.has(a.user_id) || staffIds.includes(a.user_id)) continue;
+        if (a.experiment_id !== experimentId || staffSet.has(a.user_id) || staffIds.includes(a.user_id) || tester(a.user_id)) continue;
         // `range` narrows inside the experiment's own window, never widens it (#2776): an
         // assignment outside it is out, and so are that account's events outside it.
         const assignedAt = Date.parse(a.assigned_at);
@@ -2032,7 +2052,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // aggregation the whole-host funnel uses — so a place row is counted the same way in both.
       const byArm = new Map<number, StoredEvent[]>();
       for (const a of onboardingAssignments.values()) {
-        if (a.experiment_id !== experimentId || staffSet.has(a.user_id) || staffIds.includes(a.user_id)) continue;
+        if (a.experiment_id !== experimentId || staffSet.has(a.user_id) || staffIds.includes(a.user_id) || tester(a.user_id)) continue;
         const assignedAt = Date.parse(a.assigned_at);
         if (assignedAt < lo || assignedAt > hi) continue;
         // Only runs that RENDERED this arm: a run that fell back walked another order, so its
