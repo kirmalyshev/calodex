@@ -28,7 +28,7 @@ import {
   MAX_FOOD_QUERY, FOOD_LOG_MAX_GRAMS, normalizeBarcode, type FoodSearchResponse, type ProductResponse,
   type ReferralRedeemRequest, type ReferralSharedRequest,
 } from "@eait/shared";
-import { APP_HEADER, acceptLang, narrowLang, knownApp } from "@eait/shared";
+import { APP_HEADER, CHANNEL_HEADER, acceptLang, narrowLang, knownApp, parseChannel } from "@eait/shared";
 import { appLinkLanding, html } from "../web/page.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
 import { emailSignInEnabled } from "../mail/choose.ts";
@@ -789,6 +789,14 @@ export function createRouter(
       // ── Profile ───────────────────────────────────────────────────────────────────────────
       if (pathname === ROUTES.profile) {
         if (req.method === "GET") {
+          // The distribution channel (ieat-app#2899), for the admin's tester read and nothing
+          // else. Best-effort: a failed write is logged and never fails the read; an unknown value
+          // is an older or foreign build and is dropped — counted, never quoted.
+          const sent = req.headers.get(CHANNEL_HEADER);
+          const channel = parseChannel(sent);
+          if (channel !== null) {
+            await store.setChannel(userId, channel).catch(() => console.log("[eait] profile: channel write failed"));
+          } else if (sent !== null) console.log("[eait] profile: ignored an unknown channel");
           const view = await profileView(deps, userId);
           return view ? json(view) : json({ error: "not-onboarded" }, 403);
         }
