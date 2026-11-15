@@ -3426,6 +3426,165 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(f.paid.medianMs).toBe(2100000);
     });
 
+    // ── Distribution channel and testers (ieat-app#2899) ─────────────────────────────────────
+    //
+    // A TestFlight install or a sandbox purchase was counted beside App Store users; a tester is an
+    // account whose app LAST reported testflight or dev, or whose latest grant was sandbox. Both
+    // stores must agree on who that is, because Postgres holds it as a generated column and the
+    // memory store as a function.
+    describe("distribution channel and testers (ieat-app#2899)", () => {
+      const row = async (s: Store, id: string, channel?: "appstore" | "testflight" | "dev" | "unknown") =>
+        (await s.adminListUsers({ q: id, limit: 10, today: "2026-11-15", ...(channel ? { channel } : {}) })).rows[0];
+
+      it("keeps the latest channel and the first, and writes nothing for an unknown account", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        expect(await row(s, u)).toMatchObject({ channel: null, channelFirst: null });
+        await s.setChannel(u, "testflight");
+        expect(await row(s, u)).toMatchObject({ channel: "testflight", channelFirst: "testflight" });
+        await s.setChannel(u, "appstore");
+        expect(await row(s, u)).toMatchObject({ channel: "appstore", channelFirst: "testflight" });
+        // Unchanged: still the same pair.
+        await s.setChannel(u, "appstore");
+        expect(await row(s, u)).toMatchObject({ channel: "appstore", channelFirst: "testflight" });
+        await s.setChannel(crypto.randomUUID(), "dev");
+      });
+
+      it("filters the accounts list by latest channel, `unknown` being none reported", async () => {
+        const s = await open();
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const app = await mk(), tf = await mk(), dv = await mk(), none = await mk(), moved = await mk();
+        await s.setChannel(app, "appstore");
+        await s.setChannel(tf, "testflight");
+        await s.setChannel(dv, "dev");
+        await s.setChannel(moved, "testflight");
+        await s.setChannel(moved, "appstore");
+        const where = async (id: string) => {
+          const hits: string[] = [];
+          for (const c of ["appstore", "testflight", "dev", "unknown"] as const) if (await row(s, id, c)) hits.push(c);
+          return hits;
+        };
+        expect(await where(app)).toEqual(["appstore"]);
+        expect(await where(tf)).toEqual(["testflight"]);
+        expect(await where(dv)).toEqual(["dev"]);
+        expect(await where(none)).toEqual(["unknown"]);
+        // The LATEST channel decides, not the first.
+        expect(await where(moved)).toEqual(["appstore"]);
+        // No filter: every one of them.
+        for (const id of [app, tf, dv, none, moved]) expect(await row(s, id)).toBeDefined();
+      });
+
+      it("stores a sandbox grant as `sandbox: true` and a production one as no key, per grant", async () => {
+        const s = await open();
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const sub = { expiresAt: "2026-11-16T10:00:00.000Z", productId: "yearly", eventAt: "2026-11-15T10:00:00.000Z" };
+        const life = { lifetimeProductId: "lifetime", productId: "lifetime", eventAt: "2026-11-15T10:00:00.000Z" };
+
+        const a = await mk();
+        await s.putEntitlement(a, { ...sub, sandbox: true });
+        expect(await s.getEntitlement(a)).toEqual({
+          expiresAt: sub.expiresAt, lifetimeProductId: null, productId: "yearly", eventAt: sub.eventAt, trial: false, sandbox: true,
+        });
+        const b = await mk();
+        await s.putEntitlement(b, { ...sub, sandbox: false });
+        expect("sandbox" in (await s.getEntitlement(b))!).toBe(false);
+        const c = await mk();
+        await s.putEntitlement(c, { ...life, sandbox: true });
+        expect((await s.getEntitlement(c))?.sandbox).toBe(true);
+        const d = await mk();
+        await s.putEntitlement(d, life);
+        expect("sandbox" in (await s.getEntitlement(d))!).toBe(false);
+
+        // The flag describes the most recently applied grant, whichever of the two it was.
+        await s.putEntitlement(a, { ...life, eventAt: "2026-11-15T11:00:00.000Z" });
+        expect("sandbox" in (await s.getEntitlement(a))!).toBe(false);
+        await s.putEntitlement(d, { ...sub, sandbox: true, eventAt: "2026-11-15T11:00:00.000Z" });
+        expect((await s.getEntitlement(d))?.sandbox).toBe(true);
+        // The admin list reads the same flag.
+        expect((await row(s, d))?.entitlement?.sandbox).toBe(true);
+        expect("sandbox" in ((await row(s, b))?.entitlement ?? {})).toBe(false);
+      });
+
+      it("carries the sandbox flag across a merge, with either grant", async () => {
+        const s = await open();
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const anon = await mk(), real = await mk(), anon2 = await mk(), real2 = await mk();
+        await s.putEntitlement(anon, { expiresAt: "2027-11-16T10:00:00.000Z", productId: "yearly", eventAt: "2026-11-15T10:00:00.000Z", sandbox: true });
+        await s.mergeUsers(anon, real);
+        expect((await s.getEntitlement(real))?.sandbox).toBe(true);
+        await s.putEntitlement(anon2, { lifetimeProductId: "lifetime", productId: "lifetime", eventAt: "2026-11-15T10:00:00.000Z", sandbox: true });
+        await s.mergeUsers(anon2, real2);
+        expect((await s.getEntitlement(real2))?.sandbox).toBe(true);
+      });
+
+      it("carries the sandbox flag on a transfer, and a production grant clears the destination's", async () => {
+        const s = await open();
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const from = await mk(), into = await mk();
+        await s.putEntitlement(from, { expiresAt: "2027-11-16T10:00:00.000Z", productId: "yearly", eventAt: "2026-11-15T10:00:00.000Z", sandbox: true });
+        expect(await s.moveEntitlement(from, into, "2026-11-15T12:00:00.000Z")).toBe(true);
+        expect((await s.getEntitlement(into))?.sandbox).toBe(true);
+
+        const real = await mk(), was = await mk();
+        await s.putEntitlement(was, { expiresAt: "2026-11-15T11:00:00.000Z", productId: "yearly", eventAt: "2026-11-15T10:00:00.000Z", sandbox: true });
+        await s.putEntitlement(real, { expiresAt: "2027-11-16T10:00:00.000Z", productId: "yearly", eventAt: "2026-11-15T10:30:00.000Z" });
+        expect(await s.moveEntitlement(real, was, "2026-11-15T12:00:00.000Z")).toBe(true);
+        expect((await s.getEntitlement(was))?.expiresAt).toBe("2027-11-16T10:00:00.000Z");
+        expect("sandbox" in (await s.getEntitlement(was))!).toBe(false);
+      });
+
+      it("leaves testers out of the funnel and the per-account flow unless asked, and real accounts in always", async () => {
+        const s = await open();
+        const t0 = Date.now();
+        const isoAt = (ms: number) => new Date(t0 + ms).toISOString();
+        // Window on `received_at` from this test's start, as the conversion test does: absolute counts.
+        const range = { from: new Date(t0), to: null };
+        const run = `testers-${RUN}`;
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const tf = await mk(), dv = await mk(), sbx = await mk(), real = await mk(), unk = await mk();
+        await s.setChannel(tf, "testflight");
+        await s.setChannel(dv, "dev");
+        await s.setChannel(sbx, "appstore");
+        await s.setChannel(real, "appstore");
+        const grant = (sandbox: boolean, at = 1000) =>
+          ({ expiresAt: isoAt(86400000), productId: `y-${RUN}`, eventAt: isoAt(at), ...(sandbox ? { sandbox } : {}) });
+        // A TestFlight build is a tester whatever its grant says; a sandbox grant is one whatever the channel.
+        await s.putEntitlement(tf, grant(false));
+        await s.putEntitlement(sbx, grant(true));
+        await s.putEntitlement(real, grant(false));
+        for (const u of [tf, dv, sbx, real, unk]) {
+          await s.recordOnboardingEvents(u, [{
+            id: `${run}-${u}`, sessionId: `${run}-${u}`, place: "goal", action: "view", contentVersion: 1, at: isoAt(0),
+          }] as never);
+        }
+        const people = (f: Awaited<ReturnType<Store["onboardingFunnel"]>>) => f.rows.find((r) => r.place === "goal")?.people ?? 0;
+
+        const out = await s.onboardingFunnel(range);
+        expect(out.sessions).toBe(2);
+        expect(people(out)).toBe(2);
+        expect(out.paid.converted).toBe(1);
+        const inc = await s.onboardingFunnel(range, [], true);
+        expect(inc.sessions).toBe(5);
+        expect(people(inc)).toBe(5);
+        expect(inc.paid.converted).toBe(3);
+
+        const ids = async (includeTesters?: boolean) =>
+          new Set((await s.adminOnboardingFlow({ range, limit: 50, ...(includeTesters ? { includeTesters } : {}) })).rows.map((r) => r.userId));
+        expect([...await ids()].sort()).toEqual([real, unk].sort());
+        expect([...await ids(true)].sort()).toEqual([tf, dv, sbx, real, unk].sort());
+        const rows = (await s.adminOnboardingFlow({ range, limit: 50, includeTesters: true })).rows;
+        expect(rows.find((r) => r.userId === tf)?.channel).toBe("testflight");
+        expect(rows.find((r) => r.userId === unk)?.channel).toBeNull();
+        expect(rows.find((r) => r.userId === sbx)?.entitlement?.sandbox).toBe(true);
+
+        // Read at query time, off the LATEST channel and the LATEST grant.
+        await s.setChannel(dv, "appstore");
+        await s.putEntitlement(sbx, grant(false, 2000));
+        expect((await s.onboardingFunnel(range)).sessions).toBe(4);
+        expect([...await ids()].sort()).toEqual([dv, sbx, real, unk].sort());
+      });
+    });
+
     // ── Onboarding experiments (ieat-app#2669) ───────────────────────────────────────────────
     //
     // The experiment row is global, like the switches above it — a `running` one left behind would
@@ -3636,6 +3795,29 @@ function contract(name: string, make: () => Promise<Store>) {
         await s.setStaff(staff, false);
         const back = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
         expect(back.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 2, sessions: 2, completed: 2 });
+      });
+
+      it("leaves testers out of every arm's numbers, always (ieat-app#2899)", async () => {
+        const s = await open();
+        const e = exp({ id: `tester-arm-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const user = await mk(), tf = await mk(), dv = await mk(), sbx = await mk();
+        await s.setChannel(user, "appstore");
+        await s.setChannel(tf, "testflight");
+        await s.setChannel(dv, "dev");
+        await s.putEntitlement(sbx, { expiresAt: "2027-11-16T10:00:00.000Z", productId: "yearly", eventAt: "2026-11-15T10:00:00.000Z", sandbox: true });
+        for (const u of [user, tf, dv, sbx]) {
+          const a = await s.putOnboardingAssignment(u, e.id, 41);
+          await s.recordOnboardingEvents(u, [
+            { id: crypto.randomUUID(), sessionId: "t-" + u, place: "goal", action: "view", contentVersion: 41, at: a.assigned_at },
+            { id: crypto.randomUUID(), sessionId: "t-" + u, place: "goal", action: "complete", contentVersion: 41, at: a.assigned_at },
+          ] as never);
+        }
+        const rows = await s.onboardingExperimentFunnel(e.id, { from: null, to: null });
+        expect(rows.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 1, sessions: 1, completed: 1 });
+        const places = await s.onboardingExperimentPlaces(e.id, { from: null, to: null });
+        expect(places.find((r) => r.variant_id === 41 && r.place === "goal")).toMatchObject({ people: 1, views: 1 });
       });
 
       it("keeps an arm's order, and counts each arm's places inside the arm's own window (ieat-app#2788)", async () => {
@@ -5650,6 +5832,88 @@ if (PG_URL) {
       await migrate();
       await migrate();
       expect((await store.getEntitlement(userId))?.lifetimeProductId).toBeNull();
+      await sql.end();
+    });
+  });
+
+  // ── The sandbox repair (ieat-app#2899) ─────────────────────────────────────────────────────
+  //
+  // `entitlement_sandbox` arrives with a one-time heuristic over the rows written before it: a
+  // subscription, not a trial and not a lifetime, expiring 1-48h after its own event, with that
+  // event before 2026-11-16 — a TestFlight subscription renews daily. Dropping `tester` (which
+  // depends on it) and then the column is what makes the next migration believe it is the first.
+  // TABLE-WIDE, like the lifetime backfill above: the assertions name this test's rows only.
+  describe("the sandbox repair on a database without entitlement_sandbox", () => {
+    const migrate = () => postgresStore(PG_URL, { maxConnections: 2 });
+
+    it("marks only short pre-cutoff subscriptions, once", async () => {
+      const sql = await rawSql();
+      const store = await migrate();
+      const H = 3_600_000;
+      const mk = async (eventAt: string, hours: number, extra: Record<string, unknown> = {}) => {
+        const { userId } = await store.upsertDeviceUser(`sbx-${crypto.randomUUID()}`, "en");
+        await store.putEntitlement(userId, {
+          expiresAt: new Date(Date.parse(eventAt) + hours * H).toISOString(), productId: "yearly", eventAt, ...extra,
+        });
+        return userId;
+      };
+      const before = "2026-11-14T10:00:00.000Z";
+      const cutoff = "2026-11-16T00:00:00.000Z";
+      const shapes = {
+        yearly24hBefore: { id: await mk(before, 24), marked: true },
+        at1h: { id: await mk(before, 1), marked: true },
+        at48h: { id: await mk(before, 48), marked: true },
+        at49h: { id: await mk(before, 49), marked: false },
+        at59min: { id: await mk(before, 59 / 60), marked: false },
+        atCutoff24h: { id: await mk(cutoff, 24), marked: false },
+        after24h: { id: await mk("2026-11-20T10:00:00.000Z", 24), marked: false },
+        trial24h: { id: await mk(before, 24, { trial: true }), marked: false },
+        expiration0h: { id: await mk(before, 0), marked: false },
+        monthly720h: { id: await mk(before, 720), marked: false },
+        lifetime: { id: await mk(before, 24), marked: false },
+      };
+      await store.putEntitlement(shapes.lifetime.id, {
+        lifetimeProductId: "lifetime", productId: "lifetime", eventAt: "2026-11-14T11:00:00.000Z" });
+      const ids = Object.values(shapes).map((x) => x.id);
+      const read = async () => Object.fromEntries((await sql`
+        select id::text, entitlement_sandbox, tester from users where id = any(${sql.array(ids, "uuid")})`)
+        .map((r: { id: string; entitlement_sandbox: boolean; tester: boolean }) => [r.id, r]));
+
+      await sql`alter table users drop column tester`;
+      await sql`alter table users drop column entitlement_sandbox`;
+      await migrate();
+      const after = await read();
+      for (const [name, { id, marked }] of Object.entries(shapes)) {
+        expect([name, after[id]?.entitlement_sandbox]).toEqual([name, marked]);
+        // The generated column came back on top of it.
+        expect([name, after[id]?.tester]).toEqual([name, marked]);
+      }
+      expect((await store.getEntitlement(shapes.yearly24hBefore.id))?.sandbox).toBe(true);
+
+      // A second migration changes nothing — not the marked rows, and not a new row of the
+      // repair's shape written after the column existed, which carries its own event's flag.
+      const late = await mk(before, 24);
+      await migrate();
+      const again = await read();
+      for (const id of ids) expect(again[id]?.entitlement_sandbox).toBe(after[id]?.entitlement_sandbox);
+      expect("sandbox" in (await store.getEntitlement(late))!).toBe(false);
+      await sql.end();
+    });
+  });
+
+  // `setChannel` runs on every GET /v1/profile; an unchanged channel must not rewrite the row.
+  describe("setChannel on an unchanged channel — postgres", () => {
+    it("leaves the row's version alone, and writes a change", async () => {
+      const sql = await rawSql();
+      const store = await postgresStore(PG_URL, { maxConnections: 2 });
+      const { userId } = await store.upsertDeviceUser(`ch-${crypto.randomUUID()}`, "en");
+      const xmin = async () => (await sql`select xmin::text x from users where id = ${userId}`)[0].x as string;
+      await store.setChannel(userId, "testflight");
+      const v1 = await xmin();
+      await store.setChannel(userId, "testflight");
+      expect(await xmin()).toBe(v1);
+      await store.setChannel(userId, "appstore");
+      expect(await xmin()).not.toBe(v1);
       await sql.end();
     });
   });
