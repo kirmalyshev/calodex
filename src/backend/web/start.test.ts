@@ -1195,6 +1195,33 @@ describe("the numbers go through the shared checks, not this page's own", () => 
   });
 });
 
+// A refused answer is shown back as typed (#53). In imperial it was typed in pounds or inches, and the
+// controls read the value they are handed as metric — 700 lb came back as 1543 lb, 100 in as 3′3″.
+describe("a refused imperial answer is shown back in the unit it was typed in", () => {
+  const imperialAt = async (subject: string, field: string) => {
+    const session = await signIn(subject);
+    await post("/start/q", { prompt: "goal", answer: "lose" }, session);
+    await post("/start/q", { prompt: "sex", answer: "male" }, session);
+    await post("/start/q", { prompt: "birth_year", answer: "34" }, session);
+    if (field === "weight_kg") await post("/start/q", { prompt: "height_cm", answer: "180" }, session);
+    await post("/start/q", { prompt: field, setunits: "imperial" }, session);
+    return session;
+  };
+
+  it("weight: 700 lb is refused and shown back as 700 lb", async () => {
+    const session = await imperialAt("imperial-weight", "weight_kg");
+    const html = await (await post("/start/q", { prompt: "weight_kg", answer: "700" }, session)).text();
+    expect(html).toContain('data-val="700"');
+    expect(html).toContain('value="700"');
+  });
+
+  it("height: 100 in is refused and shown back as 100 in", async () => {
+    const session = await imperialAt("imperial-height", "height_cm");
+    const html = await (await post("/start/q", { prompt: "height_cm", answer: "100" }, session)).text();
+    expect(html).toContain('data-val="100"');
+  });
+});
+
 describe("the under-sixteen stop", () => {
   const toAge = async (session: string, age: string) => {
     await post("/start/q", { prompt: "goal", answer: "lose" }, session);

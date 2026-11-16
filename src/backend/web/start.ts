@@ -1248,8 +1248,18 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const open = walk[at]!;
       // A refused answer is shown back as typed (#53): wiping the box made the person retype it.
       const typed = form.getAll("answer").filter((v): v is string => typeof v === "string");
+      // The controls read what they are handed as METRIC — a stored answer on Back is. An imperial
+      // answer was typed in inches or pounds, so it goes back through the one conversion first, or
+      // 700 lb came back as 1543 lb. A value that is not a number stays exactly as typed.
+      const shownBack = units === "imperial" && (open.field === "height_cm" || open.field === "weight_kg" || open.field === "target_weight_kg")
+        ? typed.map((t) => {
+          const n = Number(t);
+          if (t.trim() === "" || !Number.isFinite(n)) return t;
+          return String(open.field === "height_cm" ? heightToCm("imperial", n) : weightToKg("imperial", n));
+        })
+        : typed;
       const retry = (error: string | null, actions: Action[] = [], draftKg?: number) =>
-        askAt(at, error, actions, draftKg, typed.length > 0 ? typed : undefined);
+        askAt(at, error, actions, draftKg, shownBack.length > 0 ? shownBack : undefined);
 
       // The wrong-direction refusal's own escape: usually the goal was mistapped, not the number.
       const switchTo = form.get("switch");
