@@ -429,7 +429,8 @@ function optionsFor(
 type Answered =
   | { kind: "patch"; patch: PatchProfileRequest }
   /** Refused before it costs a round trip, in the words `shared` wrote for it. */
-  | { kind: "refuse"; line: string; switchTo?: Goal }
+  /** `shown`: the answer as the controls read it, metric — what a refused number is shown back as (#53). */
+  | { kind: "refuse"; line: string; switchTo?: Goal; shown?: string }
   /** Under sixteen. Not a validation failure — a stop, and the account goes with it. */
   | { kind: "under-age" }
   /** A high two-digit answer that could be a year typed short. Asked, never guessed. */
@@ -447,6 +448,14 @@ type Answered =
  * likewise a deliberate subset of the server's, so the only refusals anybody can meet are the two
  * that have words written for them.
  */
+/**
+ * A refused number as the question controls read it: METRIC, as `raw` already is here — converted
+ * from the posted unit, the imperial height's ft/in fields included — so it is shown back as typed
+ * (#53) without a second conversion that would read 700 lb as 700 kg. Not a number: nothing, and the
+ * typed text stands.
+ */
+const shownAs = (raw: string): { shown?: string } => (Number.isFinite(Number(raw)) && raw.trim() !== "" ? { shown: raw } : {});
+
 function answerFor(
   prompt: ChatPrompt,
   answers: string[],
@@ -532,7 +541,7 @@ function answerFor(
       // "90" is 1990 typed the short way, or somebody who is ninety. Computing the wrong one is
       // computing a stranger's calorie target, so it is asked rather than guessed.
       if ("ambiguousAge" in checked) return { kind: "ambiguous-age", age: checked.ambiguousAge };
-      return { kind: "refuse", line: checked.line };
+      return { kind: "refuse", line: checked.line, ...shownAs(raw) };
     }
     // THE AGE TRAVELS, NOT THE YEAR. `checkNumber` returns an age for this field — a four-digit
     // answer included — and `patchProfile` does the subtraction with the SERVER's clock, because a
@@ -545,7 +554,7 @@ function answerFor(
     // with nothing on any screen to say so.
     if (field === "target_weight_kg" && profile.goal !== null && profile.weight_kg !== null) {
       const wrong = checkDirection(profile.goal, profile.weight_kg, checked.value, profile.lang, content.refusals);
-      if (wrong) return { kind: "refuse", line: wrong.line, switchTo: wrong.switchTo };
+      if (wrong) return { kind: "refuse", line: wrong.line, switchTo: wrong.switchTo, ...shownAs(raw) };
     }
     return { kind: "patch", patch: { [field]: checked.value } as PatchProfileRequest };
   }
@@ -1248,18 +1257,10 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const open = walk[at]!;
       // A refused answer is shown back as typed (#53): wiping the box made the person retype it.
       const typed = form.getAll("answer").filter((v): v is string => typeof v === "string");
-      // The controls read what they are handed as METRIC — a stored answer on Back is. An imperial
-      // answer was typed in inches or pounds, so it goes back through the one conversion first, or
-      // 700 lb came back as 1543 lb. A value that is not a number stays exactly as typed.
-      const shownBack = units === "imperial" && (open.field === "height_cm" || open.field === "weight_kg" || open.field === "target_weight_kg")
-        ? typed.map((t) => {
-          const n = Number(t);
-          if (t.trim() === "" || !Number.isFinite(n)) return t;
-          return String(open.field === "height_cm" ? heightToCm("imperial", n) : weightToKg("imperial", n));
-        })
-        : typed;
-      const retry = (error: string | null, actions: Action[] = [], draftKg?: number) =>
-        askAt(at, error, actions, draftKg, shownBack.length > 0 ? shownBack : undefined);
+      // `shown` overrides it with the metric value the controls read (`shownAs`): an imperial answer
+      // was typed in inches or pounds, and shown back raw it was converted a second time.
+      const retry = (error: string | null, actions: Action[] = [], draftKg?: number, shown?: string[]) =>
+        askAt(at, error, actions, draftKg, shown ?? (typed.length > 0 ? typed : undefined));
 
       // The wrong-direction refusal's own escape: usually the goal was mistapped, not the number.
       const switchTo = form.get("switch");
@@ -1307,6 +1308,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         return retry(under.ask, [{ name: "confirm", value: "under-age", label: under.confirm }]);
       }
       if (answer.kind === "refuse") {
+        const shown = answer.shown !== undefined ? [answer.shown] : undefined;
         return retry(answer.line, answer.switchTo
           ? [{
               name: "switch",
@@ -1315,7 +1317,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
                 ? content.refusals.direction.switchToLose
                 : content.refusals.direction.switchToGain,
             }]
-          : []);
+          : [], undefined, shown);
       }
       // COMPLETION RIDES THE LAST QUESTION'S PATCH, whichever one it is — country and the streak
       // goal are screens of their own after the plan and never in this walk. It goes on the patch
@@ -1328,7 +1330,12 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         ...(postedUnits === "metric" || postedUnits === "imperial" ? { units: postedUnits } : {}),
       };
       const outcome = await patchProfile(ctx.deps, userId, patch);
-      if (outcome && !outcome.ok) return retry(refusalText(outcome.rejected, profile.lang));
+      if (outcome && !outcome.ok) {
+        // Refused by the server (the healthy-BMI floor): shown back as sent, metric — see `shownAs`.
+        const sent = open.field !== undefined ? (answer.patch as Record<string, unknown>)[open.field] : undefined;
+        return retry(refusalText(outcome.rejected, profile.lang), [], undefined,
+          typeof sent === "number" ? [String(sent)] : undefined);
+      }
       // The completing patch lands on the plan, which draws its own reveal — after the cards, if any.
       const trailing = editIndex === -1 ? walk[at + 1] : undefined;
       if (editIndex === -1 && at === lastField && trailing?.kind !== "auto") return seeOther(`${START_PREFIX}/plan`);

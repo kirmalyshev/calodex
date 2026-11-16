@@ -1215,6 +1215,15 @@ describe("a refused imperial answer is shown back in the unit it was typed in", 
     expect(html).toContain('value="700"');
   });
 
+  // No script: the ft/in fields are what was typed, and the hidden `answer` still holds the last
+  // render's inches. What is shown back is the ft/in answer, read the one way `answerFor` reads it.
+  it("height without the script: 9 ft 0 in is refused and shown back as 9 ft 0 in", async () => {
+    const session = await imperialAt("imperial-ftin", "height_cm");
+    const html = await (await post("/start/q",
+      { prompt: "height_cm", answer: "69", answer_ft: "9", answer_in: "0" }, session)).text();
+    expect(html).toContain('data-val="108"');
+  });
+
   it("height: 100 in is refused and shown back as 100 in", async () => {
     const session = await imperialAt("imperial-height", "height_cm");
     const html = await (await post("/start/q", { prompt: "height_cm", answer: "100" }, session)).text();
