@@ -240,8 +240,8 @@ function numAlt(v: QuestionView, input: string, unitWord: string, labelled = "an
     `<span class="uname">${escape(unitWord)}</span></div>`;
 }
 
-const numInput = (v: QuestionView, val: number, min: number, max: number, step: number): string =>
-  `<input type="number" id="answer" name="answer" value="${val}" min="${min}" max="${max}"` +
+const numInput = (v: QuestionView, val: number, min: number, max: number, step: number, shown?: string): string =>
+  `<input type="number" id="answer" name="answer" value="${shown !== undefined ? escape(shown) : val}" min="${min}" max="${max}"` +
   ` step="${step}" inputmode="decimal" required` +
   (v.error !== null ? ` aria-invalid="true" aria-describedby="answer-error"` : "") + `>`;
 
@@ -277,9 +277,28 @@ function unitsSeg(v: QuestionView, which: "height" | "weight"): string {
     hidden("from", v.prompt.id) + hidden("draft", v.draft !== null ? String(v.draft) : ""));
 }
 
+/**
+ * The metric value a ruler control draws, held to its field's band. A refused answer is shown back
+ * as typed (#53) and `?draft=` takes any positive number; the ruler, its labels and the target's
+ * goal lines are drawn from the value held inside the band. Not a number: none.
+ */
+function inBand(field: "height_cm" | "weight_kg" | "target_weight_kg", n: number | null | undefined): number | null {
+  if (n === null || n === undefined || !Number.isFinite(n)) return null;
+  const [lo, hi] = BANDS[field];
+  return Math.min(hi, Math.max(lo, n));
+}
+
+/** The refused answer as typed, for the plain field (#53), when the ruler cannot draw it: outside the band, or not a number. */
+function refusedAsTyped(v: QuestionView, field: "height_cm" | "weight_kg" | "target_weight_kg"): string | undefined {
+  const raw = v.current[0];
+  if (raw === undefined) return undefined;
+  const n = Number(raw);
+  return Number.isFinite(n) && inBand(field, n) === n ? undefined : raw;
+}
+
 function heightControl(v: QuestionView): { seg: string; control: string } {
   const stored = v.current[0] !== undefined ? Number(v.current[0]) : v.profile.height_cm;
-  const cm = v.draft ?? stored ?? ONBOARDING_NEUTRAL.heightCm;
+  const cm = inBand("height_cm", v.draft ?? stored) ?? ONBOARDING_NEUTRAL.heightCm;
   const t = RULER_TICKS.height[v.units];
   const val = heightDisplayValue(cm, v.units);
   // The imperial band rounds INWARD: a value the UI admits is always inside the metric band
@@ -296,7 +315,7 @@ function heightControl(v: QuestionView): { seg: string; control: string } {
       `<input type="number" name="answer_in" id="answer_in" data-alt value="${cmToFtIn(val ? Math.round(val * 2.54) : 0).in}" min="0" max="11" step="1" inputmode="numeric" aria-label="in">` +
       `<span class="uname">ft · in</span></div>` +
       `<input type="hidden" name="answer" value="${val}">`
-    : numAlt(v, numInput(v, val, min, max, 1), "cm");
+    : numAlt(v, numInput(v, val, min, max, 1, refusedAsTyped(v, "height_cm")), "cm");
   const ctl = rulerControl(v, {
     ticks: t, val, min, max, step: 1,
     fmt: v.units === "imperial" ? "ftin" : "int",
@@ -310,7 +329,7 @@ const weightStep = (units: UnitSystem): number => (units === "imperial" ? 1 : 0.
 
 function weightControl(v: QuestionView): { seg: string; control: string } {
   const stored = v.current[0] !== undefined ? Number(v.current[0]) : v.profile.weight_kg;
-  const kg = v.draft ?? stored ?? ONBOARDING_NEUTRAL.weightKg;
+  const kg = inBand("weight_kg", v.draft ?? stored) ?? ONBOARDING_NEUTRAL.weightKg;
   const t = RULER_TICKS.weight[v.units];
   const val = weightDisplayValue(kg, v.units);
   const [min, max] = v.units === "imperial"
@@ -322,7 +341,7 @@ function weightControl(v: QuestionView): { seg: string; control: string } {
     ticks: t, val, min, max, step: weightStep(v.units),
     fmt: "int", vertical: false, smalls: spellUnit(v.lang, word), unitWord: spellUnit(v.lang, word), settle: true,
   });
-  return { seg: unitsSeg(v, "weight"), control: ctl + numAlt(v, numInput(v, val, min, max, weightStep(v.units)), spellUnit(v.lang, word)) };
+  return { seg: unitsSeg(v, "weight"), control: ctl + numAlt(v, numInput(v, val, min, max, weightStep(v.units), refusedAsTyped(v, "weight_kg")), spellUnit(v.lang, word)) };
 }
 
 /** The goal line for every stop on the target ruler (ieat-app#2050's 09). */
@@ -341,8 +360,7 @@ export const targetFloor = (minKg: number, units: UnitSystem): number =>
   units === "imperial" ? Math.ceil(minKg * LB_PER_KG) : minKg;
 
 function targetControl(v: QuestionView): { seg: string; control: string } {
-  const kg = v.draft
-    ?? (v.current[0] !== undefined ? Number(v.current[0]) : null)
+  const kg = inBand("target_weight_kg", v.draft ?? (v.current[0] !== undefined ? Number(v.current[0]) : null))
     ?? suggestedTargetKg(v.profile)
     ?? v.profile.weight_kg ?? ONBOARDING_NEUTRAL.weightKg;
   const t = RULER_TICKS.weight[v.units];
@@ -368,7 +386,7 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
     delta: { dn: v.content.target.markers.deltaDown, up: v.content.target.markers.deltaUp },
     goals: targetGoals(v, min, max),
   });
-  const alt = numAlt(v, numInput(v, Math.max(val, min), min, max, weightStep(v.units)), spellUnit(v.lang, word));
+  const alt = numAlt(v, numInput(v, Math.max(val, min), min, max, weightStep(v.units), refusedAsTyped(v, "target_weight_kg")), spellUnit(v.lang, word));
   return { seg: unitsSeg(v, "weight"), control: ctl + alt };
 }
 

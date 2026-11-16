@@ -16,7 +16,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  AMBIGUOUS_AGE, COUNTRY_CODES, DEFAULT_ONBOARDING_CONTENT, LANGS, LANG_LABEL, UNDER_AGE_CARD,
+  AMBIGUOUS_AGE, BANDS, COUNTRY_CODES, DEFAULT_ONBOARDING_CONTENT, LANGS, LANG_LABEL, UNDER_AGE_CARD,
   UNDER_AGE_LINES, chatCopyFor, countryLabel, countryOptions, disabledScreens,
   explainTargets, lintCopy, localDate, MAX_USER_LINE, onboardingContentFor, planCopyFor, planJourney, fill,
   projectGoal, projectionMonth, resolveCountry, suggestionFirst,
@@ -1192,6 +1192,37 @@ describe("the numbers go through the shared checks, not this page's own", () => 
     expect(await res.text()).toContain("In centimetres");
     const userId = (await store.userIdForToken(session.split("=")[1]!))!;
     expect((await store.getProfile(userId))!.height_cm).toBeNull();
+  });
+});
+
+// A refused number is shown back as typed (#53), and `?draft=` takes any positive number. The ruler is
+// drawn from the value held inside the field's band; the plain field keeps what was typed.
+describe("an out-of-band number is drawn inside its band", () => {
+  const atHeight = async () => {
+    const session = await signIn("band-subject");
+    await post("/start/q", { prompt: "goal", answer: "lose" }, session);
+    await post("/start/q", { prompt: "sex", answer: "male" }, session);
+    await post("/start/q", { prompt: "birth_year", answer: "34" }, session);
+    return session;
+  };
+
+  for (const answer of ["500", "1e17"]) {
+    it(`clamps an out-of-band height (${answer}) on the ruler, keeps it as typed, stores nothing`, async () => {
+      const session = await atHeight();
+      const res = await post("/start/q", { prompt: "height_cm", answer }, session);
+      expect(res.status).toBe(200);
+      const html = await res.text();
+      expect(html).toContain(`data-val="${BANDS.height_cm[1]}"`);
+      expect(html).toContain(`value="${answer}"`);
+      const userId = (await store.userIdForToken(session.split("=")[1]!))!;
+      expect((await store.getProfile(userId))!.height_cm).toBeNull();
+    });
+  }
+
+  it("clamps an out-of-band ?draft= on the ruler", async () => {
+    const session = await atHeight();
+    const html = await (await get("/start/q?draft=1e17", session)).text();
+    expect(html).toContain(`data-val="${BANDS.height_cm[1]}"`);
   });
 });
 
