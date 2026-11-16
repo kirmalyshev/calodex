@@ -76,6 +76,15 @@ describe("the ruler tick sets", () => {
     expect(rulerLabels(t, 165, 180)).toEqual([165, 170, 175, 180]);
   });
 
+  // A window is labelled by count, so any window ends: one too wide, or past float precision, gets none.
+  test("rulerLabels always terminates, and gives no labels for a window no ruler draws", () => {
+    const t = RULER_TICKS.height.metric;
+    expect(rulerLabels(t, 1e17, 1e17 + 30)).toEqual([]);
+    expect(rulerLabels(t, 0, Infinity)).toEqual([]);
+    expect(rulerLabels(t, NaN, 180)).toEqual([]);
+    expect(rulerLabels(t, 180, 165)).toEqual([]);
+  });
+
   test("the imperial height ruler: a 16-inch window, a label every four inches", () => {
     const t = RULER_TICKS.height.imperial;
     expect(t.span).toBe(16); // 5′0″–6′4″ on the board
