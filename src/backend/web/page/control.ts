@@ -160,9 +160,12 @@ export const CONTROL_SCRIPT = `(function () {
       bigSet(ctl, fmt, val);
       inp.value = String(Math.round(val * 10) / 10);
       el.setAttribute("aria-valuenow", String(Math.round(val * 10) / 10));
-      // What a screen reader says: the numeral as drawn, unit included — "68" alone is no height.
-      var big = ctl.querySelector(".bign");
-      if (big) el.setAttribute("aria-valuetext", big.textContent.replace(/\\s+/g, " ").trim());
+      // What a screen reader says: the value with its unit — "68" alone is no height. Feet and inches
+      // are spelled, not drawn: the numeral's primes read aloud as "5 prime ft 8 double prime in".
+      var big = ctl.querySelector(".bign"), whole = Math.round(val);
+      var spoken = fmt === "ftin" ? Math.floor(whole / 12) + " ft " + (whole % 12) + " in"
+        : big ? big.textContent.replace(/\\s+/g, " ").trim() : "";
+      if (spoken) el.setAttribute("aria-valuetext", spoken);
     }
 
     var dragging = false, x0 = 0, v0 = 0;

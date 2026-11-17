@@ -97,7 +97,8 @@ test.describe("the walk", () => {
     await page.keyboard.press("Home");
     await expect(slider).toHaveAttribute("aria-valuenow", (await slider.getAttribute("aria-valuemin"))!);
     await page.locator('form.seg button', { hasText: "ft, in" }).click();
-    await expect(page.getByRole("slider")).toHaveAttribute("aria-valuetext", /′.*″/);
+    // Spoken, not drawn: "5 ft 8 in", never "5 prime ft 8 double prime in".
+    await expect(page.getByRole("slider")).toHaveAttribute("aria-valuetext", /^\d+ ft \d+ in$/);
   });
 
   test("the under-16 answer stops the walk and deletes the account", async ({ page }) => {
