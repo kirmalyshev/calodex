@@ -32,6 +32,7 @@
 // disagree about what "next" means.
 
 import { BRAND_TOKENS, branded } from "./brand.ts";
+import { COUNTRY_NAMES } from "./country-names.generated.ts";
 import type { AdminWindowEcho } from "./dates.ts";
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
 import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
@@ -608,36 +609,9 @@ export const COUNTRY_CODES = [
 ] as const;
 export type CountryCode = (typeof COUNTRY_CODES)[number];
 
-/** One `Intl.DisplayNames` per language, built on first use. Constructing one is not cheap. */
-const REGION_NAMES: Partial<Record<Lang, Intl.DisplayNames>> = {};
-
 /**
- * CLDR's English names for the curated codes — the fallback for a runtime without
- * `Intl.DisplayNames`. Hermes ships only Collator, DateTimeFormat and NumberFormat, so on the
- * phone `new Intl.DisplayNames` is `undefined` used as a constructor — a process abort where the
- * country list would render (ieat-app#977). DATA, not copy: the English spelling of a region,
- * used only where the platform cannot localize it — a wrong language on a picker beats no picker
- * at all.
- */
-const REGION_NAME_EN: Record<Exclude<CountryCode, "other">, string> = {
-  at: "Austria",
-  au: "Australia",
-  ca: "Canada",
-  ch: "Switzerland",
-  de: "Germany",
-  es: "Spain",
-  fr: "France",
-  gb: "United Kingdom",
-  id: "Indonesia",
-  it: "Italy",
-  mx: "Mexico",
-  ru: "Russia",
-  us: "United States",
-  vn: "Vietnam",
-};
-
-/**
- * The country's name in the reader's language, from CLDR.
+ * The country's name in the reader's language, from CLDR — read from `COUNTRY_NAMES`, generated
+ * at build time (`src/scripts/country-names.ts`) because Hermes has no `Intl.DisplayNames`.
  *
  * NOT A COPY TABLE, and that is the same call this PR already made for month names: a hand-written
  * table of fifteen countries in eight languages is 120 strings an admin would be handed a text box
@@ -652,9 +626,14 @@ const REGION_NAME_EN: Record<Exclude<CountryCode, "other">, string> = {
  */
 export function countryLabel(code: CountryCode, lang: Lang): string {
   if (code === "other") return code;
-  if (typeof Intl.DisplayNames !== "function") return REGION_NAME_EN[code];
-  const names = (REGION_NAMES[lang] ??= new Intl.DisplayNames([LANG_TAG[lang]], { type: "region" }));
-  return names.of(code.toUpperCase()) ?? code;
+  return COUNTRY_NAMES[lang][code] ?? code;
+}
+
+/** What a country search matches: the name in the reader's language and the English one. */
+export function countrySearchNames(code: Exclude<CountryCode, "other">, lang: Lang): string[] {
+  const local = countryLabel(code, lang);
+  const en = countryLabel(code, "en");
+  return local === en ? [local] : [local, en];
 }
 
 /**
