@@ -101,6 +101,22 @@ describe("diet and medical", () => {
     }
   }
 
+  // ieat-app#2978: the last question's answer completes onboarding, and a resume after it reopens
+  // only the span past the last question (`resume.ts`). A beat placed after it was a screen a kill
+  // skipped, and the plan and the sign-up with it.
+  for (const last of LAST_QUESTIONS) {
+    for (const beat of ["baseline", "prelim"] as const) {
+      it(`refuses ${last} before the ${beat} beat`, () => {
+        expect(validateOnboardingOrder(moved(last, beat))).toContainEqual({ place: last, rule: "must-follow", after: beat });
+      });
+    }
+  }
+
+  it("still lets an arm leave a beat out", () => {
+    expect(validateOnboardingOrder(DEFAULT_ORDER.filter((p) => p !== "prelim"))).toEqual([]);
+    expect(validateOnboardingOrder(DEFAULT_ORDER.filter((p) => p !== "baseline" && p !== "prelim"))).toEqual([]);
+  });
+
   it("may come in either order between them", () => {
     expect(validateOnboardingOrder(moved("medical", "diet"))).toEqual([]);
   });
@@ -120,17 +136,17 @@ describe("diet and medical", () => {
 });
 
 describe("the rules", () => {
-  it("are exactly the edges above, at ONBOARDING_ORDER_VERSION 1 — change either, bump the version", () => {
+  it("are exactly the edges above, at ONBOARDING_ORDER_VERSION 2 — change either, bump the version", () => {
     // A client validates against its OWN copy of these rules; one on the old copy must stop being
     // enrolled in an ordered arm, which only a version bump does (`onboarding-order.ts`).
     const expected: Partial<Record<OnboardingPlace, OnboardingPlace[]>> = {
-      summary: BEFORE_SUMMARY, diet: [...OTHER_QUESTIONS], medical: [...OTHER_QUESTIONS],
+      summary: BEFORE_SUMMARY, diet: [...OTHER_QUESTIONS, "baseline", "prelim"], medical: [...OTHER_QUESTIONS, "baseline", "prelim"],
     };
     for (const [later, earlier] of EDGES) (expected[later] ??= []).push(earlier);
     const sorted = (g: Partial<Record<string, readonly string[]>>) =>
       Object.fromEntries(Object.entries(g).map(([k, v]) => [k, [...v!].sort()]));
     expect(sorted(ORDER_AFTER)).toEqual(sorted(expected));
-    expect(ONBOARDING_ORDER_VERSION).toBe(1);
+    expect(ONBOARDING_ORDER_VERSION).toBe(2);
   });
 });
 
