@@ -218,7 +218,22 @@ export const CONTROL_SCRIPT = `(function () {
     function sync(i) {
       paint(i);
       val = min + i; inp.value = String(val);
+      el.setAttribute("aria-valuenow", String(val));
+      if (rows[i]) el.setAttribute("aria-valuetext", rows[i].textContent);
     }
+    // The slider keyboard (ieat-app#2984): up is older, Home and End the wheel's two ends.
+    el.addEventListener("keydown", function (e) {
+      var i = Math.max(0, Math.min(rows.length - 1, val - min)), n = rows.length - 1;
+      var to = e.key === "ArrowUp" || e.key === "ArrowRight" ? i + 1
+        : e.key === "ArrowDown" || e.key === "ArrowLeft" ? i - 1
+        : e.key === "PageUp" ? i + 10 : e.key === "PageDown" ? i - 10
+        : e.key === "Home" ? 0 : e.key === "End" ? n : null;
+      if (to === null) return;
+      e.preventDefault();
+      to = Math.max(0, Math.min(n, to));
+      el.scrollTo({ top: to * H, behavior: "auto" });
+      sync(to);
+    });
     function toVal(v) { el.scrollTop = (v - min) * H; }
     toVal(val);
     var t;
@@ -249,6 +264,8 @@ export const CONTROL_SCRIPT = `(function () {
     var radios = form.querySelectorAll("input[name='answer']");
     var track = ctl.querySelector(".slider"), fill = ctl.querySelector(".slider i"), knob = ctl.querySelector(".slider b");
     if (!track || !radios.length) return;
+    var spoken = []; try { spoken = JSON.parse(track.dataset.spoken || "[]"); } catch (err) { spoken = []; }
+    var at = 0;
     function pick(i) {
       i = Math.max(0, Math.min(stops.length - 1, i));
       for (var k = 0; k < stops.length; k++) {
@@ -257,6 +274,9 @@ export const CONTROL_SCRIPT = `(function () {
         if (res[k]) res[k].className = "paceres" + (k === i ? " on" : "");
       }
       if (radios[i]) radios[i].checked = true;
+      at = i;
+      track.setAttribute("aria-valuenow", String(i));
+      if (spoken[i]) track.setAttribute("aria-valuetext", spoken[i]);
       var x = track.clientWidth * i / (stops.length - 1);
       knob.style.left = x + "px";
       fill.style.width = x + "px";
@@ -275,6 +295,15 @@ export const CONTROL_SCRIPT = `(function () {
     });
     track.addEventListener("pointermove", function (e) { if (drag) atX(e); });
     track.addEventListener("pointerup", function () { drag = false; });
+    // The slider keyboard (ieat-app#2984): the radios are hidden once this runs.
+    track.addEventListener("keydown", function (e) {
+      var n = stops.length - 1;
+      var to = e.key === "ArrowRight" || e.key === "ArrowUp" ? at + 1
+        : e.key === "ArrowLeft" || e.key === "ArrowDown" ? at - 1
+        : e.key === "Home" ? 0 : e.key === "End" ? n : null;
+      if (to === null) return;
+      e.preventDefault(); pick(to);
+    });
     pick(num(ctl.dataset.val, 1));
   });
 
