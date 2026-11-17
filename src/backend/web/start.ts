@@ -26,7 +26,7 @@ import {
   askPlaceholder, checkDirection, checkNumber, defaultUnits, dietOf, disabledScreens, ftInToCm,
   heightToCm, isAnswered, promptsFor,
   isRefusal, MAX_USER_LINE, medicalOf, normalizeReferralCode, offerHeadline, optionLabel, planGoalLine, projectGoal,
-  promptById,
+  promptById, reconcileGoalEdit,
   renderableVerdicts, resolveCountry, ROUTES, screenForStep,
   screenOptions, screenOptionValues, suggestionFirst,
   switchedLine, targetRange, TARGET_STEP_KG, threadCopyFor, weightToKg,
@@ -557,6 +557,13 @@ function answerFor(
       if (wrong) return { kind: "refuse", line: wrong.line, switchTo: wrong.switchTo, ...shownAs(raw) };
     }
     return { kind: "patch", patch: { [field]: checked.value } as PatchProfileRequest };
+  }
+  // A goal answered after the target (ieat-app#3035): the goal is the intent, so it wins and takes
+  // a target it contradicts with it — the walk then asks the target again, on the new goal's
+  // suggestion. The rule is the chat's and the profile editor's, `reconcileGoalEdit`, not a copy.
+  if (field === "goal") {
+    const edit = reconcileGoalEdit(profile, { goal: value as Goal }, profile.lang, content.refusals);
+    return { kind: "patch", patch: (edit.patch ?? { goal: value }) as PatchProfileRequest };
   }
   return { kind: "patch", patch: { [field]: value } as PatchProfileRequest };
 }
