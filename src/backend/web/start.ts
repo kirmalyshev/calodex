@@ -1337,7 +1337,12 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
           typeof sent === "number" ? [String(sent)] : undefined);
       }
       // The completing patch lands on the plan, which draws its own reveal — after the cards, if any.
-      const trailing = editIndex === -1 ? walk[at + 1] : undefined;
+      // What comes next is read from the walk the ANSWER produced (ieat-app#2979): an answer that
+      // removes the questions after it (maintain drops target and pace; never-counted the barrier)
+      // leaves the beat beyond them next — the app's `nextPlace` reads it the same way.
+      const walked = outcome?.ok ? walkFor(outcome.view.profile, content, order) : walk;
+      const here = walked.findIndex((p) => p.id === open.id);
+      const trailing = editIndex === -1 ? (here === -1 ? walk[at + 1] : walked[here + 1]) : undefined;
       if (editIndex === -1 && at === lastField && trailing?.kind !== "auto") return seeOther(`${START_PREFIX}/plan`);
       // The walk's memory of the two answers a mid-run GET cannot see (see `asked` above): the
       // redirect appends the prompt just written so the next page knows it was passed — and if
