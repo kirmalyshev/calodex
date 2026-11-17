@@ -1407,6 +1407,49 @@ describe("a target that runs the wrong way", () => {
     await post("/start/q", { prompt: "target_weight_kg", answer: "90" }, session);
     expect((await store.getProfile(userId))!.target_weight_kg).toBe(90);
   });
+
+  // ieat-app#3035: the goal edited AFTER the target. The goal is the intent, so it wins and takes
+  // the target it contradicts with it, and the walk asks the target again; before, a gain plan
+  // shipped with the loss's 72 kg as its goal weight.
+  it("a goal changed after the target clears a target the new goal contradicts, and asks again", async () => {
+    const session = await signIn();
+    await toTarget(session);
+    await post("/start/q", { prompt: "target_weight_kg", answer: "72" }, session);
+    const userId = (await store.userIdForToken(session.split("=")[1]!))!;
+    expect((await store.getProfile(userId))!.target_weight_kg).toBe(72);
+    await post("/start/q", { prompt: "goal", answer: "gain" }, session);
+    const after = (await store.getProfile(userId))!;
+    expect(after.goal).toBe("gain");
+    expect(after.target_weight_kg).toBeNull();
+    const next = await (await get("/start/q", session)).text();
+    expect(next).toContain('name="prompt" value="target_weight_kg"');
+  });
+
+  // The same bug by the refusal's switch: a target already stored, edited to the wrong side, and the
+  // goal switched from the refusal. The switch wrote the goal alone, so the old 72 stayed under gain.
+  it("the refusal's switch, on an edited target, clears the old target and asks again", async () => {
+    const session = await signIn();
+    await toTarget(session);
+    await post("/start/q", { prompt: "target_weight_kg", answer: "72" }, session);
+    await post("/start/q?edit=target_weight_kg", { prompt: "target_weight_kg", answer: "90" }, session);
+    const userId = (await store.userIdForToken(session.split("=")[1]!))!;
+    expect((await store.getProfile(userId))!.target_weight_kg).toBe(72);
+    await post("/start/q?edit=target_weight_kg", { prompt: "target_weight_kg", switch: "gain" }, session);
+    const after = (await store.getProfile(userId))!;
+    expect(after.goal).toBe("gain");
+    expect(after.target_weight_kg).toBeNull();
+    const next = await (await get("/start/q?switched=1", session)).text();
+    expect(next).toContain('name="prompt" value="target_weight_kg"');
+  });
+
+  it("a goal changed after the target keeps a target the new goal still accepts", async () => {
+    const session = await signIn();
+    await toTarget(session);
+    await post("/start/q", { prompt: "target_weight_kg", answer: "72" }, session);
+    await post("/start/q", { prompt: "goal", answer: "lose" }, session);
+    const userId = (await store.userIdForToken(session.split("=")[1]!))!;
+    expect((await store.getProfile(userId))!.target_weight_kg).toBe(72);
+  });
 });
 
 // ── The v5 walk (#42): reactions, the stepper, the moments, the soft offer ────────────────────
