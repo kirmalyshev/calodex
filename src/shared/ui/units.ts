@@ -133,11 +133,16 @@ export const RULER_TICKS = {
  * the caller decides which window it is showing.
  */
 export function rulerLabels(ticks: RulerTicks, from: number, to: number): number[] {
-  const out: number[] = [];
   const first = Math.ceil(from / ticks.labelEvery) * ticks.labelEvery;
-  for (let v = first; v <= to; v += ticks.labelEvery) out.push(v);
-  return out;
+  // Counted, not stepped: past ~1e16 `v += labelEvery` no longer moves `v` in floating point. A
+  // window no ruler draws — too wide, or past that precision — gets no labels.
+  const count = Math.floor((to - first) / ticks.labelEvery) + 1;
+  if (!(count > 0) || count > MAX_RULER_LABELS || !(first + ticks.labelEvery > first)) return [];
+  return Array.from({ length: count }, (_, i) => first + i * ticks.labelEvery);
 }
+
+/** Far more than any window a ruler draws (a band is a few hundred units, a label every 4–10). */
+const MAX_RULER_LABELS = 1000;
 
 /**
  * Where the ruler's gradient sits so a tick lands under the needle: the offset of the window's

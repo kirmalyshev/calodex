@@ -37,7 +37,7 @@ import { logMail } from "../mail/log.ts";
 import { escape } from "./page.ts";
 import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
 import { pageCopyFor } from "./copy.ts";
-import { targetFloor } from "./page/question.ts";
+import { MAX_DRAWN_VALUE, targetFloor } from "./page/question.ts";
 import { createWebApp } from "../../frontend/server/index.ts";
 import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 const PAGE_COPY = pageCopyFor("en");
@@ -1192,6 +1192,51 @@ describe("the numbers go through the shared checks, not this page's own", () => 
     expect(await res.text()).toContain("In centimetres");
     const userId = (await store.userIdForToken(session.split("=")[1]!))!;
     expect((await store.getProfile(userId))!.height_cm).toBeNull();
+  });
+});
+
+// A refused number is shown back as typed (#53), and `?draft=` takes any positive number. A ruler is
+// drawn from that value held under a ceiling no stored value reaches, so every answer a person can
+// have — stored, or typed and refused — is drawn as it is.
+describe("a number no person has is drawn at the ruler's ceiling", () => {
+  const atHeight = async (subject: string) => {
+    const session = await signIn(subject);
+    await post("/start/q", { prompt: "goal", answer: "lose" }, session);
+    await post("/start/q", { prompt: "sex", answer: "male" }, session);
+    await post("/start/q", { prompt: "birth_year", answer: "34" }, session);
+    return session;
+  };
+
+  it("draws a refused out-of-band height as typed, and stores nothing", async () => {
+    const session = await atHeight("band-typed");
+    const html = await (await post("/start/q", { prompt: "height_cm", answer: "500" }, session)).text();
+    expect(html).toContain('data-val="500"');
+    expect(html).toContain('value="500"');
+    const userId = (await store.userIdForToken(session.split("=")[1]!))!;
+    expect((await store.getProfile(userId))!.height_cm).toBeNull();
+  });
+
+  it(`clamps a height past every stored value to ${MAX_DRAWN_VALUE}`, async () => {
+    const session = await atHeight("band-huge");
+    const html = await (await post("/start/q", { prompt: "height_cm", answer: "1e17" }, session)).text();
+    expect(html).toContain(`data-val="${MAX_DRAWN_VALUE}"`);
+  });
+
+  it(`clamps a ?draft= past every stored value to ${MAX_DRAWN_VALUE}`, async () => {
+    const session = await atHeight("band-draft");
+    const html = await (await get("/start/q?draft=1e17", session)).text();
+    expect(html).toContain(`data-val="${MAX_DRAWN_VALUE}"`);
+  });
+
+  // The engine stores up to MAX_WEIGHT_KG, past this page's own band: clamping to the band would
+  // draw 300 and post it over the 350 they have.
+  it("draws a stored weight the page's band does not reach as it is", async () => {
+    const session = await atHeight("band-stored");
+    await post("/start/q", { prompt: "height_cm", answer: "180" }, session);
+    const userId = (await store.userIdForToken(session.split("=")[1]!))!;
+    await store.patchProfile(userId, { weight_kg: 350 });
+    const html = await (await get("/start/q?edit=weight_kg", session)).text();
+    expect(html).toContain('data-val="350"');
   });
 });
 

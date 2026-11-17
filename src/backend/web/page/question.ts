@@ -277,9 +277,24 @@ function unitsSeg(v: QuestionView, which: "height" | "weight"): string {
     hidden("from", v.prompt.id) + hidden("draft", v.draft !== null ? String(v.draft) : ""));
 }
 
+/**
+ * Above every value the engine stores (height ≤ 250 cm, weight ≤ `MAX_WEIGHT_KG`), so any answer a
+ * person has is drawn as it is; only a number no person has is held here.
+ */
+export const MAX_DRAWN_VALUE = 1000;
+
+/**
+ * The metric value a ruler control draws. A refused answer is shown back as typed (#53) and
+ * `?draft=` takes any positive number; the ruler, its labels and the target's goal lines are drawn
+ * from the value held under `MAX_DRAWN_VALUE`. Not a number: none.
+ */
+function drawable(n: number | null | undefined): number | null {
+  return n === null || n === undefined || !Number.isFinite(n) ? null : Math.min(MAX_DRAWN_VALUE, Math.max(0, n));
+}
+
 function heightControl(v: QuestionView): { seg: string; control: string } {
   const stored = v.current[0] !== undefined ? Number(v.current[0]) : v.profile.height_cm;
-  const cm = v.draft ?? stored ?? ONBOARDING_NEUTRAL.heightCm;
+  const cm = drawable(v.draft ?? stored) ?? ONBOARDING_NEUTRAL.heightCm;
   const t = RULER_TICKS.height[v.units];
   const val = heightDisplayValue(cm, v.units);
   // The imperial band rounds INWARD: a value the UI admits is always inside the metric band
@@ -310,7 +325,7 @@ const weightStep = (units: UnitSystem): number => (units === "imperial" ? 1 : 0.
 
 function weightControl(v: QuestionView): { seg: string; control: string } {
   const stored = v.current[0] !== undefined ? Number(v.current[0]) : v.profile.weight_kg;
-  const kg = v.draft ?? stored ?? ONBOARDING_NEUTRAL.weightKg;
+  const kg = drawable(v.draft ?? stored) ?? ONBOARDING_NEUTRAL.weightKg;
   const t = RULER_TICKS.weight[v.units];
   const val = weightDisplayValue(kg, v.units);
   const [min, max] = v.units === "imperial"
@@ -341,8 +356,7 @@ export const targetFloor = (minKg: number, units: UnitSystem): number =>
   units === "imperial" ? Math.ceil(minKg * LB_PER_KG) : minKg;
 
 function targetControl(v: QuestionView): { seg: string; control: string } {
-  const kg = v.draft
-    ?? (v.current[0] !== undefined ? Number(v.current[0]) : null)
+  const kg = drawable(v.draft ?? (v.current[0] !== undefined ? Number(v.current[0]) : null))
     ?? suggestedTargetKg(v.profile)
     ?? v.profile.weight_kg ?? ONBOARDING_NEUTRAL.weightKg;
   const t = RULER_TICKS.weight[v.units];
