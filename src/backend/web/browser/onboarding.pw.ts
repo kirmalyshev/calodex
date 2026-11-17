@@ -134,18 +134,20 @@ test.describe("the walk", () => {
     await expect(page.locator('input[name="answer"][value="steady"]')).toBeChecked();
   });
 
-  test("the under-16 answer stops the walk and deletes the account", async ({ page }) => {
+  // With the script on, the age is the wheel, which starts at 16 and owns the hidden field: its
+  // settle timer writes the row it sits on back into `answer`, so a "14" written under it raced
+  // that timer and, on a loaded host, lost (the walk went on to Height). The stop arrives only
+  // through the typed field, which is the no-script page, so that is the page this walks.
+  test("the under-16 answer stops the walk and deletes the account", async ({ browser }) => {
+    const ctx = await browser.newContext({ javaScriptEnabled: false });
+    const page = await ctx.newPage();
     await signIn(page, `pw-under16-${Date.now()}`);
     for (const [id, answer] of Object.entries({ goal: "lose", sex: "male", birth_year: "14" })) {
       const cta = page.locator("a.cta");
       if (!await page.locator('input[name="prompt"]').count() && await cta.count()) await cta.first().click();
       const row = page.locator(`label.opt:has(input[name="answer"][value="${answer}"])`);
       if (await row.count()) await row.click();
-      else {
-        const field = page.locator('input[name="answer"]').first();
-        if (await field.isVisible()) await field.fill(answer);
-        else await field.evaluate((el, v) => { (el as { value: string }).value = String(v); }, answer);
-      }
+      else await page.locator('input[name="answer"]').first().fill(answer);
       await page.locator('button[type="submit"]').last().click();
     }
     // The token before the stop — after the delete it must resolve nothing.
@@ -161,6 +163,7 @@ test.describe("the walk", () => {
       headers: { authorization: `Bearer ${token}` },
     });
     expect(res.status()).toBe(401);
+    await ctx.close();
   });
 
   test("no script at all still reaches the plan", async ({ browser }) => {
