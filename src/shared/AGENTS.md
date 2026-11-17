@@ -154,7 +154,7 @@ gets its meal names in that language.
   list whose only true answer was "Somewhere else". Growing it was only affordable because the
   labels left the content: fifteen countries in eight languages is 120 strings, and our own month
   table had Spanish, Russian and Vietnamese wrong at once before `Intl` replaced it. So
-  `countryLabel` reads `COUNTRY_NAMES`, generated from `Intl.DisplayNames` at build time (`bun src/scripts/country-names.ts`; Hermes has none, and `country-names.test.ts` fails on drift or a missing language/country), `countrySearchNames` is the local plus English name a search matches, `countryOptions` sorts with `Intl.Collator` because
+  `countryLabel` reads `COUNTRY_NAMES`, generated from `Intl.DisplayNames` at build time (`bun src/scripts/country-names.ts`; Hermes has none, and `country-names.test.ts` fails on a missing language/country; the snapshot is one host's ICU, so there is deliberately no equality-with-runtime test), `countrySearchNames` is the local plus English name a search matches, `countryOptions` sorts with `Intl.Collator` because
   Austria files under Ö in German and А in Russian, and `other` is the ONE option still written by
   hand — it is a sentinel, not a region, and "Somewhere else" is the product's voice.
   `optionLabelIsData` is the single predicate the validator, the admin editor and the renderer all

@@ -1,10 +1,9 @@
 // The country-name table is generated at build time (Node has full ICU) and checked in, because
-// Hermes has no Intl.DisplayNames. These fail when a language or a country is missing, or when the
-// file drifts from what CLDR says.
+// Hermes has no Intl.DisplayNames. These fail when a language or a country is missing.
 import { describe, expect, test } from "bun:test";
+import { tmpdir } from "node:os";
 import { COUNTRY_NAMES } from "./country-names.generated.ts";
 import { countryLabel, countryMatches, countryOptions, countrySearchNames, COUNTRY_CODES } from "./onboarding.ts";
-import { LANG_TAG } from "./lang.ts";
 import { LANGS } from "./types.ts";
 
 const REGIONS = COUNTRY_CODES.filter((c) => c !== "other");
@@ -22,11 +21,20 @@ describe("COUNTRY_NAMES", () => {
     }
   });
 
-  test("equals what CLDR says (re-run `bun src/scripts/country-names.ts` on a diff)", () => {
+  test("no entry is the bare country code", () => {
     for (const lang of LANGS) {
-      const dn = new Intl.DisplayNames([LANG_TAG[lang]], { type: "region" });
-      for (const c of REGIONS) expect(COUNTRY_NAMES[lang][c], `${lang}/${c}`).toBe(dn.of(c.toUpperCase()));
+      for (const c of REGIONS) expect(COUNTRY_NAMES[lang][c]!.toLowerCase(), `${lang}/${c}`).not.toBe(c);
     }
+  });
+
+  // Not an equality test: the snapshot is whatever ICU the generating host had, and spellings differ
+  // by ICU version (ru "Соединённые" vs "Соединенные"), so no checked-in table equals every runtime.
+  test("the generator runs and covers every language and country", async () => {
+    const out = `${tmpdir()}/country-names-${process.pid}.ts`;
+    const proc = Bun.spawn(["bun", new URL("../scripts/country-names.ts", import.meta.url).pathname, out]);
+    expect(await proc.exited).toBe(0);
+    const { COUNTRY_NAMES: fresh } = await import(out);
+    for (const lang of LANGS) for (const c of REGIONS) expect(fresh[lang][c], `${lang}/${c}`).toBeTruthy();
   });
 });
 
