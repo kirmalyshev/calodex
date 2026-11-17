@@ -18,7 +18,7 @@ import { ONBOARDING_PLACES, type OnboardingPlace } from "./onboarding.ts";
  * validates against its own copy of the rules, so a client on the old rules must stop being enrolled in
  * an ordered arm rather than silently walking the default inside it. A test pins the rules to it.
  */
-export const ONBOARDING_ORDER_VERSION = 1;
+export const ONBOARDING_ORDER_VERSION = 2;
 
 /** The span an arm may reorder: the welcome to the sign-up, in the default order. */
 export const DEFAULT_ORDER: readonly OnboardingPlace[] = ONBOARDING_PLACES.slice(0, ONBOARDING_PLACES.indexOf("signup") + 1);
@@ -45,7 +45,9 @@ const OTHER_QUESTIONS = DEFAULT_ORDER.filter(
  *   situation its copy variant is keyed by `counted_before`
  *   diet,     the LAST questions, either order between them: `isAnswered` counts medical answered
  *   medical   only once onboarding is complete (a Balanced diet likewise), so a question after them
- *             is one `resumeAt` rewinds past on every resume — and the app completes on that answer
+ *             is one `resumeAt` rewinds past on every resume — and the app completes on that answer.
+ *             The beats come before them too (ieat-app#2978, v2): a beat after the last question is
+ *             a screen a kill skips, since a resume after it reopens only summary onward (`resume.ts`)
  *   summary   a rule: the plan is the end of the questions. planRows reads diet and medical and
  *             explainTargets the target inputs; the rest follow the rule
  */
@@ -59,8 +61,8 @@ export const ORDER_AFTER: Readonly<Partial<Record<OnboardingPlace, readonly Onbo
   prelim: ["goal", "sex", "age", "height", "weight", "activity", "target", "pace"],
   barrier: ["goal", "counted"],
   situation: ["counted"],
-  diet: OTHER_QUESTIONS,
-  medical: OTHER_QUESTIONS,
+  diet: [...OTHER_QUESTIONS, ...REMOVABLE_PLACES],
+  medical: [...OTHER_QUESTIONS, ...REMOVABLE_PLACES],
   summary: DEFAULT_ORDER.filter((p) => !["welcome", "summary", "signup"].includes(p)),
 };
 

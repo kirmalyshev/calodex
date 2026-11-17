@@ -8,7 +8,7 @@ import { logMail } from "../mail/log.ts";
 // text, is not hypothetical once the API is public.
 
 import { beforeEach, describe, expect, it } from "bun:test";
-import { ONBOARDING_CONTENT, ONBOARDING_PLACES, DEFAULT_ONBOARDING_CONTENT, type OnboardingContent } from "@eait/shared";
+import { ONBOARDING_CONTENT, ONBOARDING_ORDER_VERSION, ONBOARDING_PLACES, DEFAULT_ONBOARDING_CONTENT, type OnboardingContent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
@@ -638,7 +638,7 @@ describe("experiments (ieat-app#2669)", () => {
         { weight: 1, content: variantContent(42), ...(order ? { order } : {}) },
       ],
     });
-    const capable = { ...signals, orderVersion: 1 };
+    const capable = { ...signals, orderVersion: ONBOARDING_ORDER_VERSION };
 
     it("saves a valid order on a draft arm, and clears it with null", async () => {
       const { saveOnboardingVariantOrder } = await import("./onboarding.ts");
@@ -740,6 +740,8 @@ describe("experiments (ieat-app#2669)", () => {
       const e = await startExperiment(ordered());
       expect(await assignVariant(deps, userId, signals)).toBeNull();
       expect(await assignVariant(deps, userId, { ...signals, orderVersion: 0 })).toBeNull();
+      // A client one rules version behind walks the old copy of ORDER_AFTER: never enrolled.
+      expect(await assignVariant(deps, userId, { ...signals, orderVersion: ONBOARDING_ORDER_VERSION - 1 })).toBeNull();
       expect(await store.onboardingAssignments(e.id)).toEqual([]);
       expect((await assignVariant(deps, userId, capable))?.variant.content.version).toBe(42);
     });
@@ -771,7 +773,7 @@ describe("experiments (ieat-app#2669)", () => {
       await startExperiment(armed);
       await store.patchProfile(userId, { lang: "en" });
       const said = async () => (await store.chatBefore(userId, null, 10)).map((m) => m.text);
-      expect(await appendLines(deps, userId, [{ role: "assistant", ask: { prompt: "goal", line: 0 } }], { orderVersion: 1 }))
+      expect(await appendLines(deps, userId, [{ role: "assistant", ask: { prompt: "goal", line: 0 } }], { orderVersion: ONBOARDING_ORDER_VERSION }))
         .toEqual({ appended: 1 });
       expect(await said()).toContain("The arm asks the goal");
       // The same account on a build that cannot walk the order was shown the live copy's line.

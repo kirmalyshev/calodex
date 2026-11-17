@@ -1,7 +1,7 @@
 // The seeder, against the memory store. No database, no docker, runs on every `bun test`.
 
 import { describe, expect, test } from "bun:test";
-import { FIXTURE_THREAD, HEALTH_FIELDS, dateMinus, firstVerdictLines, localDate, threadCopyFor } from "@eait/shared";
+import { FIXTURE_THREAD, HEALTH_FIELDS, ONBOARDING_ORDER_VERSION, dateMinus, firstVerdictLines, localDate, threadCopyFor } from "@eait/shared";
 import { memoryStore } from "../store.memory.ts";
 import { DEFAULT_SEED_PERSONA, SEED_PERSONAS, seedDeviceId, seedDevData } from "./seed.ts";
 import { PROMPT_DEFAULTS, PROMPT_KEYS, loadPrompts } from "../llm/prompt.ts";
@@ -464,11 +464,11 @@ describe("the ordered experiment the e2e flow walks (ieat-app#2788)", () => {
     expect((await seedOrderedExperiment(store)).id).toBe(e.id);
 
     const userId = await store.createUser(SEEDED_ORDER_LANG);
-    const served = await onboardingServedFor(deps, userId, { lang: SEEDED_ORDER_LANG, surface: "app", orderVersion: 1 });
+    const served = await onboardingServedFor(deps, userId, { lang: SEEDED_ORDER_LANG, surface: "app", orderVersion: ONBOARDING_ORDER_VERSION });
     expect(served.order).toEqual(SEEDED_ORDER);
     // Every other language, and every client that cannot walk an order, is untouched.
     const en = await store.createUser("en");
-    expect((await onboardingServedFor(deps, en, { lang: "en", surface: "app", orderVersion: 1 })).order).toBeUndefined();
+    expect((await onboardingServedFor(deps, en, { lang: "en", surface: "app", orderVersion: ONBOARDING_ORDER_VERSION })).order).toBeUndefined();
 
     expect(await stopOrderedExperiment(store)).toBe(true);
     expect(await store.runningOnboardingExperiment(SEEDED_ORDER_LANG)).toBeNull();

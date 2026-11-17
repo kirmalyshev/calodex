@@ -14,7 +14,7 @@ import { logMail } from "../mail/log.ts";
 // all.
 
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
-import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, NOTIFICATION_COPY, ONBOARDING_CONTENT, ROUTES, localDate, type OnboardingContent } from "@eait/shared";
+import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, NOTIFICATION_COPY, ONBOARDING_CONTENT, ONBOARDING_ORDER_VERSION, ROUTES, localDate, type OnboardingContent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
@@ -183,7 +183,7 @@ describe("experiments (ieat-app#2669)", () => {
     const before = await (await admin("GET", "/v1/onboarding", undefined, older)).json() as { order?: unknown };
     expect(before.order).toBeUndefined();
     const newer = await session();
-    const served = await (await admin("GET", "/v1/onboarding?order=1", undefined, newer)).json() as { order?: unknown };
+    const served = await (await admin("GET", `/v1/onboarding?order=${ONBOARDING_ORDER_VERSION}`, undefined, newer)).json() as { order?: unknown };
     expect(served.order).toEqual(order);
     const garbled = await session();
     expect((await (await admin("GET", "/v1/onboarding?order=abc", undefined, garbled)).json() as { order?: unknown }).order).toBeUndefined();
