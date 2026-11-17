@@ -560,7 +560,7 @@ function answerFor(
   }
   // A goal answered after the target (ieat-app#3035): the goal is the intent, so it wins and takes
   // a target it contradicts with it — the walk then asks the target again, on the new goal's
-  // suggestion. The rule is the chat's and the profile editor's, `reconcileGoalEdit`, not a copy.
+  // suggestion. The rule is the shared `reconcileGoalEdit`, not a copy.
   if (field === "goal") {
     const edit = reconcileGoalEdit(profile, { goal: value as Goal }, profile.lang, content.refusals);
     return { kind: "patch", patch: (edit.patch ?? { goal: value }) as PatchProfileRequest };
@@ -1270,9 +1270,11 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         askAt(at, error, actions, draftKg, shown ?? (typed.length > 0 ? typed : undefined));
 
       // The wrong-direction refusal's own escape: usually the goal was mistapped, not the number.
+      // It is offered only after a target was refused, so whatever target is stored belongs to the
+      // goal being left; it goes with it, and the walk asks the target again (ieat-app#3035).
       const switchTo = form.get("switch");
       if (typeof switchTo === "string" && (switchTo === "lose" || switchTo === "gain")) {
-        await patchProfile(ctx.deps, userId, { goal: switchTo });
+        await patchProfile(ctx.deps, userId, { goal: switchTo, target_weight_kg: null });
         return seeOther(`${START_PREFIX}/q?switched=1`);
       }
 
