@@ -1319,6 +1319,22 @@ describe("a refused imperial answer is shown back in the unit it was typed in", 
   });
 });
 
+// ieat-app#2984: the age wheel is a slider, and a slider's value sits inside its own bounds — a refused
+// "3" is shown back in the field, never as aria-valuenow="3" on a wheel that starts at 16.
+describe("the age wheel as a slider", () => {
+  it("keeps aria-valuenow inside the wheel when the typed age is refused", async () => {
+    const session = await signIn("wheel-bounds");
+    await post("/start/q", { prompt: "goal", answer: "lose" }, session);
+    await post("/start/q", { prompt: "sex", answer: "male" }, session);
+    const html = await (await post("/start/q", { prompt: "birth_year", answer: "3" }, session)).text();
+    const now = Number(html.match(/class="wheel" role="slider"[^>]*aria-valuenow="(\d+)"/)?.[1]);
+    const lo = Number(html.match(/class="wheel" role="slider"[^>]*aria-valuemin="(\d+)"/)?.[1]);
+    const hi = Number(html.match(/class="wheel" role="slider"[^>]*aria-valuemax="(\d+)"/)?.[1]);
+    expect(now).toBeGreaterThanOrEqual(lo);
+    expect(now).toBeLessThanOrEqual(hi);
+  });
+});
+
 describe("the under-sixteen stop", () => {
   const toAge = async (session: string, age: string) => {
     await post("/start/q", { prompt: "goal", answer: "lose" }, session);

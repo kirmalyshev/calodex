@@ -259,10 +259,12 @@ function ageControl(v: QuestionView): { control: string } {
   const rows: string[] = [];
   for (let a = min; a <= max; a++)
     rows.push(`<div class="${rowClass(a)}">${escape(years(v.content.ui.units.yearsCount, a))}</div>`);
+  // The slider's value is the row it sits on: a refused "3" is shown back in the field, not the wheel.
+  const onWheel = Math.min(max, Math.max(min, Math.round(Number.isFinite(val) ? val : ONBOARDING_NEUTRAL.ageYears)));
   const wheel = `<div class="ctl" data-ctl="wheel" data-min="${min}" data-val="${val}">` +
     `<div class="wheelbox"><div class="wheel" role="slider" tabindex="0" aria-label="${escape(headline(v.lines))}"` +
-    ` aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${val}"` +
-    ` aria-valuetext="${escape(years(v.content.ui.units.yearsCount, val))}">${rows.join("")}</div></div></div>`;
+    ` aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${onWheel}"` +
+    ` aria-valuetext="${escape(years(v.content.ui.units.yearsCount, onWheel))}">${rows.join("")}</div></div></div>`;
     // The wheel draws ages; the typed fallback also takes a four-digit year — `checkNumber`
   // reads one — so the field's own bounds must not refuse what the server would accept.
   return { control: wheel + numAlt(v, numInput(v, val, 5, 2100, 1), v.content.ui.units.years) };
