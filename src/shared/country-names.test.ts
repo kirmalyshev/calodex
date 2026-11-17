@@ -3,7 +3,7 @@
 // file drifts from what CLDR says.
 import { describe, expect, test } from "bun:test";
 import { COUNTRY_NAMES } from "./country-names.generated.ts";
-import { countryLabel, countrySearchNames, COUNTRY_CODES } from "./onboarding.ts";
+import { countryLabel, countryMatches, countrySearchNames, COUNTRY_CODES } from "./onboarding.ts";
 import { LANG_TAG } from "./lang.ts";
 import { LANGS } from "./types.ts";
 
@@ -42,5 +42,17 @@ describe("countrySearchNames", () => {
   test("carries the local and the English name, once when equal", () => {
     expect(countrySearchNames("de", "de")).toEqual(["Deutschland", "Germany"]);
     expect(countrySearchNames("us", "en")).toHaveLength(1);
+  });
+});
+
+describe("countryMatches", () => {
+  test("finds a country by its local name and by its English name, folded", () => {
+    expect(countryMatches("de", "de", "deutsch")).toBe(true);
+    expect(countryMatches("de", "de", "german")).toBe(true);
+    expect(countryMatches("ch", "de", "SCHWEIZ")).toBe(true);
+    expect(countryMatches("at", "ru", "австр")).toBe(true);
+    expect(countryMatches("at", "ru", "austri")).toBe(true);
+    expect(countryMatches("at", "ru", "france")).toBe(false);
+    expect(countryMatches("other", "en", "o")).toBe(false);
   });
 });

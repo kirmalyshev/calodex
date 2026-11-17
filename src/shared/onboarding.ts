@@ -636,6 +636,16 @@ export function countrySearchNames(code: Exclude<CountryCode, "other">, lang: La
   return local === en ? [local] : [local, en];
 }
 
+/** Lowercase, diacritics stripped — the fold a country search runs on both sides. */
+const foldName = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+
+/** True when the query is inside the country's local or English name (`other` never matches). */
+export function countryMatches(code: CountryCode, lang: Lang, query: string): boolean {
+  if (code === "other") return false;
+  const q = foldName(query.trim());
+  return q !== "" && countrySearchNames(code, lang).some((n) => foldName(n).includes(q));
+}
+
 /**
  * The flag a curated country draws (the 16-country board): the two regional indicators the code
  * spells — computed, because fifteen flags in a table is fifteen things to keep. `other` is a
