@@ -160,6 +160,9 @@ export const CONTROL_SCRIPT = `(function () {
       bigSet(ctl, fmt, val);
       inp.value = String(Math.round(val * 10) / 10);
       el.setAttribute("aria-valuenow", String(Math.round(val * 10) / 10));
+      // What a screen reader says: the numeral as drawn, unit included — "68" alone is no height.
+      var big = ctl.querySelector(".bign");
+      if (big) el.setAttribute("aria-valuetext", big.textContent.replace(/\\s+/g, " ").trim());
     }
 
     var dragging = false, x0 = 0, v0 = 0;
@@ -183,6 +186,10 @@ export const CONTROL_SCRIPT = `(function () {
     el.addEventListener("keydown", function (e) {
       var up = e.key === "ArrowUp" || e.key === "ArrowRight";
       var dn = e.key === "ArrowDown" || e.key === "ArrowLeft";
+      // The slider pattern's ends: Home and End go to the bounds the ruler already clamps to.
+      if (e.key === "Home" || e.key === "End") {
+        e.preventDefault(); val = snap(e.key === "Home" ? -Infinity : Infinity); paint(); return;
+      }
       if (!up && !dn) return;
       e.preventDefault(); val = snap(val + (up ? step : -step)); paint();
     });

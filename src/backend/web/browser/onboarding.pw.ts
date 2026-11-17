@@ -76,6 +76,30 @@ test.describe("the walk", () => {
     expect(Math.abs((body.weight_kg ?? body.profile?.weight_kg) - 73.9)).toBeLessThan(0.6);
   });
 
+  // A ruler is role="slider": a screen reader reads aria-valuetext (68 alone is not a height — "5′ ft
+  // 8″ in" is), and the slider keyboard pattern moves Home/End to its ends, not only by one step.
+  test("the ruler reads as a height and its keyboard reaches both ends", async ({ page }) => {
+    await signIn(page, `pw-slider-${Date.now()}`);
+    for (const [id, answer] of Object.entries({ goal: "lose", sex: "male", birth_year: "35" })) {
+      const cta = page.locator("a.cta");
+      if (!await page.locator('input[name="prompt"]').count() && await cta.count()) await cta.first().click();
+      await expect(page.locator('input[name="prompt"]').first()).toHaveAttribute("value", id);
+      const row = page.locator(`label.opt:has(input[name="answer"][value="${answer}"])`);
+      if (await row.count()) await row.click();
+      await page.locator('button[type="submit"]').last().click();
+    }
+    await expect(page.locator('input[name="prompt"]')).toHaveAttribute("value", "height_cm");
+    const slider = page.getByRole("slider");
+    await expect(slider).toHaveAttribute("aria-valuetext", /\d.*cm/);
+    await slider.focus();
+    await page.keyboard.press("End");
+    await expect(slider).toHaveAttribute("aria-valuenow", (await slider.getAttribute("aria-valuemax"))!);
+    await page.keyboard.press("Home");
+    await expect(slider).toHaveAttribute("aria-valuenow", (await slider.getAttribute("aria-valuemin"))!);
+    await page.locator('form.seg button', { hasText: "ft, in" }).click();
+    await expect(page.getByRole("slider")).toHaveAttribute("aria-valuetext", /′.*″/);
+  });
+
   test("the under-16 answer stops the walk and deletes the account", async ({ page }) => {
     await signIn(page, `pw-under16-${Date.now()}`);
     for (const [id, answer] of Object.entries({ goal: "lose", sex: "male", birth_year: "14" })) {
