@@ -1240,6 +1240,42 @@ describe("a number no person has is drawn at the ruler's ceiling", () => {
   });
 });
 
+// A refused answer is shown back as typed (#53). In imperial it was typed in pounds or inches, and the
+// controls read the value they are handed as metric — 700 lb came back as 1543 lb, 100 in as 3′3″.
+describe("a refused imperial answer is shown back in the unit it was typed in", () => {
+  const imperialAt = async (subject: string, field: string) => {
+    const session = await signIn(subject);
+    await post("/start/q", { prompt: "goal", answer: "lose" }, session);
+    await post("/start/q", { prompt: "sex", answer: "male" }, session);
+    await post("/start/q", { prompt: "birth_year", answer: "34" }, session);
+    if (field === "weight_kg") await post("/start/q", { prompt: "height_cm", answer: "180" }, session);
+    await post("/start/q", { prompt: field, setunits: "imperial" }, session);
+    return session;
+  };
+
+  it("weight: 700 lb is refused and shown back as 700 lb", async () => {
+    const session = await imperialAt("imperial-weight", "weight_kg");
+    const html = await (await post("/start/q", { prompt: "weight_kg", answer: "700" }, session)).text();
+    expect(html).toContain('data-val="700"');
+    expect(html).toContain('value="700"');
+  });
+
+  // No script: the ft/in fields are what was typed, and the hidden `answer` still holds the last
+  // render's inches. What is shown back is the ft/in answer, read the one way `answerFor` reads it.
+  it("height without the script: 9 ft 0 in is refused and shown back as 9 ft 0 in", async () => {
+    const session = await imperialAt("imperial-ftin", "height_cm");
+    const html = await (await post("/start/q",
+      { prompt: "height_cm", answer: "69", answer_ft: "9", answer_in: "0" }, session)).text();
+    expect(html).toContain('data-val="108"');
+  });
+
+  it("height: 100 in is refused and shown back as 100 in", async () => {
+    const session = await imperialAt("imperial-height", "height_cm");
+    const html = await (await post("/start/q", { prompt: "height_cm", answer: "100" }, session)).text();
+    expect(html).toContain('data-val="100"');
+  });
+});
+
 describe("the under-sixteen stop", () => {
   const toAge = async (session: string, age: string) => {
     await post("/start/q", { prompt: "goal", answer: "lose" }, session);
