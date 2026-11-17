@@ -740,6 +740,8 @@ describe("experiments (ieat-app#2669)", () => {
       const e = await startExperiment(ordered());
       expect(await assignVariant(deps, userId, signals)).toBeNull();
       expect(await assignVariant(deps, userId, { ...signals, orderVersion: 0 })).toBeNull();
+      // A client one rules version behind walks the old copy of ORDER_AFTER: never enrolled.
+      expect(await assignVariant(deps, userId, { ...signals, orderVersion: ONBOARDING_ORDER_VERSION - 1 })).toBeNull();
       expect(await store.onboardingAssignments(e.id)).toEqual([]);
       expect((await assignVariant(deps, userId, capable))?.variant.content.version).toBe(42);
     });
