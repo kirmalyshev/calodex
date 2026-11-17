@@ -318,6 +318,30 @@ describe("the goal weight", () => {
     expect(checkDirection("lose", 93, 93, "en", R)).not.toBeNull();
   });
 
+  // ieat-app#3022: on a screen in pounds the refusal said "You're at 73.9kg … gain to 68".
+  it("speaks the screen's unit: pounds on an imperial screen, the metric line unchanged", () => {
+    const lb = checkDirection("gain", 73.9, 68, "en", R, "imperial")!;
+    expect(lb.line).toContain("You're at 163lb and asked to gain to 150");
+    expect(lb.line).toContain("above 163");
+    expect(lb.line).not.toContain("kg");
+    expect(lb.placeholder).toContain("163");
+    expect(checkDirection("gain", 73.9, 68, "en", R, "metric")!.line)
+      .toBe(checkDirection("gain", 73.9, 68, "en", R)!.line);
+    expect(checkDirection("gain", 73.9, 68, "en", R)!.line).toContain("You're at 73.9kg");
+  });
+
+  it("swaps every shipped language's kg for lb, keeping the spacing it had", () => {
+    for (const lang of LANGS) {
+      const r = onboardingContentFor(lang).refusals;
+      for (const [goal, t] of [["gain", 60], ["lose", 90]] as const) {
+        const line = checkDirection(goal, 73.9, t, lang, r, "imperial")!.line;
+        // A kilogram right after a figure; a bare "กก" also occurs inside ordinary Thai words.
+        expect([lang, /\d\s?(?:kg|кг|กก\.|公斤)/.test(line)]).toEqual([lang, false]);
+        expect([lang, line.includes("lb")]).toEqual([lang, true]);
+      }
+    }
+  });
+
   it("lets a real target through", () => {
     expect(checkDirection("lose", 93, 88, "en", R)).toBeNull();
     expect(checkDirection("gain", 60, 66, "en", R)).toBeNull();

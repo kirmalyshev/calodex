@@ -553,7 +553,7 @@ function answerFor(
     // surplus aimed at a number below the current weight and produce a plan that cannot arrive,
     // with nothing on any screen to say so.
     if (field === "target_weight_kg" && profile.goal !== null && profile.weight_kg !== null) {
-      const wrong = checkDirection(profile.goal, profile.weight_kg, checked.value, profile.lang, content.refusals);
+      const wrong = checkDirection(profile.goal, profile.weight_kg, checked.value, profile.lang, content.refusals, units);
       if (wrong) return { kind: "refuse", line: wrong.line, switchTo: wrong.switchTo, ...shownAs(raw) };
     }
     return { kind: "patch", patch: { [field]: checked.value } as PatchProfileRequest };
