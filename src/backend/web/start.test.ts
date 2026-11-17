@@ -812,6 +812,49 @@ describe("the questions", () => {
     ]);
   });
 
+  // ieat-app#2979: the beat after the open question was read from the walk built BEFORE the answer.
+  // An answer that removes the next questions (maintain drops target and pace) left the beat after
+  // them unshown — the app's `nextPlace` reads the walk the answer produced, and so does this.
+  it("shows the beat after questions the answer just removed", async () => {
+    const order = ["welcome", "sex", "age", "height", "weight", "activity", "baseline", "goal",
+      "target", "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup"];
+    const arm = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    arm.version = 4343;
+    const id = crypto.randomUUID();
+    await store.putOnboardingExperiment({
+      id, lang: "en", status: "draft", rules: {}, created_by: crypto.randomUUID(),
+      created_at: new Date().toISOString(), started_at: null, stopped_at: null, revision: 1,
+      variants: [
+        { control: true, weight: 0, content: structuredClone(DEFAULT_ONBOARDING_CONTENT) },
+        { weight: 1, content: arm, order: order as never },
+      ],
+    });
+    await store.startOnboardingExperiment(id);
+    await store.setSwitch("onboarding.experiments", true, crypto.randomUUID());
+
+    const session = await signIn("trailing-beat");
+    let next = "/start/q";
+    let afterGoal: string | null = null;
+    for (let i = 0; i < 30 && afterGoal === null; i++) {
+      const page = await get(next, session);
+      if (page.status === 303) break;
+      const html = await page.text();
+      const prompt = html.match(/name="prompt" value="([a-z_]+)"/)?.[1];
+      if (prompt === undefined) {
+        const href = html.match(/<a[^>]*class="cta[^"]*"[^>]*href="([^"]+)"/)?.[1]
+          ?? html.match(/<a[^>]*href="([^"]+)"[^>]*class="cta[^"]*"/)?.[1];
+        if (href === undefined) throw new Error("a page with neither a prompt nor a continue");
+        next = href.replace(/&amp;/g, "&");
+        continue;
+      }
+      const action = html.match(/action="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "/start/q";
+      const res = await post(action, { prompt, answer: prompt === "goal" ? "maintain" : ANSWERS[prompt]! }, session);
+      next = res.headers.get("location") ?? "/start/q";
+      if (prompt === "goal") afterGoal = next;
+    }
+    expect(afterGoal).toContain("show=prelim");
+  });
+
   it("walks an experiment arm's order, without the beat it removed (ieat-app#2788)", async () => {
     const order = ["welcome", "goal", "counted", "barrier", "situation", "sex", "age", "height", "weight",
       "activity", "baseline", "target", "pace", "diet", "medical", "summary", "signup"];
