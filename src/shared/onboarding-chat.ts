@@ -499,16 +499,35 @@ export interface DirectionRefusal {
   placeholder: string;
 }
 
+/**
+ * The kilogram the direction copy writes right after `{weight}`, in every shipped language: `kg`
+ * (also the stem of `kg'sın`, `kg인데`, `kgで`), `кг`, `กก.` and `公斤`, with or without a space.
+ * The copy is admin-editable, so the unit stays a word in it rather than a placeholder.
+ */
+const KG_AFTER_WEIGHT = /\{weight\}(\s?)(?:kg|кг|กก\.?|公斤)/g;
+
+/**
+ * The refusal speaks the screen's unit (ieat-app#3022): on an imperial screen the figures are
+ * pounds and the kilogram after `{weight}` becomes `lb`. Without `units`, or metric, the line is the
+ * kilogram one it always was.
+ */
 export function checkDirection(
   goal: Goal,
   weightKg: number,
   targetKg: number,
   lang: Lang,
   refusals: OnboardingRefusalsContent,
+  units: Units | null = null,
 ): DirectionRefusal | null {
-  const copy = refusals.direction;
+  const imperial = units === "imperial";
   const n = numbers(lang);
-  const params = { weight: n(weightKg), target: n(targetKg) };
+  const show = (kg: number): string => n(imperial ? kgToLb(kg) : kg);
+  const say = (template: string): string =>
+    imperial ? template.replace(KG_AFTER_WEIGHT, `{weight}$1${spellUnit(lang, "lb")}`) : template;
+  const copy = Object.fromEntries(
+    Object.entries(refusals.direction).map(([k, v]) => [k, say(v)]),
+  ) as typeof refusals.direction;
+  const params = { weight: show(weightKg), target: show(targetKg) };
   if (goal === "gain" && targetKg <= weightKg) {
     return {
       line: fill(copy.gain, params),
