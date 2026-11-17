@@ -290,7 +290,7 @@ gets its meal names in that language.
   `ListFormat`, `DisplayNames`, `RelativeTimeFormat` or `Segmenter` is `undefined` used as a
   constructor — a process abort on the phone that compiles, typechecks and passes every test on
   Node or bun, where ICU is full. The guarded helpers own the fallbacks — `countText` and
-  `listConjunction` here, `countryLabel` in `onboarding.ts` — because this workspace runs on the
+  `listConjunction` here — `countryLabel` needs none, it reads the baked `COUNTRY_NAMES` — because this workspace runs on the
   phone too, `app/*-copy.ts` included. `projection.ts`'s old twelve-month table was written against
   a build that answered a numeric month, which is the thing to check if a device ever does — not
   these tables.

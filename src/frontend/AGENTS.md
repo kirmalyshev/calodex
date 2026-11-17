@@ -82,8 +82,8 @@ the exclude is written so a new file in this directory is browser code by defaul
   `app/*-copy.ts` and its helpers, and Hermes carries `Intl.Collator`, `DateTimeFormat` and
   `NumberFormat` only: `PluralRules`, `ListFormat`, `DisplayNames`, `RelativeTimeFormat` and
   `Segmenter` are `undefined` there, and `new` on one is a process abort a browser never shows.
-  `countText`, `listConjunction` (`lang.ts`) and `countryLabel` (`onboarding.ts`) own the
-  fallbacks — the full rule is in `src/shared/AGENTS.md`.
+  `countText` and `listConjunction` (`lang.ts`) own the
+  fallbacks (`countryLabel` reads a baked table and needs none) — the full rule is in `src/shared/AGENTS.md`.
 
 ## Signing in
 

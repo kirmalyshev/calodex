@@ -3,7 +3,7 @@
 // file drifts from what CLDR says.
 import { describe, expect, test } from "bun:test";
 import { COUNTRY_NAMES } from "./country-names.generated.ts";
-import { countryLabel, countryMatches, countrySearchNames, COUNTRY_CODES } from "./onboarding.ts";
+import { countryLabel, countryMatches, countryOptions, countrySearchNames, COUNTRY_CODES } from "./onboarding.ts";
 import { LANG_TAG } from "./lang.ts";
 import { LANGS } from "./types.ts";
 
@@ -13,6 +13,12 @@ describe("COUNTRY_NAMES", () => {
   test("has every language and every curated country, non-empty", () => {
     for (const lang of LANGS) {
       for (const c of REGIONS) expect(COUNTRY_NAMES[lang]?.[c], `${lang}/${c}`).toBeTruthy();
+    }
+  });
+
+  test("every non-English language differs from English somewhere (full ICU, not a silent fallback)", () => {
+    for (const lang of LANGS.filter((l) => l !== "en")) {
+      expect(REGIONS.some((c) => COUNTRY_NAMES[lang][c] !== COUNTRY_NAMES.en[c]), lang).toBe(true);
     }
   });
 
@@ -53,6 +59,18 @@ describe("countryMatches", () => {
     expect(countryMatches("at", "ru", "австр")).toBe(true);
     expect(countryMatches("at", "ru", "austri")).toBe(true);
     expect(countryMatches("at", "ru", "france")).toBe(false);
+    expect(countryMatches("at", "de", "osterreich")).toBe(true);
+    expect(countryMatches("es", "es", "espana")).toBe(true);
     expect(countryMatches("other", "en", "o")).toBe(false);
+  });
+});
+
+describe("countryOptions sorts by the local name", () => {
+  test("Österreich files under Ö, after Deutschland, in German; other last", () => {
+    const de = countryOptions("de");
+    expect(de.indexOf("at")).toBeGreaterThan(de.indexOf("de"));
+    expect(de.at(-1)).toBe("other");
+    const ru = countryOptions("ru");
+    expect(ru.indexOf("at")).toBeLessThan(ru.indexOf("de")); // Австрия before Германия
   });
 });

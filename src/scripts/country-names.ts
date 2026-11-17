@@ -8,7 +8,12 @@ const regions = COUNTRY_CODES.filter((c) => c !== "other");
 const table = Object.fromEntries(
   LANGS.map((lang) => {
     const dn = new Intl.DisplayNames([LANG_TAG[lang]], { type: "region" });
-    return [lang, Object.fromEntries(regions.map((c) => [c, dn.of(c.toUpperCase())]))];
+    return [lang, Object.fromEntries(regions.map((c) => {
+      const name = dn.of(c.toUpperCase());
+      // No full ICU, or a missing entry: `of` answers the bare code, or undefined JSON would drop.
+      if (!name || name === c.toUpperCase()) throw new Error(`no CLDR name for ${lang}/${c} — needs full ICU`);
+      return [c, name];
+    }))];
   }),
 );
 

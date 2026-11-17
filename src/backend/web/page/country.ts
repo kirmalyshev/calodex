@@ -44,7 +44,7 @@ export function country(v: CountryView): string {
   // The GET filter narrows the rendered list to the query plus `other`, which is the choice
   // that still answers when nothing matches — a filter that hid it would dead-end a real place.
   const filtered = q === "" ? v.options : v.options.filter((c) =>
-    c === "other" || fold(countryLabel(c, v.lang) ?? c).includes(q),
+    c === "other" || fold(countryLabel(c, v.lang)).includes(q),
   );
   // The resolved pick pins to the top, checked — iOS leads the grid with the locale's country,
   // dark-ringed and ticked, ahead of the alphabetical rest. Never the sentinel: "Somewhere
@@ -57,7 +57,7 @@ export function country(v: CountryView): string {
   const held = v.selected !== null && !options.includes(v.selected)
     ? `<input type="hidden" name="answer" value="${escape(v.selected)}">` : "";
   const rows = options.map((c) => {
-    const label = c === "other" ? v.otherLabel : (countryLabel(c, v.lang) ?? c);
+    const label = c === "other" ? v.otherLabel : countryLabel(c, v.lang);
     // The sentinel draws an ellipsis where a flag would sit — it is a region of no kind.
     const flag = c === "other" ? "…" : (countryFlag(c) ?? "");
     return `    <label class="opt"><input type="radio" name="answer" value="${escape(c)}"` +
