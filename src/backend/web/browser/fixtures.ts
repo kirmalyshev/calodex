@@ -72,7 +72,8 @@ export async function signIn(page: Page, subject: string, provider: "apple" | "g
 
 /** Answer whatever question is open until the plan appears. `extra` overrides per prompt id —
  * an array ticks those checkboxes, which is how a chips answer like restrictions is given. */
-export async function onboard(page: Page, extra: Record<string, string | string[]> = {}) {
+/** Answer the walk to the plan, or until the question `until` is open (left unanswered). */
+export async function onboard(page: Page, extra: Record<string, string | string[]> = {}, until?: string) {
   const answers: Record<string, string | string[]> = { ...ANSWERS, ...extra };
   for (let i = 0; i < 40; i++) {
     if (/\/start\/plan/.test(page.url())) return;
@@ -93,6 +94,7 @@ export async function onboard(page: Page, extra: Record<string, string | string[
       else break;
       continue;
     }
+    if (prompt === until) return;
     const answer = answers[prompt];
     if (Array.isArray(answer)) {
       for (const v of answer) {
@@ -125,7 +127,8 @@ export async function onboard(page: Page, extra: Record<string, string | string[
     else await field.evaluate((el, v) => { (el as { value: string }).value = String(v); }, answer);
     await page.locator('button[type="submit"]').last().click();
   }
-  await expect(page).toHaveURL(/\/start\/plan/);
+  if (until === undefined) await expect(page).toHaveURL(/\/start\/plan/);
+  else throw new Error(`the walk never opened ${until}`);
 }
 
 /** Ask something in the chat and wait for the answer that follows it. */

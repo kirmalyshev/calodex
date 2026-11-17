@@ -259,8 +259,12 @@ function ageControl(v: QuestionView): { control: string } {
   const rows: string[] = [];
   for (let a = min; a <= max; a++)
     rows.push(`<div class="${rowClass(a)}">${escape(years(v.content.ui.units.yearsCount, a))}</div>`);
+  // The slider's value is the row it sits on: a refused "3" is shown back in the field, not the wheel.
+  const onWheel = Math.min(max, Math.max(min, Math.round(Number.isFinite(val) ? val : ONBOARDING_NEUTRAL.ageYears)));
   const wheel = `<div class="ctl" data-ctl="wheel" data-min="${min}" data-val="${val}">` +
-    `<div class="wheelbox"><div class="wheel" tabindex="0" aria-label="${escape(headline(v.lines))}">${rows.join("")}</div></div></div>`;
+    `<div class="wheelbox"><div class="wheel" role="slider" tabindex="0" aria-label="${escape(headline(v.lines))}"` +
+    ` aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${onWheel}"` +
+    ` aria-valuetext="${escape(years(v.content.ui.units.yearsCount, onWheel))}">${rows.join("")}</div></div></div>`;
     // The wheel draws ages; the typed fallback also takes a four-digit year — `checkNumber`
   // reads one — so the field's own bounds must not refuse what the server would accept.
   return { control: wheel + numAlt(v, numInput(v, val, 5, 2100, 1), v.content.ui.units.years) };
@@ -425,6 +429,7 @@ function paceControl(v: QuestionView, echo: string | null): string {
         `<p>${escape(capNote(v.content.summary.capNote, v.profile.goal, pr.ratePerWeek, v.lang))}</p></details>`
       : "";
   };
+  const spoken = PACES.map((p, i) => [opts[p]?.label ?? p, rateOf(i).disp].filter(Boolean).join(", "));
   const variants = PACES.map((p, i) => {
     const r = rateOf(i);
     return `<div class="pacevar${i === selIdx ? " on" : ""}" data-i="${i}">` +
@@ -451,7 +456,11 @@ function paceControl(v: QuestionView, echo: string | null): string {
   return `<div class="pacesel ctl" data-ctl="slider" data-val="${selIdx}">` +
     (echo ? `<p class="pecho">${escape(echo)}</p>` : "") +
     `<div class="pacevarbox">${variants}</div>` +
-    `<div class="slider"><i></i><b class="settle"></b></div>` +
+    // A slider to assistive technology and the keyboard (ieat-app#2984): once the script runs, the
+    // radio rows below are hidden, and this track is the only way to change the pace.
+    `<div class="slider" role="slider" tabindex="0" aria-label="${escape(headline(v.lines))}"` +
+    ` aria-valuemin="0" aria-valuemax="${PACES.length - 1}" aria-valuenow="${selIdx}"` +
+    ` aria-valuetext="${escape(spoken[selIdx]!)}" data-spoken="${escape(JSON.stringify(spoken))}"><i></i><b class="settle"></b></div>` +
     `<div class="stops">${stops}</div>` +
     `<div class="paceresbox">${results}</div></div>` +
     `<div class="pacerows opts">${rows}</div>`;

@@ -101,6 +101,39 @@ test.describe("the walk", () => {
     await expect(page.getByRole("slider")).toHaveAttribute("aria-valuetext", /^\d+ ft \d+ in$/);
   });
 
+  // ieat-app#2984: the age wheel was a focusable div with no role or value, and the pace's radios
+  // are hidden once the script runs, leaving a track and stops a keyboard could not reach.
+  test("the age wheel and the pace are sliders a keyboard and a screen reader can use", async ({ page }) => {
+    await signIn(page, `pw-wheel-${Date.now()}`);
+    await onboard(page, {}, "birth_year");
+    const wheel = page.getByRole("slider");
+    await expect(wheel).toHaveAttribute("aria-valuetext", /\d/);
+    const age = page.locator('input[name="answer"]').first();
+    const before = await age.inputValue();
+    await wheel.focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(age).not.toHaveValue(before);
+    await page.keyboard.press("Home");
+    await expect(wheel).toHaveAttribute("aria-valuenow", (await wheel.getAttribute("aria-valuemin"))!);
+    await expect(age).toHaveValue((await wheel.getAttribute("aria-valuemin"))!);
+    await page.keyboard.press("End");
+    await page.keyboard.press("Home");
+    await page.keyboard.press("ArrowUp");
+    await page.locator('button[type="submit"]').last().click();
+
+    await onboard(page, {}, "pace");
+    const pace = page.getByRole("slider");
+    await expect(pace).toHaveAttribute("aria-valuetext", /\S/);
+    await pace.focus();
+    await page.keyboard.press("End");
+    await expect(page.locator('input[name="answer"][value="push"]')).toBeChecked();
+    await expect(pace).toHaveAttribute("aria-valuenow", "2");
+    await page.keyboard.press("Home");
+    await expect(page.locator('input[name="answer"][value="easy"]')).toBeChecked();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator('input[name="answer"][value="steady"]')).toBeChecked();
+  });
+
   test("the under-16 answer stops the walk and deletes the account", async ({ page }) => {
     await signIn(page, `pw-under16-${Date.now()}`);
     for (const [id, answer] of Object.entries({ goal: "lose", sex: "male", birth_year: "14" })) {
