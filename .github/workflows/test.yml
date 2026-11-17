@@ -63,7 +63,11 @@ jobs:
       # GHSA-vfj7-8cjw-p6xm (braces <=3.0.3, npm's latest): dev-only path — @lingui/cli >
       # micromatch, a stack-exhaustion DoS on attacker-controlled globs our build never feeds.
       # Remove the ignore when braces > 3.0.3 ships.
-      - run: bun audit --ignore=GHSA-vfj7-8cjw-p6xm
+      # GHSA-fc5q-39xc-vjpf (picomatch <=4.0.7, no patched release): the same dev-only path —
+      # @lingui/cli > micromatch > picomatch 2.3.2, a ReDoS on attacker-controlled extglobs; the
+      # globs it sees are lingui.config's own. Nothing else in the lockfile depends on picomatch.
+      # Remove the ignore when a patched picomatch ships.
+      - run: bun audit --ignore=GHSA-vfj7-8cjw-p6xm --ignore=GHSA-fc5q-39xc-vjpf
       # THE SAME SCRIPT THE DEPLOY RUNS, against the service container instead of compose's `db`.
       # A second implementation here would be a second thing to keep true, and the one that drifts
       # is always the one nobody looks at.
