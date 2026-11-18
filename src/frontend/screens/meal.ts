@@ -90,7 +90,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     d === today ? COPY.today : d === dateMinus(today, 1) ? COPY.yesterday : dateText(d);
   const mealTime = (m: MealRecord): string => localTime(zone, new Date(m.ts));
   const meta = (m: MealRecord): string =>
-    fill((m.photos ?? 0) > 0 ? mc.metaPhoto : mc.sheetWhen, { day: dayName(m.date), time: mealTime(m) });
+    fill(mc.sheetWhen, { day: dayName(m.date), time: mealTime(m) });
 
   const wrap = el("section", "mdetail");
   const left = el("div", "wcol");

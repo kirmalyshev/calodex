@@ -230,7 +230,7 @@ export function logScreen(frame: Frame): HTMLElement {
     const checking = ctaEl({ text: L.checking, kind: "s" }) as HTMLButtonElement;
     checking.disabled = true;
     side.append(
-      el("span", "lab", `${atTime(captured)} · ${L.web.fromPhoto}`),
+      el("span", "lab", atTime(captured)),
       sayRow,
       el("div", "logpush"),
       checking,

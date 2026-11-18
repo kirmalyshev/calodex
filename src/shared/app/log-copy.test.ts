@@ -18,7 +18,7 @@ const SHARED = [
   "unknownTitle", "unknownNote", "satfatNoun", "verdictDetailTemplate", "dayEaten", "dayOfPlan", "dayLeft", "dayOver",
 ] as const;
 const WEB = [
-  "title", "dropHint", "chooseFile", "analyzeCta", "chatInstead", "fromPhoto",
+  "title", "dropHint", "chooseFile", "analyzeCta", "chatInstead",
   "failedTitle", "sendAgain",
 ] as const;
 const PHONE = [
@@ -96,8 +96,8 @@ describe("LOG_COPY", () => {
     expect(en.web.title).toBe("A photo of the meal");
     expect(en.web.dropHint).toBe("Drop a photo here");
     expect(en.web.chooseFile).toBe("or choose a file · JPEG, PNG or WebP");
+    expect("fromPhoto" in en.web).toBe(false); // the pending card says when, not "from a photo" (#3041)
     expect(en.web.chatInstead).toBe("or tell {coach} about it in Chat");
-    expect(en.web.fromPhoto).toBe("from a photo");
     expect(en.web.sendAgain).toBe("Send it again");
     expect(en.phone.cameraTitle).toBe("One meal, any angle");
     expect(en.phone.pickTitle).toBe("Pick a photo");

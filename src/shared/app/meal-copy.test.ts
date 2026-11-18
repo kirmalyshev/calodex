@@ -10,7 +10,7 @@ import { LANGS, type Lang } from "../types.ts";
 import { MEAL_COPY, mealCopyFor } from "./meal-copy.ts";
 
 const KEYS = [
-  "metaPhoto", "sheetWhen",
+  "sheetWhen",
   "macroProtein", "macroCarbs", "macroFat",
   "coachLine", "correctOpener", "itemAmount", "composeHint",
   "deleteTitle", "deleteBody", "deleteCta", "cancelCta",
@@ -40,11 +40,14 @@ describe("MEAL_COPY", () => {
     }
   });
 
+  it("carries no photo-provenance meta line in any language (#3041)", () => {
+    for (const lang of LANGS) expect(Object.keys(mealCopyFor(lang))).not.toContain("metaPhoto");
+  });
+
   it("keeps every placeholder in every language", () => {
     // A dropped `{coach}` prints the placeholder beside Gabie's avatar; a dropped `{items}` turns
     // the correct-sheet opener into a claim that nothing was read at all.
     const placeholders: Partial<Record<(typeof KEYS)[number], string[]>> = {
-      metaPhoto: ["{day}", "{time}"],
       sheetWhen: ["{day}", "{time}"],
       coachLine: ["{coach}"],
       correctOpener: ["{items}"],
@@ -80,7 +83,8 @@ describe("MEAL_COPY", () => {
 
   it("draws the boards' words in English", () => {
     const en = mealCopyFor("en" as Lang);
-    expect(en.metaPhoto).toBe("{day} · {time} · from a photo");
+    // The meal's meta line says when, never "from a photo": the photo is on the screen (#3041).
+    expect(en.sheetWhen).toBe("{day} · {time}");
     expect(en.webCorrect).toBe("Correct this meal");
     expect(en.phoneCorrect).toBe("Correct");
     expect(en.phoneDone).toBe("Done");
