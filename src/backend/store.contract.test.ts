@@ -1396,6 +1396,25 @@ function contract(name: string, make: () => Promise<Store>) {
         expect((await s.sendLogFor(a, 5))[0]?.state).toBe("queued");
       });
 
+      it("stores the text as sent and lists the newest sends across accounts (#844)", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const id = crypto.randomUUID();
+        await s.createSend(u, {
+          id, kind: "campaign", ref: "c", templateKey: "t", lang: "en", variant: null,
+          token: `ExponentPushToken[${RUN}-text]`, state: "queued", title: "Hi", body: "There",
+        });
+        const mine = (await s.recentSends(500)).find((r) => r.id === id);
+        expect(mine).toMatchObject({ userId: u, title: "Hi", body: "There" });
+        expect((await s.sendLogFor(u, 5))[0]).toMatchObject({ title: "Hi", body: "There" });
+        const dry = crypto.randomUUID();
+        await s.createSend(u, {
+          id: dry, kind: "campaign", ref: "c", templateKey: "t", lang: "en", variant: null,
+          token: "dry", state: "dry",
+        });
+        expect((await s.recentSends(500)).map((r) => r.id)).not.toContain(dry);
+      });
+
       // ── Opens (#1759) ────────────────────────────────────────────────────────────────────
       const send = async (s: Awaited<ReturnType<typeof open>>, u: string, tag: string, state: "queued" | "accepted" | "dead" | "refused" | "dry" | "expired" = "accepted") => {
         const id = crypto.randomUUID();
@@ -6268,7 +6287,7 @@ if (PG_URL) {
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "recentSends", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",

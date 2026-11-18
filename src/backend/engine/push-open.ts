@@ -44,3 +44,27 @@ export async function pushOpenView(deps: EngineDeps, range: AdminRange & { days?
   const timezone = deps.config.timezone;
   return { range: adminWindowEcho(ask), timezone, rows: await deps.store.pushOpenStats(ask, timezone) };
 }
+
+/** The rows the admin's recent-pushes table shows. Carries no push token (an explicit allowlist, so a new `send_log` column cannot leak into it). */
+export interface RecentSend {
+  id: string; userId: string; email: string | null;
+  kind: string; templateKey: string; lang: string; variant: string | null; state: string;
+  /** As sent (#844); null for a row written before the text was stored. */
+  title: string | null; body: string | null;
+  createdAt: string;
+}
+
+export const PUSH_RECENT_MAX = 200;
+
+/** The newest sends, each with the account that got it and the text it carried. */
+export async function pushRecentView(deps: EngineDeps, limit: number): Promise<{ sends: RecentSend[] }> {
+  const rows = await deps.store.recentSends(Math.min(Math.max(1, Math.floor(limit)), PUSH_RECENT_MAX));
+  const emails = new Map<string, string | null>();
+  for (const r of rows) if (!emails.has(r.userId)) emails.set(r.userId, await deps.store.emailForUser(r.userId));
+  return {
+    sends: rows.map((r) => ({
+      id: r.id, userId: r.userId, email: emails.get(r.userId) ?? null, kind: r.kind, templateKey: r.templateKey,
+      lang: r.lang, variant: r.variant, state: r.state, title: r.title, body: r.body, createdAt: r.createdAt,
+    })),
+  };
+}

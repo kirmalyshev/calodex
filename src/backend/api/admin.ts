@@ -50,7 +50,7 @@ import {
   onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
-  sendTestPush, pushOpenView, sendAdminPush,
+  sendTestPush, pushOpenView, pushRecentView, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
   resetOnboardingContent, saveOnboardingContent, saveSwitch, setUserCap, userCap,
@@ -666,11 +666,19 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
 
   // ── Push: the opens view (#1759) ───────────────────────────────────────────────────────────
   //
-  // Per day and per kind/template: sent, accepted, dead, opened, converted. Counts only — no
-  // account, token or body — so it is the one push read that names nobody.
+  // Per day and per kind/template: sent, accepted, dead, opened, converted. Counts only —
+  // names nobody. `/push/recent` below is the exception: accounts and text, never a token.
   if (req.method === "GET" && pathname === "/admin/api/push/stats") {
     const ask = rangeParam(url, { defaultDays: 7, maxDays: PUSH_STATS_MAX_DAYS });
     return json(await pushOpenView(deps, "days" in ask ? ask.days : ask));
+  }
+
+  // The newest sends, each naming its account and carrying the text as sent (#844). Unlike the
+  // counts above this one names people, so it sits behind the same admin gate and carries no token.
+  if (req.method === "GET" && pathname === "/admin/api/push/recent") {
+    const raw = url.searchParams.get("limit");
+    if (raw !== null && raw !== "" && !/^\d{1,4}$/.test(raw)) return json({ error: "bad-limit" }, 400);
+    return json(await pushRecentView(deps, raw ? Number(raw) : 50));
   }
 
   // ── Push: test one account, read what it was sent ──────────────────────────────────────────

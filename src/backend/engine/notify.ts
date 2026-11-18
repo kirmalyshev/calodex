@@ -150,7 +150,8 @@ export interface SendMeta {
  * then settled from the ticket. A dead token is dropped through the scoped write.
  *
  * NEVER THROWS for a push service that is down: the rows are settled `refused` and the caller
- * counts them. Nothing here logs a token or a body.
+ * counts them. Nothing here writes a token or a body to a process log; the text is stored in
+ * `send_log` (#844) for the admin, and the token never leaves the store.
  */
 export async function sendLogged(
   deps: EngineDeps,
@@ -169,6 +170,10 @@ export async function sendLogged(
     await deps.store.createSend(userId, {
       id, kind: meta.kind, ref: meta.ref, templateKey: meta.templateKey, lang: meta.lang,
       variant: meta.variant ?? null, token: device.token, state: "queued",
+      // Not for a transactional push: it carries the account's own meal (names, kcal), which
+      // deleting the meal must be able to take with it, and send_log has no such sweep.
+      title: meta.kind === "transactional" ? null : message.title ?? null,
+      body: meta.kind === "transactional" ? null : message.body ?? null,
     });
     ids.set(device.token, id);
     messages.push({ ...message, to: device.token, data: { ...data, sendId: id } });
