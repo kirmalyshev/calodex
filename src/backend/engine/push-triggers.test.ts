@@ -81,6 +81,16 @@ describe("onboarding trigger: day 1, 3 and 7, then stop", () => {
     expect(push.sent).toHaveLength(1);
   });
 
+  it("a refused trigger claim is counted under the claim's own reason (calodex#843)", async () => {
+    const capped = await account();
+    await store.setPushDailyMax(capped, 0);
+    const sent = await account();
+    await pushTick(deps, { now: evening(1) });
+    expect(await lastLog(sent)).toMatchObject({ kind: "onboarding" }); // the trigger path, not the evening line
+    const again = await pushTick(deps, { now: evening(1) + 60_000 });
+    expect(again.skipped).toMatchObject({ "account-cap": 1, "sender-taken": 1 });
+  });
+
   it("anything logged ends it: day 3 is the evening line", async () => {
     const userId = await account();
     await logOn(userId, dateMinus(TODAY, -1));

@@ -7,6 +7,7 @@ import { memoryStore } from "../store.memory.ts";
 import type { Store } from "../store.ts";
 import { patchProfile, type EngineDeps } from "./index.ts";
 import { collectPushReceipts, pushTick, sendTestPush } from "./notify.ts";
+import { DEFAULT_MEAL_REMINDERS } from "@eait/shared";
 
 const CONFIG: Config = {
   ...configDefaults(),
@@ -239,6 +240,34 @@ describe("send_log", () => {
     console.error = (...a: unknown[]) => { lines.push(a.join(" ")); };
     try { await pushTick(deps, { now: BERLIN_2030 }); } finally { console.log = log; console.error = err; }
     expect(lines.join("\n")).not.toContain("secret");
+  });
+});
+
+describe("a skip says why", () => {
+  // calodex#843: prod logged "15 skipped" for a month and nothing said which gate it was.
+  it("counts each skipped account under its reason, and the log line names them", async () => {
+    await account({ tz: "Asia/Tokyo" }); // 03:30 there: not its hour
+    const taken = await account();
+    await store.claimPushSlot(taken, "2026-08-20", "streak", "evening"); // its day already went
+    const off = await account();
+    await store.setMealReminders(off, { ...DEFAULT_MEAL_REMINDERS, evening: false });
+    const fresh = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    await store.putPushToken(fresh.userId, "ExponentPushToken[fresh]", "ios"); // never onboarded: nothing to say
+    const capped = await account();
+    await store.setPushDailyMax(capped, 0);
+    await account(); // the one that sends, so the tick logs
+
+    const lines: string[] = [];
+    const log = console.log;
+    console.log = (...a: unknown[]) => { lines.push(a.join(" ")); };
+    let result;
+    try { result = await pushTick(deps, { now: BERLIN_2030 }); } finally { console.log = log; }
+
+    expect(result.sent).toBe(1);
+    expect(result.skipped).toEqual({ "not-due": 1, "sender-taken": 1, "account-cap": 1, "evening-off": 1, "nothing-to-say": 1 });
+    expect(lines.join("\n")).toContain(
+      "5 skipped (not-due 1, sender-taken 1, account-cap 1, evening-off 1, nothing-to-say 1)",
+    );
   });
 });
 
