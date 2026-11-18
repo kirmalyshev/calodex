@@ -227,9 +227,10 @@ export function zoneOf(deps: EngineDeps, reported: string | null): string {
 }
 
 /**
- * Why a visited account got nothing this minute. `not-due`: outside its own 20:30 + catch-up window,
- * which is every account most of the day. `sender-taken` / `account-cap`: `claimSend`'s refusals.
- * `evening-off`: its own switch. `nothing-to-say`: never onboarded, or the key is not sendable.
+ * Why a visited account got nothing this minute. `not-due`: outside its own evening-line time
+ * (`config.eveningLineTime`) + `CATCH_UP_MS`, which is every account most of the day.
+ * `sender-taken` / `account-cap`: `claimSend`'s refusals. `evening-off`: its own switch.
+ * `nothing-to-say`: never onboarded, or the key is not sendable (`sendableCopy` warns, naming it).
  */
 export const TICK_SKIPS = ["not-due", "sender-taken", "account-cap", "evening-off", "nothing-to-say"] as const;
 export type TickSkip = (typeof TICK_SKIPS)[number];
@@ -257,7 +258,9 @@ export interface TickResult {
 export async function pushTick(deps: EngineDeps, opts: { now?: number } = {}): Promise<TickResult> {
   const now = opts.now ?? Date.now();
   const audience = await deps.store.pushAudience();
-  const skipped = Object.fromEntries(TICK_SKIPS.map((r) => [r, 0])) as Record<TickSkip, number>;
+  const skipped = {
+    "not-due": 0, "sender-taken": 0, "account-cap": 0, "evening-off": 0, "nothing-to-say": 0,
+  } satisfies Record<TickSkip, number>;
   const result: TickResult = { users: audience.length, sent: 0, skipped, failed: 0, dropped: 0 };
   let broken = 0;
   for (const audienceRow of audience) {
