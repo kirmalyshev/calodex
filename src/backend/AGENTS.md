@@ -115,6 +115,17 @@ route. A route that computes is a rule the tests cannot reach.
 - **Never log the API key, the database URL with credentials, or raw image bytes.**
 - **The app never creates the database.** `migrate()` creates tables inside a database that must
   already exist.
+- **A migration is EXPAND now and CONTRACT a release later** (ieat-app#3108). A deploy replaces one
+  replica at a time, so the new build runs `migrate()` at boot while the PREVIOUS build still
+  serves on the other replica against the same database. Every statement must be one that previous
+  build survives: add a column nullable or with a default, add a table, widen a check. Dropping or
+  renaming what it reads, retyping it, `set not null` on a column it may leave null, or a `not null`
+  column with no default it does not write, ships only after a release that no longer needs it; and
+  long `ACCESS EXCLUSIVE` DDL on a hot table stalls the serving replica for its whole duration.
+  `migrate-expand.test.ts` lists every drop, rename, retype, `set not null` and default-less
+  `not null` column `store.pg.ts` carries and fails on a new one; adding it there is the deliberate step, with the release that
+  stopped reading it named in the PR. Falsified the day a deploy stops all replicas before booting
+  the new build.
 - **State conditions live in the store's own guarded statements**, never in a read the engine did
   first: deliveries can be concurrent, nothing is transactional, and a decision made from a stale
   read is dropped permanently. **`onboarding_content` and `notification_copy` are that rule

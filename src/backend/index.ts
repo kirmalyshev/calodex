@@ -5,6 +5,7 @@
 // database and no API key. That is not a toy: it is how the app is developed on a plane, and how a
 // UI change gets reviewed without spending money on vision calls.
 
+import { leaveRotation } from "./shutdown.ts";
 import {
   configDefaults, demoConfig, loadConfig, redact, type Config,
 } from "./config.ts";
@@ -634,9 +635,14 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, async () => {
     // Unhealthy FIRST: the proxy's next health check pulls this replica out while the rest below
     // finishes, rather than traffic reaching a process that is half closed.
-    draining = true;
+    // Then the listener stays open for `shutdownSettleMs`, so the proxy has seen the 503 before a
+    // connection is refused (ieat-app#3108).
     // Stop accepting and claiming, let running jobs land, hand the rest back to the queue, then close.
-    const stopping = server.stop();
+    const stopping = leaveRotation({
+      markDraining: () => (draining = true),
+      settleMs: config.shutdownSettleMs,
+      stop: () => server.stop(),
+    });
     await drainJobs(deps, config.shutdownDrainMs);
     await stopping;
     // The connector before the pool: a handler still running holds the store, and it must finish

@@ -485,6 +485,11 @@ export interface Config {
   pushTimeoutMs: number;
   /** How long a shutdown waits for queued photo and update jobs; the deploy's stop grace period must exceed it. */
   shutdownDrainMs: number;
+  /**
+   * How long SIGTERM keeps the listener open after `/health` goes 503, so the proxy's health check
+   * routes elsewhere before connections are refused (ieat-app#3108). 0 outside a proxied deploy.
+   */
+  shutdownSettleMs: number;
   /** How many queued jobs one process runs at once. */
   jobConcurrency: number;
   /** A queued job no replica has claimed by this age settles `OUTCOME_UNKNOWN` rather than waiting forever. */
@@ -784,6 +789,7 @@ export function configDefaults(): Config {
     webPushSubject: "",
     pushTimeoutMs: 15_000,
     shutdownDrainMs: 60_000,
+    shutdownSettleMs: 0,
     jobConcurrency: 4,
     jobMaxQueuedMs: 600_000,
     // The one number the shipped copy states out loud, so it has exactly one source.
@@ -1071,6 +1077,7 @@ export function loadConfig(): Config {
     webPushSubject: process.env.EAIT__BACKEND__WEB_PUSH_SUBJECT ?? d.webPushSubject,
     pushTimeoutMs: int("EAIT__BACKEND__PUSH_TIMEOUT_MS", d.pushTimeoutMs),
     shutdownDrainMs: int("EAIT__BACKEND__SHUTDOWN_DRAIN_MS", d.shutdownDrainMs),
+    shutdownSettleMs: int("EAIT__BACKEND__SHUTDOWN_SETTLE_MS", d.shutdownSettleMs),
     jobConcurrency: int("EAIT__BACKEND__JOB_CONCURRENCY", d.jobConcurrency),
     jobMaxQueuedMs: int("EAIT__BACKEND__JOB_MAX_QUEUED_MS", d.jobMaxQueuedMs),
     eveningLineTime,
@@ -1227,6 +1234,7 @@ export function demoConfig(): Config {
     ...configDefaults(),
     port: Number(process.env.EAIT__BACKEND__PORT ?? 8484),
     host: process.env.EAIT__BACKEND__HOST ?? "127.0.0.1",
+    shutdownSettleMs: int("EAIT__BACKEND__SHUTDOWN_SETTLE_MS", 0),
     databaseUrl: "memory://demo",
     llmProvider: "demo", llmModel: "demo", llmChatModel: "demo", llmApiKey: "unused",
     // AND UNMETERED PER ADDRESS — `api/ratelimit.ts`

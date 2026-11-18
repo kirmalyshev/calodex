@@ -334,4 +334,15 @@ if (import.meta.main) {
   });
   const server = Bun.serve({ port, hostname, fetch: app.fetch });
   console.log(`[eait-web] ${server.url}`);
+  // A deploy recreates this container (ieat-app#3108). Without a handler bun dies on the signal and
+  // cuts every page in flight; `stop()` lets them finish while Caddy holds new ones for the next.
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.on(signal, async () => {
+      try {
+        await server.stop();
+      } finally {
+        process.exit(0);
+      }
+    });
+  }
 }
