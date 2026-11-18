@@ -6222,7 +6222,7 @@ if (PG_URL) {
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "recentSends", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",
