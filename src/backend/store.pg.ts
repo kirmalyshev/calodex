@@ -333,6 +333,9 @@ create table if not exists send_log (
 );
 -- A table made before the notification extension (ieat-app#1763) lacks the column.
 alter table send_log add column if not exists delivered_at timestamptz;
+-- The text as sent (#844): a template edit must not rewrite what an account was told.
+alter table send_log add column if not exists title text;
+alter table send_log add column if not exists body text;
 -- A table made by the first push build carries the constraint without .expired.; widen it once.
 -- Guarded on the definition so a normal boot takes no ACCESS EXCLUSIVE lock.
 do $do$
@@ -1972,6 +1975,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   createSend: 0,
   settleSend: 0,
   sendLogFor: 0,
+  recentSends: "unscoped",
   recordPushOpen: 0,
   recordPushDelivered: 0,
   hasCampaignSend: 0,
@@ -4756,8 +4760,8 @@ export async function postgresStore(
       // `created_at` from the store's clock rather than the column default — the same reason
       // `users.created_at` takes one: a test that can move time forward cannot move `default now()`,
       // and the admin's push stats are filtered on this column.
-      await sql`insert into send_log (id, user_id, kind, ref, template_key, lang, variant, token, state, created_at)
-        values (${r.id}, ${userId}, ${r.kind}, ${r.ref}, ${r.templateKey}, ${r.lang}, ${r.variant}, ${r.token}, ${r.state}, ${new Date(now())})`;
+      await sql`insert into send_log (id, user_id, kind, ref, template_key, lang, variant, token, state, created_at, title, body)
+        values (${r.id}, ${userId}, ${r.kind}, ${r.ref}, ${r.templateKey}, ${r.lang}, ${r.variant}, ${r.token}, ${r.state}, ${new Date(now())}, ${r.title ?? null}, ${r.body ?? null})`;
     },
 
     async settleSend(userId, id, patch) {
@@ -4932,6 +4936,11 @@ export async function postgresStore(
     async sendLogFor(userId, limit) {
       const rows = await sql`select * from send_log where user_id = ${userId}
         order by created_at desc, id limit ${limit}`;
+      return (rows as Record<string, unknown>[]).map(sendRow);
+    },
+
+    async recentSends(limit) {
+      const rows = await sql`select * from send_log order by created_at desc, id limit ${limit}`;
       return (rows as Record<string, unknown>[]).map(sendRow);
     },
 
@@ -5722,6 +5731,7 @@ function sendRow(r: Record<string, unknown>): SendLogRow {
     createdAt: new Date(r.created_at as string).toISOString(),
     receiptAt: r.receipt_at ? new Date(r.receipt_at as string).toISOString() : null,
     deliveredAt: r.delivered_at ? new Date(r.delivered_at as string).toISOString() : null,
+    title: (r.title as string | null) ?? null, body: (r.body as string | null) ?? null,
   };
 }
 

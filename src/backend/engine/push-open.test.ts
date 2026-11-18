@@ -6,7 +6,8 @@ import { logMail } from "../mail/log.ts";
 import { memoryStore } from "../store.memory.ts";
 import type { Store } from "../store.ts";
 import type { EngineDeps } from "./index.ts";
-import { PUSH_STATS_MAX_DAYS, pushOpenView, recordPushDelivered, recordPushOpen } from "./push-open.ts";
+import { PUSH_STATS_MAX_DAYS, pushOpenView, pushRecentView, recordPushDelivered, recordPushOpen } from "./push-open.ts";
+import { sendLogged } from "./notify.ts";
 
 const CONFIG: Config = {
   ...configDefaults(),
@@ -86,5 +87,35 @@ describe("pushOpenView", () => {
     expect((await pushOpenView(deps, 100_000)).range.days).toBe(PUSH_STATS_MAX_DAYS);
     expect((await pushOpenView(deps, 0)).range.days).toBe(1);
     expect((await pushOpenView(deps, Number.NaN)).range.days).toBe(7);
+  });
+});
+
+describe("pushRecentView (#844)", () => {
+  it("names the recipient and the text sent, as stored at send time", async () => {
+    const { userId } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    await store.addIdentity(userId, "google", "sub-844");
+    await store.setIdentityEmail(userId, "google", "sub-844", "who@example.com");
+    const out = await sendLogged(
+      deps, userId, [{ token: "ExponentPushToken[a]" }],
+      { kind: "campaign", ref: "c1", templateKey: "t1", lang: "en", variant: "a" },
+      { title: "Hello", body: "Log your lunch" },
+    );
+    expect(out.sent).toBe(1);
+    const view = await pushRecentView(deps, 50);
+    expect(view.sends).toHaveLength(1);
+    expect(view.sends[0]).toMatchObject({
+      userId, email: "who@example.com", templateKey: "t1", title: "Hello", body: "Log your lunch", state: "accepted",
+    });
+    expect(JSON.stringify(view)).not.toContain("ExponentPushToken");
+  });
+
+  it("is newest first, bounded by the limit, and null text for a row from before the column", async () => {
+    const { userId, sendId } = await userWithSend();
+    const second = crypto.randomUUID();
+    await store.createSend(userId, { id: second, kind: "campaign", ref: null, templateKey: "t2", lang: "en", variant: null, token: "x", state: "accepted", title: "T", body: "B" });
+    const one = await pushRecentView(deps, 1);
+    expect(one.sends.map((s) => s.id)).toEqual([second]);
+    const all = await pushRecentView(deps, 50);
+    expect(all.sends.find((s) => s.id === sendId)).toMatchObject({ title: null, body: null, email: null });
   });
 });

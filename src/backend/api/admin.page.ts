@@ -614,6 +614,15 @@ details.how p { margin-top: 8px; }
         <tbody></tbody>
       </table></div>
     </div>
+    <div class="card flush">
+      <div class="ph"><b>Recent pushes</b><span class="grow"></span><span class="hint">newest 50 · one row per device</span></div>
+      <div class="scrollx"><table id="pushes-recent">
+        <thead>
+          <tr><th>When</th><th>Account</th><th>Template</th><th>Text sent</th><th>State</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
   </div></div>
 </section>
 
@@ -1911,7 +1920,31 @@ details.how p { margin-top: 8px; }
     emptyRow(body, 9, "Nothing has been sent in this window.");
   }
 
+  // Who got each push and what it said (#844). The text is what was stored at send time; a row
+  // from before that was stored shows a dash rather than today's template.
+  function renderRecentPushes(v) {
+    var body = $("pushes-recent").querySelector("tbody");
+    body.textContent = "";
+    v.sends.forEach(function (s) {
+      var tr = document.createElement("tr");
+      td(tr, s.createdAt.slice(0, 16).replace("T", " "), 0, 99);
+      var c = document.createElement("td");
+      c.appendChild(actorEl(s.userId, s.email || s.userId.slice(0, 8)));
+      tr.appendChild(c);
+      td(tr, s.templateKey + (s.variant ? " · " + s.variant : ""), 0, 99);
+      var t = document.createElement("td");
+      if (s.title === null && s.body === null) t.textContent = "—";
+      else { var b = document.createElement("b"); b.textContent = s.title || ""; t.appendChild(b); t.appendChild(document.createElement("br")); t.appendChild(document.createTextNode(s.body || "")); }
+      tr.appendChild(t);
+      td(tr, s.state, 0, 99);
+      body.appendChild(tr);
+    });
+    emptyRow(body, 5, "Nothing has been sent yet.");
+  }
+
   function loadPushes() {
+    // The recent list is a second read: if it fails the counts above still stand.
+    api("GET", "/admin/api/push/recent?limit=50").then(renderRecentPushes, function () { emptyRow($("pushes-recent").querySelector("tbody"), 5, "Could not load recent pushes."); });
     return api("GET", "/admin/api/push/stats" + rangeQuery()).then(function (v) {
       pushData = v;
       lastEcho = v.range;

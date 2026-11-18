@@ -169,6 +169,7 @@ export async function sendLogged(
     await deps.store.createSend(userId, {
       id, kind: meta.kind, ref: meta.ref, templateKey: meta.templateKey, lang: meta.lang,
       variant: meta.variant ?? null, token: device.token, state: "queued",
+      title: message.title ?? null, body: message.body ?? null,
     });
     ids.set(device.token, id);
     messages.push({ ...message, to: device.token, data: { ...data, sendId: id } });

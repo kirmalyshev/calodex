@@ -50,7 +50,7 @@ import {
   onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
-  sendTestPush, pushOpenView, sendAdminPush,
+  sendTestPush, pushOpenView, pushRecentView, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
   resetOnboardingContent, saveOnboardingContent, saveSwitch, setUserCap, userCap,
@@ -667,10 +667,17 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // ── Push: the opens view (#1759) ───────────────────────────────────────────────────────────
   //
   // Per day and per kind/template: sent, accepted, dead, opened, converted. Counts only — no
-  // account, token or body — so it is the one push read that names nobody.
+  // account, token or body (the recent list below names accounts, behind the same gate).
   if (req.method === "GET" && pathname === "/admin/api/push/stats") {
     const ask = rangeParam(url, { defaultDays: 7, maxDays: PUSH_STATS_MAX_DAYS });
     return json(await pushOpenView(deps, "days" in ask ? ask.days : ask));
+  }
+
+  // The newest sends, each naming its account and carrying the text as sent (#844). Unlike the
+  // counts above this one names people, so it sits behind the same admin gate and carries no token.
+  if (req.method === "GET" && pathname === "/admin/api/push/recent") {
+    const n = Number(url.searchParams.get("limit") ?? 50);
+    return json(await pushRecentView(deps, Number.isFinite(n) ? n : 50));
   }
 
   // ── Push: test one account, read what it was sent ──────────────────────────────────────────

@@ -1396,6 +1396,19 @@ function contract(name: string, make: () => Promise<Store>) {
         expect((await s.sendLogFor(a, 5))[0]?.state).toBe("queued");
       });
 
+      it("stores the text as sent and lists the newest sends across accounts (#844)", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "en")).userId;
+        const id = crypto.randomUUID();
+        await s.createSend(u, {
+          id, kind: "campaign", ref: "c", templateKey: "t", lang: "en", variant: null,
+          token: `ExponentPushToken[${RUN}-text]`, state: "queued", title: "Hi", body: "There",
+        });
+        const mine = (await s.recentSends(500)).find((r) => r.id === id);
+        expect(mine).toMatchObject({ userId: u, title: "Hi", body: "There" });
+        expect((await s.sendLogFor(u, 5))[0]).toMatchObject({ title: "Hi", body: "There" });
+      });
+
       // ── Opens (#1759) ────────────────────────────────────────────────────────────────────
       const send = async (s: Awaited<ReturnType<typeof open>>, u: string, tag: string, state: "queued" | "accepted" | "dead" | "refused" | "dry" | "expired" = "accepted") => {
         const id = crypto.randomUUID();

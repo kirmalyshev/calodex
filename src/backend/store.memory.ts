@@ -1507,7 +1507,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async createSend(userId, row) {
       if (!users.has(userId)) throw new Error("send_log: no such user");
       sendLog.set(row.id, {
-        ...row, userId, ticketId: null, receiptError: null,
+        ...row, title: row.title ?? null, body: row.body ?? null, userId, ticketId: null, receiptError: null,
         createdAt: new Date(now()).toISOString(), receiptAt: null, deliveredAt: null,
       });
     },
@@ -1531,6 +1531,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async sendLogFor(userId, limit) {
       return [...sendLog.values()].filter((r) => r.userId === userId).reverse().slice(0, limit);
+    },
+
+    async recentSends(limit) {
+      return [...sendLog.values()].reverse().slice(0, limit);
     },
 
     async recordPushOpen(userId, sendId, _action) {
