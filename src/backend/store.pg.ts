@@ -1247,11 +1247,12 @@ create table if not exists push_templates (
   primary key (key, lang, variant)
 );
 
--- The language check was written for the first eight; widen it for the languages added since
+-- The create-table check above lists only the first eight; widen it to all of LANGS
 -- (ieat-app#2206). Guarded on the definition so a normal boot takes no ACCESS EXCLUSIVE lock: it
 -- widens unless the stored definition already names EVERY code in LANGS. pg prints each literal as
 -- 'xx'::text, and the guard matches that whole quoted form — a bare '%te%' matches '::text' itself
--- and never widened anything (calodex#842). A new language needs only its entry in LANGS.
+-- and never widened anything (calodex#842). A new language needs only its entry in LANGS. It never
+-- narrows: removing a code from LANGS needs a row migration first, or the add below fails the boot.
 do $do$
 begin
   if not exists (select 1 from pg_constraint where conrelid = 'push_templates'::regclass and conname = 'push_templates_lang_check')

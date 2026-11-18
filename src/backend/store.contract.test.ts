@@ -5537,31 +5537,56 @@ if (PG_URL) {
 
   // The guard on the language check used to be `not like '%te%'`, which `::text` satisfies in every
   // definition pg prints, so a constraint written for 16 languages was never widened (calodex#842).
+  // Each start state must widen; a complete constraint must be left alone (no ACCESS EXCLUSIVE lock).
   describe("the push_templates language check across boots — postgres", () => {
-    it("widens a constraint written for fewer languages, so every LANGS code can be stored", async () => {
-      const raw = await rawSql();
-      try {
-        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
-        await raw`alter table push_templates drop constraint push_templates_lang_check`;
-        await raw.unsafe(`alter table push_templates add constraint push_templates_lang_check check (lang in ('en','fr','de','it','es','vi','id','ru','pt-BR','ja','ko','zh-Hans','zh-Hant','tr','pl','nl'))`);
-        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
-        const key = `lang-widen-${RUN}`;
-        for (const lang of LANGS) {
-          await raw`insert into push_templates (key, lang, variant, title, body, status) values (${key}, ${lang}, 'default', 't', 'b', 'draft')`;
+    const boot = async () => (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
+    // `not valid`: the shared test database already holds seeded rows in every language, which a
+    // narrow constraint cannot validate against; new inserts are still checked.
+    const setCheck = async (raw: SQL, langs: readonly string[] | null) => {
+      await raw`alter table push_templates drop constraint if exists push_templates_lang_check`;
+      if (langs) await raw.unsafe(`alter table push_templates add constraint push_templates_lang_check check (lang in (${langs.map((l) => `'${l}'`).join(",")})) not valid`);
+    };
+    // Every start state a database can be in: the 16 languages prod had, one code short of the
+    // full list (a prefix-only guard passes the 16 and fails this), and no constraint at all.
+    const starts: [string, readonly string[] | null][] = [
+      ["16 languages", LANGS.slice(0, 16)],
+      ["all but one", LANGS.filter((l) => l !== "hr")],
+      ["no constraint", null],
+    ];
+    for (const [name, langs] of starts) {
+      it(`widens from ${name}, so every LANGS code can be stored`, async () => {
+        const raw = await rawSql();
+        const key = `lang-widen-${RUN}-${name.replaceAll(" ", "-")}`;
+        try {
+          await boot();
+          await setCheck(raw, langs);
+          await boot();
+          for (const lang of LANGS) {
+            await raw`insert into push_templates (key, lang, variant, title, body, status) values (${key}, ${lang}, 'default', 't', 'b', 'draft')`;
+          }
+          let refused: unknown;
+          try {
+            await raw`insert into push_templates (key, lang, variant, title, body, status) values (${key}, 'xx', 'default', 't', 'b', 'draft')`;
+          } catch (e) {
+            refused = e;
+          }
+          expect(refused).toBeDefined();
+        } finally {
+          await raw`delete from push_templates where key = ${key}`;
+          await boot(); // heal the constraint if an assertion above left it short
+          await raw.end();
         }
-        await raw`delete from push_templates where key = ${key}`;
-      } finally {
-        await raw.end();
-      }
-    });
+      }, 30_000);
+    }
 
     it("is not dropped and re-added by a boot that finds it complete", async () => {
       const raw = await rawSql();
       try {
         const oid = async () => (await raw`select oid::text as o from pg_constraint where conname = 'push_templates_lang_check'`)[0]?.o;
-        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
+        await boot();
         const first = await oid();
-        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
+        expect(first).toBeDefined();
+        await boot();
         expect(await oid()).toBe(first);
       } finally {
         await raw.end();
