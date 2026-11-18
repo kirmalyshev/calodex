@@ -20,7 +20,7 @@ import type {
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -1247,17 +1247,20 @@ create table if not exists push_templates (
   primary key (key, lang, variant)
 );
 
--- The language check was written for the first eight; widen it once for the languages added since
--- (ieat-app#2206). Guarded on the definition so a normal boot takes no ACCESS EXCLUSIVE lock. A new
--- language adds its code here AND in LANGS; the contract suite writes a row in every one.
+-- The create-table check above lists only the first eight; widen it to all of LANGS
+-- (ieat-app#2206). Guarded on the definition so a normal boot takes no ACCESS EXCLUSIVE lock: it
+-- widens unless the stored definition already names EVERY code in LANGS. pg prints each literal as
+-- 'xx'::text, and the guard matches that whole quoted form — a bare '%te%' matches '::text' itself
+-- and never widened anything (calodex#842). A new language needs only its entry in LANGS. It never
+-- narrows: removing a code from LANGS needs a row migration first, or the add below fails the boot.
 do $do$
 begin
   if not exists (select 1 from pg_constraint where conrelid = 'push_templates'::regclass and conname = 'push_templates_lang_check')
      or exists (select 1 from pg_constraint where conrelid = 'push_templates'::regclass and conname = 'push_templates_lang_check'
-                and pg_get_constraintdef(oid) not like '%te%') then
+                and not (pg_get_constraintdef(oid) like all (array[${LANGS.map((l) => `'%''${l}''::text%'`).join(",")}]))) then
     alter table push_templates drop constraint if exists push_templates_lang_check;
     alter table push_templates add constraint push_templates_lang_check
-      check (lang in ('en','fr','de','it','es','vi','id','ru','pt-BR','ja','ko','zh-Hans','zh-Hant','tr','pl','nl','uk','sv','th','hi','cs','ro','el','hu','da','fi','no','sk','hr','sl','ca','ms','pt-PT','bn','gu','kn','ml','mr','or','pa','ta','te'));
+      check (lang in (${LANGS.map((l) => `'${l}'`).join(",")}));
   end if;
 end
 $do$;
