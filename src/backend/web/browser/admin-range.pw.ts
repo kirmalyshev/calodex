@@ -72,6 +72,11 @@ const BODIES: Record<string, unknown> = {
     latency: { n: 0, queue: { p50: null, p95: null }, firstItem: { p50: null, p95: null }, total: { p50: null, p95: null } },
   },
   "push/stats": { range: RANGE, timezone: "UTC", rows: [] },
+  "push/recent": { sends: [{
+    id: "s1", userId: "11111111-2222-3333-4444-555555555555", email: "who@example.com", kind: "campaign",
+    templateKey: "welcome", lang: "en", variant: "a", state: "accepted", title: "Hello there", body: "Log your lunch",
+    createdAt: "2026-11-18T10:15:00.000Z",
+  }] },
   "funnel": {
     range: RANGE, contentVersion: 1, sessions: 0, completed: 0,
     paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
@@ -450,5 +455,17 @@ test("the funnel counts people, not showings, and a negative gap is not a drop",
   await expect(page.locator(".fp-gap").nth(0)).toContainText("1 left");
   await expect(page.locator(".fp-gap").nth(1)).toContainText("+2 joined here");
   await expect(page.locator(".fp-gap").nth(1)).not.toContainText("-");
+  expect(errors).toEqual([]);
+});
+
+test("Pushes lists each send with its account and the text as sent (#844)", async ({ page }) => {
+  const errors = watchConsole(page);
+  await stubAdmin(page, {});
+  await openAdmin(page, "pushes");
+  const row = page.locator("#pushes-recent tbody tr").first();
+  await expect(row).toContainText("who@example.com");
+  await expect(row).toContainText("Hello there");
+  await expect(row).toContainText("Log your lunch");
+  await expect(row).toContainText("welcome");
   expect(errors).toEqual([]);
 });
