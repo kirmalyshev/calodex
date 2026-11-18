@@ -33,7 +33,7 @@
 
 import { afterAll, describe, expect, it } from "bun:test";
 import { SQL } from "bun";
-import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, ONBOARDING_CONTENT, emptyHealthDay, type ActivityLevel, type FoodRef, type MealRecord, type OffProduct } from "@eait/shared";
+import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, ONBOARDING_CONTENT, emptyHealthDay, type ActivityLevel, type FoodRef, type MealRecord, type OffProduct } from "@eait/shared";
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { hashToken } from "./auth/tokens.ts";
 import { memoryStore } from "./store.memory.ts";
@@ -5527,6 +5527,40 @@ if (PG_URL) {
         await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
         const first = await oid();
         expect(first).toBeDefined();
+        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
+        expect(await oid()).toBe(first);
+      } finally {
+        await raw.end();
+      }
+    });
+  });
+
+  // The guard on the language check used to be `not like '%te%'`, which `::text` satisfies in every
+  // definition pg prints, so a constraint written for 16 languages was never widened (calodex#842).
+  describe("the push_templates language check across boots — postgres", () => {
+    it("widens a constraint written for fewer languages, so every LANGS code can be stored", async () => {
+      const raw = await rawSql();
+      try {
+        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
+        await raw`alter table push_templates drop constraint push_templates_lang_check`;
+        await raw.unsafe(`alter table push_templates add constraint push_templates_lang_check check (lang in ('en','fr','de','it','es','vi','id','ru','pt-BR','ja','ko','zh-Hans','zh-Hant','tr','pl','nl'))`);
+        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
+        const key = `lang-widen-${RUN}`;
+        for (const lang of LANGS) {
+          await raw`insert into push_templates (key, lang, variant, title, body, status) values (${key}, ${lang}, 'default', 't', 'b', 'draft')`;
+        }
+        await raw`delete from push_templates where key = ${key}`;
+      } finally {
+        await raw.end();
+      }
+    });
+
+    it("is not dropped and re-added by a boot that finds it complete", async () => {
+      const raw = await rawSql();
+      try {
+        const oid = async () => (await raw`select oid::text as o from pg_constraint where conname = 'push_templates_lang_check'`)[0]?.o;
+        await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
+        const first = await oid();
         await (await postgresStore(PG_URL, { maxConnections: TEST_POOL })).close();
         expect(await oid()).toBe(first);
       } finally {
