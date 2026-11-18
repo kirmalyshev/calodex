@@ -338,8 +338,11 @@ if (import.meta.main) {
   // cuts every page in flight; `stop()` lets them finish while Caddy holds new ones for the next.
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, async () => {
-      await server.stop();
-      process.exit(0);
+      try {
+        await server.stop();
+      } finally {
+        process.exit(0);
+      }
     });
   }
 }

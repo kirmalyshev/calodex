@@ -1234,6 +1234,7 @@ export function demoConfig(): Config {
     ...configDefaults(),
     port: Number(process.env.EAIT__BACKEND__PORT ?? 8484),
     host: process.env.EAIT__BACKEND__HOST ?? "127.0.0.1",
+    shutdownSettleMs: int("EAIT__BACKEND__SHUTDOWN_SETTLE_MS", 0),
     databaseUrl: "memory://demo",
     llmProvider: "demo", llmModel: "demo", llmChatModel: "demo", llmApiKey: "unused",
     // AND UNMETERED PER ADDRESS — `api/ratelimit.ts`
