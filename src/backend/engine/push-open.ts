@@ -45,7 +45,7 @@ export async function pushOpenView(deps: EngineDeps, range: AdminRange & { days?
   return { range: adminWindowEcho(ask), timezone, rows: await deps.store.pushOpenStats(ask, timezone) };
 }
 
-/** The rows the admin's recent-pushes table shows. No token: the device is named by nothing. */
+/** The rows the admin's recent-pushes table shows. Carries no push token (an explicit allowlist, so a new `send_log` column cannot leak into it). */
 export interface RecentSend {
   id: string; userId: string; email: string | null;
   kind: string; templateKey: string; lang: string; variant: string | null; state: string;

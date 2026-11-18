@@ -1534,7 +1534,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async recentSends(limit) {
-      return [...sendLog.values()].reverse().slice(0, limit);
+      return [...sendLog.values()].filter((r) => r.state !== "dry" && r.state !== "would_have_sent").reverse().slice(0, limit);
     },
 
     async recordPushOpen(userId, sendId, _action) {

@@ -1407,6 +1407,12 @@ function contract(name: string, make: () => Promise<Store>) {
         const mine = (await s.recentSends(500)).find((r) => r.id === id);
         expect(mine).toMatchObject({ userId: u, title: "Hi", body: "There" });
         expect((await s.sendLogFor(u, 5))[0]).toMatchObject({ title: "Hi", body: "There" });
+        const dry = crypto.randomUUID();
+        await s.createSend(u, {
+          id: dry, kind: "campaign", ref: "c", templateKey: "t", lang: "en", variant: null,
+          token: "dry", state: "dry",
+        });
+        expect((await s.recentSends(500)).map((r) => r.id)).not.toContain(dry);
       });
 
       // ── Opens (#1759) ────────────────────────────────────────────────────────────────────

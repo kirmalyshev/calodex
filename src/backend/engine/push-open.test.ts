@@ -91,6 +91,16 @@ describe("pushOpenView", () => {
 });
 
 describe("pushRecentView (#844)", () => {
+  it("stores no text for a transactional push: it carries the account's own meal", async () => {
+    const { userId } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    await sendLogged(
+      deps, userId, [{ token: "ExponentPushToken[t]" }],
+      { kind: "transactional", ref: "meal-1", templateKey: "photo-counted", lang: "en" },
+      { title: "Logged", body: "Salmon, rice · 480kcal" },
+    );
+    expect((await pushRecentView(deps, 5)).sends[0]).toMatchObject({ title: null, body: null, templateKey: "photo-counted" });
+  });
+
   it("names the recipient and the text sent, as stored at send time", async () => {
     const { userId } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
     await store.addIdentity(userId, "google", "sub-844");

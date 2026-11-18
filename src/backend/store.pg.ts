@@ -4940,7 +4940,8 @@ export async function postgresStore(
     },
 
     async recentSends(limit) {
-      const rows = await sql`select * from send_log order by created_at desc, id limit ${limit}`;
+      const rows = await sql`select * from send_log where state not in ('dry','would_have_sent')
+        order by created_at desc, id limit ${limit}`;
       return (rows as Record<string, unknown>[]).map(sendRow);
     },
 

@@ -1923,8 +1923,7 @@ details.how p { margin-top: 8px; }
   // Who got each push and what it said (#844). The text is what was stored at send time; a row
   // from before that was stored shows a dash rather than today's template.
   function renderRecentPushes(v) {
-    var body = $("pushes-recent").querySelector("tbody");
-    body.textContent = "";
+    var body = document.createElement("tbody");
     v.sends.forEach(function (s) {
       var tr = document.createElement("tr");
       td(tr, s.createdAt.slice(0, 16).replace("T", " "), 0, 99);
@@ -1940,11 +1939,20 @@ details.how p { margin-top: 8px; }
       body.appendChild(tr);
     });
     emptyRow(body, 5, "Nothing has been sent yet.");
+    $("pushes-recent").querySelector("tbody").replaceWith(body);
+  }
+
+  // The recent list is a second read: if it fails the counts still stand, but the table says
+  // so instead of leaving the last list up as if it were current.
+  function recentPushesFailed(e) {
+    console.warn("push/recent", e);
+    var body = document.createElement("tbody");
+    emptyRow(body, 5, "Could not load recent pushes: " + ((e && e.message) || "error"));
+    $("pushes-recent").querySelector("tbody").replaceWith(body);
   }
 
   function loadPushes() {
-    // The recent list is a second read: if it fails the counts above still stand.
-    api("GET", "/admin/api/push/recent?limit=50").then(renderRecentPushes, function () { emptyRow($("pushes-recent").querySelector("tbody"), 5, "Could not load recent pushes."); });
+    api("GET", "/admin/api/push/recent?limit=50").then(renderRecentPushes).catch(recentPushesFailed);
     return api("GET", "/admin/api/push/stats" + rangeQuery()).then(function (v) {
       pushData = v;
       lastEcho = v.range;

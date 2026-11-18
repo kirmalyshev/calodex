@@ -102,7 +102,7 @@ export interface NewSend {
   variant: string | null;
   token: string;
   state: SendLogState;
-  /** The text as SENT (#844), so a later template edit cannot rewrite history. Absent on rows from before the column. */
+  /** The text as SENT (#844), so a later template edit cannot rewrite history. Optional so a caller that predates #844 still compiles; omitted is stored null (as are rows from before the column). */
   title?: string | null;
   body?: string | null;
 }
@@ -1555,7 +1555,7 @@ export interface Store {
   sendsAwaitingReceipt(limit: number): Promise<SendLogRow[]>;
   /** Scoped. This account's newest rows first. */
   sendLogFor(userId: string, limit: number): Promise<SendLogRow[]>;
-  /** Admin, every account: the newest rows first (#844). Test and held-out rows included, labelled by `variant`/`state`. */
+  /** Admin, every account: the newest rows first (#844). Every row but dry and held-out ones (they carry no text and would fill the list), admin test sends included (`variant: "admin-test"`). The caller clamps `limit`. */
   recentSends(limit: number): Promise<SendLogRow[]>;
   /**
    * Scoped. The phone reports that `sendId` was opened. True when this call wrote the row; false

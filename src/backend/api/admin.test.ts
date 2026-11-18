@@ -1499,6 +1499,30 @@ describe("the admin's push opens view (ieat-app#1759)", () => {
   it("is closed to anyone but the admin", async () => {
     expect((await admin("GET", "/admin/api/push/stats", undefined, "")).status).toBe(401);
   });
+
+  it("lists recent sends with the account and the text, never the device token (#844)", async () => {
+    const { userId } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    await store.createSend(userId, {
+      id: crypto.randomUUID(), kind: "campaign", ref: null, templateKey: "recent-t", lang: "en", variant: null,
+      token: "ExponentPushToken[recent]", state: "accepted", title: "Hi", body: "There",
+    });
+    const res = await admin("GET", "/admin/api/push/recent?limit=5");
+    expect(res.status).toBe(200);
+    const view = await res.json() as { sends: Record<string, unknown>[] };
+    expect(view.sends.find((s) => s.templateKey === "recent-t")).toMatchObject({ userId, title: "Hi", body: "There" });
+    expect(JSON.stringify(view)).not.toContain("ExponentPushToken");
+  });
+
+  it("answers a bad limit with 400, an empty one with the default, and an oversize one clamped", async () => {
+    expect((await admin("GET", "/admin/api/push/recent?limit=abc")).status).toBe(400);
+    expect((await admin("GET", "/admin/api/push/recent?limit=-5")).status).toBe(400);
+    expect((await admin("GET", "/admin/api/push/recent?limit=")).status).toBe(200);
+    expect((await admin("GET", "/admin/api/push/recent?limit=9999")).status).toBe(200);
+  });
+
+  it("recent pushes is closed to anyone but the admin (#844)", async () => {
+    expect((await admin("GET", "/admin/api/push/recent", undefined, "")).status).toBe(401);
+  });
 });
 
 describe("campaigns (ieat-app#1761)", () => {

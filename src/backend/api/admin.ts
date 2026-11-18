@@ -666,8 +666,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
 
   // ── Push: the opens view (#1759) ───────────────────────────────────────────────────────────
   //
-  // Per day and per kind/template: sent, accepted, dead, opened, converted. Counts only — no
-  // account, token or body (the recent list below names accounts, behind the same gate).
+  // Per day and per kind/template: sent, accepted, dead, opened, converted. Counts only —
+  // names nobody. `/push/recent` below is the exception: accounts and text, never a token.
   if (req.method === "GET" && pathname === "/admin/api/push/stats") {
     const ask = rangeParam(url, { defaultDays: 7, maxDays: PUSH_STATS_MAX_DAYS });
     return json(await pushOpenView(deps, "days" in ask ? ask.days : ask));
@@ -676,8 +676,9 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // The newest sends, each naming its account and carrying the text as sent (#844). Unlike the
   // counts above this one names people, so it sits behind the same admin gate and carries no token.
   if (req.method === "GET" && pathname === "/admin/api/push/recent") {
-    const n = Number(url.searchParams.get("limit") ?? 50);
-    return json(await pushRecentView(deps, Number.isFinite(n) ? n : 50));
+    const raw = url.searchParams.get("limit");
+    if (raw !== null && raw !== "" && !/^\d{1,4}$/.test(raw)) return json({ error: "bad-limit" }, 400);
+    return json(await pushRecentView(deps, raw ? Number(raw) : 50));
   }
 
   // ── Push: test one account, read what it was sent ──────────────────────────────────────────
