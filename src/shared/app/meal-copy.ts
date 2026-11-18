@@ -22,12 +22,8 @@ import type { Lang } from "../types.ts";
 
 export interface MealCopy {
   /**
-   * The detail's subtitle under the meal's name (web + phone `meal.html`): "{day} · {time} ·
-   * from a photo". `{day}` is a localized day name, `{time}` the meal's own.
-   */
-  metaPhoto: string;
-  /**
-   * The sheet headers that carry no provenance — "{day} · {time}" on `web/meal-delete.html` and
+   * "{day} · {time}": the meal detail's subtitle under its name (`meal.html`, photo or not — the
+   * photo is on the screen) and the sheet headers on `web/meal-delete.html` and
    * `phone/meal-{menu,delete,edit,edited}.html`.
    */
   sheetWhen: string;
@@ -198,7 +194,6 @@ export interface MealCopy {
 
 export const MEAL_COPY: Localized<MealCopy> = {
   en: {
-    metaPhoto: "{day} · {time} · from a photo",
     sheetWhen: "{day} · {time}",
     macroProtein: "protein",
     macroCarbs: "carbs",
@@ -268,7 +263,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "All on plan now.",
   },
   fr: {
-    metaPhoto: "{day} · {time} · d’après une photo",
     sheetWhen: "{day} · {time}",
     macroProtein: "protéines",
     macroCarbs: "glucides",
@@ -338,7 +332,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Tout est dans le plan maintenant.",
   },
   de: {
-    metaPhoto: "{day} · {time} · von einem Foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "Protein",
     macroCarbs: "Kohlenhydrate",
@@ -408,7 +401,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Jetzt alles im Plan.",
   },
   it: {
-    metaPhoto: "{day} · {time} · da una foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteine",
     macroCarbs: "carboidrati",
@@ -478,7 +470,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Ora è tutto in linea.",
   },
   es: {
-    metaPhoto: "{day} · {time} · de una foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteína",
     macroCarbs: "carbohidratos",
@@ -548,7 +539,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Todo en el plan ahora.",
   },
   vi: {
-    metaPhoto: "{day} · {time} · từ một bức ảnh",
     sheetWhen: "{day} · {time}",
     macroProtein: "đạm",
     macroCarbs: "tinh bột",
@@ -618,7 +608,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Giờ tất cả đúng kế hoạch.",
   },
   id: {
-    metaPhoto: "{day} · {time} · dari foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "protein",
     macroCarbs: "karbohidrat",
@@ -688,7 +677,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Semua sesuai rencana sekarang.",
   },
   ru: {
-    metaPhoto: "{day} · {time} · по фото",
     sheetWhen: "{day} · {time}",
     macroProtein: "белок",
     macroCarbs: "углеводы",
@@ -758,7 +746,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Теперь всё в норме.",
   },
   te: {
-    metaPhoto: "{day} · {time} · ఫోటో నుండి",
     sheetWhen: "{day} · {time}",
     macroProtein: "ప్రోటీన్",
     macroCarbs: "కార్బ్స్",
@@ -828,7 +815,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "ఇప్పుడు అన్నీ ప్లాన్ ప్రకారం ఉన్నాయి.",
   },
   ta: {
-    metaPhoto: "{day} · {time} · புகைப்படத்திலிருந்து",
     sheetWhen: "{day} · {time}",
     macroProtein: "புரதம்",
     macroCarbs: "கார்ப்ஸ்",
@@ -898,7 +884,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "இப்போது அனைத்தும் திட்டப்படி.",
   },
   pa: {
-    metaPhoto: "{day} · {time} · ਫ਼ੋਟੋ ਤੋਂ",
     sheetWhen: "{day} · {time}",
     macroProtein: "ਪ੍ਰੋਟੀਨ",
     macroCarbs: "ਕਾਰਬਸ",
@@ -968,7 +953,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "ਹੁਣ ਸਭ ਪਲਾਨ ਮੁਤਾਬਕ ਹੈ।",
   },
   or: {
-    metaPhoto: "{day} · {time} · ଫଟୋରୁ",
     sheetWhen: "{day} · {time}",
     macroProtein: "ପ୍ରୋଟିନ୍",
     macroCarbs: "କାର୍ବସ୍",
@@ -1038,7 +1022,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "ଏବେ ସବୁ ପ୍ଲାନ୍ ଅନୁସାରେ।",
   },
   mr: {
-    metaPhoto: "{day} · {time} · फोटोवरून",
     sheetWhen: "{day} · {time}",
     macroProtein: "प्रोटीन",
     macroCarbs: "कार्ब्स",
@@ -1108,7 +1091,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "आता सर्व प्लॅननुसार.",
   },
   ml: {
-    metaPhoto: "{day} · {time} · ഫോട്ടോയിൽ നിന്ന്",
     sheetWhen: "{day} · {time}",
     macroProtein: "പ്രോട്ടീൻ",
     macroCarbs: "കാർബ്സ്",
@@ -1178,7 +1160,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "എല്ലാം ഇപ്പോൾ പ്ലാൻ അനുസരിച്ചാണ്.",
   },
   kn: {
-    metaPhoto: "{day} · {time} · ಫೋಟೋದಿಂದ",
     sheetWhen: "{day} · {time}",
     macroProtein: "ಪ್ರೋಟೀನ್",
     macroCarbs: "ಕಾರ್ಬ್ಸ್",
@@ -1248,7 +1229,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "ಈಗ ಎಲ್ಲವೂ ಪ್ಲಾನ್‌ಗೆ ತಕ್ಕಂತಿವೆ.",
   },
   gu: {
-    metaPhoto: "{day} · {time} · ફોટામાંથી",
     sheetWhen: "{day} · {time}",
     macroProtein: "પ્રોટીન",
     macroCarbs: "કાર્બ્સ",
@@ -1318,7 +1298,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "હવે બધું પ્લાન મુજબ છે.",
   },
   bn: {
-    metaPhoto: "{day} · {time} · ছবি থেকে",
     sheetWhen: "{day} · {time}",
     macroProtein: "প্রোটিন",
     macroCarbs: "কার্বস",
@@ -1388,7 +1367,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "এখন সবই প্ল্যান অনুযায়ী।",
   },
   "pt-PT": {
-    metaPhoto: "{day} · {time} · a partir de uma foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteína",
     macroCarbs: "hidratos",
@@ -1458,7 +1436,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Agora está tudo dentro do plano.",
   },
   ms: {
-    metaPhoto: "{day} · {time} · daripada foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "protein",
     macroCarbs: "karbohidrat",
@@ -1528,7 +1505,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Semuanya kini mengikut pelan.",
   },
   ca: {
-    metaPhoto: "{day} · {time} · a partir d'una foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteïna",
     macroCarbs: "carbohidrats",
@@ -1598,7 +1574,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Ara tot és dins del pla.",
   },
   sl: {
-    metaPhoto: "{day} · {time} · s fotografije",
     sheetWhen: "{day} · {time}",
     macroProtein: "beljakovine",
     macroCarbs: "ogljikovi hidrati",
@@ -1668,7 +1643,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Zdaj je vse v skladu z načrtom.",
   },
   hr: {
-    metaPhoto: "{day} · {time} · s fotografije",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteini",
     macroCarbs: "ugljikohidrati",
@@ -1738,7 +1712,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Sada je sve u planu.",
   },
   sk: {
-    metaPhoto: "{day} · {time} · z fotky",
     sheetWhen: "{day} · {time}",
     macroProtein: "bielkoviny",
     macroCarbs: "sacharidy",
@@ -1808,7 +1781,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Teraz je všetko v rámci plánu.",
   },
   no: {
-    metaPhoto: "{day} · {time} · fra et bilde",
     sheetWhen: "{day} · {time}",
     macroProtein: "protein",
     macroCarbs: "karbohydrater",
@@ -1878,7 +1850,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Alt innenfor planen nå.",
   },
   fi: {
-    metaPhoto: "{day} · {time} · kuvasta",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteiini",
     macroCarbs: "hiilihydraatit",
@@ -1948,7 +1919,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Kaikki nyt suunnitelman mukaisia.",
   },
   da: {
-    metaPhoto: "{day} · {time} · fra et foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "protein",
     macroCarbs: "kulhydrater",
@@ -2018,7 +1988,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Alt er nu inden for planen.",
   },
   hu: {
-    metaPhoto: "{day} · {time} · fotóról",
     sheetWhen: "{day} · {time}",
     macroProtein: "fehérje",
     macroCarbs: "szénhidrát",
@@ -2088,7 +2057,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Most már minden a terv szerint.",
   },
   el: {
-    metaPhoto: "{day} · {time} · από φωτογραφία",
     sheetWhen: "{day} · {time}",
     macroProtein: "πρωτεΐνη",
     macroCarbs: "υδατάνθρακες",
@@ -2158,7 +2126,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Όλα εντός πλάνου τώρα.",
   },
   ro: {
-    metaPhoto: "{day} · {time} · dintr-o fotografie",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteine",
     macroCarbs: "carbohidrați",
@@ -2228,7 +2195,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Acum totul e în plan.",
   },
   cs: {
-    metaPhoto: "{day} · {time} · z fotky",
     sheetWhen: "{day} · {time}",
     macroProtein: "bílkoviny",
     macroCarbs: "sacharidy",
@@ -2298,7 +2264,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Teď je všechno podle plánu.",
   },
   hi: {
-    metaPhoto: "{day} · {time} · फ़ोटो से",
     sheetWhen: "{day} · {time}",
     macroProtein: "प्रोटीन",
     macroCarbs: "कार्ब्स",
@@ -2368,7 +2333,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "अब सब प्लान के अनुसार है।",
   },
   th: {
-    metaPhoto: "{day} · {time} · จากรูป",
     sheetWhen: "{day} · {time}",
     macroProtein: "โปรตีน",
     macroCarbs: "คาร์บ",
@@ -2438,7 +2402,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "ตอนนี้ทุกอย่างอยู่ในแผนแล้ว",
   },
   sv: {
-    metaPhoto: "{day} · {time} · från ett foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "protein",
     macroCarbs: "kolhydrater",
@@ -2508,7 +2471,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     changeAllOnPlan: "Allt enligt plan nu.",
   },
   uk: {
-    metaPhoto: "{day} · {time} · за фото",
     sheetWhen: "{day} · {time}",
     macroProtein: "білок",
     macroCarbs: "вуглеводи",
@@ -2583,7 +2545,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "Je {grams} blijft staan",
     phoneSwapNone: "Niets gevonden. Probeer een ander woord.",
     phoneSwapFailed: "Dat is niet gelukt. Er is niets veranderd.",
-    metaPhoto: "{day} · {time} · van een foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "eiwit",
     macroCarbs: "koolhydraten",
@@ -2653,7 +2614,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "Wpisane {grams} zostaje",
     phoneSwapNone: "Nic nie pasuje. Spróbuj innego słowa.",
     phoneSwapFailed: "To nie przeszło. Nic się nie zmieniło.",
-    metaPhoto: "{day} · {time} · ze zdjęcia",
     sheetWhen: "{day} · {time}",
     macroProtein: "białko",
     macroCarbs: "węglowodany",
@@ -2723,7 +2683,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "Girdiğin {grams} korunur",
     phoneSwapNone: "Eşleşen bir şey yok. Başka bir kelime dene.",
     phoneSwapFailed: "Bu iletilemedi. Hiçbir şey değişmedi.",
-    metaPhoto: "{day} · {time} · fotoğraftan",
     sheetWhen: "{day} · {time}",
     macroProtein: "protein",
     macroCarbs: "karbonhidrat",
@@ -2793,7 +2752,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "保留你的 {grams}",
     phoneSwapNone: "沒有符合的結果。換個詞試試。",
     phoneSwapFailed: "沒有成功送出。沒有任何變更。",
-    metaPhoto: "{day} · {time} · 來自照片",
     sheetWhen: "{day} · {time}",
     macroProtein: "蛋白質",
     macroCarbs: "碳水",
@@ -2863,7 +2821,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "保留你的 {grams}",
     phoneSwapNone: "没有匹配的结果。换个词试试。",
     phoneSwapFailed: "没有成功。什么都没变。",
-    metaPhoto: "{day} · {time} · 来自照片",
     sheetWhen: "{day} · {time}",
     macroProtein: "蛋白质",
     macroCarbs: "碳水",
@@ -2933,7 +2890,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "{grams} 그대로 유지",
     phoneSwapNone: "일치하는 항목이 없어요. 다른 단어로 시도해 보세요.",
     phoneSwapFailed: "저장되지 않았어요. 아무것도 바뀌지 않았어요.",
-    metaPhoto: "{day} · {time} · 사진으로 기록",
     sheetWhen: "{day} · {time}",
     macroProtein: "단백질",
     macroCarbs: "탄수화물",
@@ -3003,7 +2959,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "{grams}はそのまま",
     phoneSwapNone: "一致するものがありません。別の言葉で試してください。",
     phoneSwapFailed: "送信できませんでした。何も変更されていません。",
-    metaPhoto: "{day} · {time} · 写真から",
     sheetWhen: "{day} · {time}",
     macroProtein: "タンパク質",
     macroCarbs: "炭水化物",
@@ -3073,7 +3028,6 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapKeeps: "Mantém seus {grams}",
     phoneSwapNone: "Nada encontrado. Tente outra palavra.",
     phoneSwapFailed: "Não deu certo. Nada mudou.",
-    metaPhoto: "{day} · {time} · a partir de uma foto",
     sheetWhen: "{day} · {time}",
     macroProtein: "proteína",
     macroCarbs: "carboidratos",
