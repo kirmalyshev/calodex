@@ -226,12 +226,20 @@ export function zoneOf(deps: EngineDeps, reported: string | null): string {
   return reported !== null && isTimezone(reported) ? reported : deps.config.timezone;
 }
 
+/**
+ * Why a visited account got nothing this minute. `not-due`: outside its own 20:30 + catch-up window,
+ * which is every account most of the day. `sender-taken` / `account-cap`: `claimSend`'s refusals.
+ * `evening-off`: its own switch. `nothing-to-say`: never onboarded, or the key is not sendable.
+ */
+export const TICK_SKIPS = ["not-due", "sender-taken", "account-cap", "evening-off", "nothing-to-say"] as const;
+export type TickSkip = (typeof TICK_SKIPS)[number];
+
 export interface TickResult {
   /** Accounts with a device that were visited. */
   users: number;
   sent: number;
-  /** Visited, nothing to send now: not their hour, nothing to say, or the day was already taken. */
-  skipped: number;
+  /** Visited, nothing to send now, counted by reason (calodex#843: a bare total hid which gate). */
+  skipped: Record<TickSkip, number>;
   failed: number;
   dropped: number;
 }
@@ -249,7 +257,8 @@ export interface TickResult {
 export async function pushTick(deps: EngineDeps, opts: { now?: number } = {}): Promise<TickResult> {
   const now = opts.now ?? Date.now();
   const audience = await deps.store.pushAudience();
-  const result: TickResult = { users: audience.length, sent: 0, skipped: 0, failed: 0, dropped: 0 };
+  const skipped = Object.fromEntries(TICK_SKIPS.map((r) => [r, 0])) as Record<TickSkip, number>;
+  const result: TickResult = { users: audience.length, sent: 0, skipped, failed: 0, dropped: 0 };
   let broken = 0;
   for (const audienceRow of audience) {
     const { userId, timezone } = audienceRow;
@@ -259,14 +268,14 @@ export async function pushTick(deps: EngineDeps, opts: { now?: number } = {}): P
       const date = localDate(zone, new Date(now));
 
       const at = instantOf(zone, date, deps.config.eveningLineTime);
-      if (now < at || now >= at + CATCH_UP_MS) { result.skipped++; continue; }
+      if (now < at || now >= at + CATCH_UP_MS) { skipped["not-due"]++; continue; }
 
       // The triggers go before the evening line and are the SAME sender: a day that gets a streak or
       // an onboarding push from the tick gets no evening line from it.
       const trigger = await triggerNotification(deps, audienceRow, date, now, zone);
       if (trigger !== null) {
         const claim = await claimSend(deps, userId, date, trigger.kind, trigger.message.id);
-        if (!claim.claimed) { result.skipped++; continue; }
+        if (!claim.claimed) { skipped[claim.reason]++; continue; }
         const out = await sendLogged(
           deps, userId, await pushDevices(deps, userId),
           {
@@ -283,15 +292,15 @@ export async function pushTick(deps: EngineDeps, opts: { now?: number } = {}): P
       }
 
       // The evening line has its own switch beside the meal slots (#902); the triggers above are not it.
-      if ((await deps.store.mealRemindersOf(userId))?.evening === false) { result.skipped++; continue; }
+      if ((await deps.store.mealRemindersOf(userId))?.evening === false) { skipped["evening-off"]++; continue; }
 
       const message = await dailyNotification(deps, userId, date, now);
-      if (message === null) { result.skipped++; continue; }
+      if (message === null) { skipped["nothing-to-say"]++; continue; }
       // The subscriber's line reads the day against the plan (`streak`); everyone else's plain
       // nudge is the lower `evening` kind.
       const kind: PushKind = message.id === "evening" ? "streak" : "evening";
       const claim = await claimSend(deps, userId, date, kind, message.id);
-      if (!claim.claimed) { result.skipped++; continue; } // sender-taken or account-cap
+      if (!claim.claimed) { skipped[claim.reason]++; continue; }
       const out = await sendLogged(
         deps, userId, await pushDevices(deps, userId),
         { kind, ref: message.id, templateKey: message.id, lang: message.lang },
@@ -306,9 +315,12 @@ export async function pushTick(deps: EngineDeps, opts: { now?: number } = {}): P
   result.failed += broken;
   // A tick that did something says so; a minute with nothing to do stays silent.
   if (result.sent + result.failed + result.dropped > 0) {
+    const why = TICK_SKIPS.filter((r) => skipped[r] > 0).map((r) => `${r} ${skipped[r]}`);
+    const total = TICK_SKIPS.reduce((n, r) => n + skipped[r], 0);
     console.log(
       `[eait] push tick: ${result.users} account(s) with a device, ${result.sent} sent, `
-      + `${result.skipped} skipped, ${result.failed} failed, ${result.dropped} token(s) dropped`,
+      + `${total} skipped${why.length ? ` (${why.join(", ")})` : ""}, `
+      + `${result.failed} failed, ${result.dropped} token(s) dropped`,
     );
   }
   return result;
