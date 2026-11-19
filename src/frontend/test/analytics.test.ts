@@ -8,7 +8,7 @@ import {
   ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, SERVER_SENT_WEB_EVENTS, type AnalyticsServerContext,
 } from "../../shared/analytics.ts";
 import { currentBrand } from "../../shared/brand.ts";
-import { webContext } from "../analytics.ts";
+import { capture, webContext } from "../analytics.ts";
 
 const FRONTEND = join(import.meta.dir, "..");
 const browserSources = (): string[] =>
@@ -16,7 +16,8 @@ const browserSources = (): string[] =>
     .filter((f) => f.endsWith(".ts") && !/^(test|server|node_modules|dist)\//.test(f))
     .map((f) => readFileSync(join(FRONTEND, f), "utf8"));
 
-const captured = new Set(browserSources().flatMap((src) => [...src.matchAll(/\bcapture\(\s*"([^"]+)"/g)].map((m) => m[1]!)));
+const calls = browserSources().flatMap((src) => [...src.matchAll(/\bcapture\(\s*"([^"]+)"\s*(?:,\s*\{([^}]*)\})?/g)]);
+const captured = new Set(calls.map((m) => m[1]!));
 const webEvents = Object.entries(ANALYTICS_EVENTS)
   .filter(([, spec]) => (spec.surfaces as readonly string[]).includes("web")).map(([name]) => name);
 
@@ -32,6 +33,19 @@ describe("the web's events are the catalog's", () => {
     expect(start).toContain('analyticsRequestOf(req.headers, "web")');
     for (const e of SERVER_WRITTEN) expect(start).toContain(`"${e}"`);
     expect([...captured].filter((e) => SERVER_WRITTEN.includes(e))).toEqual([]);
+  });
+
+  it("never captures a prop named like a context key — the context rides every event already", () => {
+    const props = calls.flatMap((m) => [...(m[2] ?? "").matchAll(/(?:^|[,{]|\.\.\.\()\s*(\w+)\s*(?=[:,}]|$)/g)].map((p) => p[1]!));
+    expect(props.length).toBeGreaterThan(0);
+    expect(props.filter((p) => (ANALYTICS_CONTEXT_KEYS as readonly string[]).includes(p))).toEqual([]);
+  });
+
+  it("types capture to the web's own events", () => {
+    // @ts-expect-error an app-only event
+    capture("health_connect_result", { connected: true });
+    // @ts-expect-error a server-only event
+    capture("subscription_renewal");
   });
 
   it("captures nothing the catalog does not mark web", () => {

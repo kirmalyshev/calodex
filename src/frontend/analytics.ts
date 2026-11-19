@@ -65,11 +65,14 @@ export function identify(userId: string, server: AnalyticsServerContext): void {
 }
 
 type Value = string | number | boolean | null | readonly string[];
+type WebEvent = {
+  [K in AnalyticsEventName]: "web" extends (typeof ANALYTICS_EVENTS)[K]["surfaces"][number] ? K : never
+}[AnalyticsEventName];
 /** A catalog event takes only the catalog's props for it; `$screen` takes its name. */
-type Props<E> = E extends AnalyticsEventName ? { [K in (typeof ANALYTICS_EVENTS)[E]["props"][number]]?: Value } : { $screen_name: string };
+type Props<E> = E extends WebEvent ? { [K in (typeof ANALYTICS_EVENTS)[E]["props"][number]]?: Value } : { $screen_name: string };
 
 /** One named event; nothing is sent before `identify`. */
-export const capture = <E extends AnalyticsEventName | "$screen">(event: E, props?: Props<E>): void => {
+export const capture = <E extends WebEvent | "$screen">(event: E, props?: Props<E>): void => {
   client?.capture(event, props as Record<string, unknown> | undefined);
 };
 
