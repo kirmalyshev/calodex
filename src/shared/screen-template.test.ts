@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import {
   hourInWindow,
+  keptStrings,
+  usableServedScreen,
   resolveScreen,
   TEMPLATE_RENDERER_VERSION,
   validateScreenTemplate,
@@ -78,12 +80,12 @@ describe("validateScreenTemplate (#3167)", () => {
 
 describe("validateArmScreens (#3167)", () => {
   it("accepts known slots with hour windows", () => {
-    expect(validateArmScreens({ "after:signup": [{ template: "t", version: 1, when: { hours: [18, 23] } }, { template: "u", version: 2 }] })).toEqual([]);
+    expect(validateArmScreens({ prelim: [{ template: "t", version: 1, when: { hours: [18, 23] } }, { template: "u", version: 2 }] })).toEqual([]);
   });
   it("refuses an unknown slot and an out-of-range hour", () => {
-    const errs = validateArmScreens({ "after:goal": [{ template: "t", version: 1 }], welcome: [{ template: "t", version: 1, when: { hours: [18, 24] } }] } as never);
-    expect(errs).toContain("screens.after:goal is not a slot");
-    expect(errs).toContain("screens.welcome[0].when.hours must be two different hours 0–23 (omit `when` for any hour)");
+    const errs = validateArmScreens({ welcome: [{ template: "t", version: 1 }], baseline: [{ template: "t", version: 1, when: { hours: [18, 24] } }] } as never);
+    expect(errs).toContain("screens.welcome is not a slot");
+    expect(errs).toContain("screens.baseline[0].when.hours must be two different hours 0–23 (omit `when` for any hour)");
   });
 });
 
@@ -145,20 +147,25 @@ describe("validateScreenTemplate — review round 1 (#3167)", () => {
   it("refuses Russian that genders the reader", () => {
     const t = good();
     t.strings.ru!.h = "Что ты ел?";
-    expect(validateScreenTemplate(t, assets).some((e) => e.startsWith("strings.ru") && e.includes("gendered"))).toBe(true);
+    expect(validateScreenTemplate(t, assets).some((e) => e.startsWith("strings.ru.h") && e.includes("gendered"))).toBe(true);
+  });
+  it("answers an inherited name as not a block, never a throw", () => {
+    const t = good();
+    (t.blocks as unknown[]).push({ type: "toString", x: 1 });
+    expect(validateScreenTemplate(t, assets)).toContain("blocks[4].type 'toString' is not a block");
   });
 });
 
 describe("validateArmScreens — review round 1 (#3167)", () => {
   it("refuses an empty window, an unknown field, and an unwindowed entry before another", () => {
     const errs = validateArmScreens({
-      welcome: [{ template: "t", version: 1, when: { hours: [9, 9] } }],
-      "after:signup": [{ template: "all", version: 1 }, { template: "eve", version: 1, when: { hours: [18, 23] } }],
-      prelim: [{ template: "t", version: 1, href: "x" }],
+      baseline: [{ template: "t", version: 1, when: { hours: [9, 9] } }, { template: "t", version: 1, href: "x" }, { template: "t", version: 1, when: { hours: [1, 2], tz: "x" } }],
+      prelim: [{ template: "all", version: 1 }, { template: "eve", version: 1, when: { hours: [18, 23] } }],
     } as never);
-    expect(errs).toContain("screens.welcome[0].when.hours must be two different hours 0–23 (omit `when` for any hour)");
-    expect(errs).toContain("screens.after:signup[0] has no window, so the entries after it are never served — put it last");
-    expect(errs).toContain("screens.prelim[0] has unknown fields: href");
+    expect(errs).toContain("screens.baseline[0].when.hours must be two different hours 0–23 (omit `when` for any hour)");
+    expect(errs).toContain("screens.prelim[0] has no window, so the entries after it are never served — put it last");
+    expect(errs).toContain("screens.baseline[1] has unknown fields: href");
+    expect(errs).toContain("screens.baseline[2].when takes hours only");
   });
 });
 
@@ -167,5 +174,35 @@ describe("resolveScreen — a language added later (#3167)", () => {
     const t = { key: "t", version: 1, ...good() };
     delete t.strings.fr!.go;
     expect(resolveScreen(t, "fr", (x) => x)).toBeNull();
+  });
+});
+
+describe("usableServedScreen — what a shipped binary trusts (#3167)", () => {
+  const served = () => {
+    const s = resolveScreen({ key: "t", version: 1, ...good() }, "en", (sha) => `/v1/onboarding/assets/${sha}`);
+    if (!s) throw new Error("expected a screen");
+    return s;
+  };
+  it("accepts what the server resolves", () => {
+    expect(usableServedScreen(served())).not.toBeNull();
+  });
+  it("refuses a block, a missing string, an asset URL or a shape this build cannot trust", () => {
+    expect(usableServedScreen({ ...served(), blocks: [...served().blocks, { type: "price", product: "yearly" }] })).toBeNull();
+    expect(usableServedScreen({ ...served(), strings: { ...served().strings, go: "" } })).toBeNull();
+    expect(usableServedScreen({ ...served(), assets: [{ sha256: "a".repeat(64), url: "javascript:alert(1)" }] })).toBeNull();
+    expect(usableServedScreen({ ...served(), assets: [{ sha256: "a".repeat(64), url: "//evil.example/x" }] })).toBeNull();
+    expect(usableServedScreen({ ...served(), assets: [] })).toBeNull();
+    expect(usableServedScreen(null)).toBeNull();
+    expect(usableServedScreen({ template: "t" })).toBeNull();
+  });
+});
+
+describe("keptStrings (#3167)", () => {
+  it("keeps every language, cut to the keys the blocks read", () => {
+    const t = good();
+    (t.strings.en as Record<string, string>).stray = "never read";
+    const kept = keptStrings(t);
+    expect(Object.keys(kept).length).toBe(LANGS.length);
+    expect(Object.keys(kept.en!).sort()).toEqual(["alt", "go", "h", "l1"]);
   });
 });

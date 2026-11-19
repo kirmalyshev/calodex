@@ -5,7 +5,7 @@
 // read is a slot the client skips, and onboarding walks the compiled flow.
 
 import {
-  isTimezone, localTime, ROUTES, pickArmScreen, resolveScreen, TEMPLATE_KEY, validateArmScreens, validateScreenTemplate,
+  isTimezone, keptStrings, localTime, ROUTES, pickArmScreen, resolveScreen, TEMPLATE_KEY, validateArmScreens, validateScreenTemplate,
   type ArmScreens, type Lang, type ScreenTemplateDraft, type ServedScreens, type TemplateSlot,
 } from "@eait/shared";
 import { imageMime } from "../llm/port.ts";
@@ -28,8 +28,9 @@ export async function saveScreenTemplate(
     : [];
   const errors = validateScreenTemplate(raw, await deps.store.knownTemplateAssets(shas));
   if (errors.length > 0) return { ok: false, errors };
-  const { renderer, blocks, strings, note } = draft;
-  const saved = await deps.store.putScreenTemplate(key, { renderer, blocks, strings, ...(note ? { note } : {}) }, adminId);
+  // Stored as validated: every language, cut to the keys a block reads, so nothing rides in unread.
+  const { renderer, blocks, note } = draft;
+  const saved = await deps.store.putScreenTemplate(key, { renderer, blocks, strings: keptStrings(draft), ...(note ? { note } : {}) }, adminId);
   return saved ? { ok: true, version: saved.version } : { ok: false, conflict: true, errors: ["another save took this version — save again"] };
 }
 

@@ -84,8 +84,8 @@ describe("arm screens (#3167)", () => {
   it("refuses a template version that does not exist, and the control arm", async () => {
     const e = experiment(null);
     await store.putOnboardingExperiment(e as never);
-    const r = await saveOnboardingVariantScreens(deps, e.id, 1, { "after:signup": [{ template: "nope", version: 1 }] });
-    expect(r).toEqual({ ok: false, errors: ["screens.after:signup[0]: nope@1 does not exist"] });
+    const r = await saveOnboardingVariantScreens(deps, e.id, 1, { prelim: [{ template: "nope", version: 1 }] });
+    expect(r).toEqual({ ok: false, errors: ["screens.prelim[0]: nope@1 does not exist"] });
     expect((await saveOnboardingVariantScreens(deps, e.id, 0, {})).ok).toBe(false);
   });
 
@@ -95,7 +95,7 @@ describe("arm screens (#3167)", () => {
     const e = experiment(null);
     await store.putOnboardingExperiment(e as never);
     expect(await saveOnboardingVariantScreens(deps, e.id, 1, {
-      "after:signup": [{ template: "evening", version: 1, when: { hours: [18, 23] } }, { template: "day", version: 1 }],
+      prelim: [{ template: "evening", version: 1, when: { hours: [18, 23] } }, { template: "day", version: 1 }],
     })).toEqual({ ok: true });
     await store.setSwitch("onboarding.experiments", true, admin);
     expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: true });
@@ -103,17 +103,17 @@ describe("arm screens (#3167)", () => {
     // 19:30 UTC is 20:30 in Berlin and 04:30 in Tokyo the next day: same instant, two local hours.
     const now = new Date("2026-11-19T19:30:00Z");
     const berlin = await onboardingServedFor(deps, userId, at("Europe/Berlin"), now);
-    expect(berlin.screens?.slots["after:signup"]?.template).toBe("evening");
-    expect(berlin.screens?.slots["after:signup"]?.strings.h).toBe("Evening already");
+    expect(berlin.screens?.slots.prelim?.template).toBe("evening");
+    expect(berlin.screens?.slots.prelim?.strings.h).toBe("Evening already");
     const tokyo = await onboardingServedFor(deps, userId, at("Asia/Tokyo"), now);
-    expect(tokyo.screens?.slots["after:signup"]?.template).toBe("day");
+    expect(tokyo.screens?.slots.prelim?.template).toBe("day");
   });
 
   it("never enrols a client below the templates' renderer, and serves it no screens", async () => {
     await saveScreenTemplate(deps, admin, "day", draft());
     const e = experiment(null);
     await store.putOnboardingExperiment(e as never);
-    await saveOnboardingVariantScreens(deps, e.id, 1, { welcome: [{ template: "day", version: 1 }] });
+    await saveOnboardingVariantScreens(deps, e.id, 1, { baseline: [{ template: "day", version: 1 }] });
     await store.setSwitch("onboarding.experiments", true, admin);
     await startOnboardingExperiment(deps, e.id);
     const old = await onboardingServedFor(deps, userId, { ...at("Europe/Berlin"), renderer: 0 });
@@ -136,7 +136,7 @@ describe("review round 1 (#3167)", () => {
   };
 
   it("serves the arm's words with no screens when a template read throws — never stops onboarding", async () => {
-    await running({ welcome: [{ template: "day", version: 1 }] });
+    await running({ baseline: [{ template: "day", version: 1 }] });
     await onboardingServedFor(deps, userId, at("Europe/Berlin"));
     store.screenTemplate = async () => { throw new Error("db down"); };
     const r = await onboardingServedFor(deps, userId, at("Europe/Berlin"));
@@ -145,7 +145,7 @@ describe("review round 1 (#3167)", () => {
   });
 
   it("serves no screens to an enrolled user's later client that cannot draw them", async () => {
-    const e = await running({ welcome: [{ template: "day", version: 1 }] });
+    const e = await running({ baseline: [{ template: "day", version: 1 }] });
     expect((await onboardingServedFor(deps, userId, at("Europe/Berlin"))).screens).toBeDefined();
     const old = await onboardingServedFor(deps, userId, { ...at("Europe/Berlin"), renderer: 0 });
     expect(old.screens).toBeUndefined();
@@ -154,37 +154,37 @@ describe("review round 1 (#3167)", () => {
   });
 
   it("keeps an old client out even when it would have rolled control", async () => {
-    const e = await running({ welcome: [{ template: "day", version: 1 }] }, [1, 0]);
+    const e = await running({ baseline: [{ template: "day", version: 1 }] }, [1, 0]);
     await onboardingServedFor(deps, userId, { ...at("Europe/Berlin"), renderer: 0 });
     expect(await store.onboardingAssignment(userId, e.id)).toBeNull();
   });
 
   it("serves the unwindowed entry when the device zone is unknown", async () => {
     await saveScreenTemplate(deps, admin, "eve", draft());
-    await running({ welcome: [{ template: "eve", version: 1, when: { hours: [18, 23] } }, { template: "day", version: 1 }] });
+    await running({ baseline: [{ template: "eve", version: 1, when: { hours: [18, 23] } }, { template: "day", version: 1 }] });
     const r = await onboardingServedFor(deps, userId, at("Not/AZone"));
-    expect(r.screens?.slots.welcome?.template).toBe("day");
+    expect(r.screens?.slots.baseline?.template).toBe("day");
   });
 
   it("omits screens entirely when no slot's window holds now", async () => {
     await saveScreenTemplate(deps, admin, "eve", draft());
-    await running({ welcome: [{ template: "eve", version: 1, when: { hours: [18, 23] } }] });
+    await running({ baseline: [{ template: "eve", version: 1, when: { hours: [18, 23] } }] });
     const r = await onboardingServedFor(deps, userId, at("Europe/Berlin"), new Date("2026-11-19T08:00:00Z"));
     expect(r.screens).toBeUndefined();
   });
 
-  it("freezes a running arm's screens, and keeps them through a content save of the draft", async () => {
-    const e = await running({ welcome: [{ template: "day", version: 1 }] });
+  it("freezes a running arm's screens", async () => {
+    const e = await running({ baseline: [{ template: "day", version: 1 }] });
     expect((await saveOnboardingVariantScreens(deps, e.id, 1, {})).ok).toBe(false);
     const stored = (await store.listOnboardingExperiments()).find((x) => x.id === e.id)!;
-    expect(stored.variants[1]!.screens).toEqual({ welcome: [{ template: "day", version: 1 }] });
+    expect(stored.variants[1]!.screens).toEqual({ baseline: [{ template: "day", version: 1 }] });
   });
 
   it("refuses to start an arm whose stored screens name a revision that was never saved", async () => {
-    const e = experiment({ welcome: [{ template: "nope", version: 1 }] });
+    const e = experiment({ baseline: [{ template: "nope", version: 1 }] });
     await store.putOnboardingExperiment(e as never);
     await store.setSwitch("onboarding.experiments", true, admin);
-    expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: false, errors: ["arm 1: screens.welcome[0]: nope@1 does not exist"] });
+    expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: false, errors: ["arm 1: screens.baseline[0]: nope@1 does not exist"] });
     expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)?.status).toBe("draft");
   });
 

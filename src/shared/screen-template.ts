@@ -3,14 +3,14 @@
 //
 // A template is DATA interpreted by compiled code — no layout, colour, link, HTML or script — which is
 // what keeps it inside App Review 2.5.2. It never asks a question: the questions, the under-16 stop and
-// the plan maths stay compiled (`onboarding.ts`). It never types a number: a price comes from StoreKit
-// and a kcal from `explainTargets`, so every string with a digit is refused, in every script.
+// the plan maths stay compiled (`onboarding.ts`). It never types a number (a price is StoreKit's, a
+// kcal is `explainTargets`'), so every string with a digit is refused, in every script.
 // Validated on the WRITE (`validateScreenTemplate`), because a stored template meets no reviewer.
 
 import { lintCopy } from "./claims.ts";
 import { genderedRussian } from "./lang.ts";
 import type { MascotMood } from "./mascot.ts";
-import { ONBOARDING_CLAIM_RULES, WELCOME_IMAGE_KEYS, type WelcomeImageKey } from "./onboarding.ts";
+import { ONBOARDING_CLAIM_RULES } from "./onboarding.ts";
 import { LANGS, type Lang } from "./types.ts";
 
 /**
@@ -19,13 +19,19 @@ import { LANGS, type Lang } from "./types.ts";
  */
 export const TEMPLATE_RENDERER_VERSION = 1;
 
-/** Where a template may stand. `welcome`, `baseline` and `prelim` REPLACE that beat; the rest insert one. */
-export const TEMPLATE_SLOTS = ["welcome", "baseline", "prelim", "after:summary", "after:signup", "before:paywall"] as const;
+/**
+ * Where a template may stand: v1 REPLACES one of the two beats, the screens that answer nothing, so
+ * no question, no sign-up door and no paywall moves. A slot that inserts a screen (after the plan,
+ * before the paywall) is added with the client that can route to it — a slot the app cannot render
+ * would be an arm the server accepts and every phone skips.
+ */
+export const TEMPLATE_SLOTS = ["baseline", "prelim"] as const;
 export type TemplateSlot = (typeof TEMPLATE_SLOTS)[number];
 
-export const CTA_ACTIONS = ["next", "back", "open-paywall", "open-camera"] as const;
+/** What a button does. v1: on to the next place, the way the beat it replaces does. */
+export const CTA_ACTIONS = ["next"] as const;
 export type CtaAction = (typeof CTA_ACTIONS)[number];
-const FORWARD: readonly string[] = ["next", "open-paywall", "open-camera"];
+const FORWARD: readonly string[] = ["next"];
 
 export const BULLET_ICONS = ["check", "camera", "chart", "heart", "clock", "spark"] as const;
 const MOODS: readonly MascotMood[] = ["care", "wave", "think", "idle", "happy", "joy"];
@@ -40,9 +46,6 @@ export type Block =
   | { type: "spud"; lines: StringKey[]; mood: MascotMood }
   | { type: "bullets"; items: { icon: (typeof BULLET_ICONS)[number]; text: StringKey }[] }
   | { type: "image"; asset: AssetRef; alt: StringKey }
-  | { type: "demo-verdict"; plate: WelcomeImageKey }
-  | { type: "plan-recap" }
-  | { type: "price"; product: "yearly" | "monthly" }
   | { type: "cta"; label: StringKey; action: CtaAction }
   | { type: "spacer"; size: "s" | "m" | "l" };
 
@@ -121,14 +124,15 @@ const isStr = (v: unknown): v is string => typeof v === "string" && v !== "";
  *  the client reads by these names, and a `url` or `color` riding along is the free form it is not. */
 const BLOCK_FIELDS: Record<Block["type"], readonly string[]> = {
   headline: ["text"], body: ["text"], spud: ["lines", "mood"], bullets: ["items"], image: ["asset", "alt"],
-  "demo-verdict": ["plate"], "plan-recap": [], price: ["product"], cta: ["label", "action"], spacer: ["size"],
+  cta: ["label", "action"], spacer: ["size"],
 };
 
 /** One message per problem; empty means valid. Every block field is checked, because the input is JSON. */
 function blockErrors(raw: unknown, at: string, assets: ReadonlySet<string>): string[] {
   const b = raw as Record<string, unknown>;
   if (typeof b !== "object" || b === null) return [`${at} must be an object`];
-  const allowed = BLOCK_FIELDS[b.type as Block["type"]];
+  // Own keys only: `{type: "toString"}` must be "not a block", not a TypeError and a 500.
+  const allowed = typeof b.type === "string" && Object.hasOwn(BLOCK_FIELDS, b.type) ? BLOCK_FIELDS[b.type as Block["type"]] : undefined;
   if (allowed) {
     const extra = Object.keys(b).filter((k) => k !== "type" && !allowed.includes(k));
     if (extra.length > 0) return [`${at} has unknown fields: ${extra.join(", ")}`];
@@ -155,10 +159,6 @@ function blockErrors(raw: unknown, at: string, assets: ReadonlySet<string>): str
           ? assets.has(b.asset) ? [] : [`${at}.asset ${b.asset} was not uploaded`]
           : [`${at}.asset must be a sha256`]),
       ];
-    case "demo-verdict":
-      return (WELCOME_IMAGE_KEYS as readonly string[]).includes(b.plate as string) ? [] : [`${at}.plate '${String(b.plate)}' is not a plate`];
-    case "plan-recap": return [];
-    case "price": return b.product === "yearly" || b.product === "monthly" ? [] : [`${at}.product must be yearly or monthly`];
     case "cta": {
       const a = String(b.action);
       const known = (CTA_ACTIONS as readonly string[]).includes(a);
@@ -205,8 +205,8 @@ export function validateScreenTemplate(raw: unknown, assets: ReadonlySet<string>
     }
   }
   // Russian past tense has no neutral form; stored copy meets the same check compiled copy does.
-  for (const g of genderedRussian(strings.ru ?? {})) errs.push(`strings.ru${g.at} is gendered: "${g.text}"`);
-  if (t.note !== undefined && typeof t.note !== "string") errs.push("note must be a string");
+  for (const g of genderedRussian(strings.ru ?? {})) errs.push(`strings.ru.${g.at} is gendered: "${g.text}"`);
+  if (t.note !== undefined && (typeof t.note !== "string" || t.note.length > MAX_TEXT)) errs.push(`note must be a string of at most ${MAX_TEXT} characters`);
   return errs;
 }
 
@@ -226,7 +226,8 @@ export function validateArmScreens(raw: unknown): string[] {
       if (e?.when === undefined && i < entries.length - 1) errs.push(`${at} has no window, so the entries after it are never served — put it last`);
       if (typeof e?.template !== "string" || !TEMPLATE_KEY.test(e.template)) errs.push(`${at}.template must be a template key`);
       if (!Number.isInteger(e?.version) || e.version < 1) errs.push(`${at}.version must be a positive integer`);
-      if (e?.when !== undefined && !isHourPair(e.when?.hours)) errs.push(`${at}.when.hours must be two different hours 0–23 (omit \`when\` for any hour)`);
+      if (e?.when !== undefined && (typeof e.when !== "object" || e.when === null || Object.keys(e.when).some((k) => k !== "hours"))) errs.push(`${at}.when takes hours only`);
+      else if (e?.when !== undefined && !isHourPair(e.when?.hours)) errs.push(`${at}.when.hours must be two different hours 0–23 (omit \`when\` for any hour)`);
     });
   }
   return errs;
@@ -239,6 +240,31 @@ export function pickArmScreen(entries: readonly ArmScreen[], hour: number | null
     if (hour !== null && hourInWindow(hour, e.when.hours)) return e;
   }
   return null;
+}
+
+/**
+ * The client's own check of a served screen (ieat-app#3167): a newer server's block, action or slot
+ * this build cannot draw, a missing string, or an asset URL that is neither a path nor https is null,
+ * and the client walks the compiled beat. The server validated on the write; this is what a SHIPPED
+ * binary trusts.
+ */
+export function usableServedScreen(raw: unknown): ServedScreen | null {
+  const s = raw as ServedScreen;
+  if (typeof s !== "object" || s === null || typeof s.template !== "string" || !Number.isInteger(s.version)) return null;
+  if (!Array.isArray(s.blocks) || s.blocks.length === 0 || typeof s.strings !== "object" || s.strings === null) return null;
+  if (!Array.isArray(s.assets) || !s.assets.every((a) => typeof a?.sha256 === "string" && typeof a.url === "string" && /^(\/(?!\/)|https:\/\/)/.test(a.url))) return null;
+  const shas = new Set(s.assets.map((a) => a.sha256));
+  for (const [i, b] of s.blocks.entries()) {
+    if (blockErrors(b, `blocks[${i}]`, shas).length > 0) return null;
+    if (keysOf(b).some((k) => typeof s.strings[k] !== "string" || s.strings[k] === "")) return null;
+  }
+  return s.blocks.filter((b) => b.type === "cta").length === 1 ? s : null;
+}
+
+/** The strings a template keeps: every `LANGS` table, cut to the keys its blocks read. */
+export function keptStrings(t: ScreenTemplateDraft): ScreenTemplateDraft["strings"] {
+  const keys = [...new Set(t.blocks.flatMap(keysOf))];
+  return Object.fromEntries(LANGS.map((l) => [l, Object.fromEntries(keys.map((k) => [k, t.strings[l]![k]!]))]));
 }
 
 /**

@@ -1873,7 +1873,7 @@ describe("screen templates over the admin API (ieat-app#3167)", () => {
     });
     const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" })).json() as { experiment: { id: string } };
     await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
-    const set = await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, { screens: { "after:summary": [{ template: "beat", version: 1 }] } });
+    const set = await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, { screens: { prelim: [{ template: "beat", version: 1 }] } });
     expect(set.status).toBe(200);
     await admin("PUT", `/admin/api/experiments/${experiment.id}`, { rules: { surfaces: ["app"] }, weights: [0, 1] });
     await admin("PUT", "/admin/api/switches/onboarding.experiments", { enabled: true });
@@ -1887,7 +1887,7 @@ describe("screen templates over the admin API (ieat-app#3167)", () => {
     expect(old.screens).toBeUndefined();
     const res = await (await get("&renderer=1")).json() as { screens?: { slots: Record<string, { strings: Record<string, string> }> } };
     // The first fetch without a renderer enrolled nobody, so this one can.
-    expect(res.screens?.slots["after:summary"]?.strings.h).toBe("One more thing");
+    expect(res.screens?.slots.prelim?.strings.h).toBe("One more thing");
   });
 });
 
@@ -1901,7 +1901,7 @@ describe("arm screens body rules (#3167, review round 1)", () => {
     const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" })).json() as { experiment: { id: string } };
     await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
     const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
-    const screens = { welcome: [{ template: "beat", version: 1 }] };
+    const screens = { baseline: [{ template: "beat", version: 1 }] };
     expect((await admin("PUT", arm, { screens, content: {} })).status).toBe(422);
     expect((await admin("PUT", arm, { screens, order: null })).status).toBe(422);
     const armOf = async () => (await store.listOnboardingExperiments()).find((e) => e.id === experiment.id)!.variants[1]!;

@@ -440,6 +440,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, result.conflict ? 409 : 422);
   }
   if (req.method === "POST" && pathname === "/admin/api/template-assets") {
+    // Refused before the body is read when the length is declared over the cap.
+    if (Number(req.headers.get("content-length") ?? 0) > deps.config.maxUploadBytes) return json({ errors: [`over ${deps.config.maxUploadBytes} bytes`] }, 422);
     const result = await uploadTemplateAsset(deps, new Uint8Array(await req.arrayBuffer()));
     return result.ok ? json({ sha256: result.sha256 }) : json({ errors: result.errors }, 422);
   }
