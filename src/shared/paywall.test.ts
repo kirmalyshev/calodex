@@ -52,6 +52,26 @@ describe("paywallPrice", () => {
     expect(paywallPrice(39.99, "EUR", "de")).toBe("39,99 €");
     expect(paywallPrice(39.99, "USD", "en")).toBe("$39.99");
   });
+
+  // ieat-app#3163: a bare "$" on an Australian or New Zealand sheet reads as US dollars, a ruble
+  // price shows kopecks nobody quotes, and the ringgit is RM.
+  it("names AUD and NZD with their own sign, in every language", () => {
+    expect(paywallPrice(39.99, "AUD", "en")).toBe("A$39.99");
+    expect(paywallPrice(39.99, "NZD", "en")).toBe("NZ$39.99");
+    expect(paywallPrice(39.99, "AUD", "de").replace(/\s/g, " ")).toBe("39,99 A$");
+    expect(paywallPrice(39.99, "NZD", "fr")).toContain("NZ$");
+  });
+
+  it("drops the kopecks on RUB, rounded to the whole ruble", () => {
+    expect(paywallPrice(3333, "RUB", "ru").replace(/\s/g, " ")).toBe("3 333 ₽");
+    expect(paywallPrice(277.75, "RUB", "ru").replace(/\s/g, " ")).toBe("278 ₽");
+    expect(paywallPrice(277.75, "RUB", "en")).not.toContain(".");
+  });
+
+  it("writes MYR as RM", () => {
+    expect(paywallPrice(39.99, "MYR", "en")).toContain("RM");
+    expect(paywallPrice(39.99, "MYR", "en")).not.toContain("MYR");
+  });
 });
 
 // ieat-app#3155: the admin arms the decline → offer per platform and the flag travels on

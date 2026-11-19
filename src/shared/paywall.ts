@@ -76,8 +76,16 @@ export interface WebPaywall {
  */
 export function paywallPrice(amount: number, currency: string, lang: Lang): string {
   // narrowSymbol, so a USD paywall reads "$39.99" to an English reader rather than "US$39.99".
-  return new Intl.NumberFormat(LANG_TAG[lang], { style: "currency", currency, currencyDisplay: "narrowSymbol" }).format(amount);
+  // Three currencies need more than that (ieat-app#3163): a bare "$" on AUD/NZD reads as US
+  // dollars, so their own sign replaces the symbol part and Intl keeps its side and spacing; a
+  // ruble price carries no kopecks. MYR's narrow symbol is already "RM".
+  const whole = currency === "RUB" ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {};
+  const parts = new Intl.NumberFormat(LANG_TAG[lang], { style: "currency", currency, currencyDisplay: "narrowSymbol", ...whole }).formatToParts(amount);
+  const sign = CURRENCY_SIGN[currency];
+  return parts.map((p) => (p.type === "currency" && sign ? sign : p.value)).join("");
 }
+
+const CURRENCY_SIGN: Record<string, string> = { AUD: "A$", NZD: "NZ$", MYR: "RM" };
 
 /**
  * The offer's percent off written in the reader's language — "40%" to an English reader, "40 %" to
