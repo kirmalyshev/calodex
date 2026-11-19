@@ -552,6 +552,13 @@ export interface Config {
    */
   resendApiKey: string;
   /**
+   * PostHog's project key and capture host, for the events only the server sees (ieat-app#3196):
+   * `/start` and the RevenueCat webhook. Server analytics is off unless BOTH are set. `redact()`
+   * masks the key.
+   */
+  posthogKey: string;
+  posthogHost: string;
+  /**
    * The From the sign-in mail carries. `eait <login@eait.fit>` is the default — the sender
    * fooddb's portal already delivers from, so SPF and DKIM on the domain already cover it.
    */
@@ -796,6 +803,8 @@ export function configDefaults(): Config {
     eveningLineTime: { hour: REMINDER_TIME.hour, minute: REMINDER_TIME.minute },
     mailProvider: "log",
     resendApiKey: "",
+    posthogKey: "",
+    posthogHost: "",
     mailFrom: BRANDS[DEFAULT_APP].mailFrom,
     emailCodesPerHour: 5,
     emailCodesPerDay: 10,
@@ -1083,6 +1092,8 @@ export function loadConfig(): Config {
     eveningLineTime,
     mailProvider,
     resendApiKey,
+    posthogKey: (process.env.EAIT__BACKEND__POSTHOG_KEY ?? d.posthogKey).trim(),
+    posthogHost: (process.env.EAIT__BACKEND__POSTHOG_HOST ?? d.posthogHost).trim(),
     mailFrom: process.env.EAIT__BACKEND__MAIL_FROM ?? d.mailFrom,
     emailCodesPerHour: int("EAIT__BACKEND__EMAIL_CODES_PER_HOUR", d.emailCodesPerHour),
     emailCodesPerDay: int("EAIT__BACKEND__EMAIL_CODES_PER_DAY", d.emailCodesPerDay),
@@ -1158,7 +1169,7 @@ export function telegramBotTokenFromEnv(): string {
 export function redact(c: Config): Record<string, unknown> {
   const {
     llmApiKey: _k, revenueCatWebhookToken: _rc,
-    expoPushAccessToken: _e, webPushVapidPrivateKey: _wp, googleWebClientSecret: _g, applePrivateKey: _ap, telegramBotToken: _tg, fooddbReadKey: _fk, resendApiKey: _rs, storeReviewCode: _sr, databaseUrl,
+    expoPushAccessToken: _e, webPushVapidPrivateKey: _wp, googleWebClientSecret: _g, applePrivateKey: _ap, telegramBotToken: _tg, fooddbReadKey: _fk, resendApiKey: _rs, storeReviewCode: _sr, posthogKey: _ph, databaseUrl,
     ...rest
   } = c;
   return {
@@ -1185,6 +1196,7 @@ export function redact(c: Config): Record<string, unknown> {
     fooddbReadKey: c.fooddbReadKey === "" ? "(unset — the catalog refresh is off)" : "***",
     resendApiKey: c.resendApiKey === "" ? "(unset — mail is logged)" : "***",
     storeReviewCode: c.storeReviewCode === "" ? "(unset — store-review sign-in is off)" : "***",
+    posthogKey: c.posthogKey === "" ? "(unset — server analytics is off)" : "***",
   };
 }
 

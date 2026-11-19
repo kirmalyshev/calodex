@@ -79,6 +79,10 @@ export async function signOut(): Promise<void> {
   }
 }
 
+let revokedListener: (() => void) | null = null;
+/** A session that ended under a signed-in tab: revoked, or signed out somewhere else. */
+export const onRevoked = (fn: () => void): void => { revokedListener = fn; };
+
 /** Drop only what this tab holds — for a 401, where the credential is already dead. */
 export const forget = (): void => { bearer = null; };
 
@@ -124,11 +128,11 @@ async function call(path: string, init: RequestInit): Promise<Response> {
       // sign-in screen, and `signIn` says so itself (#505). ANYTHING ELSE IS THE NETWORK and stays
       // the network (#529): read as signed out, it showed "Sign in" over a live session and wiped a
       // held proposal. The expired bearer is kept, so the next call asks for a fresh one again.
-      if (e instanceof Unauthenticated) forget();
+      if (e instanceof Unauthenticated) { forget(); revokedListener?.(); }
       throw e;
     }
     res = await send(path, init);
-    if (res.status === 401) { forget(); throw new Unauthenticated(); }
+    if (res.status === 401) { forget(); revokedListener?.(); throw new Unauthenticated(); }
   }
   if (!res.ok) {
     const body = await res.json().catch(() => null) as ErrorResponse | null;

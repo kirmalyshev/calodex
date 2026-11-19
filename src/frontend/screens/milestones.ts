@@ -8,11 +8,12 @@ import { countText, numbers, weekdayLetters } from "../../shared/lang.ts";
 import { milestonesCopyFor, streakCardLine, type MilestonesCopy } from "../../shared/app/milestones-copy.ts";
 import { ico } from "../../shared/ui/kit.ts";
 import type { DaysResponse, DiaryDay, MilestonesResponse, ProfileResponse } from "@eait/shared";
-import { api, getMilestones, postMilestonesSeen } from "../api.ts";
+import { getMilestones, postMilestonesSeen } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { kitEl } from "../kit.ts";
 import { openDialog } from "../panel.ts";
-import { el, forgetProfile, kcal, lang, profile, refusalWords, type Frame } from "../shell.ts";
+import { patchProfile, el, forgetProfile, kcal, lang, profile, refusalWords, type Frame } from "../shell.ts";
+import * as analytics from "../analytics.ts";
 
 const BADGE_BY_ID = new Map(BADGES.map((b) => [b.id, b]));
 export const medalSrc = (id: string): string => `/medals/${id}.webp`;
@@ -167,6 +168,7 @@ async function shareMedal(id: string, name: string): Promise<void> {
   const blob = await (await fetch(medalSrc(id))).blob();
   const file = new File([blob], `${id}.webp`, { type: blob.type || "image/webp" });
   await navigator.share({ files: [file], title: name });
+  analytics.capture("milestone_shared");
 }
 
 const canShareFiles = (): boolean =>
@@ -311,11 +313,7 @@ export function milestoneSettingsScreen(frame: Frame): HTMLElement {
       if (saving) return;
       const was = sw.getAttribute("aria-checked") === "true";
       saving = true; notice.hidden = true; paint(!was);
-      api<ProfileResponse>("/profile", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ [key]: !was }),
-      }).then((res) => { me = res; forgetProfile(); })
+      patchProfile({ [key]: !was }).then((res) => { me = res; forgetProfile(); })
         .catch((err: unknown) => {
           console.error(err);
           paint(was);

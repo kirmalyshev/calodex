@@ -2,6 +2,7 @@
 // Every request goes through `api.ts`; the worker (`sw.ts`) has no bearer and makes none.
 
 import { dropPushToken, getPushConsent, postPushOpen, registerPushToken, signedIn } from "./api.ts";
+import * as analytics from "./analytics.ts";
 
 export const pushSupported = (): boolean =>
   "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -21,7 +22,9 @@ const post = (sub: PushSubscription) => registerPushToken({
 
 /** Ask permission and subscribe. Call from a user gesture: browsers refuse the prompt otherwise. */
 export async function subscribeWeb(webPushKey: string): Promise<"on" | "denied"> {
-  if (await Notification.requestPermission() !== "granted") return "denied";
+  const answer = await Notification.requestPermission();
+  analytics.capture("notification_permission_result", { granted: answer === "granted", can_ask_again: answer === "default" });
+  if (answer !== "granted") return "denied";
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription()
     ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(webPushKey) });
@@ -47,6 +50,8 @@ export async function refreshWeb(): Promise<void> {
 export async function reportPushOpen(): Promise<void> {
   const sendId = new URLSearchParams(location.search).get("push");
   if (!sendId) return;
+  // A browser notification has no reply action: every open is a tap.
+  analytics.capture("push_opened", { reply: false });
   await postPushOpen({ sendId, action: "tap" });
   history.replaceState(null, "", location.pathname + location.hash);
 }

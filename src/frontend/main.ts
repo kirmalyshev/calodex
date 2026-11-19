@@ -14,12 +14,14 @@ import { mealScreen } from "./screens/meal.ts";
 import { homeScreen } from "./screens/today.ts";
 import { payScreen } from "./screens/pay.ts";
 import { checkAwardsSoon, milestoneSettingsScreen, milestonesScreen } from "./screens/milestones.ts";
-import { onWrite } from "./api.ts";
+import { onRevoked, onWrite } from "./api.ts";
+import * as analytics from "./analytics.ts";
 import { acceptDrops, restoreJobs } from "./queue.ts";
 import { startPush } from "./push.ts";
 
 // The new-award popup (#2148) follows any write: the server decides what was earned.
 onWrite(checkAwardsSoon);
+onRevoked(() => analytics.capture("session_revoked"));
 // `#/` LAST: it is the fallthrough an unclaimed route lands on, as it always has.
 screen("#/meal/", (frame) => mealScreen(frame));
 screen("#/chat", (frame) => chatScreen(frame));

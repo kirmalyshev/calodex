@@ -41,6 +41,7 @@ import {
   setHeldProposal, textField,
 } from "../shell.ts";
 import { routeBase } from "../route.ts";
+import * as analytics from "../analytics.ts";
 
 /** The boards' `.say` — one quiet line, inside the diary card. */
 function sayRow(line: string): HTMLElement {
@@ -383,6 +384,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
           headers: { "content-type": "application/json" },
           body: JSON.stringify(edit),
         });
+        analytics.capture("meal_edited", { items_edited: "items" in edit });
         // "target-gone" and the refusals are statuses; a JSON body here is the updated meal.
         if (r.kind !== "updated") throw new ApiError(200, { error: r.kind }, `edit: ${r.kind}`);
         // The WHOLE card is rebuilt from the server's answer; nothing of the old one survives.
@@ -460,9 +462,17 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
     }
     card.append(go, hint);
     box.append(card);
+    // No storefront on the web: the checkout link is the store.
+    const sold = () => ({ plan: plans?.picked()?.value ?? "monthly", trial_shown: trialDays > 0, storefront: null });
+    analytics.capture("paywall_opened", { blocked: false, source: "first_verdict" });
+    plans?.group.addEventListener("change", () => analytics.capture("paywall_plan_selected", sold()));
+    go.addEventListener("click", () => analytics.capture("paywall_purchase_started", sold()));
     const later = el("button", "cta g", COPY.offerLater) as HTMLButtonElement;
     // "Not now" re-renders: a meal exists by now, so the gate opens the diary it belongs on.
-    later.addEventListener("click", () => { closeSheet(); void render(); });
+    later.addEventListener("click", () => {
+      analytics.capture("paywall_dismissed", { result: "cancelled", blocked: false });
+      closeSheet(); void render();
+    });
     box.append(later);
     dlg.append(box);
     scrim.append(dlg);

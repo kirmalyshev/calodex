@@ -12,6 +12,7 @@ import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
 import type { FirstVerdictArm, OnboardingContent, OnboardingEvent } from "./onboarding.ts";
 import type { ServedScreens } from "./screen-template.ts";
+import type { AnalyticsServerContext } from "./analytics.ts";
 import type { TargetBasis } from "./targets.ts";
 import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
@@ -403,6 +404,12 @@ export const ROUTES = {
   pushOpen: "/v1/push/open",
   /** POST — the notification extension reports a push arrived. See `PushDeliveredRequest`. */
   pushDelivered: "/v1/push/delivered",
+  /**
+   * POST — this install's Apple AdServices attribution token (ieat-app#3196). See
+   * `AttributionRequest`. The server asks Apple and keeps the answer on the account; the reply says
+   * only whether that is done.
+   */
+  attribution: "/v1/attribution",
   /**
    * GET — the tips-and-offers consent (`PushConsentResponse`); POST — set it (`PushConsentRequest`).
    * Offers default OFF; `notifications` (default ON) silences every push for the account.
@@ -901,6 +908,12 @@ export interface ProfileResponse {
   donate: DonateLinks;
   /** {@link ReferralView} — this account's link and what it has done (#899). */
   referral: ReferralView;
+  /**
+   * What the server knows for the analytics context (ieat-app#3196), registered as super properties
+   * by the app and the web alike. Labels events, gates nothing. Null when it could not be read: keep
+   * what was registered before rather than clearing it.
+   */
+  analytics: AnalyticsServerContext | null;
 }
 
 /**
@@ -1079,6 +1092,11 @@ export interface OnboardingContentResponse {
    * that slot and walks the compiled beat.
    */
   screens?: ServedScreens;
+  /**
+   * The experiment and arm this answer's copy is (ieat-app#3196), for the client's analytics super
+   * properties; null when it served the live flow, including an arm held but not drawable here.
+   */
+  experiment?: { id: string; arm: string } | null;
 }
 
 /**
@@ -1445,6 +1463,20 @@ export type DistributionChannel = (typeof DISTRIBUTION_CHANNELS)[number];
 /** The channel a header or column names, or null when it names none. */
 export function parseChannel(v: unknown): DistributionChannel | null {
   return (DISTRIBUTION_CHANNELS as readonly unknown[]).includes(v) ? (v as DistributionChannel) : null;
+}
+
+/**
+ * The binary's version, build number and OTA update id (ieat-app#3196), the siblings of
+ * `CHANNEL_HEADER`. CLIENT-REPORTED, so they label analytics rows and gate nothing, ever. Absent on an
+ * older build and on the web; a value `parseClientTag` refuses is dropped, never stored.
+ */
+export const VERSION_HEADER = "x-eait-version";
+export const BUILD_HEADER = "x-eait-build";
+export const UPDATE_HEADER = "x-eait-update";
+
+/** A version, build or update id as a header carries it, or null: at most 64 of `[A-Za-z0-9._+-]`. */
+export function parseClientTag(v: unknown): string | null {
+  return typeof v === "string" && /^[A-Za-z0-9._+-]{1,64}$/.test(v) ? v : null;
 }
 
 /** A bound on a value that is stored per device and re-sent on every launch. Expo's are ~40 chars. */
@@ -2244,3 +2276,32 @@ export function parseNumbersLogRequest(body: unknown): NumbersLogRequest | null 
 export const FOOD_SEARCH_LIMIT = 25;
 /** The server never answers with more than this many rows, whatever the client asks for. */
 export const FOOD_SEARCH_MAX_LIMIT = 50;
+
+/**
+ * The app's Apple AdServices token (ieat-app#3196), from `AAAttribution.attributionToken()`. The
+ * server sends it to Apple and stores what Apple says on the caller's account; it is never logged
+ * and never stored. A bound, not a format: Apple's tokens are a few hundred characters.
+ */
+export interface AttributionRequest {
+  token: string;
+}
+
+export const MAX_ATTRIBUTION_TOKEN = 4096;
+
+export function isAttributionRequest(body: unknown): body is AttributionRequest {
+  if (typeof body !== "object" || body === null) return false;
+  const t = (body as Record<string, unknown>).token;
+  return typeof t === "string" && t.length > 0 && t.length <= MAX_ATTRIBUTION_TOKEN;
+}
+
+/**
+ * What became of the token, and nothing about where the account came from. The HTTP status says the
+ * same: `resolved` 200 (stored now or already; stop sending), `pending` 202 (Apple has no answer yet;
+ * send the same token again in a few seconds), `invalid` 422 (Apple refused this token; get a new
+ * one), `unavailable` 503 (Apple or the server could not answer; retry later).
+ */
+export const ATTRIBUTION_STATUS = { resolved: 200, pending: 202, invalid: 422, unavailable: 503 } as const;
+export type AttributionStatus = keyof typeof ATTRIBUTION_STATUS;
+export interface AttributionResponse {
+  status: AttributionStatus;
+}

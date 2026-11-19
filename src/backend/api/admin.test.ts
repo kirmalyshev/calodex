@@ -217,6 +217,26 @@ describe("experiments (ieat-app#2669)", () => {
       .toBe("welcome-plate");
   });
 
+  it("names the experiment and arm only when the arm's copy is what it served (ieat-app#3196)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, { firstVerdict: "welcome-plate" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+    type Served = { content: { version: number }; experiment?: unknown };
+    const get = async (path: string, token: string) => await (await admin("GET", path, undefined, token)).json() as Served;
+
+    const token = await session();
+    const armed = await get("/v1/onboarding?verdict=1", token);
+    expect(armed.experiment).toEqual({ id: experiment.id, arm: String(armed.content.version) });
+    const fellBack = await get("/v1/onboarding", token);
+    expect(fellBack.content.version).not.toBe(armed.content.version);
+    expect(fellBack.experiment).toBeNull();
+    expect((await get("/v1/onboarding", await session())).experiment).toBeNull();
+  });
+
   it("quotes the armed ask line on the lines route only with ?verdict= (ieat-app#3165)", async () => {
     const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
       .json() as { experiment: { id: string } };
@@ -545,6 +565,23 @@ describe("the app's onboarding routes", () => {
     expect(await (await send([e])).json()).toEqual({ accepted: 0 });
   });
 
+  it("stamps each event with the binary's headers, as surface app (ieat-app#3196)", async () => {
+    const token = await session();
+    await handle(new Request(url(ROUTES.onboardingEvents), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json", authorization: `Bearer ${token}`,
+        "x-eait-app": "eait", "x-eait-channel": "testflight", "x-eait-version": "1.4.2", "x-eait-build": "187", "x-eait-update": "upd-1",
+      },
+      body: JSON.stringify({ events: [{ id: "ctx1", sessionId: "s", place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString() }] }),
+    }));
+    const userId = await store.userIdForToken(token);
+    const [row] = (await store.adminOnboardingFlow({ userId: userId!, range: { from: null, to: null } })).rows;
+    expect(row!.events![0]!.context).toMatchObject({
+      surface: "app", brand: "eait", channel: "testflight", app_version: "1.4.2", build: "187", ota_update_id: "upd-1",
+    });
+  });
+
   it("does not 400 on a malformed batch", async () => {
     // Forgiving on purpose. A rejected batch is an app that retries forever, and the funnel then
     // has a hole exactly where the users on bad connections were.
@@ -847,6 +884,29 @@ describe("testers and channels (ieat-app#2899)", () => {
   const started = (userId: string) => store.recordOnboardingEvents(userId, [{
     id: `${userId}-e`, sessionId: `${userId}-s`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString(),
   } as never]);
+
+  it("narrows the funnel by the dimension params and offers each dimension's values (ieat-app#3196)", async () => {
+    const app = await user(), web = await user();
+    const ev = (u: string, surface: string) => store.recordOnboardingEvents(u, [{
+      id: `${u}-e`, sessionId: `${u}-s`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString(),
+    } as never], { surface, app_version: "3.1", lang: surface === "web" ? "en" : "de", country: "DE", experiment_id: "x1", arm: "7" } as never);
+    await ev(app, "app");
+    await ev(web, "web");
+    await store.putAcquisition(app, { source: "asa", campaign: null, adGroup: null, keyword: null, via: "adservices" });
+    const get = async (q: string) => (await admin("GET", `/admin/api/funnel${q}`)).json() as Promise<{ sessions: number; dimensions: Record<string, unknown> }>;
+    expect((await get("")).sessions).toBe(2);
+    expect((await get("?surface=web")).sessions).toBe(1);
+    expect((await get("?lang=de&country=DE")).sessions).toBe(1);
+    expect((await get("?acq_source=asa")).sessions).toBe(1);
+    expect((await get("?app_version=3.1&experiment=x1&arm=7")).sessions).toBe(2);
+    expect((await get("?experiment=x1&arm=8")).sessions).toBe(0);
+    expect((await get("?surface=")).sessions).toBe(2);
+    expect((await admin("GET", "/admin/api/funnel?arm=7")).status).toBe(400);
+    expect((await get("?surface=web")).dimensions).toEqual({
+      surface: ["app", "web"], app_version: ["3.1"], lang: ["de", "en"], country: ["DE"], acq_source: ["asa"],
+      arm: [{ experiment_id: "x1", arm: "7" }],
+    });
+  });
 
   it("keeps testers out of the funnel and its per-account list unless `testers=1`", async () => {
     const tf = await user(), sbx = await user(), real = await user();

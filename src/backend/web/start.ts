@@ -45,11 +45,12 @@ import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
-  onboardingContentFor, onboardingServedFor, mintPairingCode, patchProfile, profileView,
+  onboardingContentFor, onboardingServedFor, serveOnboarding, mintPairingCode, patchProfile, profileView, recordOnboardingEvents,
   sendEmailCode, signInWithProvider, switchOn, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
 } from "../engine/index.ts";
+import { analyticsRequestOf, track } from "../engine/analytics.ts";
 import { blankProfile, type Store } from "../store.ts";
 import { legalUrls } from "../brand.ts";
 import {
@@ -371,6 +372,45 @@ async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Pr
 
 /** The cards the walk draws between and after the questions; `summary` and `signup` are not. */
 const BEAT_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
+
+/**
+ * One funnel row from this surface (ieat-app#3196), through the engine function the app's
+ * `POST /v1/onboarding/events` calls, so the same sanitising and the same server-stamped context
+ * apply. The run is the session account: it is born with the first answer and a reinstall here is a
+ * new one. Fire-and-forget — a page never waits on it, and a lost row is logged, never shown.
+ */
+async function funnel(
+  deps: EngineDeps, req: Request, userId: string, content: OnboardingContent,
+  place: OnboardingPlace, action: "view" | "answer" | "complete", field?: string, value?: unknown,
+): Promise<void> {
+  try {
+    const shown = Array.isArray(value) ? value.join(",") : value;
+    const request = analyticsRequestOf(req.headers, "web");
+    const written = await recordOnboardingEvents(deps, userId, [{
+      id: crypto.randomUUID(), sessionId: userId, place, action, contentVersion: content.version, at: new Date().toISOString(),
+      ...(field ? { field, value: shown } : {}),
+    }], request);
+    // The browser cannot see these rows, so the server sends their PostHog twin (ieat-app#3196).
+    if (written === 0) return;
+    await track(deps, userId, "onboarding_step", { place, action, ...(field ? { field } : {}) }, request);
+    if (place === "summary" && action === "complete") await track(deps, userId, "onboarding_plan_completed", {}, request);
+  } catch (e) {
+    console.error(`[eait] /start: funnel write failed: ${(e as Error | null)?.name ?? "error"}`);
+  }
+}
+
+/** `signup_completed` / `signin_completed` for a /start sign-in, the way the app names them. */
+async function trackSignIn(
+  deps: EngineDeps, req: Request, provider: "apple" | "google" | "email", session: string | null,
+  result: { userId: string; outcome: string },
+): Promise<void> {
+  const request = analyticsRequestOf(req.headers, "web");
+  if (result.outcome === "created" || result.outcome === "linked") {
+    await track(deps, result.userId, "signup_completed", { provider, after_onboarding: session !== null }, request);
+  } else {
+    await track(deps, result.userId, "signin_completed", { provider, outcome: result.outcome }, request);
+  }
+}
 
 /**
  * The W2 walk — the field questions PLUS the interstitials among them, in the SERVED order: an
@@ -870,6 +910,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       console.error(`[eait] web sign-in failed: ${e instanceof AuthError ? e.reason : (e as Error)?.message}`);
       return failed();
     }
+    void trackSignIn(ctx.deps, req, name, userId, result);
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),
@@ -1021,6 +1062,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       if (result.kind === "rate-limited") return seeOther(`${START_PREFIX}/email/code?error=too-many&wait=${result.wait}`);
       return seeOther(`${START_PREFIX}/email/code?error=${result.kind === "code-wrong" ? "wrong" : "dead"}`);
     }
+    void trackSignIn(ctx.deps, req, "email", userId, result);
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),
@@ -1070,10 +1112,11 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // runs before an account exists: the pre-account `/q` renders the blank profile in
   // `browserLang(req)`, which is also the language the first answer's account is born into.
   // The words AND the arm's order (ieat-app#2788): this page walks it, so it declares it can. An
-  // order this build cannot validate walks the default (`servedOrder`) and is said in the log —
-  // /start sends no funnel events, so `fell_back` cannot count it.
+  // order this build cannot validate walks the default (`servedOrder`) and is said in the log.
+  // An account's page is recorded as served, so its funnel rows carry the arm it walked.
   const view = async (): Promise<{ profile: Profile; content: OnboardingContent; order?: readonly string[] }> => {
-    const served = await onboardingServedFor(ctx.deps, userId, webSignals(profile.lang, req));
+    const signals = webSignals(profile.lang, req);
+    const served = userId === null ? await onboardingServedFor(ctx.deps, userId, signals) : await serveOnboarding(ctx.deps, userId, signals);
     if (orderFellBack(served.order)) console.error("[eait] /start: served order failed validation, walking the default");
     return { profile, ...served };
   };
@@ -1139,6 +1182,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const i = editable(url.searchParams.get("edit"));
       if (i === -1) return seeOther(askPath);
       const kg = walk[i]!.id === "target_weight_kg" ? profile.target_weight_kg ?? undefined : undefined;
+      if (userId !== null) void funnel(ctx.deps, req, userId, content, walk[i]!.place, "view");
       return askAt(i, null, [], kg);
     }
 
@@ -1160,6 +1204,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const following = walk[i + 1];
       const onward = following !== undefined && following.kind === "auto"
         ? `${askPath}${askPath.includes("?") ? "&" : "?"}show=${following.id}` : askPath;
+      if (userId !== null) void funnel(ctx.deps, req, userId, content, auto.place, "view");
       return html(interstitial(auto.place as Parameters<typeof interstitial>[0], profile, content, profile.lang, onward, backBefore(walk, i), order));
     }
 
@@ -1170,6 +1215,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const switched = url.searchParams.has("switched") && profile.goal !== null
         ? switchedLine(profile.goal, profile.lang, content.refusals)
         : null;
+      // No account yet means nobody to own the first question's view; its answer is the first row.
+      if (userId !== null) void funnel(ctx.deps, req, userId, content, walk[openIndex]!.place, "view");
       return ask(switched);
     }
 
@@ -1250,6 +1297,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
           ? { ...answer.patch, units: postedUnits } : answer.patch;
         const outcome = await patchProfile(ctx.deps, fresh, patch);
         if (outcome && !outcome.ok) return retry(refusalText(outcome.rejected, profile.lang));
+        void funnel(ctx.deps, req, fresh, content, open.place, "answer", open.field,
+          open.field === undefined ? undefined : (answer.patch as Record<string, unknown>)[open.field]);
         const token = await ctx.store.issueToken(fresh);
         return seeOther(`${START_PREFIX}/q`, [setCookie(SESSION_COOKIE, token, { secure })]);
       }
@@ -1346,6 +1395,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         return retry(refusalText(outcome.rejected, profile.lang), [], undefined,
           typeof sent === "number" ? [String(sent)] : undefined);
       }
+      void funnel(ctx.deps, req, userId, content, open.place, "answer", open.field,
+        open.field === undefined ? undefined : (answer.patch as Record<string, unknown>)[open.field]);
+      if (editIndex === -1 && at === lastField) void funnel(ctx.deps, req, userId, content, "summary", "complete");
       // The completing patch lands on the plan, which draws its own reveal — after the cards, if any.
       // What comes next is read from the walk the ANSWER produced (ieat-app#2979): an answer that
       // removes the questions after it (maintain drops target and pace; never-counted the barrier)

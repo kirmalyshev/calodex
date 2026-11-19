@@ -405,3 +405,19 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
   });
 });
 
+
+describe("the experiment GET /v1/onboarding names (ieat-app#3196)", () => {
+  it("is null when the arm's stored copy is unusable and the live copy went out instead", async () => {
+    const e = {
+      id: crypto.randomUUID(), lang: "en" as const, status: "draft" as const, rules: { surfaces: ["app" as const] },
+      variants: [{ control: true, weight: 0, content: content(41) }, { weight: 1, content: { ...content(42), screens: [] } }],
+      created_by: admin, created_at: new Date().toISOString(), started_at: null, stopped_at: null, revision: 1,
+    };
+    await store.putOnboardingExperiment(e as never);
+    await store.setSwitch("onboarding.experiments", true, admin);
+    await store.startOnboardingExperiment(e.id);
+    const served = await serveOnboarding(deps, userId, signals);
+    expect(served.content.version).not.toBe(42);
+    expect(served.experiment ?? null).toBeNull();
+  });
+});

@@ -9,18 +9,19 @@
 
 import {
   COUNTRY_CODES, branded, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
-  ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone,
+  ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone, TEMPLATE_REF,
   localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   DEFAULT_ORDER, FIRST_VERDICT_ARMS, FIRST_VERDICT_VERSION, isFirstVerdictArm, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent, type OnboardingContentSet,
   type DistributionChannel, type FirstVerdictArm, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
-import { resolveScreen, type ServedScreen, type ServedScreens, type TemplateSlot } from "@eait/shared";
+import { resolveScreen, type FunnelFilters, type ServedScreen, type ServedScreens, type TemplateSlot } from "@eait/shared";
 import { rendererNeeded, screensStartErrors, servedScreens, templateAssetUrl } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
-import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingServed, OnboardingServedRecord, OnboardingSurface, OnboardingVariant, TemplateRef } from "../store.ts";
+import { onboardingEventContext, type AnalyticsRequest } from "./analytics.ts";
+import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingExperimentFunnelRow, OnboardingServed, OnboardingServedRecord, OnboardingSurface, OnboardingVariant, TemplateRef } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 import { referralBonusOf } from "./entitlement.ts";
 
@@ -233,7 +234,7 @@ export async function onboardingServedFor(
   userId: string | null,
   signals: OnboardingSignals,
   at: Date = new Date(),
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens; experiment?: { id: string; arm: string } | null }> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
   const served = await servedRaw(deps, userId, signals, control, at);
   // The ONE place stored and variant copy is branded: the editor and the clone read it raw.
@@ -273,7 +274,7 @@ async function servedRaw(
   signals: OnboardingSignals,
   control: OnboardingContent,
   at: Date,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens; experiment?: { id: string; arm: string } | null }> {
   if (userId === null) return { content: control };
   const assigned = await assignVariant(deps, userId, signals, at);
   if (!assigned) return { content: control };
@@ -283,11 +284,14 @@ async function servedRaw(
   if (firstVerdict && !readsFirstVerdict(signals)) return { content: control };
   // Screens only to a client that can draw them (ieat-app#3167); never throws.
   const screens = await servedScreens(deps, assigned.variant, signals.lang, signals.tz, signals.renderer ?? 0, at);
+  const content = usableContent(assigned.variant.content, control);
+  const servedArm = content.version === assigned.variant.content.version;
   return {
-    content: usableContent(assigned.variant.content, control),
+    content,
     ...(order ? { order } : {}),
     ...(firstVerdict ? { firstVerdict } : {}),
     ...(screens ? { screens } : {}),
+    experiment: servedArm ? { id: assigned.experiment.id, arm: String(assigned.variant.content.version) } : null,
   };
 }
 
@@ -359,6 +363,7 @@ export async function recordOnboardingEvents(
   deps: EngineDeps,
   userId: string,
   events: unknown,
+  request: AnalyticsRequest,
 ): Promise<number> {
   if (!Array.isArray(events)) return 0;
 
@@ -381,6 +386,7 @@ export async function recordOnboardingEvents(
     // The privacy rule, enforced server-side. A value for a field that is not enumerated is
     // discarded rather than the event being rejected — losing one column beats losing the funnel.
     const value = field && isReportableField(field) ? str(e.value, 120) : "";
+    const template = str(e.template, 72);
 
     clean.push({
       id,
@@ -392,11 +398,19 @@ export async function recordOnboardingEvents(
       ...(ms !== undefined ? { ms } : {}),
       ...(field ? { field } : {}),
       ...(value ? { value } : {}),
+      ...(TEMPLATE_REF.test(template) ? { template } : {}),
     });
   }
 
   if (clean.length === 0) return 0;
-  return deps.store.recordOnboardingEvents(userId, clean);
+  // The context is the SERVER's to stamp (ieat-app#3196): the request's headers, the account's row
+  // and its held arm. Of the body, only `template` is read; every other context-shaped key is not.
+  const context = await onboardingEventContext(deps, userId, request).catch((e: unknown) => {
+    const err = e as { name?: string; code?: string } | null;
+    console.error(`[eait] onboarding: event context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
+    return { ...request, lang: null, country: null, experiment_id: null, arm: null, template: null };
+  });
+  return deps.store.recordOnboardingEvents(userId, clean, context);
 }
 
 /**
@@ -429,11 +443,11 @@ export async function adminMetrics(
 
 /** The funnel, in the DEFAULT order the screens are shown in. */
 export async function onboardingFunnel(
-  deps: EngineDeps, range: AdminRange & { days?: number } | number, includeTesters = false,
+  deps: EngineDeps, range: AdminRange & { days?: number } | number, includeTesters = false, filters: FunnelFilters = {},
 ): Promise<OnboardingFunnel> {
   const ask = adminRangeOf(range, 30, 365);
   // TESTERS out unless asked (ieat-app#2899): a TestFlight sandbox purchase is not a conversion.
-  const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds, includeTesters);
+  const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds, includeTesters, filters);
   // THE NEWEST REVISION IN ANY LANGUAGE, because the counter is one counter (`store.putOnboardingContent`) and
   // this row names which words the numbers below were collected against. Reading English's alone
   // would report a stale number on a host whose last edit was German.
@@ -468,6 +482,7 @@ export async function onboardingFunnel(
     range: adminWindowEcho(ask),
     contentVersion,
     rows,
+    dimensions: agg.dimensions,
   };
 }
 
@@ -800,7 +815,10 @@ export interface OnboardingExperimentView {
   arms: {
     variant: OnboardingVariant;
     stats: { assigned: number; sessions: number; completed: number; completed_users: number;
-             fell_back: number; rate: number | null; ci: { lo: number; hi: number } | null };
+             fell_back: number; rate: number | null; ci: { lo: number; hi: number } | null;
+             /** Assigned accounts holding a grant from at or after the assignment, and that over `assigned` (ieat-app#3196). */
+             paid: number; paid_rate: number | null;
+             by_surface: OnboardingExperimentFunnelRow["by_surface"] };
     /**
      * This arm's place funnel, in THIS arm's order (ieat-app#2788): its span (`order`, else the
      * default), then the fixed tail. Only runs that rendered this arm are counted — a run that fell
@@ -811,6 +829,8 @@ export interface OnboardingExperimentView {
     places: FunnelRow[];
   }[];
 }
+
+const noRuns = () => ({ sessions: 0, completed: 0, completed_users: 0, fell_back: 0 });
 
 /** An arm's places in its order: the span it walks, then the tail no arm moves. */
 function armPlaces(variant: OnboardingVariant): OnboardingPlace[] {
@@ -849,12 +869,16 @@ export async function onboardingExperiments(
             completed: row?.completed ?? 0, completed_users: row?.completed_users ?? 0,
             fell_back: row?.fell_back ?? 0,
             rate: null, ci: null,
+            paid: row?.paid ?? 0, paid_rate: null,
+            by_surface: row?.by_surface ?? { app: noRuns(), web: noRuns() },
           }
         : {
             assigned: row.assigned, sessions: row.sessions, completed: row.completed,
             completed_users: row.completed_users, fell_back: row.fell_back,
             rate: row.completed_users / row.assigned,
             ci: wilsonInterval(row.completed_users, row.assigned),
+            paid: row.paid, paid_rate: row.paid / row.assigned,
+            by_surface: row.by_surface,
           };
       const mine = new Map(placeRows.filter((r) => r.variant_id === variant.content.version).map((r) => [r.place, r]));
       const places: FunnelRow[] = armPlaces(variant).map((place) => {

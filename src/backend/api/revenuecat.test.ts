@@ -14,6 +14,7 @@ import type { Store } from "../store.ts";
 import type { EngineDeps } from "../engine/index.ts";
 import { createRouter } from "./routes.ts";
 import { fakePush } from "../push/fake.ts";
+import { fakeAnalytics } from "../analytics/fake.ts";
 import { logMail } from "../mail/log.ts";
 import {
   REVENUECAT_WEBHOOK_PATH, createRevenueCatWebhook, describeTransfer, parseRevenueCatEvent,
@@ -35,10 +36,12 @@ const base: Config = {
 
 let store: Store;
 let handle: (req: Request) => Promise<Response>;
+let sink: ReturnType<typeof fakeAnalytics>;
 
 function mount(config: Config) {
   store = memoryStore();
-  const deps: EngineDeps = { store, config, llm: demoPorts(), push: fakePush(), mail: logMail() };
+  sink = fakeAnalytics();
+  const deps: EngineDeps = { store, config, llm: demoPorts(), push: fakePush(), mail: logMail(), analytics: sink };
   handle = createRouter(deps, store, verifier);
 }
 
@@ -77,6 +80,45 @@ const purchase = (userId: string, over: Record<string, unknown> = {}) => ({
   expiration_at_ms: Date.now() + 30 * 24 * 60 * 60 * 1000,
   event_timestamp_ms: Date.now(),
   ...over,
+});
+
+describe("the subscription lifecycle reaches analytics (ieat-app#3196)", () => {
+  it("emits exactly one event per delivery, with the purchase's props and the account's context", async () => {
+    const { userId } = await account();
+    const delivery = purchase(userId, {
+      id: crypto.randomUUID(), period_type: "TRIAL", presented_offering_id: "default", price: 39.99,
+      price_in_purchased_currency: 36.99, currency: "EUR", store: "APP_STORE", country_code: "DE", environment: "PRODUCTION",
+    });
+    expect((await deliver(delivery)).status).toBe(200);
+    expect(sink.captured).toHaveLength(1);
+    const { event, userId: who, props } = sink.captured[0]!;
+    expect(event).toBe("subscription_initial_purchase");
+    expect(who).toBe(userId);
+    expect(props).toMatchObject({
+      product_id: "yearly", period_type: "TRIAL", presented_offering_id: "default", price_usd: 39.99, price: 36.99, currency: "EUR",
+      store: "APP_STORE", country_code: "DE", environment: "PRODUCTION", is_trial_conversion: null, cancel_reason: null,
+      surface: null, lang: "en",
+    });
+    // RevenueCat retries a delivery it is unsure of: the same event id is not a second event.
+    await deliver(delivery);
+    expect(sink.captured).toHaveLength(1);
+  });
+
+  it("names a refund and a trial conversion through their props", async () => {
+    const { userId } = await account();
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "RENEWAL", is_trial_conversion: true }));
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "CANCELLATION", cancel_reason: "CUSTOMER_SUPPORT" }));
+    expect(sink.captured.map((c) => [c.event, c.props.is_trial_conversion, c.props.cancel_reason])).toEqual([
+      ["subscription_renewal", true, null],
+      ["subscription_cancellation", null, "CUSTOMER_SUPPORT"],
+    ]);
+  });
+
+  it("sends nothing for a type the catalog does not list", async () => {
+    const { userId } = await account();
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "TEST" }));
+    expect(sink.captured).toHaveLength(0);
+  });
 });
 
 describe("the webhook's credential", () => {
@@ -165,6 +207,17 @@ describe("a delivery naming an account a sign-in merged away", () => {
     expect(lines.some((l) => l.includes(anon.userId) && l.includes(real.userId))).toBe(true);
     expect(lines.some((l) => l.includes("RENEWAL") || l.includes("yearly"))).toBe(false);
     expect((await profile(real.token)).entitlement.expiresAt).toBe(new Date(renewedTo).toISOString());
+  });
+
+  it("logs, attributes and tracks the delivery on the survivor (ieat-app#3196)", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+    const attrs = { $mediaSource: { value: "Apple Search Ads", updated_at_ms: 1 } };
+    await deliver(purchase(anon.userId, { id: "evt-merged", subscriber_attributes: attrs }));
+    expect((await store.revenueCatEventsOf(real.userId)).map((r) => r.id)).toEqual(["evt-merged"]);
+    expect((await store.acquisitionOf(real.userId))?.source).toBe("apple_search_ads");
+    expect(sink.captured.map((c) => c.userId)).toEqual([real.userId]);
   });
 
   it("grants the survivor a purchase that landed after the merge", async () => {
@@ -908,5 +961,124 @@ describe("the misconfiguration warning's quiet period", () => {
       }), d);
       expect(warn.mock.calls.flat().join(" ")).not.toContain("no entitlement this server knows");
     } finally { warn.mockRestore(); }
+  });
+});
+
+// ── The event log and acquisition (ieat-app#3196) ────────────────────────────────────────────
+describe("every delivery is logged", () => {
+  const attrs = {
+    $mediaSource: { value: "Apple Search Ads", updated_at_ms: 1 },
+    $campaign: { value: "Brand DE", updated_at_ms: 1 },
+    $adGroup: { value: "Exact", updated_at_ms: 1 },
+    $keyword: { value: "calorie counter", updated_at_ms: 1 },
+    $email: { value: "someone@example.com", updated_at_ms: 1 },
+  };
+
+  it("writes the purchase's facts and its acquisition attributes, once per event id", async () => {
+    const { userId } = await account();
+    const at = Date.parse("2026-11-19T10:00:00.000Z");
+    const e = purchase(userId, {
+      id: "evt-1", period_type: "TRIAL", presented_offering_id: "default", price: 0, currency: "EUR",
+      price_in_purchased_currency: 0, store: "APP_STORE", country_code: "DE", environment: "PRODUCTION",
+      event_timestamp_ms: at, subscriber_attributes: attrs,
+    });
+    expect((await deliver(e)).status).toBe(200);
+    expect(await deliver(e)).toBeTruthy();
+    expect(await store.revenueCatEventsOf(userId)).toEqual([{
+      id: "evt-1", userId, type: "INITIAL_PURCHASE", productId: "yearly", periodType: "TRIAL",
+      presentedOfferingId: "default", price: 0, currency: "EUR", priceInPurchasedCurrency: 0,
+      store: "APP_STORE", countryCode: "DE", environment: "PRODUCTION", eventAt: new Date(at).toISOString(),
+      acquisition: { source: "apple_search_ads", campaign: "Brand DE", adGroup: "Exact", keyword: "calorie counter" },
+    }]);
+    expect(await store.acquisitionOf(userId)).toEqual({
+      source: "apple_search_ads", campaign: "Brand DE", adGroup: "Exact", keyword: "calorie counter", via: "revenuecat",
+    });
+  });
+
+  it("logs an event the entitlement logic ignores, and leaves the entitlement exactly as before", async () => {
+    const { userId, token } = await account();
+    const res = await deliver(purchase(userId, { id: "evt-other", entitlement_ids: ["something_else"] }));
+    expect(await res.json()).toEqual({ ok: true, applied: false });
+    expect((await profile(token)).entitlement.active).toBe(false);
+    expect((await store.revenueCatEventsOf(userId)).map((r) => r.id)).toEqual(["evt-other"]);
+    expect(await store.acquisitionOf(userId)).toBeNull();
+  });
+
+  it("never replaces Apple's own AdServices answer with RevenueCat's", async () => {
+    const { userId } = await account();
+    const ads = { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" } as const;
+    await store.putAcquisition(userId, ads);
+    await deliver(purchase(userId, { id: "evt-2", subscriber_attributes: attrs }));
+    expect(await store.acquisitionOf(userId)).toEqual(ads);
+  });
+
+  it("still applies the entitlement when the log write fails, answers 200, and names the delivery in the log", async () => {
+    const { userId, token } = await account();
+    const spy = spyOn(store, "recordRevenueCatEvent").mockImplementation(async () => {
+      throw Object.assign(new Error("db down"), { name: "PostgresError", code: "57P01" });
+    });
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    const delivery = purchase(userId, { id: "evt-3" });
+    const res = await deliver(delivery);
+    expect(res.status).toBe(200);
+    expect((await profile(token)).entitlement.active).toBe(true);
+    expect(warn.mock.calls.map((c) => String(c[0]))).toContain(
+      "[eait] revenuecat: event log write failed, event evt-3 INITIAL_PURCHASE: PostgresError 57P01",
+    );
+    spy.mockRestore(); warn.mockRestore();
+  });
+});
+
+describe("a failed acquisition write (ieat-app#3196)", () => {
+  it("still tracks the event and answers 200, naming the delivery in the log", async () => {
+    const { userId } = await account();
+    const attrs = { $mediaSource: { value: "Apple Search Ads", updated_at_ms: 1 } };
+    const spy = spyOn(store, "putAcquisition").mockImplementation(async () => { throw new Error("db down"); });
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    const delivery = purchase(userId, { id: "evt-acq", subscriber_attributes: attrs });
+    expect((await deliver(delivery)).status).toBe(200);
+    expect(sink.captured.map((c) => c.event)).toEqual(["subscription_initial_purchase"]);
+    expect(warn.mock.calls.map((c) => String(c[0])).some((l) => l.includes("evt-acq"))).toBe(true);
+    spy.mockRestore(); warn.mockRestore();
+  });
+});
+
+describe("subscription event names (ieat-app#3196)", () => {
+  it("never doubles the prefix RevenueCat's own type already carries", async () => {
+    const { subscriptionEvent } = await import("../engine/acquisition.ts");
+    expect(subscriptionEvent("SUBSCRIPTION_PAUSED")).toBe("subscription_paused");
+    expect(subscriptionEvent("SUBSCRIPTION_EXTENDED")).toBe("subscription_extended");
+    expect(subscriptionEvent("RENEWAL")).toBe("subscription_renewal");
+  });
+
+  it("maps every documented RevenueCat type to a server event or an explicit ignore, and reaches every server event", async () => {
+    const { subscriptionEvent, UNTRACKED_REVENUECAT_TYPES } = await import("../engine/acquisition.ts");
+    const { ANALYTICS_EVENTS } = await import("@eait/shared");
+    const documented = [
+      "INITIAL_PURCHASE", "RENEWAL", "CANCELLATION", "UNCANCELLATION", "NON_RENEWING_PURCHASE", "SUBSCRIPTION_PAUSED",
+      "EXPIRATION", "BILLING_ISSUE", "PRODUCT_CHANGE", "TRANSFER", "SUBSCRIPTION_EXTENDED", "TEMPORARY_ENTITLEMENT_GRANT",
+      "REFUND_REVERSED", "INVOICE_ISSUANCE", "TEST",
+    ];
+    for (const type of documented) {
+      const event = subscriptionEvent(type);
+      if (event === null) expect(UNTRACKED_REVENUECAT_TYPES).toContain(type);
+      else expect(ANALYTICS_EVENTS[event]).toMatchObject({ server: true });
+    }
+    const reached = new Set<string | null>(documented.map(subscriptionEvent));
+    const server = Object.entries(ANALYTICS_EVENTS).filter(([, spec]) => "server" in spec).map(([name]) => name);
+    for (const name of server) expect(reached).toContain(name);
+    expect(subscriptionEvent("PURCHASE_COMPLETED")).toBeNull();
+  });
+
+  it("warns once about a type that maps to no catalog event", async () => {
+    const { userId } = await account();
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "SOMETHING_NEW" }));
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "SOMETHING_NEW" }));
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "TEST" }));
+    const lines = warn.mock.calls.map((c) => String(c[0])).filter((l) => l.includes("no analytics event"));
+    warn.mockRestore();
+    expect(lines).toEqual(["[eait] revenuecat: type SOMETHING_NEW maps to no analytics event"]);
+    expect(sink.captured).toHaveLength(0);
   });
 });

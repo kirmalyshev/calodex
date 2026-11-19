@@ -49,6 +49,7 @@ import {
   COPY, DAYS, MEAL, clear, dayPickerButton, dayText, el, findMeal, lang, names, profile,
   setRedraw, takeTurn, type Frame,
 } from "../shell.ts";
+import * as analytics from "../analytics.ts";
 
 // The screen the meal was opened from — Update closes back to it, where the row carries the progress.
 let cameFrom = "#/";
@@ -231,6 +232,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       closeOverlay();
       turn(async () => {
         await api(`${MEAL(meal.id)}`, { method: "DELETE" });
+        analytics.capture("meal_deleted", { result: "deleted" });
         closeToDiary();
       });
     });

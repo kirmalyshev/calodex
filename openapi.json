@@ -3384,6 +3384,99 @@
         ]
       }
     },
+    "/v1/attribution": {
+      "post": {
+        "operationId": "post_attribution",
+        "summary": "Send this install's Apple AdServices token. The server asks Apple and stores the answer on the account; the reply is only a status: resolved 200, pending 202 (send the same token again shortly), invalid 422, unavailable 503.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttributionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/v1/push/consent": {
       "get": {
         "operationId": "get_pushConsent",
@@ -4705,6 +4798,99 @@
           "many"
         ]
       },
+      "AnalyticsServerContext": {
+        "type": "object",
+        "properties": {
+          "content_version": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The onboarding copy revision this account was last served; before any serving, its arm's, else the live one."
+          },
+          "lang": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Lang"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "experiment_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "arm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The assigned variant's content version, as text — the id the admin's arms carry. With `experiment_id`, null unless the copy last served is that variant's."
+          },
+          "template": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The served templates, `key@version` comma-joined in slot order; on a funnel row, that row's own one. Null when none."
+          },
+          "acq_source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acq_campaign": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acq_adgroup": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acq_keyword": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referrer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The referral code this account joined with, or null."
+          }
+        },
+        "required": [
+          "content_version",
+          "lang",
+          "country",
+          "experiment_id",
+          "arm",
+          "template",
+          "acq_source",
+          "acq_campaign",
+          "acq_adgroup",
+          "acq_keyword",
+          "referrer"
+        ],
+        "additionalProperties": false
+      },
       "Answered": {
         "type": "object",
         "properties": {
@@ -4871,6 +5057,40 @@
         ],
         "additionalProperties": false,
         "description": "What `POST /v1/meals/:id/photos` answers: the meal, and how many photos it now holds.\n\n`photos` is the COUNT the server ended up with, not the number sent — the app renders the strip from it (`PhotoStrip`), and a client that added its own upload to its own stale count would draw a frame for a photo that is not there."
+      },
+      "AttributionRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "additionalProperties": false,
+        "description": "The app's Apple AdServices token (ieat-app#3196), from `AAAttribution.attributionToken()`. The server sends it to Apple and stores what Apple says on the caller's account; it is never logged and never stored. A bound, not a format: Apple's tokens are a few hundred characters."
+      },
+      "AttributionResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/AttributionStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "AttributionStatus": {
+        "type": "string",
+        "enum": [
+          "resolved",
+          "pending",
+          "invalid",
+          "unavailable"
+        ]
       },
       "AuthDeviceRequest": {
         "type": "object",
@@ -8711,6 +8931,30 @@
           "screens": {
             "$ref": "#/components/schemas/ServedScreens",
             "description": "The arm's template screens, one per slot whose local-hour window holds now (ieat-app#3167), absent for none. Sent only to a client that declared `?renderer=` at or above what the templates need. Strings are already in `lang`. A client that cannot validate a screen skips that slot and walks the compiled beat."
+          },
+          "experiment": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "arm": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "arm"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The experiment and arm this answer's copy is (ieat-app#3196), for the client's analytics super properties; null when it served the live flow, including an arm held but not drawable here."
           }
         },
         "required": [
@@ -8756,6 +9000,10 @@
           "at": {
             "type": "string",
             "description": "Client clock, ISO. The server stamps its own arrival time separately."
+          },
+          "template": {
+            "type": "string",
+            "description": "The served template this screen was drawn from, `key@version` (ieat-app#3196). Client-reported, because only the client knows which slot it rendered; it labels the row and gates nothing."
           }
         },
         "required": [
@@ -10566,6 +10814,17 @@
           "referral": {
             "$ref": "#/components/schemas/ReferralView",
             "description": "{@link  ReferralView }  — this account's link and what it has done (#899)."
+          },
+          "analytics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsServerContext"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the server knows for the analytics context (ieat-app#3196), registered as super properties by the app and the web alike. Labels events, gates nothing. Null when it could not be read: keep what was registered before rather than clearing it."
           }
         },
         "required": [
@@ -10587,7 +10846,8 @@
           "coachName",
           "hasLoggedMeal",
           "donate",
-          "referral"
+          "referral",
+          "analytics"
         ],
         "additionalProperties": false,
         "description": "Profile plus everything derived from it, so the app never recomputes targets locally."
