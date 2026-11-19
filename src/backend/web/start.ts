@@ -45,11 +45,12 @@ import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
-  onboardingContentFor, onboardingServedFor, mintPairingCode, patchProfile, profileView,
+  onboardingContentFor, onboardingServedFor, mintPairingCode, patchProfile, profileView, recordOnboardingEvents,
   sendEmailCode, signInWithProvider, switchOn, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
 } from "../engine/index.ts";
+import { analyticsRequestOf } from "../engine/analytics.ts";
 import { blankProfile, type Store } from "../store.ts";
 import { legalUrls } from "../brand.ts";
 import {
@@ -379,6 +380,23 @@ const BEAT_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
  * the front door renders its own, the rest are the steps after this walk ends (the plan, the streak
  * goal, sign-up — W3).
  */
+/**
+ * One funnel row from this surface (ieat-app#3196), through the engine function the app's
+ * `POST /v1/onboarding/events` calls, so the same sanitising and the same server-stamped context
+ * apply. The run is the session account: it is born with the first answer and a reinstall here is a
+ * new one. Best-effort — a lost row never fails a page.
+ */
+async function funnel(
+  deps: EngineDeps, req: Request, userId: string, content: OnboardingContent,
+  place: OnboardingPlace, action: "view" | "answer" | "complete", field?: string, value?: unknown,
+): Promise<void> {
+  const shown = Array.isArray(value) ? value.join(",") : value;
+  await recordOnboardingEvents(deps, userId, [{
+    id: crypto.randomUUID(), sessionId: userId, place, action, contentVersion: content.version, at: new Date().toISOString(),
+    ...(field ? { field, value: shown } : {}),
+  }], analyticsRequestOf(req.headers, "web")).catch((e: unknown) => console.error(`[eait] /start: funnel write failed: ${(e as Error | null)?.name ?? "error"}`));
+}
+
 function walkFor(profile: Profile, content: OnboardingContent, order?: readonly string[]): ChatPrompt[] {
   const off = disabledScreens(content);
   return promptsFor(profile, [...off, "country", "streak"], { health: false }, order)
@@ -1139,6 +1157,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const i = editable(url.searchParams.get("edit"));
       if (i === -1) return seeOther(askPath);
       const kg = walk[i]!.id === "target_weight_kg" ? profile.target_weight_kg ?? undefined : undefined;
+      if (userId !== null) await funnel(ctx.deps, req, userId, content, walk[i]!.place, "view");
       return askAt(i, null, [], kg);
     }
 
@@ -1160,6 +1179,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const following = walk[i + 1];
       const onward = following !== undefined && following.kind === "auto"
         ? `${askPath}${askPath.includes("?") ? "&" : "?"}show=${following.id}` : askPath;
+      if (userId !== null) await funnel(ctx.deps, req, userId, content, auto.place, "view");
       return html(interstitial(auto.place as Parameters<typeof interstitial>[0], profile, content, profile.lang, onward, backBefore(walk, i), order));
     }
 
@@ -1170,6 +1190,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const switched = url.searchParams.has("switched") && profile.goal !== null
         ? switchedLine(profile.goal, profile.lang, content.refusals)
         : null;
+      // No account yet means nobody to own the first question's view; its answer is the first row.
+      if (userId !== null) await funnel(ctx.deps, req, userId, content, walk[openIndex]!.place, "view");
       return ask(switched);
     }
 
@@ -1250,6 +1272,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
           ? { ...answer.patch, units: postedUnits } : answer.patch;
         const outcome = await patchProfile(ctx.deps, fresh, patch);
         if (outcome && !outcome.ok) return retry(refusalText(outcome.rejected, profile.lang));
+        await funnel(ctx.deps, req, fresh, content, open.place, "answer", open.field,
+          open.field === undefined ? undefined : (answer.patch as Record<string, unknown>)[open.field]);
         const token = await ctx.store.issueToken(fresh);
         return seeOther(`${START_PREFIX}/q`, [setCookie(SESSION_COOKIE, token, { secure })]);
       }
@@ -1346,6 +1370,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         return retry(refusalText(outcome.rejected, profile.lang), [], undefined,
           typeof sent === "number" ? [String(sent)] : undefined);
       }
+      await funnel(ctx.deps, req, userId, content, open.place, "answer", open.field,
+        open.field === undefined ? undefined : (answer.patch as Record<string, unknown>)[open.field]);
+      if (editIndex === -1 && at === lastField) await funnel(ctx.deps, req, userId, content, "summary", "complete");
       // The completing patch lands on the plan, which draws its own reveal — after the cards, if any.
       // What comes next is read from the walk the ANSWER produced (ieat-app#2979): an answer that
       // removes the questions after it (maintain drops target and pace; never-counted the barrier)

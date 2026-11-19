@@ -3530,3 +3530,20 @@ describe("a welcome that hides its lines (ieat-app#2756)", () => {
     expect(html.match(/class="qsub"/g)).toHaveLength(1);
   });
 });
+
+describe("the web funnel (ieat-app#3196)", () => {
+  it("records what the app records, stamped surface web, through the app's engine function", async () => {
+    const session = await answerAll(undefined, ANSWERS);
+    const userId = await webUser(session);
+    const [row] = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
+    const events = row!.events!;
+    expect(events.every((e) => e.context.surface === "web" && e.context.lang === "en")).toBe(true);
+    // The first answer creates the account, so it is the first row: there was nobody to own its view.
+    expect(events[0]).toMatchObject({ place: "goal", action: "answer", field: "goal", value: "lose" });
+    expect(events.filter((e) => e.action === "view").length).toBeGreaterThan(3);
+    // Numbers are answered, never valued — the engine's privacy rule holds on this surface too.
+    expect(events.find((e) => e.field === "weight_kg")).toMatchObject({ action: "answer", value: null });
+    expect(events.filter((e) => e.action === "complete")).toMatchObject([{ place: "summary" }]);
+    expect(new Set(events.map((e) => e.sessionId)).size).toBe(1);
+  });
+});
