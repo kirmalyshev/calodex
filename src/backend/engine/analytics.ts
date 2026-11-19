@@ -2,7 +2,7 @@
 // what the server knows about the account. Both are read here and nowhere else, so the funnel rows,
 // `ProfileResponse.analytics` and every client's super properties agree.
 import {
-  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
+  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, effectiveAcqSource, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
   TEMPLATE_SLOTS, usableContentFor, type AnalyticsContext, type AnalyticsServerContext, type AnalyticsSurface, type Lang,
   type OnboardingEventContext, type Profile,
 } from "@eait/shared";
@@ -89,8 +89,7 @@ async function readServerContext(deps: EngineDeps, userId: string, profile: Prof
     experiment_id: arm?.experimentId ?? null,
     arm: arm ? String(arm.variant.content.version) : null,
     template: servedTemplates(latest),
-    // A paid campaign outranks a referral; a referral outranks Apple's "organic".
-    acq_source: acq && acq.source !== "organic" ? acq.source : referrer !== null ? "referral" : acq?.source ?? null,
+    acq_source: effectiveAcqSource(acq?.source ?? null, referrer !== null),
     acq_campaign: acq?.campaign ?? null, acq_adgroup: acq?.adGroup ?? null, acq_keyword: acq?.keyword ?? null,
     referrer,
   };

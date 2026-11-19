@@ -5634,6 +5634,26 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect([...d.app_version].sort()).toEqual(d.app_version);
     });
 
+    it("counts a referred account Apple called organic under acq_source=referral (ieat-app#3196)", async () => {
+      const s = await open();
+      const v = `8.${RUN}`;
+      const friend = await s.createUser("en");
+      const plain = await s.createUser("en");
+      expect(await s.redeemReferral(friend, (await s.referralOf(await s.createUser("en")))!.code, 7)).toBe("ok");
+      const organic = { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" } as const;
+      await s.putAcquisition(friend, organic);
+      await s.putAcquisition(plain, organic);
+      const at = new Date().toISOString();
+      for (const u of [friend, plain]) {
+        await s.recordOnboardingEvents(u, [{ id: crypto.randomUUID(), sessionId: `acq-${u}`, place: "goal", action: "view", contentVersion: 1, at }] as never,
+          { surface: "app", app_version: v } as never);
+      }
+      const f = (acq_source: string) => s.onboardingFunnel({ from: null, to: null }, [], false, { app_version: v, acq_source });
+      expect((await f("referral")).sessions).toBe(1);
+      expect((await f("organic")).sessions).toBe(1);
+      expect((await f("referral")).dimensions.acq_source).toEqual(expect.arrayContaining(["organic", "referral"]));
+    });
+
     it("leaves a staff account's onboarding events out of the funnel (#2783)", async () => {
       const s = await open();
       const staff = await s.createUser("en");

@@ -4360,6 +4360,9 @@ export async function postgresStore(
       const { from: lo, to: hi } = range;
       const configStaff = uuidArray(staffIds);
       const eq = (v: string | undefined) => v ?? null;
+      // `effectiveAcqSource`, over `users u`.
+      const effectiveAcq = sql`(case when u.acq_source is not null and u.acq_source <> 'organic' then u.acq_source
+        when u.referred_by is not null then 'referral' else u.acq_source end)`;
       const narrow = sql`
         and (${eq(filters.surface) === null} or e.surface = ${eq(filters.surface)})
         and (${eq(filters.app_version) === null} or e.app_version = ${eq(filters.app_version)})
@@ -4368,7 +4371,7 @@ export async function postgresStore(
         and (${eq(filters.experiment_id) === null} or e.experiment_id = ${eq(filters.experiment_id)})
         and (${eq(filters.arm) === null} or e.arm = ${eq(filters.arm)})
         and (${eq(filters.acq_source) === null}
-             or exists (select 1 from users ua where ua.id = e.user_id and ua.acq_source = ${eq(filters.acq_source)}))`;
+             or exists (select 1 from users u where u.id = e.user_id and ${effectiveAcq} = ${eq(filters.acq_source)}))`;
       // Staff accounts (admin-flagged) are not users; their runs stay out (#2783).
 
       const totals = await sql`
@@ -4443,8 +4446,8 @@ export async function postgresStore(
         union select 'app_version', app_version, null from ev where app_version is not null
         union select 'lang', lang, null from ev where lang is not null
         union select 'country', country, null from ev where country is not null
-        union select 'acq_source', u.acq_source, null from users u
-          where u.acq_source is not null and u.id in (select user_id from ev)
+        union select 'acq_source', ${effectiveAcq}, null from users u
+          where ${effectiveAcq} is not null and u.id in (select user_id from ev)
         union select 'arm', arm, experiment_id from ev where arm is not null and experiment_id is not null`;
       const dimensions: FunnelDimensions = { surface: [], app_version: [], lang: [], country: [], acq_source: [], arm: [] };
       const armKeys: [string, { experiment_id: string; arm: string }][] = [];

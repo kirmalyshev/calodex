@@ -54,6 +54,14 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
 const _exact: Same<keyof AnalyticsContext, AnalyticsContextKey> = true;
 void _exact;
 
+/**
+ * The one `acq_source` rule: a paid campaign outranks a referral, a referral outranks Apple's
+ * "organic". Both stores' funnel filter and dimension compute the same in their own terms.
+ */
+export function effectiveAcqSource(acquired: string | null, referred: boolean): string | null {
+  return acquired !== null && acquired !== "organic" ? acquired : referred ? "referral" : acquired;
+}
+
 export type AnalyticsServerContext = Pick<AnalyticsContext, (typeof ANALYTICS_SERVER_KEYS)[number]>;
 
 /** The context columns on `onboarding_events`, stamped by the server at record time. */
