@@ -4,14 +4,12 @@
 
 import type { Lang } from "@eait/shared";
 import { brandSvg } from "@eait/shared/ui/icons";
-import { currentBrand, fill } from "@eait/shared";
+import { currentBrand } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
 
 export interface InviteView {
-  /** The link as it is read off a screen — no scheme — or null for a path that holds no code. */
-  shown: string | null;
   /** The full link, which "Get the iPhone app" copies for the app's paste. */
   link: string | null;
   /** The App Store listing with `ct=referral`, or null when this host names none. */
@@ -31,14 +29,11 @@ export function invite(v: InviteView): string {
   const app = v.appStore === null ? ""
     : ctaLink(v.appStore, c.inviteApp, "p", v.link ? ` data-copy="${escape(v.link)}"` : "");
   const web = v.start === null ? "" : ctaLink(v.start, c.inviteWeb, v.appStore === null ? "p" : "s");
-  const note = v.appStore !== null && v.shown
-    ? `<p class="note">${escape(fill(c.inviteCopied, { link: v.shown }))}</p>` : "";
   return shell(c.inviteTitle, `${wtop()}
 <div class="wmain one"><div class="wcol mid"><div class="ref">
 ${say([c.inviteHeading])}
 <p class="muted-sub">${escape(c.inviteLead)}</p>
 <div class="wctas">${app}${web}</div>
-${note}
 </div></div></div>
 `, v.lang, "ob");
 }

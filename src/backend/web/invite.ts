@@ -31,7 +31,6 @@ export async function inviteRoute(
   const store = deps.config.appStoreUrl;
   return html(invite({
     link,
-    shown: link?.replace(/^https?:\/\//, "") ?? null,
     appStore: store === "" ? null : `${store}${store.includes("?") ? "&" : "?"}ct=referral`,
     start: hasStart ? `${START_PREFIX}${code === null ? "" : `?ref=${code}`}` : null,
     lang: acceptLang(req.headers.get("accept-language")),
