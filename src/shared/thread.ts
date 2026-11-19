@@ -80,10 +80,10 @@ export function fromHistory(entries: ChatEntry[]): ThreadEntry[] {
 
 /**
  * What survives a reload of the thread from the server: a live proposal — not a meal until it is
- * confirmed, so the server has no card for it — and a bubble whose reply is still on its way. The
- * bubble that asked for a proposal is kept only while in flight: its words are on the server from
- * the moment they were said, but a page fetched before that write does not carry them (#3076). Everything else comes back inside it too; an error
- * bubble was a moment, and does not outlive the page. Deduplicated by id, so a page that overlaps
+ * confirmed, so the server has no card for it — and a user bubble still in flight. A bubble's
+ * words are on the server from the moment they were said, but a page fetched before that write
+ * does not carry them, so the bubble stays until a page's line with its id replaces it (#3076).
+ * Everything else comes back inside the page; an error bubble was a moment, and does not outlive it. Deduplicated by id, so a page that overlaps
  * what is on screen (two fetches racing) never shows a line twice.
  */
 export function mergeThread(page: ThreadEntry[], prev: ThreadEntry[], inflight: ReadonlySet<string>): ThreadEntry[] {

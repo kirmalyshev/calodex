@@ -232,6 +232,14 @@ export const isMeal = (r: { kind: string }): r is MealLogged | MealUpdated | Mea
  */
 export const isRefusal = (r: { kind: string }): r is Refusal => Object.hasOwn(REFUSAL_STATUS, r.kind);
 
+/**
+ * Whether a typed turn's words are kept as a thread line: not for a refusal, a `target-gone` or an
+ * empty answer. The server's `keep` and the client's in-flight bubble (`landed`, #3076) both read
+ * this, so a kind the server stops keeping cannot leave a bubble waiting for a line forever.
+ */
+export const keepsALine = (r: { kind: string; text?: unknown }): boolean =>
+  !(r.kind === "target-gone" || isRefusal(r) || (r.kind === "answered" && r.text === ""));
+
 /** Whose cap was reached. `unknown` is the honest answer for a scope that is absent or new. */
 export type CapScope = "address" | "global" | "user" | "unknown";
 

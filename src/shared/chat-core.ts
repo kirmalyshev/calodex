@@ -24,7 +24,7 @@ import { mayHaveSpentGrant } from "./entitlement.ts";
 import type { ChatEntry, ChatHistoryResponse, DeleteLineResponse, PendingMealsResponse, ProfileResponse } from "./contract.ts";
 import type { Lang } from "./types.ts";
 import { attemptOf } from "./outbox.ts";
-import { isRefusal } from "./results.ts";
+import { keepsALine } from "./results.ts";
 import type { ConfirmMealResult, HandleTextResult, MealLogged, MealProposed, RefusedTurn, TargetGone } from "./results.ts";
 import {
   fromHistory, keepsItsWords, landedLine, lastMealId, mealIdOf, oneLiveProposal, pendingIdOf, reconcilePage, livePendings,
@@ -659,11 +659,11 @@ export function createChatCore(deps: ChatCoreDeps): ChatCore {
     // what seats the reconcile's keep of the answer and its chips.
     // In flight until a page carries that line (#3076): a page fetched before the server wrote it
     // (a focus refresh still out, a reload that raced the write) would otherwise drop the words
-    // and leave a proposal drawn alone. Only where the server keeps a line (`text.ts`): for a
-    // refusal, `target-gone` or an empty answer no page ever would, and the words would stay forever.
+    // and leave a proposal drawn alone. Only where the server keeps a line (`keepsALine`); its
+    // write is best-effort, so a full thread or a failed append leaves these words on screen until
+    // the next launch, shown once.
     if (send !== undefined) {
-      const kept = !(result.kind === "target-gone" || isRefusal(result) || (result.kind === "answered" && result.text === ""));
-      if (kept) inflightIds.add(send.id);
+      if (keepsALine(result)) inflightIds.add(send.id);
       push({ id: send.id, role: "user", text: send.text });
     }
     if ("mealId" in result) focusMealId = result.date === deps.today() ? result.mealId : null;

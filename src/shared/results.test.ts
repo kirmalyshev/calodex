@@ -3,7 +3,7 @@
 // the hand-written list is what shipped one kind short and answered a 200 with a refusal inside it.
 
 import { describe, expect, it } from "bun:test";
-import { RATE_LIMITED, UNANSWERED, capScope, isRefusal, isServerAnswer, lostAt, outcomeUnknown, refusalFrom } from "./results.ts";
+import { RATE_LIMITED, UNANSWERED, capScope, isRefusal, isServerAnswer, keepsALine, lostAt, outcomeUnknown, refusalFrom } from "./results.ts";
 import { OUTCOME_UNKNOWN, REFUSAL_STATUS } from "./contract.ts";
 
 describe("RATE_LIMITED", () => {
@@ -119,5 +119,17 @@ describe("lostAt — #540", () => {
 
   it("is no body a server sends, so no answer it gave can be mistaken for it", () => {
     expect(isServerAnswer({ kind: UNANSWERED })).toBe(false);
+  });
+});
+
+// The server's `keep` and the app's in-flight bubble read the same answer (#3076).
+describe("keepsALine", () => {
+  it("keeps the words of a turn the server answered, and none of a refusal, a gone target or an empty answer", () => {
+    expect(keepsALine({ kind: "proposed" })).toBe(true);
+    expect(keepsALine({ kind: "answered", text: "About 40g." })).toBe(true);
+    for (const kind of ["target-gone", "cap-exceeded", "meal-changed", "not-food", "subscription-required"]) {
+      expect(keepsALine({ kind })).toBe(false);
+    }
+    expect(keepsALine({ kind: "answered", text: "" })).toBe(false);
   });
 });

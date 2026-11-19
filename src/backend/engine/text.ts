@@ -11,7 +11,7 @@ import {
   type HandleTextResult, type MealAnalysis, type MealProposed, type MealRecord, type MealRedated,
   type PhotoEvent, type Profile, explainTargets, streamCopyFor,
 } from "@eait/shared";
-import { TEXT_MODEL_CALLS, dateMinus, healthScore, isRefusal, localDate, scriptedLine, verdictInlineText, verdictLabels, windowStart } from "@eait/shared";
+import { TEXT_MODEL_CALLS, dateMinus, healthScore, keepsALine, localDate, scriptedLine, verdictInlineText, verdictLabels, windowStart } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import type { ChatAppend, ChatIntent, PendingMeal } from "../store.ts";
 import { normalizePromptText } from "../llm/prompt.ts";
@@ -448,9 +448,9 @@ async function keep(
   // A refusal never was a turn, and `meal-changed` is one: a correction that lost to another write
   // wrote nothing, so no line is kept. A correction whose meal is gone changed nothing either, and
   // the app says so in a notice that is not a line.
-  if (result.kind === "target-gone" || isRefusal(result)) return;
   // An answer that came back empty is no turn: a sentence with nothing in it is not kept.
-  if (result.kind === "answered" && result.text === "") return;
+  // `keepsALine` is shared: the app's in-flight bubble waits on exactly these lines (#3076).
+  if (!keepsALine(result)) return;
   await remember(deps, userId, async () => {
     // The words go in when they are said, so a turn taken while a proposal sits lands after them.
     // The MEAL is not written until confirmed; `confirmPendingMeal` keeps the card then.
