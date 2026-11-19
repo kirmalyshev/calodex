@@ -7,6 +7,7 @@
 // `offerMath` itself, which is why the math takes numbers rather than display strings.
 
 import { LANG_TAG } from "./lang.ts";
+import type { ProfileResponse } from "./contract.ts";
 import type { Lang } from "./types.ts";
 
 /**
@@ -118,4 +119,17 @@ export function offerMath(regularYearly: number, offer: number): OfferMath | nul
   const percentOff = Math.floor(((regularYearly - offer) / regularYearly) * 100);
   if (percentOff < 1) return null;
   return { percentOff, perMonth: perMonth(offer) };
+}
+
+/**
+ * The admin's arm for the decline → offer, per platform (ieat-app#3155), read off a profile
+ * answer's `exitOfferEnabled`. Present AND true means on — anything else is off, including a
+ * server that predates the field and sends none at all, which is why the parameter's own type
+ * lets the field be absent rather than asking every caller to cast an old answer into a new one.
+ */
+export function exitOfferOn(
+  profile: { exitOfferEnabled?: ProfileResponse["exitOfferEnabled"] } | null | undefined,
+  platform: "ios" | "web",
+): boolean {
+  return profile?.exitOfferEnabled?.[platform] === true;
 }

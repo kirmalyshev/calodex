@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { offerMath, paywallPercent, paywallPrice, perMonth } from "./paywall.ts";
+import { exitOfferOn, offerMath, paywallPercent, paywallPrice, perMonth } from "./paywall.ts";
 
 // The one arithmetic the web paywall (#96) and the native one (#928) share: the exit offer's
 // percent off and its per-month equivalent, derived from the two prices that were actually
@@ -51,6 +51,28 @@ describe("paywallPrice", () => {
     expect(paywallPrice(39.99, "EUR", "en")).toBe("€39.99");
     expect(paywallPrice(39.99, "EUR", "de")).toBe("39,99 €");
     expect(paywallPrice(39.99, "USD", "en")).toBe("$39.99");
+  });
+});
+
+// ieat-app#3155: the admin arms the decline → offer per platform and the flag travels on
+// `ProfileResponse.exitOfferEnabled`. The read is the subtle part — a server that predates the
+// field sends NO `exitOfferEnabled` at all, and absent must answer the same as off.
+describe("exitOfferOn", () => {
+  it("answers the platform's flag, one arm per platform", () => {
+    const p = { exitOfferEnabled: { ios: true, web: false } };
+    expect(exitOfferOn(p, "ios")).toBe(true);
+    expect(exitOfferOn(p, "web")).toBe(false);
+    expect(exitOfferOn({ exitOfferEnabled: { ios: false, web: true } }, "web")).toBe(true);
+  });
+
+  it("answers false where the field is absent — an older server arms nothing", () => {
+    expect(exitOfferOn({}, "ios")).toBe(false);
+    expect(exitOfferOn(null, "ios")).toBe(false);
+    expect(exitOfferOn(undefined, "web")).toBe(false);
+  });
+
+  it("answers false off the flag alone — a present false, never merely truthy", () => {
+    expect(exitOfferOn({ exitOfferEnabled: { ios: false, web: false } }, "ios")).toBe(false);
   });
 });
 
