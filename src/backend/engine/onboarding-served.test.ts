@@ -160,7 +160,7 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     expect(byId.r3!.served!.at).toBe(at(20));
   });
 
-  it("prefers a serving before the run to one just after it, and reaches past it only by the drift", async () => {
+  it("reaches past the run by the drift only when nothing precedes it, and calls a different serving on both sides ambiguous", async () => {
     const base = Date.parse("2026-11-19T10:00:00Z");
     const at = (min: number) => new Date(base + min * 60_000).toISOString();
     let clock = base;
@@ -182,7 +182,8 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
       event("far", "welcome", "view", 9, { at: at(37) }),
     ] as never);
     const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
-    expect(byId.before!.lang).toBe("en");
+    // en before it and de within the drift after it: either could be this run's — not recorded, not a pick.
+    expect(byId.before!.served).toBeNull();
     expect(byId.behind!.served!.at).toBe(at(31));
     expect(byId.far!.served).toBeNull();
   });
@@ -298,6 +299,69 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     expect(byId.de!.experiment).toEqual({ id: de.id, arm: "variant 2", fellBack: true });
     // No serving recorded: two arms, no language to choose by — nothing.
     expect(byId.none!.experiment).toBeNull();
+  });
+
+  // ── Round 4 ──
+  const clocked = () => {
+    const base = Date.parse("2026-11-19T10:00:00Z");
+    const at = (min: number) => new Date(base + min * 60_000).toISOString();
+    const c = { now: base };
+    store = memoryStore({ now: () => c.now });
+    deps = { ...deps, store };
+    return { at, set: (min: number) => { c.now = Date.parse(at(min)); } };
+  };
+
+  it("names a control arm at the live version only inside its assignment's window", async () => {
+    const { at, set } = clocked();
+    userId = await store.createUser("en");
+    const L = 61;
+    const e = armOf("en", L, L + 1, { status: "stopped", started_at: at(-60), stopped_at: at(20) });
+    await store.putOnboardingExperiment(e as never);
+    set(0); await store.putOnboardingAssignment(userId, e.id, L);
+    await store.recordOnboardingEvents(userId, [
+      event("pre", "welcome", "view", L, { at: at(-10) }),
+      event("in", "welcome", "view", L, { at: at(5) }),
+      event("post", "welcome", "view", L, { at: at(30) }),
+    ] as never);
+    const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
+    expect(byId.pre!.experiment).toBeNull();
+    expect(byId.in!.experiment).toEqual({ id: e.id, arm: "control", fellBack: false });
+    expect(byId.post!.experiment).toBeNull();
+  });
+
+  it("picks between two controls at the live version by whose window holds the run, and neither when both do", async () => {
+    const { at, set } = clocked();
+    userId = await store.createUser("en");
+    const L = 61;
+    const one = armOf("en", L, 62, { status: "stopped", started_at: at(-60), stopped_at: at(20) });
+    const two = armOf("en", L, 63, { started_at: at(-60) });
+    for (const e of [one, two]) await store.putOnboardingExperiment(e as never);
+    set(0); await store.putOnboardingAssignment(userId, one.id, L);
+    set(5); await store.putOnboardingAssignment(userId, two.id, L);
+    await store.recordOnboardingEvents(userId, [
+      event("one", "welcome", "view", L, { at: at(2) }),
+      event("both", "welcome", "view", L, { at: at(10) }),
+      event("two", "welcome", "view", L, { at: at(30) }),
+    ] as never);
+    const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
+    expect(byId.one!.experiment).toEqual({ id: one.id, arm: "control", fellBack: false });
+    expect(byId.both!.experiment).toBeNull();
+    expect(byId.two!.experiment).toEqual({ id: two.id, arm: "control", fellBack: false });
+  });
+
+  it("matches across the drift when the servings on both sides are the same serving", async () => {
+    const { at, set } = clocked();
+    userId = await store.createUser("en");
+    const serve = (v: number, min: number) => {
+      set(min);
+      return store.recordOnboardingServed(userId, { contentVersion: v, lang: "en", surface: "app", screens: { baseline: { template: "a", version: 1 } } });
+    };
+    await serve(8, 30);
+    await serve(9, 35);
+    await serve(8, 41);
+    await store.recordOnboardingEvents(userId, [event("same", "welcome", "view", 8, { at: at(40) })] as never);
+    const [run] = await runs();
+    expect(run!.served!.at).toBe(at(30));
   });
 });
 

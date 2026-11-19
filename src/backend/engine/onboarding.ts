@@ -616,7 +616,9 @@ export interface AdminOnboardingRun {
   contentVersion: number;
   /**
    * The account's arm: `arm` is the experiments table's label, "control" or "variant N" (1-based).
-   * `fellBack`: the account holds that arm but this run showed another version. Null: no experiment.
+   * Only an arm held at the time of the run counts: from `assigned_at` (client-clock drift allowed)
+   * to the experiment's `stopped_at`. `fellBack`: the account held that arm then, but this run
+   * showed another version. Null: no experiment, or two held arms at this version (ambiguous).
    */
   experiment: { id: string; arm: string; fellBack: boolean } | null;
   lang: Lang | null;
@@ -651,13 +653,18 @@ export async function onboardingRuns(deps: EngineDeps, userId: string, events: A
   for (const first of firsts.values()) {
     const v = first.contentVersion;
     const rec = servedFor(served, v, first.at);
-    // The arm this run showed; else the one arm the account held AT THE TIME (the window the experiment
-    // funnel counts: from the assignment, drift allowed, to the stop), in the served language when known: it fell back.
-    const exact = held.find((h) => h.e.variants[h.i]!.content.version === v);
+    // Only the arms the account held AT THE TIME of the run count: from the assignment to the
+    // experiment's stop. Unlike the experiment funnel's strict `e.at >= assigned_at`, the start
+    // allows the client-clock drift, since a run's first event is stamped by the phone.
     const t = Date.parse(first.at);
-    const others = held.filter((h) => (rec === null || h.e.lang === rec.lang)
-      && h.assignedAt <= t + SERVED_DRIFT_MS && (h.e.stopped_at === null || t <= Date.parse(h.e.stopped_at)));
-    const hit = exact ?? (others.length === 1 ? others[0]! : null);
+    const live = held.filter((h) => h.assignedAt <= t + SERVED_DRIFT_MS
+      && (h.e.stopped_at === null || t <= Date.parse(h.e.stopped_at)));
+    // The arm this run showed (two at one version — controls cloning the same live copy — is
+    // ambiguous: none); else the one arm held, in the served language when known: it fell back.
+    const exacts = live.filter((h) => h.e.variants[h.i]!.content.version === v);
+    const exact = exacts.length === 1 ? exacts[0]! : null;
+    const others = live.filter((h) => rec === null || h.e.lang === rec.lang);
+    const hit = exacts.length > 0 ? exact : others.length === 1 ? others[0]! : null;
     const experiment = hit ? { id: hit.e.id, arm: armLabel(hit.e, hit.i), fellBack: hit !== exact } : null;
     const places = new Set(events.filter((e) => e.sessionId === first.sessionId).map((e) => e.place));
     runs.push({
@@ -669,13 +676,24 @@ export async function onboardingRuns(deps: EngineDeps, userId: string, events: A
   return runs;
 }
 
-/** The latest serving of `v` at or before `at`; else the earliest within the drift after it; else null. */
+/** Key order is not part of a serving (jsonb compares the same way). */
+const servingKey = (r: OnboardingServed) => JSON.stringify([r.contentVersion, r.lang, r.surface,
+  Object.entries(r.screens).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, s]) => [k, s!.template, s!.version])]);
+
+/**
+ * The latest serving of `v` at or before `at`; else the earliest within the drift after it; else
+ * null. A DIFFERENT serving on each side of `at` (within the drift) is ambiguous — either could be
+ * this run's — so null too; the same serving on both sides is not.
+ */
 function servedFor(rows: OnboardingServedRecord[], v: number, at: string): OnboardingServedRecord | null {
   const t = Date.parse(at);
   const same = rows.filter((r) => r.contentVersion === v);
   const before = same.filter((r) => Date.parse(r.servedAt) <= t);
-  if (before.length > 0) return before.reduce((m, r) => (r.servedAt >= m.servedAt ? r : m));
-  const after = same.filter((r) => Date.parse(r.servedAt) <= t + SERVED_DRIFT_MS);
+  const after = same.filter((r) => Date.parse(r.servedAt) > t && Date.parse(r.servedAt) <= t + SERVED_DRIFT_MS);
+  if (before.length > 0) {
+    const pick = before.reduce((m, r) => (r.servedAt >= m.servedAt ? r : m));
+    return after.some((r) => servingKey(r) !== servingKey(pick)) ? null : pick;
+  }
   return after.length > 0 ? after.reduce((m, r) => (r.servedAt < m.servedAt ? r : m)) : null;
 }
 
