@@ -51,6 +51,7 @@ const VARS = [
   "EAIT__BACKEND__MAIL_PROVIDER", "EAIT__BACKEND__RESEND_API_KEY", "EAIT__BACKEND__MAIL_FROM",
   "EAIT__BACKEND__EMAIL_CODES_PER_HOUR", "EAIT__BACKEND__EMAIL_CODES_PER_DAY",
   "EAIT__BACKEND__STORE_REVIEW_EMAIL", "EAIT__BACKEND__STORE_REVIEW_CODE",
+  "EAIT__BACKEND__POSTHOG_KEY", "EAIT__BACKEND__POSTHOG_HOST",
 ] as const;
 
 /** A syntactically real PKCS#8 PEM. Nothing here signs with it — `web-oauth.test.ts` does that. */
@@ -899,5 +900,19 @@ describe("the sign-in mailer fails closed, and switches email sign-in off rather
   it("refuses a provider it does not know", () => {
     withRequired({ EAIT__BACKEND__MAIL_PROVIDER: "smtp" });
     expect(() => loadConfig()).toThrow(/must be resend, log or off/);
+  });
+});
+
+describe("server-side analytics (ieat-app#3196)", () => {
+  beforeEach(clear);
+  afterEach(clear);
+
+  it("is unset by default, reads both variables, and never prints the key", () => {
+    withRequired();
+    expect(loadConfig()).toMatchObject({ posthogKey: "", posthogHost: "" });
+    withRequired({ EAIT__BACKEND__POSTHOG_KEY: " phc_not_real ", EAIT__BACKEND__POSTHOG_HOST: "https://eu.i.posthog.com" });
+    const c = loadConfig();
+    expect(c).toMatchObject({ posthogKey: "phc_not_real", posthogHost: "https://eu.i.posthog.com" });
+    expect(JSON.stringify(redact(c))).not.toContain("phc_not_real");
   });
 });

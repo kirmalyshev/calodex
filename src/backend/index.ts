@@ -21,6 +21,7 @@ import { isAgentProvider, localAgentPorts, probeAgentCli } from "./llm/local-age
 import { choosePush } from "./push/choose.ts";
 import { chooseMail } from "./mail/choose.ts";
 import { appleAdServices } from "./adservices.ts";
+import { posthogAnalytics } from "./analytics/posthog.ts";
 import { openRouterPorts } from "./llm/openrouter.ts";
 import { loadPrompts } from "./llm/prompt.ts";
 import { collectPushReceipts, drainJobs, mealSlotTick, pushTick, runCampaigns, startJobs, pruneAgedHealthDays, type EngineDeps } from "./engine/index.ts";
@@ -186,6 +187,8 @@ const deps: EngineDeps = {
   mail,
   // A --demo server never reaches Apple: attributeInstall answers unavailable there.
   ...(demo ? {} : { adServices: appleAdServices() }),
+  // Server analytics: off unless the key and the host are both set, and never from a --demo server.
+  ...(() => { const analytics = demo ? undefined : posthogAnalytics(config); return analytics ? { analytics } : {}; })(),
   llm: cannedLlm
     ? demoPorts()
     : isAgentProvider(config.llmProvider)

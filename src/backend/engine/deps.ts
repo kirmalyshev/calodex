@@ -10,6 +10,7 @@ import type { LlmPorts } from "../llm/port.ts";
 import type { MailPort } from "../mail/port.ts";
 import type { PushPort } from "../push/port.ts";
 import type { AdServicesPort } from "../adservices.ts";
+import type { AnalyticsPort } from "../analytics/posthog.ts";
 
 export interface EngineDeps {
   store: Store;
@@ -34,4 +35,9 @@ export interface EngineDeps {
    * process wires the real one in `index.ts`.
    */
   adServices?: AdServicesPort;
+  /**
+   * The server-side analytics sink (ieat-app#3196). OPTIONAL like `adServices`: absent, `track`
+   * sends nothing. `index.ts` wires PostHog only when its key and host are both configured.
+   */
+  analytics?: AnalyticsPort;
 }

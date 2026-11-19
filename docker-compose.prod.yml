@@ -184,6 +184,9 @@ services:
       EAIT__BACKEND__FOODDB_URL: ${EAIT__BACKEND__FOODDB_URL:-https://food-api.eait.fit}
       EAIT__BACKEND__FOODDB_TIMEOUT_MS: ${EAIT__BACKEND__FOODDB_TIMEOUT_MS:-4000}
       EAIT__BACKEND__FOODDB_MISS_TTL_MS: ${EAIT__BACKEND__FOODDB_MISS_TTL_MS:-60000}
+      # Server analytics (ieat-app#3196): off unless both are set.
+      EAIT__BACKEND__POSTHOG_KEY: ${EAIT__BACKEND__POSTHOG_KEY:-}
+      EAIT__BACKEND__POSTHOG_HOST: ${EAIT__BACKEND__POSTHOG_HOST:-}
 
       # The sign-in code's transport (#569). `log` prints the code instead of sending — fine for a
       # local run, and a boot that refuses only once somebody asks for `resend` without the key.
