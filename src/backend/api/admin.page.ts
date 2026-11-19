@@ -2703,7 +2703,8 @@ details.how p { margin-top: 8px; }
       var head = ["Run " + (i + 1), atLabel(s.events[0].at)];
       if (Number.isInteger(ver)) head.push("content v" + ver);
       if (run) {
-        head.push(run.experiment ? "exp " + String(run.experiment.id).slice(0, 8) + " · " + run.experiment.arm : "no experiment");
+        head.push(run.experiment ? "exp " + String(run.experiment.id).slice(0, 8) + " · " + run.experiment.arm
+          + (run.experiment.fellBack ? " · fell back (saw v" + ver + ")" : "") : "no experiment");
         head.push(run.lang || "language not recorded");
         head.push(run.served ? run.served.surface : "surface not recorded");
       }
@@ -2739,7 +2740,7 @@ details.how p { margin-top: 8px; }
         if (e.action === "view") seen[e.place] = true;
         if (!finished && j === s.events.length - 1) acts.appendChild(el("span", "chip b", "left here"));
         var tpl = run && run.served && run.served.screens ? run.served.screens[e.place] : null;
-        if (tpl) acts.appendChild(el("span", "chip n", "template " + tpl.template + "@" + tpl.version));
+        if (tpl) acts.appendChild(el("span", "chip n", "template " + tpl.template + "@v" + tpl.version));
         line.appendChild(acts);
         line.appendChild(el("span", "fl-t", e.ms !== null ? Math.round(e.ms / 1000) + "s" : ""));
         // The words as served, once per place, as TEXT: the strings are stored, never markup.

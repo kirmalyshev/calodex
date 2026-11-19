@@ -65,7 +65,7 @@ const JOURNAL = {
   // ieat-app#3194: the run as served. The welcome copy carries markup on purpose — it must read as text.
   runs: [{
     sessionId: "sess-aaaa-1", contentVersion: 7,
-    experiment: { id: "abcd1234-0000-0000-0000-000000000000", arm: "variant 2" }, lang: "de",
+    experiment: { id: "abcd1234-0000-0000-0000-000000000000", arm: "variant 2", fellBack: false }, lang: "de",
     served: { at: "2026-11-08T09:59:58.000Z", surface: "app", screens: { baseline: { template: "evening-beat", version: 3 } } },
     copy: { welcome: "Hallo <b>du</b>\n[Los]", baseline: "So geht es\n[Weiter]" },
   }],
@@ -81,7 +81,7 @@ const QUIT_JOURNAL = {
   ],
   runs: [
     { sessionId: "q-1", contentVersion: 4, experiment: null, lang: null, served: null, copy: null },
-    { sessionId: "q-2", contentVersion: 5, experiment: null, lang: "de", served: { at: "2026-11-07T09:59:00.000Z", surface: "app", screens: {} }, copy: null },
+    { sessionId: "q-2", contentVersion: 5, experiment: { id: "99990000-0000-0000-0000-000000000000", arm: "variant 2", fellBack: true }, lang: "de", served: { at: "2026-11-07T09:59:00.000Z", surface: "app", screens: {} }, copy: null },
   ],
 };
 
@@ -157,7 +157,7 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   // ieat-app#3194: the run header names the arm, language and surface; the template beat says so;
   // the copy as served opens on demand and is text, never markup.
   await expect(flow.locator(".fl-h")).toContainText("content v7 · exp abcd1234 · variant 2 · de · app");
-  await expect(flow.locator(".chip", { hasText: "template evening-beat@3" })).toHaveCount(1);
+  await expect(flow.locator(".chip", { hasText: "template evening-beat@v3" })).toHaveCount(1);
   const welcome = flow.locator(".fl-copy").first();
   await expect(welcome.locator("pre")).toBeHidden();
   await welcome.locator("summary").click();
@@ -169,7 +169,7 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   const lost = page.locator(".fa-open").filter({ hasText: "Run 2" });
   await expect(lost.locator(".fl-h").first()).toContainText("content v4 · no experiment · language not recorded · surface not recorded");
   await expect(lost.locator(".fl-note").first()).toHaveText("copy not recorded");
-  await expect(lost.locator(".fl-h").nth(1)).toContainText("content v5 · no experiment · de · app");
+  await expect(lost.locator(".fl-h").nth(1)).toContainText("content v5 · exp 99990000 · variant 2 · fell back (saw v5) · de · app");
   await expect(lost.locator(".fl-note").nth(1)).toHaveText("copy for v5 not kept");
   await expect(lost.locator(".fl-copy")).toHaveCount(0);
   await page.locator("#funnel-users .fa-row", { hasText: "99999999" }).click();
