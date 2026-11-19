@@ -55,8 +55,11 @@ const lines = (sink?: (id: string, body: string) => void): string[] => {
   return out;
 };
 
-test("copy under the default brand is unchanged", () => {
-  const now = lines().join("\n") + "\n";
+test("copy under the eait brand is unchanged", () => {
+  const was0 = shared.currentBrand();
+  shared.setBrandSource(() => shared.BRANDS.eait);
+  let now: string;
+  try { now = lines().join("\n") + "\n"; } finally { shared.setBrandSource(() => was0); }
   expect(flagged, "accessors whose probe threw").toBe(0);
   if (process.env.UPDATE_GOLDEN === "1") { writeFileSync(FILE, now); return; }
   expect(existsSync(FILE), "brand.golden.txt is missing; UPDATE_GOLDEN=1 writes it").toBe(true);
@@ -66,10 +69,10 @@ test("copy under the default brand is unchanged", () => {
   expect(now.split("\n").length).toBe(was.length);
 });
 
-test("a probe brand leaves no default name in the copy it serves", () => {
+test("a probe brand leaves no eait in the copy it serves", () => {
   const probe = { app: "probe" as never, name: "Zapex", storeName: "Zapex", domain: "zz.example", mailFrom: "Zapex <x@zz.example>" } as const;
   shared.setBrandSource(() => probe);
   const left: string[] = [];
-  try { lines((id, body) => { if (body.includes("eait") || /d'Zapex|qu'Zapex|Zapexs|\{(app_name|domain|d_app_name|qu_app_name|app_name_s|az|Az|app_name_tel|nouvel)\}/.test(body)) left.push(id); }); } finally { shared.setBrandSource(() => shared.BRANDS.eait); }
+  try { lines((id, body) => { if (body.includes("eait") || /d'Zapex|qu'Zapex|Zapexs|\{(app_name|domain|d_app_name|qu_app_name|app_name_s|az|Az|app_name_tel|nouvel)\}/.test(body)) left.push(id); }); } finally { shared.setBrandSource(() => shared.BRANDS[shared.DEFAULT_APP]); }
   expect(left).toEqual([]);
 });

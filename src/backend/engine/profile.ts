@@ -25,6 +25,7 @@ import { dailyPhotoCap, entitlementFor } from "./entitlement.ts";
 import { referralView } from "./referral.ts";
 import { MAX_WINDOW_DAYS } from "./diary.ts";
 import { unpaidRefused } from "./caps.ts";
+import { legalUrls } from "../brand.ts";
 
 /**
  * The limits THIS server enforces, so the client stops guessing at them.
@@ -103,8 +104,8 @@ function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed:
     },
     // The footer's links — the same two the `/start` pages already render, sent so the app's pay
     // surfaces never carry a second copy of where they point.
-    termsUrl: deps.config.termsUrl,
-    privacyUrl: deps.config.landingUrl === "" ? "" : `${deps.config.landingUrl}/privacy`,
+    termsUrl: legalUrls(deps.config).terms,
+    privacyUrl: legalUrls(deps.config).privacy,
   };
 }
 

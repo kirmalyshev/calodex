@@ -2,6 +2,7 @@
 // paid period, and the third grant both of them make — which every reader of "paid" must count.
 
 import { beforeEach, describe, expect, it } from "bun:test";
+import { installBrandSource, withBrand } from "../brand.ts";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { logMail } from "../mail/log.ts";
@@ -361,6 +362,13 @@ describe("the profile's referral card", () => {
     mount({}, { landingUrl: "", publicWebUrl: "https://app.example" });
     const me = await account();
     expect((await profileView(deps, me))!.referral.link).toBe(`https://app.example/r/${await codeOf(me)}`);
+  });
+
+  // ieat-app#3154: a request naming a brand other than the default links that brand's own domain.
+  it("links another brand's own domain", async () => {
+    installBrandSource();
+    const me = await account();
+    expect((await withBrand("eait", () => profileView(deps, me)))!.referral.link).toBe(`https://eait.fit/r/${await codeOf(me)}`);
   });
 });
 

@@ -3,7 +3,7 @@
 // `web/ob-referral{,-applied,-invalid,-own,-used}.html`.
 
 import type { Lang } from "@eait/shared";
-import { fill } from "@eait/shared";
+import { currentBrand, fill } from "@eait/shared";
 import { spudSvg } from "@eait/shared/mascot";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
@@ -62,7 +62,7 @@ export function referralStep(v: ReferralStepView): string {
     : `<p class="${v.notice.ok ? "note" : "notice"}" role="${v.notice.ok ? "status" : "alert"}">${escape(v.notice.text)}</p>`;
   const form = v.done ? `<div class="wctas">${ctaLink(v.next, c.continueLabel)}</div>` : `
 <form method="post" action="${escape(v.action)}">
-  <input type="text" name="code" value="${escape(v.value)}" placeholder="eait.fit/r/…" aria-label="${escape(c.referralField)}" autocomplete="off" autocapitalize="characters" spellcheck="false">
+  <input type="text" name="code" value="${escape(v.value)}" placeholder="${escape(currentBrand().domain)}/r/…" aria-label="${escape(c.referralField)}" autocomplete="off" autocapitalize="characters" spellcheck="false">
   ${notice}
   <div class="wctas"><button class="cta w" type="submit">${escape(v.notice ? c.referralTryAgain : c.continueLabel)}</button><a class="skiplink" href="${escape(v.next)}">${escape(c.referralSkip)}</a></div>
 </form>`;

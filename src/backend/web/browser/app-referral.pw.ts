@@ -15,7 +15,7 @@ test("the card shares the account's link and counts the share when the sheet fin
   await card.getByRole("button", { name: "Share link" }).click();
   expect((await counted).postDataJSON()).toEqual({ via: "web-share" });
   const shared = await page.evaluate("window.shared") as { text: string }[];
-  expect(shared[0]!.text).toMatch(/^A week of eait free: \S+\/r\/[A-HJ-NP-Z2-9]{6}$/);
+  expect(shared[0]!.text).toMatch(/^A week of Calodex free: \S+\/r\/[A-HJ-NP-Z2-9]{6}$/);
 });
 
 test("without a share sheet it copies the link instead, and says so", async ({ inWebApp: page, context }) => {
@@ -77,7 +77,7 @@ test("while the bonus keeps the account in, the card says until when", async ({ 
     body.entitlement.active = true;
     body.entitlement.bonusUntil = until.toISOString();
   });
-  await expect(page.getByLabel("Refer a friend")).toContainText(`eait is yours until ${bonusDate("en", String(p.timezone))}.`);
+  await expect(page.getByLabel("Refer a friend")).toContainText(`Calodex is yours until ${bonusDate("en", String(p.timezone))}.`);
 });
 
 // German writes its short month with a full stop ("12. Okt."): the sentence's own full stop is
@@ -89,7 +89,7 @@ test("a date that ends in a full stop ends the sentence once", async ({ inWebApp
     body.entitlement.bonusUntil = until.toISOString();
   });
   const card = page.getByLabel(/Freunde einladen|Refer a friend/);
-  await expect(card).toContainText(`eait gehört dir bis ${bonusDate("de", String(p.timezone))}.`);
+  await expect(card).toContainText(`Calodex gehört dir bis ${bonusDate("de", String(p.timezone))}.`);
   await expect(card).not.toContainText("..");
 });
 

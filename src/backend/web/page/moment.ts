@@ -6,7 +6,7 @@
 import {
   bmi, BMI_AXIS, BMI_SEGMENTS, bmiRange, bmiRangeLabel, chatCopyFor, explainTargets, fill, kcalNumbers, numbers,
 } from "@eait/shared";
-import type { Lang, OnboardingContent, Profile } from "@eait/shared";
+import { currentBrand, type Lang, type OnboardingContent, type Profile } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -93,5 +93,5 @@ ${inner}
 ${ctaLink(continueHref, content.ui.continueLabel)}
 </div>
 </div></div>`;
-  return shell("eait", body, lang, "ob");
+  return shell(currentBrand().name, body, lang, "ob");
 }

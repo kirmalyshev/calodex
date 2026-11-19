@@ -69,7 +69,7 @@ describe("CHAT_SCREEN_COPY", () => {
     expect(en.proposalDecline).toBe("No");
     expect(en.loadFailed).toBe("Couldn't load the conversation.");
     expect(en.tryAgain).toBe("Try again");
-    expect(en.offlineTitle).toBe("Couldn't reach eait.");
+    expect(en.offlineTitle).toBe("Couldn't reach Calodex.");
     expect(en.offlineBody).toBe("Nothing was logged.");
     expect(en.sendAgain).toBe("Send again");
     expect(en.waitingToSend).toBe("Waiting to send");

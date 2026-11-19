@@ -1808,3 +1808,10 @@ describe("the referrals view", () => {
     expect(ADMIN_PAGE).toContain('id="view-referrals"');
   });
 });
+
+// ieat-app#3154: the admin names the product by the brand table, not the old literal.
+it("the admin page's title and header name the brand", () => {
+  const page = adminPage("n");
+  expect(page).toContain("<title>Calodex — onboarding admin</title>");
+  expect(page).not.toMatch(/>\s*eait\b|"eait admin|<title>eait/);
+});

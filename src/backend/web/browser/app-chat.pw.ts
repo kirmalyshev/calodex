@@ -250,7 +250,7 @@ test("dropping a proposal the server no longer holds is what was asked, and says
 
 test("a turn whose answer never arrived keeps the photo and offers Send again", async ({ inWebApp: page }) => {
   // The connection went with the turn still running: the server may have logged it. Since #708 the
-  // page keeps the photo — dimmed, under Spud's "Couldn't reach eait." with the resend beside it.
+  // page keeps the photo — dimmed, under Spud's "Couldn't reach Calodex." with the resend beside it.
   await page.route("**/api/v1/meals/photo", (r) => r.abort("connectionreset"));
   await page.locator('input[type="file"]').setInputFiles(FIXTURE);
   await page.getByRole("button", { name: "Send the photo" }).click();

@@ -16,7 +16,7 @@ test("a friend's link: invite page, the walk, the step prefilled, applied", asyn
   const code = String(me.referral.link).slice(-6);
 
   await page.goto(`/r/${code}`);
-  await expect(page.getByText("A friend sent you a week of eait")).toBeVisible();
+  await expect(page.getByText("A friend sent you a week of Calodex")).toBeVisible();
   await page.getByRole("link", { name: "Start on the web" }).click();
   await page.getByRole("link", { name: "Get started", exact: true }).click();
   await onboard(page);

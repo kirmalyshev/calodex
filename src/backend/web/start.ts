@@ -51,6 +51,7 @@ import {
   type EngineDeps,
 } from "../engine/index.ts";
 import { blankProfile, type Store } from "../store.ts";
+import { legalUrls } from "../brand.ts";
 import {
   // NOT `PAGE_COPY`. It is the English alias, and every use here is shadowed by a local
   // `pageCopyFor(lang)` — so importing it buys nothing and costs a silent English render the
@@ -751,8 +752,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       error: url.searchParams.get("error") === "terms" ? signupCopyFor(lang).errorTerms
         : url.searchParams.has("error") ? PAGE_COPY.errorSignIn
         : null,
-      termsHref: config.termsUrl === "" ? null : config.termsUrl,
-      privacyHref: config.landingUrl === "" ? null : `${config.landingUrl}/privacy`,
+      termsHref: legalUrls(config).terms || null,
+      privacyHref: legalUrls(config).privacy || null,
       fromPlan: profile !== null,
       signup: profile === null ? null : (await onboardingContentFor(ctx.deps, userId, webSignals(lang, req))).signup,
       lang,
@@ -1802,8 +1803,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       headline: offerHeadline(profile, new Date(), profile.lang)
         ?? pageCopyFor(profile.lang).offerTitleElse,
       checkoutUrl: `${START_PREFIX}/checkout`,
-      privacyHref: config.landingUrl === "" ? null : `${config.landingUrl}/privacy`,
-      termsHref: config.termsUrl === "" ? null : config.termsUrl,
+      privacyHref: legalUrls(config).privacy || null,
+      termsHref: legalUrls(config).terms || null,
       // The note under the CTA is the one the checked radio names — the trial promise rides BOTH
       // plans now (ieat-app#1591), `{renewal}` already priced on each plan's own cadence.
       noteYearly: w.yearlyCheckoutUrl === "" ? ""

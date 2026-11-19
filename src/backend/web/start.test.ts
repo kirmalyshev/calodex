@@ -230,7 +230,7 @@ async function signIn(
  * so this works with none handed in and hands back the one it made.
  */
 async function answerAll(
-  session: string | undefined, answers: Record<string, string | string[]>,
+  session: string | undefined, answers: Record<string, string | string[]>, seen?: string[],
 ): Promise<string> {
   let cookie = session;
   // Follow the redirect like a browser: a POST can name a `?show=` card, and the `?asked=` marks
@@ -245,6 +245,7 @@ async function answerAll(
       return cookie;
     }
     const html = await page.text();
+    seen?.push(html);
     const id = html.match(/name="prompt" value="([a-z_]+)"/)?.[1];
     if (!id) {
       // An interstitial (`?show=baseline` / `?show=prelim`): its Continue is a link, not a form.
@@ -3413,6 +3414,25 @@ describe("refer a friend", () => {
     expect(page).toContain(PAGE_COPY.inviteWeb);
     expect((await get("/r/not-a-code", undefined, SAFARI)).status).toBe(404);
     expect(await opens()).toBe(0);
+  });
+
+  // ieat-app#3154: a browser sends no brand header, so every page is the default brand's, and no
+  // page may restate the old name in its words, its title or a placeholder.
+  it("names no eait anywhere a person reads it, on any page of the walk", async () => {
+    const readable = (html: string): string =>
+      html.replace(/<style\b[\s\S]*?<\/style[^>]*>|<script\b[\s\S]*?<\/script[^>]*>|<!--[\s\S]*?--!?>|<svg\b[\s\S]*?<\/svg[^>]*>/gi, " ")
+        .replace(/<[^>]*?\b(?:placeholder|aria-label|alt|title|value)="([^"]*)"[^>]*>/g, " $1 ")
+        .replace(/<[^>]+>/g, " ");
+    const code = await codeOf(await store.createUser("en"));
+    const pages: string[] = [await (await get("/start")).text(), await (await get(`/r/${code}`, undefined, SAFARI)).text()];
+    const session = await answerAll(undefined, ANSWERS, pages);
+    const signed = await signIn("brand-walk", "google", undefined, session);
+    pages.push(await (await get("/start/country", signed)).text());
+    await post("/start/country", { answer: "de" }, signed);
+    pages.push(await (await get("/start/referral", signed)).text());
+    expect(pages.length).toBeGreaterThan(6);
+    const left = pages.map(readable).flatMap((t) => t.match(/.{0,40}\beait\b.{0,40}/gi) ?? []);
+    expect(left).toEqual([]);
   });
 
   it("carries ?ref= through the walk to the step after the country, and applies it there", async () => {
