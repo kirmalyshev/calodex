@@ -3384,6 +3384,99 @@
         ]
       }
     },
+    "/v1/attribution": {
+      "post": {
+        "operationId": "post_attribution",
+        "summary": "Send this install's Apple AdServices token. The server asks Apple and stores the answer on the account; the reply is only a status: resolved 200, pending 202 (send the same token again shortly), invalid 422, unavailable 503.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttributionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/v1/push/consent": {
       "get": {
         "operationId": "get_pushConsent",
@@ -4871,6 +4964,40 @@
         ],
         "additionalProperties": false,
         "description": "What `POST /v1/meals/:id/photos` answers: the meal, and how many photos it now holds.\n\n`photos` is the COUNT the server ended up with, not the number sent — the app renders the strip from it (`PhotoStrip`), and a client that added its own upload to its own stale count would draw a frame for a photo that is not there."
+      },
+      "AttributionRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "additionalProperties": false,
+        "description": "The app's Apple AdServices token (ieat-app#3196), from `AAAttribution.attributionToken()`. The server sends it to Apple and stores what Apple says on the caller's account; it is never logged and never stored. A bound, not a format: Apple's tokens are a few hundred characters."
+      },
+      "AttributionResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/AttributionStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "AttributionStatus": {
+        "type": "string",
+        "enum": [
+          "resolved",
+          "pending",
+          "invalid",
+          "unavailable"
+        ]
       },
       "AuthDeviceRequest": {
         "type": "object",

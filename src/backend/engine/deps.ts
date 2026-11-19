@@ -9,6 +9,7 @@ import type { Store } from "../store.ts";
 import type { LlmPorts } from "../llm/port.ts";
 import type { MailPort } from "../mail/port.ts";
 import type { PushPort } from "../push/port.ts";
+import type { AdServicesPort } from "../adservices.ts";
 
 export interface EngineDeps {
   store: Store;
@@ -27,4 +28,10 @@ export interface EngineDeps {
    * and `--demo` get the `log` implementation, which prints the code instead of delivering it.
    */
   mail: MailPort;
+  /**
+   * Apple's AdServices attribution API (ieat-app#3196). OPTIONAL so the many test deps need not
+   * name it; absent, `attributeInstall` answers `unavailable` and nothing reaches Apple. The
+   * process wires the real one in `index.ts`.
+   */
+  adServices?: AdServicesPort;
 }

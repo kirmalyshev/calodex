@@ -10,7 +10,7 @@ export {
   type AdminUser, type AdminUserSummary, type AdminUsers, type ApplyOutcome, type RevenueCatEvent,
   type RevenueCatTransfer, type UserCap,
 } from "./entitlement.ts";
-export { logRevenueCatEvent } from "./acquisition.ts";
+export { attributeInstall, logRevenueCatEvent } from "./acquisition.ts";
 export {
   logPhotoMeal, logFoodMeal, logNumbersMeal, editMeal, applyCorrection, attachPhotos, changeLine, confirmPendingMeal, cancelPendingMeal, pendingMeals, reanalyzeMeal, redateMeal, focusMeal, logSavedMeal, saveMealFromLog, sumTotals,
   toAnalysis, type LogPhotoInput,
