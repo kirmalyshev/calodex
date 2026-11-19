@@ -20,7 +20,7 @@ import type {
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel, ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -30,7 +30,7 @@ import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
-  type AdminOnboardingAccount, type AdminOnboardingEvent,
+  type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto,
@@ -1124,6 +1124,20 @@ create table if not exists onboarding_events (
   at              timestamptz not null,
   received_at     timestamptz not null default now()
 );
+-- What the server stamped at record time (ieat-app#3196): the request's binary, the account's
+-- language and country, the arm it held. Null on rows from before, and wherever nothing was known.
+alter table onboarding_events
+  add column if not exists surface       text,
+  add column if not exists brand         text,
+  add column if not exists app_version   text,
+  add column if not exists build         text,
+  add column if not exists ota_update_id text,
+  add column if not exists channel       text,
+  add column if not exists lang          text,
+  add column if not exists country       text,
+  add column if not exists experiment_id text,
+  add column if not exists arm           text,
+  add column if not exists template      text;
 create index if not exists onboarding_events_received_idx on onboarding_events(received_at);
 create index if not exists onboarding_events_session_idx on onboarding_events(session_id);
 create index if not exists onboarding_events_user_idx on onboarding_events(user_id);
@@ -4055,8 +4069,9 @@ export async function postgresStore(
       return written;
     },
 
-    async recordOnboardingEvents(userId, events) {
+    async recordOnboardingEvents(userId, events, context) {
       if (events.length === 0) return 0;
+      const c = { ...NO_EVENT_CONTEXT, ...context };
       let added = 0;
       // One statement per event rather than a multi-row insert. The batches are small (the app
       // flushes a screen at a time) and `do nothing` per row means one duplicate does not discard
@@ -4064,9 +4079,12 @@ export async function postgresStore(
       for (const e of events) {
         const rows = await sql`
           insert into onboarding_events
-            (id, user_id, session_id, place, action, content_version, ms, field, value, at, received_at)
+            (id, user_id, session_id, place, action, content_version, ms, field, value, at, received_at,
+             surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template)
           values (${e.id}, ${userId}, ${e.sessionId}, ${e.place}, ${e.action}, ${e.contentVersion},
-                  ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at}, ${new Date(now())})
+                  ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at}, ${new Date(now())},
+                  ${c.surface}, ${c.brand}, ${c.app_version}, ${c.build}, ${c.ota_update_id}, ${c.channel},
+                  ${c.lang}, ${c.country}, ${c.experiment_id}, ${c.arm}, ${c.template})
           on conflict (id) do nothing
           returning id`;
         if (rows.length > 0) added++;
@@ -4272,7 +4290,8 @@ export async function postgresStore(
            group by u.id`;
         if (summary.length === 0) return { rows: [], nextCursor: null };
         const events = await sql`
-          select session_id, place, action, content_version, ms, field, value, at
+          select session_id, place, action, content_version, ms, field, value, at,
+                 surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template
             from onboarding_events
            where user_id = ${userId}
              and (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
@@ -4284,6 +4303,7 @@ export async function postgresStore(
             field: (r.field as string | null) ?? null, value: (r.value as string | null) ?? null,
             contentVersion: num(r.content_version),
             at: iso(r.at)!,
+            context: Object.fromEntries(ONBOARDING_EVENT_CONTEXT_KEYS.map((k) => [k, r[k] ?? null])) as NullableEventContext,
           })))],
           nextCursor: null,
         };

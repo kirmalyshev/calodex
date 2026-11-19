@@ -203,6 +203,41 @@ describe("events", () => {
   });
 });
 
+describe("the context stamped on events (ieat-app#3196)", () => {
+  const request = { surface: "app" as const, brand: "eait" as const, app_version: "1.4.2", build: "187", ota_update_id: null, channel: "appstore" as const };
+  const stored = async () =>
+    (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows[0]!.events!.map((e) => e.context);
+
+  it("comes from the request, the account and its held arm — never from the event body", async () => {
+    const content = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    content.version = 42;
+    const id = crypto.randomUUID();
+    await store.putOnboardingExperiment({
+      id, lang: "en", status: "draft", rules: {}, created_by: userId, created_at: new Date().toISOString(),
+      started_at: null, stopped_at: null, revision: 1,
+      variants: [{ control: true, weight: 0, content: structuredClone(DEFAULT_ONBOARDING_CONTENT) }, { weight: 1, content }],
+    } as never);
+    await store.startOnboardingExperiment(id);
+    await store.setSwitch("onboarding.experiments", true, userId);
+    await store.putOnboardingAssignment(userId, id, 42);
+    await store.patchProfile(userId, { country: "de" });
+
+    await recordOnboardingEvents(deps, userId, [event({
+      surface: "web", brand: "calodex", lang: "fr", country: "us", experiment_id: "forged", arm: "1", template: "x@1",
+      context: { experiment_id: "forged" },
+    })], request);
+
+    expect(await stored()).toEqual([{
+      ...request, lang: "en", country: "de", experiment_id: id, arm: "42", template: null,
+    }]);
+  });
+
+  it("names no arm while the experiments switch is off", async () => {
+    await recordOnboardingEvents(deps, userId, [event()], request);
+    expect(await stored()).toEqual([{ ...request, lang: "en", country: null, experiment_id: null, arm: null, template: null }]);
+  });
+});
+
 describe("the funnel", () => {
   beforeEach(async () => {
     const at = new Date().toISOString();

@@ -23,11 +23,11 @@ import { type ChatMessage,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
-  type AdminOnboardingAccount, type AdminOnboardingEvent,
+  type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
 } from "./store.ts";
 
 /** A stored funnel event: what the client sent, plus who and when we received it. */
-type StoredEvent = OnboardingEvent & { userId: string; receivedAt: number };
+type StoredEvent = OnboardingEvent & { userId: string; receivedAt: number; context: NullableEventContext };
 
 /** The middle value, or the mean of the two middles. Null for an empty sample. */
 /** A saved row as the port returns it: without the account key the store keeps. */
@@ -1819,13 +1819,13 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return written;
     },
 
-    async recordOnboardingEvents(userId, events) {
+    async recordOnboardingEvents(userId, events, context) {
       let added = 0;
       for (const e of events) {
         // Keyed on the CLIENT's id, so a retried batch overwrites nothing and adds nothing. The
         // Postgres implementation gets the same behaviour from a primary key.
         if (onboardingEvents.has(e.id)) continue;
-        onboardingEvents.set(e.id, { ...clone(e), userId, receivedAt: now() });
+        onboardingEvents.set(e.id, { ...clone(e), userId, receivedAt: now(), context: { ...NO_EVENT_CONTEXT, ...context } });
         added++;
       }
       return added;
@@ -1889,6 +1889,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           sessionId: e.sessionId, place: e.place, action: e.action,
           ms: typeof e.ms === "number" ? e.ms : null,
           field: e.field ?? null, value: e.value ?? null, contentVersion: e.contentVersion, at: e.at,
+          context: { ...e.context },
         });
         return { rows: [{ ...toAccount(userId, evs), events: evs.map(toEvent) }], nextCursor: null };
       }

@@ -20,6 +20,7 @@ import type { ServedScreens } from "@eait/shared";
 import { rendererNeeded, screensStartErrors, servedScreens } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
+import { onboardingEventContext, type AnalyticsRequest } from "./analytics.ts";
 import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 import { referralBonusOf } from "./entitlement.ts";
@@ -332,6 +333,7 @@ export async function recordOnboardingEvents(
   deps: EngineDeps,
   userId: string,
   events: unknown,
+  request?: AnalyticsRequest,
 ): Promise<number> {
   if (!Array.isArray(events)) return 0;
 
@@ -369,7 +371,10 @@ export async function recordOnboardingEvents(
   }
 
   if (clean.length === 0) return 0;
-  return deps.store.recordOnboardingEvents(userId, clean);
+  // The context is the SERVER's to stamp (ieat-app#3196): the request's headers, the account's row
+  // and its held arm. Whatever context-shaped keys an event carried were never read above.
+  const context = request ? await onboardingEventContext(deps, userId, request) : undefined;
+  return deps.store.recordOnboardingEvents(userId, clean, context);
 }
 
 /**

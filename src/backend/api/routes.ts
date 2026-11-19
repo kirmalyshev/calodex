@@ -45,6 +45,7 @@ import {
   reanalyzeMeal, redateMeal, focusMeal, logSavedMeal, saveMealFromLog, followPhotoJob, listJobs, photoJob, queuePhoto, queueMealUpdate, removePhotoJob,
   foodSearch, productByBarcode, redeemReferral, shareReferral,
 } from "../engine/index.ts";
+import { analyticsRequestOf } from "../engine/analytics.ts";
 import { adminRoutes } from "./admin.ts";
 import { webProviders, type WebProvider, type WebSignInProvider } from "../auth/web-oauth.ts";
 import { isStartPath, startRoutes } from "../web/start.ts";
@@ -863,7 +864,7 @@ export function createRouter(
       // forever and a funnel that is missing exactly the users on bad connections.
       if (req.method === "POST" && pathname === ROUTES.onboardingEvents) {
         const body = await req.json() as OnboardingEventsRequest;
-        const accepted = await recordOnboardingEvents(deps, userId, body?.events);
+        const accepted = await recordOnboardingEvents(deps, userId, body?.events, analyticsRequestOf(req.headers, "app"));
         return json({ accepted } satisfies OnboardingEventsResponse);
       }
 

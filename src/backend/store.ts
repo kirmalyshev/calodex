@@ -16,10 +16,11 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
 import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
+import { ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 
 /**
  * The turn's cutoff, when a call is part of one — carried as async context because adding it to
@@ -632,7 +633,16 @@ export interface AdminOnboardingEvent {
   contentVersion: number;
   /** Client clock, ISO — when the screen was seen, not when the batch arrived. */
   at: string;
+  /** What the server stamped at record time (ieat-app#3196); every key null on a row from before. */
+  context: NullableEventContext;
 }
+
+/** `OnboardingEventContext` as a row holds it: a row recorded before the columns has none. */
+export type NullableEventContext = { [K in keyof OnboardingEventContext]: OnboardingEventContext[K] | null };
+
+export const NO_EVENT_CONTEXT: NullableEventContext = Object.fromEntries(
+  ONBOARDING_EVENT_CONTEXT_KEYS.map((k) => [k, null]),
+) as NullableEventContext;
 
 /**
  * One account's onboarding flow as the admin's per-account funnel lists it (#812).
@@ -1745,7 +1755,7 @@ export interface Store {
    * Idempotent on `event.id` because the app retries a batch it could not confirm, and a funnel
    * that double-counts a bad connection reports its best numbers for its worst users.
    */
-  recordOnboardingEvents(userId: string, events: OnboardingEvent[]): Promise<number>;
+  recordOnboardingEvents(userId: string, events: OnboardingEvent[], context?: OnboardingEventContext): Promise<number>;
   /** The funnel inside `range` (#2776), aggregated. Reads every user except staff-flagged ones (#2783) — this is the admin's view.
    * `staffIds` are accounts staff by config (`campaignStaffIds`), left out beside the flag.
    * TESTERS (`isTester`) are left out too unless `includeTesters` (ieat-app#2899). */

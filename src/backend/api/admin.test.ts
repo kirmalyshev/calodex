@@ -538,6 +538,23 @@ describe("the app's onboarding routes", () => {
     expect(await (await send([e])).json()).toEqual({ accepted: 0 });
   });
 
+  it("stamps each event with the binary's headers, as surface app (ieat-app#3196)", async () => {
+    const token = await session();
+    await handle(new Request(url(ROUTES.onboardingEvents), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json", authorization: `Bearer ${token}`,
+        "x-eait-app": "eait", "x-eait-channel": "testflight", "x-eait-version": "1.4.2", "x-eait-build": "187", "x-eait-update": "upd-1",
+      },
+      body: JSON.stringify({ events: [{ id: "ctx1", sessionId: "s", place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString() }] }),
+    }));
+    const userId = await store.userIdForToken(token);
+    const [row] = (await store.adminOnboardingFlow({ userId: userId!, range: { from: null, to: null } })).rows;
+    expect(row!.events![0]!.context).toMatchObject({
+      surface: "app", brand: "eait", channel: "testflight", app_version: "1.4.2", build: "187", ota_update_id: "upd-1",
+    });
+  });
+
   it("does not 400 on a malformed batch", async () => {
     // Forgiving on purpose. A rejected batch is an app that retries forever, and the funnel then
     // has a hole exactly where the users on bad connections were.
