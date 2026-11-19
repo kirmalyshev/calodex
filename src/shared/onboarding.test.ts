@@ -871,11 +871,14 @@ describe("resolving the country, and deciding whether to ask", () => {
   });
 
   it("preselects the country a device region already names", () => {
-    // ieat-app#3145: pt-BR is the second-largest onboarding cohort and Croatian is in the funnel,
-    // and both resolved to `other` while the list lacked their countries — the question asked and
-    // offered them nowhere. A curated region answers the question outright.
+    // ieat-app#3145: pt-BR is the second-largest onboarding cohort, and Brazil resolved to `other`
+    // while the list lacked it — the question asked and offered them nowhere. The fix is every
+    // shipped language's home, and a curated region answers the question outright.
     expect(resolveCountry({ regions: ["BR"] })).toEqual({ country: "br", ask: false });
     expect(resolveCountry({ regions: ["HR"] })).toEqual({ country: "hr", ask: false });
+    expect(resolveCountry({ regions: ["JP"] })).toEqual({ country: "jp", ask: false });
+    expect(resolveCountry({ regions: ["IN"] })).toEqual({ country: "in", ask: false });
+    expect(resolveCountry({ regions: ["TW"] })).toEqual({ country: "tw", ask: false });
     // The tag's region half is a region like any other: "pt-BR" seeds Brazil, still as a hint.
     expect(resolveCountry({ languages: ["pt-BR"] })).toEqual({ country: "br", ask: true });
     expect(resolveCountry({ languages: ["hr"] })).toEqual({ country: "hr", ask: true });
@@ -888,6 +891,17 @@ describe("resolving the country, and deciding whether to ask", () => {
     expect(resolveCountry({ regions: ["AR"], languages: ["vi"] })).toEqual({ country: "vn", ask: true });
     // A tag carries its own region, and that half is a region like any other.
     expect(resolveCountry({ languages: ["ru-RU"] })).toEqual({ country: "ru", ask: true });
+    expect(resolveCountry({ languages: ["pt-PT"] })).toEqual({ country: "pt", ask: true });
+    // A script subtag names the market a bare language cannot: "zh-Hans" is China, "zh-Hant" is
+    // Taiwan, where a bare "zh" is the same coin flip "en" is.
+    expect(resolveCountry({ languages: ["zh-Hans"] })).toEqual({ country: "cn", ask: true });
+    expect(resolveCountry({ languages: ["zh-Hant"] })).toEqual({ country: "tw", ask: true });
+    expect(resolveCountry({ languages: ["zh"] })).toEqual({ country: "other", ask: true });
+    // A region the list does not cover is not a script: "es-SV" is El Salvador, not Sweden —
+    // only a four-letter subtag carries one.
+    expect(resolveCountry({ languages: ["es-SV"] })).toEqual({ country: "other", ask: true });
+    expect(resolveCountry({ languages: ["es-PA"] })).toEqual({ country: "other", ask: true });
+    expect(resolveCountry({ languages: ["en-UK"] })).toEqual({ country: "other", ask: true });
     // English cannot tell gb from us, so it suggests neither — and Spanish is the same shape now
     // that Spain and Mexico are both curated. A coin flip offered first is not a suggestion.
     expect(resolveCountry({ languages: ["en"] })).toEqual({ country: "other", ask: true });
@@ -928,7 +942,9 @@ describe("resolving the country, and deciding whether to ask", () => {
 describe("the suggested answer, offered first", () => {
   it("moves the suggestion to the front and keeps everything else in order", () => {
     expect(suggestionFirst(COUNTRY_CODES, "us")).toEqual([
-      "us", "at", "au", "br", "ca", "ch", "de", "es", "fr", "gb", "hr", "id", "it", "mx", "ru", "vn", "other",
+      "us", "at", "au", "bd", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr",
+      "hr", "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "se",
+      "si", "sk", "th", "tr", "tw", "ua", "vn", "other",
     ]);
     // On the list the reader actually sees, which is sorted by name and not by code.
     expect(suggestionFirst(countryOptions("de"), "vn")[0]).toBe("vn");
@@ -953,8 +969,9 @@ describe("the countries this app curates", () => {
   // somebody where they shop and offering them nowhere is worse than not asking.
 
   /**
-   * Where a speaker of each language is most likely to be standing — or `other`, the honest
-   * answer when the language's market is one the list has not tuned for yet.
+   * Where a speaker of each language is most likely to be standing. Every entry is a curated
+   * market, never `other` — the list's job is that no shipped language's home is a place it has
+   * not tuned for (#3145's second wave: the same defect as pt-BR, for every cohort at once).
    *
    * The expectation lives HERE rather than in `onboarding.ts` because it is the specification:
    * the list may grow past it and must never shrink below it. Adding a language to `LANGS` with
@@ -962,10 +979,10 @@ describe("the countries this app curates", () => {
    */
   const HOME: Record<(typeof LANGS)[number], CountryCode> = {
     en: "gb", fr: "fr", de: "de", it: "it", es: "es", vi: "vn", id: "id", ru: "ru",
-    "pt-BR": "br", ja: "other", ko: "other", "zh-Hans": "other", "zh-Hant": "other", tr: "other", pl: "other", nl: "other",
-    uk: "other", sv: "other", th: "other", hi: "other", cs: "other", ro: "other", el: "other", hu: "other",
-    da: "other", fi: "other", no: "other", sk: "other", hr: "hr", sl: "other", ca: "es", ms: "other", "pt-PT": "other",
-    bn: "other", gu: "other", kn: "other", ml: "other", mr: "other", or: "other", pa: "other", ta: "other", te: "other",
+    "pt-BR": "br", ja: "jp", ko: "kr", "zh-Hans": "cn", "zh-Hant": "tw", tr: "tr", pl: "pl", nl: "nl",
+    uk: "ua", sv: "se", th: "th", hi: "in", cs: "cz", ro: "ro", el: "gr", hu: "hu",
+    da: "dk", fi: "fi", no: "no", sk: "sk", hr: "hr", sl: "si", ca: "es", ms: "my", "pt-PT": "pt",
+    bn: "bd", gu: "in", kn: "in", ml: "in", mr: "in", or: "in", pa: "in", ta: "in", te: "in",
   };
 
   it("offers a country to every language the app speaks", () => {
@@ -979,7 +996,8 @@ describe("the countries this app curates", () => {
     // The language→country hint and the HOME spec above are two views of the same judgement:
     // `resolveCountry` on the language tag alone must answer exactly the home HOME names. `en`
     // and `es` are exempt on purpose — gb/us and es/mx are real splits, and a coin flip pinned
-    // to the top is a wrong answer half the time, offered first.
+    // to the top is a wrong answer half the time, offered first. Tags that carry their own
+    // market ("pt-PT", "zh-Hans") resolve it on the way through, so even they are covered.
     for (const lang of LANGS) {
       if (lang === "en" || lang === "es") continue;
       const { country } = resolveCountry({ languages: [lang.toLowerCase()] });
