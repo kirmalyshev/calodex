@@ -633,6 +633,7 @@ details.how p { margin-top: 8px; }
       <div class="akpi" id="funnel-kpi"></div>
     <p class="muted" id="funnel-scope"></p>
     <label class="muted"><input type="checkbox" id="funnel-testers"> Include testers (TestFlight, dev, sandbox)</label>
+    <p class="muted" id="funnel-dims"></p>
     <div class="card" id="funnel-path"></div>
     <p class="muted">Between steps: people who reached the step above and never reached the next. Red marks the three biggest drops.</p>
     <div class="card fa" id="funnel-users"></div>
@@ -2369,10 +2370,43 @@ details.how p { margin-top: 8px; }
   var ACTION_WORDS = { view: "viewed", answer: "answered", back: "went back", reject: "declined", complete: "answered the questions", leave: "left" };
 
   // TestFlight, dev and sandbox accounts are left out of the funnel unless this is ticked (ieat-app#2899).
+  var FUNNEL_DIMS = [["surface", "surface"], ["app_version", "version"], ["lang", "language"],
+    ["country", "country"], ["acq_source", "source"], ["arm", "arm"]];
   function funnelQuery() {
     var q = rangeQS();
     if ($("funnel-testers").checked) q += (q ? "&" : "") + "testers=1";
+    FUNNEL_DIMS.forEach(function (d) {
+      var sel = $("funnel-dim-" + d[0]);
+      if (sel && sel.value) q += (q ? "&" : "") + (d[0] === "arm" ? sel.value : d[0] + "=" + sel.value);
+    });
     return q ? "?" + q : "";
+  }
+  function funnelDims(dims) {
+    var host = $("funnel-dims");
+    FUNNEL_DIMS.forEach(function (d) {
+      var sel = $("funnel-dim-" + d[0]);
+      if (!sel) {
+        sel = document.createElement("select");
+        sel.id = "funnel-dim-" + d[0];
+        sel.setAttribute("aria-label", "Filter by " + d[1]);
+        sel.addEventListener("change", function () { run("funnel"); });
+        host.appendChild(sel);
+        host.appendChild(document.createTextNode(" "));
+      }
+      var keep = sel.value;
+      sel.textContent = "";
+      sel.appendChild(new Option("every " + d[1], ""));
+      ((dims && dims[d[0]]) || []).forEach(function (v) {
+        var value = d[0] === "arm"
+          ? "experiment=" + encodeURIComponent(v.experiment_id) + "&arm=" + encodeURIComponent(v.arm)
+          : encodeURIComponent(v);
+        sel.appendChild(new Option(d[0] === "arm" ? v.experiment_id.slice(0, 8) + " · arm " + v.arm : v, value));
+      });
+      if (keep && !Array.prototype.some.call(sel.options, function (o) { return o.value === keep; })) {
+        sel.appendChild(new Option(decodeURIComponent(keep), keep));
+      }
+      sel.value = keep;
+    });
   }
   $("funnel-testers").addEventListener("change", function () { run("funnel"); });
 
@@ -2380,6 +2414,7 @@ details.how p { margin-top: 8px; }
     return api("GET", "/admin/api/funnel" + funnelQuery()).then(function (f) {
       lastEcho = f.range;
       rangeNote();
+      funnelDims(f.dimensions);
       var kp = $("funnel-kpi");
       kp.textContent = "";
       kpi(kp, "Started", String(f.sessions), "", "");
@@ -4316,7 +4351,8 @@ details.how p { margin-top: 8px; }
         + '<p class="muted">' + esc(ruleText(e.rules)) + '</p>';
       var arms = '<table><thead><tr><th>arm</th><th class="r">weight</th><th class="r">version</th>'
         + '<th class="r">assigned</th><th class="r">sessions</th><th class="r">completed</th>'
-        + '<th class="r">rate</th><th class="r">95% CI</th><th class="r">fell back</th><th></th></tr></thead><tbody>';
+        + '<th class="r">rate</th><th class="r">95% CI</th><th class="r">fell back</th>'
+        + '<th class="r">paid</th><th class="r">paid rate</th><th class="r">app / web runs</th><th></th></tr></thead><tbody>';
       view.arms.forEach(function (arm, i) {
         var st = arm.stats;
         var ci = st.ci ? expPct(st.ci.lo) + "–" + expPct(st.ci.hi) : "—";
@@ -4329,6 +4365,9 @@ details.how p { margin-top: 8px; }
           + '<td class="r">' + expPct(st.rate) + '</td>'
           + '<td class="r">' + ci + '</td>'
           + '<td class="r">' + st.fell_back + '</td>'
+          + '<td class="r">' + (st.paid || 0) + '</td>'
+          + '<td class="r">' + expPct(st.paid_rate) + '</td>'
+          + '<td class="r">' + (st.by_surface ? st.by_surface.app.sessions + " / " + st.by_surface.web.sessions : "—") + '</td>'
           + (e.status === "draft" && !arm.variant.control
               ? '<td><button class="small" data-edit="' + i + '">Edit copy</button></td>'
               : '<td></td>')
