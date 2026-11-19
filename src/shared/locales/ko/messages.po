@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "먼저 웹에서 플랜 질문에 답해 주세요."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "칼로리"
@@ -421,11 +426,6 @@ msgstr "나트륨"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "문제가 생겼지만 처리됐을 수도 있어요. 다시 보내기 전에 /today를 확인하세요."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

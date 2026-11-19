@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "ആദ്യം വെബിൽ പ്ലാൻ ചോദ്യങ്ങൾക്ക് ഉത്തരം നൽകൂ."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "കലോറി"
@@ -421,11 +426,6 @@ msgstr "സോഡിയം"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "എന്തോ പിഴവ് സംഭവിച്ചു, എന്നിട്ടും ഇത് എത്തിയിട്ടുണ്ടാകാം. വീണ്ടും അയയ്ക്കുന്നതിന് മുമ്പ് /today പരിശോധിക്കൂ."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

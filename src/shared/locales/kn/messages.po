@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "ಮೊದಲು ವೆಬ್‌ನಲ್ಲಿ ಪ್ಲಾನ್ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "ಕ್ಯಾಲೊರಿ"
@@ -421,11 +426,6 @@ msgstr "ಸೋಡಿಯಂ"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "ಏನೋ ತಪ್ಪಾಯಿತು, ಆದರೂ ಅದು ತಲುಪಿರಬಹುದು. ಮತ್ತೆ ಕಳುಹಿಸುವ ಮೊದಲು /today ಪರಿಶೀಲಿಸಿ."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

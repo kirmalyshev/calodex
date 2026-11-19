@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "Răspunde mai întâi la întrebările pentru plan pe web."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "calorii"
@@ -421,11 +426,6 @@ msgstr "Sodiu"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "Ceva n-a mers bine și s-ar putea să fi trecut totuși. Verifică /today înainte s-o trimiți din nou."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

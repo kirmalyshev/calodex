@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "Primer respon les preguntes del pla al web."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "calories"
@@ -421,11 +426,6 @@ msgstr "Sodi"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "Alguna cosa ha fallat, i potser s'ha enviat igualment. Comprova /today abans de tornar-ho a enviar."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

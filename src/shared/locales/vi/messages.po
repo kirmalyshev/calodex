@@ -179,6 +179,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "Hãy trả lời các câu hỏi lập kế hoạch trên web trước."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "calo"
@@ -427,11 +432,6 @@ msgstr "Natri"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "Có gì đó trục trặc, nhưng có thể vẫn đã được ghi. Kiểm tra /today trước khi gửi lại."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

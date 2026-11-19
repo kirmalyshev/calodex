@@ -179,6 +179,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "Answer the plan questions on the web first."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "calories"
@@ -427,11 +432,6 @@ msgstr "Sodium"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "Something went wrong, and it may still have gone through. Check /today before sending it again."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
