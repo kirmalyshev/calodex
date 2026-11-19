@@ -419,12 +419,13 @@ export async function applyRevenueCatTransfer(deps: EngineDeps, t: RevenueCatTra
   if (t.sandbox && !deps.config.revenueCatAcceptSandbox) return { applied: false, reason: "sandbox" };
   const named = t.to[0];
   if (named === undefined) return { applied: false, reason: "not-applied" };
-  // Either side may name an account a sign-in merged away (#3201): a device still configured with
-  // the anonymous id restores to it, or moves purchases the merge already put on the survivor.
+  // A device still configured with the anonymous id restores to an account a sign-in merged away
+  // (#3201): resolve the DESTINATION. Never the source: `moveEntitlement` moves a record whole, and
+  // the survivor's record also holds purchases of its own that the anonymous receipt never had.
   const into = await survivorOf(deps, named);
   const eventAt = new Date(t.eventTimestampMs).toISOString();
   let moved = false;
-  for (const from of t.from) moved = (await deps.store.moveEntitlement(await survivorOf(deps, from), into, eventAt)) || moved;
+  for (const from of t.from) moved = (await deps.store.moveEntitlement(from, into, eventAt)) || moved;
   return moved ? { applied: true } : { applied: false, reason: "not-applied" };
 }
 

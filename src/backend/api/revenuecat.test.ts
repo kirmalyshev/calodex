@@ -373,16 +373,17 @@ describe("a transfer between accounts", () => {
     expect((await profile(real.token)).entitlement.active).toBe(true);
   });
 
-  it("moves the survivor's grant when the source was merged away", async () => {
+  // Never resolved: the survivor's record holds its own purchases too, and a TRANSFER moves a record
+  // whole (#3201 review). The survivor keeps what it has; the destination is under-granted, #687's ceiling.
+  it("leaves the survivor's grant alone when the source was merged away", async () => {
     const anon = await account();
     const real = await account();
     const other = await account();
     await deliver(purchase(anon.userId, { event_timestamp_ms: Date.now() - 60_000 }));
     await store.mergeUsers(anon.userId, real.userId);
 
-    const res = await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [other.userId] }));
-    expect(await res.json()).toEqual({ ok: true, applied: true });
-    expect((await profile(other.token)).entitlement.active).toBe(true);
+    await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [other.userId] }));
+    expect((await profile(real.token)).entitlement.active).toBe(true);
   });
 
   it("transfers onto the survivor when the destination was merged away", async () => {
