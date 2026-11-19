@@ -154,8 +154,8 @@ describe("events", () => {
   // privacy filter like any enumerated pick does.
   it("keeps the paywall's shown-and-answered pair, with its result", async () => {
     const n = await recordOnboardingEvents(deps, userId, [
-      event({ place: "paywall", action: "view" }),
-      event({ place: "paywall", action: "answer", field: "paywall", value: "declined" }),
+      event({ place: "paywall", action: "view", at: "2026-11-01T10:00:00.000Z" }),
+      event({ place: "paywall", action: "answer", field: "paywall", value: "declined", at: "2026-11-01T10:00:04.000Z" }),
     ]);
     expect(n).toBe(2);
     const rows = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;

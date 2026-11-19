@@ -1869,7 +1869,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           completed: evs.some((e) => e.action === "complete"),
           sawPaywallAt: sorted.find((e) => e.action === "view" && (e.place === "summary" || e.place === "health"))?.at ?? null,
           // The sheet's own answer — Postgres' `paywall_result`, the newest paywall event's value.
-          paywallResult: sorted.findLast((e) => e.place === "paywall" && e.value !== undefined)?.value ?? null,
+          paywallResult: sorted.findLast((e) => e.place === "paywall" && e.value != null)?.value ?? null,
           entitledAt: g === null ? null : g.firstGrantAt,
           entitlement: g === null ? null : storedEntitlement(uid),
           bonusUntil: bonusUntil.get(uid) ?? null,

@@ -3332,6 +3332,13 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(rows[0]!.completed).toBe(true);
       // The journal line keeps the answer's word, so the row can read "paywall · declined".
       expect(rows[0]!.events!.at(-1)).toMatchObject({ place: "paywall", action: "answer", value: "declined" });
+
+      // And the LATEST paywall answer is the result — a decline later purchased reads purchased.
+      await s.recordOnboardingEvents(u, [
+        ev(5, { place: "paywall", action: "answer", field: "paywall", value: "purchased" }),
+      ] as never);
+      const after = (await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } })).rows;
+      expect(after[0]!.paywallResult).toBe("purchased");
     });
 
     it("adminOnboardingFlow's leftAt keeps only accounts whose run's last screen it is (#814)", async () => {

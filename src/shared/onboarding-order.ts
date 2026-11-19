@@ -1,7 +1,7 @@
 // Onboarding: the order an experiment arm may ask the questions in, and the rules that keep it valid.
 //
 // The DEFAULT order is `ONBOARDING_PLACES`, fixed in code. An experiment arm may carry its own order of
-// the span from the welcome to the sign-up; the tail (country, referral, Health, the streak goal) is
+// the span from the welcome to the sign-up; the tail (the plans sheet, country, referral, Health, the streak goal) is
 // routed separately on both surfaces and does not move. Every edge in `ORDER_AFTER` names why it holds:
 // a reader that quotes an earlier answer (a reply, an echo, a guard), or a stated rule. An order is
 // meant to be refused when it is SAVED; a client handed one it cannot validate walks the default
