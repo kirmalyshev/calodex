@@ -1027,8 +1027,10 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   // headline — `lines` may be empty, and the button is "Get started". v24 (ieat-app#2757): `ui`
   // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
   // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
-  // revision may never reuse a number that was already issued.
-  version: 28,
+  // revision may never reuse a number that was already issued. v29 (ieat-app#3176): the plan
+  // line and the baseline title drop their "Here is …" lead-in in every language — new words,
+  // new number.
+  version: 29,
   welcome: {
     lines: [],
     cta: "Get started",
