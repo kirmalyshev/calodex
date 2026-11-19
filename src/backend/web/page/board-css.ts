@@ -35,7 +35,7 @@ export const BOARD_CSS = `
 
 /* ── the frame ── */
 /* The top bar is the app shell's (main.css .wtop): a white bar on the hairline, the app icon
-   as the brand mark (DIRECTION §6 — Spud is a signature beside his line, never the mark). */
+   as the brand mark (DIRECTION §6). */
 .ob .wtop { display: flex; align-items: center; gap: 28px; height: 64px; padding: 0 40px;
             background: var(--surface); border-bottom: 1px solid var(--hair); }
 .ob .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; letter-spacing: -.02em; }

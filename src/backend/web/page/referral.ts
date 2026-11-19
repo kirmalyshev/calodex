@@ -3,6 +3,7 @@
 // `web/ob-referral{,-applied,-invalid,-own,-used}.html`.
 
 import type { Lang } from "@eait/shared";
+import { brandSvg } from "@eait/shared/ui/icons";
 import { currentBrand, fill } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
@@ -69,7 +70,7 @@ export function referralStep(v: ReferralStepView): string {
 <div class="wmain one refstep"><div class="wcol">
 ${dash("referral", v.lang)}
 <div class="refmid"><div class="ref">
-<div class="say sayi"><h1 class="q">${escape(c.referralAsk)}</h1></div>
+<div class="say sayi">${brandSvg("eait", { size: 28, class: "appicon" })}<h1 class="q">${escape(c.referralAsk)}</h1></div>
 <p class="muted-sub">${escape(c.referralLead)}</p>
 ${v.done ? notice : ""}
 ${form}

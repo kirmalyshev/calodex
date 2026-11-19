@@ -326,7 +326,7 @@ describe("tagx — the attribution chip", () => {
   test("words alone, on a surface pill, no mascot face", () => {
     const m = tagx({ text: "eait analysis" });
     expect(m).toContain('class="tagx"');
-    expect(m).not.toContain("wm");
+    expect(m).not.toMatch(/class="[^"]*\bwm\b/);
     expect(m).toContain("eait analysis");
   });
   test("the streak chip is the same pill with an icon", () => {

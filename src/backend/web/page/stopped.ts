@@ -4,7 +4,7 @@ import { escape, shell } from "./shell.ts";
 
 /**
  * The end of the road, and the only page here with nothing to press — `states-under16`'s card:
- * Spud `care` beside the title, the reason under it, the account already deleted.
+ * the title, the reason under it, the account already deleted.
  *
  * Its one caller is the under-sixteen stop, whose words promise that nothing was kept — so the
  * account is deleted before this renders. A page that said it while a row survived would be the

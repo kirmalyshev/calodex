@@ -308,7 +308,7 @@ export const photoHero = (o: {
 // `weekBars`' own, the labels are the caller's words. SVG presentation attributes carry the paint
 // — a `style=` on an element is what the app's CSP refuses.
 //
-// The gradient id is per-instance (`spudSeq`'s rule): two charts on one page may not share one.
+// The gradient id is per-instance (the same rule every inline SVG here keeps): two charts on one page may not share one.
 let chartSeq = 0;
 
 /** The estimate chart is a component, not a bare svg: the header row (its `.lab` plus the
@@ -462,10 +462,8 @@ export const energyBarsSvg = (
 
 // ── The avatars ──────────────────────────────────────────────────────────────────────────────
 //
-// Spud is the 28 px tinted disc the boards draw beside a `.say` (36 px `.lg`); the face art per
-// mood is mascot.ts's own, data-urled into a `--face` variable by kitCss — never a copy
-// transcribed into a string here. The lettered accent disc and the name line `.gname` — the
-// "{coach} · nutritionist" the correction boards carry.
+// The lettered accent disc `.gabie` and the name line `.gname` — the "{coach} · nutritionist"
+// the correction boards carry.
 
 /** The lettered accent disc — the letter itself is `.gabie::before`, so the markup carries none. */
 export const gabieAvatar = (): string => `<span class="gabie" aria-hidden="true"></span>`;
@@ -737,7 +735,7 @@ ${[0, 1, 2, 3, 4, 5, 6].map((i) => `.week .wtint.a${i}{left:calc(${i}*(100% - 44
 
 /* The attribution chip — words; the streak chip is the same pill at .ic. */
 .tagx{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border-radius:999px;
-  padding:3px 9px 3px 4px;font-size:12px;font-weight:600;color:var(--ink);
+  padding:3px 9px;font-size:12px;font-weight:600;color:var(--ink);
   box-shadow:0 1px 3px rgba(23,25,28,.16);white-space:nowrap}
 .tagx .ico{width:16px;height:16px}
 .tagx .i-streak{color:var(--macro-carbs)}
