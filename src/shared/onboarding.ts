@@ -784,8 +784,12 @@ function suggestCountry(signals: CountrySignals): CountryCode {
     const fromLanguage = LANGUAGE_COUNTRY[language ?? ""];
     if (fromLanguage) return fromLanguage;
     // A script subtag names the market a bare language cannot: "zh-Hans" reads China and
-    // "zh-Hant" reads Taiwan, where a bare "zh" is the same coin flip "en" is.
-    const fromScript = LANGUAGE_COUNTRY[rest.find((part) => LANGUAGE_COUNTRY[part] !== undefined) ?? ""];
+    // "zh-Hant" reads Taiwan, where a bare "zh" is the same coin flip "en" is. Scripts are
+    // exactly four letters — a two-letter one was already tried as a region, so `es-SV` is
+    // El Salvador, not Sweden, however `sv` maps as a language.
+    const fromScript = LANGUAGE_COUNTRY[
+      rest.find((part) => /^[a-z]{4}$/.test(part) && LANGUAGE_COUNTRY[part] !== undefined) ?? ""
+    ];
     if (fromScript) return fromScript;
   }
   return suggestFromEmail(signals.email);

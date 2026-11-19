@@ -897,6 +897,11 @@ describe("resolving the country, and deciding whether to ask", () => {
     expect(resolveCountry({ languages: ["zh-Hans"] })).toEqual({ country: "cn", ask: true });
     expect(resolveCountry({ languages: ["zh-Hant"] })).toEqual({ country: "tw", ask: true });
     expect(resolveCountry({ languages: ["zh"] })).toEqual({ country: "other", ask: true });
+    // A region the list does not cover is not a script: "es-SV" is El Salvador, not Sweden —
+    // only a four-letter subtag carries one.
+    expect(resolveCountry({ languages: ["es-SV"] })).toEqual({ country: "other", ask: true });
+    expect(resolveCountry({ languages: ["es-PA"] })).toEqual({ country: "other", ask: true });
+    expect(resolveCountry({ languages: ["en-UK"] })).toEqual({ country: "other", ask: true });
     // English cannot tell gb from us, so it suggests neither — and Spanish is the same shape now
     // that Spain and Mexico are both curated. A coin flip offered first is not a suggestion.
     expect(resolveCountry({ languages: ["en"] })).toEqual({ country: "other", ask: true });
