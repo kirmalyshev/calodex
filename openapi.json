@@ -5300,57 +5300,6 @@
             "properties": {
               "type": {
                 "type": "string",
-                "const": "demo-verdict"
-              },
-              "plate": {
-                "$ref": "#/components/schemas/WelcomeImageKey"
-              }
-            },
-            "required": [
-              "type",
-              "plate"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "const": "plan-recap"
-              }
-            },
-            "required": [
-              "type"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "const": "price"
-              },
-              "product": {
-                "type": "string",
-                "enum": [
-                  "yearly",
-                  "monthly"
-                ]
-              }
-            },
-            "required": [
-              "type",
-              "product"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
                 "const": "cta"
               },
               "label": {
@@ -5764,12 +5713,7 @@
       },
       "CtaAction": {
         "type": "string",
-        "enum": [
-          "next",
-          "back",
-          "open-paywall",
-          "open-camera"
-        ]
+        "const": "next"
       },
       "DailyTotals": {
         "type": "object",
@@ -11260,22 +11204,10 @@
           "slots": {
             "type": "object",
             "properties": {
-              "welcome": {
-                "$ref": "#/components/schemas/ServedScreen"
-              },
               "baseline": {
                 "$ref": "#/components/schemas/ServedScreen"
               },
               "prelim": {
-                "$ref": "#/components/schemas/ServedScreen"
-              },
-              "after:summary": {
-                "$ref": "#/components/schemas/ServedScreen"
-              },
-              "after:signup": {
-                "$ref": "#/components/schemas/ServedScreen"
-              },
-              "before:paywall": {
                 "$ref": "#/components/schemas/ServedScreen"
               }
             },
