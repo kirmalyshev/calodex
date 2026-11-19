@@ -500,7 +500,13 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   if (req.method === "GET" && pathname === "/admin/api/funnel") {
     const ask = rangeParam(url, { defaultDays: 30, maxDays: 365 });
     // `testers=1` keeps TestFlight, dev and sandbox accounts in (ieat-app#2899); out by default.
-    return json(await onboardingFunnel(deps, "days" in ask ? ask.days : ask, url.searchParams.get("testers") === "1"));
+    const param = (k: string) => url.searchParams.get(k) || undefined;
+    if (param("arm") !== undefined && param("experiment") === undefined) return json({ errors: ["arm needs experiment"] }, 400);
+    const filters = Object.fromEntries(Object.entries({
+      surface: param("surface"), app_version: param("app_version"), lang: param("lang"), country: param("country"),
+      acq_source: param("acq_source"), experiment_id: param("experiment"), arm: param("arm"),
+    }).filter(([, v]) => v !== undefined));
+    return json(await onboardingFunnel(deps, "days" in ask ? ask.days : ask, url.searchParams.get("testers") === "1", filters));
   }
 
   // The per-account funnel (kirmalyshev/calodex#812): the same range control and the same

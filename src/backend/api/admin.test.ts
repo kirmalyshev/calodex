@@ -858,6 +858,29 @@ describe("testers and channels (ieat-app#2899)", () => {
     id: `${userId}-e`, sessionId: `${userId}-s`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString(),
   } as never]);
 
+  it("narrows the funnel by the dimension params and offers each dimension's values (ieat-app#3196)", async () => {
+    const app = await user(), web = await user();
+    const ev = (u: string, surface: string) => store.recordOnboardingEvents(u, [{
+      id: `${u}-e`, sessionId: `${u}-s`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString(),
+    } as never], { surface, app_version: "3.1", lang: surface === "web" ? "en" : "de", country: "DE", experiment_id: "x1", arm: "7" } as never);
+    await ev(app, "app");
+    await ev(web, "web");
+    await store.putAcquisition(app, { source: "asa", campaign: null, adGroup: null, keyword: null, via: "adservices" });
+    const get = async (q: string) => (await admin("GET", `/admin/api/funnel${q}`)).json() as Promise<{ sessions: number; dimensions: Record<string, unknown> }>;
+    expect((await get("")).sessions).toBe(2);
+    expect((await get("?surface=web")).sessions).toBe(1);
+    expect((await get("?lang=de&country=DE")).sessions).toBe(1);
+    expect((await get("?acq_source=asa")).sessions).toBe(1);
+    expect((await get("?app_version=3.1&experiment=x1&arm=7")).sessions).toBe(2);
+    expect((await get("?experiment=x1&arm=8")).sessions).toBe(0);
+    expect((await get("?surface=")).sessions).toBe(2);
+    expect((await admin("GET", "/admin/api/funnel?arm=7")).status).toBe(400);
+    expect((await get("?surface=web")).dimensions).toEqual({
+      surface: ["app", "web"], app_version: ["3.1"], lang: ["de", "en"], country: ["DE"], acq_source: ["asa"],
+      arm: [{ experiment_id: "x1", arm: "7" }],
+    });
+  });
+
   it("keeps testers out of the funnel and its per-account list unless `testers=1`", async () => {
     const tf = await user(), sbx = await user(), real = await user();
     await store.setChannel(tf, "testflight");

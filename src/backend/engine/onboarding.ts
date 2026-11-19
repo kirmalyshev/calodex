@@ -16,12 +16,12 @@ import {
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
   type DistributionChannel, type FirstVerdictArm, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
-import type { ServedScreens } from "@eait/shared";
+import type { FunnelFilters, ServedScreens } from "@eait/shared";
 import { rendererNeeded, screensStartErrors, servedScreens } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
 import { onboardingEventContext, type AnalyticsRequest } from "./analytics.ts";
-import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
+import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingExperimentFunnelRow, OnboardingVariant } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 import { referralBonusOf } from "./entitlement.ts";
 
@@ -409,11 +409,11 @@ export async function adminMetrics(
 
 /** The funnel, in the DEFAULT order the screens are shown in. */
 export async function onboardingFunnel(
-  deps: EngineDeps, range: AdminRange & { days?: number } | number, includeTesters = false,
+  deps: EngineDeps, range: AdminRange & { days?: number } | number, includeTesters = false, filters: FunnelFilters = {},
 ): Promise<OnboardingFunnel> {
   const ask = adminRangeOf(range, 30, 365);
   // TESTERS out unless asked (ieat-app#2899): a TestFlight sandbox purchase is not a conversion.
-  const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds, includeTesters);
+  const agg = await deps.store.onboardingFunnel(ask, deps.config.campaignStaffIds, includeTesters, filters);
   // THE NEWEST REVISION IN ANY LANGUAGE, because the counter is one counter (`store.putOnboardingContent`) and
   // this row names which words the numbers below were collected against. Reading English's alone
   // would report a stale number on a host whose last edit was German.
@@ -448,6 +448,7 @@ export async function onboardingFunnel(
     range: adminWindowEcho(ask),
     contentVersion,
     rows,
+    dimensions: agg.dimensions,
   };
 }
 
@@ -610,7 +611,10 @@ export interface OnboardingExperimentView {
   arms: {
     variant: OnboardingVariant;
     stats: { assigned: number; sessions: number; completed: number; completed_users: number;
-             fell_back: number; rate: number | null; ci: { lo: number; hi: number } | null };
+             fell_back: number; rate: number | null; ci: { lo: number; hi: number } | null;
+             /** Assigned accounts holding a grant from at or after the assignment, and that over `assigned` (ieat-app#3196). */
+             paid: number; paid_rate: number | null;
+             by_surface: OnboardingExperimentFunnelRow["by_surface"] };
     /**
      * This arm's place funnel, in THIS arm's order (ieat-app#2788): its span (`order`, else the
      * default), then the fixed tail. Only runs that rendered this arm are counted — a run that fell
@@ -621,6 +625,8 @@ export interface OnboardingExperimentView {
     places: FunnelRow[];
   }[];
 }
+
+const noRuns = () => ({ sessions: 0, completed: 0, completed_users: 0, fell_back: 0 });
 
 /** An arm's places in its order: the span it walks, then the tail no arm moves. */
 function armPlaces(variant: OnboardingVariant): OnboardingPlace[] {
@@ -659,12 +665,16 @@ export async function onboardingExperiments(
             completed: row?.completed ?? 0, completed_users: row?.completed_users ?? 0,
             fell_back: row?.fell_back ?? 0,
             rate: null, ci: null,
+            paid: row?.paid ?? 0, paid_rate: null,
+            by_surface: row?.by_surface ?? { app: noRuns(), web: noRuns() },
           }
         : {
             assigned: row.assigned, sessions: row.sessions, completed: row.completed,
             completed_users: row.completed_users, fell_back: row.fell_back,
             rate: row.completed_users / row.assigned,
             ci: wilsonInterval(row.completed_users, row.assigned),
+            paid: row.paid, paid_rate: row.paid / row.assigned,
+            by_surface: row.by_surface,
           };
       const mine = new Map(placeRows.filter((r) => r.variant_id === variant.content.version).map((r) => [r.place, r]));
       const places: FunnelRow[] = armPlaces(variant).map((place) => {

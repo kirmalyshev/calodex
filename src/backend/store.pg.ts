@@ -14,13 +14,13 @@
 import { SQL, type TransactionSQL } from "bun";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { PgBoss, fromBunSql } from "pg-boss";
-import type { MealReminders, PushKind, SavedMeal, SendKind, SendLogState } from "@eait/shared";
+import type { FunnelDimension, FunnelDimensions, FunnelFilters, MealReminders, PushKind, SavedMeal, SendKind, SendLogState } from "@eait/shared";
 import type {
   DayTotals, FoodNutrient, FoodPortion, FoodRef, HealthDay, Lang, MealFocus, MealItem, MealLabel, MealQuestion,
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel, ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, FUNNEL_DIMENSIONS, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel, ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -4054,23 +4054,43 @@ export async function postgresStore(
                count(distinct e.user_id)
                  filter (where e.action = 'complete')                            as completed_users,
                count(distinct e.session_id)
-                 filter (where e.content_version is distinct from a.variant_id)  as fell_back
+                 filter (where e.content_version is distinct from a.variant_id)  as fell_back,
+               count(distinct a.user_id)
+                 filter (where least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) >= a.assigned_at) as paid,
+               count(distinct e.session_id) filter (where s.web)                 as web_sessions,
+               count(distinct e.session_id) filter (where s.web and e.action = 'complete') as web_completed,
+               count(distinct e.user_id) filter (where s.web and e.action = 'complete')    as web_completed_users,
+               count(distinct e.session_id)
+                 filter (where s.web and e.content_version is distinct from a.variant_id)  as web_fell_back,
+               count(distinct e.session_id) filter (where not s.web)             as app_sessions,
+               count(distinct e.session_id) filter (where not s.web and e.action = 'complete') as app_completed,
+               count(distinct e.user_id) filter (where not s.web and e.action = 'complete')    as app_completed_users,
+               count(distinct e.session_id)
+                 filter (where not s.web and e.content_version is distinct from a.variant_id)  as app_fell_back
         from onboarding_assignments a
         join onboarding_experiments x on x.id = a.experiment_id
+        join users u on u.id = a.user_id
         left join onboarding_events e on e.user_id = a.user_id
           and e.at >= a.assigned_at
           and (x.stopped_at is null or e.at <= x.stopped_at)
           and (${lo === null} or e.at >= ${lo})
           and (${hi === null} or e.at <= ${hi})
+        -- A row from before the surface column is an app run: no web writer existed then.
+        cross join lateral (select e.surface is not distinct from 'web' as web) s
         where a.experiment_id = ${experimentId}
-          and not exists (select 1 from users u where u.id = a.user_id and (u.staff or u.tester))
+          and not (u.staff or u.tester)
           and a.user_id <> all(${configStaff}::uuid[])
           and (${lo === null} or a.assigned_at >= ${lo})
           and (${hi === null} or a.assigned_at <= ${hi})
         group by a.variant_id`;
+      const side = (r: Record<string, unknown>, p: "app" | "web") => ({
+        sessions: num(r[`${p}_sessions`]), completed: num(r[`${p}_completed`]),
+        completed_users: num(r[`${p}_completed_users`]), fell_back: num(r[`${p}_fell_back`]),
+      });
       return rows.map((r: Record<string, unknown>) => ({
         variant_id: num(r.variant_id), assigned: num(r.assigned), sessions: num(r.sessions),
         completed: num(r.completed), completed_users: num(r.completed_users), fell_back: num(r.fell_back),
+        paid: num(r.paid), by_surface: { app: side(r, "app"), web: side(r, "web") },
       }));
     },
 
@@ -4256,18 +4276,29 @@ export async function postgresStore(
       }));
     },
 
-    async onboardingFunnel(range, staffIds = [], includeTesters = false): Promise<FunnelAggregate> {
+    async onboardingFunnel(range, staffIds = [], includeTesters = false, filters: FunnelFilters = {}): Promise<FunnelAggregate> {
       const { from: lo, to: hi } = range;
       const configStaff = uuidArray(staffIds);
+      const eq = (v: string | undefined) => v ?? null;
+      const narrow = sql`
+        and (${eq(filters.surface) === null} or e.surface = ${eq(filters.surface)})
+        and (${eq(filters.app_version) === null} or e.app_version = ${eq(filters.app_version)})
+        and (${eq(filters.lang) === null} or e.lang = ${eq(filters.lang)})
+        and (${eq(filters.country) === null} or e.country = ${eq(filters.country)})
+        and (${eq(filters.experiment_id) === null} or e.experiment_id = ${eq(filters.experiment_id)})
+        and (${eq(filters.arm) === null} or e.arm = ${eq(filters.arm)})
+        and (${eq(filters.acq_source) === null}
+             or exists (select 1 from users ua where ua.id = e.user_id and ua.acq_source = ${eq(filters.acq_source)}))`;
       // Staff accounts (admin-flagged) are not users; their runs stay out (#2783).
 
       const totals = await sql`
         select count(distinct session_id)::int as sessions,
                count(distinct session_id) filter (where action = 'complete')::int as completed
-        from onboarding_events
+        from onboarding_events e
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
-          and not exists (select 1 from users u where u.id = onboarding_events.user_id and (u.staff or (not ${includeTesters} and u.tester)))
-          and onboarding_events.user_id <> all(${configStaff}::uuid[])`;
+          and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
+          and e.user_id <> all(${configStaff}::uuid[])
+          ${narrow}`;
 
       // `percentile_cont` over the answer rows only — a median that included view events would be
       // measuring nothing, since a view carries no elapsed time.
@@ -4281,10 +4312,11 @@ export async function postgresStore(
                percentile_cont(0.5) within group (
                  order by ms
                ) filter (where action = 'answer' and ms is not null) as median_ms
-        from onboarding_events
+        from onboarding_events e
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
-          and not exists (select 1 from users u where u.id = onboarding_events.user_id and (u.staff or (not ${includeTesters} and u.tester)))
-          and onboarding_events.user_id <> all(${configStaff}::uuid[])
+          and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
+          and e.user_id <> all(${configStaff}::uuid[])
+          ${narrow}
         group by place`;
 
       // Conversion to paid (#812), the funnel's last step. The same population and window,
@@ -4304,6 +4336,7 @@ export async function postgresStore(
            where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
              and not u.staff and (${includeTesters} or not u.tester)
              and e.user_id <> all(${configStaff}::uuid[])
+             ${narrow}
            group by e.user_id, e.session_id, u.id
         ),
         conv as (
@@ -4318,7 +4351,32 @@ export async function postgresStore(
           from conv
          group by product, trial, is_lifetime`;
 
+      const dimRows = await sql`
+        with ev as (
+          select e.user_id, e.surface, e.app_version, e.lang, e.country, e.experiment_id, e.arm
+            from onboarding_events e
+           where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
+             and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
+             and e.user_id <> all(${configStaff}::uuid[])
+        )
+        select distinct 'surface' as k, surface as v, null::text as x from ev where surface is not null
+        union select 'app_version', app_version, null from ev where app_version is not null
+        union select 'lang', lang, null from ev where lang is not null
+        union select 'country', country, null from ev where country is not null
+        union select 'acq_source', u.acq_source, null from users u
+          where u.acq_source is not null and u.id in (select user_id from ev)
+        union select 'arm', arm, experiment_id from ev where arm is not null and experiment_id is not null`;
+      const dimensions: FunnelDimensions = { surface: [], app_version: [], lang: [], country: [], acq_source: [], arm: [] };
+      const armKeys: [string, { experiment_id: string; arm: string }][] = [];
+      for (const r of dimRows as { k: string; v: string; x: string | null }[]) {
+        if (r.k === "arm") armKeys.push([`${r.x}\u0000${r.v}`, { experiment_id: String(r.x), arm: r.v }]);
+        else dimensions[r.k as FunnelDimension].push(r.v);
+      }
+      for (const k of FUNNEL_DIMENSIONS) dimensions[k].sort();
+      dimensions.arm = armKeys.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, v]) => v);
+
       return {
+        dimensions,
         sessions: num(totals[0]?.sessions),
         completed: num(totals[0]?.completed),
         paid: {
