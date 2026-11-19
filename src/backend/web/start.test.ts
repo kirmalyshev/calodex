@@ -371,7 +371,7 @@ describe("the front door", () => {
     expect(html).toContain(DEFAULT_ONBOARDING_CONTENT.welcome.cta);
     expect(html).toContain(DEFAULT_ONBOARDING_CONTENT.welcome.signin);
     expect(html).not.toContain("/start/auth/");
-    expect(html).toContain("Spud");
+    expect(html).toContain("Calodex");
   });
 });
 
@@ -1455,7 +1455,7 @@ describe("a target that runs the wrong way", () => {
 
 // ── The v5 walk (#42): reactions, the stepper, the moments, the soft offer ────────────────────
 //
-// Every answer gets Spud's one line back, spoken above the next question; the four support beats
+// Every answer gets Calodex's one line back, spoken above the next question; the four support beats
 // are whole screens of their own; the target weight is a stepper that starts at the shared
 // suggestion. None of it is JavaScript — the stepper's buttons are plain form submits, the
 // moments are GET pages a POST redirects to.
@@ -1799,7 +1799,7 @@ describe("the soft offer after the plan", () => {
     for (const perk of [
       "Honest macros on every meal",
       "Your plan moves when your weight does",
-      "Spud, any time you ask",
+      "Calodex, any time you ask",
     ]) expect(html).toContain(escape(perk));
     expect(html).toContain("7 days free");
     expect(html).toContain("We remind you");
@@ -2509,7 +2509,7 @@ describe("chat on the web: a turn that needs a meal in focus", () => {
 });
 
 describe("chat on the web: who said it", () => {
-  it("names Spud on his answers and nobody else — the app's own lines carry no name", async () => {
+  it("names Calodex on his answers and nobody else — the app's own lines carry no name", async () => {
     const { session, userId } = await onboarded();
     await store.appendChat(userId, [
       { role: "assistant", kind: "text", text: "First one in. 612kcal." },
@@ -2518,7 +2518,7 @@ describe("chat on the web: who said it", () => {
       { role: "assistant", kind: "text", text: "About 40g so far.", speaker: "gabie" },
     ]);
     const page = await (await get("/start/chat", session)).text();
-    expect(page).toContain('<p class="who">Spud</p><p class="bubble">About 40g so far.</p>');
+    expect(page).toContain('<p class="who">Calodex</p><p class="bubble">About 40g so far.</p>');
     expect(page).toContain('<p class="bubble">First one in. 612kcal.</p>');
     expect(page.match(/class="who"/g)).toHaveLength(1);
   });

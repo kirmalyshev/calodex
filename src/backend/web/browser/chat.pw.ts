@@ -11,8 +11,8 @@ test("a question comes back as an answer, not as a meal", async ({ signedIn: pag
   expect(reply.length).toBeGreaterThan(0);
   // The whole job of the router: nothing to confirm, because nothing was logged.
   await expect(page.getByRole("button", { name: "Log it" })).toHaveCount(0);
-  // And it is Spud's line — the coach answers in Chat, and his name leads it (S9).
-  await expect(page.locator("p.who")).toHaveText("Spud");
+  // And it is Calodex's line — the coach answers in Chat, and his name leads it (S9).
+  await expect(page.locator("p.who")).toHaveText("Calodex");
 });
 
 test("asking what it can do is answered rather than logged", async ({ signedIn: page }) => {

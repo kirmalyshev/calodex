@@ -7,7 +7,7 @@
 //                calorie target from these, so the set is not editable by anyone at runtime.
 //   2. SCREENS — how those fields are grouped, and the unit the copy is keyed by. Fixed in code; a
 //                screen may be turned OFF only if nothing it collects reaches the arithmetic.
-//   3. CONTENT — the words. What Spud SAYS to pose each question, the option labels, the front
+//   3. CONTENT — the words. What Calodex SAYS to pose each question, the option labels, the front
 //                door, and the plan. Fully editable from the backend admin, validated on the write.
 //
 // An admin can rewrite every sentence in onboarding and cannot break the target math, cannot drop
@@ -15,7 +15,7 @@
 // server would reject. `validateOnboardingContent` is where that boundary is enforced, and it is
 // enforced on the WRITE, so bad copy never reaches a phone.
 //
-// WHAT IS *NOT* HERE, AND WHY. The conversation AROUND the questions — Spud's reply to each answer
+// WHAT IS *NOT* HERE, AND WHY. The conversation AROUND the questions — Calodex's reply to each answer
 // and the branch logic that makes a reply speak to the branch taken — lives in `onboarding-chat.ts`,
 // compiled in, under test, and NOT admin-editable. An admin text box in front of a health statistic
 // is an unsubstantiated claim with no gate in front of it — the `claims.ts` reasoning — so a cited
@@ -85,7 +85,7 @@ export function stepApplies(step: OnboardingStep, p: Profile): boolean {
 /**
  * The groups the copy is keyed by, in the order the design asks them.
  *
- * THEY ARE NO LONGER SCREENS, and the name is kept anyway. The flow is one chat now: Spud asks one
+ * THEY ARE NO LONGER SCREENS, and the name is kept anyway. The flow is one chat now: Calodex asks one
  * question at a time and the answer arrives in the same conversation. But the grouping is still the
  * unit the admin edits, the unit the funnel counts, and the unit `SCREEN_FIELDS` binds the fields
  * to — renaming it would churn the admin, the stored content row and every funnel row already
@@ -167,7 +167,7 @@ export const DASH_PLACES: readonly OnboardingPlace[] = ONBOARDING_PLACES.filter(
 export const dashIndex = (place: OnboardingPlace): number => DASH_PLACES.indexOf(place);
 
 /**
- * Which fields each group collects, in the order Spud asks them.
+ * Which fields each group collects, in the order Calodex asks them.
  *
  * This is the mapping that makes the flow safe to resume: the question to ask is the first one the
  * profile has no answer for (`resumeAt`, in `onboarding-chat.ts`), and everything before it has an
@@ -269,9 +269,9 @@ export interface OnboardingOptionContent {
 }
 
 /**
- * What Spud says to pose ONE question, and what the input looks like while it is open.
+ * What Calodex says to pose ONE question, and what the input looks like while it is open.
  *
- * `lines` is a list because Spud sends bubbles, not paragraphs: "A little about you, for the
+ * `lines` is a list because Calodex sends bubbles, not paragraphs: "A little about you, for the
  * calorie formula. Which fits you?" is one bubble, and the age that follows it is another.
  * One entry, one bubble. The FIRST line is the question and is required; a later line may be
  * empty, and an empty line renders nothing (ieat-app#2756).
@@ -291,7 +291,7 @@ export interface OnboardingAskContent {
 export interface OnboardingScreenContent {
   id: OnboardingScreenId;
   /**
-   * What Spud says to ask each field in this group, keyed by the field name.
+   * What Calodex says to ask each field in this group, keyed by the field name.
    *
    * REQUIRED FOR EVERY FIELD THE GROUP COLLECTS. A missing entry is a question with nothing to ask
    * it with, which in a chat is not a degraded screen — it is a conversation that stops.
@@ -555,7 +555,7 @@ export interface OnboardingFirstMealContent {
 }
 
 /**
- * The refusals (ieat-app#2757, area e): what Spud says when an answer is not a number, an age is
+ * The refusals (ieat-app#2757, area e): what Calodex says when an answer is not a number, an age is
  * ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All
  * REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the
  * digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy
@@ -987,7 +987,7 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -1281,7 +1281,7 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   ui: {
     continueLabel: "Continue",
     saveKept: "Couldn't save that. Your answer is still here. Continue sends it again.",
-    idlePlaceholder: "Message Spud…",
+    idlePlaceholder: "Message Calodex…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Continue", less: "Less", more: "More" },
     units: { years: "years", yearsCount: { one: "{n} year", other: "{n} years" } },
@@ -1391,7 +1391,7 @@ const MAX_LINE = 240;
 const MAX_LABEL = 60;
 const MAX_HINT = 90;
 const MAX_BODY = 400;
-/** One question is at most four bubbles. Past that Spud is lecturing, not asking. */
+/** One question is at most four bubbles. Past that Calodex is lecturing, not asking. */
 const MAX_ASK_LINES = 4;
 /** The front door is read in about three seconds or it is not read. */
 const MAX_WELCOME_LINES = 4;
@@ -1412,7 +1412,7 @@ const isStr = (v: unknown): v is string => typeof v === "string";
  * Every rule here exists because breaking it produces something specific and bad:
  *   - a missing required screen           → a profile field nobody was asked for, and a target
  *                                           computed from a default
- *   - a missing ask                       → a question Spud has no sentence for: the conversation
+ *   - a missing ask                       → a question Calodex has no sentence for: the conversation
  *                                           stops on a field the arithmetic needs
  *   - a missing option label              → a tappable chip rendering as blank space
  *   - an option key outside the vocabulary → a value the server's own patch validator will 422
@@ -1488,7 +1488,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     if (!isStr(v) || v.length > MAX_LINE) push(`${at} must be a string under ${MAX_LINE} characters`);
   };
 
-  /** A list of Spud bubbles: one to `max`, each a real sentence. */
+  /** A list of Calodex bubbles: one to `max`, each a real sentence. */
   const bubbles = (v: unknown, at: string, max: number) => {
     if (!Array.isArray(v) || v.length < 1 || v.length > max) {
       push(`${at} must be 1 to ${max} lines`);
@@ -1949,7 +1949,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   // THE CLAIMS GATE, the same one the notification copy and the landing page run. Onboarding copy
   // is the third editable public surface: an admin can write anything into it and it reaches every
   // phone that fetches a revision. `retired-no-email` is why this is here — "No email, no name."
-  // was Spud's third welcome bubble until issue #95, and nothing stopped an admin typing it back.
+  // was Calodex's third welcome bubble until issue #95, and nothing stopped an admin typing it back.
   // The free/trial/price rules joined it for #2766 — the signup line and the first-meal offer are
   // editable too, and "Three meals on me" or "Free forever" is the same class of typed-in claim.
   for (const v of lintCopy(claimFields(raw), ONBOARDING_CLAIM_RULES)) {

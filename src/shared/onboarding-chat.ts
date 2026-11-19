@@ -1,4 +1,4 @@
-// Onboarding as a conversation: the default order, the branches, and every sentence Spud says back.
+// Onboarding as a conversation: the default order, the branches, and every sentence Calodex says back.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // WHY THIS IS SHARED AND PURE, AND WHY IT IS NOT ADMIN-EDITABLE
@@ -10,7 +10,7 @@
 // NOT EDITABLE, because which line a case takes IS this file — a text box can hold a sentence but
 // not the branch that chose it. A cited figure stays code for the `claims.ts` reason: an
 // admin-editable health statistic is an unsubstantiated claim with no gate in front of it. The
-// QUESTIONS Spud asks are editable (`onboarding.ts`, `asks`); the conversation around them is
+// QUESTIONS Calodex asks are editable (`onboarding.ts`, `asks`); the conversation around them is
 // code.
 //
 // THE THREE RULES EVERY REPLY OBEYS (copy.md § Context model), each with a test:
@@ -55,7 +55,7 @@ import {
 // ── The prompts ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Everything Spud asks or shows, in the DEFAULT order (`ONBOARDING_PLACES`); `promptsFor` applies an arm's.
+ * Everything Calodex asks or shows, in the DEFAULT order (`ONBOARDING_PLACES`); `promptsFor` applies an arm's.
  *
  * A prompt with a `field` fills a profile column and its answer survives the app being killed. A
  * prompt without one is conversation: asked while the run is live, skipped on a resume that has
@@ -75,7 +75,7 @@ export type ChatPromptId =
  *   chips   any number of an enumerated list, plus a quick reply to finish
  *   number  the number pad
  *   text    the composer, with quick replies beside it
- *   auto    nothing to answer — a card Spud draws and moves on from
+ *   auto    nothing to answer — a card Calodex draws and moves on from
  *   health  the Apple Health offer: a connect button beside a manual one, its answer being the
  *           permission's outcome rather than typed text
  */
@@ -208,7 +208,7 @@ export function baselineApplies(p: Profile): boolean {
  *
  * The rule is the one the screens had: the flow is FIELD-DERIVED, so being killed mid-answer
  * resumes at the question the data says you are on, never past it. Everything before that point is
- * replayed as a transcript — Spud's question and the answer already on the profile — so the user
+ * replayed as a transcript — Calodex's question and the answer already on the profile — so the user
  * arrives back in a conversation rather than at a bare prompt.
  *
  * A conversation question is SKIPPED when it sits before the resume point. It is not on the
@@ -253,7 +253,7 @@ export function isAnswered(prompt: ChatPrompt, p: Profile): boolean {
   return p[prompt.field] != null;
 }
 
-// ── The questions Spud asks ──────────────────────────────────────────────────────────────────
+// ── The questions Calodex asks ──────────────────────────────────────────────────────────────────
 
 /** The editable ask for a profile field, or nothing when this binary's content has none. */
 function askContent(content: OnboardingContent, field: OnboardingStep) {
@@ -279,7 +279,7 @@ export interface ServedContent {
 }
 
 /**
- * What Spud says to pose one prompt, as bubbles.
+ * What Calodex says to pose one prompt, as bubbles.
  *
  * The profile questions read the ADMIN'S words; the conversation question reads the constant below.
  * `{loseTail}` is the one substitution in the shipped copy, and it exists because "faster isn't
@@ -382,7 +382,7 @@ export type NumberField = "birth_year" | "height_cm" | "weight_kg" | "target_wei
 
 export type NumberAnswer =
   | { ok: true; value: number }
-  /** The value is not one this app takes, and `line` is what Spud says instead of taking it. */
+  /** The value is not one this app takes, and `line` is what Calodex says instead of taking it. */
   | { ok: false; line: string }
   /** The age says under sixteen. Not a validation failure — a stop. See `UNDER_AGE_CARD`. */
   | { ok: false; underAge: true }
@@ -392,7 +392,7 @@ export type NumberAnswer =
 /**
  * The clarifying exchange for that ambiguity. "90" typed under year-worded copy means 1990; typed
  * by a ninety-year-old it means ninety. Guessing either way computes somebody else's target, so
- * Spud asks — the quick reply takes it as an age, four digits take it as the year.
+ * Calodex asks — the quick reply takes it as an age, four digits take it as the year.
  */
 // The four refusal readers below take the served `refusals` (ieat-app#2757, area e), and the
 // parameter is required: a caller that omits it compiled to `chatCopyFor` once, and a missed one
@@ -547,7 +547,7 @@ export function checkDirection(
   return null;
 }
 
-/** What Spud says after the goal is flipped mid-question, and the target is asked again. */
+/** What Calodex says after the goal is flipped mid-question, and the target is asked again. */
 export function switchedLine(goal: Goal, lang: Lang, refusals: OnboardingRefusalsContent): string {
   // `lose` carries the pacing brake and is code on purpose: an edit must not turn it into "faster is better".
   return goal === "gain" ? refusals.switched.gain : chatCopyFor(lang).switched.lose;

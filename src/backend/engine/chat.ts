@@ -2,7 +2,7 @@
 //
 // Written by the engine functions that produce a turn — `handleText`, `logPhotoMeal`,
 // `confirmPendingMeal`, `cancelPendingMeal`, `editMeal` — and by `appendLines` for what the app may
-// add without a model turn: the user's own words and Spud's scripted lines by id. Read by
+// add without a model turn: the user's own words and Calodex's scripted lines by id. Read by
 // `chatHistory`. The Chat tab is this thread's continuation, so nothing the app shows in it is
 // something the server does not have. A refused turn writes nothing: there was no turn.
 
@@ -133,7 +133,7 @@ export async function afterCorrection(
 }
 
 /**
- * Spud's first verdict, as lines for the thread. Spoken on the account's FIRST
+ * Calodex's first verdict, as lines for the thread. Spoken on the account's FIRST
  * meal only; every later meal is the card. `totals` are the day's after the meal.
  */
 export async function firstVerdict(
@@ -162,7 +162,7 @@ export async function firstVerdict(
 }
 
 /**
- * What the APP may append: the user's own words, and Spud's scripted lines by id. All-or-nothing,
+ * What the APP may append: the user's own words, and Calodex's scripted lines by id. All-or-nothing,
  * and never assistant prose — the client names a line, the server owns the words.
  */
 export async function appendLines(

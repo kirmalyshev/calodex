@@ -18,7 +18,7 @@ export const chatCss = `
 ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.stagger}ms; }`).join("\n")}
 
 /* #1520 — Telegram's bubbles on the kit's tokens. Both sides are bubbles: hers on the accent tint at
-   the right, Spud's on --chat-bubble at the left, radius 17. A run of one side's lines is a group:
+   the right, Calodex's on --chat-bubble at the left, radius 17. A run of one side's lines is a group:
    2 px apart (8 when the side changes), inner corners 6, the tail and the app icon on the run's
    LAST line only — drawn from the siblings, so a row never needs to know its neighbours. The time
    sits inside, bottom-right, sharing the last line when it fits. Starter and suggestion cards are

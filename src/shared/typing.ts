@@ -1,4 +1,4 @@
-// How Spud's onboarding lines are typed out, one character at a time.
+// How Calodex's onboarding lines are typed out, one character at a time.
 //
 // The pace is a product number, not a taste one: a line that lands whole is read as pasted and
 // skipped, and the onboarding is fifteen of them. Both clients draw from this one schedule — the

@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "Vastaa ensin suunnitelman kysymyksiin verkossa."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "kalorit"
@@ -421,11 +426,6 @@ msgstr "Natrium"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "Jokin meni vikaan, ja se saattoi silti mennä perille. Tarkista /today ennen kuin lähetät sen uudelleen."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Spud"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

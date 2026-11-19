@@ -378,7 +378,7 @@ export const ROUTES = {
    * GET `?before=<seq>&limit=N` — the thread, newest page first.
    */
   messages: "/v1/messages",
-  /** POST — the user's own words and Spud's SCRIPTED lines by id. See `AppendLinesRequest`. */
+  /** POST — the user's own words and Calodex's SCRIPTED lines by id. See `AppendLinesRequest`. */
   messagesLines: "/v1/messages/lines",
   /**
    * DELETE — the caller's own line, by id (#608). A photo line is its meal: the meal, its photos
@@ -1120,7 +1120,7 @@ export type ChatEntry =
   | { id: string; seq: number; ts: string; role: "user"; kind: "text"; text: string; clientId: string | null; pendingId: string | null }
   /** `mealId`: the meal the photo logged, so the bubble can fetch the picture; null on lines from before photos were kept. */
   | { id: string; seq: number; ts: string; role: "user"; kind: "photo"; text: string | null; mealId: string | null }
-  /** `speaker`: who said it. Null is Spud — onboarding's asks and scripted beats; `gabie` is an engine line, and the app draws her face on it (S9). */
+  /** `speaker`: who said it. Null is Calodex — onboarding's asks and scripted beats; `gabie` is an engine line, and the app draws her face on it (S9). */
   | { id: string; seq: number; ts: string; role: "assistant"; kind: "text"; text: string; speaker: ChatSpeaker | null }
   /** `mealId` outlives the meal: `meal` is null once it is deleted, and "was this proposal logged" reads the id. `speaker`: the engines' card is the coach's; a row from before the column reads null. */
   | { id: string; seq: number; ts: string; role: "assistant"; kind: "meal"; event: ChatEvent; mealId: string | null; meal: MealRecord | null; speaker: ChatSpeaker | null };
@@ -1134,7 +1134,7 @@ export interface ChatHistoryResponse {
 
 /**
  * `POST /v1/messages/lines`. What the APP may put in the thread without a model turn: the user's
- * own words (an onboarding answer, a choice) and Spud's scripted lines BY ID — never assistant
+ * own words (an onboarding answer, a choice) and Calodex's scripted lines BY ID — never assistant
  * prose from the client. All-or-nothing: one bad line and nothing is written.
  */
 export interface AppendLinesRequest {
@@ -1142,7 +1142,7 @@ export interface AppendLinesRequest {
 }
 /** One batch's bound — an onboarding's worth of turns. Over it, the whole batch is refused. */
 export const MAX_APPEND_LINES_PER_BATCH = 50;
-/** One user line — an onboarding answer or a sentence at Spud. The composer and the caption cap at it. */
+/** One user line — an onboarding answer or a sentence at Calodex. The composer and the caption cap at it. */
 export const MAX_USER_LINE = 500;
 /** A profile free-text field (the medical free text, allergies, avoided products): prose, not a line. */
 export const MAX_PROFILE_TEXT = 2000;

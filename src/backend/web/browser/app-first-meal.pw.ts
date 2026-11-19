@@ -35,7 +35,7 @@ test("a photo reaches the first verdict, a manual edit the recheck, and Keep goi
   expect(kcal).toBe(diary.meals[0]!.kcal);
   const grams0 = diary.meals[0]!.items[0]!.grams;
   await expect(page.locator(".pill").first()).toBeVisible();
-  // #49: Spud only, and the pills' verdict is what he says — never a line the pills contradict.
+  // #49: Calodex only, and the pills' verdict is what he says — never a line the pills contradict.
   await expect(page.getByText(/gabie/i)).toHaveCount(0);
   if ((await page.locator(".pill.warn, .pill.bad").count()) > 0) await expect(page.getByText("On plan.")).toHaveCount(0);
 

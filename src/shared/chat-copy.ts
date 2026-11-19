@@ -1,7 +1,7 @@
 // The thread's WORDS that are not the model's, in every language the product speaks.
 //
 // `chat.ts` keeps the RULES — which line a first verdict takes, when the arithmetic is spoken as
-// its own sentence rather than after a dash, what a client may put in Spud's mouth — and the
+// its own sentence rather than after a dash, what a client may put in Calodex's mouth — and the
 // wording of each of them is here. Same split as `onboarding-chat-copy.ts`, same reason.
 //
 // ONE THING THAT IS NOT COPY AND MUST NOT BECOME IT: `ScriptedLineId` itself. A client names a
@@ -46,8 +46,8 @@ export interface ThreadCopy {
   /** Keyed by `ScriptedLineId`. `{price}` on `trial-started` is the one parameter any of them takes. */
   scripted: Record<ScriptedLineId, (v?: Record<string, string>) => string>;
   /**
-   * Who the coach is (S9). `name` is "Spud" in every shipped language — Kirill's ruling,
-   * 2026-09-28 (#1041): the chat coach is Spud, reversing the Gabie naming. One key, so every
+   * Who the coach is (S9). `name` is "Calodex" in every shipped language — Kirill's ruling,
+   * 2026-09-28 (#1041): the chat coach is Calodex, reversing the Gabie naming. One key, so every
    * surface that names him — Chat's avatar line, a `{coach}` placeholder, Telegram's prefix —
    * fills from this, never a literal.
    */
@@ -107,7 +107,7 @@ const THREAD = (i18n: I18n): ThreadCopy => ({
     "onboarding-done": (v) => i18n._("thread.scripted.onboarding-done", v, { message: "Good — that's onboarding done, and the first day started. One more thing before you go, and it's the only time I'll ask." }),
     "dropped": (v) => i18n._("thread.scripted.dropped", v, { message: "Dropped it." }),
   },
-  coach: { name: i18n._("thread.coach.name", undefined, { message: "Spud" }) },
+  coach: { name: i18n._("thread.coach.name", undefined, { message: "Calodex" }) },
   coachStarters: {
     consistency: i18n._("thread.coachStarters.consistency", undefined, { message: "How's my week going?" }),
     habits: i18n._("thread.coachStarters.habits", undefined, { message: "What's a lighter swap for dinner?" }),
@@ -187,7 +187,7 @@ export function queuedPushCopy(lang: Lang, v: { names: string; kcal: string; lef
 }
 
 /**
- * Spud's one line while the turn is pending, and it only moves forward: a row outranks the reading
+ * Calodex's one line while the turn is pending, and it only moves forward: a row outranks the reading
  * line, and a schema retry still holds a row. The stream carries nothing between
  * the last row and the answer, so there is no later step to show — the card replaces the line.
  *

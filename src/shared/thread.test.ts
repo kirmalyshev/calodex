@@ -366,9 +366,9 @@ const landed: ChatResult = {
 };
 
 describe("speakerOf", () => {
-  it("names the user, Gabie on every line the chat engines produce, and Spud on onboarding's", () => {
+  it("names the user, Gabie on every line the chat engines produce, and Calodex on onboarding's", () => {
     expect(speakerOf({ id: "u1", role: "user", text: "hi" })).toBe("user");
-    // S9 / overseer: the boards draw no Spud in Chat — every assistant line the chat and
+    // S9 / overseer: the boards draw no Calodex in Chat — every assistant line the chat and
     // meal-edit engines write is hers, read back from the speaker stored at write time.
     for (const result of [
       { kind: "answered", text: "hi", speaker: "gabie" },
@@ -380,11 +380,11 @@ describe("speakerOf", () => {
     }
     // A live answer before its round trip is hers the same way.
     expect(speakerOf(spoke({ kind: "answered", text: "hi" }))).toBe("gabie");
-    // Stored history reads its own speaker: hers was written, Spud's was not — an onboarding ask
+    // Stored history reads its own speaker: hers was written, Calodex's was not — an onboarding ask
     // or a line the app appended by id carries no speaker and stays his.
     expect(speakerOf(fromHistory([said("hi", "gabie")])[0]!)).toBe("gabie");
     expect(speakerOf(fromHistory([said("hi")])[0]!)).toBe("spud");
-    // A card the engine logged is hers; one stored before the column is history — Spud's.
+    // A card the engine logged is hers; one stored before the column is history — Calodex's.
     expect(speakerOf(fromHistory([card(meal("m1", 300), null, "gabie")])[0]!)).toBe("gabie");
     expect(speakerOf(fromHistory([card(meal("m1", 300))])[0]!)).toBe("spud");
     // A moment is chat-state, and the boards give it no face — hers.

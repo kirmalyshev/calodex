@@ -341,7 +341,7 @@ export async function logPhotoTurn(
   await evaluateMilestones(deps, userId);
   const totals = sumTotals(await deps.store.mealsForDate(userId, date));
   // The bubble names the meal; the bytes are fetched through the scoped route, never carried in a
-  // line. Then the card, then — on the account's first meal only — Spud's verdict in the design's words.
+  // line. Then the card, then — on the account's first meal only — Calodex's verdict in the design's words.
   await remember(deps, userId, async () => {
     const greeting = await firstVerdict(deps, userId, profile, record, totals, "photo", input.caption ?? null);
     return {

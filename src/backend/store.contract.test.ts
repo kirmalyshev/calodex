@@ -1705,7 +1705,7 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.chatBefore(a, null, 1))[0]!.text).toBeNull();
     });
 
-    it("keeps who spoke an assistant line, and Spud is the default", async () => {
+    it("keeps who spoke an assistant line, and Calodex is the default", async () => {
       const s = await open();
       const u = (await s.upsertDeviceUser(device(), "en")).userId;
       await s.appendChat(u, [

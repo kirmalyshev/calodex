@@ -74,7 +74,7 @@ describe("the pending photo turn", () => {
   const egg: MealItem = { name: "Egg", grams: 50 };
   const run = (...events: PhotoEvent[]) => events.reduce(advancePending, start);
 
-  test("before anything arrives, Spud is reading the plate", () => {
+  test("before anything arrives, Calodex is reading the plate", () => {
     expect(pendingLine(start, "en")).toBe("Reading the plate…");
   });
 

@@ -315,7 +315,7 @@ describe("avatars — Gabie's letter", () => {
     expect(gabieName("Gabie · nutritionist")).toBe('<div class="gname">Gabie · nutritionist</div>');
     expect(gabieName("Gabie <script>")).toContain("&lt;script&gt;");
   });
-  test("the stylesheet carries no Spud face (#3177)", () => {
+  test("the stylesheet carries no Calodex face (#3177)", () => {
     const css = kitCss();
     expect(css).not.toMatch(/\.spud|\.wm|--face/);
     expect(css).toContain('.gabie::before{content:"G"}');

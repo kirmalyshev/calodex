@@ -1028,7 +1028,7 @@ export function createRouter(
           ...(Number.isInteger(pageLimit) && pageLimit > 0 ? { limit: pageLimit } : {}),
         }));
       }
-      // The app's own lines: the user's words and Spud's scripted lines by id. All-or-nothing, and
+      // The app's own lines: the user's words and Calodex's scripted lines by id. All-or-nothing, and
       // a rejected batch is a 400 rather than a partial thread.
       if (req.method === "POST" && pathname === ROUTES.messagesLines) {
         // Unbilled, so no cap reaches it; per address, like the health sync, and BEFORE the body.

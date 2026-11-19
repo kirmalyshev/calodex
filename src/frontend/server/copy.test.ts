@@ -90,8 +90,8 @@ describe("the spent-sample refusal", () => {
   });
 });
 
-// #49, principal 2026-09-26: Spud only. Nothing the web writes for itself names anybody else.
-describe("Spud only", () => {
+// #49, principal 2026-09-26: Calodex only. Nothing the web writes for itself names anybody else.
+describe("Calodex only", () => {
   it("never mentions Gabie, in any language", () => {
     for (const lang of LANGS) {
       for (const [at, text] of Object.entries(flat(webCopyFor(lang)))) expect(text, `${lang}.${at}`).not.toMatch(/gabie/i);

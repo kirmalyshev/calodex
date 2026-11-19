@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "ตอบคำถามสำหรับแผนบนเว็บก่อน"
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "แคลอรี"
@@ -421,11 +426,6 @@ msgstr "โซเดียม"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "มีบางอย่างผิดพลาด และอาจส่งไปแล้วก็ได้ เช็ก /today ก่อนส่งอีกครั้ง"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Spud"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -25,7 +25,7 @@ export interface MealLogged {
   date: string;
   hint: MealHint;
   /**
-   * The one thing Spud would ask about this plate, when there is one worth asking.
+   * The one thing Calodex would ask about this plate, when there is one worth asking.
    *
    * ABSENT is the normal case, and the surface must render nothing for it: the engine only asks
    * about a low-confidence plate, past an account's first meal, when the account could afford the
@@ -39,7 +39,7 @@ export interface MealLogged {
    * arrives already worded: a client renders these and composes nothing itself.
    */
   verdictLabels: VerdictLabel[];
-  /** Spud's one-sentence verdict for the card — `verdictHeadline`; null when the verdicts say nothing. */
+  /** Calodex's one-sentence verdict for the card — `verdictHeadline`; null when the verdicts say nothing. */
   verdictHeadline: string | null;
 }
 
@@ -123,7 +123,7 @@ export interface MealProposed {
 
 /**
  * Who said an assistant line. Absent is the app's own voice; `gabie` is the coach who answers in Chat
- * (S9). The flag kept its name — the face above it is `coach.name`'s, Spud since #1041.
+ * (S9). The flag kept its name — the face above it is `coach.name`'s, Calodex since #1041.
  */
 export type ChatSpeaker = "gabie";
 
@@ -178,7 +178,7 @@ export interface MealUpdated {
   via: "manual" | "nl" | "reanalysis";
   /** The pills' words for the edited analysis — `verdictPillLabel` per visible verdict, localized. Never describes numbers that have since changed: computed at write. */
   verdictLabels: VerdictLabel[];
-  /** Spud's one-sentence verdict after the edit — `verdictHeadline`; null when nothing to say. */
+  /** Calodex's one-sentence verdict after the edit — `verdictHeadline`; null when nothing to say. */
   verdictHeadline: string | null;
   /**
    * The change, named — the SAME line the engine writes into the thread ("Rice 150 → 200g: 540 →

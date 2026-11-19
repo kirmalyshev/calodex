@@ -184,7 +184,7 @@ export const API: readonly Endpoint[] = [
     request: { json: "MessageRequest" },
     responses: { 200: "MessageResponse", 400: ERROR, 409: ERROR }, refuses: true, stream: "MessageResponse" },
   { route: "messagesLines", method: "POST", path: "/v1/messages/lines", auth: "bearer",
-    summary: "The user's own words and Spud's scripted lines, by id. Not charged.",
+    summary: "The user's own words and Calodex's scripted lines, by id. Not charged.",
     query: {
       order: "The order capability, the SAME value sent to `GET /v1/onboarding`: an onboarding ask line is quoted in the words a client with it was shown, so a different value quotes a line the screen did not show.",
       verdict: "The first-verdict capability, the SAME value sent to `GET /v1/onboarding`, for the same reason as `order`.",

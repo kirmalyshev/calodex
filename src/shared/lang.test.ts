@@ -226,7 +226,7 @@ describe("localizedGaps — the check that keeps this true after everybody leave
 describe("genderedRussian — the check no English-reading reviewer could be", () => {
   // The corpus is the point. A reviewer wrote 29 gendered sentences that a nutrition app would
   // plausibly ship and the first version of this check caught four of them, while firing on three
-  // of Spud's own lines. Both lists below are that corpus, kept so the next widening is measured
+  // of Calodex's own lines. Both lists below are that corpus, kept so the next widening is measured
   // rather than argued.
   const GENDERED = [
     "Что ты ел?", "Ты должна выпить воды.", "Оценено только потому, что ты об этом попросил.",
@@ -242,7 +242,7 @@ describe("genderedRussian — the check no English-reading reviewer could be", (
     "Ты, друг, пришёл?", "Ты, друг, пришла?",
   ];
   const FINE = [
-    // Spud, about himself. His gender is his own to have.
+    // Calodex, about himself. His gender is his own to have.
     "Я пока не уверен в этой оценке.", "Я всегда готов помочь.", "Я тоже рад этому.",
     "Когда я не уверен, я так и скажу.", "Записал. С этого момента натрий оценивается.",
     // `один` is the NUMERAL everywhere except after `ты`.
@@ -276,7 +276,7 @@ describe("genderedRussian — the check no English-reading reviewer could be", (
 
   it("does NOT claim to catch pro-drop, which Russian uses constantly", () => {
     // `Отлично справился сегодня` is gendered with no marker of person in it, and `Записал.` is
-    // Spud saying "noted" about himself. The two are indistinguishable without understanding the
+    // Calodex saying "noted" about himself. The two are indistinguishable without understanding the
     // sentence, so guessing would fire on his voice every second line. Pinned so the limit is a
     // decision in the suite rather than a surprise.
     expect(genderedRussian(["Отлично справился сегодня."])).toEqual([]);

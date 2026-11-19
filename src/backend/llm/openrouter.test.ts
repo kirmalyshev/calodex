@@ -89,7 +89,7 @@ const ANALYSIS = {
   sugar_g: 1.1, sodium_mg: 124, confidence: "medium", notes: "",
 };
 
-/** A meal already on the plate, and the question Spud asked about it. A chip answers these. */
+/** A meal already on the plate, and the question Calodex asked about it. A chip answers these. */
 const FOCUS = {
   isFood: true,
   items: [{ name: "Fried potatoes", name_en: "fried potatoes", grams: 250, kcal: 380,
@@ -181,7 +181,7 @@ describe("routeText", () => {
     expect(system!.content).toBe(SYSTEM_TEXT_CORRECTION);
     // The plate it must correct, and the question its two words are the answer to.
     expect(user!.content).toContain("Fried potatoes");
-    expect(user!.content).toContain(`Spud asked about this meal: "Cooked in oil, or dry?"`);
+    expect(user!.content).toContain(`Calodex asked about this meal: "Cooked in oil, or dry?"`);
     expect(user!.content).toContain("The user said: In oil");
   });
 

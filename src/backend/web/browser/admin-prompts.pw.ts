@@ -49,7 +49,7 @@ const PROMPTS = [
   { key: "route", text: "Sort the message in two words.", version: 4, source: "admin", updated_at: "2026-09-18T11:00:00.000Z", shipped: "You are the text side of a nutrition tracker." },
   { key: "text_meal", text: "You estimate from a description.", version: 1, source: "shipped", updated_at: "2026-09-18T10:00:00.000Z", shipped: "You estimate from a description." },
   { key: "text_correction", text: "You correct a meal already logged.", version: 1, source: "shipped", updated_at: "2026-09-18T10:00:00.000Z", shipped: "You correct a meal already logged." },
-  { key: "coach", text: "You are Spud.", version: 1, source: "shipped", updated_at: "2026-09-18T10:00:00.000Z", shipped: "You are Spud." },
+  { key: "coach", text: "You are Calodex.", version: 1, source: "shipped", updated_at: "2026-09-18T10:00:00.000Z", shipped: "You are Calodex." },
 ];
 
 /** The shipped copy as the template listing the server would answer, every row reviewed. */
