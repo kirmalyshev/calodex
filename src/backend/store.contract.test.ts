@@ -38,7 +38,7 @@ import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { hashToken } from "./auth/tokens.ts";
 import { memoryStore } from "./store.memory.ts";
 import { RLS_TABLES, SCOPE, postgresStore } from "./store.pg.ts";
-import { SWITCH_KEYS, type CampaignRow, type LlmCall, type Store, type StoreOptions } from "./store.ts";
+import { SWITCH_KEYS, type CampaignRow, type LlmCall, type RevenueCatEventRow, type Store, type StoreOptions } from "./store.ts";
 
 const PG_URL = process.env.TEST_DATABASE_URL;
 
@@ -1027,6 +1027,100 @@ function contract(name: string, make: () => Promise<Store>) {
       });
       await s.deleteUser(userId);
       expect(await s.getEntitlement(userId)).toBeNull();
+    });
+
+    // ── Acquisition and the RevenueCat event log (ieat-app#3196) ───────────────────────────
+    const rcEvent = (userId: string | null, over: Partial<RevenueCatEventRow> = {}): RevenueCatEventRow => ({
+      id: `rc-${crypto.randomUUID()}`, userId, type: "INITIAL_PURCHASE", productId: "eait_pro_yearly",
+      periodType: "TRIAL", presentedOfferingId: "default", price: 0, currency: "EUR",
+      priceInPurchasedCurrency: 0, store: "APP_STORE", countryCode: "DE", environment: "PRODUCTION",
+      eventAt: "2026-11-19T10:00:00.000Z",
+      acquisition: { source: "apple_search_ads", campaign: "c1", adGroup: "g1", keyword: "k1" },
+      ...over,
+    });
+
+    it("logs a RevenueCat event once per event id, and reads it back for its account only", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const e = rcEvent(a);
+      expect(await s.recordRevenueCatEvent(e)).toBe(true);
+      // A redelivery is the same event: nothing is written twice.
+      expect(await s.recordRevenueCatEvent({ ...e, type: "RENEWAL" })).toBe(false);
+      expect(await s.revenueCatEventsOf(a)).toEqual([e]);
+      expect(await s.revenueCatEventsOf(b)).toEqual([]);
+    });
+
+    it("logs an event naming no account of ours with no owner, and never creates a user", async () => {
+      const s = await open();
+      const stranger = crypto.randomUUID();
+      expect(await s.recordRevenueCatEvent(rcEvent(stranger))).toBe(true);
+      expect(await s.recordRevenueCatEvent(rcEvent(null, { acquisition: null, price: null, currency: null }))).toBe(true);
+      expect(await s.getProfile(stranger)).toBeNull();
+      expect(await s.revenueCatEventsOf(stranger)).toEqual([]);
+    });
+
+    it("erases the event log and the acquisition with the account, and moves both on a merge", async () => {
+      const s = await open();
+      const gone = (await s.upsertDeviceUser(device(), "en")).userId;
+      await s.recordRevenueCatEvent(rcEvent(gone));
+      await s.putAcquisition(gone, { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" });
+      await s.deleteUser(gone);
+      expect(await s.revenueCatEventsOf(gone)).toEqual([]);
+      expect(await s.acquisitionOf(gone)).toBeNull();
+
+      const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+      const real = (await s.upsertDeviceUser(device(), "en")).userId;
+      const e = rcEvent(anon);
+      await s.recordRevenueCatEvent(e);
+      const asa = { source: "apple_search_ads", campaign: "1", adGroup: "2", keyword: "3", via: "adservices" } as const;
+      await s.putAcquisition(anon, asa);
+      await s.mergeUsers(anon, real);
+      expect(await s.revenueCatEventsOf(real)).toEqual([{ ...e, userId: real }]);
+      expect(await s.acquisitionOf(real)).toEqual(asa);
+    });
+
+    it("a merge keeps the surviving account's AdServices answer, and fills a gap or a RevenueCat one", async () => {
+      const s = await open();
+      const pair = async () => ({
+        anon: (await s.upsertDeviceUser(device(), "en")).userId,
+        real: (await s.upsertDeviceUser(device(), "en")).userId,
+      });
+      const ads = { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" } as const;
+      const rc = { source: "apple_search_ads", campaign: "Brand", adGroup: "G", keyword: "kw", via: "revenuecat" } as const;
+
+      const kept = await pair();
+      await s.putAcquisition(kept.real, ads);
+      await s.putAcquisition(kept.anon, rc);
+      await s.mergeUsers(kept.anon, kept.real);
+      expect(await s.acquisitionOf(kept.real)).toEqual(ads);
+
+      const upgraded = await pair();
+      await s.putAcquisition(upgraded.real, rc);
+      await s.putAcquisition(upgraded.anon, ads);
+      await s.mergeUsers(upgraded.anon, upgraded.real);
+      expect(await s.acquisitionOf(upgraded.real)).toEqual(ads);
+    });
+
+    it("an AdServices answer is never replaced; RevenueCat's fills only until it arrives", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      expect(await s.acquisitionOf(u)).toBeNull();
+      const rc = { source: "apple_search_ads", campaign: "Brand", adGroup: "G", keyword: "kw", via: "revenuecat" } as const;
+      expect(await s.putAcquisition(u, rc)).toBe(true);
+      expect(await s.acquisitionOf(u)).toEqual(rc);
+      // A later RevenueCat delivery refreshes its own answer.
+      const rc2 = { ...rc, keyword: "kw2" };
+      expect(await s.putAcquisition(u, rc2)).toBe(true);
+      expect(await s.acquisitionOf(u)).toEqual(rc2);
+      // Apple's own answer replaces RevenueCat's, and then nothing replaces it — not even Apple's.
+      const ads = { source: "apple_search_ads", campaign: "11", adGroup: "22", keyword: "33", via: "adservices" } as const;
+      expect(await s.putAcquisition(u, ads)).toBe(true);
+      expect(await s.putAcquisition(u, rc)).toBe(false);
+      expect(await s.putAcquisition(u, { ...ads, source: "organic" })).toBe(false);
+      expect(await s.acquisitionOf(u)).toEqual(ads);
+      // No such account: nothing written.
+      expect(await s.putAcquisition(crypto.randomUUID(), ads)).toBe(false);
     });
 
     // ── Photos ─────────────────────────────────────────────────────────────────────────────
@@ -6367,7 +6461,7 @@ if (PG_URL) {
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "recordRevenueCatEvent", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",

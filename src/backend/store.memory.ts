@@ -23,7 +23,7 @@ import { type ChatMessage,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
-  type AdminOnboardingAccount, type AdminOnboardingEvent,
+  type AdminOnboardingAccount, type AdminOnboardingEvent, type Acquisition, type RevenueCatEventRow,
 } from "./store.ts";
 
 /** A stored funnel event: what the client sent, plus who and when we received it. */
@@ -218,6 +218,13 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     lifetimeEventAt: string | null;
   }
   const entitlements = new Map<string, StoredWithClocks>();
+  /** `users.acq_*` (ieat-app#3196), a map for the reason `roles` is one. */
+  const acquisitions = new Map<string, Acquisition>();
+  /** `revenuecat_events`, keyed on RevenueCat's event id as its primary key is. */
+  const rcEvents = new Map<string, RevenueCatEventRow>();
+  /** `mergeUsers`' rule for `users.acq_*`, in both stores: fill a gap, or replace RevenueCat's with Apple's. */
+  const mergedAcquisitionWins = (from: Acquisition | undefined, into: Acquisition | undefined): from is Acquisition =>
+    from !== undefined && (into === undefined || (into.via === "revenuecat" && from.via === "adservices"));
   const freeAnalyses = new Map<string, number>(); // userId -> the analyses the admin granted
   /**
    * The referral columns of `users` (#899) — maps beside the profile for the reason `roles` is
@@ -501,6 +508,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     roles.delete(userId);
     staffSet.delete(userId);
     channels.delete(userId);
+    acquisitions.delete(userId);
+    for (const [id, e] of rcEvents) if (e.userId === userId) rcEvents.delete(id);
     // Same again (S8): consent stamps are `users` columns in Postgres and a map here — an account
     // that consented and was deleted keeps neither the record nor the timestamp.
     consents.delete(userId);
@@ -1183,6 +1192,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // grant to somebody else's account. Postgres gets this for free by not listing the column.
       roles.delete(fromUserId);
       channels.delete(fromUserId);
+      const fromAcq = acquisitions.get(fromUserId);
+      if (mergedAcquisitionWins(fromAcq, acquisitions.get(intoUserId))) acquisitions.set(intoUserId, fromAcq);
+      acquisitions.delete(fromUserId);
+      for (const e of rcEvents.values()) if (e.userId === fromUserId) e.userId = intoUserId;
       // The merged-away zone and slots were handled above (the zone only fills a gap); what is left
       // of it dies with the row, as Postgres drops it.
       const fromZone = timezones.get(fromUserId);
@@ -1380,6 +1393,29 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (plan === null) return false;
       entitlements.set(intoUserId, plan.into);
       entitlements.set(fromUserId, plan.from);
+      return true;
+    },
+
+    async recordRevenueCatEvent(row) {
+      if (rcEvents.has(row.id)) return false;
+      // An id that names no account of ours is kept with no owner — the foreign key's answer there.
+      rcEvents.set(row.id, { ...row, userId: row.userId !== null && users.has(row.userId) ? row.userId : null });
+      return true;
+    },
+
+    async revenueCatEventsOf(userId) {
+      return [...rcEvents.values()].filter((e) => e.userId === userId)
+        .sort((a, b) => a.eventAt.localeCompare(b.eventAt)).map((e) => ({ ...e }));
+    },
+
+    async acquisitionOf(userId) {
+      const a = acquisitions.get(userId);
+      return a ? { ...a } : null;
+    },
+
+    async putAcquisition(userId, acquisition) {
+      if (!users.has(userId) || acquisitions.get(userId)?.via === "adservices") return false;
+      acquisitions.set(userId, { ...acquisition });
       return true;
     },
 
