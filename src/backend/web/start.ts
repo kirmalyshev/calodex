@@ -1537,8 +1537,11 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       }
       await patchProfile(ctx.deps, userId, { country: chosen });
       // The stored profile read above still says country=null. Onboarded, signed in, country just
-      // written: what is left is the optional friend's-link step, then the product.
-      return seeOther(REFERRAL_PATH);
+      // written: the friend's-link step is no longer asked (#3195). A link the walk arrived with
+      // (`?ref=`) is applied silently; a refusal (own, already, paid) is not worth a screen.
+      const ref = normalizeReferralCode(cookies[REF_COOKIE] ?? "");
+      if (ref !== null) await redeemReferral(ctx.deps, userId, ref);
+      return seeOther(ctx.hasWebApp ? "/" : CHAT_PATH, ref === null ? [] : [clearCookie(REF_COOKIE, secure)]);
     }
     return notFound();
   }

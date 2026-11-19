@@ -475,7 +475,15 @@ export async function patchProfile(
       coachName: threadCopyFor(profile.lang).coach.name,
       donate: donateOf(deps.config),
       hasLoggedMeal: await hasLoggedMeal(deps, userId),
-      referral: await referralView(deps, userId),
+      // The FIRST answer to the country question is the app's cue for the friend's-link step, which
+      // asks `link && !applied` of THIS response (#3195: that step is gone). An empty link reads as
+      // "no program" to every shipped build. A later edit, or the system's own fill, keeps the link:
+      // the phone and the web You screen store this response and draw the invite card from it.
+      referral: {
+        ...await referralView(deps, userId),
+        ...(req.country !== undefined && !req.filled && (current.country === null || (current.filled_fields ?? []).includes("country"))
+          ? { link: "" } : {}),
+      },
       analytics: await analyticsServerContext(deps, userId, profile),
     },
   };

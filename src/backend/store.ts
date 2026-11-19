@@ -1543,6 +1543,14 @@ export interface Store {
    */
   putAcquisition(userId: string, acquisition: Acquisition): Promise<boolean>;
 
+  /**
+   * The account a sign-in merged `userId` into, or null when it was never merged away (#2694).
+   * RevenueCat keeps naming the anonymous id it was configured with, so every delivery after the
+   * merge (a renewal, a cancellation, a late purchase) names an account that no longer exists.
+   * Written by `mergeUsers`, forgotten when the survivor is erased.
+   */
+  mergedInto(userId: string): Promise<string | null>;
+
   // ── Referrals (#899) ───────────────────────────────────────────────────────────────────────
   //
   // `users.referral_code` (unique, made with the account), `users.referred_by` (set ONCE),

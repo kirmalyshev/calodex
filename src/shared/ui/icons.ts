@@ -403,7 +403,7 @@ export interface IconOpts {
   /**
    * When the icon IS the content — a button that is only an icon — the accessible name goes here,
    * and the element is exposed (`role="img"`) instead of hidden. Decorative beside labelled text is
-   * the default, the same rule `spudSvg` keeps: never the only carrier of a piece of information.
+   * the default, the rule every mark here keeps: never the only carrier of a piece of information.
    */
   label?: string;
 }

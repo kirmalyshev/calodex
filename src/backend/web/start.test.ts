@@ -3438,7 +3438,7 @@ describe("refer a friend", () => {
     expect(left).toEqual([]);
   });
 
-  it("carries ?ref= through the walk to the step after the country, and applies it there", async () => {
+  it("carries ?ref= through the walk and applies it silently at the country — no step is asked (#3195)", async () => {
     const referrer = await store.createUser("en");
     const code = await codeOf(referrer);
     const door = await get(`/start?ref=${code.toLowerCase()}`);
@@ -3448,26 +3448,20 @@ describe("refer a friend", () => {
 
     const session = await answerAll(undefined, ANSWERS);
     const signed = await signIn("ref-walk", "google", undefined, session);
-    const country = await post("/start/country", { answer: "de" }, signed);
-    expect(country.headers.get("location")).toBe("/start/referral");
-
-    const step = await (await get("/start/referral", `${signed}; ${ref}`)).text();
-    expect(step).toContain(`value="api.eait.fit/r/${code}"`);
-    expect(step).toContain(escape(PAGE_COPY.referralAsk));
-    // The bar tops the plain column, and only the step below it is centred (`web/ob-referral.html`).
-    expect(step).toMatch(/<div class="wmain one refstep"><div class="wcol">\s*<div class="wbar">.*?class="dash".*?<\/div><\/div>\s*<div class="refmid"><div class="ref">/s);
-
-    const applied = await post("/start/referral", { code: `api.eait.fit/r/${code}` }, `${signed}; ${ref}`);
-    expect(applied.status).toBe(200);
-    const html = await applied.text();
-    expect(html).toContain(escape(PAGE_COPY.referralApplied));
-    expect(html).toContain(`href="/start/chat"`);
-    expect(applied.headers.getSetCookie().some((c) => c.startsWith("eait_ref=;"))).toBe(true);
+    const country = await post("/start/country", { answer: "de" }, `${signed}; ${ref}`);
+    expect(country.headers.get("location")).toBe("/start/chat");
+    expect(country.headers.getSetCookie().some((c) => c.startsWith("eait_ref=;"))).toBe(true);
     const userId = await webUser(signed);
     expect((await store.referralOf(userId))!.applied).toBe(true);
     expect(await store.bonusUntil(userId)).not.toBeNull();
-    // Done once: the step is not asked again.
-    expect((await get("/start/referral", signed)).headers.get("location")).toBe("/start/chat");
+  });
+
+  it("a walk with no ?ref= goes from the country straight to the product (#3195)", async () => {
+    const session = await answerAll(undefined, ANSWERS);
+    const signed = await signIn("no-ref-walk", "google", undefined, session);
+    const country = await post("/start/country", { answer: "de" }, signed);
+    expect(country.headers.get("location")).toBe("/start/chat");
+    expect((await store.referralOf(await webUser(signed)))!.applied).toBe(false);
   });
 
   it("answers each refusal in words, keeping what was typed, and Skip stores nothing", async () => {

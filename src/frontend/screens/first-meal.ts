@@ -15,10 +15,8 @@
 //
 // Moved whole out of `main.ts` (#87); the register's own boards for it are W5's.
 
-import { verdictMood } from "../../shared/types.ts";
 
 
-import type { MascotMood } from "../../shared/mascot.ts";
 // The one-meal flow's Spud lines are onboarding CONTENT (ieat-app#2757): the compiled-in revision
 // draws first, and the served one (the admin's words, or an experiment's) replaces it when it lands.
 import { onboardingContentFor } from "../../shared/onboarding-content.ts";
@@ -36,7 +34,7 @@ import { fillCopy as fill } from "../copy.ts";
 import { shrinkPhotos } from "../photo.ts";
 import { firstMealEdit, mealTitle, type Portion } from "../portion.ts";
 import { kitEl, payPlansEl } from "../kit.ts";
-import { ico, photoHero, spudAvatar } from "../../shared/ui/kit.ts";
+import { ico, photoHero } from "../../shared/ui/kit.ts";
 import { payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import {
   COPY, CONFIRM, MEAL, el, clear, kcal, lang, names, refusalWords, render, sendOrKeep,
@@ -45,10 +43,10 @@ import {
 import { routeBase } from "../route.ts";
 import * as analytics from "../analytics.ts";
 
-/** The boards' `.say` — Spud's disc beside one quiet line, inside the diary card. */
-function sayRow(mood: MascotMood, line: string): HTMLElement {
+/** The boards' `.say` — one quiet line, inside the diary card. */
+function sayRow(line: string): HTMLElement {
   const row = el("div", "say fline");
-  row.append(kitEl(spudAvatar(mood)), el("p", "", line));
+  row.append(el("p", "", line));
   return row;
 }
 
@@ -142,7 +140,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
   const askStep = (): HTMLElement => {
     const box = el("div", "step");
     // No offer preceded this screen on the web, so there is no `react` beat to answer it (#50).
-    box.append(sayRow("happy", fm.ask));
+    box.append(sayRow(fm.ask));
     const foot = el("div", "step-foot");
     const up = el("button", "cta p") as HTMLButtonElement;
     up.append(kitEl(ico("upload")), document.createTextNode(COPY.firstMealUpload));
@@ -156,7 +154,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
 
   const photoStep = (): HTMLElement => {
     const box = el("div", "step");
-    box.append(sayRow("happy", COPY.firstPhotoAsk));
+    box.append(sayRow(COPY.firstPhotoAsk));
     // A LABEL around the input, so the whole zone opens the chooser natively — a click needs no
     // script, and drag-and-drop is the affordance on top of it.
     const zone = el("label", "drop");
@@ -231,7 +229,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
 
   const typeStep = (): HTMLElement => {
     const box = el("div", "step");
-    box.append(sayRow("happy", COPY.firstTypeAsk));
+    box.append(sayRow(COPY.firstTypeAsk));
     const panel = el("div", "card");
     const lab = el("label", "lab", COPY.yourMeal);
     lab.setAttribute("for", "fm-meal");
@@ -281,7 +279,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
     dlg.setAttribute("role", "dialog");
     dlg.setAttribute("aria-modal", "true");
     dlg.setAttribute("aria-label", COPY.firstVerdictBeat);
-    dlg.append(sayRow(verdictMood(analysis.verdicts), COPY.firstVerdictBeat));
+    dlg.append(sayRow(COPY.firstVerdictBeat));
     if (lastPhotoUrl !== null) {
       const corners = ["tl", "bl", "br"] as const;
       const hero = kitEl(photoHero({
@@ -406,7 +404,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
     scrim.style.top = `${document.querySelector<HTMLElement>(".wtop")?.offsetHeight ?? 0}px`;
     const dlg = el("div", "foffer");
     const box = el("div", "step");
-    box.append(sayRow("happy", fm.afterAsk));
+    box.append(sayRow(fm.afterAsk));
     const card = el("div", "card");
     card.append(el("b", "d d22", COPY.offerAsk));
     const pay = payCopyFor(lang);

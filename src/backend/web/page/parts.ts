@@ -1,12 +1,8 @@
-// The fragments more than one screen draws: Spud's mark, his typed lines, the slim top bar.
+// The fragments more than one screen draws: the typed lines, the slim top bar.
 
-import { spudSvg } from "@eait/shared/mascot";
-import { currentBrand, type Lang } from "@eait/shared";
-import { pageCopyFor, type PageCopy } from "../copy.ts";
+import { currentBrand } from "@eait/shared";
+import type { PageCopy } from "../copy.ts";
 import { escape } from "./shell.ts";
-
-export const spud = (lang: Lang): string =>
-  `<div class="spud" role="img" aria-label="${escape(pageCopyFor(lang).spudAlt)}">${spudSvg("wave", "spud-start")}</div>`;
 
 export const bubbles = (lines: readonly string[]): string =>
   lines.map((line) => `<p class="bubble typed">${escape(line)}</p>`).join("");

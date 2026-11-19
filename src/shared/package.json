@@ -12,7 +12,6 @@
     "./palette": "./palette.ts",
     "./design": "./design.ts",
     "./brand": "./brand.ts",
-    "./mascot": "./mascot.ts",
     "./ui/icons": "./ui/icons.ts",
     "./ui/kit": "./ui/kit.ts"
   },

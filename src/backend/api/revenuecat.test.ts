@@ -186,6 +186,65 @@ describe("a purchase", () => {
   });
 });
 
+// #2694: the app configures RevenueCat with the ANONYMOUS id, and a sign-in merges that account
+// into the real one and deletes it. Every later delivery (a renewal, a cancellation, a purchase
+// that lands after the merge) still names the deleted id, and a paying user's renewal was
+// answered "not-applied" while their entitlement ran out.
+describe("a delivery naming an account a sign-in merged away", () => {
+  it("extends the survivor's subscription on a renewal", async () => {
+    const anon = await account();
+    const real = await account();
+    await deliver(purchase(anon.userId, { event_timestamp_ms: Date.now() - 60_000 }));
+    await store.mergeUsers(anon.userId, real.userId);
+
+    const renewedTo = Date.now() + 365 * 24 * 60 * 60 * 1000;
+    const log = spyOn(console, "log");
+    const res = await deliver(purchase(anon.userId, { type: "RENEWAL", expiration_at_ms: renewedTo }));
+    const lines = log.mock.calls.map((c) => String(c[0]));
+    log.mockRestore();
+    expect(await res.json()).toEqual({ ok: true, applied: true });
+    // The resolution is logged as the id pair, and nothing from the payload (#3201).
+    expect(lines.some((l) => l.includes(anon.userId) && l.includes(real.userId))).toBe(true);
+    expect(lines.some((l) => l.includes("RENEWAL") || l.includes("yearly"))).toBe(false);
+    expect((await profile(real.token)).entitlement.expiresAt).toBe(new Date(renewedTo).toISOString());
+  });
+
+  it("grants the survivor a purchase that landed after the merge", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+
+    const res = await deliver(purchase(anon.userId));
+    expect(await res.json()).toEqual({ ok: true, applied: true });
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+
+  it("grants and refunds a lifetime unlock on the survivor", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+    const lifetime = { type: "NON_RENEWING_PURCHASE", product_id: "lifetime", expiration_at_ms: null };
+
+    await deliver(purchase(anon.userId, { ...lifetime, event_timestamp_ms: Date.now() - 60_000 }));
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+    await deliver(purchase(anon.userId, { ...lifetime, type: "CANCELLATION" }));
+    expect((await profile(real.token)).entitlement.active).toBe(false);
+  });
+
+  it("still refuses a delivery older than the survivor's grant", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+    await deliver(purchase(real.userId, { event_timestamp_ms: Date.now() }));
+
+    const res = await deliver(purchase(anon.userId, {
+      type: "EXPIRATION", expiration_at_ms: Date.now() - 1000, event_timestamp_ms: Date.now() - 60_000,
+    }));
+    expect(await res.json()).toEqual({ ok: true, applied: false });
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+});
+
 describe("deliveries this server ignores", () => {
   // A Test Store or sandbox purchase is a simulated one. Accepting it in production would sell the
   // tier for free to anybody with a development build; the deployed host opts in explicitly, and
@@ -353,6 +412,31 @@ describe("a transfer between accounts", () => {
     await store.mergeUsers(anon.userId, real.userId);
     const res = await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [real.userId] }));
     expect(res.status).toBe(200);
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+
+  // Never resolved: the survivor's record holds its own purchases too, and a TRANSFER moves a record
+  // whole (#3201 review). The survivor keeps what it has; the destination is under-granted, #687's ceiling.
+  it("leaves the survivor's grant alone when the source was merged away", async () => {
+    const anon = await account();
+    const real = await account();
+    const other = await account();
+    await deliver(purchase(anon.userId, { event_timestamp_ms: Date.now() - 60_000 }));
+    await store.mergeUsers(anon.userId, real.userId);
+
+    await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [other.userId] }));
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+
+  it("transfers onto the survivor when the destination was merged away", async () => {
+    const buyer = await account();
+    const anon = await account();
+    const real = await account();
+    await deliver(purchase(buyer.userId, { event_timestamp_ms: Date.now() - 60_000 }));
+    await store.mergeUsers(anon.userId, real.userId);
+
+    const res = await deliver(transfer({ transferred_from: [buyer.userId], transferred_to: [anon.userId] }));
+    expect(await res.json()).toEqual({ ok: true, applied: true });
     expect((await profile(real.token)).entitlement.active).toBe(true);
   });
 
