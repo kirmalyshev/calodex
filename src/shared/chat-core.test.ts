@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { createChatCore, type ChatClient, type ChatCore, type Failure, type QueuedTurn } from "./chat-core.ts";
 import type { ChatEntry, ChatHistoryResponse, DeleteLineResponse, PendingMealsResponse, ProfileResponse } from "./contract.ts";
 import type { HandleTextResult, TargetGone } from "./results.ts";
-import { hasLiveSuggestions, visibleEntries } from "./thread.ts";
+import { chatRows, hasLiveSuggestions, visibleEntries } from "./thread.ts";
 import type { ThreadEntry } from "./thread.ts";
 
 // The Chat screen's async half (#381), driven with a fake client and no renderer: the four ways a
@@ -329,6 +329,23 @@ describe("the outbox (#708)", () => {
     const offers = core.state.entries.flatMap((e) => (e.role === "assistant" && e.result.kind === "proposed" ? [e.result.pendingId] : []));
     expect(offers).toEqual(["p2"]);
     expect(core.state.entries.some((e) => e.role === "user" && e.clientId === "q1")).toBe(true);
+  });
+
+  it("a drained turn's words stay over its proposal until the page carrying them lands (#3076)", async () => {
+    const { core, fake } = harness();
+    // The page this turn's reload reads was fetched before the server wrote the line — a focus
+    // refresh in flight, a reload that raced the write: it must not take her words off the card.
+    fake.pages.push(page([]));
+    await core.landed(proposed("p2"), { id: "q1", text: "a bowl of porridge with berries" });
+    const rows = chatRows(visibleEntries(core.state.entries));
+    const last = rows[rows.length - 1];
+    expect(last?.kind === "me" && last.entry.text).toBe("a bowl of porridge with berries");
+    expect(last?.kind === "me" && last.outcome?.role === "assistant" && last.outcome.result.kind).toBe("proposed");
+    // The stored line, once a page has it, replaces the bubble: one turn, drawn once.
+    fake.pages.push(page([userLine("a bowl of porridge with berries", { clientId: "q1", pendingId: "p2" })]));
+    core.refresh(); await settle();
+    const words = core.state.entries.filter((e) => e.role === "user" && e.text === "a bowl of porridge with berries");
+    expect(words.map((e) => "stored" in e && e.stored === true)).toEqual([true]);
   });
 
   it("a job-sent turn's answer keeps its chips onto the stored line (#1347)", async () => {

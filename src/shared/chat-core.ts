@@ -656,7 +656,13 @@ export function createChatCore(deps: ChatCoreDeps): ChatCore {
     // (#1347): the user's own words ride in with it, the bubble `send` itself would have drawn.
     // The stored page supersedes it by clientId, and sitting right before this turn's entry is
     // what seats the reconcile's keep of the answer and its chips.
-    if (send !== undefined) push({ id: send.id, role: "user", text: send.text });
+    // In flight until a page carries that line (#3076): a page fetched before the server wrote it
+    // — a focus refresh still out, a reload that raced the write — would otherwise drop the words
+    // and leave the answer alone under her photo.
+    if (send !== undefined) {
+      inflightIds.add(send.id);
+      push({ id: send.id, role: "user", text: send.text });
+    }
     if ("mealId" in result) focusMealId = result.date === deps.today() ? result.mealId : null;
     if (result.kind === "proposed") {
       // The same rule as a live proposal (#360): one live estimate, and the older ones cancelled for
