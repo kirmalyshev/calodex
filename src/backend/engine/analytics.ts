@@ -2,7 +2,7 @@
 // what the server knows about the account. Both are read here and nowhere else, so the funnel rows,
 // `ProfileResponse.analytics` and every client's super properties agree.
 import {
-  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
+  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
   TEMPLATE_SLOTS, usableContentFor, type AnalyticsContext, type AnalyticsServerContext, type AnalyticsSurface, type Lang,
   type OnboardingEventContext, type Profile,
 } from "@eait/shared";
@@ -55,8 +55,25 @@ function servedTemplates(latest: OnboardingServedRecord | undefined): string | n
   return refs.length > 0 ? refs.join(",") : null;
 }
 
-/** What the server knows about an account, for its rows and for every client's super properties. */
+/**
+ * What the server knows about an account, for its rows and for every client's super properties.
+ * Never throws: on a failed read the account's half is null, and the profile and the funnel go on.
+ */
 export async function analyticsServerContext(deps: EngineDeps, userId: string, profile: Profile): Promise<AnalyticsServerContext> {
+  try {
+    return await readServerContext(deps, userId, profile);
+  } catch (e) {
+    const err = e as { name?: string; code?: string } | null;
+    console.error(`[eait] analytics: context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
+    const live = await deps.store.getOnboardingContent().then((c) => usableContentFor(profile.lang, c).version, () => null);
+    return {
+      ...(Object.fromEntries(ANALYTICS_SERVER_KEYS.map((k) => [k, null])) as AnalyticsServerContext),
+      content_version: live, lang: profile.lang, country: profile.country,
+    };
+  }
+}
+
+async function readServerContext(deps: EngineDeps, userId: string, profile: Profile): Promise<AnalyticsServerContext> {
   const [held, referral, acq, served] = await Promise.all([
     heldArm(deps, userId, profile.lang), deps.store.referralOf(userId), deps.store.acquisitionOf(userId),
     deps.store.onboardingServed(userId),

@@ -82,6 +82,25 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     expect(await arm()).toEqual([id, "42"]);
   });
 
+  it("never fails the profile: a failed read is logged and the account's half is null", async () => {
+    const { store, deps, userId } = await setup();
+    await store.patchProfile(userId, { country: "de" });
+    store.acquisitionOf = async () => { throw Object.assign(new Error("db down"), { code: "57P01" }); };
+    const errors = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await profileView(deps, userId))!.analytics).toEqual({
+        content_version: DEFAULT_ONBOARDING_CONTENT.version, lang: "de", country: "de",
+        experiment_id: null, arm: null, template: null,
+        acq_source: null, acq_campaign: null, acq_adgroup: null, acq_keyword: null, referrer: null,
+      });
+      expect(errors).toHaveBeenCalledWith("[eait] analytics: context read failed: Error 57P01");
+      store.getOnboardingContent = async () => { throw new Error("db down"); };
+      expect((await profileView(deps, userId))!.analytics.content_version).toBeNull();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
   it("names the templates the account was last served, key@version, in slot order", async () => {
     const { store, deps, userId } = await setup();
     await store.recordOnboardingServed(userId, { contentVersion: 1, lang: "de", surface: "app", screens: { baseline: { template: "old", version: 1 } } });
