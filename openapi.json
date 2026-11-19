@@ -6094,6 +6094,13 @@
         ],
         "description": "Why a QUEUED job ended unknown (ieat-app#2187). Additive: a build that reads only `kind` is unchanged. `timeout` outran its budget, `error` threw, `worker-lost` died with a note that is never re-run, `expired` was never claimed. The wording is the client's."
       },
+      "FirstVerdictArm": {
+        "type": "string",
+        "enum": [
+          "own-meal",
+          "welcome-plate"
+        ]
+      },
       "FocusMealRequest": {
         "type": "object",
         "properties": {
@@ -8491,6 +8498,10 @@
               "type": "string"
             },
             "description": "The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the default. The contract: a server sends it only to a client that declared `?order=` at or above `ONBOARDING_ORDER_VERSION`, and enrols an older client in no experiment with an ordered arm. Typed as strings because it is NOT yet trusted: a client hands it to `promptsFor`, which runs `servedOrder`, so an order it cannot validate is the default, never a broken walk."
+          },
+          "firstVerdict": {
+            "$ref": "#/components/schemas/FirstVerdictArm",
+            "description": "The experiment arm's first verdict (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the live flow. Sent only to a client that declared `?verdict=1`; the server enrols no other client in an experiment whose arms carry one. `own-meal` arrives with the one analysis already allowed, so `limits.subscriptionRequired` is false until it is spent — the arm is that, read off the profile."
           }
         },
         "required": [
