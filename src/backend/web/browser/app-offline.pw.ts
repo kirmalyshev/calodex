@@ -161,9 +161,13 @@ test("a refusal that comes back when the queue drains is worded against the kept
   // With only a held turn left, a turn said now goes now rather than joining a queue.
   await say(page, "and some toast");
   await expect(waiting(page)).toHaveCount(0);
+  // The toast's turn is still out, and `takeTurn` disables every control until it lands (#3130):
+  // a Resend tapped now is a disabled button, and the banana would never go.
+  await expect.poll(() => userLines(page)).toContain("text:and some toast");
+  await expect(banana.getByRole("button", { name: "Resend" })).toBeEnabled();
 
   refused = false;
-  // force: see app-chat's Send-again spec — the rising node is swapped under the pointer.
+  // force: the kept line is still rising, and the outbox's redraw swaps the node under the click.
   await banana.getByRole("button", { name: "Resend" }).click({ force: true });
   await expect(waiting(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Resend" })).toHaveCount(0);
