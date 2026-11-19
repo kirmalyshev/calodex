@@ -1468,6 +1468,71 @@ describe("the admin's test push (ieat-app#1765)", () => {
   });
 });
 
+describe("the admin's per-account push history (ieat-app#3168)", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  const user = async () => (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+  const send = async (userId: string, over: Partial<Parameters<Store["createSend"]>[1]> = {}) =>
+    store.createSend(userId, {
+      id: crypto.randomUUID(), kind: "evening", ref: null, templateKey: "evening", lang: "en", variant: null,
+      token: "ExponentPushToken[hist]", state: "accepted", title: "Hi", body: "There", ...over,
+    });
+
+  it("lists every send_log row for the account, newest first — text, state and receipt error, never the token", async () => {
+    const userId = await user();
+    const other = await user();
+    await send(userId, { templateKey: "oldest" });
+    // The states the global recent list drops are still this account's history: a dry run and a
+    // holdout are sends that did not happen, and the row says so.
+    await send(userId, { kind: "campaign", ref: "c1", templateKey: "campaign:win-back", lang: "de", variant: "b", state: "dry", title: null, body: null });
+    // A transactional push stores no text (#848): the row carries nulls, not a template's words.
+    await send(userId, { kind: "transactional", templateKey: "meal-logged", state: "accepted", title: null, body: null });
+    const last = crypto.randomUUID();
+    await send(userId, { id: last, templateKey: "newest" });
+    await store.settleSend(userId, last, { state: "refused", receiptError: "message-rate-exceeded", receipt: true });
+    await send(other, { templateKey: "somebody-elses" });
+
+    const res = await admin("GET", `/admin/api/users/${userId}/push-log?limit=50`);
+    expect(res.status).toBe(200);
+    const view = await res.json() as { sends: Record<string, unknown>[] };
+    expect(view.sends.map((s) => s.templateKey)).toEqual(["newest", "meal-logged", "campaign:win-back", "oldest"]);
+    expect(view.sends[0]).toMatchObject({
+      id: last, kind: "evening", state: "refused", receiptError: "message-rate-exceeded",
+      title: "Hi", body: "There", lang: "en",
+    });
+    expect(view.sends[0]).toHaveProperty("receiptAt");
+    expect(view.sends[0]).toHaveProperty("deliveredAt");
+    expect(view.sends[1]).toMatchObject({ kind: "transactional", title: null, body: null });
+    expect(view.sends[2]).toMatchObject({ kind: "campaign", ref: "c1", lang: "de", variant: "b", state: "dry" });
+    for (const row of view.sends) {
+      expect(row).not.toHaveProperty("token");
+      expect(row).not.toHaveProperty("ticketId");
+      expect(row).not.toHaveProperty("userId");
+    }
+  });
+
+  it("404s an account that does not exist — 'no such person' is not 'sent nothing'", async () => {
+    expect((await admin("GET", `/admin/api/users/${crypto.randomUUID()}/push-log`)).status).toBe(404);
+  });
+
+  it("takes a limit for the newest rows, 400s a bad one and clamps an oversize one", async () => {
+    const userId = await user();
+    await send(userId, { templateKey: "older" });
+    await send(userId, { templateKey: "newer" });
+    const one = await (await admin("GET", `/admin/api/users/${userId}/push-log?limit=1`)).json() as { sends: { templateKey: string }[] };
+    expect(one.sends).toEqual([expect.objectContaining({ templateKey: "newer" })]);
+    expect((await admin("GET", `/admin/api/users/${userId}/push-log?limit=abc`)).status).toBe(400);
+    expect((await admin("GET", `/admin/api/users/${userId}/push-log?limit=-5`)).status).toBe(400);
+    expect((await admin("GET", `/admin/api/users/${userId}/push-log?limit=9999`)).status).toBe(200);
+  });
+
+  it("is closed to anyone but the admin", async () => {
+    const userId = await user();
+    expect((await admin("GET", `/admin/api/users/${userId}/push-log`, undefined, "")).status).toBe(401);
+    expect((await admin("GET", `/admin/api/users/${userId}/push-log`, undefined, await session())).status).toBe(404);
+  });
+});
+
 describe("the admin's push opens view (ieat-app#1759)", () => {
   beforeEach(async () => { await mountWithAdmin(); });
 
