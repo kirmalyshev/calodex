@@ -405,7 +405,6 @@ async function trackSignIn(
   result: { userId: string; outcome: string },
 ): Promise<void> {
   const request = analyticsRequestOf(req.headers, "web");
-  if (session !== null && session !== result.userId) deps.analytics?.merge(result.userId, session);
   if (result.outcome === "created" || result.outcome === "linked") {
     await track(deps, result.userId, "signup_completed", { provider, after_onboarding: session !== null }, request);
   } else {
