@@ -58,8 +58,30 @@ const JOURNAL = {
     { sessionId: "sess-aaaa-1", place: "goal", action: "answer", contentVersion: 7, ms: 4200, field: "goal", value: "lose", at: "2026-11-08T10:00:09.000Z" },
     { sessionId: "sess-aaaa-1", place: "goal", action: "back", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:12.000Z" },
     { sessionId: "sess-aaaa-1", place: "goal", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:15.000Z" },
+    { sessionId: "sess-aaaa-1", place: "baseline", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:20.000Z" },
     { sessionId: "sess-aaaa-1", place: "summary", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:30.000Z" },
     { sessionId: "sess-aaaa-1", place: "summary", action: "complete", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:01:00.000Z" },
+  ],
+  // ieat-app#3194: the run as served. The welcome copy carries markup on purpose — it must read as text.
+  runs: [{
+    sessionId: "sess-aaaa-1", contentVersion: 7,
+    experiment: { id: "abcd1234-0000-0000-0000-000000000000", arm: "variant 2", fellBack: false }, lang: "de",
+    served: { at: "2026-11-08T09:59:58.000Z", surface: "app", screens: { baseline: { template: "evening-beat", version: 3 } } },
+    copy: { welcome: "Hallo <b>du</b>\n[Los]", baseline: "So geht es\n[Weiter]" },
+  }],
+};
+
+/** Two runs nothing can render the words of: one never recorded, one whose version's copy is gone. */
+const QUIT = "99999999-8888-7777-6666-555555555555";
+const QUIT_JOURNAL = {
+  ...ACCOUNTS.accounts[1],
+  events: [
+    { sessionId: "q-1", place: "welcome", action: "view", contentVersion: 4, ms: null, field: null, value: null, at: "2026-11-07T09:00:00.000Z" },
+    { sessionId: "q-2", place: "goal", action: "view", contentVersion: 5, ms: null, field: null, value: null, at: "2026-11-07T10:00:00.000Z" },
+  ],
+  runs: [
+    { sessionId: "q-1", contentVersion: 4, experiment: null, lang: null, served: null, copy: null },
+    { sessionId: "q-2", contentVersion: 5, experiment: { id: "99990000-0000-0000-0000-000000000000", arm: "variant 2", fellBack: true }, lang: "de", served: { at: "2026-11-07T09:59:00.000Z", surface: "app", screens: {} }, copy: null },
   ],
 };
 
@@ -77,6 +99,7 @@ async function stub(page: Page) {
   await page.route("**/admin/api/funnel**", (r) => r.fulfill(json(FUNNEL)));
   await page.route("**/admin/api/funnel/users**", (r) => r.fulfill(json(ACCOUNTS)));
   await page.route(`**/admin/api/users/${USER}/onboarding**`, (r) => r.fulfill(json(JOURNAL)));
+  await page.route(`**/admin/api/users/${QUIT}/onboarding**`, (r) => r.fulfill(json(QUIT_JOURNAL)));
 }
 
 /** Console errors are a failure, not noise: this page has no build step to catch them first. */
@@ -131,6 +154,25 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(flow.locator(".chip", { hasText: "↩ back" })).toHaveCount(1);
   await expect(flow).toContainText("lose");
   await expect(flow).toContainText("4s");
+  // ieat-app#3194: the run header names the arm, language and surface; the template beat says so;
+  // the copy as served opens on demand and is text, never markup.
+  await expect(flow.locator(".fl-h")).toContainText("content v7 · exp abcd1234 · variant 2 · de · app");
+  await expect(flow.locator(".chip", { hasText: "template evening-beat@v3" })).toHaveCount(1);
+  const welcome = flow.locator(".fl-copy").first();
+  await expect(welcome.locator("pre")).toBeHidden();
+  await welcome.locator("summary").click();
+  await expect(welcome.locator("pre")).toHaveText("Hallo <b>du</b>\n[Los]");
+  await expect(welcome.locator("b")).toHaveCount(0);
+  await expect(flow.locator(".fl-copy")).toHaveCount(2);
+  // A run nothing recorded says so; a recorded run whose version's words are gone says that.
+  await page.locator("#funnel-users .fa-row", { hasText: "99999999" }).click();
+  const lost = page.locator(".fa-open").filter({ hasText: "Run 2" });
+  await expect(lost.locator(".fl-h").first()).toContainText("content v4 · no experiment · language not recorded · surface not recorded");
+  await expect(lost.locator(".fl-note").first()).toHaveText("copy not recorded");
+  await expect(lost.locator(".fl-h").nth(1)).toContainText("content v5 · exp 99990000 · variant 2 · fell back (saw v5) · de · app");
+  await expect(lost.locator(".fl-note").nth(1)).toHaveText("copy for v5 not kept");
+  await expect(lost.locator(".fl-copy")).toHaveCount(0);
+  await page.locator("#funnel-users .fa-row", { hasText: "99999999" }).click();
 
   // The row is a keyboard button too: Enter opens, Enter again closes.
   await row.click();
@@ -180,7 +222,7 @@ test("the account page's Onboarding tab reads the same journal", async ({ page }
   // The tab must load THIS account's stored journal — once upon a time it loaded the copy
   // editor's answer instead, because the tab's loader shared loadOnboarding's name.
   const flow = page.locator("#onboarding-flow");
-  await expect(flow.locator(".fl-ev")).toHaveCount(7);
+  await expect(flow.locator(".fl-ev")).toHaveCount(8);
   await expect(flow).toContainText("went back");
   await expect(flow.locator(".chip", { hasText: "↩ back" })).toHaveCount(1);
   await expect(page.locator("#onboarding-summary")).toContainText("monthly · 2h");

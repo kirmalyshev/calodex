@@ -59,6 +59,16 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     await store.putAcquisition(userId, { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" });
     expect((await profileView(deps, userId))!.analytics.acq_source).toBe("referral");
   });
+
+  it("names the templates the account was last served, key@version, in slot order", async () => {
+    const { store, deps, userId } = await setup();
+    await store.recordOnboardingServed(userId, { contentVersion: 1, lang: "de", surface: "app", screens: { baseline: { template: "old", version: 1 } } });
+    await store.recordOnboardingServed(userId, {
+      contentVersion: 2, lang: "de", surface: "app",
+      screens: { prelim: { template: "hero", version: 3 }, baseline: { template: "plate", version: 2 } },
+    });
+    expect((await profileView(deps, userId))!.analytics.template).toBe("plate@2,hero@3");
+  });
 });
 
 describe("analyticsRequestOf (ieat-app#3196)", () => {
