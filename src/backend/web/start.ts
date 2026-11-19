@@ -374,13 +374,6 @@ async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Pr
 const BEAT_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
 
 /**
- * The W2 walk — the field questions PLUS the interstitials among them, in the SERVED order: an
- * experiment arm may move `baseline` and remove `prelim` (ieat-app#2788), and `promptsFor` applies
- * it; this only filters. The `welcome`, `summary`, `signup`, `country` and `streak` places are out:
- * the front door renders its own, the rest are the steps after this walk ends (the plan, the streak
- * goal, sign-up — W3).
- */
-/**
  * One funnel row from this surface (ieat-app#3196), through the engine function the app's
  * `POST /v1/onboarding/events` calls, so the same sanitising and the same server-stamped context
  * apply. The run is the session account: it is born with the first answer and a reinstall here is a
@@ -416,6 +409,13 @@ async function trackSignIn(
   }
 }
 
+/**
+ * The W2 walk — the field questions PLUS the interstitials among them, in the SERVED order: an
+ * experiment arm may move `baseline` and remove `prelim` (ieat-app#2788), and `promptsFor` applies
+ * it; this only filters. The `welcome`, `summary`, `signup`, `country` and `streak` places are out:
+ * the front door renders its own, the rest are the steps after this walk ends (the plan, the streak
+ * goal, sign-up — W3).
+ */
 function walkFor(profile: Profile, content: OnboardingContent, order?: readonly string[]): ChatPrompt[] {
   const off = disabledScreens(content);
   return promptsFor(profile, [...off, "country", "streak"], { health: false }, order)

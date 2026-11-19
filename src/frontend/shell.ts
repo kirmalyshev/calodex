@@ -117,7 +117,7 @@ export const profile = async (): Promise<ProfileResponse> => {
     document.documentElement.lang = lang;
     // The deadline a queued send is bounded by reads this: the per-call budget THIS server runs.
     setModelCallTimeout(profileCache.limits.modelCallTimeoutMs);
-    // Our id, never the email, and no person properties. A repeat with the same id is a no-op.
+    // Our id, never the email; the context rides as super properties. A repeat with the same id is a no-op.
     analytics.identify(profileCache.profile.user_id, profileCache.analytics);
   }
   return profileCache;

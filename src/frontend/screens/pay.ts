@@ -45,7 +45,8 @@ export function payScreen(frame: Frame): HTMLElement {
     return box;
   }
   const plans = w === undefined ? null : payPlansEl(w, COPY.offerPlans);
-  // `#/pay?blocked` is the spent free sample's link (`log.ts`); every other way in is the settings row.
+  // `#/pay?blocked` is the spent free sample's link (`log.ts`); every other way in — the settings
+  // row, a `subscription` push — is source `settings`.
   const blocked = location.hash.includes("?blocked");
   analytics.capture("paywall_opened", { blocked, source: blocked ? "blocked" : "settings" });
   const sold = () => ({ plan: plans?.picked()?.value ?? "monthly", trial_shown: (w?.trialDays ?? 0) > 0, storefront: null });

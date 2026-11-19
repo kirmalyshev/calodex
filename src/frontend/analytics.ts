@@ -6,8 +6,9 @@
 // PostHog's EU host, so `connect-src 'self'` is unchanged. The `no-external` slim build loads no
 // script of its own — the nonce policy would refuse one anyway.
 //
-// Events carry names and flags only — never a weight, a kcal, a meal, a photo or anything typed —
-// and a person is our user id, never an email. Nothing is captured automatically: no clicks, no
+// Events carry names, flags and the analytics context (build, language, country, arm, acquisition,
+// referral code) — never a weight, kcal, meal, photo or typed text; a person is our user id, never
+// an email. Nothing is captured automatically: no clicks, no
 // page views, no recordings, no surveys. Nothing is persisted in this browser, and the client
 // starts only once somebody is signed in, AS them (`bootstrap`): an anonymous id minted per page
 // load and merged on every identify would pile ids onto one person until PostHog stops showing it.
