@@ -3405,7 +3405,7 @@ describe("refer a friend", () => {
   // page may restate the old name in its words, its title or a placeholder.
   it("names no eait anywhere a person reads it, on any page of the walk", async () => {
     const readable = (html: string): string =>
-      html.replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>|<!--[\s\S]*?-->|<svg[\s\S]*?<\/svg>/g, " ")
+      html.replace(/<style\b[\s\S]*?<\/style[^>]*>|<script\b[\s\S]*?<\/script[^>]*>|<!--[\s\S]*?--!?>|<svg\b[\s\S]*?<\/svg[^>]*>/gi, " ")
         .replace(/<[^>]*?\b(?:placeholder|aria-label|alt|title|value)="([^"]*)"[^>]*>/g, " $1 ")
         .replace(/<[^>]+>/g, " ");
     const code = await codeOf(await store.createUser("en"));
