@@ -3535,8 +3535,9 @@ describe("the web funnel (ieat-app#3196)", () => {
     const [row] = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
     const events = row!.events!;
     expect(events.every((e) => e.context.surface === "web" && e.context.lang === "en")).toBe(true);
-    // The first answer creates the account, so it is the first row: there was nobody to own its view.
-    expect(events[0]).toMatchObject({ place: "goal", action: "answer", field: "goal", value: "lose" });
+    // The first answer creates the account, so goal has no view: there was nobody to own it. The rows
+    // are written without the page waiting, so two in one millisecond come back in either order.
+    expect(events.filter((e) => e.place === "goal")).toMatchObject([{ action: "answer", field: "goal", value: "lose" }]);
     expect(events.filter((e) => e.action === "view").length).toBeGreaterThan(3);
     // Numbers are answered, never valued — the engine's privacy rule holds on this surface too.
     expect(events.find((e) => e.field === "weight_kg")).toMatchObject({ action: "answer", value: null });
