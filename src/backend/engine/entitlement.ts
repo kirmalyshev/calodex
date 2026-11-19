@@ -375,14 +375,25 @@ export async function applyRevenueCatEvent(
   let userId = event.appUserId;
   let written = await write(userId);
   if (!written) {
-    const survivor = await deps.store.mergedInto(userId);
-    if (survivor !== null) {
+    const survivor = await survivorOf(deps, userId);
+    if (survivor !== userId) {
       userId = survivor;
       written = await write(userId);
     }
   }
   await referralReward(deps, { ...event, appUserId: userId }, eventAt);
   return written ? { applied: true } : { applied: false, reason: "not-applied" };
+}
+
+/**
+ * The account `userId` lives on now: itself, or the survivor a sign-in merged it into (#3201).
+ * Logged as the id pair only, never the payload.
+ */
+async function survivorOf(deps: EngineDeps, userId: string): Promise<string> {
+  const survivor = await deps.store.mergedInto(userId);
+  if (survivor === null) return userId;
+  console.log(`[eait] revenuecat: ${userId} was merged into ${survivor}, delivery resolved to it`);
+  return survivor;
 }
 
 /** A TRANSFER (#687): RevenueCat moved one app user id's purchases onto another. Our ids only. */
@@ -408,12 +419,12 @@ export async function applyRevenueCatTransfer(deps: EngineDeps, t: RevenueCatTra
   if (t.sandbox && !deps.config.revenueCatAcceptSandbox) return { applied: false, reason: "sandbox" };
   const named = t.to[0];
   if (named === undefined) return { applied: false, reason: "not-applied" };
-  // A restore on a device still configured with the anonymous id names an account a sign-in
-  // merged away (#2694); its purchases belong to the survivor.
-  const into = (await deps.store.mergedInto(named)) ?? named;
+  // Either side may name an account a sign-in merged away (#3201): a device still configured with
+  // the anonymous id restores to it, or moves purchases the merge already put on the survivor.
+  const into = await survivorOf(deps, named);
   const eventAt = new Date(t.eventTimestampMs).toISOString();
   let moved = false;
-  for (const from of t.from) moved = (await deps.store.moveEntitlement(from, into, eventAt)) || moved;
+  for (const from of t.from) moved = (await deps.store.moveEntitlement(await survivorOf(deps, from), into, eventAt)) || moved;
   return moved ? { applied: true } : { applied: false, reason: "not-applied" };
 }
 
