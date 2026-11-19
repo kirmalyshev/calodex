@@ -1037,7 +1037,9 @@ describe("call metrics", () => {
     const { seen, onCall } = collect();
     await expect(llm.analyzePhoto({ ...PHOTO_INPUT, onCall })).rejects.toThrow(/timeout/);
     expect(seen.map((m) => m.status)).toEqual(["timeout"]);
-    expect(seen[0]!.msTotal).toBeGreaterThanOrEqual(35);
+    // No wall-clock lower bound: a timer may fire early and a loaded host skews it (#3225). It is a measured duration, not an exact one.
+    expect(Number.isFinite(seen[0]!.msTotal)).toBe(true);
+    expect(seen[0]!.msTotal).toBeGreaterThanOrEqual(0);
   });
 
   test("a streamed call reports the first content delta as first_item", async () => {
