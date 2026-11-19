@@ -51,7 +51,7 @@ import { lintCopy } from "./claims.ts";
  *
  *   - the wrong-direction check on the goal weight ("you're at 93 and asked to lose to 95") reads
  *     the current weight, so weight comes first;
- *   - the pace screen prints a landing month and a kcal a day, which need the activity multiplier,
+ *   - the pace screen prints a landing month, which needs the activity multiplier,
  *     so activity comes before the target.
  */
 export const ONBOARDING_STEPS = [
@@ -491,16 +491,17 @@ export interface OnboardingTargetContent {
  * The pace screen's words (ieat-app#2757). `rate`/`rateSuffix`/`result` are required; `echo` — the
  * answer said back above the pick — may be empty and renders nothing (ieat-app#2756). `{rate}` is
  * the projected rate with unit; `{target}`/`{month}` the projection's figure and month (a stored
- * `result` may still carry `{kcal}`: it is cut off, never shown — ieat-app#3192); `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code —
+ * `result` may still carry a ` · …{kcal}…` segment: it is cut off when read, and a new save is
+ * refused for it — ieat-app#3192); `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code —
  * the cap and floor's own explanation is bound to `explainTargets`, not editable copy.
  */
 export interface OnboardingPaceContent {
   rate: string;
   /** The words after the rate figure alone — "a week", said without the number. */
   rateSuffix: string;
-  /** "{target} around {month}" — `{kcal}` is still accepted in a stored revision and no longer shown (ieat-app#3192). */
+  /** "{target} around {month}" — a stored revision may still carry a trailing " · …{kcal}…" segment, cut when read; a new save with `{kcal}` is refused (ieat-app#3192). */
   result: string;
-  /** The pace question per goal ("How fast you want to lose weight"), whole sentences. Absent or empty → the `asks.pace` line. */
+  /** The pace question per goal ("How fast you want to lose weight"), whole sentences. Absent → the language's compiled-in heading; blank → the `asks.pace` line. */
   heading?: { lose: string; gain: string };
   echo: string;
 }
@@ -1833,7 +1834,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     }
     tmpl(pace.rate, "pace.rate", { required: true, allowed: ["rate"], requiredPh: ["rate"], max: MAX_LINE });
     tmpl(pace.rateSuffix, "pace.rateSuffix", { required: true });
-    tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month", "kcal"], requiredPh: ["target", "month"], max: MAX_LINE });
+    tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month"], requiredPh: ["target", "month"], max: MAX_LINE });
     const heading = pace.heading as Record<string, unknown> | undefined;
     if (heading !== undefined) {
       if (typeof heading !== "object" || heading === null) push("pace.heading must be an object");

@@ -258,15 +258,15 @@ function flatten(node: unknown, at = "", out: Record<string, string> = {}): Reco
 }
 
 describe("pace heading (ieat-app#3192)", () => {
-  it("names the goal; maintain and a revision without it keep the asked line", async () => {
+  it("names the goal; maintain keeps the asked line; a revision without it gets the compiled-in one", async () => {
     const { paceHeading } = await import("./onboarding-chat.ts");
     const en = onboardingContentFor("en");
-    expect(paceHeading(en, "lose", ["How fast?"])).toEqual(["How fast you want to lose weight"]);
-    expect(paceHeading(en, "gain", ["How fast?"])).toEqual(["How fast you want to gain weight"]);
-    expect(paceHeading(en, "maintain", ["How fast?"])).toEqual(["How fast?"]);
+    expect(paceHeading(en, "lose", ["How fast?"], "en")).toEqual(["How fast you want to lose weight"]);
+    expect(paceHeading(en, "gain", ["How fast?"], "en")).toEqual(["How fast you want to gain weight"]);
+    expect(paceHeading(en, "maintain", ["How fast?"], "en")).toEqual(["How fast?"]);
     const { heading: _gone, ...paceOld } = en.pace;
     const old = { ...en, pace: paceOld };
-    expect(paceHeading(old, "lose", ["How fast?"])).toEqual(["How fast?"]);
+    expect(paceHeading(old, "lose", ["How fast?"], "de")).toEqual([onboardingContentFor("de").pace.heading!.lose]);
   });
   it("no pace result prints a kcal figure", () => {
     for (const lang of LANGS) expect(onboardingContentFor(lang).pace.result, lang).not.toContain("{kcal}");
@@ -285,15 +285,15 @@ describe("pace heading and legacy revisions (ieat-app#3192)", () => {
     const { paceHeading } = await import("./onboarding-chat.ts");
     const en = onboardingContentFor("en");
     const blank = { ...en, pace: { ...en.pace, heading: { lose: "  ", gain: "" } } };
-    expect(paceHeading(blank, "lose", ["How fast?"])).toEqual(["How fast?"]);
-    expect(paceHeading(blank, "gain", ["How fast?"])).toEqual(["How fast?"]);
+    expect(paceHeading(blank, "lose", ["How fast?"], "en")).toEqual(["How fast?"]);
+    expect(paceHeading(blank, "gain", ["How fast?"], "en")).toEqual(["How fast?"]);
   });
-  it("validates old revisions: echo.days with {burn}, no days, {kcal} still in result; refuses a null or odd heading", () => {
+  it("validates old revisions: echo.days with {burn}, no days, refuses a new {kcal} in result; a null or odd heading", () => {
     const en = onboardingContentFor("en");
     const ok = (f: (c: any) => void) => { const c = structuredClone(en) as any; f(c); return validateOnboardingContent(c); };
     expect(ok((c) => { c.beats.echo.days = "Your days burn {burn}kcal"; }).ok).toBe(true);
     expect(ok((c) => { delete c.beats.echo.days; }).ok).toBe(true);
-    expect(ok((c) => { c.pace.result = "{target} around {month} · {kcal}kcal a day"; }).ok).toBe(true);
+    expect(ok((c) => { c.pace.result = "{target} around {month} · {kcal}kcal a day"; }).ok).toBe(false);
     expect(ok((c) => { delete c.pace.heading; }).ok).toBe(true);
     const nul = ok((c) => { c.pace.heading = null; });
     expect(nul.ok).toBe(false);

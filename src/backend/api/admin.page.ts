@@ -970,7 +970,7 @@ details.how p { margin-top: 8px; }
           <p class="muted">
             The explainers between the questions. <code>{rest}</code>, <code>{burn}</code> and
             <code>{delta}</code> are computed numbers — never type them.
-            "Why we ask" and the two burn echoes may be left empty: an empty line renders nothing.
+            "Why we ask" and the resting echo may be left empty: an empty line renders nothing.
           </p>
           <div id="beats"></div>
         </div>
@@ -1366,9 +1366,8 @@ details.how p { margin-top: 8px; }
     field(card, 'Rate line — {rate} is computed', t.rate, function (v) { t.rate = v; });
     field(card, 'Rate suffix ("a week")', t.rateSuffix, function (v) { t.rateSuffix = v; });
     field(card, 'Result — {target} {month} are computed', t.result, function (v) { t.result = v; });
-    t.heading = t.heading || { lose: "", gain: "" };
-    field(card, 'Question when the goal is lose weight (empty: the generic Pace line)', t.heading.lose, function (v) { t.heading.lose = v; });
-    field(card, 'Question when the goal is gain weight (empty: the generic Pace line)', t.heading.gain, function (v) { t.heading.gain = v; });
+    field(card, 'Question when the goal is lose weight (unset: the built-in one; blank: the generic Pace line)', (t.heading || {}).lose || "", function (v) { t.heading = t.heading || { lose: "", gain: "" }; t.heading.lose = v; });
+    field(card, 'Question when the goal is gain weight (unset: the built-in one; blank: the generic Pace line)', (t.heading || {}).gain || "", function (v) { t.heading = t.heading || { lose: "", gain: "" }; t.heading.gain = v; });
     field(card, 'Answer echo — {from} {to} are computed (may be empty)', t.echo, function (v) { t.echo = v; });
     return card;
   }

@@ -503,7 +503,8 @@ export function question(v: QuestionView): string {
       return page(v, { seg, control });
     }
     case "pace":
-      return page({ ...v, lines: [...paceHeading(v.content, v.profile.goal, v.lines)] }, { control: paceControl(v, paceEcho(v.profile, v.units, v.lang, v.content)) });
+      const named = { ...v, lines: [...paceHeading(v.content, v.profile.goal, v.lines, v.lang)] };
+      return page(named, { control: paceControl(named, paceEcho(v.profile, v.units, v.lang, v.content)) });
     default:
       // A field prompt this file does not draw is a bug, not a page — fail loud in dev.
       return page(v, {

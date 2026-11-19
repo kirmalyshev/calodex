@@ -31,6 +31,7 @@
 // rule 2: each wrote a value — a bucket, a moment, a frequency — that nothing in `src/` ever read
 // back. `struggles` stayed because it picks the on-track caption that appears one beat later.
 
+import { onboardingContentFor } from "./onboarding-content.ts";
 import {
   ageFrom, DIETS, MAX_DEFICIT_SHARE, MAX_SURPLUS_SHARE, MEDICAL_TAGS, MIN_AGE, MIN_WEIGHT_KG, dietOf,
   explainTargets, medicalOf, minHealthyWeightKg,
@@ -784,10 +785,13 @@ export function paceEcho(p: Profile, units: Units | null, lang: Lang, content: O
 
 /**
  * The pace question, named for the goal the user picked (ieat-app#3192): "How fast you want to lose
- * weight". Maintain — and a revision that predates `heading` — keep the screen's own `asks.pace` line.
+ * weight". Maintain keeps the screen's own `asks.pace` line; a stored revision that predates `heading` gets the compiled-in one.
  */
-export function paceHeading(content: OnboardingContent, goal: Profile["goal"], asked: readonly string[]): readonly string[] {
-  const h = goal === "lose" || goal === "gain" ? content.pace.heading?.[goal] : undefined;
+export function paceHeading(content: OnboardingContent, goal: Profile["goal"], asked: readonly string[], lang: Lang): readonly string[] {
+  if (goal !== "lose" && goal !== "gain") return asked;
+  // A stored revision that predates `heading` has none: the language's compiled-in one stands in. A
+  // heading an admin blanked on purpose is present and blank, and falls back to the asked line.
+  const h = (content.pace.heading ?? onboardingContentFor(lang).pace.heading)?.[goal];
   return typeof h === "string" && h.trim() !== "" ? [h] : asked;
 }
 
@@ -841,8 +845,8 @@ export function pacePreview(
     : null;
   return {
     ratePerWeek: proj === null ? null : Math.round(proj.kgPerWeek * 10) / 10,
-    // A stored revision may still end in " · {kcal}kcal a day": the figure is cut, never shown (#3192).
-    line: proj === null ? null : fill(content.pace.result.replace(/ · (?:(?! · ).)*\{kcal\}.*$/, ""), {
+    // A stored revision may still carry a " · …{kcal}…" segment: that segment is cut, never shown (#3192).
+    line: proj === null ? null : fill(content.pace.result.replace(/ · (?:(?! · ).)*?\{kcal\}(?:(?! · ).)*/, ""), {
       target: weightDisplay(p.target_weight_kg, p.units, lang),
       month: projectionMonth(today, proj.weeks, lang),
       kcal: kcalNumbers(lang)(targets.kcal),
