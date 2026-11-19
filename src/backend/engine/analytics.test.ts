@@ -8,6 +8,7 @@ import { demoPorts } from "../llm/demo.ts";
 import { logMail } from "../mail/log.ts";
 import { fakePush } from "../push/fake.ts";
 import { memoryStore } from "../store.memory.ts";
+import type { Store } from "../store.ts";
 import { fakeAnalytics } from "../analytics/fake.ts";
 import { analyticsRequestOf, track } from "./analytics.ts";
 import type { EngineDeps } from "./deps.ts";
@@ -60,6 +61,16 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     expect((await profileView(deps, userId))!.analytics.acq_source).toBe("referral");
   });
 
+  it("names the copy last served, else the held arm's, else the live one", async () => {
+    const { store, deps, userId } = await setup();
+    const version = async () => (await profileView(deps, userId))!.analytics.content_version;
+    expect(await version()).toBe(DEFAULT_ONBOARDING_CONTENT.version);
+    await holdArm(store, userId, 42);
+    expect(await version()).toBe(42);
+    await serve(store, userId, 7);
+    expect(await version()).toBe(7);
+  });
+
   it("names the templates the account was last served, key@version, in slot order", async () => {
     const { store, deps, userId } = await setup();
     await store.recordOnboardingServed(userId, { contentVersion: 1, lang: "de", surface: "app", screens: { baseline: { template: "old", version: 1 } } });
@@ -70,6 +81,23 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     expect((await profileView(deps, userId))!.analytics.template).toBe("plate@2,hero@3");
   });
 });
+
+const holdArm = async (store: Store, userId: string, version: number) => {
+  const content = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+  content.version = version;
+  const id = crypto.randomUUID();
+  await store.putOnboardingExperiment({
+    id, lang: "de", status: "draft", rules: {}, created_by: userId, created_at: new Date().toISOString(),
+    started_at: null, stopped_at: null, revision: 1,
+    variants: [{ control: true, weight: 0, content: structuredClone(DEFAULT_ONBOARDING_CONTENT) }, { weight: 1, content }],
+  } as never);
+  await store.startOnboardingExperiment(id);
+  await store.setSwitch("onboarding.experiments", true, userId);
+  await store.putOnboardingAssignment(userId, id, version);
+  return id;
+};
+const serve = (store: Store, userId: string, contentVersion: number) =>
+  store.recordOnboardingServed(userId, { contentVersion, lang: "de", surface: "app", screens: {} });
 
 describe("analyticsRequestOf (ieat-app#3196)", () => {
   it("reads the binary's own headers", () => {

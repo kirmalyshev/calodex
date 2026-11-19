@@ -32,7 +32,7 @@ export interface AnalyticsContext {
   ota_update_id: string | null;
   channel: DistributionChannel | null;
   paywall_offering: string | null;
-  /** The onboarding copy revision this account is served: its arm's, else the live one. */
+  /** The onboarding copy revision this account was last served; before any serving, its arm's, else the live one. */
   content_version: number | null;
   lang: Lang | null;
   country: string | null;

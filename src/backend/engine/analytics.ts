@@ -43,9 +43,11 @@ async function heldArm(deps: EngineDeps, userId: string, lang: Lang): Promise<{ 
   }
 }
 
-/** The latest serving's templates, `key@version` in slot order, comma-joined; null when none. */
-function servedTemplates(served: OnboardingServedRecord[]): string | null {
-  const latest = served.reduce<OnboardingServedRecord | undefined>((a, r) => (!a || r.lastServedAt >= a.lastServedAt ? r : a), undefined);
+const latestServed = (served: OnboardingServedRecord[]) =>
+  served.reduce<OnboardingServedRecord | undefined>((a, r) => (!a || r.lastServedAt >= a.lastServedAt ? r : a), undefined);
+
+/** The serving's templates, `key@version` in slot order, comma-joined; null when none. */
+function servedTemplates(latest: OnboardingServedRecord | undefined): string | null {
   const refs = TEMPLATE_SLOTS.flatMap((slot) => {
     const ref = latest?.screens[slot];
     return ref ? [`${ref.template}@${ref.version}`] : [];
@@ -60,14 +62,15 @@ export async function analyticsServerContext(deps: EngineDeps, userId: string, p
     deps.store.onboardingServed(userId),
   ]);
   const referrer = referral?.referredBy ?? null;
+  const latest = latestServed(served);
   return {
-    content_version: held?.variant.content.version
+    content_version: latest?.contentVersion ?? held?.variant.content.version
       ?? usableContentFor(profile.lang, await deps.store.getOnboardingContent()).version,
     lang: profile.lang,
     country: profile.country,
     experiment_id: held?.experimentId ?? null,
     arm: held ? String(held.variant.content.version) : null,
-    template: servedTemplates(served),
+    template: servedTemplates(latest),
     // A paid campaign outranks a referral; a referral outranks Apple's "organic".
     acq_source: acq && acq.source !== "organic" ? acq.source : referrer !== null ? "referral" : acq?.source ?? null,
     acq_campaign: acq?.campaign ?? null, acq_adgroup: acq?.adGroup ?? null, acq_keyword: acq?.keyword ?? null,
