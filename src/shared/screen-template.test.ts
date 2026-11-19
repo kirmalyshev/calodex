@@ -18,10 +18,9 @@ const good = (): ScreenTemplateDraft => ({
   blocks: [
     { type: "headline", text: "h" },
     { type: "image", asset: "a".repeat(64), alt: "alt" },
-    { type: "spud", lines: ["l1"], mood: "wave" },
     { type: "cta", label: "go", action: "next" },
   ],
-  strings: everyLang({ h: "See it work", alt: "A plate", l1: "Here is how", go: "Continue" }),
+  strings: everyLang({ h: "See it work", alt: "A plate", go: "Continue" }),
 });
 
 describe("validateScreenTemplate (#3167)", () => {
@@ -44,10 +43,10 @@ describe("validateScreenTemplate (#3167)", () => {
   it("refuses an unknown block type and an unknown action", () => {
     const t = good();
     (t.blocks as unknown[]).push({ type: "webview", url: "https://x" });
-    (t.blocks as unknown[])[3] = { type: "cta", label: "go", action: "open-url" };
+    (t.blocks as unknown[])[2] = { type: "cta", label: "go", action: "open-url" };
     const errs = validateScreenTemplate(t, new Set(["a".repeat(64)]));
-    expect(errs).toContain("blocks[4].type 'webview' is not a block");
-    expect(errs).toContain("blocks[3].action 'open-url' is not an action");
+    expect(errs).toContain("blocks[3].type 'webview' is not a block");
+    expect(errs).toContain("blocks[2].action 'open-url' is not an action");
   });
 
   it("refuses a typed number in any language: prices, kcal and trial lengths are never typed", () => {
@@ -105,7 +104,7 @@ describe("resolveScreen (#3167)", () => {
     expect(s.template).toBe("t");
     expect(s.version).toBe(3);
     expect(s.strings.go).toBe("Continue");
-    expect(Object.keys(s.strings).sort()).toEqual(["alt", "go", "h", "l1"]);
+    expect(Object.keys(s.strings).sort()).toEqual(["alt", "go", "h"]);
     expect(s.assets).toEqual([{ sha256: "a".repeat(64), url: `/v1/onboarding/assets/${"a".repeat(64)}` }]);
   });
 });
@@ -136,8 +135,8 @@ describe("validateScreenTemplate — review round 1 (#3167)", () => {
   });
   it("refuses a skip action: no template may jump past a compiled question", () => {
     const t = good();
-    (t.blocks as unknown[])[3] = { type: "cta", label: "go", action: "skip-to:paywall" };
-    expect(validateScreenTemplate(t, assets)).toContain("blocks[3].action 'skip-to:paywall' is not an action");
+    (t.blocks as unknown[])[2] = { type: "cta", label: "go", action: "skip-to:paywall" };
+    expect(validateScreenTemplate(t, assets)).toContain("blocks[2].action 'skip-to:paywall' is not an action");
   });
   it("refuses a format character that would hide a claim from the gate", () => {
     const t = good();
@@ -152,7 +151,17 @@ describe("validateScreenTemplate — review round 1 (#3167)", () => {
   it("answers an inherited name as not a block, never a throw", () => {
     const t = good();
     (t.blocks as unknown[]).push({ type: "toString", x: 1 });
-    expect(validateScreenTemplate(t, assets)).toContain("blocks[4].type 'toString' is not a block");
+    expect(validateScreenTemplate(t, assets)).toContain("blocks[3].type 'toString' is not a block");
+  });
+  it("caps the admin's note", () => {
+    expect(validateScreenTemplate({ ...good(), note: "x".repeat(241) }, assets)).toContain("note must be a string of at most 240 characters");
+  });
+  it("refuses a spud block (#3177) and a screen that does not open on its headline", () => {
+    const t = good();
+    t.blocks = [t.blocks[1]!, t.blocks[0]!, t.blocks[2]!];
+    expect(validateScreenTemplate(t, assets)).toContain("blocks[0] must be the headline");
+    (t.blocks as unknown[]).push({ type: "spud", lines: ["h"], mood: "wave" });
+    expect(validateScreenTemplate(t, assets)).toContain("blocks[3].type 'spud' is not a block");
   });
 });
 
@@ -191,6 +200,7 @@ describe("usableServedScreen — what a shipped binary trusts (#3167)", () => {
     expect(usableServedScreen({ ...served(), strings: { ...served().strings, go: "" } })).toBeNull();
     expect(usableServedScreen({ ...served(), assets: [{ sha256: "a".repeat(64), url: "javascript:alert(1)" }] })).toBeNull();
     expect(usableServedScreen({ ...served(), assets: [{ sha256: "a".repeat(64), url: "//evil.example/x" }] })).toBeNull();
+    expect(usableServedScreen({ ...served(), assets: [{ sha256: "a".repeat(64), url: "/\\evil.example/x" }] })).toBeNull();
     expect(usableServedScreen({ ...served(), assets: [] })).toBeNull();
     expect(usableServedScreen(null)).toBeNull();
     expect(usableServedScreen({ template: "t" })).toBeNull();
@@ -203,6 +213,6 @@ describe("keptStrings (#3167)", () => {
     (t.strings.en as Record<string, string>).stray = "never read";
     const kept = keptStrings(t);
     expect(Object.keys(kept).length).toBe(LANGS.length);
-    expect(Object.keys(kept.en!).sort()).toEqual(["alt", "go", "h", "l1"]);
+    expect(Object.keys(kept.en!).sort()).toEqual(["alt", "go", "h"]);
   });
 });

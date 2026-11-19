@@ -1830,7 +1830,7 @@ describe("screen templates over the admin API (ieat-app#3167)", () => {
     const { sha256 } = await up.json() as { sha256: string };
     const draft = {
       renderer: 1,
-      blocks: [{ type: "image", asset: sha256, alt: "a" }, { type: "cta", label: "go", action: "next" }],
+      blocks: [{ type: "headline", text: "a" }, { type: "image", asset: sha256, alt: "a" }, { type: "cta", label: "go", action: "next" }],
       strings: strings({ a: "A plate", go: "Continue" }),
     };
     const put = await admin("PUT", "/admin/api/templates/plate-beat", draft);
@@ -1839,7 +1839,7 @@ describe("screen templates over the admin API (ieat-app#3167)", () => {
     const list = await (await admin("GET", "/admin/api/templates")).json() as { templates: { key: string; version: number }[] };
     expect(list.templates.map((t) => [t.key, t.version])).toEqual([["plate-beat", 1]]);
     const one = await admin("GET", "/admin/api/templates/plate-beat/1");
-    expect(((await one.json()) as { template: { blocks: unknown[] } }).template.blocks).toHaveLength(2);
+    expect(((await one.json()) as { template: { blocks: unknown[] } }).template.blocks).toHaveLength(3);
 
     const asset = await handle(new Request(url(ROUTES.onboardingAsset(sha256))));
     expect(asset.status).toBe(200);
@@ -1856,6 +1856,11 @@ describe("screen templates over the admin API (ieat-app#3167)", () => {
     expect(bad.status).toBe(422);
     expect(((await bad.json()) as { errors: string[] }).errors).toContain("blocks[0].type 'webview' is not a block");
     expect((await upload(new TextEncoder().encode("<svg/>"))).status).toBe(422);
+    const declaredOver = await handle(new Request(url("/admin/api/template-assets"), {
+      method: "POST", body: JPEG,
+      headers: { "content-type": "application/octet-stream", "content-length": String(base.maxUploadBytes + 1), authorization: `Bearer ${adminBearer}` },
+    }));
+    expect(declaredOver.status).toBe(422);
   });
 
   it("is invisible to an ordinary account", async () => {

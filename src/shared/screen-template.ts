@@ -9,7 +9,7 @@
 
 import { lintCopy } from "./claims.ts";
 import { genderedRussian } from "./lang.ts";
-import type { MascotMood } from "./mascot.ts";
+import type { IconName } from "./ui/icons.ts";
 import { ONBOARDING_CLAIM_RULES } from "./onboarding.ts";
 import { LANGS, type Lang } from "./types.ts";
 
@@ -33,8 +33,7 @@ export const CTA_ACTIONS = ["next"] as const;
 export type CtaAction = (typeof CTA_ACTIONS)[number];
 const FORWARD: readonly string[] = ["next"];
 
-export const BULLET_ICONS = ["check", "camera", "chart", "heart", "clock", "spark"] as const;
-const MOODS: readonly MascotMood[] = ["care", "wave", "think", "idle", "happy", "joy"];
+export const BULLET_ICONS = ["check", "camera", "bars", "heart", "clock", "sparkle"] as const satisfies readonly IconName[];
 
 /** A key into the template's own `strings`. */
 type StringKey = string;
@@ -43,7 +42,6 @@ type AssetRef = string;
 
 export type Block =
   | { type: "headline" | "body"; text: StringKey }
-  | { type: "spud"; lines: StringKey[]; mood: MascotMood }
   | { type: "bullets"; items: { icon: (typeof BULLET_ICONS)[number]; text: StringKey }[] }
   | { type: "image"; asset: AssetRef; alt: StringKey }
   | { type: "cta"; label: StringKey; action: CtaAction }
@@ -110,7 +108,6 @@ export const hourInWindow = (hour: number, [from, to]: [number, number]): boolea
 function keysOf(b: Block): StringKey[] {
   switch (b.type) {
     case "headline": case "body": return [b.text];
-    case "spud": return b.lines;
     case "bullets": return b.items.map((i) => i.text);
     case "image": return [b.alt];
     case "cta": return [b.label];
@@ -123,7 +120,7 @@ const isStr = (v: unknown): v is string => typeof v === "string" && v !== "";
 /** The fields each block type may carry. Anything else is refused, never stored: a template is data
  *  the client reads by these names, and a `url` or `color` riding along is the free form it is not. */
 const BLOCK_FIELDS: Record<Block["type"], readonly string[]> = {
-  headline: ["text"], body: ["text"], spud: ["lines", "mood"], bullets: ["items"], image: ["asset", "alt"],
+  headline: ["text"], body: ["text"], bullets: ["items"], image: ["asset", "alt"],
   cta: ["label", "action"], spacer: ["size"],
 };
 
@@ -143,11 +140,6 @@ function blockErrors(raw: unknown, at: string, assets: ReadonlySet<string>): str
   const need = (f: string) => (isStr(b[f]) ? [] : [`${at}.${f} must be a string key`]);
   switch (b.type) {
     case "headline": case "body": return need("text");
-    case "spud":
-      return [
-        ...(Array.isArray(b.lines) && b.lines.length >= 1 && b.lines.length <= 3 && b.lines.every(isStr) ? [] : [`${at}.lines must be 1–3 string keys`]),
-        ...(MOODS.includes(b.mood as MascotMood) ? [] : [`${at}.mood '${String(b.mood)}' is not a mood`]),
-      ];
     case "bullets":
       return Array.isArray(b.items) && b.items.length >= 1 && b.items.length <= 4 &&
         b.items.every((i) => isStr(i?.text) && (BULLET_ICONS as readonly string[]).includes(i?.icon))
@@ -182,6 +174,8 @@ export function validateScreenTemplate(raw: unknown, assets: ReadonlySet<string>
   t.blocks.forEach((b, i) => errs.push(...blockErrors(b, `blocks[${i}]`, assets)));
   if (errs.length > 0) return errs;
 
+  // The screen's heading is its first block, as every beat's question is (`Frame`'s `q`).
+  if (t.blocks[0]!.type !== "headline") errs.push("blocks[0] must be the headline");
   if (t.blocks.filter((b) => b.type === "cta" && FORWARD.includes(b.action)).length !== 1) {
     errs.push("needs exactly one cta that moves forward");
   }
@@ -252,13 +246,13 @@ export function usableServedScreen(raw: unknown): ServedScreen | null {
   const s = raw as ServedScreen;
   if (typeof s !== "object" || s === null || typeof s.template !== "string" || !Number.isInteger(s.version)) return null;
   if (!Array.isArray(s.blocks) || s.blocks.length === 0 || typeof s.strings !== "object" || s.strings === null) return null;
-  if (!Array.isArray(s.assets) || !s.assets.every((a) => typeof a?.sha256 === "string" && typeof a.url === "string" && /^(\/(?!\/)|https:\/\/)/.test(a.url))) return null;
+  if (!Array.isArray(s.assets) || !s.assets.every((a) => typeof a?.sha256 === "string" && typeof a.url === "string" && /^(\/(?![\/\\])|https:\/\/)/.test(a.url))) return null;
   const shas = new Set(s.assets.map((a) => a.sha256));
   for (const [i, b] of s.blocks.entries()) {
     if (blockErrors(b, `blocks[${i}]`, shas).length > 0) return null;
     if (keysOf(b).some((k) => typeof s.strings[k] !== "string" || s.strings[k] === "")) return null;
   }
-  return s.blocks.filter((b) => b.type === "cta").length === 1 ? s : null;
+  return s.blocks[0]!.type === "headline" && s.blocks.filter((b) => b.type === "cta").length === 1 ? s : null;
 }
 
 /** The strings a template keeps: every `LANGS` table, cut to the keys its blocks read. */

@@ -56,7 +56,7 @@ describe("saveScreenTemplate (#3167)", () => {
     expect(await store.listScreenTemplates()).toEqual([]);
   });
   it("refuses an image that was never uploaded, and accepts it once it is", async () => {
-    const img = (sha: string) => draft({ blocks: [{ type: "image", asset: sha, alt: "h" }, { type: "cta", label: "go", action: "next" }] });
+    const img = (sha: string) => draft({ blocks: [{ type: "headline", text: "h" }, { type: "image", asset: sha, alt: "h" }, { type: "cta", label: "go", action: "next" }] });
     expect((await saveScreenTemplate(deps, admin, "t", img("a".repeat(64)))).ok).toBe(false);
     const up = await uploadTemplateAsset(deps, JPEG);
     expect(up.ok).toBe(true);
