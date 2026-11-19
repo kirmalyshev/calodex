@@ -618,7 +618,8 @@ export interface AdminOnboardingRun {
    * The account's arm: `arm` is the experiments table's label, "control" or "variant N" (1-based).
    * Only an arm held at the time of the run counts: from `assigned_at` (client-clock drift allowed)
    * to the experiment's `stopped_at`. `fellBack`: the account held that arm then, but this run
-   * showed another version. Null: no experiment, or two held arms at this version (ambiguous).
+   * showed another version — claimed only when a serving was recorded for the run. Null: no arm
+   * held then; two held arms at this version (ambiguous); or no recorded serving to fall back from.
    */
   experiment: { id: string; arm: string; fellBack: boolean } | null;
   lang: Lang | null;
@@ -663,14 +664,14 @@ export async function onboardingRuns(deps: EngineDeps, userId: string, events: A
     // ambiguous: none); else the one arm held, in the served language when known: it fell back.
     const exacts = live.filter((h) => h.e.variants[h.i]!.content.version === v);
     const exact = exacts.length === 1 ? exacts[0]! : null;
-    const others = live.filter((h) => rec === null || h.e.lang === rec.lang);
+    const others = rec === null ? [] : live.filter((h) => h.e.lang === rec.lang);
     const hit = exacts.length > 0 ? exact : others.length === 1 ? others[0]! : null;
     const experiment = hit ? { id: hit.e.id, arm: armLabel(hit.e, hit.i), fellBack: hit !== exact } : null;
     const places = new Set(events.filter((e) => e.sessionId === first.sessionId).map((e) => e.place));
     runs.push({
       sessionId: first.sessionId, contentVersion: v, experiment, lang: rec?.lang ?? null,
       served: rec ? { at: rec.servedAt, surface: rec.surface, screens: rec.screens } : null,
-      copy: rec ? await runCopy(deps, exact ? exact.e.variants[exact.i]! : null, stored, v, rec, places) : null,
+      copy: rec ? await runCopy(deps, experiments, stored, v, rec, places) : null,
     });
   }
   return runs;
@@ -682,7 +683,8 @@ const servingKey = (r: OnboardingServed) => JSON.stringify([r.contentVersion, r.
 
 /**
  * The latest serving of `v` at or before `at`; else the earliest within the drift after it; else
- * null. A DIFFERENT serving on each side of `at` (within the drift) is ambiguous — either could be
+ * null. A DIFFERENT serving on each side of `at` (within the drift), or two different ones within the
+ * drift after it with none before, is ambiguous — either could be
  * this run's — so null too; the same serving on both sides is not.
  */
 function servedFor(rows: OnboardingServedRecord[], v: number, at: string): OnboardingServedRecord | null {
@@ -694,22 +696,33 @@ function servedFor(rows: OnboardingServedRecord[], v: number, at: string): Onboa
     const pick = before.reduce((m, r) => (r.servedAt >= m.servedAt ? r : m));
     return after.some((r) => servingKey(r) !== servingKey(pick)) ? null : pick;
   }
+  // ponytail: the drift only covers a client clock BEHIND the server; one running ahead can match a
+  // later serving of the same version as "before". Bound it both ways if that shows up in the journal.
+  if (new Set(after.map(servingKey)).size > 1) return null;
   return after.length > 0 ? after.reduce((m, r) => (r.servedAt < m.servedAt ? r : m)) : null;
 }
 
+/** A fallback with no blocks: what `usableContent` swaps in for an unusable block reads as "not kept". */
+const NOT_KEPT = {} as OnboardingContent;
+
 /**
- * The words of version `v` in the served language, from what holds exactly them: the run's arm, or
- * the stored row's own copy for that language when it IS version `v` — each its own blocks only,
- * never filled from another revision. Compiled copy is never used: it changes without a version bump.
+ * The words of version `v` in the served language, from what holds exactly them: the arm whose
+ * version it is (by version alone — a version names one arm, whoever was assigned), or the stored
+ * row's own copy for that language when it IS version `v`. Only the blocks the phone would have used:
+ * `usableContent` swaps an incomplete block for the fallback's, so that block is absent here, never
+ * raw words. Compiled copy is never used: it changes without a version bump.
  */
 async function runCopy(
-  deps: EngineDeps, arm: OnboardingVariant | null, stored: OnboardingContentSet, v: number,
+  deps: EngineDeps, experiments: OnboardingExperiment[], stored: OnboardingContentSet, v: number,
   rec: OnboardingServedRecord, places: Set<string>,
 ): Promise<Record<string, string> | null> {
+  const arm = experiments.flatMap((e) => (e.lang === rec.lang ? e.variants : [])).find((x) => x.content.version === v);
   const row = stored[rec.lang];
-  const found: Partial<OnboardingContent> | null = arm ? arm.content : row?.version === v ? row : null;
-  if (found === null) return null;
-  const content = branded(found);
+  const raw = arm ? arm.content : row?.version === v ? row : null;
+  if (raw === null) return null;
+  const usable = usableContent(raw, NOT_KEPT);
+  if (usable === NOT_KEPT) return null;
+  const content = branded(usable as Partial<OnboardingContent>);
   const copy: Record<string, string> = {};
   for (const place of places) {
     const text = placeCopy(content, place);

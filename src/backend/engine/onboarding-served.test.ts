@@ -31,6 +31,11 @@ const draft: ScreenTemplateDraft = {
   strings: strings({ h: "See how it works", go: "Continue" }),
 };
 const content = (version: number): OnboardingContent => ({ ...structuredClone(DEFAULT_ONBOARDING_CONTENT), version });
+/** A whole revision whose welcome says `who` and whose summary block is missing. */
+const words = (version: number, who: string): OnboardingContent => {
+  const { summary: _gone, ...rest } = content(version);
+  return { ...rest, welcome: { lines: [`${who} hello`], cta: `${who} go`, signin: `${who} in` } } as OnboardingContent;
+};
 const signals = { lang: "en" as const, surface: "app" as const, region: "DE", tz: "Europe/Berlin", orderVersion: 99, renderer: TEMPLATE_RENDERER_VERSION };
 
 /** A running experiment whose second arm (version 42) replaces the baseline beat with `day@1`. */
@@ -119,10 +124,13 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
   it("says control for the control arm, and 'fell back' when an assigned account's run shows another version", async () => {
     const e = await running();
     await store.putOnboardingAssignment(userId, e.id, 41);
-    await store.recordOnboardingEvents(userId, [event("c", "welcome", "view", 41), event("x", "welcome", "view", 42)] as never);
-    const [control, other] = await runs();
+    await served(42);
+    await store.recordOnboardingEvents(userId, [event("c", "welcome", "view", 41), event("x", "welcome", "view", 42), event("y", "welcome", "view", 99)] as never);
+    const [control, other, unrecorded] = await runs();
     expect(control!.experiment).toEqual({ id: e.id, arm: "control", fellBack: false });
     expect(other!.experiment).toEqual({ id: e.id, arm: "control", fellBack: true });
+    // Nothing recorded what that run was served: no fell-back claim.
+    expect(unrecorded!.experiment).toBeNull();
   });
 
   it("derives the arm for a run nothing recorded the serving of, and guesses nothing else", async () => {
@@ -195,7 +203,7 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     expect(compiled).toMatchObject({ lang: "en", copy: null });
 
     const other = await store.createUser("en");
-    const v = await store.putOnboardingContent("en", { version: 0, welcome: { lines: ["Row hello"], cta: "Row go", signin: "Row in" } } as never, 600);
+    const v = await store.putOnboardingContent("en", words(0, "Row") as never, 600);
     await store.recordOnboardingServed(other, { contentVersion: v, lang: "en", surface: "app", screens: {} });
     await store.recordOnboardingEvents(other, [event("row", "welcome", "view", v), event("row", "summary", "view", v)] as never);
     const [row] = (await adminUserOnboarding(deps, other))!.runs;
@@ -216,7 +224,7 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
   });
 
   it("never fills an arm's missing words from today's copy, and names a template revision it cannot find", async () => {
-    const partial = { version: 77, welcome: { lines: ["Arm hello"], cta: "Arm go", signin: "Arm in" } };
+    const partial = words(77, "Arm");
     const e = {
       id: crypto.randomUUID(), lang: "en" as const, status: "running" as const, rules: {},
       variants: [{ control: true, weight: 0, content: content(76) }, { weight: 1, content: partial }],
@@ -251,6 +259,7 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     const e = armOf("en", 41, 42, { status: "stopped", started_at: at(-60), stopped_at: at(20) });
     await store.putOnboardingExperiment(e as never);
     await store.putOnboardingAssignment(userId, e.id, 42);
+    await served(9);
     await store.recordOnboardingEvents(userId, [
       event("pre", "welcome", "view", 9, { at: at(-10) }),
       event("in", "welcome", "view", 9, { at: at(5) }),
@@ -264,7 +273,7 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
 
   it("never fills an arm's missing words from a live row that is there", async () => {
     await store.putOnboardingContent("en", { ...structuredClone(DEFAULT_ONBOARDING_CONTENT), version: 0 } as never, 700);
-    const e = armOf("en", 76, 0, { variants: [{ control: true, weight: 0, content: content(76) }, { weight: 1, content: { version: 77, welcome: { lines: ["Arm hello"], cta: "Arm go", signin: "Arm in" } } }] });
+    const e = armOf("en", 76, 0, { variants: [{ control: true, weight: 0, content: content(76) }, { weight: 1, content: words(77, "Arm") }] });
     await store.putOnboardingExperiment(e as never);
     await store.putOnboardingAssignment(userId, e.id, 77);
     await served(77);
@@ -299,6 +308,37 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     expect(byId.de!.experiment).toEqual({ id: de.id, arm: "variant 2", fellBack: true });
     // No serving recorded: two arms, no language to choose by — nothing.
     expect(byId.none!.experiment).toBeNull();
+  });
+
+  // ── Round 5 ──
+  it("gives no copy for a block the phone would not have used, and still names the arm by its version alone", async () => {
+    const arm = content(77);
+    delete (arm.referral as Partial<typeof arm.referral>).skip;
+    const e = armOf("en", 76, 0, { status: "stopped", stopped_at: new Date(Date.now() - 3_600_000).toISOString(), variants: [{ control: true, weight: 0, content: content(76) }, { weight: 1, content: arm }] });
+    await store.putOnboardingExperiment(e as never);
+    await served(77);
+    await store.recordOnboardingEvents(userId, [event("r", "welcome", "view", 77), event("r", "referral", "view", 77)] as never);
+    const [run] = await runs();
+    // Never assigned, and stopped long ago — yet v77 IS that arm's words.
+    expect(run!.copy!.welcome).toContain(DEFAULT_ONBOARDING_CONTENT.welcome.cta);
+    expect(run!.copy!.referral).toBeUndefined();
+  });
+
+  it("calls two different servings within the drift after a run, with none before it, ambiguous", async () => {
+    const { at, set } = (() => {
+      const base = Date.parse("2026-11-19T10:00:00Z");
+      const at = (min: number) => new Date(base + min * 60_000).toISOString();
+      const c = { now: base };
+      store = memoryStore({ now: () => c.now });
+      deps = { ...deps, store };
+      return { at, set: (min: number) => { c.now = Date.parse(at(min)); } };
+    })();
+    userId = await store.createUser("en");
+    set(30.5); await store.recordOnboardingServed(userId, { contentVersion: 10, lang: "en", surface: "app", screens: {} });
+    set(31); await store.recordOnboardingServed(userId, { contentVersion: 10, lang: "de", surface: "app", screens: {} });
+    await store.recordOnboardingEvents(userId, [event("two", "welcome", "view", 10, { at: at(30) })] as never);
+    const [run] = await runs();
+    expect(run!.served).toBeNull();
   });
 
   // ── Round 4 ──
