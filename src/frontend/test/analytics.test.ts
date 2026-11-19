@@ -19,16 +19,18 @@ const webEvents = Object.entries(ANALYTICS_EVENTS)
   .filter(([, spec]) => (spec.surfaces as readonly string[]).includes("web")).map(([name]) => name);
 
 // The web's onboarding is `/start`, served by the backend before this client has anybody to be:
-// its steps are funnel rows the server writes with surface `web`, never a browser capture.
-const SERVER_WRITTEN = ["onboarding_step"];
+// its steps, the plan and the sign-ups are the server's to send, with surface `web`, never a browser capture.
+const SERVER_WRITTEN = ["onboarding_step", "onboarding_plan_completed", "signup_completed", "signin_completed"];
 
 describe("the web's events are the catalog's", () => {
   it("captures every event the catalog marks web", () => {
     expect(webEvents.filter((e) => !captured.has(e) && !SERVER_WRITTEN.includes(e))).toEqual([]);
   });
 
-  it("writes /start's onboarding steps server-side, as the web", () => {
-    expect(readFileSync(join(FRONTEND, "../backend/web/start.ts"), "utf8")).toContain('analyticsRequestOf(req.headers, "web")');
+  it("sends /start's events server-side, as the web", () => {
+    const start = readFileSync(join(FRONTEND, "../backend/web/start.ts"), "utf8");
+    expect(start).toContain('analyticsRequestOf(req.headers, "web")');
+    for (const e of SERVER_WRITTEN) expect(start).toContain(`"${e}"`);
     expect([...captured].filter((e) => SERVER_WRITTEN.includes(e))).toEqual([]);
   });
 
