@@ -10,8 +10,6 @@ import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
 
 export interface InviteView {
-  /** The full link, which "Get the iPhone app" copies for the app's paste. */
-  link: string | null;
   /** The App Store listing with `ct=referral`, or null when this host names none. */
   appStore: string | null;
   /** `/start?ref=<code>`, or null when this host has no web sign-up. */
@@ -19,15 +17,11 @@ export interface InviteView {
   lang: Lang;
 }
 
-/**
- * The invite page: one page on a phone and a desktop. "Get the iPhone app" copies the link before
- * it leaves (`data-copy`, read by the page's one script) so the app's step can paste it; with the
- * script blocked it is still a plain link to the listing.
- */
+/** The invite page: one page on a phone and a desktop; both buttons are plain links. */
 export function invite(v: InviteView): string {
   const c = pageCopyFor(v.lang);
   const app = v.appStore === null ? ""
-    : ctaLink(v.appStore, c.inviteApp, "p", v.link ? ` data-copy="${escape(v.link)}"` : "");
+    : ctaLink(v.appStore, c.inviteApp, "p");
   const web = v.start === null ? "" : ctaLink(v.start, c.inviteWeb, v.appStore === null ? "p" : "s");
   return shell(c.inviteTitle, `${wtop()}
 <div class="wmain one"><div class="wcol mid"><div class="ref">

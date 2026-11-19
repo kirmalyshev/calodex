@@ -6,7 +6,7 @@
 // counted is the referrer's code and the instant (`referral_events`), never the visitor.
 
 import { acceptLang, normalizeReferralCode } from "@eait/shared";
-import { openInvite, referralLink, type EngineDeps } from "../engine/index.ts";
+import { openInvite, type EngineDeps } from "../engine/index.ts";
 import { html, invite } from "./page.ts";
 import { START_PREFIX } from "./start.ts";
 
@@ -27,10 +27,8 @@ export async function inviteRoute(
   const code = normalizeReferralCode(raw);
   // A HEAD is a checker, not a person.
   if (req.method === "GET" && mayCount()) await openInvite(deps, raw, req.headers.get("user-agent"));
-  const link = code === null ? null : referralLink(deps.config, code);
   const store = deps.config.appStoreUrl;
   return html(invite({
-    link,
     appStore: store === "" ? null : `${store}${store.includes("?") ? "&" : "?"}ct=referral`,
     start: hasStart ? `${START_PREFIX}${code === null ? "" : `?ref=${code}`}` : null,
     lang: acceptLang(req.headers.get("accept-language")),
