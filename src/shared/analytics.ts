@@ -88,7 +88,7 @@ export const ANALYTICS_EVENTS = {
   signin_completed: { surfaces: APP, props: ["provider", "outcome"] },
   signed_out: { surfaces: BOTH, props: ["everywhere"] },
   account_deleted: { surfaces: BOTH, props: [] },
-  profile_edited: { surfaces: BOTH, props: ["fields", "units"] },
+  profile_edited: { surfaces: BOTH, props: ["fields", "units", "lang_set"] },
   session_revoked: { surfaces: BOTH, props: [] },
   session_owner_unreadable: { surfaces: APP, props: [] },
   land_account_mismatch: { surfaces: APP, props: [] },
@@ -97,7 +97,7 @@ export const ANALYTICS_EVENTS = {
   // Logging food
   meal_photo_queued: { surfaces: BOTH, props: ["is_first_meal", "has_caption"] },
   meal_logged: { surfaces: BOTH, props: ["requires_follow_up", "is_first_meal"] },
-  meal_photo_failed: { surfaces: BOTH, props: ["result"] },
+  meal_photo_failed: { surfaces: BOTH, props: ["result", "tries"] },
   meal_update_submitted: { surfaces: BOTH, props: ["update_kind", "has_meal_context", "submitted_from_chat"] },
   meal_edited: { surfaces: BOTH, props: ["items_edited"] },
   meal_deleted: { surfaces: BOTH, props: ["result"] },
