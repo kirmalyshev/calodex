@@ -3045,7 +3045,7 @@ describe("Connect Telegram", () => {
   });
 });
 
-// ── Onboarding, driven to the end in all eight ───────────────────────────────────────────────
+// ── Onboarding, driven to the end in every language ───────────────────────────────────────────
 //
 // WHY THE FULL WALK, when `onboarding-content.test.ts` already proves every table is complete.
 // Because completeness of a table has never been the failure mode here. Twice in this branch the
@@ -3053,8 +3053,8 @@ describe("Connect Telegram", () => {
 // whatever the browser asked for, and `TREND_PERIODS` held plain strings no check could see. Both
 // were invisible to a data test and obvious in a rendered page.
 //
-// This drives the real handler, question by question, in each of the eight — which is the same
-// thing `language.pw.ts` does in a browser for German alone, at a cost that allows eight.
+// This drives the real handler, question by question, in each of them — which is the same thing
+// `language.pw.ts` does in a browser for German alone, at a cost only the in-process version affords.
 
 describe("the whole onboarding flow, in every language the app speaks", () => {
   for (const lang of LANGS) {

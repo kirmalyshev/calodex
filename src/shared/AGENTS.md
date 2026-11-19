@@ -115,7 +115,7 @@ gets its meal names in that language.
   carries its own unit word in its template; the four places that CONCATENATE one onto a figure
   (the plan card, the diary headline, a Telegram meal line) read `UNIT_KCAL`, because a Russian plan
   card read "1 500 kcal" with "Порог — 1500 ккал." two lines under it. That table is a SPELLING and
-  not a unit: the same quantity in all eight, which is the `LANG_LABEL` situation and not the
+  not a unit: the same quantity in all forty-two, which is the `LANG_LABEL` situation and not the
   imperial one. `HEALTH_FIELDS.unit` stays SI and this does not license changing it.
 - **Numbers and dates are `Intl`.** `numbers(lang)` keeps a tenth (a weight somebody typed);
   `wholeNumbers(lang)` rounds (a kcal from a photo, where a decimal claims a precision the analyzer
@@ -133,7 +133,7 @@ gets its meal names in that language.
   is watching them.
 - **A sentence is a TEMPLATE, never fragments joined by code.** `trendSummary` built the VoiceOver
   line by concatenating "by", "from", "to", "Lowest" around the numbers. Word order is not a
-  constant across eight languages, and for a reader with low vision that sentence IS the chart. It
+  constant across forty-two languages, and for a reader with low vision that sentence IS the chart. It
   is one string per language with named placeholders now. The same rule caught Russian's `по`,
   which governs the dative plural: `HealthCopy.periods[p].per` exists beside `noun` because one
   field cannot be both `неделя` and `неделям`.
