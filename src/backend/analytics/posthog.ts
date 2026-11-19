@@ -22,7 +22,13 @@ export function posthogAnalytics(
 ): AnalyticsPort | undefined {
   const key = config.posthogKey.trim();
   const host = config.posthogHost.trim().replace(/\/+$/, "");
-  if (key === "" || host === "") return undefined;
+  if (key === "" || host === "") {
+    if (key !== "" || host !== "") {
+      const [set, unset] = key === "" ? ["HOST", "KEY"] : ["KEY", "HOST"];
+      console.warn(`[eait] posthog: EAIT__BACKEND__POSTHOG_${set} is set without EAIT__BACKEND__POSTHOG_${unset}; analytics is off`);
+    }
+    return undefined;
+  }
   const url = `${host}/batch/`;
   const send = (userId: string, event: string, props: Record<string, unknown>) => {
     const body = JSON.stringify({

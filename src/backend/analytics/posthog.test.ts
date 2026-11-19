@@ -20,6 +20,20 @@ describe("the PostHog adapter (ieat-app#3196)", () => {
     expect(posthogAnalytics({ posthogKey: "", posthogHost: "https://eu.i.posthog.com" }, fetchImpl)).toBeUndefined();
   });
 
+  it("warns, without the key, when only one of the key and the host is set", () => {
+    const { fetchImpl } = recording();
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    posthogAnalytics({ posthogKey: KEY, posthogHost: "" }, fetchImpl);
+    posthogAnalytics({ posthogKey: "", posthogHost: "https://eu.i.posthog.com" }, fetchImpl);
+    posthogAnalytics({ posthogKey: "", posthogHost: "" }, fetchImpl);
+    const lines = warn.mock.calls.map((c) => c.map(String).join(" "));
+    warn.mockRestore();
+    expect(lines).toEqual([
+      "[eait] posthog: EAIT__BACKEND__POSTHOG_KEY is set without EAIT__BACKEND__POSTHOG_HOST; analytics is off",
+      "[eait] posthog: EAIT__BACKEND__POSTHOG_HOST is set without EAIT__BACKEND__POSTHOG_KEY; analytics is off",
+    ]);
+  });
+
   it("posts one event as a batch to the host's capture API", async () => {
     const { calls, fetchImpl } = recording();
     posthogAnalytics({ posthogKey: KEY, posthogHost: "https://eu.i.posthog.com/" }, fetchImpl)!
