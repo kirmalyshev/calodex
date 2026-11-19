@@ -8,7 +8,7 @@ import { logMail } from "../mail/log.ts";
 // text, is not hypothetical once the API is public.
 
 import { beforeEach, describe, expect, it } from "bun:test";
-import { ONBOARDING_CONTENT, ONBOARDING_ORDER_VERSION, ONBOARDING_PLACES, DEFAULT_ONBOARDING_CONTENT, type OnboardingContent } from "@eait/shared";
+import { FIRST_VERDICT_VERSION, ONBOARDING_CONTENT, ONBOARDING_ORDER_VERSION, ONBOARDING_PLACES, DEFAULT_ONBOARDING_CONTENT, type OnboardingContent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
@@ -829,7 +829,7 @@ describe("experiments (ieat-app#2669)", () => {
         { weight: 1, content: variantContent(43), firstVerdict: "welcome-plate" },
       ],
     });
-    const capable = { ...signals, firstVerdict: true };
+    const capable = { ...signals, verdictVersion: FIRST_VERDICT_VERSION };
 
     it("saves an arm on a draft variant, clears it with null, and refuses anything else", async () => {
       const { saveOnboardingVariantFirstVerdict } = await import("./onboarding.ts");
@@ -843,6 +843,22 @@ describe("experiments (ieat-app#2669)", () => {
       expect((await saveOnboardingVariantFirstVerdict(deps, e.id, 1, "free-week")).ok).toBe(false);
       expect((await saveOnboardingVariantFirstVerdict(deps, e.id, 0, "own-meal")).ok).toBe(false);
       expect((await saveOnboardingVariantFirstVerdict(deps, e.id, 9, "own-meal")).ok).toBe(false);
+    });
+
+    it("starts on the app only, and refuses a stored arm it cannot serve", async () => {
+      const { startOnboardingExperiment } = await import("./onboarding.ts");
+      await store.setSwitch("onboarding.experiments", true, userId);
+      const web = t1();
+      await store.putOnboardingExperiment(web as never);
+      expect(await startOnboardingExperiment(deps, web.id)).toMatchObject({ ok: false });
+      const stale = t1();
+      stale.rules = { surfaces: ["app"] } as never;
+      (stale.variants[2] as { firstVerdict: string }).firstVerdict = "retired-arm";
+      await store.putOnboardingExperiment(stale as never);
+      expect(await startOnboardingExperiment(deps, stale.id)).toMatchObject({ ok: false, errors: ["arm 2: not a first verdict this server can serve"] });
+      const app = { ...t1(), rules: { surfaces: ["app"] } };
+      await store.putOnboardingExperiment(app as never);
+      expect(await startOnboardingExperiment(deps, app.id)).toEqual({ ok: true });
     });
 
     it("refuses to change the arm of a running experiment", async () => {
@@ -897,16 +913,43 @@ describe("experiments (ieat-app#2669)", () => {
         return e;
       };
 
-      it("lets an own-meal account through exactly once, then asks", async () => {
+      it("lets an own-meal account through exactly once, then asks — through the guarded charge", async () => {
+        const { charge } = await import("./caps.ts");
         await armed("own-meal");
         expect(await unpaidRefused(deps, userId)).toBe(false);
-        await store.recordAnalysis(userId, "2026-11-19", "photo");
+        expect(await charge(deps, userId, "2026-11-19", "photo")).toMatchObject({ analysisId: expect.any(String) });
         expect(await unpaidRefused(deps, userId)).toBe(true);
+        expect(await charge(deps, userId, "2026-11-19", "photo")).toEqual({ kind: "subscription-required" });
       });
 
       it("gives a welcome-plate account nothing: its verdict costs no model call", async () => {
         await armed("welcome-plate");
         expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("grants the arm in whichever language it was served, not only the profile's", async () => {
+        const { onboardingServedFor } = await import("./onboarding.ts");
+        await startExperiment(experiment({
+          lang: "es",
+          variants: [
+            { control: true, weight: 0, content: variantContent(41, "Control") },
+            { weight: 1, content: variantContent(42), firstVerdict: "own-meal" },
+          ],
+        }));
+        expect((await onboardingServedFor(deps, userId, { ...capable, lang: "es" })).firstVerdict).toBe("own-meal");
+        expect(await unpaidRefused(deps, userId)).toBe(false);
+      });
+
+      it("grants nothing more once the experiment stops", async () => {
+        const e = await armed("own-meal");
+        await store.stopOnboardingExperiment(e.id);
+        expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("never enrols anybody from a cap check", async () => {
+        const e = await startExperiment(t1());
+        expect(await unpaidRefused(deps, userId)).toBe(true);
+        expect(await store.onboardingAssignment(userId, e.id)).toBeNull();
       });
 
       it("grants nothing more once the experiments switch is off", async () => {

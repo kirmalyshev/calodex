@@ -356,11 +356,15 @@ export interface OnboardingWelcomeContent {
  * is let through for ONE analysis, so the user photographs their own meal and the sheet opens on its
  * first verdict. `welcome-plate`: no analysis — a verdict worked on the welcome plate they already
  * saw, computed against their plan, then the sheet. Absent: the live flow, the sheet straight after
- * sign-up. A client renders an arm only when it declared it can (`?verdict=1`); the server enrols
- * no other client in an experiment whose arms carry one.
+ * sign-up. A client declares `?verdict=FIRST_VERDICT_VERSION` when it can render every arm here;
+ * the server enrols no other client in an experiment whose arms carry one. A new arm bumps the
+ * version, which takes the clients that cannot draw it out — `ONBOARDING_ORDER_VERSION`'s rule.
  */
 export const FIRST_VERDICT_ARMS = ["own-meal", "welcome-plate"] as const;
 export type FirstVerdictArm = typeof FIRST_VERDICT_ARMS[number];
+export const FIRST_VERDICT_VERSION = 1;
+export const isFirstVerdictArm = (v: unknown): v is FirstVerdictArm =>
+  (FIRST_VERDICT_ARMS as readonly unknown[]).includes(v);
 
 /**
  * The welcome heroes an experiment may name (ieat-app#2669).

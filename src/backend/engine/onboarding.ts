@@ -12,7 +12,7 @@ import {
   ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone,
   localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
-  DEFAULT_ORDER, FIRST_VERDICT_ARMS, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
+  DEFAULT_ORDER, FIRST_VERDICT_ARMS, FIRST_VERDICT_VERSION, isFirstVerdictArm, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
   type DistributionChannel, type FirstVerdictArm, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
@@ -70,15 +70,19 @@ export interface OnboardingSignals {
    */
   orderVersion?: number;
   /**
-   * The client can render an arm's first verdict (`?verdict=1`, ieat-app#3165). Without it, it is
-   * enrolled in no experiment whose arms carry one: an arm it cannot draw would hand it the live
-   * flow under the arm's name, and that arm's rate would then describe the live flow.
+   * The first-verdict capability the client declared (`?verdict=`, ieat-app#3165). Below
+   * `FIRST_VERDICT_VERSION` — absent included — it is enrolled in no experiment whose arms carry
+   * one, and an arm it already holds serves it the live flow (`servedRaw`): an arm it cannot draw
+   * would be the live flow under the arm's name, and that arm's rate would describe the live flow.
    */
-  firstVerdict?: boolean;
+  verdictVersion?: number;
 }
 
 /** Whether this client can walk an arm's order. */
 const readsOrder = (signals: OnboardingSignals): boolean => (signals.orderVersion ?? 0) >= ONBOARDING_ORDER_VERSION;
+
+/** Whether this client can render every first-verdict arm (ieat-app#3165). */
+const readsFirstVerdict = (signals: OnboardingSignals): boolean => (signals.verdictVersion ?? 0) >= FIRST_VERDICT_VERSION;
 
 /**
  * FNV-1a over `userId:experimentId` — the pick inside the weights.
@@ -170,7 +174,7 @@ export async function assignVariant(
     // it control: control would then be the arm the old builds are in, and the arms would stop
     // comparing like with like.
     if (experiment.variants.some((v) => v.order) && !readsOrder(signals)) return null;
-    if (experiment.variants.some((v) => v.firstVerdict) && !signals.firstVerdict) return null;
+    if (experiment.variants.some((v) => v.firstVerdict) && !readsFirstVerdict(signals)) return null;
     const picked = pickVariant(experiment.variants, hashPick(userId, experiment.id));
     if (!picked) return null;
 
@@ -236,7 +240,7 @@ async function servedRaw(
   const { order, firstVerdict } = assigned.variant;
   if (order && !readsOrder(signals)) return { content: control };
   // An arm held from a capable client, asked for by one that is not: the live flow, like an order.
-  if (firstVerdict && !signals.firstVerdict) return { content: control };
+  if (firstVerdict && !readsFirstVerdict(signals)) return { content: control };
   return {
     content: usableContent(assigned.variant.content, control),
     ...(order ? { order } : {}),
@@ -875,13 +879,13 @@ export async function saveOnboardingVariantFirstVerdict(
     return { ok: false, errors: ["the control arm is the live flow — it takes no first verdict"] };
   }
   if (experiment.status !== "draft") return { ok: false, errors: ["only a draft's arms take a first verdict — a running arm is frozen"] };
-  if (arm !== null && !(FIRST_VERDICT_ARMS as readonly unknown[]).includes(arm)) {
+  if (arm !== null && !isFirstVerdictArm(arm)) {
     return { ok: false, errors: [`firstVerdict must be one of ${FIRST_VERDICT_ARMS.join(", ")}, or null`] };
   }
   experiment.variants = experiment.variants.map((v, i) => {
     if (i !== index) return v;
     const { firstVerdict: _old, ...rest } = v;
-    return arm === null ? rest : { ...rest, firstVerdict: arm as FirstVerdictArm };
+    return arm === null ? rest : { ...rest, firstVerdict: arm };
   });
   const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
   return wrote ? { ok: true } : { ok: false, errors: ["the experiment changed under you — reload the page"] };
@@ -934,6 +938,17 @@ export async function startOnboardingExperiment(
   const first = DEFAULT_ORDER[1];
   if (web && experiment.variants.some((v) => v.order !== undefined && v.order[1] !== first)) {
     return { ok: false, errors: [`an arm that does not open on "${first}" runs on the app only — set surfaces to ["app"]`] };
+  }
+  // A first verdict is the app's to render (ieat-app#3165): the web declares no capability, so an
+  // arm carrying one would enrol nobody there — a running card counting nothing on that surface.
+  if (web && experiment.variants.some((v) => v.firstVerdict !== undefined)) {
+    return { ok: false, errors: ['an arm with a first verdict runs on the app only — set surfaces to ["app"]'] };
+  }
+  // Re-checked at the start like the order: a stored arm this build does not know, or one on the
+  // control (the live flow by definition), must not reach a client typed as a valid arm.
+  for (const [i, v] of experiment.variants.entries()) {
+    if (v.firstVerdict === undefined) continue;
+    if (v.control || !isFirstVerdictArm(v.firstVerdict)) return { ok: false, errors: [`arm ${i}: not a first verdict this server can serve`] };
   }
   // Re-validated at the start: a draft saved before a rule tightened must not reach a client that
   // validates against the new rules and walks the default inside the arm (ieat-app#2788).

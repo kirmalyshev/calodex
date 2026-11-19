@@ -9,7 +9,7 @@ import type { Refusal } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import type { SpendLimit } from "../store.ts";
 import { GatewayRefusal, type OnCall, type OnCost } from "../llm/port.ts";
-import { dailyPhotoCap, entitlementFor, freeAnalysesFor } from "./entitlement.ts";
+import { dailyPhotoCap, entitlementFor, firstVerdictAllowance, freeAnalysesFor } from "./entitlement.ts";
 import { isAnonymous } from "./identity.ts";
 
 export type CapScope = "photo" | "text";
@@ -120,7 +120,10 @@ async function chargeLimit(deps: EngineDeps, userId: string, scope: CapScope): P
     const cap = scope === "photo" ? dailyPhotoCap(deps.config) : 0;
     return cap > 0 ? { over: "day", max: cap } : null;
   }
-  return deps.config.paywall ? { over: "lifetime" } : null;
+  if (!deps.config.paywall) return null;
+  // The arm's analysis is a floor under the grant, which the write still reads under its lock.
+  const arm = await firstVerdictAllowance(deps, userId);
+  return arm > 0 ? { over: "lifetime", floor: arm } : { over: "lifetime" };
 }
 
 export type ChargedAnalysis = { analysisId: string; fresh: boolean; onCost: OnCost; onCall: OnCall };

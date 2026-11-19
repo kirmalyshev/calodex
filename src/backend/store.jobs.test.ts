@@ -183,8 +183,12 @@ function jobs(name: string, make: () => Promise<Store>) {
         .toMatchObject({ fresh: true });
       // And the lifetime limit reads the grant off the account's own row.
       expect(await s.chargeAnalysis(userId, "2026-10-10", "text", { limit: { over: "lifetime" } })).toBe("cap");
+      // Two rows so far. A floor (T1's own-meal arm, ieat-app#3165) lifts a missing grant, never adds to one.
+      expect(await s.chargeAnalysis(userId, "2026-10-10", "text", { limit: { over: "lifetime", floor: 3 } }))
+        .toMatchObject({ fresh: true });
+      expect(await s.chargeAnalysis(userId, "2026-10-10", "text", { limit: { over: "lifetime", floor: 3 } })).toBe("cap");
       await s.setFreeAnalyses(userId, 5);
-      expect(await s.chargeAnalysis(userId, "2026-10-10", "text", { limit: { over: "lifetime" } }))
+      expect(await s.chargeAnalysis(userId, "2026-10-10", "text", { limit: { over: "lifetime", floor: 3 } }))
         .toMatchObject({ fresh: true });
     });
 
