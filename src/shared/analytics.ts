@@ -39,7 +39,7 @@ export interface AnalyticsContext {
   experiment_id: string | null;
   /** The assigned variant's content version, as text — the id the admin's arms carry. */
   arm: string | null;
-  /** The served screen template as `key@version`, or null. */
+  /** The served templates, `key@version` comma-joined in slot order; on a funnel row, that row's own one. Null when none. */
   template: string | null;
   acq_source: string | null;
   acq_campaign: string | null;
