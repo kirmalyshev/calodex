@@ -3465,6 +3465,7 @@ export async function postgresStore(
     async referralOf(userId) {
       const rows = await sql`
         select u.referral_code, u.referred_by is not null as applied,
+               (select r.referral_code from users r where r.id = u.referred_by) as referred_by_code,
                (select count(*) from users f where f.referred_by = u.id) as joined,
                (select count(*) from referral_grants g where g.referrer_id = u.id and g.revoked_at is null) as subscribed,
                (select coalesce(sum(g.days), 0) from referral_grants g where g.referrer_id = u.id and g.revoked_at is null) as days,
@@ -3473,7 +3474,8 @@ export async function postgresStore(
       const r = rows[0] as Record<string, unknown> | undefined;
       if (!r) return null;
       return {
-        code: String(r.referral_code), applied: r.applied === true, joined: num(r.joined),
+        code: String(r.referral_code), applied: r.applied === true,
+        referredBy: (r.referred_by_code as string | null) ?? null, joined: num(r.joined),
         subscribed: num(r.subscribed), daysEarned: num(r.days), shares: num(r.shares),
       };
     },

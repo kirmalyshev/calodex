@@ -304,6 +304,8 @@ export interface ReferralRow {
   code: string;
   /** This account joined with somebody's code. */
   applied: boolean;
+  /** That code — the referrer's own, never their id (ieat-app#3196) — or null. */
+  referredBy: string | null;
   /** Accounts that joined with this one's code. */
   joined: number;
   /** Of the friends, the ones whose first paid period has granted this account its reward. */

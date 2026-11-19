@@ -1358,6 +1358,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return {
         code,
         applied: referredBy.has(userId),
+        referredBy: referralCodes.get(referredBy.get(userId) ?? "") ?? null,
         joined: [...referredBy.values()].filter((r) => r === userId).length,
         subscribed: grants.length,
         daysEarned: grants.reduce((n, g) => n + g.days, 0),

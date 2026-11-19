@@ -45,7 +45,8 @@ async function heldArm(deps: EngineDeps, userId: string, lang: Lang): Promise<{ 
 
 /** What the server knows about an account, for its rows and for every client's super properties. */
 export async function analyticsServerContext(deps: EngineDeps, userId: string, profile: Profile): Promise<AnalyticsServerContext> {
-  const held = await heldArm(deps, userId, profile.lang);
+  const [held, referral] = await Promise.all([heldArm(deps, userId, profile.lang), deps.store.referralOf(userId)]);
+  const referrer = referral?.referredBy ?? null;
   return {
     content_version: held?.variant.content.version
       ?? usableContentFor(profile.lang, await deps.store.getOnboardingContent()).version,
@@ -55,8 +56,9 @@ export async function analyticsServerContext(deps: EngineDeps, userId: string, p
     arm: held ? String(held.variant.content.version) : null,
     // THE ONE PLACE the served template goes, once ieat-app#3194 records what GET /v1/onboarding served.
     template: null,
-    acq_source: null, acq_campaign: null, acq_adgroup: null, acq_keyword: null,
-    referrer: null,
+    // ponytail: referral is the only source the server knows today; P2/P3 (ieat-app#3196) fill the ASA keys.
+    acq_source: referrer === null ? null : "referral", acq_campaign: null, acq_adgroup: null, acq_keyword: null,
+    referrer,
   };
 }
 

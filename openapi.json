@@ -4705,6 +4705,99 @@
           "many"
         ]
       },
+      "AnalyticsServerContext": {
+        "type": "object",
+        "properties": {
+          "content_version": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The onboarding copy revision this account is served: its arm's, else the live one."
+          },
+          "lang": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Lang"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "experiment_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "arm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The assigned variant's content version, as text — the id the admin's arms carry."
+          },
+          "template": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The served screen template as `key@version`, or null."
+          },
+          "acq_source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acq_campaign": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acq_adgroup": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acq_keyword": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referrer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The referral code this account joined with, or null."
+          }
+        },
+        "required": [
+          "content_version",
+          "lang",
+          "country",
+          "experiment_id",
+          "arm",
+          "template",
+          "acq_source",
+          "acq_campaign",
+          "acq_adgroup",
+          "acq_keyword",
+          "referrer"
+        ],
+        "additionalProperties": false
+      },
       "Answered": {
         "type": "object",
         "properties": {
@@ -10566,6 +10659,10 @@
           "referral": {
             "$ref": "#/components/schemas/ReferralView",
             "description": "{@link  ReferralView }  — this account's link and what it has done (#899)."
+          },
+          "analytics": {
+            "$ref": "#/components/schemas/AnalyticsServerContext",
+            "description": "What the server knows for the analytics context (ieat-app#3196), registered as super properties by the app and the web alike. Labels events, gates nothing."
           }
         },
         "required": [
@@ -10587,7 +10684,8 @@
           "coachName",
           "hasLoggedMeal",
           "donate",
-          "referral"
+          "referral",
+          "analytics"
         ],
         "additionalProperties": false,
         "description": "Profile plus everything derived from it, so the app never recomputes targets locally."

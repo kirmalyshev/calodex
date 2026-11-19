@@ -4813,7 +4813,8 @@ function referrals(name: string, make: (opts: StoreOptions) => Promise<Store>) {
       expect(await s.redeemReferral(friend, await codeOf(s, referrer), 7)).toBe("ok");
       expect(await s.bonusUntil(friend)).toBe(at(7));
       expect((await s.referralOf(friend))!.applied).toBe(true);
-      expect(await s.referralOf(referrer)).toMatchObject({ applied: false, joined: 1, subscribed: 0, daysEarned: 0 });
+      expect((await s.referralOf(friend))!.referredBy).toBe(await codeOf(s, referrer));
+      expect(await s.referralOf(referrer)).toMatchObject({ applied: false, referredBy: null, joined: 1, subscribed: 0, daysEarned: 0 });
 
       // A second code, or the same one again, is refused and grants nothing more.
       const other = await s.createUser("en");

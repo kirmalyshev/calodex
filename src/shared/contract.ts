@@ -12,6 +12,7 @@ import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
 import type { FirstVerdictArm, OnboardingContent, OnboardingEvent } from "./onboarding.ts";
 import type { ServedScreens } from "./screen-template.ts";
+import type { AnalyticsServerContext } from "./analytics.ts";
 import type { TargetBasis } from "./targets.ts";
 import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
@@ -901,6 +902,11 @@ export interface ProfileResponse {
   donate: DonateLinks;
   /** {@link ReferralView} — this account's link and what it has done (#899). */
   referral: ReferralView;
+  /**
+   * What the server knows for the analytics context (ieat-app#3196), registered as super properties
+   * by the app and the web alike. Labels events, gates nothing.
+   */
+  analytics: AnalyticsServerContext;
 }
 
 /**

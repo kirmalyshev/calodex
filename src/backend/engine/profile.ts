@@ -23,6 +23,7 @@ import { evaluateMilestones } from "./milestones.ts";
 import { switchOn } from "./switches.ts";
 import { dailyPhotoCap, entitlementFor } from "./entitlement.ts";
 import { referralView } from "./referral.ts";
+import { analyticsServerContext } from "./analytics.ts";
 import { isStaffAccount } from "./notify.ts";
 import { MAX_WINDOW_DAYS } from "./diary.ts";
 import { unpaidRefused } from "./caps.ts";
@@ -149,6 +150,7 @@ export async function profileView(deps: EngineDeps, userId: string): Promise<Pro
     hasLoggedMeal: await hasLoggedMeal(deps, userId),
     donate: donateOf(deps.config),
     referral: await referralView(deps, userId),
+    analytics: await analyticsServerContext(deps, userId, profile),
   };
 }
 
@@ -474,6 +476,7 @@ export async function patchProfile(
       donate: donateOf(deps.config),
       hasLoggedMeal: await hasLoggedMeal(deps, userId),
       referral: await referralView(deps, userId),
+      analytics: await analyticsServerContext(deps, userId, profile),
     },
   };
 }
