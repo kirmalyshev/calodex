@@ -34,6 +34,14 @@ describe("the PostHog adapter (ieat-app#3196)", () => {
     expect(Number.isNaN(Date.parse(body.batch[0].timestamp))).toBe(false);
   });
 
+  it("merges one person into another with $merge_dangerously", async () => {
+    const { calls, fetchImpl } = recording();
+    posthogAnalytics({ posthogKey: KEY, posthogHost: "https://eu.i.posthog.com" }, fetchImpl)!.merge("real", "anon");
+    await Bun.sleep(0);
+    const body = JSON.parse(String(calls[0]!.init.body));
+    expect(body.batch[0]).toMatchObject({ event: "$merge_dangerously", distinct_id: "real", properties: { alias: "anon" } });
+  });
+
   it("never throws, never waits, and logs a failure without the key", async () => {
     const errors = spyOn(console, "error").mockImplementation(() => {});
     try {

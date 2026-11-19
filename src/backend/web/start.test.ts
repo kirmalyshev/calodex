@@ -3567,4 +3567,13 @@ describe("the web funnel (ieat-app#3196)", () => {
     expect(sink.captured.filter((c) => c.event === "signin_completed").map((c) => [c.userId, c.props.provider]))
       .toEqual([[userId, "google"]]);
   });
+
+  it("merges the anonymous session account's analytics person into the account a sign-in lands on", async () => {
+    const { userId } = await signedUp("web-merge");
+    expect(sink.merged).toEqual([]);
+    const session = await answerAll(undefined, ANSWERS);
+    const anonymous = await webUser(session);
+    await signIn("web-merge", "google", undefined, session);
+    expect(sink.merged).toEqual([{ into: userId, from: anonymous }]);
+  });
 });

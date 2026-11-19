@@ -7,6 +7,8 @@
 
 export interface AnalyticsPort {
   capture(userId: string, event: string, props: Record<string, unknown>): void;
+  /** `from`'s events become `into`'s: a sign-in that landed an anonymous session on an existing account. */
+  merge(into: string, from: string): void;
 }
 
 /** Short: an event lost to a slow sink costs less than a socket held open. */
@@ -22,18 +24,17 @@ export function posthogAnalytics(
   const host = config.posthogHost.trim().replace(/\/+$/, "");
   if (key === "" || host === "") return undefined;
   const url = `${host}/batch/`;
-  return {
-    capture(userId, event, props) {
-      const body = JSON.stringify({
-        api_key: key,
-        batch: [{ event, distinct_id: userId, properties: props, timestamp: new Date().toISOString() }],
-      });
-      Promise.resolve()
-        .then(() => fetchImpl(url, {
-          method: "POST", headers: { "content-type": "application/json" }, body, signal: AbortSignal.timeout(timeoutMs),
-        }))
-        .then((res) => { if (!res.ok) console.error(`[eait] posthog: ${event} refused with ${res.status}`); })
-        .catch((e: unknown) => console.error(`[eait] posthog: ${event} not sent: ${(e as Error | null)?.name ?? "error"}`));
-    },
+  const send = (userId: string, event: string, props: Record<string, unknown>) => {
+    const body = JSON.stringify({
+      api_key: key,
+      batch: [{ event, distinct_id: userId, properties: props, timestamp: new Date().toISOString() }],
+    });
+    Promise.resolve()
+      .then(() => fetchImpl(url, {
+        method: "POST", headers: { "content-type": "application/json" }, body, signal: AbortSignal.timeout(timeoutMs),
+      }))
+      .then((res) => { if (!res.ok) console.error(`[eait] posthog: ${event} refused with ${res.status}`); })
+      .catch((e: unknown) => console.error(`[eait] posthog: ${event} not sent: ${(e as Error | null)?.name ?? "error"}`));
   };
+  return { capture: send, merge: (into, from) => send(into, "$merge_dangerously", { alias: from }) };
 }
