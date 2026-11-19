@@ -2440,14 +2440,35 @@ describe("POST /v1/meals/update/queue", () => {
 
 describe("refer a friend (#899)", () => {
   const me = async (token: string) => await (await get(ROUTES.profile, token)).json() as ProfileResponse;
+  /** Onboarded through the plan, country not yet asked — the account the country screen meets. */
+  const beforeCountry = async (): Promise<string> => {
+    const { token } = await (await post(ROUTES.authDevice, { deviceId: crypto.randomUUID() + crypto.randomUUID(), locale: "en-GB" })).json() as { token: string };
+    await post(ROUTES.authGoogle, { idToken: `ok:google:s-${crypto.randomUUID()}`, terms: true }, token);
+    await patch(ROUTES.profile, {
+      goal: "lose", sex: "female", birth_year: 1990, height_cm: 165, weight_kg: 70,
+      target_weight_kg: 65, activity: "some", pace: "steady", restrictions: [], complete_onboarding: true,
+    }, token);
+    return token;
+  };
 
-  it("the country write answers with no invite link, so no shipped build asks for a friend's link; a read still has it (#3195)", async () => {
-    const token = await session();
+  it("the first country answer comes back with no invite link, so no shipped build asks for a friend's link; a read still has it (#3195)", async () => {
+    const token = await beforeCountry();
     const written = await (await patch(ROUTES.profile, { country: "de" }, token)).json() as ProfileResponse;
     expect(written.referral.link).toBe("");
     expect((await me(token)).referral.link).toMatch(/\/r\/[A-HJ-NP-Z2-9]{6}$/);
     const other = await (await patch(ROUTES.profile, { height_cm: 171 }, token)).json() as ProfileResponse;
     expect(other.referral.link).toMatch(/\/r\//);
+    // A later edit of the answer keeps the invite card's link: the phone and the web You screen store this response.
+    const edited = await (await patch(ROUTES.profile, { country: "gb" }, token)).json() as ProfileResponse;
+    expect(edited.referral.link).toMatch(/\/r\//);
+  });
+
+  it("the system's own country fill keeps the link, and the answer after it still blanks it (#3195)", async () => {
+    const token = await beforeCountry();
+    const filled = await (await patch(ROUTES.profile, { country: "de", filled: true }, token)).json() as ProfileResponse;
+    expect(filled.referral.link).toMatch(/\/r\//);
+    const answered = await (await patch(ROUTES.profile, { country: "de" }, token)).json() as ProfileResponse;
+    expect(answered.referral.link).toBe("");
   });
 
   it("a friend's code entered after sign-up still earns the free week (#3195)", async () => {
