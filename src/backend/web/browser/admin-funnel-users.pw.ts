@@ -58,9 +58,18 @@ const JOURNAL = {
     { sessionId: "sess-aaaa-1", place: "goal", action: "answer", contentVersion: 7, ms: 4200, field: "goal", value: "lose", at: "2026-11-08T10:00:09.000Z" },
     { sessionId: "sess-aaaa-1", place: "goal", action: "back", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:12.000Z" },
     { sessionId: "sess-aaaa-1", place: "goal", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:15.000Z" },
+    { sessionId: "sess-aaaa-1", place: "baseline", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:20.000Z" },
     { sessionId: "sess-aaaa-1", place: "summary", action: "view", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:00:30.000Z" },
     { sessionId: "sess-aaaa-1", place: "summary", action: "complete", contentVersion: 7, ms: null, field: null, value: null, at: "2026-11-08T10:01:00.000Z" },
   ],
+  // ieat-app#3194: the run as served. The welcome copy carries markup on purpose — it must read as text.
+  runs: [{
+    sessionId: "sess-aaaa-1", contentVersion: 7,
+    experiment: { id: "abcd1234-0000-0000-0000-000000000000", arm: "variant 2", isControl: false },
+    lang: "de", surface: "app", servedAt: "2026-11-08T09:59:58.000Z",
+    screens: { baseline: { template: "evening-beat", version: 3 } },
+    copy: { welcome: "Hallo <b>du</b>\n[Los]", baseline: "So geht es\n[Weiter]" },
+  }],
 };
 
 async function stub(page: Page) {
@@ -131,6 +140,16 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(flow.locator(".chip", { hasText: "↩ back" })).toHaveCount(1);
   await expect(flow).toContainText("lose");
   await expect(flow).toContainText("4s");
+  // ieat-app#3194: the run header names the arm, language and surface; the template beat says so;
+  // the copy as served opens on demand and is text, never markup.
+  await expect(flow.locator(".fl-h")).toContainText("content v7 · exp abcd1234 · variant 2 · de · app");
+  await expect(flow.locator(".chip", { hasText: "template evening-beat@3" })).toHaveCount(1);
+  const welcome = flow.locator(".fl-copy").first();
+  await expect(welcome.locator("pre")).toBeHidden();
+  await welcome.locator("summary").click();
+  await expect(welcome.locator("pre")).toHaveText("Hallo <b>du</b>\n[Los]");
+  await expect(welcome.locator("b")).toHaveCount(0);
+  await expect(flow.locator(".fl-copy")).toHaveCount(2);
 
   // The row is a keyboard button too: Enter opens, Enter again closes.
   await row.click();
@@ -180,7 +199,7 @@ test("the account page's Onboarding tab reads the same journal", async ({ page }
   // The tab must load THIS account's stored journal — once upon a time it loaded the copy
   // editor's answer instead, because the tab's loader shared loadOnboarding's name.
   const flow = page.locator("#onboarding-flow");
-  await expect(flow.locator(".fl-ev")).toHaveCount(7);
+  await expect(flow.locator(".fl-ev")).toHaveCount(8);
   await expect(flow).toContainText("went back");
   await expect(flow.locator(".chip", { hasText: "↩ back" })).toHaveCount(1);
   await expect(page.locator("#onboarding-summary")).toContainText("monthly · 2h");
