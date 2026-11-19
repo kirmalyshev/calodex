@@ -275,7 +275,12 @@ export async function revenueCatWebhook(
   // and the entitlement below is applied regardless.
   const logged = parseRevenueCatLog(body);
   if (logged) {
-    await logRevenueCatEvent(deps, logged).catch(() => console.warn("[eait] revenuecat: event log write failed"));
+    const e = eventOf(body);
+    const lifecycle = {
+      is_trial_conversion: typeof e?.is_trial_conversion === "boolean" ? e.is_trial_conversion : null,
+      cancel_reason: text(e?.cancel_reason),
+    };
+    await logRevenueCatEvent(deps, logged, lifecycle).catch(() => console.warn("[eait] revenuecat: event log write failed"));
   }
   const transfer = parseRevenueCatTransfer(body);
   if (transfer) {
