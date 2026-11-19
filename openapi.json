@@ -8457,11 +8457,10 @@
               }
             },
             "required": [
-              "rest",
-              "days"
+              "rest"
             ],
             "additionalProperties": false,
-            "description": "The answers said back as burn numbers under later questions — `{rest}`/`{burn}` are computed kcal, never typed. Either may be empty (hidden)."
+            "description": "The answer said back under the activity question — `{rest}` is the computed resting burn, may be empty (hidden). `days` is retired (ieat-app#3192: the Target screen prints no burn line); a stored revision may still carry it and nothing reads it."
           },
           "baseline": {
             "type": "object",
@@ -8913,6 +8912,23 @@
           "result": {
             "type": "string"
           },
+          "heading": {
+            "type": "object",
+            "properties": {
+              "lose": {
+                "type": "string"
+              },
+              "gain": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lose",
+              "gain"
+            ],
+            "additionalProperties": false,
+            "description": "The pace question per goal (\"How fast you want to lose weight\"), whole sentences. Absent or empty → the `asks.pace` line."
+          },
           "echo": {
             "type": "string"
           }
@@ -8924,7 +8940,7 @@
           "echo"
         ],
         "additionalProperties": false,
-        "description": "The pace screen's words (ieat-app#2757). `rate`/`rateSuffix`/`result` are required; `echo` — the answer said back above the pick — may be empty and renders nothing (ieat-app#2756). `{rate}` is the projected rate with unit; `{target}`/`{month}`/`{kcal}` the projection's figure, month and plan; `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code — the cap and floor's own explanation is bound to `explainTargets`, not editable copy."
+        "description": "The pace screen's words (ieat-app#2757). `rate`/`rateSuffix`/`result` are required; `echo` — the answer said back above the pick — may be empty and renders nothing (ieat-app#2756). `{rate}` is the projected rate with unit; `{target}`/`{month}` the projection's figure and month (a stored `result` may still carry `{kcal}`: it is cut off, never shown — ieat-app#3192); `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code — the cap and floor's own explanation is bound to `explainTargets`, not editable copy."
       },
       "OnboardingPlace": {
         "anyOf": [

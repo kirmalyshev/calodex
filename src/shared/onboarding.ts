@@ -458,10 +458,10 @@ export interface OnboardingBeatsContent {
   /** Under the age question: why it is asked. May be empty (hidden). */
   ageWhy: string;
   /**
-   * The answers said back as burn numbers under later questions — `{rest}`/`{burn}` are computed
-   * kcal, never typed. Either may be empty (hidden).
+   * The answer said back under the activity question — `{rest}` is the computed resting burn, may
+   * be empty (hidden). `days` is retired (ieat-app#3192: the Target screen prints no burn line); a
+   * stored revision may still carry it and nothing reads it.
    */
-  /** `days` is retired (ieat-app#3192: the Target screen no longer prints a burn line); a stored revision may still carry it and it is read by nothing. */
   echo: { rest: string; days?: string };
   /**
    * The BMI beat's words. The band labels stay code (`bmiRangeLabel`, shared with Progress) —
@@ -490,8 +490,8 @@ export interface OnboardingTargetContent {
 /**
  * The pace screen's words (ieat-app#2757). `rate`/`rateSuffix`/`result` are required; `echo` — the
  * answer said back above the pick — may be empty and renders nothing (ieat-app#2756). `{rate}` is
- * the projected rate with unit; `{target}`/`{month}`/`{kcal}` the projection's figure, month and
- * plan; `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code —
+ * the projected rate with unit; `{target}`/`{month}` the projection's figure and month (a stored
+ * `result` may still carry `{kcal}`: it is cut off, never shown — ieat-app#3192); `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code —
  * the cap and floor's own explanation is bound to `explainTargets`, not editable copy.
  */
 export interface OnboardingPaceContent {
@@ -500,7 +500,7 @@ export interface OnboardingPaceContent {
   rateSuffix: string;
   /** "{target} around {month}" — `{kcal}` is still accepted in a stored revision and no longer shown (ieat-app#3192). */
   result: string;
-  /** The pace question per goal ("How fast you want to lose weight"), whole sentences. Absent → the `asks.pace` line. */
+  /** The pace question per goal ("How fast you want to lose weight"), whole sentences. Absent or empty → the `asks.pace` line. */
   heading?: { lose: string; gain: string };
   echo: string;
 }
@@ -1763,7 +1763,8 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
         if (!["rest", "days"].includes(k)) push(`beats.echo.${k} is not a used key`);
       }
       tmpl(echo.rest, "beats.echo.rest", { allowed: ["rest"], requiredPh: ["rest"], max: MAX_LINE });
-      if (echo.days !== undefined) tmpl(echo.days, "beats.echo.days", { allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
+      // Retired (#3192): a stored `days` is tolerated and read by nothing, so it is not policed.
+      if (echo.days !== undefined && typeof echo.days !== "string") push("beats.echo.days must be a string");
     }
     const base = beats.baseline as Record<string, unknown> | undefined;
     if (typeof base !== "object" || base === null) push("beats.baseline is required");
@@ -1835,7 +1836,11 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
     tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month", "kcal"], requiredPh: ["target", "month"], max: MAX_LINE });
     const heading = pace.heading as Record<string, unknown> | undefined;
     if (heading !== undefined) {
-      for (const k of ["lose", "gain"]) tmpl(heading[k], `pace.heading.${k}`, { max: MAX_LINE });
+      if (typeof heading !== "object" || heading === null) push("pace.heading must be an object");
+      else {
+        for (const k of Object.keys(heading)) if (k !== "lose" && k !== "gain") push(`pace.heading.${k} is not a used key`);
+        for (const k of ["lose", "gain"]) tmpl(heading[k], `pace.heading.${k}`, { max: MAX_LINE });
+      }
     }
     tmpl(pace.echo, "pace.echo", { allowed: ["from", "to"], requiredPh: ["from", "to"], max: MAX_LINE });
   }

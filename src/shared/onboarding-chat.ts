@@ -788,7 +788,7 @@ export function paceEcho(p: Profile, units: Units | null, lang: Lang, content: O
  */
 export function paceHeading(content: OnboardingContent, goal: Profile["goal"], asked: readonly string[]): readonly string[] {
   const h = goal === "lose" || goal === "gain" ? content.pace.heading?.[goal] : undefined;
-  return h ? [h] : asked;
+  return typeof h === "string" && h.trim() !== "" ? [h] : asked;
 }
 
 /**
@@ -841,7 +841,8 @@ export function pacePreview(
     : null;
   return {
     ratePerWeek: proj === null ? null : Math.round(proj.kgPerWeek * 10) / 10,
-    line: proj === null ? null : fill(content.pace.result, {
+    // A stored revision may still end in " · {kcal}kcal a day": the figure is cut, never shown (#3192).
+    line: proj === null ? null : fill(content.pace.result.replace(/ · (?:(?! · ).)*\{kcal\}.*$/, ""), {
       target: weightDisplay(p.target_weight_kg, p.units, lang),
       month: projectionMonth(today, proj.weeks, lang),
       kcal: kcalNumbers(lang)(targets.kcal),

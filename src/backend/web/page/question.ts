@@ -393,12 +393,9 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
 
 // ── The pace screen (10) — three computed candidates ──────────────────────────────────────────
 
-/** A pace result line ("72kg around March 2027 · 1490kcal a day") as the board's card: the
- *  arrival on top, the day's kcal under it in bold. A line with no " · " is the card alone. */
+/** A pace result line ("72kg around March 2027") as the board's card (ieat-app#3192: no kcal under it). */
 function whenCard(line: string): string {
-  const at = line.lastIndexOf(" · ");
-  return at === -1 ? `<div class="when num">${escape(line)}</div>`
-    : `<div class="when num"><span>${escape(line.slice(0, at))}</span>${escape(line.slice(at + 3))}</div>`;
+  return `<div class="when num">${escape(line)}</div>`;
 }
 
 /**
