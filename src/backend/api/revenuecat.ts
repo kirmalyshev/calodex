@@ -272,11 +272,9 @@ export async function revenueCatWebhook(
   if (declared > MAX_BODY_BYTES) return json({ error: "too large" }, 413);
 
   const body = await req.json().catch(() => null);
-  // The log is analytics and must never cost anybody their purchase: the entitlement below is
-  // applied regardless, then a failed write answers 500. The retry is safe: the entitlement is
-  // clock-guarded and the log insert does nothing on a conflict.
+  // The log is analytics and must never cost anybody their purchase: a failed write is logged with
+  // the delivery's id and type, so it can be replayed from RevenueCat, and the answer stays 200.
   const logged = parseRevenueCatLog(body);
-  let logFailed = false;
   if (logged) {
     const e = eventOf(body);
     const lifecycle = {
@@ -284,12 +282,11 @@ export async function revenueCatWebhook(
       cancel_reason: text(e?.cancel_reason),
     };
     await logRevenueCatEvent(deps, logged, lifecycle).catch((err: unknown) => {
-      logFailed = true;
       const { name, code } = (err ?? {}) as { name?: unknown; code?: unknown };
       console.warn(`[eait] revenuecat: event log write failed, event ${logged.id} ${logged.type}: ${String(name ?? "error")} ${String(code ?? "-")}`);
     });
   }
-  const done = (body: { ok: true; applied: boolean }): Response => logFailed ? json({ ...body, ok: false }, 500) : json(body);
+  const done = (body: { ok: true; applied: boolean }): Response => json(body);
   const transfer = parseRevenueCatTransfer(body);
   if (transfer) {
     const moved = await applyRevenueCatTransfer(deps, transfer);

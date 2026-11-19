@@ -4,6 +4,7 @@
 import type { RevenueCatEventRow } from "../store.ts";
 import { ANALYTICS_EVENTS, type AnalyticsEventName, type AttributionStatus } from "@eait/shared";
 import { track } from "./analytics.ts";
+import { survivorOf } from "./entitlement.ts";
 import type { EngineDeps } from "./deps.ts";
 
 type SubscriptionEvent = Extract<AnalyticsEventName, `subscription_${string}`>;
@@ -24,17 +25,21 @@ const warnedTypes = new Set<string>();
  * Log one RevenueCat delivery and, when it carries RevenueCat's acquisition attributes and names
  * one of our accounts, copy them onto it. The store keeps Apple's own AdServices answer over them.
  * A FIRST delivery naming an account is also one `subscription_<type>` analytics event; a retried
- * one is not, because the event id is already logged. A failed acquisition write throws after the
- * event is tracked, so the retry stores it.
+ * one is not, because the event id is already logged. An id a sign-in merged away is resolved to
+ * the account that survived it first, as the entitlement is.
  */
 export async function logRevenueCatEvent(
   deps: EngineDeps, row: RevenueCatEventRow,
   lifecycle: { is_trial_conversion: boolean | null; cancel_reason: string | null } = { is_trial_conversion: null, cancel_reason: null },
 ): Promise<void> {
+  if (row.userId !== null) row = { ...row, userId: await survivorOf(deps, row.userId) };
   const fresh = await deps.store.recordRevenueCatEvent(row);
-  let failed: unknown = null;
   if (row.userId !== null && row.acquisition !== null) {
-    await deps.store.putAcquisition(row.userId, { ...row.acquisition, via: "revenuecat" }).catch((e: unknown) => { failed = e ?? new Error("putAcquisition"); });
+    const id = row.id;
+    await deps.store.putAcquisition(row.userId, { ...row.acquisition, via: "revenuecat" }).catch((e: unknown) => {
+      const { name, code } = (e ?? {}) as { name?: unknown; code?: unknown };
+      console.warn(`[eait] revenuecat: acquisition write failed, event ${id}: ${String(name ?? "error")} ${String(code ?? "-")}`);
+    });
   }
   const event = subscriptionEvent(row.type);
   if (event === null && !UNTRACKED_REVENUECAT_TYPES.includes(row.type) && !warnedTypes.has(row.type)) {
@@ -48,7 +53,6 @@ export async function logRevenueCatEvent(
       environment: row.environment, ...lifecycle,
     }, null);
   }
-  if (failed !== null) throw failed;
 }
 
 /**

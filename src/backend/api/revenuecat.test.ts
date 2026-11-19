@@ -209,6 +209,17 @@ describe("a delivery naming an account a sign-in merged away", () => {
     expect((await profile(real.token)).entitlement.expiresAt).toBe(new Date(renewedTo).toISOString());
   });
 
+  it("logs, attributes and tracks the delivery on the survivor (ieat-app#3196)", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+    const attrs = { $mediaSource: { value: "Apple Search Ads", updated_at_ms: 1 } };
+    await deliver(purchase(anon.userId, { id: "evt-merged", subscriber_attributes: attrs }));
+    expect((await store.revenueCatEventsOf(real.userId)).map((r) => r.id)).toEqual(["evt-merged"]);
+    expect((await store.acquisitionOf(real.userId))?.source).toBe("apple_search_ads");
+    expect(sink.captured.map((c) => c.userId)).toEqual([real.userId]);
+  });
+
   it("grants the survivor a purchase that landed after the merge", async () => {
     const anon = await account();
     const real = await account();
@@ -1001,7 +1012,7 @@ describe("every delivery is logged", () => {
     expect(await store.acquisitionOf(userId)).toEqual(ads);
   });
 
-  it("still applies the entitlement when the log write fails, then answers 500 so the retry logs it", async () => {
+  it("still applies the entitlement when the log write fails, answers 200, and names the delivery in the log", async () => {
     const { userId, token } = await account();
     const spy = spyOn(store, "recordRevenueCatEvent").mockImplementation(async () => {
       throw Object.assign(new Error("db down"), { name: "PostgresError", code: "57P01" });
@@ -1009,31 +1020,26 @@ describe("every delivery is logged", () => {
     const warn = spyOn(console, "warn").mockImplementation(() => {});
     const delivery = purchase(userId, { id: "evt-3" });
     const res = await deliver(delivery);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(200);
     expect((await profile(token)).entitlement.active).toBe(true);
     expect(warn.mock.calls.map((c) => String(c[0]))).toContain(
       "[eait] revenuecat: event log write failed, event evt-3 INITIAL_PURCHASE: PostgresError 57P01",
     );
     spy.mockRestore(); warn.mockRestore();
-    expect((await deliver(delivery)).status).toBe(200);
-    expect((await store.revenueCatEventsOf(userId)).map((r) => r.id)).toEqual(["evt-3"]);
-    expect((await profile(token)).entitlement.active).toBe(true);
   });
 });
 
 describe("a failed acquisition write (ieat-app#3196)", () => {
-  it("still tracks the event, and the retry stores the acquisition without a second event", async () => {
+  it("still tracks the event and answers 200, naming the delivery in the log", async () => {
     const { userId } = await account();
     const attrs = { $mediaSource: { value: "Apple Search Ads", updated_at_ms: 1 } };
     const spy = spyOn(store, "putAcquisition").mockImplementation(async () => { throw new Error("db down"); });
     const warn = spyOn(console, "warn").mockImplementation(() => {});
     const delivery = purchase(userId, { id: "evt-acq", subscriber_attributes: attrs });
-    expect((await deliver(delivery)).status).toBe(500);
-    expect(sink.captured.map((c) => c.event)).toEqual(["subscription_initial_purchase"]);
-    spy.mockRestore(); warn.mockRestore();
     expect((await deliver(delivery)).status).toBe(200);
-    expect((await store.acquisitionOf(userId))?.source).toBe("apple_search_ads");
-    expect(sink.captured).toHaveLength(1);
+    expect(sink.captured.map((c) => c.event)).toEqual(["subscription_initial_purchase"]);
+    expect(warn.mock.calls.map((c) => String(c[0])).some((l) => l.includes("evt-acq"))).toBe(true);
+    spy.mockRestore(); warn.mockRestore();
   });
 });
 
