@@ -72,9 +72,10 @@ type WebEvent = {
 /** A catalog event takes only the catalog's props for it; `$screen` takes its name. */
 type Props<E> = E extends WebEvent ? { [K in (typeof ANALYTICS_EVENTS)[E]["props"][number]]?: Value } : { $screen_name: string };
 
-/** One named event; nothing is sent before `identify`. */
-export const capture = <E extends WebEvent | "$screen">(event: E, props?: Props<E>): void => {
-  client?.capture(event, props as Record<string, unknown> | undefined);
+/** One named event; nothing is sent before `identify`. `beforeUnload` sends it now, by beacon. */
+export const capture = <E extends WebEvent | "$screen">(event: E, props?: Props<E>, beforeUnload = false): void => {
+  client?.capture(event, props as Record<string, unknown> | undefined,
+    beforeUnload ? { send_instantly: true, transport: "sendBeacon" } : undefined);
 };
 
 /** Signing out: whoever signs in next is somebody else. */

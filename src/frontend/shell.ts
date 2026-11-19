@@ -123,12 +123,18 @@ export const profile = async (): Promise<ProfileResponse> => {
   return profileCache;
 };
 
-/** Every profile write: the PATCH, then `profile_edited` naming the fields changed — never a value but units. */
+/**
+ * Every profile write: the PATCH, then `profile_edited` naming the fields changed — never a value but
+ * the language and units. A language change reloads the page, so that event is sent at once, by beacon.
+ */
 export async function patchProfile(body: Record<string, unknown>): Promise<ProfileResponse> {
   const res = await api<ProfileResponse>("/profile", {
     method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
   });
-  analytics.capture("profile_edited", { fields: Object.keys(body), ...("units" in body ? { units: String(body.units) } : {}) });
+  analytics.capture("profile_edited", {
+    fields: Object.keys(body), ...("lang" in body ? { lang_set: String(body.lang) } : {}),
+    ...("units" in body ? { units: String(body.units) } : {}),
+  }, "lang" in body);
   return res;
 }
 

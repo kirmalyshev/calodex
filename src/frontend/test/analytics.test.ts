@@ -41,6 +41,11 @@ describe("the web's events are the catalog's", () => {
     expect(props.filter((p) => (ANALYTICS_CONTEXT_KEYS as readonly string[]).includes(p))).toEqual([]);
   });
 
+  it("names the language a profile edit set", () => {
+    const edits = calls.filter((m) => m[1] === "profile_edited").map((m) => m[2] ?? "");
+    expect(edits.some((p) => p.includes("lang_set"))).toBe(true);
+  });
+
   it("types capture to the web's own events", () => {
     // @ts-expect-error an app-only event
     capture("health_connect_result", { connected: true });
