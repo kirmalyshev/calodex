@@ -210,6 +210,28 @@ describe("experiments (ieat-app#2669)", () => {
       .toBe("welcome-plate");
   });
 
+  it("quotes the armed ask line on the lines route only with ?verdict= (ieat-app#3165)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
+    const content = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    content.screens.find((x) => x.id === "goal")!.asks.goal!.lines = ["The arm asks the goal"];
+    expect((await admin("PUT", arm, { content })).status).toBe(200);
+    expect((await admin("PUT", arm, { firstVerdict: "welcome-plate" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const lines = { lines: [{ role: "assistant", ask: { prompt: "goal", line: 0 } }] };
+    expect((await admin("POST", `${ROUTES.messagesLines}?verdict=1`, lines, token)).status).toBe(200);
+    expect((await admin("POST", ROUTES.messagesLines, lines, token)).status).toBe(200);
+    const said = (await store.chatBefore(userId, null, 10)).map((m) => m.text);
+    expect(said.filter((t) => t === "The arm asks the goal")).toHaveLength(1);
+  });
+
   it("tells an own-meal account its one analysis on the profile, and asks once it is spent (ieat-app#3165)", async () => {
     const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
       .json() as { experiment: { id: string } };

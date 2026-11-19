@@ -957,6 +957,38 @@ describe("experiments (ieat-app#2669)", () => {
         expect(await unpaidRefused(deps, userId)).toBe(false);
       });
 
+      it("grants the analysis when any arm the account holds is own-meal, whatever the order", async () => {
+        const { onboardingServedFor } = await import("./onboarding.ts");
+        for (const [lang, arm] of [["en", "welcome-plate"], ["es", "own-meal"]] as const) {
+          await store.putOnboardingExperiment(experiment({
+            lang,
+            variants: [
+              { control: true, weight: 0, content: variantContent(41, "Control") },
+              { weight: 1, content: variantContent(lang === "en" ? 42 : 43), firstVerdict: arm },
+            ],
+          }) as never);
+        }
+        for (const e of await store.listOnboardingExperiments()) await store.startOnboardingExperiment(e.id);
+        await store.setSwitch("onboarding.experiments", true, userId);
+        expect((await onboardingServedFor(deps, userId, capable)).firstVerdict).toBe("welcome-plate");
+        expect((await onboardingServedFor(deps, userId, { ...capable, lang: "es" })).firstVerdict).toBe("own-meal");
+        expect(await unpaidRefused(deps, userId)).toBe(false);
+      });
+
+      it("counts the arm's analysis against every analysis the account already has", async () => {
+        await store.recordAnalysis(userId, "2026-11-18", "text");
+        await armed("own-meal");
+        expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("refuses loudly when the store cannot say which arm the account holds", async () => {
+        await armed("own-meal");
+        const broken = { ...deps, store: Object.assign(Object.create(store), {
+          listOnboardingExperiments: async () => { throw new Error("db down"); },
+        }) };
+        await expect(unpaidRefused(broken, userId)).rejects.toThrow("db down");
+      });
+
       it("grants nothing more once the experiment stops", async () => {
         const e = await armed("own-meal");
         await store.stopOnboardingExperiment(e.id);

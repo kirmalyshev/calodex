@@ -267,7 +267,7 @@ naming it too.
   `subscription-required` (402), before any charge, until the webhook has written an entitlement.
   Three exceptions only: a SELF-HOSTED instance that sets `EAIT__BACKEND__PAYWALL=off` (`config.paywall`;
   production never sets it, and the app repo's deploy tests refuse it), an analysis count the
-  ADMIN granted one account (`freeAnalysesFor`, none by default) — a development store grants every account it creates
+  ADMIN granted one account (`getFreeAnalyses`, none by default) — a development store grants every account it creates
   through that same path (`dev/grant.ts`, `--grant N`), which is how a demo, the e2e runners and the
   tests log meals — and ONE analysis for an account holding T1's `own-meal` arm in a running
   experiment (ieat-app#3165), the larger of it and any grant, read off the stored assignment and

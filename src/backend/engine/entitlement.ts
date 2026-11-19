@@ -13,7 +13,7 @@
 import {
   DIARY_WINDOW_DAYS, KCAL_PER_KG, entitlementActive, entitlementLive, explainTargets, forgivingStreak, localDate,
   referralBonusEnd,
-  trialDaysLeft, windowStart, type AdminWindowEcho, type DistributionChannel, type Entitlement, type FirstVerdictArm,
+  trialDaysLeft, windowStart, type AdminWindowEcho, type DistributionChannel, type Entitlement,
   type Goal, type Lang,
 } from "@eait/shared";
 import type { Config } from "../config.ts";
@@ -28,7 +28,8 @@ import { referralRewardDays } from "./referral.ts";
  * The photos-per-day allowance of an ENTITLED account, resolved in one place.
  *
  * There is no unentitled allowance to resolve: without an entitlement the account has what the
- * admin granted it (`freeAnalysesFor`, none by default — ieat-app#2364) and nothing per day.
+ * admin granted it or T1's arm allows it (`freeAnalysesFor`, none by default — ieat-app#2364) and
+ * nothing per day.
  */
 export function dailyPhotoCap(config: Config): number {
   return config.paidDailyPhotoCap;
@@ -46,33 +47,30 @@ export async function freeAnalysesFor(deps: EngineDeps, userId: string): Promise
   return Math.max(granted ?? 0, arm);
 }
 
-/** The analyses T1's arm allows this account: one for `own-meal`, none otherwise (ieat-app#3165). */
-export async function firstVerdictAllowance(deps: EngineDeps, userId: string): Promise<number> {
-  return (await firstVerdictArmOf(deps, userId)) === "own-meal" ? 1 : 0;
-}
-
 /**
- * The T1 arm this account HOLDS: its stored assignment in a running experiment whose arms carry
- * one, in whichever language the client asked for it — `GET /v1/onboarding` assigns by `?lang=`
- * before the profile's, so the profile's language is not the key. Never recomputed, and read here
- * rather than through `assignVariant`, which may WRITE one: a cap check must never enrol anybody.
- * An arm held by an account that later asks from a client that cannot render it (`servedRaw` serves
- * that client the live flow) still holds: assignment needs a capable client, so it takes a second
- * device or a downgrade. A stopped experiment, or the experiments switch off, grants nothing more.
- * A store failure throws, like `getFreeAnalyses` beside it — never a silent paywall.
+ * The analyses T1 allows this account (ieat-app#3165): ONE when any arm it HOLDS is `own-meal`,
+ * none otherwise. Held = its stored assignment in a running experiment whose arms carry one, in
+ * whichever language the client asked for it — `GET /v1/onboarding` assigns by `?lang=` before the
+ * profile's, so an account can hold arms in two languages and the profile's is not the key. Never
+ * recomputed, and read here rather than through `assignVariant`, which may WRITE one: a cap check
+ * must never enrol anybody. An arm held by an account that later asks from a client that cannot
+ * render it (`servedRaw` serves that client the live flow) still counts: assignment needs a
+ * capable client, so that takes a second device or a downgrade. A stopped experiment, or the
+ * experiments switch off, grants nothing more. The experiment and assignment reads throw on a store
+ * failure, like `getFreeAnalyses` beside them; the switch is read through `switchOn`, whose rule is
+ * that a switch never fails a meal, so a failed switch read is logged and means no arm.
  */
-async function firstVerdictArmOf(deps: EngineDeps, userId: string): Promise<FirstVerdictArm | null> {
-  if (!(await switchOn(deps, "onboarding.experiments"))) return null;
+export async function firstVerdictAllowance(deps: EngineDeps, userId: string): Promise<number> {
+  if (!(await switchOn(deps, "onboarding.experiments"))) return 0;
   // ponytail: lists every experiment per cap check — a handful of rows; a store method keyed on
   // the user's assignments when the table grows.
   const armed = (await deps.store.listOnboardingExperiments())
-    .filter((e) => e.status === "running" && e.variants.some((v) => v.firstVerdict));
+    .filter((e) => e.status === "running" && e.variants.some((v) => v.firstVerdict === "own-meal"));
   for (const experiment of armed) {
     const row = await deps.store.onboardingAssignment(userId, experiment.id);
-    const arm = row && experiment.variants.find((v) => v.content.version === row.variant_id)?.firstVerdict;
-    if (arm) return arm;
+    if (row && experiment.variants.find((v) => v.content.version === row.variant_id)?.firstVerdict === "own-meal") return 1;
   }
-  return null;
+  return 0;
 }
 
 /** One account's sample, as the admin sees it. */
