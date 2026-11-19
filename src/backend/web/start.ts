@@ -402,7 +402,7 @@ const regionOf = (tag: string): string | undefined =>
  * The values a choice or chips question offers, with the admin's labels on them.
  *
  * A LABEL THE CONTENT DOES NOT CARRY FALLS BACK TO CLDR, not to the raw value. That is the
- * country list: fifteen countries in eight languages is 120 strings nobody should type, so
+ * country list: sixteen countries in forty-two languages is ~700 strings nobody should type, so
  * `countryLabel` names them and the content carries only `other`. An admin who writes one anyway
  * still wins — this reads the content first.
  */
