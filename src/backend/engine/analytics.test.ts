@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 import {
   ANALYTICS_CLIENT_KEYS, ANALYTICS_CONTEXT_KEYS, ANALYTICS_SERVER_KEYS, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER,
   DEFAULT_ONBOARDING_CONTENT, UPDATE_HEADER, VERSION_HEADER,
@@ -8,7 +8,8 @@ import { demoPorts } from "../llm/demo.ts";
 import { logMail } from "../mail/log.ts";
 import { fakePush } from "../push/fake.ts";
 import { memoryStore } from "../store.memory.ts";
-import { analyticsRequestOf } from "./analytics.ts";
+import { fakeAnalytics } from "../analytics/fake.ts";
+import { analyticsRequestOf, track } from "./analytics.ts";
 import type { EngineDeps } from "./deps.ts";
 import { profileView } from "./profile.ts";
 
@@ -76,5 +77,60 @@ describe("analyticsRequestOf (ieat-app#3196)", () => {
     expect(analyticsRequestOf(h, "web")).toEqual({
       surface: "web", brand: "calodex", channel: null, app_version: null, build: null, ota_update_id: null,
     });
+  });
+});
+
+describe("track — one server-side event, with the whole context (ieat-app#3196)", () => {
+  const setup = async (wired = true) => {
+    const store = memoryStore();
+    const sink = fakeAnalytics();
+    const deps: EngineDeps = {
+      store, llm: demoPorts(), push: fakePush(), mail: logMail(),
+      config: { ...configDefaults(), port: 0, databaseUrl: "memory://test", llmProvider: "demo", llmModel: "demo", llmApiKey: "unused" },
+      ...(wired ? { analytics: sink } : {}),
+    };
+    return { store, deps, sink, userId: await store.createUser("de") };
+  };
+
+  it("sends the event's props plus every context key, and sets the acquisition person props", async () => {
+    const { store, deps, sink, userId } = await setup();
+    await store.patchProfile(userId, { country: "de" });
+    await track(deps, userId, "signup_completed", { provider: "google", after_onboarding: true }, analyticsRequestOf(new Headers(), "web"));
+    expect(sink.captured).toHaveLength(1);
+    const { event, userId: who, props } = sink.captured[0]!;
+    expect(event).toBe("signup_completed");
+    expect(who).toBe(userId);
+    expect(props).toMatchObject({ provider: "google", after_onboarding: true, surface: "web", lang: "de", country: "de" });
+    for (const k of ANALYTICS_CONTEXT_KEYS) expect(props).toHaveProperty(k);
+    expect(props.$set).toEqual({ acq_source: null, acq_campaign: null, acq_adgroup: null, acq_keyword: null, referrer: null });
+  });
+
+  it("with no request, says so with nulls rather than inventing a surface", async () => {
+    const { deps, sink, userId } = await setup();
+    await track(deps, userId, "subscription_renewal", { product_id: "yearly" }, null);
+    expect(sink.captured[0]!.props).toMatchObject({ surface: null, brand: null, app_version: null, product_id: "yearly", lang: "de" });
+  });
+
+  it("drops a name or a prop the catalog does not list", async () => {
+    const { deps, sink, userId } = await setup();
+    await track(deps, userId, "nope" as "signed_out", {}, null);
+    await track(deps, userId, "signed_out", { everywhere: true, email: "x@y.z" } as { everywhere: boolean }, null);
+    expect(sink.captured.map((c) => c.event)).toEqual(["signed_out"]);
+    expect(sink.captured[0]!.props).not.toHaveProperty("email");
+  });
+
+  it("sends nothing when no sink is configured, and never throws", async () => {
+    const { deps, userId } = await setup(false);
+    await track(deps, userId, "signed_out", {}, null);
+    const { deps: broken, sink, userId: other } = await setup();
+    broken.store.getProfile = async () => { throw new Error("db down"); };
+    const errors = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await track(broken, other, "signed_out", {}, null);
+      expect(errors).toHaveBeenCalledTimes(1);
+    } finally {
+      errors.mockRestore();
+    }
+    expect(sink.captured).toHaveLength(0);
   });
 });
