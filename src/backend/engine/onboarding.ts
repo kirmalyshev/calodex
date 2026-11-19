@@ -16,6 +16,7 @@ import {
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
   type DistributionChannel, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
+import { rendererNeeded, screensStartErrors, servedScreens, type ServedScreens } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
 import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
@@ -69,6 +70,12 @@ export interface OnboardingSignals {
    * arm, and an arm it already holds serves it the live copy.
    */
   orderVersion?: number;
+  /**
+   * The template renderer the client declared (`?renderer=`, ieat-app#3167). Below what an
+   * experiment's templates need — absent included, which is every web request — it is enrolled in
+   * no experiment holding them, and an arm it already holds serves it no screens.
+   */
+  renderer?: number;
 }
 
 /** Whether this client can walk an arm's order. */
@@ -164,6 +171,9 @@ export async function assignVariant(
     // it control: control would then be the arm the old builds are in, and the arms would stop
     // comparing like with like.
     if (experiment.variants.some((v) => v.order) && !readsOrder(signals)) return null;
+    // The same rule for template screens (ieat-app#3167): a client that cannot draw every arm's
+    // templates enters no arm, so control never ends up holding only the old builds.
+    if ((await rendererNeeded(deps, experiment.variants)) > (signals.renderer ?? 0)) return null;
     const picked = pickVariant(experiment.variants, hashPick(userId, experiment.id));
     if (!picked) return null;
 
@@ -210,9 +220,10 @@ export async function onboardingServedFor(
   deps: EngineDeps,
   userId: string | null,
   signals: OnboardingSignals,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[] }> {
+  at: Date = new Date(),
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; screens?: ServedScreens }> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
-  const served = await servedRaw(deps, userId, signals, control);
+  const served = await servedRaw(deps, userId, signals, control, at);
   // The ONE place stored and variant copy is branded: the editor and the clone read it raw.
   return { ...served, content: branded(served.content) };
 }
@@ -222,13 +233,18 @@ async function servedRaw(
   userId: string | null,
   signals: OnboardingSignals,
   control: OnboardingContent,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[] }> {
+  at: Date,
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; screens?: ServedScreens }> {
   if (userId === null) return { content: control };
-  const assigned = await assignVariant(deps, userId, signals);
+  const assigned = await assignVariant(deps, userId, signals, at);
   if (!assigned) return { content: control };
   const { order } = assigned.variant;
   if (order && !readsOrder(signals)) return { content: control };
-  return { content: usableContent(assigned.variant.content, control), ...(order ? { order } : {}) };
+  // Screens only to a client that can draw them (ieat-app#3167); the words and order still serve.
+  const screens = (await rendererNeeded(deps, [assigned.variant])) <= (signals.renderer ?? 0)
+    ? await servedScreens(deps, assigned.variant, signals.lang, signals.tz, at)
+    : undefined;
+  return { content: usableContent(assigned.variant.content, control), ...(order ? { order } : {}), ...(screens ? { screens } : {}) };
 }
 
 /**
@@ -900,6 +916,9 @@ export async function startOnboardingExperiment(
     const refusals = validateOnboardingOrder(v.order);
     if (refusals.length > 0) return { ok: false, errors: refusals.map((r) => `arm ${i}: ${orderRefusalText(r)}`) };
   }
+  // A template saved into an arm must still exist at the start (ieat-app#3167).
+  const screenErrors = await screensStartErrors(deps, experiment.variants);
+  if (screenErrors.length > 0) return { ok: false, errors: screenErrors };
   // A running card that enrolls nobody is worse than a refused start: the switch is the gate the
   // enrolment reads, so start only once it is on.
   if (!(await switchOn(deps, "onboarding.experiments"))) {
