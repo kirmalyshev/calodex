@@ -1871,7 +1871,7 @@ describe("the soft offer after the plan", () => {
     const session = await signIn();
     await answerAll(session, ANSWERS);
     const html = await (await get("/start/offer", session)).text();
-    expect(html).toContain('href="https://eait.fit/privacy"');
+    expect(html).toContain('href="https://calodex.app/privacy"');
   });
 
   it("lets the offer go quietly — × is the web app's first meal", async () => {
