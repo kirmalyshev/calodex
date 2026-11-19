@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 import { ADSERVICES_URL, appleAdServices } from "./adservices.ts";
 
 const reply = (status: number, body?: unknown) => async () =>
@@ -37,6 +37,26 @@ describe("Apple's AdServices adapter", () => {
     expect(await appleAdServices(reply(500))("t")).toEqual({ kind: "unavailable" });
     expect(await appleAdServices(reply(200, { nope: 1 }))("t")).toEqual({ kind: "unavailable" });
     expect(await appleAdServices(async () => { throw new Error("network"); })("t")).toEqual({ kind: "unavailable" });
+  });
+
+  it("logs the status or error name of every outcome that is not an attribution, never the token", async () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    await appleAdServices(reply(404))("secret-token");
+    await appleAdServices(reply(400))("secret-token");
+    await appleAdServices(reply(503))("secret-token");
+    await appleAdServices(reply(200, { nope: 1 }))("secret-token");
+    await appleAdServices(async () => { throw Object.assign(new Error("x"), { name: "TimeoutError" }); })("secret-token");
+    await appleAdServices(reply(200, { attribution: false }))("secret-token");
+    const lines = warn.mock.calls.map((c) => c.map(String).join(" "));
+    warn.mockRestore();
+    expect(lines).toEqual([
+      "[eait] adservices: pending, status 404",
+      "[eait] adservices: invalid, status 400",
+      "[eait] adservices: unavailable, status 503",
+      "[eait] adservices: unavailable, unreadable answer, status 200",
+      "[eait] adservices: unavailable, TimeoutError",
+    ]);
+    for (const l of lines) expect(l).not.toContain("secret-token");
   });
 
   it("gives up after its timeout", async () => {

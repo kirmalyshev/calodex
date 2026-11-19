@@ -3,7 +3,7 @@
 // from. No credential is involved — the token is the whole request. A port, like `mail` and
 // `push`, so no test reaches Apple.
 //
-// THE TOKEN IS NEVER LOGGED, and this file logs nothing at all.
+// THE TOKEN IS NEVER LOGGED: an outcome that is not an attribution logs Apple's status or the error name.
 
 export const ADSERVICES_URL = "https://api-adservices.apple.com/api/v1/";
 
@@ -24,6 +24,11 @@ export type AdServicesPort = (token: string) => Promise<AdServicesAnswer>;
 
 const id = (v: unknown): string | null => (typeof v === "number" || typeof v === "string") && v !== "" ? String(v) : null;
 
+function refused<K extends "pending" | "invalid" | "unavailable">(kind: K, why: string): { kind: K } {
+  console.warn(`[eait] adservices: ${kind}, ${why}`);
+  return { kind };
+}
+
 export function appleAdServices(
   fetchImpl: (url: string, init: RequestInit) => Promise<Response> = fetch,
   timeoutMs = TIMEOUT_MS,
@@ -34,17 +39,17 @@ export function appleAdServices(
         method: "POST", headers: { "content-type": "text/plain" }, body: token,
         signal: AbortSignal.timeout(timeoutMs),
       });
-      if (res.status === 404) return { kind: "pending" };
-      if (res.status === 400) return { kind: "invalid" };
-      if (!res.ok) return { kind: "unavailable" };
-      const b = await res.json() as Record<string, unknown> | null;
-      if (typeof b?.attribution !== "boolean") return { kind: "unavailable" };
+      if (res.status === 404) return refused("pending", `status ${res.status}`);
+      if (res.status === 400) return refused("invalid", `status ${res.status}`);
+      if (!res.ok) return refused("unavailable", `status ${res.status}`);
+      const b = await res.json().catch(() => null) as Record<string, unknown> | null;
+      if (typeof b?.attribution !== "boolean") return refused("unavailable", `unreadable answer, status ${res.status}`);
       return {
         kind: "attribution", attributed: b.attribution,
         campaignId: id(b.campaignId), adGroupId: id(b.adGroupId), keywordId: id(b.keywordId),
       };
-    } catch {
-      return { kind: "unavailable" };
+    } catch (e) {
+      return refused("unavailable", (e as Error | null)?.name ?? "error");
     }
   };
 }
