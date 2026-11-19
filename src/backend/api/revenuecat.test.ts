@@ -144,6 +144,47 @@ describe("a purchase", () => {
   });
 });
 
+// #2694: the app configures RevenueCat with the ANONYMOUS id, and a sign-in merges that account
+// into the real one and deletes it. Every later delivery (a renewal, a cancellation, a purchase
+// that lands after the merge) still names the deleted id, and a paying user's renewal was
+// answered "not-applied" while their entitlement ran out.
+describe("a delivery naming an account a sign-in merged away", () => {
+  it("extends the survivor's subscription on a renewal", async () => {
+    const anon = await account();
+    const real = await account();
+    await deliver(purchase(anon.userId, { event_timestamp_ms: Date.now() - 60_000 }));
+    await store.mergeUsers(anon.userId, real.userId);
+
+    const renewedTo = Date.now() + 365 * 24 * 60 * 60 * 1000;
+    const res = await deliver(purchase(anon.userId, { type: "RENEWAL", expiration_at_ms: renewedTo }));
+    expect(await res.json()).toEqual({ ok: true, applied: true });
+    expect((await profile(real.token)).entitlement.expiresAt).toBe(new Date(renewedTo).toISOString());
+  });
+
+  it("grants the survivor a purchase that landed after the merge", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+
+    const res = await deliver(purchase(anon.userId));
+    expect(await res.json()).toEqual({ ok: true, applied: true });
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+
+  it("still refuses a delivery older than the survivor's grant", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+    await deliver(purchase(real.userId, { event_timestamp_ms: Date.now() }));
+
+    const res = await deliver(purchase(anon.userId, {
+      type: "EXPIRATION", expiration_at_ms: Date.now() - 1000, event_timestamp_ms: Date.now() - 60_000,
+    }));
+    expect(await res.json()).toEqual({ ok: true, applied: false });
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+});
+
 describe("deliveries this server ignores", () => {
   // A Test Store or sandbox purchase is a simulated one. Accepting it in production would sell the
   // tier for free to anybody with a development build; the deployed host opts in explicitly, and

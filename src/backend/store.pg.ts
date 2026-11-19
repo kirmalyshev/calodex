@@ -636,6 +636,16 @@ alter table users add column if not exists referral_banked_days integer not null
 -- account is kept here, and grantReferralWeek refuses one, so the late payment earns nothing.
 -- The friend's account owns the row and takes it when it is erased: a store transaction id is a
 -- purchase somebody made, and outliving them is not this table's job.
+-- #2694: which account a sign-in merged a deleted anonymous one into. RevenueCat keeps naming the
+-- anonymous id it was configured with, so a renewal after the merge names an account that no longer
+-- exists; the webhook resolves it here. No foreign key on from_id (that row is gone by design).
+-- Goes with the survivor. Read unscoped: the id in a webhook IS the message.
+create table if not exists merged_users (
+  from_id   uuid primary key,
+  into_id   uuid not null references users(id) on delete cascade,
+  merged_at timestamptz not null default now()
+);
+create index if not exists merged_users_into on merged_users (into_id);
 create table if not exists referral_refunds (
   transaction_id text primary key,
   referred_id    uuid not null references users(id) on delete cascade,
@@ -1868,6 +1878,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   mergeUsers: "unscoped",
   moveIdentity: "unscoped",
   moveEntitlement: "unscoped",
+  mergedInto: "unscoped",
   // One Expo push token is one INSTALLATION, and the upsert deliberately MOVES it between accounts
   // when a phone signs into a different one — the invariant on `push_tokens`. Scoped to the new
   // owner, the policy would hide the existing row and the move would become a duplicate.
@@ -3211,6 +3222,10 @@ export async function postgresStore(
         // working rather than silently start addressing someone else's diary.
         await tx`delete from tokens where user_id = ${fromUserId}`;
         await tx`delete from users where id = ${fromUserId}`;
+        await tx`update merged_users set into_id = ${intoUserId} where into_id = ${fromUserId}`;
+        await tx`
+          insert into merged_users (from_id, into_id) values (${fromUserId}, ${intoUserId})
+          on conflict (from_id) do update set into_id = excluded.into_id`;
         return moved.length;
       });
     },
@@ -3484,6 +3499,11 @@ export async function postgresStore(
         trial: r.entitlement_trial === true,
         ...(r.entitlement_sandbox === true ? { sandbox: true } : {}),
       };
+    },
+
+    async mergedInto(userId) {
+      const rows = await sql`select into_id from merged_users where from_id = ${userId}`;
+      return rows.length > 0 ? String(rows[0].into_id) : null;
     },
 
     async moveEntitlement(fromUserId, intoUserId, eventAtIso) {

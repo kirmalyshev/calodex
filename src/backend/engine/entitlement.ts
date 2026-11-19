@@ -367,8 +367,21 @@ export async function applyRevenueCatEvent(
   // statement whose WHERE clause carries both conditions, and splitting the reason would mean a
   // second query asking a question nothing acts on. Both are ordinary, and both answer 200.
   const eventAt = new Date(event.eventTimestampMs).toISOString();
-  const written = await deps.store.putEntitlement(event.appUserId, { ...patch, productId: event.productId, eventAt, sandbox: event.sandbox });
-  await referralReward(deps, event, eventAt);
+  const write = (userId: string) =>
+    deps.store.putEntitlement(userId, { ...patch, productId: event.productId, eventAt, sandbox: event.sandbox });
+  // A SIGN-IN MAY HAVE MERGED THIS ACCOUNT AWAY (#2694). RevenueCat keeps the anonymous id it was
+  // configured with, so every later delivery names a deleted row. Resolved only after the write
+  // missed, so a merge that commits while this delivery waits on the row's lock lands here too.
+  let userId = event.appUserId;
+  let written = await write(userId);
+  if (!written) {
+    const survivor = await deps.store.mergedInto(userId);
+    if (survivor !== null) {
+      userId = survivor;
+      written = await write(userId);
+    }
+  }
+  await referralReward(deps, { ...event, appUserId: userId }, eventAt);
   return written ? { applied: true } : { applied: false, reason: "not-applied" };
 }
 
