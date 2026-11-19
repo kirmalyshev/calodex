@@ -57,7 +57,7 @@ export {
   resetOnboardingContent, recordOnboardingEvents, sanitizeExperimentRules, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment, wilsonInterval,
   adminMetrics,
-  onboardingFunnel, adminOnboardingUsers, adminUserOnboarding,
+  onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, onboardingRuns,
   type AdminOnboardingRun, type AdminOnboardingUserRow, type OnboardingExperimentView, type OnboardingSignals,
 } from "./onboarding.ts";
 export {

@@ -629,7 +629,7 @@ export interface AdminOnboardingRun {
   copy: Record<string, string> | null;
 }
 
-async function onboardingRuns(deps: EngineDeps, userId: string, events: AdminOnboardingEvent[]): Promise<AdminOnboardingRun[]> {
+export async function onboardingRuns(deps: EngineDeps, userId: string, events: AdminOnboardingEvent[]): Promise<AdminOnboardingRun[]> {
   if (events.length === 0) return [];
   const served = await deps.store.onboardingServed(userId);
   const experiments = await deps.store.listOnboardingExperiments();
