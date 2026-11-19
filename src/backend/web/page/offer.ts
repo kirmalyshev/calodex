@@ -1,4 +1,3 @@
-import { spudSvg } from "@eait/shared/mascot";
 import { payPlans, type PayPlanRow } from "@eait/shared/ui/kit";
 import { fill, payCopyFor } from "@eait/shared";
 import type { Lang } from "@eait/shared";
@@ -59,7 +58,6 @@ export function offer(v: OfferView): string {
 ${topBar(PAGE_COPY)}
 <form class="offer" action="${escape(v.checkoutUrl)}" method="get">
 <a class="x" href="${escape(v.closeHref)}" aria-label="${escape(PAGE_COPY.offerClose)}">×</a>
-<div class="offer-hero">${spudSvg("joy", "spud-offer")}</div>
 <p class="beat">${escape(PAGE_COPY.offerBeat)}</p>
 <h1>${escape(v.headline)}</h1>
 ${[PAGE_COPY.offerPerkVerdict, PAGE_COPY.offerPerkPlan, PAGE_COPY.offerPerkSpud].map(perk).join("\n")}

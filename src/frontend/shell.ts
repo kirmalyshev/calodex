@@ -26,7 +26,6 @@
 import { shellCopyFor } from "../shared/app/shell-copy.ts";
 import { chatScreenCopyFor } from "../shared/app/chat-copy.ts";
 import { homeCopyFor } from "../shared/app/home-copy.ts";
-import { spudSvg, type MascotMood } from "../shared/mascot.ts";
 import { brandSvg } from "../shared/ui/icons.ts";
 import { ico } from "../shared/ui/kit.ts";
 import { joinsQueue } from "../shared/outbox.ts";
@@ -98,19 +97,6 @@ export function el(tag: string, className: string, text?: string): HTMLElement {
 }
 
 export const clear = (node: HTMLElement): HTMLElement => { node.replaceChildren(); return node; };
-
-/** Which gradient id the next Spud gets — two inline SVGs on one page may not share one. */
-let spudSeq = 0;
-
-/**
- * Spud as a parsed element, one gradient id per instance. He arrives as a STRING (`spudSvg` is the
- * one drawing every web surface shares), parsed rather than built node by node. It is a
- * compile-time constant we wrote, not server or user content — which is the whole of what "text,
- * never innerHTML" exists to keep off the page.
- */
-export function spudFace(mood: MascotMood): Element {
-  return new DOMParser().parseFromString(spudSvg(mood, `spud-${++spudSeq}`), "image/svg+xml").documentElement;
-}
 
 /**
  * The profile, fetched once per signed-in tab.

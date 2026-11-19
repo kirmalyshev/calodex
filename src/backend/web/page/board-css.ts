@@ -35,7 +35,7 @@ export const BOARD_CSS = `
 
 /* ── the frame ── */
 /* The top bar is the app shell's (main.css .wtop): a white bar on the hairline, the app icon
-   as the brand mark (DIRECTION §6 — Spud is a signature beside his line, never the mark). */
+   as the brand mark (DIRECTION §6). */
 .ob .wtop { display: flex; align-items: center; gap: 28px; height: 64px; padding: 0 40px;
             background: var(--surface); border-bottom: 1px solid var(--hair); }
 .ob .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; letter-spacing: -.02em; }
@@ -76,9 +76,6 @@ export const BOARD_CSS = `
 /* 8 under the question, as board 08 draws it: the column's 18 less 10. */
 .ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }
 .ob .burnline { align-self: center; text-align: center; margin: 14px 0 0; font-size: 15px; color: var(--muted); }
-.ob .spud { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-tint);
-            display: inline-flex; align-items: center; justify-content: center; margin-top: 2px; }
-.ob .spud svg { width: 78%; height: 78%; display: block; }
 /* The ask is the iOS question's own 28px, left, under the bar — the wrap falls where the
    phone's falls, not a width the web invented. */
 .ob h1.q { font-size: 32px; font-weight: 700; letter-spacing: -.032em; line-height: 1.13; text-wrap: balance; }

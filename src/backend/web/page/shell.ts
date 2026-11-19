@@ -110,7 +110,6 @@ img, svg { display: block; max-width: 100%; }
   padding: .15rem .7rem; margin: .4rem .4rem 0 0;
   font-size: .8125rem; color: var(--muted);
 }
-.spud { width: 64px; height: 64px; display: block; margin: 0 0 1rem; }
 /* The part of a line not yet typed. Laid out, read by a screen reader, not yet seen. */
 .untyped { color: transparent; }
 
@@ -231,8 +230,6 @@ label.check {
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   color: var(--muted); background: var(--surface); border: 1px solid var(--hair); font-size: 1.15rem;
 }
-.offer-hero { width: 96px; margin: 1rem auto .5rem; }
-.offer-hero svg { width: 96px; height: 96px; }
 .offer .beat { text-align: center; color: var(--muted); margin: 0 0 .35rem; }
 .offer h1 { text-align: center; }
 .perk { display: flex; gap: .6rem; align-items: center; font-weight: 600; margin: 0 0 .55rem; }

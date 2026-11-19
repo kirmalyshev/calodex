@@ -35,7 +35,7 @@ import type { Frame } from "../shell.ts";
 import { outbox, type WebQueued } from "../outbox.ts";
 import { shrinkPhotos } from "../photo.ts";
 import {
-  ctaEl, gramMacsEl, kitEl, optionRowEl, photoHeroEl, spudAvatarEl, verdictListEl,
+  ctaEl, gramMacsEl, kitEl, optionRowEl, photoHeroEl, verdictListEl,
 } from "../kit.ts";
 
 /**
@@ -121,10 +121,10 @@ export function logScreen(frame: Frame): HTMLElement {
   const reducedMotion = (): boolean =>
     typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /** A say row — the kit's avatar and the words. */
-  const say = (mood: "think" | "care" | "happy", text: string, q = false): HTMLElement => {
+  /** A say row — the words alone. */
+  const say = (text: string, q = false): HTMLElement => {
     const row = el("div", `say logsay${q ? " q" : ""}`);
-    row.append(spudAvatarEl(mood), el("p", "", text));
+    row.append(el("p", "", text));
     return row;
   };
 
@@ -226,7 +226,7 @@ export function logScreen(frame: Frame): HTMLElement {
     // text, `reading`/`item` carry `line`, each already worded on the server.
     const sayRow = el("div", "say logsay");
     readingWords = el("p", "", L.reading);
-    sayRow.append(spudAvatarEl("think"), readingWords);
+    sayRow.append(readingWords);
     const checking = ctaEl({ text: L.checking, kind: "s" }) as HTMLButtonElement;
     checking.disabled = true;
     side.append(
@@ -270,7 +270,7 @@ export function logScreen(frame: Frame): HTMLElement {
     const line = verdictDetailLine(lang, {
       verdictLabels: r.verdictLabels, meal: r.analysis, targets: me.targets,
     });
-    return line === null ? null : say("care", line);
+    return line === null ? null : say(line);
   };
 
   /** The day counter — the server's day totals read through the shared day budget. */
@@ -315,7 +315,7 @@ export function logScreen(frame: Frame): HTMLElement {
     if (first) {
       // The phone board's content in the logged frame: the heading, the same photo and card,
       // Correct and Continue — Spud's paragraph is gone (the board's own note).
-      side.append(say("happy", L.firstVerdict, true), mealCard(r, ".4s"));
+      side.append(say(L.firstVerdict, true), mealCard(r, ".4s"));
       const btns = el("div", "logbtns");
       btns.append(
         ctaEl({ text: L.correct, kind: "s", icon: "sparkle", href: `#/meal/${encodeURIComponent(r.mealId)}?fix` }),
@@ -370,7 +370,7 @@ export function logScreen(frame: Frame): HTMLElement {
     const block = el("div", "");
     const askRow = el("div", "rise");
     askRow.style.setProperty("--d", ".15s");
-    askRow.append(say("think", q.text, true));
+    askRow.append(say(q.text, true));
     const opts = el("div", "card");
     opts.style.padding = "4px 16px";
     opts.classList.add("rise");
