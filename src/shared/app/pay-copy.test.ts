@@ -14,7 +14,7 @@ import { PAY_COPY, payCopyFor } from "./pay-copy.ts";
 const KEYS = [
   "plansTitle", "plansHeroAlt",
   "planYearly", "planMonthly", "trialBadge", "pricePerYear", "pricePerMonth",
-  "yearlySub", "monthlySub", "perMonthCaption", "benefitPhoto", "benefitPlan", "benefitChat",
+  "yearlySub", "monthlySub", "perMonthCaption", "perMonthSave", "benefitPhoto", "benefitPlan", "benefitChat",
   "startTrial", "trialNote", "trialNotePhone",
   "giftTitle", "giftAlt", "giftNote", "giftOpen",
   "offerTitle", "offerAlt", "offerOff", "offerPrice", "offerPerMonth",
@@ -49,6 +49,7 @@ describe("PAY_COPY", () => {
       trialBadge: ["{days}"],
       pricePerYear: ["{price}"],
       pricePerMonth: ["{price}"],
+      perMonthSave: ["{price}", "{percent}"],
       yearlySub: ["{trial}", "{price}"],
       monthlySub: ["{trial}", "{price}"],
       startTrial: ["{days}"],
@@ -96,6 +97,7 @@ describe("PAY_COPY", () => {
     expect(en.pricePerYear).toBe("{price} a year");
     expect(en.pricePerMonth).toBe("{price} a month");
     // pay-paywall (phone): the benefits, the yearly sub-line, the captions, the free-meal card
+    expect(en.perMonthSave).toBe("{price}/month · save {percent}");
     expect(en.benefitPhoto).toBe("One photo logs a meal");
     expect(en.benefitPlan).toBe("Every meal checked against your plan");
     expect(en.benefitChat).toBe("Ask Spud about your day");
@@ -104,7 +106,7 @@ describe("PAY_COPY", () => {
     expect(en.monthlySub).toBe("{trial}, {price} a month");
     expect(en.startTrial).toBe("Try {days} days free");
     expect(en.trialNote).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel any time in Profile › Subscription.");
-    expect(en.trialNotePhone).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel in Settings › Apple ID › Subscriptions at least 24 hours before the trial ends.");
+    expect(en.trialNotePhone).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel in Settings › Apple ID › Subscriptions at least 24 hours before the trial ends. We'll remind you before the trial ends.");
     // pay-gift
     expect(en.giftTitle).toBe("We have a gift for you");
     expect(en.giftAlt).toBe("A wrapped gift box");

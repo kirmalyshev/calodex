@@ -80,6 +80,7 @@ export * from "./app/error-copy.ts";
 export * from "./app/signup-copy.ts";
 export * from "./app/chat-copy.ts";
 export * from "./app/pay-copy.ts";
+export * from "./app/pay-lines.ts";
 export * from "./app/plan-copy.ts";
 export * from "./plan-reveal.ts";
 export * from "./app/you-copy.ts";

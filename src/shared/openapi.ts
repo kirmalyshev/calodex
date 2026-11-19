@@ -96,6 +96,7 @@ export const API: readonly Endpoint[] = [
     query: {
       lang: "A Lang code. The account's language when absent, English when unknown.",
       order: "The order capability this client can walk (`ONBOARDING_ORDER_VERSION`). Absent is 0: no experiment with an ordered arm enrolls it, and `order` is never sent.",
+      verdict: "The first-verdict capability this client can render (`FIRST_VERDICT_VERSION`, ieat-app#3165). Absent is 0: no experiment whose arms carry a first verdict enrolls it, and `firstVerdict` is never sent.",
       renderer: "The template renderer this client can draw (`TEMPLATE_RENDERER_VERSION`). Absent is 0: no experiment with template screens enrolls it, and `screens` is never sent.",
     },
     summary: "The onboarding copy this server is serving.", responses: { 200: "OnboardingContentResponse" } },
@@ -184,7 +185,10 @@ export const API: readonly Endpoint[] = [
     responses: { 200: "MessageResponse", 400: ERROR, 409: ERROR }, refuses: true, stream: "MessageResponse" },
   { route: "messagesLines", method: "POST", path: "/v1/messages/lines", auth: "bearer",
     summary: "The user's own words and Spud's scripted lines, by id. Not charged.",
-    query: { order: "The order capability, the SAME value sent to `GET /v1/onboarding`: an onboarding ask line is quoted in the words a client with it was shown, so a different value quotes a line the screen did not show." },
+    query: {
+      order: "The order capability, the SAME value sent to `GET /v1/onboarding`: an onboarding ask line is quoted in the words a client with it was shown, so a different value quotes a line the screen did not show.",
+      verdict: "The first-verdict capability, the SAME value sent to `GET /v1/onboarding`, for the same reason as `order`.",
+    },
     request: { json: "AppendLinesRequest" }, responses: { 200: "AppendLinesResponse", 400: ERROR, 429: ERROR } },
   { route: "message", method: "DELETE", path: "/v1/messages/{id}", auth: "bearer",
     summary: "Delete the caller's own line. A photo line takes its meal with it.",

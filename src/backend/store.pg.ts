@@ -5416,7 +5416,7 @@ export async function postgresStore(
         if (opts.limit) {
           const own = acct[0].free_analyses;
           const max = opts.limit.over === "day" ? opts.limit.max
-            : (own === null || own === undefined ? 0 : num(own));
+            : Math.max(own === null || own === undefined ? 0 : num(own), opts.limit.floor);
           const rows = opts.limit.over === "day"
             ? await tx`select count(*)::int as n from analyses where user_id = ${userId} and date = ${date} and scope = ${scope}`
             : await tx`select count(*)::int as n from analyses where user_id = ${userId}`;

@@ -839,19 +839,21 @@ export function createRouter(
         // `?tz=` (IANA) and `?region=` (the device's locale region) are the experiment signals
         // (ieat-app#2669): a request without them is still answered — missing means "not
         // eligible", never an error. `?order=` is the order capability (ieat-app#2788),
-        // `orderVersionOf`.
+        // `orderVersionOf`. `?verdict=` is the first-verdict capability (ieat-app#3165).
         const served = await onboardingServedFor(deps, userId, {
           lang, surface: "app",
           region: url.searchParams.get("region"),
           tz: url.searchParams.get("tz"),
           orderVersion: orderVersionOf(url),
           renderer: rendererOf(url),
+          verdictVersion: versionOf(url, "verdict"),
         });
         return json({
           content: served.content,
           lang,
           ...(served.order ? { order: served.order } : {}),
           ...(served.screens ? { screens: served.screens } : {}),
+          ...(served.firstVerdict ? { firstVerdict: served.firstVerdict } : {}),
         } satisfies OnboardingContentResponse);
       }
 
@@ -1036,7 +1038,7 @@ export function createRouter(
         if (!Array.isArray(body?.lines)) return json({ error: "lines required" }, 400);
         // `?order=` — the SAME value the client sent `GET /v1/onboarding`: the thread quotes the ask
         // line a client with it was shown, so a different one quotes a line the screen did not show.
-        const out = await appendLines(deps, userId, body.lines, { orderVersion: orderVersionOf(url) });
+        const out = await appendLines(deps, userId, body.lines, { orderVersion: orderVersionOf(url), verdictVersion: versionOf(url, "verdict") });
         if (body.lines.length > 0 && out.appended === 0) return json({ error: out.reason ?? "bad-line" }, 400);
         return json(out satisfies AppendLinesResponse);
       }
@@ -1461,6 +1463,11 @@ function rendererOf(url: URL): number {
 
 /** The order capability a client declared with `?order=` (ieat-app#2788): absent or not a number is 0. */
 function orderVersionOf(url: URL): number {
-  const n = Number(url.searchParams.get("order") ?? 0);
+  return versionOf(url, "order");
+}
+
+/** A capability a client declared as `?<param>=<version>`: absent or not a number is 0. */
+function versionOf(url: URL, param: string): number {
+  const n = Number(url.searchParams.get(param) ?? 0);
   return Number.isFinite(n) ? n : 0;
 }
