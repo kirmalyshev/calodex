@@ -53,7 +53,7 @@ export {
 export {
   addOnboardingVariant, assignVariant, createOnboardingExperiment, onboardingContent,
   onboardingContentFor, onboardingExperiments, onboardingServedFor, orderRefusalText, saveOnboardingContent,
-  saveOnboardingVariant, saveOnboardingVariantOrder,
+  saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder,
   resetOnboardingContent, recordOnboardingEvents, sanitizeExperimentRules, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment, wilsonInterval,
   adminMetrics,

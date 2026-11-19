@@ -10,7 +10,7 @@ import type {
 } from "./types.ts";
 import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
-import type { OnboardingContent, OnboardingEvent } from "./onboarding.ts";
+import type { FirstVerdictArm, OnboardingContent, OnboardingEvent } from "./onboarding.ts";
 import type { TargetBasis } from "./targets.ts";
 import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
@@ -1052,6 +1052,14 @@ export interface OnboardingContentResponse {
    * `servedOrder`, so an order it cannot validate is the default, never a broken walk.
    */
   order?: readonly string[];
+  /**
+   * The experiment arm's first verdict (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the live
+   * flow. Sent only to a client that declared `?verdict=` at or above `FIRST_VERDICT_VERSION`; the
+   * server enrols no other client in an experiment whose arms carry one. `own-meal` lets an account
+   * with no analyses yet through for one, so the client reads `limits.subscriptionRequired` — the
+   * paywall's answer, never the arm — to decide whether the sheet comes before the first meal.
+   */
+  firstVerdict?: FirstVerdictArm;
 }
 
 /**

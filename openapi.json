@@ -670,6 +670,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "verdict",
+            "in": "query",
+            "required": false,
+            "description": "The first-verdict capability this client can render (`FIRST_VERDICT_VERSION`, ieat-app#3165). Absent is 0: no experiment whose arms carry a first verdict enrolls it, and `firstVerdict` is never sent.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2729,6 +2738,15 @@
             "in": "query",
             "required": false,
             "description": "The order capability, the SAME value sent to `GET /v1/onboarding`: an onboarding ask line is quoted in the words a client with it was shown, so a different value quotes a line the screen did not show.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "verdict",
+            "in": "query",
+            "required": false,
+            "description": "The first-verdict capability, the SAME value sent to `GET /v1/onboarding`, for the same reason as `order`.",
             "schema": {
               "type": "string"
             }
@@ -6094,6 +6112,13 @@
         ],
         "description": "Why a QUEUED job ended unknown (ieat-app#2187). Additive: a build that reads only `kind` is unchanged. `timeout` outran its budget, `error` threw, `worker-lost` died with a note that is never re-run, `expired` was never claimed. The wording is the client's."
       },
+      "FirstVerdictArm": {
+        "type": "string",
+        "enum": [
+          "own-meal",
+          "welcome-plate"
+        ]
+      },
       "FocusMealRequest": {
         "type": "object",
         "properties": {
@@ -8491,6 +8516,10 @@
               "type": "string"
             },
             "description": "The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the default. The contract: a server sends it only to a client that declared `?order=` at or above `ONBOARDING_ORDER_VERSION`, and enrols an older client in no experiment with an ordered arm. Typed as strings because it is NOT yet trusted: a client hands it to `promptsFor`, which runs `servedOrder`, so an order it cannot validate is the default, never a broken walk."
+          },
+          "firstVerdict": {
+            "$ref": "#/components/schemas/FirstVerdictArm",
+            "description": "The experiment arm's first verdict (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the live flow. Sent only to a client that declared `?verdict=` at or above `FIRST_VERDICT_VERSION`; the server enrols no other client in an experiment whose arms carry one. `own-meal` lets an account with no analyses yet through for one, so the client reads `limits.subscriptionRequired` — the paywall's answer, never the arm — to decide whether the sheet comes before the first meal."
           }
         },
         "required": [

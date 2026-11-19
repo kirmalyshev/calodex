@@ -47,7 +47,7 @@ import {
 import {
   adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
-  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
+  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
   sendTestPush, pushOpenView, pushRecentView, adminUserPushLog, sendAdminPush,
@@ -431,11 +431,17 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     }
     if (req.method === "PUT" && sub === "variants") {
       const raw: unknown = await req.json().catch(() => ({}));
-      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown };
+      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown; firstVerdict?: unknown };
       const index = Number(expMatch[3]);
-      // Two editors, two bodies, never both (ieat-app#2788): `{order}` is the order editor's save
+      // One editor per body, never two at once (ieat-app#2788): `{order}` is the order editor's save
       // (`null` clears it), anything else the copy editor's. A body carrying both is refused rather
-      // than half-written — a content save is committed before an order could be refused.
+      // than half-written — a content save is committed before an order could be refused. `{firstVerdict}`
+      // is the third, alone the same way (ieat-app#3165; `null` clears it).
+      if ("firstVerdict" in body) {
+        if (body.content !== undefined || "order" in body) return json({ errors: ["send the first verdict alone"] }, 422);
+        const result = await saveOnboardingVariantFirstVerdict(deps, id, index, body.firstVerdict);
+        return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+      }
       if ("order" in body) {
         if (body.content !== undefined) return json({ errors: ["send the copy or the order, not both"] }, 422);
         const result = await saveOnboardingVariantOrder(deps, id, index, body.order);

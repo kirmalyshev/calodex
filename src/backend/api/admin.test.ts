@@ -188,6 +188,68 @@ describe("experiments (ieat-app#2669)", () => {
     const garbled = await session();
     expect((await (await admin("GET", "/v1/onboarding?order=abc", undefined, garbled)).json() as { order?: unknown }).order).toBeUndefined();
   });
+
+  it("saves an arm's first verdict and serves it only to a client that can render it (ieat-app#3165)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
+    expect((await admin("PUT", arm, { firstVerdict: "free-week" })).status).toBe(422);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/0`, { firstVerdict: "own-meal" })).status).toBe(422);
+    expect((await admin("PUT", arm, { firstVerdict: "own-meal", order: null })).status).toBe(422);
+    expect((await admin("PUT", arm, { firstVerdict: "own-meal", content: structuredClone(DEFAULT_ONBOARDING_CONTENT) })).status).toBe(422);
+    expect((await admin("PUT", arm, { firstVerdict: "welcome-plate" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+
+    const older = await session();
+    expect((await (await admin("GET", "/v1/onboarding", undefined, older)).json() as { firstVerdict?: unknown }).firstVerdict).toBeUndefined();
+    const newer = await session();
+    expect((await (await admin("GET", "/v1/onboarding?verdict=1", undefined, newer)).json() as { firstVerdict?: unknown }).firstVerdict)
+      .toBe("welcome-plate");
+  });
+
+  it("quotes the armed ask line on the lines route only with ?verdict= (ieat-app#3165)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
+    const content = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    content.screens.find((x) => x.id === "goal")!.asks.goal!.lines = ["The arm asks the goal"];
+    expect((await admin("PUT", arm, { content })).status).toBe(200);
+    expect((await admin("PUT", arm, { firstVerdict: "welcome-plate" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const lines = { lines: [{ role: "assistant", ask: { prompt: "goal", line: 0 } }] };
+    expect((await admin("POST", `${ROUTES.messagesLines}?verdict=1`, lines, token)).status).toBe(200);
+    expect((await admin("POST", ROUTES.messagesLines, lines, token)).status).toBe(200);
+    const said = (await store.chatBefore(userId, null, 10)).map((m) => m.text);
+    expect(said.filter((t) => t === "The arm asks the goal")).toHaveLength(1);
+  });
+
+  it("tells an own-meal account its one analysis on the profile, and asks once it is spent (ieat-app#3165)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, { firstVerdict: "own-meal" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+
+    const token = await session();
+    expect((await (await admin("GET", "/v1/onboarding?verdict=1", undefined, token)).json() as { firstVerdict?: unknown }).firstVerdict)
+      .toBe("own-meal");
+    const required = async () =>
+      ((await (await admin("GET", ROUTES.profile, undefined, token)).json()) as { limits: { subscriptionRequired: boolean } }).limits.subscriptionRequired;
+    expect(await required()).toBe(false);
+    await store.recordAnalysis((await store.userIdForToken(token))!, "2026-11-19", "photo");
+    expect(await required()).toBe(true);
+  });
 });
 
 describe("the admin is off unless somebody holds the role", () => {

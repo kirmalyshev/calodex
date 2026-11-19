@@ -2660,7 +2660,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         return { analysisId: j.analysisId, fresh: false };
       }
       if (opts.limit) {
-        const max = opts.limit.over === "day" ? opts.limit.max : (freeAnalyses.get(userId) ?? 0);
+        const max = opts.limit.over === "day" ? opts.limit.max
+          : Math.max(freeAnalyses.get(userId) ?? 0, opts.limit.floor);
         const n = opts.limit.over === "day"
           ? analyses.filter((a) => a.userId === userId && a.date === date && a.scope === scope).length
           : analyses.filter((a) => a.userId === userId).length;
