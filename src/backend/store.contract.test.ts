@@ -3657,7 +3657,7 @@ function contract(name: string, make: () => Promise<Store>) {
     // The experiment row is global, like the switches above it — a `running` one left behind would
     // be served to every later test in this database, so each is stopped when its test is done.
     describe("screen templates (ieat-app#3167)", () => {
-      const draft = (note: string) => ({ renderer: 1, blocks: [{ type: "plan-recap" as const }], strings: { en: {} }, note });
+      const draft = (note: string) => ({ renderer: 1, blocks: [{ type: "spacer" as const, size: "s" as const }], strings: { en: {} }, note });
       it("appends revisions per key and lists the latest", async () => {
         const s = await open();
         const key = `tpl-${RUN}`;
@@ -3666,7 +3666,7 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(one?.version).toBe(1);
         expect(two?.version).toBe(2);
         expect((await s.screenTemplate(key, 1))?.note).toBe("first");
-        expect((await s.screenTemplate(key, 2))?.blocks).toEqual([{ type: "plan-recap" }]);
+        expect((await s.screenTemplate(key, 2))?.blocks).toEqual([{ type: "spacer", size: "s" }]);
         expect(await s.screenTemplate(key, 3)).toBeNull();
         const latest = (await s.listScreenTemplates()).filter((t) => t.key === key);
         expect(latest.map((t) => t.version)).toEqual([2]);
