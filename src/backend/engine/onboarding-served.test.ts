@@ -82,6 +82,10 @@ describe("serveOnboarding records what it served (ieat-app#3194)", () => {
 });
 
 describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () => {
+  const served = (contentVersion: number, screens = {}) =>
+    store.recordOnboardingServed(userId, { contentVersion, lang: "en", surface: "app", screens });
+  const runs = async () => (await adminUserOnboarding(deps, userId))!.runs;
+
   it("names the arm, the language, the surface, the template and the words of every place", async () => {
     const e = await running();
     await serveOnboarding(deps, userId, signals);
@@ -90,42 +94,89 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
       event("s1", "goal", "answer", 42, { field: "goal", value: "lose" }),
       event("s1", "baseline", "view", 42),
     ] as never);
-    const view = await adminUserOnboarding(deps, userId);
-    expect(view!.runs).toHaveLength(1);
-    const run = view!.runs[0]!;
+    const [run] = await runs();
     expect(run).toMatchObject({
-      sessionId: "s1", contentVersion: 42,
-      experiment: { id: e.id, arm: "variant 2", isControl: false },
-      lang: "en", surface: "app",
-      screens: { baseline: { template: "day", version: 1 } },
+      sessionId: "s1", contentVersion: 42, experiment: { id: e.id, arm: "variant 2" }, lang: "en",
+      served: { surface: "app", screens: { baseline: { template: "day", version: 1 } } },
     });
-    expect(typeof run.servedAt).toBe("string");
+    expect(typeof run!.served!.at).toBe("string");
     const goalAsk = DEFAULT_ONBOARDING_CONTENT.screens.find((s) => s.id === "goal")!.asks.goal!.lines[0]!;
-    expect(run.copy!.welcome).toContain(DEFAULT_ONBOARDING_CONTENT.welcome.cta);
-    expect(run.copy!.goal).toContain(goalAsk);
-    expect(run.copy!.baseline).toBe("See how it works\n[Continue]");
+    expect(run!.copy!.welcome).toContain(DEFAULT_ONBOARDING_CONTENT.welcome.cta);
+    expect(run!.copy!.goal).toContain(goalAsk);
+    expect(run!.copy!.baseline).toBe("See how it works\n[Continue]");
   });
 
-  it("says control for the control arm", async () => {
+  it("says control for the control arm, and no arm when the run shows another version than the one assigned", async () => {
     const e = await running();
     await store.putOnboardingAssignment(userId, e.id, 41);
-    await store.recordOnboardingEvents(userId, [event("s1", "welcome", "view", 41)] as never);
-    const run = (await adminUserOnboarding(deps, userId))!.runs[0]!;
-    expect(run.experiment).toEqual({ id: e.id, arm: "control", isControl: true });
+    await store.recordOnboardingEvents(userId, [event("c", "welcome", "view", 41), event("x", "welcome", "view", 42)] as never);
+    const [control, other] = await runs();
+    expect(control!.experiment).toEqual({ id: e.id, arm: "control" });
+    expect(other!.experiment).toBeNull();
   });
 
-  it("derives what it can for a run nothing recorded the serving of, and invents nothing", async () => {
+  it("derives the arm for a run nothing recorded the serving of, and guesses nothing else", async () => {
     const e = await running();
     await store.putOnboardingAssignment(userId, e.id, 42);
+    await store.recordOnboardingEvents(userId, [event("old", "welcome", "view", 42), event("lost", "welcome", "view", 9)] as never);
+    const [old, lost] = await runs();
+    expect(old).toMatchObject({ sessionId: "old", experiment: { id: e.id, arm: "variant 2" }, lang: null, served: null, copy: null });
+    expect(lost).toMatchObject({ sessionId: "lost", contentVersion: 9, experiment: null, lang: null, served: null, copy: null });
+  });
+
+  it("matches each run to the latest serving before it (A, B, A), and a run before every serving to none", async () => {
+    const base = Date.parse("2026-11-19T10:00:00Z");
+    const at = (min: number) => new Date(base + min * 60_000).toISOString();
+    let clock = base;
+    store = memoryStore({ now: () => clock });
+    deps = { ...deps, store };
+    userId = await store.createUser("en");
+    await store.recordOnboardingEvents(userId, [event("early", "welcome", "view", 7, { at: at(-30) })] as never);
+    clock = Date.parse(at(0)); await served(7, { baseline: { template: "a", version: 1 } });
+    clock = Date.parse(at(10)); await served(7, { baseline: { template: "b", version: 1 } });
+    clock = Date.parse(at(20)); await served(7, { baseline: { template: "a", version: 1 } });
     await store.recordOnboardingEvents(userId, [
-      event("old", "welcome", "view", 42),
-      event("lost", "welcome", "view", 9, { at: new Date(Date.now() + 99_000).toISOString() }),
+      event("r1", "welcome", "view", 7, { at: at(1) }),
+      event("r2", "welcome", "view", 7, { at: at(11) }),
+      // The client's clock runs a minute behind the server's: still this serving.
+      event("r3", "welcome", "view", 7, { at: at(19) }),
     ] as never);
-    const [old, lost] = (await adminUserOnboarding(deps, userId))!.runs;
-    // The arm comes from the assignment, the language from the arm's experiment; the serving was never recorded.
-    expect(old).toMatchObject({ sessionId: "old", experiment: { id: e.id, arm: "variant 2" }, lang: "en", surface: null, servedAt: null, screens: null });
-    expect(old!.copy!.welcome).toContain(DEFAULT_ONBOARDING_CONTENT.welcome.cta);
-    // A version no copy is kept for, on a run with no record: nothing to say but that.
-    expect(lost).toMatchObject({ sessionId: "lost", contentVersion: 9, experiment: null, lang: null, surface: null, screens: null, copy: null });
+    const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
+    expect(byId.early!.served).toBeNull();
+    expect(byId.r1!.served!.at).toBe(at(0));
+    expect(byId.r2!.served!.at).toBe(at(10));
+    expect(byId.r3!.served!.at).toBe(at(20));
+  });
+
+  it("renders today's live copy only for a run at its version, and nothing for a version nothing keeps", async () => {
+    const live = { ...structuredClone(DEFAULT_ONBOARDING_CONTENT), welcome: { ...DEFAULT_ONBOARDING_CONTENT.welcome, cta: "Live door" } };
+    const v = await store.putOnboardingContent("en", live, 500);
+    await served(v);
+    await store.recordOnboardingEvents(userId, [event("now", "welcome", "view", v)] as never);
+    await served(5);
+    await store.recordOnboardingEvents(userId, [event("then", "welcome", "view", 5, { at: new Date(Date.now() + 99_000).toISOString() })] as never);
+    const [now, then] = await runs();
+    expect(now!.copy!.welcome).toContain("Live door");
+    expect(then).toMatchObject({ lang: "en", copy: null });
+  });
+
+  it("never fills an arm's missing words from today's copy, and names a template revision it cannot find", async () => {
+    const partial = { version: 77, welcome: { lines: ["Arm hello"], cta: "Arm go", signin: "Arm in" } };
+    const e = {
+      id: crypto.randomUUID(), lang: "en" as const, status: "running" as const, rules: {},
+      variants: [{ control: true, weight: 0, content: content(76) }, { weight: 1, content: partial }],
+      created_by: admin, created_at: new Date().toISOString(), started_at: null, stopped_at: null, revision: 1,
+    };
+    await store.putOnboardingExperiment(e as never);
+    await store.putOnboardingAssignment(userId, e.id, 77);
+    await served(77, { baseline: { template: "gone", version: 9 } });
+    await store.recordOnboardingEvents(userId, [
+      event("p", "welcome", "view", 77), event("p", "summary", "view", 77), event("p", "baseline", "view", 77),
+    ] as never);
+    const [run] = await runs();
+    expect(run!.copy!.welcome).toBe("Arm hello\n[Arm go]\n[Arm in]");
+    expect(run!.copy!.summary).toBeUndefined();
+    expect(run!.copy!.baseline).toBe("template gone@v9 not found");
   });
 });
+

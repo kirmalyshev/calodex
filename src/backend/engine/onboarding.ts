@@ -20,7 +20,7 @@ import { resolveScreen, type ServedScreen, type ServedScreens, type TemplateSlot
 import { rendererNeeded, screensStartErrors, servedScreens, templateAssetUrl } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
-import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingServed, OnboardingServedRecord, OnboardingVariant } from "../store.ts";
+import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingServed, OnboardingServedRecord, OnboardingVariant, TemplateRef } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 import { referralBonusOf } from "./entitlement.ts";
 
@@ -256,13 +256,14 @@ export async function serveOnboarding(
   for (const [slot, s] of Object.entries(served.screens?.slots ?? {}) as [TemplateSlot, ServedScreen][]) {
     screens[slot] = { template: s.template, version: s.version };
   }
-  try {
-    await deps.store.recordOnboardingServed(userId, {
-      contentVersion: served.content.version, lang: signals.lang, surface: signals.surface, screens,
+  const version = served.content.version;
+  // Not awaited: the answer does not wait on its own bookkeeping. The log names no account and
+  // carries no driver message (one can quote the user id): the error's name and code only.
+  void (async () => deps.store.recordOnboardingServed(userId, { contentVersion: version, lang: signals.lang, surface: signals.surface, screens }))()
+    .catch((err: unknown) => {
+      const e = err as { name?: unknown; code?: unknown } | null;
+      console.error(`[eait] onboarding serving not recorded (content v${version}, ${signals.surface}): ${String(e?.name ?? "Error")} ${String(e?.code ?? "")}`.trimEnd());
     });
-  } catch (err) {
-    console.error("[eait] onboarding serving not recorded", err);
-  }
   return served;
 }
 
@@ -605,29 +606,28 @@ export async function adminUserOnboarding(
 }
 
 /**
- * One run (a `session_id`) as it was served (ieat-app#3194). What `GET /v1/onboarding` recorded is
- * matched by the run's content version; a run from before the record, or one nothing matched, has
- * `servedAt`, `surface` and `screens` null — "not recorded", never a guess. The arm comes from the
- * account's assignment whose variant IS that version; the language from the record, else from that
- * arm's experiment (its copy is in one language), else null.
+ * One run (a `session_id`) as it was served (ieat-app#3194). `served` is the serving of the run's
+ * content version with the latest stamp at or before the run's first event (plus `SERVED_DRIFT_MS`
+ * for the client's clock), or null — "not recorded", never a guess. The arm comes from the
+ * account's assignment whose variant IS that version. `lang` and `copy` need the record.
  */
 export interface AdminOnboardingRun {
   sessionId: string;
   contentVersion: number;
   /** `arm` is the experiments table's label: "control" or "variant N" (1-based). Null: no experiment. */
-  experiment: { id: string; arm: string; isControl: boolean } | null;
+  experiment: { id: string; arm: string } | null;
   lang: Lang | null;
-  surface: "app" | "web" | null;
-  servedAt: string | null;
-  /** Each slot's template key and version, `{}` when none replaced a beat; null when not recorded. */
-  screens: OnboardingServed["screens"] | null;
+  served: { at: string; surface: OnboardingSignals["surface"]; screens: OnboardingServed["screens"] } | null;
   /**
    * Each place's words as served, a plain-text render keyed by place — a template's where one
-   * replaced the beat. Places whose words are code (or that have none) are absent. Null when the
-   * language is unknown or this version's copy is not kept anywhere (the live row keeps no history).
+   * replaced the beat. Places whose words are code (or that the kept copy lacks) are absent. Null
+   * when nothing recorded the serving, or this version's copy is not kept (the live row keeps no history).
    */
   copy: Record<string, string> | null;
 }
+
+/** How far a client's clock may run behind the server's when a run is matched to its serving. */
+const SERVED_DRIFT_MS = 2 * 60_000;
 
 export async function onboardingRuns(deps: EngineDeps, userId: string, events: AdminOnboardingEvent[]): Promise<AdminOnboardingRun[]> {
   if (events.length === 0) return [];
@@ -646,76 +646,82 @@ export async function onboardingRuns(deps: EngineDeps, userId: string, events: A
     const v = first.contentVersion;
     const rec = servedFor(served, v, first.at);
     let experiment: AdminOnboardingRun["experiment"] = null;
-    let expLang: Lang | null = null;
+    let arm: OnboardingVariant | null = null;
     for (const e of experiments) {
       const i = e.variants.findIndex((x) => x.content.version === v);
       if (i < 0 || assigned.get(e.id) !== v) continue;
-      const control = e.variants[i]!.control === true;
-      experiment = { id: e.id, arm: control ? "control" : `variant ${i + 1}`, isControl: control };
-      expLang = e.lang;
+      arm = e.variants[i]!;
+      experiment = { id: e.id, arm: arm.control === true ? "control" : `variant ${i + 1}` };
     }
-    const lang = rec?.lang ?? expLang;
     const places = new Set(events.filter((e) => e.sessionId === first.sessionId).map((e) => e.place));
     runs.push({
-      sessionId: first.sessionId, contentVersion: v, experiment, lang,
-      surface: rec?.surface ?? null, servedAt: rec?.servedAt ?? null, screens: rec ? rec.screens : null,
-      copy: lang === null ? null : await runCopy(deps, experiments, stored, v, lang, rec?.screens ?? {}, places),
+      sessionId: first.sessionId, contentVersion: v, experiment, lang: rec?.lang ?? null,
+      served: rec ? { at: rec.servedAt, surface: rec.surface, screens: rec.screens } : null,
+      copy: rec ? await runCopy(deps, arm, stored, v, rec, places) : null,
     });
   }
   return runs;
 }
 
-/** The serving of version `v` nearest before the run's first event; the earliest one when none precedes it (client clocks drift). */
+/** The serving of version `v` with the latest stamp at or before the run's first event (plus drift), or null. */
 function servedFor(rows: OnboardingServedRecord[], v: number, at: string): OnboardingServedRecord | null {
-  const same = rows.filter((r) => r.contentVersion === v);
-  const before = same.filter((r) => Date.parse(r.servedAt) <= Date.parse(at));
-  return before.at(-1) ?? same[0] ?? null;
+  const by = Date.parse(at) + SERVED_DRIFT_MS;
+  return rows.filter((r) => r.contentVersion === v && Date.parse(r.servedAt) <= by)
+    .reduce<OnboardingServedRecord | null>((m, r) => (m === null || r.servedAt >= m.servedAt ? r : m), null);
 }
 
-/** The words of version `v` in `lang`, wherever they are still kept — an arm, the live row, the compiled copy — rendered per place. */
+/**
+ * The words of version `v` in the served language, from what still holds exactly them: the run's
+ * arm (its own words only — never patched from today's copy), else the live copy or the compiled
+ * one when that IS version `v`. Null otherwise.
+ */
 async function runCopy(
-  deps: EngineDeps, experiments: OnboardingExperiment[], stored: unknown, v: number, lang: Lang,
-  screens: OnboardingServed["screens"], places: Set<string>,
+  deps: EngineDeps, arm: OnboardingVariant | null, stored: unknown, v: number,
+  rec: OnboardingServedRecord, places: Set<string>,
 ): Promise<Record<string, string> | null> {
-  const live = usableContentFor(lang, stored);
-  const arm = experiments.flatMap((e) => e.lang === lang ? e.variants : []).find((x) => x.content.version === v);
-  const content = arm ? usableContent(arm.content, live)
-    : live.version === v ? live
-    : compiledContentFor(lang).version === v ? compiledContentFor(lang) : null;
-  if (content === null) return null;
+  const live = usableContentFor(rec.lang, stored);
+  const compiled = compiledContentFor(rec.lang);
+  const found: Partial<OnboardingContent> | null = arm ? arm.content
+    : live.version === v ? live : compiled.version === v ? compiled : null;
+  if (found === null) return null;
+  const content = branded(found);
   const copy: Record<string, string> = {};
   for (const place of places) {
-    const text = placeCopy(branded(content), place);
+    const text = placeCopy(content, place);
     if (text) copy[place] = text;
   }
-  for (const [slot, ref] of Object.entries(screens) as [TemplateSlot, { template: string; version: number }][]) {
+  for (const [slot, ref] of Object.entries(rec.screens) as [TemplateSlot, TemplateRef][]) {
     if (!places.has(slot)) continue;
     const t = await deps.store.screenTemplate(ref.template, ref.version);
-    const s = t ? resolveScreen(t, lang, templateAssetUrl) : null;
-    if (s) copy[slot] = screenCopy(s);
+    const s = t ? resolveScreen(t, rec.lang, templateAssetUrl) : null;
+    copy[slot] = s ? screenCopy(s)
+      : t ? `template ${ref.template}@v${ref.version} has no ${rec.lang} copy`
+      : `template ${ref.template}@v${ref.version} not found`;
   }
   return copy;
 }
 
-const lines = (xs: readonly string[]) => xs.filter((x) => x !== "");
+const lines = (xs: readonly string[] | undefined) => (xs ?? []).filter((x) => x !== "");
 
-/** One place's admin-editable words, as text. Null where the words are code (`baseline`, `prelim`, `paywall`) or absent. */
-function placeCopy(c: OnboardingContent, place: string): string | null {
-  const screen = c.screens.find((s) => s.id === place);
+/** One place's admin-editable words, as text. Null where the words are code (`baseline`, `prelim`, `paywall`) or not kept. */
+function placeCopy(c: Partial<OnboardingContent>, place: string): string | null {
+  const screen = c.screens?.find((s) => s.id === place);
   if (screen) {
-    const asks = Object.values(screen.asks).flatMap((a) => lines(a.lines));
+    const asks = Object.values(screen.asks ?? {}).flatMap((a) => lines(a.lines));
     const options = Object.values(screen.options ?? {}).map((o) => `• ${o.label}`);
     return [...asks, ...options].join("\n") || null;
   }
+  const join = (xs: string[]) => xs.join("\n") || null;
   switch (place) {
-    case "welcome": return [...lines(c.welcome.lines), `[${c.welcome.cta}]`, `[${c.welcome.signin}]`].join("\n");
-    case "summary": return [...lines(c.summary.lines), `[${c.summary.cta}]`].join("\n");
-    case "signup": return lines([c.signup.heading, c.signup.line]).join("\n");
-    case "referral": return c.referral.ask;
-    case "health": return lines([c.health.title, c.health.body]).join("\n");
+    case "welcome": return c.welcome ? join([...lines(c.welcome.lines), `[${c.welcome.cta}]`, `[${c.welcome.signin}]`]) : null;
+    case "summary": return c.summary ? join([...lines(c.summary.lines), `[${c.summary.cta}]`]) : null;
+    case "signup": return c.signup ? join(lines([c.signup.heading, c.signup.line])) : null;
+    case "referral": return c.referral?.ask ?? null;
+    case "health": return c.health ? join(lines([c.health.title, c.health.body])) : null;
     default: return null;
   }
 }
+
 
 /** A served template as text, block by block. */
 function screenCopy(s: ServedScreen): string {

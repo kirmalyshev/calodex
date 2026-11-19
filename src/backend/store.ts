@@ -800,11 +800,13 @@ export interface OnboardingAssignment {
  * per distinct serving — a repeat moves `lastServedAt` only — so the admin's journal can say what a
  * run was shown without a row per request.
  */
+/** One served template revision, by key and version. */
+export interface TemplateRef { template: string; version: number }
 export interface OnboardingServed {
   contentVersion: number;
   lang: Lang;
-  surface: "app" | "web";
-  screens: Partial<Record<TemplateSlot, { template: string; version: number }>>;
+  surface: NonNullable<OnboardingExperimentRules["surfaces"]>[number];
+  screens: Partial<Record<TemplateSlot, TemplateRef>>;
 }
 export interface OnboardingServedRecord extends OnboardingServed {
   /** First served, ISO. */

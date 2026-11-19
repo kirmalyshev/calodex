@@ -89,6 +89,13 @@ async function session(): Promise<string> {
 describe("experiments (ieat-app#2669)", () => {
   beforeEach(async () => { await mountWithAdmin(); });
 
+  it("records what GET /v1/onboarding served (ieat-app#3194)", async () => {
+    const token = await session();
+    expect((await admin("GET", "/v1/onboarding?lang=de", undefined, token)).status).toBe(200);
+    const rows = await store.onboardingServed((await store.userIdForToken(token))!);
+    expect(rows.map((r) => [r.lang, r.surface, r.screens])).toEqual([["de", "app", {}]]);
+  });
+
   it("lists nothing at first, and drafts are born with the control cloned", async () => {
     expect(await (await admin("GET", "/admin/api/experiments")).json()).toMatchObject({ experiments: [] });
     const created = await admin("POST", "/admin/api/experiments", { lang: "de" });
