@@ -38,34 +38,38 @@ const CAP = { freeAnalyses: null, spent: 0, effective: 3 };
 
 const SENDS = [
   {
-    id: 52, kind: "admin-push", ref: null, templateKey: "re-engage", lang: "en", variant: "b",
-    state: "delivered", title: "Still on track?", body: "Your week needs two more days.",
+    // An admin's own send: a campaign row whose ref names the admin.
+    id: "send-52", kind: "campaign", ref: "admin:kir", templateKey: "re-engage", lang: "en",
+    variant: "b",
+    state: "delivered-to-apns", title: "Still on track?", body: "Your week needs two more days.",
     receiptError: null, createdAt: "2026-11-19T14:20:00.000Z",
     deliveredAt: "2026-11-19T14:22:31.000Z", receiptAt: "2026-11-19T14:21:02.000Z",
   },
   {
-    id: 41, kind: "reminder", ref: "streak", templateKey: "streak-save", lang: "en", variant: null,
-    state: "failed", title: "Keep the streak", body: "Log dinner to keep 4 days.",
+    id: "send-41", kind: "streak", ref: null, templateKey: "streak-save", lang: "en", variant: null,
+    state: "dead", title: "Keep the streak", body: "Log dinner to keep 4 days.",
     receiptError: "DeviceNotRegistered", createdAt: "2026-11-18T19:05:00.000Z",
     deliveredAt: null, receiptAt: "2026-11-18T19:05:41.000Z",
   },
   {
-    id: 38, kind: "test-push", ref: null, templateKey: "test", lang: "en", variant: "a",
-    state: "sent", title: "Test", body: "A push sent from this pane.",
+    id: "send-38", kind: "campaign", ref: "admin-test", templateKey: "test", lang: "en", variant: "a",
+    state: "accepted", title: "Test", body: "A push sent from this pane.",
     receiptError: null, createdAt: "2026-11-17T11:00:00.000Z",
     deliveredAt: null, receiptAt: null,
   },
   {
     // A transactional send: title and body stay null by decision in #848 — the row draws a dash,
     // never a template's current text.
-    id: 30, kind: "analysis-ready", ref: "meal", templateKey: null, lang: "en", variant: null,
+    id: "send-30", kind: "transactional", ref: "meal", templateKey: "analysis-done", lang: "en",
+    variant: null,
     state: "delivered-to-apns", title: null, body: null,
     receiptError: null, createdAt: "2026-11-16T08:30:00.000Z",
     deliveredAt: null, receiptAt: "2026-11-16T08:30:20.000Z",
   },
   {
     // A dry run is this account's history even though nothing left the server.
-    id: 12, kind: "admin-push", ref: "dry", templateKey: "re-engage", lang: "en", variant: "a",
+    id: "send-12", kind: "campaign", ref: "admin:kir", templateKey: "re-engage", lang: "en",
+    variant: "a",
     state: "dry", title: "Dry title", body: "Would have been sent.",
     receiptError: null, createdAt: "2026-11-10T12:00:00.000Z",
     deliveredAt: null, receiptAt: null,
@@ -128,11 +132,12 @@ test("the Pushes tab lists every send the account has, with its text, state and 
   await expect(rows.nth(0)).toContainText("Still on track?");
   await expect(rows.nth(0)).toContainText("Your week needs two more days.");
   await expect(rows.nth(0)).toContainText("re-engage");
-  await expect(rows.nth(0)).toContainText("delivered");
+  await expect(rows.nth(0)).toContainText("admin:kir");
+  await expect(rows.nth(0)).toContainText("delivered-to-apns");
   await expect(rows.nth(0)).toContainText("on device 11-19 14:22");
 
-  // A failure names the receipt's own error; the dry run stays in the history.
-  await expect(rows.nth(1)).toContainText("failed");
+  // A dead send names the receipt's own error; the dry run stays in the history.
+  await expect(rows.nth(1)).toContainText("dead");
   await expect(rows.nth(1)).toContainText("DeviceNotRegistered");
   await expect(rows.nth(1)).toContainText("streak");
 

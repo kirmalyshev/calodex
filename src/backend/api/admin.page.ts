@@ -3481,6 +3481,8 @@ details.how p { margin-top: 8px; }
     $("diary").querySelector("tbody").textContent = "";
     $("diary-from").value = "";
     $("diary-to").value = "";
+    $("pushlog").querySelector("tbody").textContent = "";
+    $("pushlog-status").textContent = "";
     $("composer-status").classList.add("hidden");
     $("composer-results").textContent = "";
     $("pane-name").textContent = u.email || shortId(u.userId);
@@ -4056,7 +4058,7 @@ details.how p { margin-top: 8px; }
     var userId = sel && sel.userId;
     if (!userId) return Promise.resolve();
     paintBox($("pushlog-state"), $("pushlog-body"), "loading");
-    return api("GET", "/admin/api/users/" + userId + "/push-log?limit=${ADMIN_PUSH_LOG_MAX}").then(function (view) {
+    return api("GET", "/admin/api/users/" + encodeURIComponent(userId) + "/push-log?limit=${ADMIN_PUSH_LOG_MAX}").then(function (view) {
       if (!sel || sel.userId !== userId) return;
       var body = $("pushlog").querySelector("tbody");
       body.textContent = "";
