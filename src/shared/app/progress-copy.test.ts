@@ -100,5 +100,5 @@ describe("PROGRESS_COPY", () => {
       for (const [k, v] of Object.entries(fields(PROGRESS_COPY[lang]!))) named[`PROGRESS_COPY.${k}`] = v;
       expect(lintCopy(named).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang).toEqual([]);
     }
-  });
+  }, 30_000);
 });

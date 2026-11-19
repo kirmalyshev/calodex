@@ -146,7 +146,6 @@ describe("PAY_COPY", () => {
     expect(en.privacyLink).toBe("Privacy");
   });
 
-  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("carries no claim the gate refuses, in any of the eight", () => {
     // The paywall is the most-attended copy in the product — a discount that overstates itself is
     // exactly what `exclusivity`/`guarantee` exist to stop, so the sweep runs here by name rather

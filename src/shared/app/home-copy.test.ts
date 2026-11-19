@@ -86,7 +86,6 @@ describe("HOME_COPY", () => {
     expect(homeCopyFor("vi" as Lang).kcalLeft).not.toBe(HOME_COPY.en.kcalLeft);
   });
 
-  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("passes the claims sweep in all eight", () => {
     for (const lang of LANGS) {
       expect(lintCopy(flat(HOME_COPY[lang]!)).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang)

@@ -98,7 +98,6 @@ describe("the compiled catalogs, held to the rules the tables are held to", () =
     }
   });
 
-  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("carries no health claim, in any of the eight", () => {
     // The gate reads four families in all eight and the rest in English only — `claims.ts` says
     // which. Run over every language for the same reason `NOTIFICATION_COPY` is: these words are

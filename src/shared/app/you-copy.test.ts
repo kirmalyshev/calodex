@@ -49,7 +49,6 @@ describe("YOU_COPY", () => {
     }
   });
 
-  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("carries no claim the linter would refuse — every template, filled, every language", () => {
     // Placeholders stand for numbers and names; the sweep fills them with the boards' own
     // persona values so a pattern that could fire on the filled sentence is what fails.

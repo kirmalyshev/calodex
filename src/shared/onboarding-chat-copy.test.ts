@@ -162,7 +162,6 @@ describe("the readers of those tables", () => {
     expect(checkDirection("gain", 93.5, 90, "en", onboardingContentFor("en").refusals)!.line).toContain("93.5");
   });
 
-  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("carries no claim the linter would refuse — every new template, every language", () => {
     // lintCopy over every rendered string the new surfaces can show: the captions, the pace line
     // with its placeholders filled, the chart words, the how/health beats.
