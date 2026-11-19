@@ -18,6 +18,7 @@ import type {
   OnboardingContent, OnboardingContentSet,
   OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
+import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
 /**
@@ -746,6 +747,18 @@ export interface OnboardingVariant {
    * on the control arm, which is the live flow by definition.
    */
   firstVerdict?: FirstVerdictArm;
+  /**
+   * The template screens this arm shows, by slot (ieat-app#3167), absent for none. Validated by
+   * `validateArmScreens` and against the stored templates when SAVED; a client below the highest
+   * `renderer` they name is enrolled in no experiment holding them. Never on the control arm.
+   */
+  screens?: ArmScreens;
+}
+
+/** A stored template revision (ieat-app#3167): global, append-only, no `user_id`. */
+export interface ScreenTemplateRecord extends ScreenTemplate {
+  created_by: string;
+  created_at: string;
 }
 
 export type OnboardingExperimentStatus = "draft" | "running" | "stopped";
@@ -1755,6 +1768,25 @@ export interface Store {
    * answer, nothing a client could tell one person by.
    */
   countOnboardedSince(hours: number): Promise<number>;
+
+  // ── Onboarding screen templates (ieat-app#3167) ─────────────────────────────────────────────
+  //
+  // Global content, like `onboarding_content`: no `user_id`, every method `unscoped` in SCOPE.
+  // Templates are append-only revisions per key; assets are content-addressed by sha256.
+
+  /** The LATEST revision of every template key, key order. */
+  listScreenTemplates(): Promise<ScreenTemplateRecord[]>;
+  /** One revision, or null. */
+  screenTemplate(key: string, version: number): Promise<ScreenTemplateRecord | null>;
+  /** Append the next revision of `key` (1 for a new key). Null when a concurrent put took that
+   *  version first — the caller re-reads and retries; nothing is overwritten. */
+  putScreenTemplate(key: string, draft: ScreenTemplateDraft, createdBy: string): Promise<ScreenTemplateRecord | null>;
+  /** Store an uploaded image; a second upload of the same bytes is a no-op. */
+  putTemplateAsset(sha256: string, mime: string, bytes: Uint8Array): Promise<void>;
+  /** One asset's bytes, or null. */
+  templateAsset(sha256: string): Promise<{ mime: string; bytes: Uint8Array } | null>;
+  /** Which of `shas` are stored. */
+  knownTemplateAssets(shas: readonly string[]): Promise<Set<string>>;
 
   // ── Onboarding experiments (ieat-app#2669) ──────────────────────────────────────────────────
   //

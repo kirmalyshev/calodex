@@ -55,6 +55,7 @@ import {
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
   resetOnboardingContent, saveOnboardingContent, saveSwitch, setUserCap, userCap,
   type EngineDeps,
+  listScreenTemplates, saveOnboardingVariantScreens, saveScreenTemplate, screenTemplateRevision, uploadTemplateAsset,
 } from "../engine/index.ts";
 import { adminPage } from "./admin.page.ts";
 
@@ -420,6 +421,31 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     }
     return json({ experiment: await createOnboardingExperiment(deps, adminId, body.lang as Lang) });
   }
+  // ── Screen templates (ieat-app#3167) ──────────────────────────────────────────────────────
+  //
+  // Kirill on this page and the coordinator through the eait-admin MCP reach the same verbs. A
+  // template is append-only: a PUT is the next revision, validated in every language first.
+  if (req.method === "GET" && pathname === "/admin/api/templates") {
+    return json({ templates: await listScreenTemplates(deps) });
+  }
+  const tplMatch = /^\/admin\/api\/templates\/([a-z0-9-]+)(?:\/(\d+))?$/.exec(pathname);
+  if (tplMatch !== null && req.method === "GET" && tplMatch[2] !== undefined) {
+    const t = await screenTemplateRevision(deps, tplMatch[1]!, Number(tplMatch[2]));
+    return t ? json({ template: t }) : notFound();
+  }
+  if (tplMatch !== null && req.method === "PUT" && tplMatch[2] === undefined) {
+    const body = await req.json().catch(() => null);
+    if (body === null || typeof body !== "object") return json({ errors: ["body must be JSON"] }, 422);
+    const result = await saveScreenTemplate(deps, adminId, tplMatch[1]!, body);
+    return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, result.conflict ? 409 : 422);
+  }
+  if (req.method === "POST" && pathname === "/admin/api/template-assets") {
+    // Refused before the body is read when the length is declared over the cap.
+    if (Number(req.headers.get("content-length") ?? 0) > deps.config.maxUploadBytes) return json({ errors: [`over ${deps.config.maxUploadBytes} bytes`] }, 422);
+    const result = await uploadTemplateAsset(deps, new Uint8Array(await req.arrayBuffer()));
+    return result.ok ? json({ sha256: result.sha256 }) : json({ errors: result.errors }, 422);
+  }
+
   const expMatch = /^\/admin\/api\/experiments\/([^/]+)(?:\/(variants)(?:\/(\d+))?|\/(start|stop))?$/.exec(pathname);
   if (expMatch !== null) {
     const id = expMatch[1]!;
@@ -431,8 +457,14 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     }
     if (req.method === "PUT" && sub === "variants") {
       const raw: unknown = await req.json().catch(() => ({}));
-      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown; firstVerdict?: unknown };
+      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown; firstVerdict?: unknown; screens?: unknown };
       const index = Number(expMatch[3]);
+      // `{screens}` is its own editor's body too (ieat-app#3167), alone; `{}` clears them.
+      if ("screens" in body) {
+        if (body.content !== undefined || "order" in body || "firstVerdict" in body) return json({ errors: ["send the screens alone"] }, 422);
+        const result = await saveOnboardingVariantScreens(deps, id, index, body.screens);
+        return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+      }
       // One editor per body, never two at once (ieat-app#2788): `{order}` is the order editor's save
       // (`null` clears it), anything else the copy editor's. A body carrying both is refused rather
       // than half-written — a content save is committed before an order could be refused. `{firstVerdict}`

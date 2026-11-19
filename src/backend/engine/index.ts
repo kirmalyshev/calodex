@@ -60,6 +60,9 @@ export {
   onboardingFunnel, adminOnboardingUsers, adminUserOnboarding,
   type AdminOnboardingUserRow, type OnboardingExperimentView, type OnboardingSignals,
 } from "./onboarding.ts";
+export {
+  listScreenTemplates, saveOnboardingVariantScreens, saveScreenTemplate, screenTemplateRevision, templateAsset, uploadTemplateAsset,
+} from "./screen-templates.ts";
 export { adminSwitches, saveSwitch, switchOn, type FlipView, type SwitchView } from "./switches.ts";
 export { livePrompts, promptHistory, savePrompt, type PromptView, type PromptSave } from "./prompts.ts";
 export { foodSearch, productByBarcode } from "./foods.ts";

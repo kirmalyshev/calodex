@@ -16,6 +16,8 @@ import {
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
   type DistributionChannel, type FirstVerdictArm, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
+import type { ServedScreens } from "@eait/shared";
+import { rendererNeeded, screensStartErrors, servedScreens } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
 import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
@@ -76,6 +78,12 @@ export interface OnboardingSignals {
    * would be the live flow under the arm's name, and that arm's rate would describe the live flow.
    */
   verdictVersion?: number;
+  /**
+   * The template renderer the client declared (`?renderer=`, ieat-app#3167). Below what an
+   * experiment's templates need — absent included, which is every web request — it is enrolled in
+   * no experiment holding them, and an arm it already holds serves it no screens.
+   */
+  renderer?: number;
 }
 
 /** Whether this client can walk an arm's order. */
@@ -175,6 +183,9 @@ export async function assignVariant(
     // comparing like with like.
     if (experiment.variants.some((v) => v.order) && !readsOrder(signals)) return null;
     if (experiment.variants.some((v) => v.firstVerdict) && !readsFirstVerdict(signals)) return null;
+    // The same rule for template screens (ieat-app#3167): a client that cannot draw every arm's
+    // templates enters no arm, so control never ends up holding only the old builds.
+    if ((await rendererNeeded(deps, experiment.variants)) > (signals.renderer ?? 0)) return null;
     const picked = pickVariant(experiment.variants, hashPick(userId, experiment.id));
     if (!picked) return null;
 
@@ -221,9 +232,10 @@ export async function onboardingServedFor(
   deps: EngineDeps,
   userId: string | null,
   signals: OnboardingSignals,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm }> {
+  at: Date = new Date(),
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
-  const served = await servedRaw(deps, userId, signals, control);
+  const served = await servedRaw(deps, userId, signals, control, at);
   // The ONE place stored and variant copy is branded: the editor and the clone read it raw.
   return { ...served, content: branded(served.content) };
 }
@@ -233,18 +245,22 @@ async function servedRaw(
   userId: string | null,
   signals: OnboardingSignals,
   control: OnboardingContent,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm }> {
+  at: Date,
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
   if (userId === null) return { content: control };
-  const assigned = await assignVariant(deps, userId, signals);
+  const assigned = await assignVariant(deps, userId, signals, at);
   if (!assigned) return { content: control };
   const { order, firstVerdict } = assigned.variant;
   if (order && !readsOrder(signals)) return { content: control };
   // An arm held from a capable client, asked for by one that is not: the live flow, like an order.
   if (firstVerdict && !readsFirstVerdict(signals)) return { content: control };
+  // Screens only to a client that can draw them (ieat-app#3167); never throws.
+  const screens = await servedScreens(deps, assigned.variant, signals.lang, signals.tz, signals.renderer ?? 0, at);
   return {
     content: usableContent(assigned.variant.content, control),
     ...(order ? { order } : {}),
     ...(firstVerdict ? { firstVerdict } : {}),
+    ...(screens ? { screens } : {}),
   };
 }
 
@@ -944,6 +960,10 @@ export async function startOnboardingExperiment(
   if (web && experiment.variants.some((v) => v.firstVerdict !== undefined)) {
     return { ok: false, errors: ['an arm with a first verdict runs on the app only — set surfaces to ["app"]'] };
   }
+  // Template screens are the app's too (ieat-app#3167, Q4): the web declares no renderer.
+  if (web && experiment.variants.some((v) => v.screens !== undefined)) {
+    return { ok: false, errors: ['an arm with template screens runs on the app only — set surfaces to ["app"]'] };
+  }
   // Re-checked at the start like the order: a stored arm this build does not know, or one on the
   // control (the live flow by definition), must not reach a client typed as a valid arm.
   for (const [i, v] of experiment.variants.entries()) {
@@ -957,6 +977,9 @@ export async function startOnboardingExperiment(
     const refusals = validateOnboardingOrder(v.order);
     if (refusals.length > 0) return { ok: false, errors: refusals.map((r) => `arm ${i}: ${orderRefusalText(r)}`) };
   }
+  // A template saved into an arm must still exist at the start (ieat-app#3167).
+  const screenErrors = await screensStartErrors(deps, experiment.variants);
+  if (screenErrors.length > 0) return { ok: false, errors: screenErrors };
   // A running card that enrolls nobody is worse than a refused start: the switch is the gate the
   // enrolment reads, so start only once it is on.
   if (!(await switchOn(deps, "onboarding.experiments"))) {
