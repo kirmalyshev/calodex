@@ -631,6 +631,20 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.getEntitlement(other)).toBeNull();
     });
 
+    // #2694: RevenueCat keeps naming the anonymous id after a sign-in merged it away, so the merge
+    // records where it went, and erasing the survivor forgets it.
+    it("records which account a merge folded an anonymous one into", async () => {
+      const s = await open();
+      const { userId: anon } = await s.upsertDeviceUser(device(), "en");
+      const { userId: real } = await s.upsertDeviceUser(device(), "en");
+      expect(await s.mergedInto(anon)).toBeNull();
+      await s.mergeUsers(anon, real);
+      expect(await s.mergedInto(anon)).toBe(real);
+      expect(await s.mergedInto(real)).toBeNull();
+      await s.deleteUser(real);
+      expect(await s.mergedInto(anon)).toBeNull();
+    });
+
     // A TRANSFER (#687): the grants move per grant, newer clock wins; the source keeps its record
     // with both cleared and stamped at the transfer, so an older delivery cannot write them back.
     it("moves both grants on a transfer, and fences the source at the transfer's clock", async () => {
@@ -6355,7 +6369,7 @@ if (PG_URL) {
         // ieat-app#3167: screen templates and their assets are global content, like onboarding_content.
         "knownTemplateAssets",
         "listCampaigns", "listOnboardingExperiments", "listPushTemplates", "listScreenTemplates",
-        "markCampaignRunning", "mergeUsers",
+        "markCampaignRunning", "mergeUsers", "mergedInto",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
         "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
@@ -6395,7 +6409,7 @@ if (PG_URL) {
           and (c.relname = 'users' or exists (
             select 1 from information_schema.columns col
             where col.table_schema = 'public' and col.table_name = c.relname
-              and col.column_name in ('user_id', 'referrer_id', 'referred_id')))
+              and col.column_name in ('user_id', 'referrer_id', 'referred_id', 'into_id')))
         order by c.relname`;
 
       // A catalog query that matched nothing -- or matched one table FEWER than the list it is

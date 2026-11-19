@@ -179,6 +179,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const now = opts.now ?? Date.now;
 
   const users = new Map<string, Profile>();
+  /** merged-away id → survivor (#2694), as `merged_users` holds it. */
+  const mergedAway = new Map<string, string>();
   // WHEN the account was made. A column on `users` in Postgres and a second map here, like the
   // entitlement and the role — the admin's list (#374) is the only reader, and a store that could
   // not answer it would be a store the panel had to guess against.
@@ -492,6 +494,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
   const eraseUser = (userId: string): void => {
     users.delete(userId);
+    for (const [from, into] of mergedAway) if (into === userId) mergedAway.delete(from);
     createdAt.delete(userId);
     // Goes with the account. In Postgres this is a column on `users` and needs no statement at
     // all; here it is a second map, so it needs this line to keep the two stores honest.
@@ -1175,6 +1178,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // rather than silently start addressing someone else's diary.
       for (const [h, row] of tokens) if (row.userId === fromUserId) tokens.delete(h);
       users.delete(fromUserId);
+      mergedAway.set(fromUserId, intoUserId);
       // Goes with the row, exactly as `eraseUser` takes it. Postgres gets both of these for free —
       // one is a column on a deleted row, the other is a column this method never copies.
       createdAt.delete(fromUserId);
@@ -1371,6 +1375,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // port is a field somebody will branch on. `storedEntitlement` is that projection, shared
       // with the admin list so the two cannot disagree about which fields leave.
       return storedEntitlement(userId);
+    },
+
+    async mergedInto(userId) {
+      return mergedAway.get(userId) ?? null;
     },
 
     async moveEntitlement(fromUserId, intoUserId, eventAt) {
