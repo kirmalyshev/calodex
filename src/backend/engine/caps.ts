@@ -122,7 +122,9 @@ async function chargeLimit(deps: EngineDeps, userId: string, scope: CapScope): P
     return cap > 0 ? { over: "day", max: cap } : null;
   }
   if (!deps.config.paywall) return null;
-  // The arm's analysis is a floor under the grant, which the write still reads under its lock.
+  // The arm's analysis is a floor under the grant, which the write still reads under its lock. It
+  // is read again here, after `checkCaps` read it: an experiment stopped (or a switch read failed)
+  // in between refuses at the charge, the authority — as a grant edited in between already does.
   return { over: "lifetime", floor: await firstVerdictAllowance(deps, userId) };
 }
 

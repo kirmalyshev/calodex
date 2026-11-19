@@ -47,7 +47,7 @@ export interface NewJob {
  * `day` is this scope's rows on the charge's `date` (the paid daily photo cap); `lifetime` is every
  * analyses row the account holds against `free_analyses`, which the write reads off the account row
  * it has locked — the number and the count are decided inside the same transaction. `floor` is the
- * least the engine allows whatever that column says (0: none) (T1's `own-meal` arm, ieat-app#3165): the
+ * least the engine allows whatever that column says (T1's `own-meal` arm, ieat-app#3165; 0 is none): the
  * write enforces the larger of the two, so a grant edited mid-charge is still read under the lock.
  */
 export type SpendLimit = { over: "day"; max: number } | { over: "lifetime"; floor: number };

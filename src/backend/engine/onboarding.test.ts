@@ -987,6 +987,18 @@ describe("experiments (ieat-app#2669)", () => {
           listOnboardingExperiments: async () => { throw new Error("db down"); },
         }) };
         await expect(unpaidRefused(broken, userId)).rejects.toThrow("db down");
+        const { charge } = await import("./caps.ts");
+        await expect(charge(broken, userId, "2026-11-19", "photo")).rejects.toThrow("db down");
+        expect(await store.countUserAnalyses(userId)).toBe(0);
+      });
+
+      it("reads a failed switch as no arm, never a failed meal — the switch's own rule", async () => {
+        const { firstVerdictAllowance } = await import("./entitlement.ts");
+        await armed("own-meal");
+        const broken = { ...deps, store: Object.assign(Object.create(store), {
+          switchEnabled: async () => { throw new Error("db down"); },
+        }) };
+        expect(await firstVerdictAllowance(broken, userId)).toBe(0);
       });
 
       it("grants nothing more once the experiment stops", async () => {

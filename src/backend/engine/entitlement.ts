@@ -57,7 +57,7 @@ export async function freeAnalysesFor(deps: EngineDeps, userId: string): Promise
  * render it (`servedRaw` serves that client the live flow) still counts: assignment needs a
  * capable client, so that takes a second device or a downgrade. A stopped experiment, or the
  * experiments switch off, grants nothing more. The experiment and assignment reads throw on a store
- * failure, like `getFreeAnalyses` beside them; the switch is read through `switchOn`, whose rule is
+ * failure, like `getFreeAnalyses`; the switch is read through `switchOn`, whose rule is
  * that a switch never fails a meal, so a failed switch read is logged and means no arm.
  */
 export async function firstVerdictAllowance(deps: EngineDeps, userId: string): Promise<number> {
