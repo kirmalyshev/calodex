@@ -137,7 +137,7 @@ shared.chatScreenCopyFor ja 7241e8052c42b5ba
 shared.chatScreenCopyFor ko 86d2415534ca5359
 shared.chatScreenCopyFor zh-Hans e5e0df211ae2ec2a
 shared.chatScreenCopyFor zh-Hant 640f0d19cdd46bc7
-shared.chatScreenCopyFor tr c58ee002a5320339
+shared.chatScreenCopyFor tr 18f167bee64f458e
 shared.chatScreenCopyFor pl 15c32add2362ad6e
 shared.chatScreenCopyFor nl 1a51c879b525c80e
 shared.chatScreenCopyFor uk e46e1f5a5cd95c6d
