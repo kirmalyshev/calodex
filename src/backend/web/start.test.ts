@@ -3529,11 +3529,24 @@ describe("a welcome that hides its lines (ieat-app#2756)", () => {
 });
 
 describe("the web funnel (ieat-app#3196)", () => {
+  // The funnel rows are written without the page waiting: read them once the complete row is in and
+  // two reads in a row agree.
+  const settledRows = async (userId: string) => {
+    const read = async () => (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows[0]?.events ?? [];
+    let last = await read();
+    for (let i = 0; i < 200; i++) {
+      await Bun.sleep(10);
+      const next = await read();
+      if (next.length === last.length && next.some((e) => e.action === "complete")) return next;
+      last = next;
+    }
+    return last;
+  };
+
   it("records what the app records, stamped surface web, through the app's engine function", async () => {
     const session = await answerAll(undefined, ANSWERS);
     const userId = await webUser(session);
-    const [row] = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
-    const events = row!.events!;
+    const events = await settledRows(userId);
     expect(events.every((e) => e.context.surface === "web" && e.context.lang === "en")).toBe(true);
     // The first answer creates the account, so goal has no view: there was nobody to own it. The rows
     // are written without the page waiting, so two in one millisecond come back in either order.
@@ -3548,16 +3561,24 @@ describe("the web funnel (ieat-app#3196)", () => {
   // /start sends to analytics without waiting, so a test waits for what it reads.
   const eventually = async (done: () => boolean) => { for (let i = 0; i < 200 && !done(); i++) await Bun.sleep(10); };
 
+  it("records what it served, as the web, so the rows can carry the arm the page walked", async () => {
+    const userId = await webUser(await answerAll(undefined, ANSWERS));
+    let surfaces: string[] = [];
+    for (let i = 0; i < 200 && surfaces.length === 0; i++, await Bun.sleep(10)) surfaces = (await store.onboardingServed(userId)).map((r) => r.surface);
+    expect(surfaces).toContain("web");
+  });
+
   it("sends one onboarding_step per funnel row, and the plan once, to analytics", async () => {
     const session = await answerAll(undefined, ANSWERS);
     const userId = await webUser(session);
-    await eventually(() => sink.captured.some((c) => c.event === "onboarding_plan_completed"));
-    const [row] = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
+    const rows = await settledRows(userId);
+    await eventually(() => sink.captured.filter((c) => c.event === "onboarding_step").length >= rows.length
+      && sink.captured.some((c) => c.event === "onboarding_plan_completed"));
     const steps = sink.captured.filter((c) => c.event === "onboarding_step");
     // As a multiset: rows written in the same millisecond come back from the store in either order.
     const key = (p: unknown, a: unknown, f: unknown) => `${String(p)}/${String(a)}/${String(f ?? "")}`;
     expect(steps.map((c) => key(c.props.place, c.props.action, c.props.field)).sort())
-      .toEqual(row!.events!.map((e) => key(e.place, e.action, e.field)).sort());
+      .toEqual(rows.map((e) => key(e.place, e.action, e.field)).sort());
     expect(steps.every((c) => c.userId === userId && c.props.surface === "web" && "content_version" in c.props)).toBe(true);
     expect(sink.captured.filter((c) => c.event === "onboarding_plan_completed")).toHaveLength(1);
   });

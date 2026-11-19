@@ -45,7 +45,7 @@ import type { WebProvider, WebSignInProvider } from "../auth/web-oauth.ts";
 import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
-  onboardingContentFor, onboardingServedFor, mintPairingCode, patchProfile, profileView, recordOnboardingEvents,
+  onboardingContentFor, onboardingServedFor, serveOnboarding, mintPairingCode, patchProfile, profileView, recordOnboardingEvents,
   sendEmailCode, signInWithProvider, switchOn, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
@@ -1112,10 +1112,11 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // runs before an account exists: the pre-account `/q` renders the blank profile in
   // `browserLang(req)`, which is also the language the first answer's account is born into.
   // The words AND the arm's order (ieat-app#2788): this page walks it, so it declares it can. An
-  // order this build cannot validate walks the default (`servedOrder`) and is said in the log —
-  // /start sends no funnel events, so `fell_back` cannot count it.
+  // order this build cannot validate walks the default (`servedOrder`) and is said in the log.
+  // An account's page is recorded as served, so its funnel rows carry the arm it walked.
   const view = async (): Promise<{ profile: Profile; content: OnboardingContent; order?: readonly string[] }> => {
-    const served = await onboardingServedFor(ctx.deps, userId, webSignals(profile.lang, req));
+    const signals = webSignals(profile.lang, req);
+    const served = userId === null ? await onboardingServedFor(ctx.deps, userId, signals) : await serveOnboarding(ctx.deps, userId, signals);
     if (orderFellBack(served.order)) console.error("[eait] /start: served order failed validation, walking the default");
     return { profile, ...served };
   };
