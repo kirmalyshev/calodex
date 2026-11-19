@@ -15,7 +15,7 @@ export const ANALYTICS_SERVER_KEYS = [
   "acq_source", "acq_campaign", "acq_adgroup", "acq_keyword", "referrer",
 ] as const;
 
-/** What only the client knows about itself; the server reads the first six from request headers. */
+/** What only the client knows about itself; the server reads five from request headers and `surface` from the route. */
 export const ANALYTICS_CLIENT_KEYS = [
   "surface", "brand", "app_version", "build", "ota_update_id", "channel", "paywall_offering",
 ] as const;
@@ -72,7 +72,7 @@ export const ONBOARDING_EVENT_CONTEXT_KEYS = [
 export type OnboardingEventContext = Pick<AnalyticsContext, (typeof ONBOARDING_EVENT_CONTEXT_KEYS)[number]>;
 
 export interface AnalyticsEventSpec {
-  /** Where the event is emitted — the web half is the target P4 builds to, not today's state. */
+  /** Where a client emits the event. */
   surfaces: readonly AnalyticsSurface[];
   /** Emitted by the server alone, from a delivery no client sees; `surfaces` is then empty. */
   server?: true;
@@ -98,16 +98,17 @@ const SUBSCRIPTION = {
 } as const;
 
 /**
- * Every product event by name. The app's `posthog?.capture(…)` calls and `paywall-events.ts` are
- * the source; the server's funnel is `onboarding_events` (`ONBOARDING_ACTIONS`), whose PostHog
- * twin is `onboarding_step`.
+ * Every product event by name. This catalog is the source: every client's captures and the
+ * server's `track` calls conform to it. The funnel is `onboarding_events` (`ONBOARDING_ACTIONS`),
+ * whose PostHog twin is `onboarding_step`. On the web, `onboarding_step`, `onboarding_plan_completed`,
+ * `signup_completed` and `signin_completed` are sent by the server, from /start.
  */
 export const ANALYTICS_EVENTS = {
   // Onboarding
   onboarding_step: { surfaces: BOTH, props: ["place", "action", "ms", "field"] },
   onboarding_plan_completed: { surfaces: BOTH, props: [] },
   health_connect_result: { surfaces: APP, props: ["connected"] },
-  // Accounts — the web half of these four is the server's, from /start
+  // Accounts
   signup_completed: { surfaces: BOTH, props: ["provider", "after_onboarding"] },
   signin_completed: { surfaces: BOTH, props: ["provider", "outcome"] },
   signed_out: { surfaces: BOTH, props: ["everywhere"] },

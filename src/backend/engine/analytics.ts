@@ -1,6 +1,7 @@
 // The analytics context (ieat-app#3196): what a request says about the binary that sent it, and
-// what the server knows about the account. Both are read here and nowhere else, so the funnel rows,
-// `ProfileResponse.analytics` and every client's super properties agree.
+// what the server knows about the account. The server builds both for its own events and the funnel
+// rows, and sends the account's half in `ProfileResponse.analytics` for every client's super
+// properties; a funnel row's `template` is the client's own.
 import {
   ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, effectiveAcqSource, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
   TEMPLATE_SLOTS, usableContentFor, type AnalyticsContext, type AnalyticsServerContext, type AnalyticsSurface, type Lang,

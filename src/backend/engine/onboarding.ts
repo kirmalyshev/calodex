@@ -401,7 +401,7 @@ export async function recordOnboardingEvents(
 
   if (clean.length === 0) return 0;
   // The context is the SERVER's to stamp (ieat-app#3196): the request's headers, the account's row
-  // and its held arm. Whatever context-shaped keys an event carried were never read above.
+  // and its held arm. Of the body, only `template` is read; every other context-shaped key is not.
   const context = await onboardingEventContext(deps, userId, request).catch((e: unknown) => {
     const err = e as { name?: string; code?: string } | null;
     console.error(`[eait] onboarding: event context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
