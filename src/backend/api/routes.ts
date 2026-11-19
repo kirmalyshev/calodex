@@ -855,6 +855,7 @@ export function createRouter(
           ...(served.order ? { order: served.order } : {}),
           ...(served.screens ? { screens: served.screens } : {}),
           ...(served.firstVerdict ? { firstVerdict: served.firstVerdict } : {}),
+          experiment: served.experiment ?? null,
         } satisfies OnboardingContentResponse);
       }
 

@@ -234,7 +234,7 @@ export async function onboardingServedFor(
   userId: string | null,
   signals: OnboardingSignals,
   at: Date = new Date(),
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens; experiment?: { id: string; arm: string } }> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
   const served = await servedRaw(deps, userId, signals, control, at);
   // The ONE place stored and variant copy is branded: the editor and the clone read it raw.
@@ -274,7 +274,7 @@ async function servedRaw(
   signals: OnboardingSignals,
   control: OnboardingContent,
   at: Date,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens; experiment?: { id: string; arm: string } }> {
   if (userId === null) return { content: control };
   const assigned = await assignVariant(deps, userId, signals, at);
   if (!assigned) return { content: control };
@@ -289,6 +289,7 @@ async function servedRaw(
     ...(order ? { order } : {}),
     ...(firstVerdict ? { firstVerdict } : {}),
     ...(screens ? { screens } : {}),
+    experiment: { id: assigned.experiment.id, arm: String(assigned.variant.content.version) },
   };
 }
 
