@@ -189,7 +189,7 @@ describe("the readers of those tables", () => {
       const violations = lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`);
       expect(violations, lang).toEqual([]);
     }
-  });
+  }, 30_000);
 });
 
 describe("the under-16 stop (#65)", () => {

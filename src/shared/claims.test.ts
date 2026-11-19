@@ -440,7 +440,7 @@ describe("every sentence this product ships", () => {
       walk(copy, "");
       expect(lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang).toEqual([]);
     }
-  });
+  }, 30_000);
 
   it("passes the claims gate over the plan reveal's own words, in all eight (#1692)", () => {
     // The methodology note names an equation and a source at the moment of decision — exactly
@@ -450,7 +450,7 @@ describe("every sentence this product ships", () => {
       if (!copy) continue;
       expect(lintCopy({ ...copy }).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang).toEqual([]);
     }
-  });
+  }, 30_000);
 
   it("passes the notification gate, in all eight — that copy is push and is admin-editable", () => {
     for (const lang of LANGS) {

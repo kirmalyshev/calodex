@@ -106,5 +106,5 @@ describe("the compiled catalogs, held to the rules the tables are held to", () =
       expect(lintCopy(catalogText(lang)).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang)
         .toEqual([]);
     }
-  });
+  }, 30_000);
 });

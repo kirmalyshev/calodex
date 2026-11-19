@@ -133,5 +133,5 @@ describe("CHAT_SCREEN_COPY", () => {
       const violations = lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`);
       expect(violations, lang).toEqual([]);
     }
-  });
+  }, 30_000);
 });

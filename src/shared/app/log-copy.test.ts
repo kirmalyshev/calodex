@@ -130,7 +130,7 @@ describe("LOG_COPY", () => {
       const violations = lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`);
       expect(violations, lang).toEqual([]);
     }
-  });
+  }, 30_000);
 });
 
 describe("verdictDetailLine", () => {

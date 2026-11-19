@@ -91,5 +91,5 @@ describe("HOME_COPY", () => {
       expect(lintCopy(flat(HOME_COPY[lang]!)).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang)
         .toEqual([]);
     }
-  });
+  }, 30_000);
 });

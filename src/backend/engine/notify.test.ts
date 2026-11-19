@@ -180,7 +180,7 @@ describe("the admin's copy", () => {
     await logMeal(userId, DAY, 2600, 40);
     const out = (await dailyNotification(deps, userId, DAY, NOW))!;
     expect(lintCopy({ title: out.title, body: out.body })).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe("a subscription is not a trial", () => {

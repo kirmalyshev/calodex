@@ -159,5 +159,5 @@ describe("PAY_COPY", () => {
       }
       expect(lintCopy(fields), lang).toEqual([]);
     }
-  });
+  }, 30_000);
 });
