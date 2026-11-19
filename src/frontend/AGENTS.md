@@ -55,7 +55,7 @@ the exclude is written so a new file in this directory is browser code by defaul
   what lets both images skip `bun install` entirely: a type import is erased before anything is
   resolved. Its ONE precedent (#78): dependency-free modules under `src/shared/ui/` — tokens,
   icons, motion, geometry, units — and the surface copy tables may be imported by RELATIVE path, as
-  `stream.ts`, `budget.ts` and `copy.ts` already are. The boundary that makes
+  `../shared/mascot.ts`, `stream.ts`, `budget.ts` and `copy.ts` already are. The boundary that makes
   it safe is enforced by a test in `src/shared/ui.test.ts`: a module in `ui/` may import another
   module in `ui/`, `palette.ts`, `design.ts` or `lang.ts`, and nothing else — the day one reaches
   back into the workspace it pulls the runtime in and the test fails.
