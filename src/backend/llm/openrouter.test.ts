@@ -1037,7 +1037,8 @@ describe("call metrics", () => {
     const { seen, onCall } = collect();
     await expect(llm.analyzePhoto({ ...PHOTO_INPUT, onCall })).rejects.toThrow(/timeout/);
     expect(seen.map((m) => m.status)).toEqual(["timeout"]);
-    // No wall-clock lower bound: a timer may fire early and a loaded host skews it (#3225). It is a measured duration, not an exact one.
+    // msTotal times the CALL, but the budget belongs to the TURN: the call gets what is left of the
+    // turn's deadline (#153), so it falls short of timeoutMs by whatever ran before send (#3225).
     expect(Number.isFinite(seen[0]!.msTotal)).toBe(true);
     expect(seen[0]!.msTotal).toBeGreaterThanOrEqual(0);
   });
