@@ -39,7 +39,8 @@ async function heldArm(deps: EngineDeps, userId: string, lang: Lang): Promise<{ 
     const variant = stored && experiment.variants.find((v) => v.content.version === stored.variant_id);
     return variant ? { experimentId: experiment.id, variant } : null;
   } catch (err) {
-    console.error(`[eait] analytics: experiment read failed for ${lang}`, err);
+    const { name, code } = (err ?? {}) as { name?: unknown; code?: unknown };
+    console.error(`[eait] analytics: experiment read failed for ${lang}: ${String(name ?? "error")} ${String(code ?? "-")}`);
     return null;
   }
 }
