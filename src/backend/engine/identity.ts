@@ -158,6 +158,7 @@ export async function completeSignIn(
     } else {
       outcome = "merged";
       mergedMeals = moved;
+      deps.analytics?.merge(existing, currentUserId);
     }
   } else {
     // Two accounts that both have real identities. Merging them is a decision with no safe

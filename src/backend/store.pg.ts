@@ -14,13 +14,13 @@
 import { SQL, type TransactionSQL } from "bun";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { PgBoss, fromBunSql } from "pg-boss";
-import type { MealReminders, PushKind, SavedMeal, SendKind, SendLogState } from "@eait/shared";
+import type { FunnelDimension, FunnelDimensions, FunnelFilters, MealReminders, PushKind, SavedMeal, SendKind, SendLogState } from "@eait/shared";
 import type {
   DayTotals, FoodNutrient, FoodPortion, FoodRef, HealthDay, Lang, MealFocus, MealItem, MealLabel, MealQuestion,
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, FUNNEL_DIMENSIONS, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel, ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -30,10 +30,11 @@ import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
-  type AdminOnboardingAccount, type AdminOnboardingEvent, type OnboardingServedRecord, type OnboardingSurface,
+  type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
+  type OnboardingServedRecord, type OnboardingSurface,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
-  type ClockedEntitlement, type StoreOptions, type StoredPhoto,
+  type ClockedEntitlement, type StoreOptions, type StoredPhoto, type Acquisition, type RevenueCatEventRow,
 } from "./store.ts";
 
 /**
@@ -116,6 +117,7 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   weights: "user_id",
   milestones: "user_id",
   turns: "user_id",
+  revenuecat_events: "user_id",
   // A grant and a share belong to the REFERRER — the account whose card counts them. Every write to
   // either that names another account (a grant, a merge) is unscoped and says why in `SCOPE`.
   referral_grants: "referrer_id",
@@ -699,6 +701,41 @@ alter table users add column if not exists entitlement_trial boolean not null de
 -- push_tokens.app is the BRAND, not the channel -- so every existing account starts unknown.
 alter table users add column if not exists channel text check (channel in ('appstore', 'testflight', 'dev'));
 alter table users add column if not exists channel_first text check (channel_first in ('appstore', 'testflight', 'dev'));
+-- Where the account came from (ieat-app#3196). acq_via says who said so: 'adservices' is Apple's
+-- answer to the app's attribution token and is never replaced; 'revenuecat' is RevenueCat's copy
+-- from a webhook's subscriber attributes and fills only until Apple answers. Analytics only;
+-- gates nothing. Absent from mergeUsers' plain column list: it moves by its own rule there.
+alter table users add column if not exists acq_source   text;
+alter table users add column if not exists acq_campaign text;
+alter table users add column if not exists acq_adgroup  text;
+alter table users add column if not exists acq_keyword  text;
+alter table users add column if not exists acq_via      text check (acq_via in ('adservices', 'revenuecat'));
+-- Every RevenueCat webhook delivery (ieat-app#3196), beside the resolved entitlement on users.
+-- Keyed on RevenueCat's event id, so a redelivery writes nothing. user_id is null for a delivery
+-- that names no account of ours; otherwise it goes with the account and moves with a merge. In
+-- RLS_TABLES. price is RevenueCat's USD figure. No subscriber attribute but the four acquisition
+-- ones is kept: the rest can carry an email or a name.
+create table if not exists revenuecat_events (
+  id                          text primary key,
+  user_id                     uuid references users(id) on delete cascade,
+  type                        text not null,
+  product_id                  text,
+  period_type                 text,
+  presented_offering_id       text,
+  price                       double precision,
+  currency                    text,
+  price_in_purchased_currency double precision,
+  store                       text,
+  country_code                text,
+  environment                 text,
+  event_at                    timestamptz not null,
+  received_at                 timestamptz not null default now(),
+  acq_source                  text,
+  acq_campaign                text,
+  acq_adgroup                 text,
+  acq_keyword                 text
+);
+create index if not exists revenuecat_events_user_idx on revenuecat_events(user_id, event_at);
 -- Whether the most recently applied grant came from RevenueCat's SANDBOX. Added with its repair in
 -- one step, so the heuristic below runs exactly once, on rows written BEFORE the column existed;
 -- every grant written after that carries its own event's flag.
@@ -1137,6 +1174,20 @@ create table if not exists onboarding_events (
   at              timestamptz not null,
   received_at     timestamptz not null default now()
 );
+-- What the server stamped at record time (ieat-app#3196): the request's binary, the account's
+-- language and country, the arm it held. Null on rows from before, and wherever nothing was known.
+alter table onboarding_events
+  add column if not exists surface       text,
+  add column if not exists brand         text,
+  add column if not exists app_version   text,
+  add column if not exists build         text,
+  add column if not exists ota_update_id text,
+  add column if not exists channel       text,
+  add column if not exists lang          text,
+  add column if not exists country       text,
+  add column if not exists experiment_id text,
+  add column if not exists arm           text,
+  add column if not exists template      text;
 create index if not exists onboarding_events_received_idx on onboarding_events(received_at);
 create index if not exists onboarding_events_session_idx on onboarding_events(session_id);
 create index if not exists onboarding_events_user_idx on onboarding_events(user_id);
@@ -2037,6 +2088,13 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // The one user id in this codebase that comes out of a request body. Declaring it is TIGHTER than
   // not: the webhook then cannot write a row belonging to anybody but the account it names.
   putEntitlement: 0,
+  // Every delivery is logged, including one naming no account of ours (a TRANSFER, RevenueCat's own
+  // anonymous id), which no declared user could write. Insert-only, behind the webhook's secret.
+  recordRevenueCatEvent: "unscoped",
+  revenueCatEventsOf: 0,
+  acquisitionOf: 0,
+  // From the app's own token, or from the webhook naming the account as `putEntitlement` does.
+  putAcquisition: 0,
   dropPushToken: 0,
   pushTokensFor: 0,
   setTimezone: 0,
@@ -3141,6 +3199,16 @@ export async function postgresStore(
         // Funnel rows move too: signing in halfway through onboarding is normal, and a run split
         // across two user ids reads as two abandoned runs.
         await tx`update onboarding_events set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        await tx`update revenuecat_events set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        // Where the person came from: the anonymous session's answer fills a gap, or replaces a
+        // RevenueCat copy with Apple's own — the rule `putAcquisition` keeps. Matches store.memory.ts.
+        await tx`
+          update users into_u set
+            acq_source = from_u.acq_source, acq_campaign = from_u.acq_campaign,
+            acq_adgroup = from_u.acq_adgroup, acq_keyword = from_u.acq_keyword, acq_via = from_u.acq_via
+          from users from_u
+          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId} and from_u.acq_via is not null
+            and (into_u.acq_via is null or (into_u.acq_via = 'revenuecat' and from_u.acq_via = 'adservices'))`;
         // Experiment assignments move by the gap rule below: the account that already holds one
         // keeps it, the anonymous session's fills what is missing. An assignment is what makes a
         // variant sticky, and a run split across two ids would assign the same person twice.
@@ -3490,6 +3558,7 @@ export async function postgresStore(
     async referralOf(userId) {
       const rows = await sql`
         select u.referral_code, u.referred_by is not null as applied,
+               (select r.referral_code from users r where r.id = u.referred_by) as referred_by_code,
                (select count(*) from users f where f.referred_by = u.id) as joined,
                (select count(*) from referral_grants g where g.referrer_id = u.id and g.revoked_at is null) as subscribed,
                (select coalesce(sum(g.days), 0) from referral_grants g where g.referrer_id = u.id and g.revoked_at is null) as days,
@@ -3498,7 +3567,8 @@ export async function postgresStore(
       const r = rows[0] as Record<string, unknown> | undefined;
       if (!r) return null;
       return {
-        code: String(r.referral_code), applied: r.applied === true, joined: num(r.joined),
+        code: String(r.referral_code), applied: r.applied === true,
+        referredBy: (r.referred_by_code as string | null) ?? null, joined: num(r.joined),
         subscribed: num(r.subscribed), daysEarned: num(r.days), shares: num(r.shares),
       };
     },
@@ -3570,6 +3640,67 @@ export async function postgresStore(
         }
         return true;
       });
+    },
+
+    async recordRevenueCatEvent(e) {
+      const a = e.acquisition;
+      // The owner is resolved IN the insert: an id naming no account of ours (or one deleted since)
+      // is kept with no owner rather than failing the foreign key, which would be a 500 and a
+      // RevenueCat retry, forever, for a delivery that was always going to be logged.
+      const rows = await sql`
+        insert into revenuecat_events (
+          id, user_id, type, product_id, period_type, presented_offering_id, price, currency,
+          price_in_purchased_currency, store, country_code, environment, event_at,
+          acq_source, acq_campaign, acq_adgroup, acq_keyword)
+        values (
+          ${e.id}, (select id from users where id = ${e.userId}::uuid), ${e.type}, ${e.productId}, ${e.periodType},
+          ${e.presentedOfferingId}, ${e.price}, ${e.currency}, ${e.priceInPurchasedCurrency}, ${e.store},
+          ${e.countryCode}, ${e.environment}, ${new Date(e.eventAt)},
+          ${a?.source ?? null}, ${a?.campaign ?? null}, ${a?.adGroup ?? null}, ${a?.keyword ?? null})
+        on conflict (id) do nothing
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async revenueCatEventsOf(userId) {
+      const rows = await sql`
+        select * from revenuecat_events where user_id = ${userId} order by event_at, received_at`;
+      return rows.map((r: Record<string, unknown>): RevenueCatEventRow => {
+        const s = (v: unknown) => (v == null ? null : String(v));
+        const n = (v: unknown) => (v == null ? null : Number(v));
+        return {
+          id: String(r.id), userId: s(r.user_id), type: String(r.type), productId: s(r.product_id),
+          periodType: s(r.period_type), presentedOfferingId: s(r.presented_offering_id), price: n(r.price),
+          currency: s(r.currency), priceInPurchasedCurrency: n(r.price_in_purchased_currency), store: s(r.store),
+          countryCode: s(r.country_code), environment: s(r.environment),
+          eventAt: new Date(r.event_at as string).toISOString(),
+          acquisition: r.acq_source == null ? null : {
+            source: String(r.acq_source), campaign: s(r.acq_campaign), adGroup: s(r.acq_adgroup), keyword: s(r.acq_keyword),
+          },
+        };
+      });
+    },
+
+    async acquisitionOf(userId) {
+      const [r] = await sql`
+        select acq_source, acq_campaign, acq_adgroup, acq_keyword, acq_via from users
+        where id = ${userId} and acq_via is not null`;
+      if (!r) return null;
+      const s = (v: unknown) => (v == null ? null : String(v));
+      return {
+        source: String(r.acq_source), campaign: s(r.acq_campaign), adGroup: s(r.acq_adgroup),
+        keyword: s(r.acq_keyword), via: r.acq_via as Acquisition["via"],
+      };
+    },
+
+    async putAcquisition(userId, a) {
+      // The guard is the write's own: Apple's answer, once stored, is never replaced.
+      const rows = await sql`
+        update users set acq_source = ${a.source}, acq_campaign = ${a.campaign}, acq_adgroup = ${a.adGroup},
+          acq_keyword = ${a.keyword}, acq_via = ${a.via}
+        where id = ${userId} and acq_via is distinct from 'adservices'
+        returning id`;
+      return rows.length > 0;
     },
 
     async putEntitlement(userId, patch) {
@@ -4003,23 +4134,43 @@ export async function postgresStore(
                count(distinct e.user_id)
                  filter (where e.action = 'complete')                            as completed_users,
                count(distinct e.session_id)
-                 filter (where e.content_version is distinct from a.variant_id)  as fell_back
+                 filter (where e.content_version is distinct from a.variant_id)  as fell_back,
+               count(distinct a.user_id)
+                 filter (where least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) >= a.assigned_at) as paid,
+               count(distinct e.session_id) filter (where s.web)                 as web_sessions,
+               count(distinct e.session_id) filter (where s.web and e.action = 'complete') as web_completed,
+               count(distinct e.user_id) filter (where s.web and e.action = 'complete')    as web_completed_users,
+               count(distinct e.session_id)
+                 filter (where s.web and e.content_version is distinct from a.variant_id)  as web_fell_back,
+               count(distinct e.session_id) filter (where not s.web)             as app_sessions,
+               count(distinct e.session_id) filter (where not s.web and e.action = 'complete') as app_completed,
+               count(distinct e.user_id) filter (where not s.web and e.action = 'complete')    as app_completed_users,
+               count(distinct e.session_id)
+                 filter (where not s.web and e.content_version is distinct from a.variant_id)  as app_fell_back
         from onboarding_assignments a
         join onboarding_experiments x on x.id = a.experiment_id
+        join users u on u.id = a.user_id
         left join onboarding_events e on e.user_id = a.user_id
           and e.at >= a.assigned_at
           and (x.stopped_at is null or e.at <= x.stopped_at)
           and (${lo === null} or e.at >= ${lo})
           and (${hi === null} or e.at <= ${hi})
+        -- A row from before the surface column is an app run: no web writer existed then.
+        cross join lateral (select e.surface is not distinct from 'web' as web) s
         where a.experiment_id = ${experimentId}
-          and not exists (select 1 from users u where u.id = a.user_id and (u.staff or u.tester))
+          and not (u.staff or u.tester)
           and a.user_id <> all(${configStaff}::uuid[])
           and (${lo === null} or a.assigned_at >= ${lo})
           and (${hi === null} or a.assigned_at <= ${hi})
         group by a.variant_id`;
+      const side = (r: Record<string, unknown>, p: "app" | "web") => ({
+        sessions: num(r[`${p}_sessions`]), completed: num(r[`${p}_completed`]),
+        completed_users: num(r[`${p}_completed_users`]), fell_back: num(r[`${p}_fell_back`]),
+      });
       return rows.map((r: Record<string, unknown>) => ({
         variant_id: num(r.variant_id), assigned: num(r.assigned), sessions: num(r.sessions),
         completed: num(r.completed), completed_users: num(r.completed_users), fell_back: num(r.fell_back),
+        paid: num(r.paid), by_surface: { app: side(r, "app"), web: side(r, "web") },
       }));
     },
 
@@ -4134,8 +4285,9 @@ export async function postgresStore(
       return written;
     },
 
-    async recordOnboardingEvents(userId, events) {
+    async recordOnboardingEvents(userId, events, context) {
       if (events.length === 0) return 0;
+      const c = { ...NO_EVENT_CONTEXT, ...context };
       let added = 0;
       // One statement per event rather than a multi-row insert. The batches are small (the app
       // flushes a screen at a time) and `do nothing` per row means one duplicate does not discard
@@ -4143,9 +4295,12 @@ export async function postgresStore(
       for (const e of events) {
         const rows = await sql`
           insert into onboarding_events
-            (id, user_id, session_id, place, action, content_version, ms, field, value, at, received_at)
+            (id, user_id, session_id, place, action, content_version, ms, field, value, at, received_at,
+             surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template)
           values (${e.id}, ${userId}, ${e.sessionId}, ${e.place}, ${e.action}, ${e.contentVersion},
-                  ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at}, ${new Date(now())})
+                  ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at}, ${new Date(now())},
+                  ${c.surface}, ${c.brand}, ${c.app_version}, ${c.build}, ${c.ota_update_id}, ${c.channel},
+                  ${c.lang}, ${c.country}, ${c.experiment_id}, ${c.arm}, ${e.template ?? c.template})
           on conflict (id) do nothing
           returning id`;
         if (rows.length > 0) added++;
@@ -4201,18 +4356,33 @@ export async function postgresStore(
       }));
     },
 
-    async onboardingFunnel(range, staffIds = [], includeTesters = false): Promise<FunnelAggregate> {
+    async onboardingFunnel(range, staffIds = [], includeTesters = false, filters: FunnelFilters = {}): Promise<FunnelAggregate> {
       const { from: lo, to: hi } = range;
       const configStaff = uuidArray(staffIds);
+      const eq = (v: string | undefined) => v ?? null;
+      // `effectiveAcqSource`, over `users u`.
+      const effectiveAcq = sql`(case when u.acq_source is not null and u.acq_source <> 'organic' then u.acq_source
+        when u.referred_by is not null then 'referral' else u.acq_source end)`;
+      // A row with no surface is an app run, as `by_surface` counts it.
+      const narrow = sql`
+        and (${eq(filters.surface) === null} or coalesce(e.surface, 'app') = ${eq(filters.surface)})
+        and (${eq(filters.app_version) === null} or e.app_version = ${eq(filters.app_version)})
+        and (${eq(filters.lang) === null} or e.lang = ${eq(filters.lang)})
+        and (${eq(filters.country) === null} or e.country = ${eq(filters.country)})
+        and (${eq(filters.experiment_id) === null} or e.experiment_id = ${eq(filters.experiment_id)})
+        and (${eq(filters.arm) === null} or e.arm = ${eq(filters.arm)})
+        and (${eq(filters.acq_source) === null}
+             or exists (select 1 from users u where u.id = e.user_id and ${effectiveAcq} = ${eq(filters.acq_source)}))`;
       // Staff accounts (admin-flagged) are not users; their runs stay out (#2783).
 
       const totals = await sql`
         select count(distinct session_id)::int as sessions,
                count(distinct session_id) filter (where action = 'complete')::int as completed
-        from onboarding_events
+        from onboarding_events e
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
-          and not exists (select 1 from users u where u.id = onboarding_events.user_id and (u.staff or (not ${includeTesters} and u.tester)))
-          and onboarding_events.user_id <> all(${configStaff}::uuid[])`;
+          and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
+          and e.user_id <> all(${configStaff}::uuid[])
+          ${narrow}`;
 
       // `percentile_cont` over the answer rows only — a median that included view events would be
       // measuring nothing, since a view carries no elapsed time.
@@ -4226,10 +4396,11 @@ export async function postgresStore(
                percentile_cont(0.5) within group (
                  order by ms
                ) filter (where action = 'answer' and ms is not null) as median_ms
-        from onboarding_events
+        from onboarding_events e
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
-          and not exists (select 1 from users u where u.id = onboarding_events.user_id and (u.staff or (not ${includeTesters} and u.tester)))
-          and onboarding_events.user_id <> all(${configStaff}::uuid[])
+          and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
+          and e.user_id <> all(${configStaff}::uuid[])
+          ${narrow}
         group by place`;
 
       // Conversion to paid (#812), the funnel's last step. The same population and window,
@@ -4249,6 +4420,7 @@ export async function postgresStore(
            where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
              and not u.staff and (${includeTesters} or not u.tester)
              and e.user_id <> all(${configStaff}::uuid[])
+             ${narrow}
            group by e.user_id, e.session_id, u.id
         ),
         conv as (
@@ -4263,7 +4435,32 @@ export async function postgresStore(
           from conv
          group by product, trial, is_lifetime`;
 
+      const dimRows = await sql`
+        with ev as (
+          select e.user_id, e.surface, e.app_version, e.lang, e.country, e.experiment_id, e.arm
+            from onboarding_events e
+           where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
+             and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
+             and e.user_id <> all(${configStaff}::uuid[])
+        )
+        select distinct 'surface' as k, coalesce(surface, 'app') as v, null::text as x from ev
+        union select 'app_version', app_version, null from ev where app_version is not null
+        union select 'lang', lang, null from ev where lang is not null
+        union select 'country', country, null from ev where country is not null
+        union select 'acq_source', ${effectiveAcq}, null from users u
+          where ${effectiveAcq} is not null and u.id in (select user_id from ev)
+        union select 'arm', arm, experiment_id from ev where arm is not null and experiment_id is not null`;
+      const dimensions: FunnelDimensions = { surface: [], app_version: [], lang: [], country: [], acq_source: [], arm: [] };
+      const armKeys: [string, { experiment_id: string; arm: string }][] = [];
+      for (const r of dimRows as { k: string; v: string; x: string | null }[]) {
+        if (r.k === "arm") armKeys.push([`${r.x}\u0000${r.v}`, { experiment_id: String(r.x), arm: r.v }]);
+        else dimensions[r.k as FunnelDimension].push(r.v);
+      }
+      for (const k of FUNNEL_DIMENSIONS) dimensions[k].sort();
+      dimensions.arm = armKeys.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, v]) => v);
+
       return {
+        dimensions,
         sessions: num(totals[0]?.sessions),
         completed: num(totals[0]?.completed),
         paid: {
@@ -4351,7 +4548,8 @@ export async function postgresStore(
            group by u.id`;
         if (summary.length === 0) return { rows: [], nextCursor: null };
         const events = await sql`
-          select session_id, place, action, content_version, ms, field, value, at
+          select session_id, place, action, content_version, ms, field, value, at,
+                 surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template
             from onboarding_events
            where user_id = ${userId}
              and (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
@@ -4363,6 +4561,7 @@ export async function postgresStore(
             field: (r.field as string | null) ?? null, value: (r.value as string | null) ?? null,
             contentVersion: num(r.content_version),
             at: iso(r.at)!,
+            context: Object.fromEntries(ONBOARDING_EVENT_CONTEXT_KEYS.map((k) => [k, r[k] ?? null])) as NullableEventContext,
           })))],
           nextCursor: null,
         };

@@ -16,10 +16,11 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
-import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
+import type { ArmScreens, FunnelDimensions, FunnelFilters, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
+import { ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 
 /**
  * The turn's cutoff, when a call is part of one — carried as async context because adding it to
@@ -259,6 +260,41 @@ export interface StoredEntitlement {
 }
 
 /**
+ * Where an account came from (ieat-app#3196). `via` is who said so: `adservices` is Apple's own
+ * answer to the app's attribution token (`source` is `apple_search_ads` or `organic`, the rest
+ * Apple's numeric ids); `revenuecat` is RevenueCat's copy of the same, from a webhook's subscriber
+ * attributes (`source` its `$mediaSource`, normalised; the rest may be names). Apple's wins.
+ */
+export interface Acquisition {
+  source: string;
+  campaign: string | null;
+  adGroup: string | null;
+  keyword: string | null;
+  via: "adservices" | "revenuecat";
+}
+
+/** One RevenueCat webhook delivery, as logged. `price` is RevenueCat's, in USD. */
+export interface RevenueCatEventRow {
+  /** RevenueCat's event id — the idempotency key. */
+  id: string;
+  /** Ours, or null when the delivery names no account of ours (a TRANSFER, an anonymous id). */
+  userId: string | null;
+  type: string;
+  productId: string | null;
+  periodType: string | null;
+  presentedOfferingId: string | null;
+  price: number | null;
+  currency: string | null;
+  priceInPurchasedCurrency: number | null;
+  store: string | null;
+  countryCode: string | null;
+  environment: string | null;
+  eventAt: string;
+  /** The `$mediaSource`/`$campaign`/`$adGroup`/`$keyword` subscriber attributes, when sent. */
+  acquisition: Omit<Acquisition, "via"> | null;
+}
+
+/**
  * One event's effect: set the subscription's end, or set/clear the lifetime unlock, never both.
  *
  * Undefined means LEAVE ALONE, and that is the whole point. A monthly renewal says nothing about a
@@ -303,6 +339,8 @@ export interface ReferralRow {
   code: string;
   /** This account joined with somebody's code. */
   applied: boolean;
+  /** That code — the referrer's own, never their id (ieat-app#3196) — or null. */
+  referredBy: string | null;
   /** Accounts that joined with this one's code. */
   joined: number;
   /** Of the friends, the ones whose first paid period has granted this account its reward. */
@@ -610,6 +648,8 @@ export interface FunnelAggregate {
     /** Median time on screen before an answer, in ms. Null when nothing was answered. */
     medianMs: number | null;
   }[];
+  /** Every value in the window over the same population, NOT narrowed by the filters. */
+  dimensions: FunnelDimensions;
 }
 
 // ── The per-account funnel (#812) ────────────────────────────────────────────────────────────
@@ -632,7 +672,16 @@ export interface AdminOnboardingEvent {
   contentVersion: number;
   /** Client clock, ISO — when the screen was seen, not when the batch arrived. */
   at: string;
+  /** What the server stamped at record time (ieat-app#3196); every key null on a row from before. */
+  context: NullableEventContext;
 }
+
+/** `OnboardingEventContext` as a row holds it: a row recorded before the columns has none. */
+export type NullableEventContext = { [K in keyof OnboardingEventContext]: OnboardingEventContext[K] | null };
+
+export const NO_EVENT_CONTEXT: NullableEventContext = Object.fromEntries(
+  ONBOARDING_EVENT_CONTEXT_KEYS.map((k) => [k, null]),
+) as NullableEventContext;
 
 /**
  * One account's onboarding flow as the admin's per-account funnel lists it (#812).
@@ -837,6 +886,17 @@ export interface OnboardingExperimentFunnelRow {
    *  not per session, so a restart cannot inflate it. */
   completed_users: number;
   /** Runs that rendered a different revision than assigned — the fell-back count. */
+  fell_back: number;
+  /** Assigned users whose earliest grant clock is at or after the assignment (ieat-app#3196). */
+  paid: number;
+  /** The run counts by the events' stamped surface; a row from before the column is `app`. */
+  by_surface: Record<"app" | "web", ExperimentSurfaceCounts>;
+}
+
+export interface ExperimentSurfaceCounts {
+  sessions: number;
+  completed: number;
+  completed_users: number;
   fell_back: number;
 }
 
@@ -1461,6 +1521,28 @@ export interface Store {
    */
   moveEntitlement(fromUserId: string, intoUserId: string, eventAt: string): Promise<boolean>;
 
+  // ── Acquisition and the RevenueCat event log (ieat-app#3196) ───────────────────────────────
+  //
+  // The paid tier above is resolved state; this is the history beside it, kept for analytics and
+  // read by nothing that decides access. Both go with the account and move with a merge.
+
+  /**
+   * Append one RevenueCat delivery. Idempotent on the event id: true when written, false when the
+   * id is already logged. `userId` is null, or names no account, for a delivery that is not about
+   * one of ours — the row is still kept, owned by nobody. Never creates a user.
+   */
+  recordRevenueCatEvent(row: RevenueCatEventRow): Promise<boolean>;
+  /** This account's logged deliveries, oldest event first. */
+  revenueCatEventsOf(userId: string): Promise<RevenueCatEventRow[]>;
+  /** Where this account came from, or null when nothing has said. */
+  acquisitionOf(userId: string): Promise<Acquisition | null>;
+  /**
+   * Record where this account came from. The guard is in the write: a stored AdServices answer is
+   * never replaced, by anything; every other write replaces what is there. False when nothing was
+   * written — that guard, or no such account.
+   */
+  putAcquisition(userId: string, acquisition: Acquisition): Promise<boolean>;
+
   /**
    * The account a sign-in merged `userId` into, or null when it was never merged away (#2694).
    * RevenueCat keeps naming the anonymous id it was configured with, so every delivery after the
@@ -1777,11 +1859,11 @@ export interface Store {
    * Idempotent on `event.id` because the app retries a batch it could not confirm, and a funnel
    * that double-counts a bad connection reports its best numbers for its worst users.
    */
-  recordOnboardingEvents(userId: string, events: OnboardingEvent[]): Promise<number>;
+  recordOnboardingEvents(userId: string, events: OnboardingEvent[], context?: OnboardingEventContext): Promise<number>;
   /** The funnel inside `range` (#2776), aggregated. Reads every user except staff-flagged ones (#2783) — this is the admin's view.
    * `staffIds` are accounts staff by config (`campaignStaffIds`), left out beside the flag.
    * TESTERS (`isTester`) are left out too unless `includeTesters` (ieat-app#2899). */
-  onboardingFunnel(range: AdminRange, staffIds?: string[], includeTesters?: boolean): Promise<FunnelAggregate>;
+  onboardingFunnel(range: AdminRange, staffIds?: string[], includeTesters?: boolean, filters?: FunnelFilters): Promise<FunnelAggregate>;
   /**
    * The per-account funnel (#812). `userId` absent → every account that sent an onboarding
    * event inside `range`, newest first, keyset-paged — the same population as

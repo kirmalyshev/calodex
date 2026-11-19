@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it } from "bun:test";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { fakePush } from "../push/fake.ts";
+import { fakeAnalytics } from "../analytics/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { memoryStore } from "../store.memory.ts";
 import type { Store } from "../store.ts";
@@ -234,6 +235,21 @@ describe("the address the provider vouched for", () => {
     expect(out.outcome).toBe("merged");
     expect(out.userId).toBe(real);
     expect(await emailOf("merger")).toBe("merge@example.com");
+  });
+
+  it("joins the anonymous person to the real one in analytics, only when the accounts merged (ieat-app#3196)", async () => {
+    const analytics = fakeAnalytics();
+    const deps = { ...depsFor(store), analytics };
+    const real = await store.createUser("en");
+    await store.addIdentity(real, "apple", "joined");
+    const anon = (await store.upsertDeviceUser(device(), "en")).userId;
+    expect((await signInWithProvider(deps, verifierFor(), "apple", "joined", undefined, anon, "en", CONSENT)).outcome).toBe("merged");
+    expect(analytics.merged).toEqual([{ into: real, from: anon }]);
+
+    const other = await store.createUser("en");
+    await store.addIdentity(other, "apple", "someone-else");
+    expect((await signInWithProvider(deps, verifierFor(), "apple", "someone-else", undefined, real, "en", CONSENT)).outcome).toBe("switched");
+    expect(analytics.merged).toEqual([{ into: real, from: anon }]);
   });
 
   it("stores it for a returning user, whose sign-in links nothing at all", async () => {

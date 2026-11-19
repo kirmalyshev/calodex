@@ -6,11 +6,10 @@ import type { DayResponse, Profile, ProfileResponse } from "@eait/shared";
 import { goalCopyFor } from "../../shared/app/goal-copy.ts";
 import { kcalNumbers } from "../../shared/lang.ts";
 import { ico } from "../../shared/ui/kit.ts";
-import { api } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { kitEl } from "../kit.ts";
 import { openDialog } from "../panel.ts";
-import { el, forgetProfile, lang } from "../shell.ts";
+import { patchProfile, el, forgetProfile, lang } from "../shell.ts";
 
 /** "Plan 1,434 + burned 187 + yesterday 144 ›" — null unless something was added to this day's goal. */
 export function goalLine(day: DayResponse, profile: Profile): HTMLElement | null {
@@ -85,11 +84,7 @@ export function goalPrefsCard(me: ProfileResponse, onSaved: (res: ProfileRespons
       if (saving) return;
       const was = sw.getAttribute("aria-checked") === "true";
       saving = true; paint(!was);
-      api<ProfileResponse>("/profile", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ [key]: !was }),
-      }).then((res) => { forgetProfile(); onSaved(res); })
+      patchProfile({ [key]: !was }).then((res) => { forgetProfile(); onSaved(res); })
         .catch((err: unknown) => { console.error(err); paint(was); })
         .finally(() => { saving = false; });
     });

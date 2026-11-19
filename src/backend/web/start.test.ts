@@ -9,7 +9,7 @@
 import { prelimCards } from "./page/moment.ts";
 import { frontDoor } from "./page/front-door.ts";
 import { say } from "./page/board.ts";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -32,6 +32,7 @@ import { AuthError, type Verifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
 import { chatHistory, day, handleText, linkTelegram, saveOnboardingContent } from "../engine/index.ts";
 import { createRouter } from "../api/routes.ts";
+import { fakeAnalytics } from "../analytics/fake.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { escape } from "./page.ts";
@@ -109,6 +110,7 @@ const CONFIG: Config = {
 
 let store: Store;
 let deps: EngineDeps;
+let sink: ReturnType<typeof fakeAnalytics>;
 let handle: (req: Request) => Promise<Response>;
 
 /**
@@ -141,7 +143,8 @@ function router(
   store = grantEveryAccount(memoryStore(storeOpts), 1_000_000);
   // Only when asked for: a test that sets `publicWebUrl` itself means what it set.
   const withWeb = webApp ? { ...config, publicWebUrl: WEB_ORIGIN } : config;
-  deps = { store, config: withWeb, llm, push: fakePush(), mail: logMail() };
+  sink = fakeAnalytics();
+  deps = { store, config: withWeb, llm, push: fakePush(), mail: logMail(), analytics: sink };
   const handler = createRouter(deps, store, testVerifier, { webProviders: providers });
   handle = (req) => handler(req);
 }
@@ -3522,5 +3525,95 @@ describe("a welcome that hides its lines (ieat-app#2756)", () => {
     const html = say(["Lead.", "", "Real question?"]);
     expect(html).toContain("Real question?");
     expect(html.match(/class="qsub"/g)).toHaveLength(1);
+  });
+});
+
+describe("the web funnel (ieat-app#3196)", () => {
+  // The funnel rows are written without the page waiting: read them once the complete row is in and
+  // two reads in a row agree.
+  const settledRows = async (userId: string) => {
+    const read = async () => (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows[0]?.events ?? [];
+    let last = await read();
+    for (let i = 0; i < 200; i++) {
+      await Bun.sleep(10);
+      const next = await read();
+      if (next.length === last.length && next.some((e) => e.action === "complete")) return next;
+      last = next;
+    }
+    return last;
+  };
+
+  it("records what the app records, stamped surface web, through the app's engine function", async () => {
+    const session = await answerAll(undefined, ANSWERS);
+    const userId = await webUser(session);
+    const events = await settledRows(userId);
+    expect(events.every((e) => e.context.surface === "web" && e.context.lang === "en")).toBe(true);
+    // The first answer creates the account, so goal has no view: there was nobody to own it. The rows
+    // are written without the page waiting, so two in one millisecond come back in either order.
+    expect(events.filter((e) => e.place === "goal")).toMatchObject([{ action: "answer", field: "goal", value: "lose" }]);
+    expect(events.filter((e) => e.action === "view").length).toBeGreaterThan(3);
+    // Numbers are answered, never valued — the engine's privacy rule holds on this surface too.
+    expect(events.find((e) => e.field === "weight_kg")).toMatchObject({ action: "answer", value: null });
+    expect(events.filter((e) => e.action === "complete")).toMatchObject([{ place: "summary" }]);
+    expect(new Set(events.map((e) => e.sessionId)).size).toBe(1);
+  });
+
+  // /start sends to analytics without waiting, so a test waits for what it reads.
+  const eventually = async (done: () => boolean) => { for (let i = 0; i < 200 && !done(); i++) await Bun.sleep(10); };
+
+  it("records what it served, as the web, so the rows can carry the arm the page walked", async () => {
+    const userId = await webUser(await answerAll(undefined, ANSWERS));
+    let surfaces: string[] = [];
+    for (let i = 0; i < 200 && surfaces.length === 0; i++, await Bun.sleep(10)) surfaces = (await store.onboardingServed(userId)).map((r) => r.surface);
+    expect(surfaces).toContain("web");
+  });
+
+  it("sends one onboarding_step per funnel row, and the plan once, to analytics", async () => {
+    const session = await answerAll(undefined, ANSWERS);
+    const userId = await webUser(session);
+    const rows = await settledRows(userId);
+    await eventually(() => sink.captured.filter((c) => c.event === "onboarding_step").length >= rows.length
+      && sink.captured.some((c) => c.event === "onboarding_plan_completed"));
+    const steps = sink.captured.filter((c) => c.event === "onboarding_step");
+    // As a multiset: rows written in the same millisecond come back from the store in either order.
+    const key = (p: unknown, a: unknown, f: unknown) => `${String(p)}/${String(a)}/${String(f ?? "")}`;
+    expect(steps.map((c) => key(c.props.place, c.props.action, c.props.field)).sort())
+      .toEqual(rows.map((e) => key(e.place, e.action, e.field)).sort());
+    expect(steps.every((c) => c.userId === userId && c.props.surface === "web" && "content_version" in c.props)).toBe(true);
+    expect(sink.captured.filter((c) => c.event === "onboarding_plan_completed")).toHaveLength(1);
+  });
+
+  it("sends signup_completed once for the account the walk made, and signin_completed on a return", async () => {
+    const { userId } = await signedUp("web-analytics");
+    await eventually(() => sink.captured.some((c) => c.event === "signup_completed"));
+    const signups = sink.captured.filter((c) => c.event === "signup_completed");
+    expect(signups).toHaveLength(1);
+    expect(signups[0]).toMatchObject({ userId, props: { provider: "google", after_onboarding: true, surface: "web" } });
+    await signIn("web-analytics");
+    await eventually(() => sink.captured.some((c) => c.event === "signin_completed"));
+    expect(sink.captured.filter((c) => c.event === "signup_completed")).toHaveLength(1);
+    expect(sink.captured.filter((c) => c.event === "signin_completed").map((c) => [c.userId, c.props.provider]))
+      .toEqual([[userId, "google"]]);
+  });
+
+  it("answers every page without waiting on the funnel or the sink", async () => {
+    const write = spyOn(store, "recordOnboardingEvents").mockImplementation(() => new Promise(() => {}));
+    const send = spyOn(sink, "capture").mockImplementation(() => { throw new Error("sink down"); });
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const walked = signedUp("web-slow-sink").then(() => "answered");
+      expect(await Promise.race([walked, Bun.sleep(5_000).then(() => "hung")])).toBe("answered");
+    } finally {
+      write.mockRestore(); send.mockRestore(); error.mockRestore();
+    }
+  });
+
+  it("merges the anonymous session account's analytics person into the account a sign-in lands on", async () => {
+    const { userId } = await signedUp("web-merge");
+    expect(sink.merged).toEqual([]);
+    const session = await answerAll(undefined, ANSWERS);
+    const anonymous = await webUser(session);
+    await signIn("web-merge", "google", undefined, session);
+    expect(sink.merged).toEqual([{ into: userId, from: anonymous }]);
   });
 });

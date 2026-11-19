@@ -38,7 +38,7 @@ import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { hashToken } from "./auth/tokens.ts";
 import { memoryStore } from "./store.memory.ts";
 import { RLS_TABLES, SCOPE, postgresStore } from "./store.pg.ts";
-import { SWITCH_KEYS, type CampaignRow, type LlmCall, type Store, type StoreOptions } from "./store.ts";
+import { SWITCH_KEYS, type CampaignRow, type LlmCall, type RevenueCatEventRow, type Store, type StoreOptions } from "./store.ts";
 
 const PG_URL = process.env.TEST_DATABASE_URL;
 
@@ -1053,6 +1053,100 @@ function contract(name: string, make: () => Promise<Store>) {
       });
       await s.deleteUser(userId);
       expect(await s.getEntitlement(userId)).toBeNull();
+    });
+
+    // ── Acquisition and the RevenueCat event log (ieat-app#3196) ───────────────────────────
+    const rcEvent = (userId: string | null, over: Partial<RevenueCatEventRow> = {}): RevenueCatEventRow => ({
+      id: `rc-${crypto.randomUUID()}`, userId, type: "INITIAL_PURCHASE", productId: "eait_pro_yearly",
+      periodType: "TRIAL", presentedOfferingId: "default", price: 0, currency: "EUR",
+      priceInPurchasedCurrency: 0, store: "APP_STORE", countryCode: "DE", environment: "PRODUCTION",
+      eventAt: "2026-11-19T10:00:00.000Z",
+      acquisition: { source: "apple_search_ads", campaign: "c1", adGroup: "g1", keyword: "k1" },
+      ...over,
+    });
+
+    it("logs a RevenueCat event once per event id, and reads it back for its account only", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const e = rcEvent(a);
+      expect(await s.recordRevenueCatEvent(e)).toBe(true);
+      // A redelivery is the same event: nothing is written twice.
+      expect(await s.recordRevenueCatEvent({ ...e, type: "RENEWAL" })).toBe(false);
+      expect(await s.revenueCatEventsOf(a)).toEqual([e]);
+      expect(await s.revenueCatEventsOf(b)).toEqual([]);
+    });
+
+    it("logs an event naming no account of ours with no owner, and never creates a user", async () => {
+      const s = await open();
+      const stranger = crypto.randomUUID();
+      expect(await s.recordRevenueCatEvent(rcEvent(stranger))).toBe(true);
+      expect(await s.recordRevenueCatEvent(rcEvent(null, { acquisition: null, price: null, currency: null }))).toBe(true);
+      expect(await s.getProfile(stranger)).toBeNull();
+      expect(await s.revenueCatEventsOf(stranger)).toEqual([]);
+    });
+
+    it("erases the event log and the acquisition with the account, and moves both on a merge", async () => {
+      const s = await open();
+      const gone = (await s.upsertDeviceUser(device(), "en")).userId;
+      await s.recordRevenueCatEvent(rcEvent(gone));
+      await s.putAcquisition(gone, { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" });
+      await s.deleteUser(gone);
+      expect(await s.revenueCatEventsOf(gone)).toEqual([]);
+      expect(await s.acquisitionOf(gone)).toBeNull();
+
+      const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+      const real = (await s.upsertDeviceUser(device(), "en")).userId;
+      const e = rcEvent(anon);
+      await s.recordRevenueCatEvent(e);
+      const asa = { source: "apple_search_ads", campaign: "1", adGroup: "2", keyword: "3", via: "adservices" } as const;
+      await s.putAcquisition(anon, asa);
+      await s.mergeUsers(anon, real);
+      expect(await s.revenueCatEventsOf(real)).toEqual([{ ...e, userId: real }]);
+      expect(await s.acquisitionOf(real)).toEqual(asa);
+    });
+
+    it("a merge keeps the surviving account's AdServices answer, and fills a gap or a RevenueCat one", async () => {
+      const s = await open();
+      const pair = async () => ({
+        anon: (await s.upsertDeviceUser(device(), "en")).userId,
+        real: (await s.upsertDeviceUser(device(), "en")).userId,
+      });
+      const ads = { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" } as const;
+      const rc = { source: "apple_search_ads", campaign: "Brand", adGroup: "G", keyword: "kw", via: "revenuecat" } as const;
+
+      const kept = await pair();
+      await s.putAcquisition(kept.real, ads);
+      await s.putAcquisition(kept.anon, rc);
+      await s.mergeUsers(kept.anon, kept.real);
+      expect(await s.acquisitionOf(kept.real)).toEqual(ads);
+
+      const upgraded = await pair();
+      await s.putAcquisition(upgraded.real, rc);
+      await s.putAcquisition(upgraded.anon, ads);
+      await s.mergeUsers(upgraded.anon, upgraded.real);
+      expect(await s.acquisitionOf(upgraded.real)).toEqual(ads);
+    });
+
+    it("an AdServices answer is never replaced; RevenueCat's fills only until it arrives", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      expect(await s.acquisitionOf(u)).toBeNull();
+      const rc = { source: "apple_search_ads", campaign: "Brand", adGroup: "G", keyword: "kw", via: "revenuecat" } as const;
+      expect(await s.putAcquisition(u, rc)).toBe(true);
+      expect(await s.acquisitionOf(u)).toEqual(rc);
+      // A later RevenueCat delivery refreshes its own answer.
+      const rc2 = { ...rc, keyword: "kw2" };
+      expect(await s.putAcquisition(u, rc2)).toBe(true);
+      expect(await s.acquisitionOf(u)).toEqual(rc2);
+      // Apple's own answer replaces RevenueCat's, and then nothing replaces it — not even Apple's.
+      const ads = { source: "apple_search_ads", campaign: "11", adGroup: "22", keyword: "33", via: "adservices" } as const;
+      expect(await s.putAcquisition(u, ads)).toBe(true);
+      expect(await s.putAcquisition(u, rc)).toBe(false);
+      expect(await s.putAcquisition(u, { ...ads, source: "organic" })).toBe(false);
+      expect(await s.acquisitionOf(u)).toEqual(ads);
+      // No such account: nothing written.
+      expect(await s.putAcquisition(crypto.randomUUID(), ads)).toBe(false);
     });
 
     // ── Photos ─────────────────────────────────────────────────────────────────────────────
@@ -3168,6 +3262,27 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.recordOnboardingEvents(u, [e])).toBe(0);
     });
 
+    it("stores an onboarding event's context columns, null where none was stamped (ieat-app#3196)", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const at = new Date().toISOString();
+      const ev = (id: string, ms: number) => ({ id: `${id}-${RUN}`, sessionId: `ctx-${RUN}`, place: "goal" as const, action: "view" as const, contentVersion: 1, at: new Date(Date.parse(at) + ms).toISOString() });
+      const context = {
+        surface: "app" as const, brand: "eait" as const, app_version: "1.4.2", build: "187", ota_update_id: "u-1",
+        channel: "testflight" as const, lang: "de" as const, country: "de", experiment_id: "exp-1", arm: "42", template: "hero@3",
+      };
+      await s.recordOnboardingEvents(u, [ev("stamped", 0)], context);
+      await s.recordOnboardingEvents(u, [{ ...ev("own", 500), template: "plate@2" }], context);
+      await s.recordOnboardingEvents(u, [ev("bare", 1000)]);
+      const [row] = (await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } })).rows;
+      expect(row!.events!.map((e) => e.context)).toEqual([
+        context,
+        { ...context, template: "plate@2" },
+        { surface: null, brand: null, app_version: null, build: null, ota_update_id: null, channel: null,
+          lang: null, country: null, experiment_id: null, arm: null, template: null },
+      ]);
+    });
+
     it("aggregates the funnel identically in both implementations", async () => {
       const s = await open();
       const u = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -3948,6 +4063,33 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(rows.find((r) => r.variant_id === 41)).toMatchObject({ assigned: 1, sessions: 1, completed: 1 });
         const places = await s.onboardingExperimentPlaces(e.id, { from: null, to: null });
         expect(places.find((r) => r.variant_id === 41 && r.place === "goal")).toMatchObject({ people: 1, views: 1 });
+      });
+
+      it("counts an arm's accounts paid after assignment, and splits its runs by surface (ieat-app#3196)", async () => {
+        const s = await open();
+        const e = exp({ id: `paid-arm-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const before = await mk(), after = await mk(), never = await mk(), onWeb = await mk();
+        await s.putEntitlement(before, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: "2001-01-01T00:00:00.000Z" });
+        for (const u of [before, after, never, onWeb]) {
+          const a = await s.putOnboardingAssignment(u, e.id, 41);
+          await s.recordOnboardingEvents(u, [
+            { id: crypto.randomUUID(), sessionId: "p-" + u, place: "goal", action: "view", contentVersion: 41, at: a.assigned_at },
+            { id: crypto.randomUUID(), sessionId: "p-" + u, place: "goal", action: "complete", contentVersion: u === never ? 42 : 41, at: a.assigned_at },
+          ] as never, { surface: u === onWeb ? "web" : "app" } as never);
+          if (u === after || u === onWeb) {
+            await s.putEntitlement(u, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "yearly", eventAt: new Date(Date.parse(a.assigned_at) + 60_000).toISOString() });
+          }
+        }
+        const v41 = (await s.onboardingExperimentFunnel(e.id, { from: null, to: null })).find((r) => r.variant_id === 41);
+        expect(v41).toMatchObject({
+          assigned: 4, sessions: 4, completed: 4, paid: 2,
+          by_surface: {
+            app: { sessions: 3, completed: 3, completed_users: 3, fell_back: 1 },
+            web: { sessions: 1, completed: 1, completed_users: 1, fell_back: 0 },
+          },
+        });
       });
 
       it("keeps an arm's order, and counts each arm's places inside the arm's own window (ieat-app#2788)", async () => {
@@ -4877,7 +5019,8 @@ function referrals(name: string, make: (opts: StoreOptions) => Promise<Store>) {
       expect(await s.redeemReferral(friend, await codeOf(s, referrer), 7)).toBe("ok");
       expect(await s.bonusUntil(friend)).toBe(at(7));
       expect((await s.referralOf(friend))!.applied).toBe(true);
-      expect(await s.referralOf(referrer)).toMatchObject({ applied: false, joined: 1, subscribed: 0, daysEarned: 0 });
+      expect((await s.referralOf(friend))!.referredBy).toBe(await codeOf(s, referrer));
+      expect(await s.referralOf(referrer)).toMatchObject({ applied: false, referredBy: null, joined: 1, subscribed: 0, daysEarned: 0 });
 
       // A second code, or the same one again, is refused and grants nothing more.
       const other = await s.createUser("en");
@@ -5452,6 +5595,72 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect(goal.people - (baseGoal?.people ?? 0)).toBe(3);
       expect(goal.views - (baseGoal?.views ?? 0)).toBe(3);
       expect((await s.onboardingFunnel({ from: range.to, to: range.from })).sessions).toBe(0);
+    });
+
+    it("narrows the funnel by each context dimension, and lists every value the range holds (ieat-app#3196)", async () => {
+      const s = await open();
+      const all = { from: null, to: null };
+      const v = `9.${RUN}`;
+      const x = `dim-x-${RUN}`;
+      const app = await s.createUser("en");
+      const web = await s.createUser("en");
+      await s.putAcquisition(app, { source: `asa-${RUN}`, campaign: null, adGroup: null, keyword: null, via: "adservices" });
+      const at = new Date().toISOString();
+      const ev = (sid: string, action: string) => [{ id: crypto.randomUUID(), sessionId: sid, place: "goal", action, contentVersion: 1, at }];
+      const appCtx = { surface: "app", app_version: v, lang: "de", country: "AT", experiment_id: x, arm: "77" };
+      await s.recordOnboardingEvents(app, ev(`dim-app-${RUN}`, "view") as never, appCtx as never);
+      await s.recordOnboardingEvents(app, ev(`dim-app-${RUN}`, "complete") as never, appCtx as never);
+      await s.recordOnboardingEvents(web, ev(`dim-web-${RUN}`, "view") as never, { surface: "web", app_version: v, lang: "en", country: "DE" } as never);
+      await s.putEntitlement(app, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: new Date(Date.parse(at) + 60_000).toISOString() });
+      const f = (filters: Record<string, string>) => s.onboardingFunnel(all, [], false, { app_version: v, ...filters });
+
+      expect(await f({})).toMatchObject({ sessions: 2, completed: 1, paid: { converted: 1 } });
+      expect(await f({ surface: "app" })).toMatchObject({ sessions: 1, completed: 1, paid: { converted: 1 } });
+      expect(await f({ surface: "web" })).toMatchObject({ sessions: 1, completed: 0, paid: { converted: 0 } });
+      expect((await f({ lang: "de" })).sessions).toBe(1);
+      expect((await f({ country: "DE" })).sessions).toBe(1);
+      expect((await f({ acq_source: `asa-${RUN}` })).sessions).toBe(1);
+      expect((await f({ experiment_id: x, arm: "77" })).rows.find((r) => r.place === "goal")?.people).toBe(1);
+      expect((await f({ experiment_id: x, arm: "78" })).sessions).toBe(0);
+      expect((await f({ surface: "web", lang: "de" })).sessions).toBe(0);
+
+      const d = (await f({ surface: "web" })).dimensions;
+      expect(d.app_version).toContain(v);
+      expect(d.surface).toEqual(expect.arrayContaining(["app", "web"]));
+      expect(d.lang).toEqual(expect.arrayContaining(["de", "en"]));
+      expect(d.country).toEqual(expect.arrayContaining(["AT", "DE"]));
+      expect(d.acq_source).toContain(`asa-${RUN}`);
+      expect(d.arm).toContainEqual({ experiment_id: x, arm: "77" });
+      expect([...d.app_version].sort()).toEqual(d.app_version);
+    });
+
+    it("counts a row with no surface as an app run, as the experiment's by_surface does (ieat-app#3196)", async () => {
+      const s = await open();
+      const u = await s.createUser("en");
+      const f = async (surface: string) => (await s.onboardingFunnel({ from: null, to: null }, [], false, { surface })).sessions;
+      const [app, web] = [await f("app"), await f("web")];
+      await s.recordOnboardingEvents(u, [{ id: crypto.randomUUID(), sessionId: `nosurf-${RUN}`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString() }]);
+      expect([await f("app") - app, await f("web") - web]).toEqual([1, 0]);
+    });
+
+    it("counts a referred account Apple called organic under acq_source=referral (ieat-app#3196)", async () => {
+      const s = await open();
+      const v = `8.${RUN}`;
+      const friend = await s.createUser("en");
+      const plain = await s.createUser("en");
+      expect(await s.redeemReferral(friend, (await s.referralOf(await s.createUser("en")))!.code, 7)).toBe("ok");
+      const organic = { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" } as const;
+      await s.putAcquisition(friend, organic);
+      await s.putAcquisition(plain, organic);
+      const at = new Date().toISOString();
+      for (const u of [friend, plain]) {
+        await s.recordOnboardingEvents(u, [{ id: crypto.randomUUID(), sessionId: `acq-${u}`, place: "goal", action: "view", contentVersion: 1, at }] as never,
+          { surface: "app", app_version: v } as never);
+      }
+      const f = (acq_source: string) => s.onboardingFunnel({ from: null, to: null }, [], false, { app_version: v, acq_source });
+      expect((await f("referral")).sessions).toBe(1);
+      expect((await f("organic")).sessions).toBe(1);
+      expect((await f("referral")).dimensions.acq_source).toEqual(expect.arrayContaining(["organic", "referral"]));
     });
 
     it("leaves a staff account's onboarding events out of the funnel (#2783)", async () => {
@@ -6450,7 +6659,7 @@ if (PG_URL) {
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "recordRevenueCatEvent", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",

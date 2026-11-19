@@ -7,13 +7,14 @@ import { logMail } from "../mail/log.ts";
 // app — a client that sends a body weight as an event value, or a place name that is a megabyte of
 // text, is not hypothetical once the API is public.
 
-import { beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { FIRST_VERDICT_VERSION, ONBOARDING_CONTENT, ONBOARDING_ORDER_VERSION, ONBOARDING_PLACES, DEFAULT_ONBOARDING_CONTENT, type OnboardingContent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
 import type { Store } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
+import { analyticsRequestOf } from "./analytics.ts";
 import { appendLines } from "./chat.ts";
 import {
   assignVariant, onboardingContent, onboardingContentFor, onboardingFunnel, recordOnboardingEvents,
@@ -37,6 +38,8 @@ beforeEach(async () => {
 });
 
 const clone = (c: OnboardingContent): OnboardingContent => structuredClone(c);
+
+const APP_REQUEST = analyticsRequestOf(new Headers(), "app");
 
 const event = (over: Record<string, unknown> = {}) => ({
   id: crypto.randomUUID(),
@@ -112,7 +115,7 @@ describe("events", () => {
     const n = await recordOnboardingEvents(deps, userId, [
       event({ place: "goal", action: "view" }),
       event({ place: "goal", action: "answer", field: "goal", value: "lose", ms: 2400 }),
-    ]);
+    ], APP_REQUEST);
     expect(n).toBe(2);
 
     const funnel = await onboardingFunnel(deps, 30);
@@ -126,17 +129,17 @@ describe("events", () => {
   it("counts the friend's-link step as a place of its own", async () => {
     expect(await recordOnboardingEvents(deps, userId, [
       event({ place: "referral", action: "view" }), event({ place: "referral", action: "answer" }),
-    ])).toBe(2);
+    ], APP_REQUEST)).toBe(2);
     const rows = (await onboardingFunnel(deps, 30)).rows.map((r) => r.place);
     expect(rows.indexOf("referral")).toBeGreaterThan(rows.indexOf("country"));
   });
 
   it("is idempotent on the event id", async () => {
     const e = event({ action: "view" });
-    expect(await recordOnboardingEvents(deps, userId, [e])).toBe(1);
+    expect(await recordOnboardingEvents(deps, userId, [e], APP_REQUEST)).toBe(1);
     // The app re-sends a batch it could not confirm. A funnel that double-counted those would
     // report its best numbers for its worst-connected users.
-    expect(await recordOnboardingEvents(deps, userId, [e])).toBe(0);
+    expect(await recordOnboardingEvents(deps, userId, [e], APP_REQUEST)).toBe(0);
     expect((await onboardingFunnel(deps, 30)).rows.find((r) => r.place === "goal")!.views).toBe(1);
   });
 
@@ -145,7 +148,7 @@ describe("events", () => {
       event({ place: "the-paywall" }),
       event({ action: "purchased" }),
       event({ place: "x".repeat(5000) }),
-    ]);
+    ], APP_REQUEST);
     expect(n).toBe(0);
   });
 
@@ -156,7 +159,7 @@ describe("events", () => {
     const n = await recordOnboardingEvents(deps, userId, [
       event({ place: "paywall", action: "view", at: "2026-11-01T10:00:00.000Z" }),
       event({ place: "paywall", action: "answer", field: "paywall", value: "declined", at: "2026-11-01T10:00:04.000Z" }),
-    ]);
+    ], APP_REQUEST);
     expect(n).toBe(2);
     const rows = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
     expect(rows[0]!.events!.map((e) => `${e.place}:${e.action}`)).toEqual(["paywall:view", "paywall:answer"]);
@@ -170,7 +173,7 @@ describe("events", () => {
       event({ place: "weight", action: "answer", field: "weight_kg", value: "93" }),
       event({ place: "restrictions", action: "answer", field: "medical_limitations", value: "stage 3 CKD" }),
       event({ place: "goal", action: "answer", field: "goal", value: "lose" }),
-    ]);
+    ], APP_REQUEST);
 
     const stored = await store.onboardingFunnel({ from: null, to: null });
     expect(stored.rows.find((r) => r.place === "weight")!.answers).toBe(1);
@@ -182,24 +185,85 @@ describe("events", () => {
 
   it("caps a batch", async () => {
     const many = Array.from({ length: 500 }, () => event({ action: "view" }));
-    expect(await recordOnboardingEvents(deps, userId, many)).toBe(100);
+    expect(await recordOnboardingEvents(deps, userId, many, APP_REQUEST)).toBe(100);
   });
 
   it("survives junk without throwing", async () => {
-    expect(await recordOnboardingEvents(deps, userId, "not an array")).toBe(0);
-    expect(await recordOnboardingEvents(deps, userId, [null, 7, {}, { id: "x" }])).toBe(0);
+    expect(await recordOnboardingEvents(deps, userId, "not an array", APP_REQUEST)).toBe(0);
+    expect(await recordOnboardingEvents(deps, userId, [null, 7, {}, { id: "x" }], APP_REQUEST)).toBe(0);
     // A phone whose clock is wrong must not break the insert.
-    expect(await recordOnboardingEvents(deps, userId, [event({ at: "tuesday" })])).toBe(1);
+    expect(await recordOnboardingEvents(deps, userId, [event({ at: "tuesday" })], APP_REQUEST)).toBe(1);
   });
 
   it("is erased with the account", async () => {
-    await recordOnboardingEvents(deps, userId, [event({ action: "view" })]);
+    await recordOnboardingEvents(deps, userId, [event({ action: "view" })], APP_REQUEST);
     expect((await onboardingFunnel(deps, 30)).sessions).toBe(1);
 
     await store.deleteUser(userId);
     // Onboarding tells the user "deleting your account erases it" while asking about their kidneys.
     // The funnel is not an exception to that sentence.
     expect((await onboardingFunnel(deps, 30)).sessions).toBe(0);
+  });
+});
+
+describe("the context stamped on events (ieat-app#3196)", () => {
+  const request = { surface: "app" as const, brand: "eait" as const, app_version: "1.4.2", build: "187", ota_update_id: null, channel: "appstore" as const };
+  const stored = async () =>
+    (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows[0]!.events!.map((e) => e.context);
+
+  it("comes from the request, the account and its held arm — never from the event body", async () => {
+    const content = structuredClone(DEFAULT_ONBOARDING_CONTENT);
+    content.version = 42;
+    const id = crypto.randomUUID();
+    await store.putOnboardingExperiment({
+      id, lang: "en", status: "draft", rules: {}, created_by: userId, created_at: new Date().toISOString(),
+      started_at: null, stopped_at: null, revision: 1,
+      variants: [{ control: true, weight: 0, content: structuredClone(DEFAULT_ONBOARDING_CONTENT) }, { weight: 1, content }],
+    } as never);
+    await store.startOnboardingExperiment(id);
+    await store.setSwitch("onboarding.experiments", true, userId);
+    await store.putOnboardingAssignment(userId, id, 42);
+    await store.recordOnboardingServed(userId, { contentVersion: 42, lang: "en", surface: "app", screens: {} });
+    await store.patchProfile(userId, { country: "de" });
+
+    await recordOnboardingEvents(deps, userId, [event({
+      surface: "web", brand: "calodex", lang: "fr", country: "us", experiment_id: "forged", arm: "1", template: "x@1",
+      context: { experiment_id: "forged" },
+    })], request);
+
+    expect(await stored()).toEqual([{
+      ...request, lang: "en", country: "de", experiment_id: id, arm: "42", template: "x@1",
+    }]);
+  });
+
+  it("keeps the template the client says it drew, and only in key@version shape", async () => {
+    await recordOnboardingEvents(deps, userId, [
+      event({ id: "t1", template: "welcome-hero@3" }), event({ id: "t2", template: "<b>@1" }), event({ id: "t3", template: 7 }),
+    ], request);
+    expect((await stored()).map((c) => c.template).sort()).toEqual(["welcome-hero@3", null, null].sort());
+  });
+
+  it("names a template only when the client reported one for that screen, never the account's served list", async () => {
+    await store.recordOnboardingServed(userId, { contentVersion: 1, lang: "en", surface: "app", screens: { baseline: { template: "plate", version: 2 } } });
+    await recordOnboardingEvents(deps, userId, [event({ place: "goal" })], request);
+    expect((await stored()).map((c) => c.template)).toEqual([null]);
+  });
+
+  it("writes the rows with the request's half when the account's read fails", async () => {
+    store.getProfile = async () => { throw Object.assign(new Error("db down"), { code: "57P01" }); };
+    const errors = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(await recordOnboardingEvents(deps, userId, [event()], request)).toBe(1);
+      expect(errors).toHaveBeenCalledWith("[eait] onboarding: event context read failed: Error 57P01");
+    } finally {
+      errors.mockRestore();
+    }
+    expect(await stored()).toEqual([{ ...request, lang: null, country: null, experiment_id: null, arm: null, template: null }]);
+  });
+
+  it("names no arm while the experiments switch is off", async () => {
+    await recordOnboardingEvents(deps, userId, [event()], request);
+    expect(await stored()).toEqual([{ ...request, lang: "en", country: null, experiment_id: null, arm: null, template: null }]);
   });
 });
 
@@ -218,7 +282,7 @@ describe("the funnel", () => {
       { id: "b2", sessionId: "b", place: "goal", action: "answer", field: "goal", value: "gain", ms: 3000, at },
       { id: "b3", sessionId: "b", place: "weight", action: "view", contentVersion: 1, at },
       { id: "b4", sessionId: "b", place: "weight", action: "back", ms: 9000, at },
-    ] as never);
+    ] as never, APP_REQUEST);
   });
 
   it("counts runs and completions", async () => {
@@ -591,6 +655,10 @@ describe("experiments (ieat-app#2669)", () => {
     expect(raw.version).toBe(43);
     expect(view.arms[1]!.stats.assigned).toBe(1);
     expect(view.arms[1]!.stats.sessions).toBe(1);
+    expect(view.arms[1]!.stats).toMatchObject({ paid: 0, paid_rate: 0, by_surface: { app: { sessions: 1 }, web: { sessions: 0 } } });
+    await store.putEntitlement(userId, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "yearly", eventAt: "2098-01-01T00:00:00.000Z" });
+    view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
+    expect(view.arms[1]!.stats).toMatchObject({ paid: 1, paid_rate: 1 });
   });
 
   it("clones a control that predates ui/beats into an arm the editor can open", async () => {
@@ -805,7 +873,7 @@ describe("experiments (ieat-app#2669)", () => {
         event({ place: "diet", contentVersion: 42, action: "answer", ms: 900 }),
         // A run that fell back walked the default order: it is the arm's `fell_back`, not a row here.
         event({ id: crypto.randomUUID(), sessionId: "s-fell", place: "medical", contentVersion: 41 }),
-      ]);
+      ], APP_REQUEST);
       const view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
       const arm = view.arms[1]!;
       const places = arm.places.map((r) => r.place);

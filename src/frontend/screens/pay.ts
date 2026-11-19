@@ -16,6 +16,7 @@ import { payCopyFor } from "../../shared/app/pay-copy.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl, payPlansEl } from "../kit.ts";
+import * as analytics from "../analytics.ts";
 
 /** The image the boards' hero draws — served by the backend off shared/assets/img, same origin. */
 const HERO_SRC = "/start/assets/img/salmon.webp";
@@ -44,6 +45,11 @@ export function payScreen(frame: Frame): HTMLElement {
     return box;
   }
   const plans = w === undefined ? null : payPlansEl(w, COPY.offerPlans);
+  // `#/pay?blocked` is the spent free sample's link (`log.ts`); every other way in — the settings
+  // row, a `subscription` push — is source `settings`.
+  const blocked = location.hash.includes("?blocked");
+  analytics.capture("paywall_opened", { blocked, source: blocked ? "blocked" : "settings" });
+  const sold = () => ({ plan: plans?.picked()?.value ?? "monthly", trial_shown: (w?.trialDays ?? 0) > 0, storefront: null });
 
   const hero = el("div", "hero");
   const img = el("img", "") as HTMLImageElement;
@@ -90,10 +96,12 @@ export function payScreen(frame: Frame): HTMLElement {
       }
     };
     plans.group.addEventListener("change", update);
+    plans.group.addEventListener("change", () => analytics.capture("paywall_plan_selected", sold()));
     update();
     col.append(plans.group);
   }
   col.append(go, note);
+  go.addEventListener("click", () => analytics.capture("paywall_purchase_started", sold()));
   // The footer's legal links — only the ones the operator publishes (`WebPaywall` carries "" for
   // a link it does not have). No Restore: the web has no store to restore from; a purchase lands
   // here by webhook. Both states of the column draw it, so it is built on demand.
@@ -124,7 +132,11 @@ export function payScreen(frame: Frame): HTMLElement {
   close.addEventListener("click", (ev) => {
     const offer = w?.exitOffer ?? null;
     const uid = frame.me?.profile.user_id;
-    if (offered || offer === null || uid === undefined || offerSeen(uid)) return;
+    if (offered || offer === null || uid === undefined || offerSeen(uid)) {
+      analytics.capture("paywall_dismissed", { result: "cancelled", blocked });
+      return;
+    }
+    analytics.capture("paywall_offer_step", { step: "shown" });
     ev.preventDefault();
     offered = true;
     markOfferSeen(uid);
@@ -143,6 +155,11 @@ export function payScreen(frame: Frame): HTMLElement {
     claim.href = offer.checkoutUrl;
     const decline = el("a", "cta g", pay.offerDecline) as HTMLAnchorElement;
     decline.href = "#/";
+    claim.addEventListener("click", () => analytics.capture("paywall_offer_step", { step: "claimed" }));
+    decline.addEventListener("click", () => {
+      analytics.capture("paywall_offer_step", { step: "declined" });
+      analytics.capture("paywall_dismissed", { result: "cancelled", blocked });
+    });
     const parts = [el("h1", "d d28", pay.offerTitle), card, claim, decline, el("p", "t12 m", pay.offerNote)];
     const foot = legal();
     if (foot !== null) parts.push(foot);
