@@ -87,4 +87,3 @@ export * from "./app/you-copy.ts";
 export * from "./push.ts";
 export * from "./campaign.ts";
 export * from "./meal-reminders.ts";
-export * from "./plate-verdicts.ts";
