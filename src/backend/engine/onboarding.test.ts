@@ -220,6 +220,7 @@ describe("the context stamped on events (ieat-app#3196)", () => {
     await store.startOnboardingExperiment(id);
     await store.setSwitch("onboarding.experiments", true, userId);
     await store.putOnboardingAssignment(userId, id, 42);
+    await store.recordOnboardingServed(userId, { contentVersion: 42, lang: "en", surface: "app", screens: {} });
     await store.patchProfile(userId, { country: "de" });
 
     await recordOnboardingEvents(deps, userId, [event({

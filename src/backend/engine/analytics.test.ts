@@ -71,6 +71,17 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     expect(await version()).toBe(7);
   });
 
+  it("names the held arm only when the copy last served is that arm's", async () => {
+    const { store, deps, userId } = await setup();
+    const arm = async () => { const a = (await profileView(deps, userId))!.analytics; return [a.experiment_id, a.arm]; };
+    const id = await holdArm(store, userId, 42);
+    expect(await arm()).toEqual([null, null]);
+    await serve(store, userId, DEFAULT_ONBOARDING_CONTENT.version);
+    expect(await arm()).toEqual([null, null]);
+    await serve(store, userId, 42);
+    expect(await arm()).toEqual([id, "42"]);
+  });
+
   it("names the templates the account was last served, key@version, in slot order", async () => {
     const { store, deps, userId } = await setup();
     await store.recordOnboardingServed(userId, { contentVersion: 1, lang: "de", surface: "app", screens: { baseline: { template: "old", version: 1 } } });

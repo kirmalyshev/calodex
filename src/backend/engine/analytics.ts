@@ -63,13 +63,14 @@ export async function analyticsServerContext(deps: EngineDeps, userId: string, p
   ]);
   const referrer = referral?.referredBy ?? null;
   const latest = latestServed(served);
+  const arm = held && latest?.contentVersion === held.variant.content.version ? held : null;
   return {
     content_version: latest?.contentVersion ?? held?.variant.content.version
       ?? usableContentFor(profile.lang, await deps.store.getOnboardingContent()).version,
     lang: profile.lang,
     country: profile.country,
-    experiment_id: held?.experimentId ?? null,
-    arm: held ? String(held.variant.content.version) : null,
+    experiment_id: arm?.experimentId ?? null,
+    arm: arm ? String(arm.variant.content.version) : null,
     template: servedTemplates(latest),
     // A paid campaign outranks a referral; a referral outranks Apple's "organic".
     acq_source: acq && acq.source !== "organic" ? acq.source : referrer !== null ? "referral" : acq?.source ?? null,

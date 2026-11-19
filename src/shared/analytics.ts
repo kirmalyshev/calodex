@@ -37,7 +37,7 @@ export interface AnalyticsContext {
   lang: Lang | null;
   country: string | null;
   experiment_id: string | null;
-  /** The assigned variant's content version, as text — the id the admin's arms carry. */
+  /** The assigned variant's content version, as text — the id the admin's arms carry. With `experiment_id`, null unless the copy last served is that variant's. */
   arm: string | null;
   /** The served templates, `key@version` comma-joined in slot order; on a funnel row, that row's own one. Null when none. */
   template: string | null;
