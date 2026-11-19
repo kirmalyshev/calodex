@@ -15,6 +15,10 @@ describe("plateVerdicts (ieat-app#3165, T1 arm B)", () => {
     expect(plateVerdicts({ kcal: 365 }, PLAN, ["ldl"])).toEqual({ weight: "good" });
   });
 
+  it("judges a figure the plate does carry, sodium included", () => {
+    expect(plateVerdicts({ kcal: 365, sodium_mg: 900 }, { ...PLAN, sodium_mg: 2000 }, ["kidneys"])).toEqual({ weight: "good", kidneys: "warn" });
+  });
+
   it("shows no dimension the user did not declare", () => {
     expect(plateVerdicts({ kcal: 365, satfat_g: 5 }, PLAN, [])).toEqual({ weight: "good" });
   });
