@@ -9,7 +9,7 @@
 import { prelimCards } from "./page/moment.ts";
 import { frontDoor } from "./page/front-door.ts";
 import { say } from "./page/board.ts";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -3566,6 +3566,18 @@ describe("the web funnel (ieat-app#3196)", () => {
     expect(sink.captured.filter((c) => c.event === "signup_completed")).toHaveLength(1);
     expect(sink.captured.filter((c) => c.event === "signin_completed").map((c) => [c.userId, c.props.provider]))
       .toEqual([[userId, "google"]]);
+  });
+
+  it("answers every page without waiting on the funnel or the sink", async () => {
+    const write = spyOn(store, "recordOnboardingEvents").mockImplementation(() => new Promise(() => {}));
+    const send = spyOn(sink, "capture").mockImplementation(() => { throw new Error("sink down"); });
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const walked = signedUp("web-slow-sink").then(() => "answered");
+      expect(await Promise.race([walked, Bun.sleep(5_000).then(() => "hung")])).toBe("answered");
+    } finally {
+      write.mockRestore(); send.mockRestore(); error.mockRestore();
+    }
   });
 
   it("merges the anonymous session account's analytics person into the account a sign-in lands on", async () => {
