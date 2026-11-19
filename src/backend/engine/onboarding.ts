@@ -638,11 +638,11 @@ export async function onboardingRuns(deps: EngineDeps, userId: string, events: A
   if (events.length === 0) return [];
   const served = await deps.store.onboardingServed(userId);
   const experiments = await deps.store.listOnboardingExperiments();
-  const held: { e: OnboardingExperiment; i: number }[] = [];
+  const held: { e: OnboardingExperiment; i: number; assignedAt: number }[] = [];
   for (const e of experiments) {
     const as = await deps.store.onboardingAssignment(userId, e.id);
     const i = as ? e.variants.findIndex((x) => x.content.version === as.variant_id) : -1;
-    if (i >= 0) held.push({ e, i });
+    if (i >= 0) held.push({ e, i, assignedAt: Date.parse(as!.assigned_at) });
   }
   const stored = storedContentSet(await deps.store.getOnboardingContent());
   const firsts = new Map<string, AdminOnboardingEvent>();
@@ -651,9 +651,12 @@ export async function onboardingRuns(deps: EngineDeps, userId: string, events: A
   for (const first of firsts.values()) {
     const v = first.contentVersion;
     const rec = servedFor(served, v, first.at);
-    // The arm this run showed; else the one arm the account holds (in the served language, when known): it fell back.
+    // The arm this run showed; else the one arm the account held AT THE TIME (the window the experiment
+    // funnel counts: from the assignment, drift allowed, to the stop), in the served language when known: it fell back.
     const exact = held.find((h) => h.e.variants[h.i]!.content.version === v);
-    const others = held.filter((h) => rec === null || h.e.lang === rec.lang);
+    const t = Date.parse(first.at);
+    const others = held.filter((h) => (rec === null || h.e.lang === rec.lang)
+      && h.assignedAt <= t + SERVED_DRIFT_MS && (h.e.stopped_at === null || t <= Date.parse(h.e.stopped_at)));
     const hit = exact ?? (others.length === 1 ? others[0]! : null);
     const experiment = hit ? { id: hit.e.id, arm: armLabel(hit.e, hit.i), fellBack: hit !== exact } : null;
     const places = new Set(events.filter((e) => e.sessionId === first.sessionId).map((e) => e.place));

@@ -232,5 +232,72 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     expect(run!.copy!.summary).toBeUndefined();
     expect(run!.copy!.baseline).toBe("template gone@v9 not found");
   });
+
+  // ── Round 3 ──
+  const armOf = (lang: "en" | "de", control: number, arm: number, over: Record<string, unknown> = {}) => ({
+    id: crypto.randomUUID(), lang, status: "running" as const, rules: {},
+    variants: [{ control: true, weight: 0, content: content(control) }, { weight: 1, content: content(arm) }],
+    created_by: admin, created_at: new Date().toISOString(), started_at: new Date().toISOString(), stopped_at: null, revision: 1, ...over,
+  });
+
+  it("calls a run fell back only inside the assignment's window: not before it, not after the stop", async () => {
+    const base = Date.parse("2026-11-19T10:00:00Z");
+    const at = (min: number) => new Date(base + min * 60_000).toISOString();
+    let clock = base;
+    store = memoryStore({ now: () => clock });
+    deps = { ...deps, store };
+    userId = await store.createUser("en");
+    const e = armOf("en", 41, 42, { status: "stopped", started_at: at(-60), stopped_at: at(20) });
+    await store.putOnboardingExperiment(e as never);
+    await store.putOnboardingAssignment(userId, e.id, 42);
+    await store.recordOnboardingEvents(userId, [
+      event("pre", "welcome", "view", 9, { at: at(-10) }),
+      event("in", "welcome", "view", 9, { at: at(5) }),
+      event("post", "welcome", "view", 9, { at: at(30) }),
+    ] as never);
+    const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
+    expect(byId.pre!.experiment).toBeNull();
+    expect(byId.in!.experiment).toEqual({ id: e.id, arm: "variant 2", fellBack: true });
+    expect(byId.post!.experiment).toBeNull();
+  });
+
+  it("never fills an arm's missing words from a live row that is there", async () => {
+    await store.putOnboardingContent("en", { ...structuredClone(DEFAULT_ONBOARDING_CONTENT), version: 0 } as never, 700);
+    const e = armOf("en", 76, 0, { variants: [{ control: true, weight: 0, content: content(76) }, { weight: 1, content: { version: 77, welcome: { lines: ["Arm hello"], cta: "Arm go", signin: "Arm in" } } }] });
+    await store.putOnboardingExperiment(e as never);
+    await store.putOnboardingAssignment(userId, e.id, 77);
+    await served(77);
+    await store.recordOnboardingEvents(userId, [event("p", "welcome", "view", 77), event("p", "summary", "view", 77)] as never);
+    const [run] = await runs();
+    expect(run!.copy!.welcome).toBe("Arm hello\n[Arm go]\n[Arm in]");
+    expect(run!.copy!.summary).toBeUndefined();
+  });
+
+  it("gives a fell-back run the words of the version it showed, not the held arm's", async () => {
+    const e = armOf("en", 41, 42);
+    await store.putOnboardingExperiment(e as never);
+    await store.putOnboardingAssignment(userId, e.id, 42);
+    const live = { ...structuredClone(DEFAULT_ONBOARDING_CONTENT), welcome: { ...DEFAULT_ONBOARDING_CONTENT.welcome, cta: "Live door" } };
+    const v = await store.putOnboardingContent("en", live, 800);
+    await served(v);
+    await store.recordOnboardingEvents(userId, [event("fb", "welcome", "view", v)] as never);
+    const [run] = await runs();
+    expect(run!.experiment).toEqual({ id: e.id, arm: "variant 2", fellBack: true });
+    expect(run!.copy!.welcome).toContain("Live door");
+  });
+
+  it("picks the fell-back arm by the served language when the account holds arms in two", async () => {
+    const en = armOf("en", 41, 42);
+    const de = armOf("de", 51, 52);
+    for (const e of [en, de]) { await store.putOnboardingExperiment(e as never); }
+    await store.putOnboardingAssignment(userId, en.id, 42);
+    await store.putOnboardingAssignment(userId, de.id, 52);
+    await store.recordOnboardingServed(userId, { contentVersion: 9, lang: "de", surface: "app", screens: {} });
+    await store.recordOnboardingEvents(userId, [event("de", "welcome", "view", 9), event("none", "welcome", "view", 8)] as never);
+    const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
+    expect(byId.de!.experiment).toEqual({ id: de.id, arm: "variant 2", fellBack: true });
+    // No serving recorded: two arms, no language to choose by — nothing.
+    expect(byId.none!.experiment).toBeNull();
+  });
 });
 
