@@ -13,11 +13,13 @@
 import {
   DIARY_WINDOW_DAYS, KCAL_PER_KG, entitlementActive, entitlementLive, explainTargets, forgivingStreak, localDate,
   referralBonusEnd,
-  trialDaysLeft, windowStart, type AdminWindowEcho, type DistributionChannel, type Entitlement, type Goal, type Lang,
+  trialDaysLeft, windowStart, type AdminWindowEcho, type DistributionChannel, type Entitlement, type FirstVerdictArm,
+  type Goal, type Lang,
 } from "@eait/shared";
 import type { Config } from "../config.ts";
 import type { AdminUserRow, EntitlementPatch, StoredEntitlement } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
+import { switchOn } from "./switches.ts";
 import { adminWindowEcho } from "./admin.ts";
 import { isStoreReviewer } from "./email.ts";
 import { referralRewardDays } from "./referral.ts";
@@ -33,11 +35,35 @@ export function dailyPhotoCap(config: Config): number {
 }
 
 /**
- * The analyses the admin granted THIS account before an entitlement is required — none unless one
- * was granted (ieat-app#2364: no default sample). `checkCaps` refuses with it and `limitsOf` reports it.
+ * The analyses THIS account may run before an entitlement is required — none unless the admin
+ * granted some (ieat-app#2364: no default sample), or the account holds T1's `own-meal` arm
+ * (ieat-app#3165), which is ONE: the user's own first meal, its verdict, then the sheet. Never on
+ * top of a grant — the larger of the two. `checkCaps` refuses with it and `limitsOf` reports it.
  */
 export async function freeAnalysesFor(deps: EngineDeps, userId: string): Promise<number> {
-  return (await deps.store.getFreeAnalyses(userId)) ?? 0;
+  const [granted, arm] = await Promise.all([deps.store.getFreeAnalyses(userId), firstVerdictArmOf(deps, userId)]);
+  return Math.max(granted ?? 0, arm === "own-meal" ? 1 : 0);
+}
+
+/**
+ * The T1 arm this account holds in the RUNNING experiment for its language, read off the stored
+ * assignment — never recomputed, so it is the arm the client was served. A stopped experiment, or
+ * the experiments switch off, grants nothing more. Read here rather than through `assignVariant`, which may WRITE an assignment: a cap
+ * check must never enrol anybody. A store failure is no arm — a refusal, the paywall's own default.
+ */
+async function firstVerdictArmOf(deps: EngineDeps, userId: string): Promise<FirstVerdictArm | null> {
+  if (!(await switchOn(deps, "onboarding.experiments"))) return null;
+  try {
+    const lang = (await deps.store.getProfile(userId))?.lang;
+    if (!lang) return null;
+    const experiment = await deps.store.runningOnboardingExperiment(lang);
+    if (!experiment?.variants.some((v) => v.firstVerdict)) return null;
+    const row = await deps.store.onboardingAssignment(userId, experiment.id);
+    return experiment.variants.find((v) => v.content.version === row?.variant_id)?.firstVerdict ?? null;
+  } catch (err) {
+    console.error("[eait] first-verdict arm read failed", err);
+    return null;
+  }
 }
 
 /** One account's sample, as the admin sees it. */

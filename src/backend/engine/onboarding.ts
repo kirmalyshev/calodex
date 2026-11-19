@@ -12,9 +12,9 @@ import {
   ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone,
   localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
-  DEFAULT_ORDER, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
+  DEFAULT_ORDER, FIRST_VERDICT_ARMS, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
-  type DistributionChannel, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
+  type DistributionChannel, type FirstVerdictArm, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
@@ -69,6 +69,12 @@ export interface OnboardingSignals {
    * arm, and an arm it already holds serves it the live copy.
    */
   orderVersion?: number;
+  /**
+   * The client can render an arm's first verdict (`?verdict=1`, ieat-app#3165). Without it, it is
+   * enrolled in no experiment whose arms carry one: an arm it cannot draw would hand it the live
+   * flow under the arm's name, and that arm's rate would then describe the live flow.
+   */
+  firstVerdict?: boolean;
 }
 
 /** Whether this client can walk an arm's order. */
@@ -164,6 +170,7 @@ export async function assignVariant(
     // it control: control would then be the arm the old builds are in, and the arms would stop
     // comparing like with like.
     if (experiment.variants.some((v) => v.order) && !readsOrder(signals)) return null;
+    if (experiment.variants.some((v) => v.firstVerdict) && !signals.firstVerdict) return null;
     const picked = pickVariant(experiment.variants, hashPick(userId, experiment.id));
     if (!picked) return null;
 
@@ -210,7 +217,7 @@ export async function onboardingServedFor(
   deps: EngineDeps,
   userId: string | null,
   signals: OnboardingSignals,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[] }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm }> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
   const served = await servedRaw(deps, userId, signals, control);
   // The ONE place stored and variant copy is branded: the editor and the clone read it raw.
@@ -222,13 +229,19 @@ async function servedRaw(
   userId: string | null,
   signals: OnboardingSignals,
   control: OnboardingContent,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[] }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm }> {
   if (userId === null) return { content: control };
   const assigned = await assignVariant(deps, userId, signals);
   if (!assigned) return { content: control };
-  const { order } = assigned.variant;
+  const { order, firstVerdict } = assigned.variant;
   if (order && !readsOrder(signals)) return { content: control };
-  return { content: usableContent(assigned.variant.content, control), ...(order ? { order } : {}) };
+  // An arm held from a capable client, asked for by one that is not: the live flow, like an order.
+  if (firstVerdict && !signals.firstVerdict) return { content: control };
+  return {
+    content: usableContent(assigned.variant.content, control),
+    ...(order ? { order } : {}),
+    ...(firstVerdict ? { firstVerdict } : {}),
+  };
 }
 
 /**
@@ -840,6 +853,35 @@ export async function saveOnboardingVariantOrder(
     if (i !== index) return v;
     const { order: _old, ...rest } = v;
     return next ? { ...rest, order: next } : rest;
+  });
+  const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
+  return wrote ? { ok: true } : { ok: false, errors: ["the experiment changed under you — reload the page"] };
+}
+
+/**
+ * Write a draft arm's FIRST VERDICT (ieat-app#3165): one of `FIRST_VERDICT_ARMS`, or `null` for the
+ * live flow. The control arm IS the live flow, so it takes none; a running arm is frozen, because
+ * an account's arm must never change under it.
+ */
+export async function saveOnboardingVariantFirstVerdict(
+  deps: EngineDeps, id: string, index: number, arm: unknown,
+): Promise<{ ok: true } | { ok: false; errors: string[] }> {
+  const experiment = (await deps.store.listOnboardingExperiments()).find((e) => e.id === id);
+  if (!experiment) return { ok: false, errors: ["experiment not found"] };
+  if (!Number.isInteger(index) || index < 0 || index >= experiment.variants.length) {
+    return { ok: false, errors: ["no such variant"] };
+  }
+  if (experiment.variants[index]!.control) {
+    return { ok: false, errors: ["the control arm is the live flow — it takes no first verdict"] };
+  }
+  if (experiment.status !== "draft") return { ok: false, errors: ["only a draft's arms take a first verdict — a running arm is frozen"] };
+  if (arm !== null && !(FIRST_VERDICT_ARMS as readonly unknown[]).includes(arm)) {
+    return { ok: false, errors: [`firstVerdict must be one of ${FIRST_VERDICT_ARMS.join(", ")}, or null`] };
+  }
+  experiment.variants = experiment.variants.map((v, i) => {
+    if (i !== index) return v;
+    const { firstVerdict: _old, ...rest } = v;
+    return arm === null ? rest : { ...rest, firstVerdict: arm as FirstVerdictArm };
   });
   const wrote = await deps.store.putOnboardingExperiment(experiment, experiment.revision);
   return wrote ? { ok: true } : { ok: false, errors: ["the experiment changed under you — reload the page"] };

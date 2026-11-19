@@ -819,6 +819,115 @@ describe("experiments (ieat-app#2669)", () => {
       expect(view.arms[0]!.places.map((r) => r.place)).toEqual([...ONBOARDING_PLACES]);
     });
   });
+
+  describe("an arm's first verdict (ieat-app#3165)", () => {
+    // T1: no live control — control carries no weight, the two weighted arms are A and B.
+    const t1 = () => experiment({
+      variants: [
+        { control: true, weight: 0, content: variantContent(41, "Control") },
+        { weight: 1, content: variantContent(42), firstVerdict: "own-meal" },
+        { weight: 1, content: variantContent(43), firstVerdict: "welcome-plate" },
+      ],
+    });
+    const capable = { ...signals, firstVerdict: true };
+
+    it("saves an arm on a draft variant, clears it with null, and refuses anything else", async () => {
+      const { saveOnboardingVariantFirstVerdict } = await import("./onboarding.ts");
+      const e = experiment();
+      await store.putOnboardingExperiment(e as never);
+      const arm = async () => (await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!;
+      expect(await saveOnboardingVariantFirstVerdict(deps, e.id, 1, "welcome-plate")).toEqual({ ok: true });
+      expect((await arm()).firstVerdict).toBe("welcome-plate");
+      expect(await saveOnboardingVariantFirstVerdict(deps, e.id, 1, null)).toEqual({ ok: true });
+      expect((await arm()).firstVerdict).toBeUndefined();
+      expect((await saveOnboardingVariantFirstVerdict(deps, e.id, 1, "free-week")).ok).toBe(false);
+      expect((await saveOnboardingVariantFirstVerdict(deps, e.id, 0, "own-meal")).ok).toBe(false);
+      expect((await saveOnboardingVariantFirstVerdict(deps, e.id, 9, "own-meal")).ok).toBe(false);
+    });
+
+    it("refuses to change the arm of a running experiment", async () => {
+      const { saveOnboardingVariantFirstVerdict } = await import("./onboarding.ts");
+      const e = await startExperiment(t1());
+      expect((await saveOnboardingVariantFirstVerdict(deps, e.id, 1, null)).ok).toBe(false);
+    });
+
+    it("enrols no client that cannot render an arm, and writes no row for it", async () => {
+      const e = await startExperiment(t1());
+      expect(await assignVariant(deps, userId, signals)).toBeNull();
+      expect(await store.onboardingAssignment(userId, e.id)).toBeNull();
+    });
+
+    it("serves a capable client its arm, and the arm never switches", async () => {
+      const { onboardingServedFor } = await import("./onboarding.ts");
+      await startExperiment(t1());
+      const first = await onboardingServedFor(deps, userId, capable);
+      expect(["own-meal", "welcome-plate"]).toContain(first.firstVerdict!);
+      for (let i = 0; i < 3; i++) {
+        expect((await onboardingServedFor(deps, userId, { ...capable, region: "BR", tz: "America/Sao_Paulo" })).firstVerdict)
+          .toBe(first.firstVerdict!);
+      }
+    });
+
+    it("splits the two weighted arms and never assigns the weightless control", async () => {
+      const { onboardingServedFor } = await import("./onboarding.ts");
+      await startExperiment(t1());
+      const seen = new Map<string, number>();
+      for (let i = 0; i < 60; i++) {
+        const u = await store.createUser("en");
+        const arm = (await onboardingServedFor(deps, u, capable)).firstVerdict ?? "control";
+        seen.set(arm, (seen.get(arm) ?? 0) + 1);
+      }
+      expect(seen.get("control")).toBeUndefined();
+      expect(seen.get("own-meal")! + seen.get("welcome-plate")!).toBe(60);
+      expect(seen.get("own-meal")!).toBeGreaterThan(15);
+      expect(seen.get("welcome-plate")!).toBeGreaterThan(15);
+    });
+
+    describe("arm A's one analysis", () => {
+      const { unpaidRefused } = require("./caps.ts") as typeof import("./caps.ts");
+      const armed = async (arm: "own-meal" | "welcome-plate") => {
+        const e = await startExperiment(experiment({
+          variants: [
+            { control: true, weight: 0, content: variantContent(41, "Control") },
+            { weight: 1, content: variantContent(42), firstVerdict: arm },
+          ],
+        }));
+        const { onboardingServedFor } = await import("./onboarding.ts");
+        expect((await onboardingServedFor(deps, userId, capable)).firstVerdict).toBe(arm);
+        return e;
+      };
+
+      it("lets an own-meal account through exactly once, then asks", async () => {
+        await armed("own-meal");
+        expect(await unpaidRefused(deps, userId)).toBe(false);
+        await store.recordAnalysis(userId, "2026-11-19", "photo");
+        expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("gives a welcome-plate account nothing: its verdict costs no model call", async () => {
+        await armed("welcome-plate");
+        expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("grants nothing more once the experiments switch is off", async () => {
+        await armed("own-meal");
+        await store.setSwitch("onboarding.experiments", false, userId);
+        expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("gives an unassigned account nothing", async () => {
+        await startExperiment(t1());
+        expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("does not add the arm's analysis on top of an admin grant", async () => {
+        await armed("own-meal");
+        await store.setFreeAnalyses(userId, 3);
+        const { freeAnalysesFor } = await import("./entitlement.ts");
+        expect(await freeAnalysesFor(deps, userId)).toBe(3);
+      });
+    });
+  });
 });
 
 /** A valid revision with one word changed, for the legacy-row tests above. */

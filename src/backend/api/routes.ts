@@ -827,17 +827,19 @@ export function createRouter(
         // `?tz=` (IANA) and `?region=` (the device's locale region) are the experiment signals
         // (ieat-app#2669): a request without them is still answered — missing means "not
         // eligible", never an error. `?order=` is the order capability (ieat-app#2788),
-        // `orderVersionOf`.
+        // `orderVersionOf`. `?verdict=1` says it can render an arm's first verdict (ieat-app#3165).
         const served = await onboardingServedFor(deps, userId, {
           lang, surface: "app",
           region: url.searchParams.get("region"),
           tz: url.searchParams.get("tz"),
           orderVersion: orderVersionOf(url),
+          firstVerdict: url.searchParams.get("verdict") === "1",
         });
         return json({
           content: served.content,
           lang,
           ...(served.order ? { order: served.order } : {}),
+          ...(served.firstVerdict ? { firstVerdict: served.firstVerdict } : {}),
         } satisfies OnboardingContentResponse);
       }
 

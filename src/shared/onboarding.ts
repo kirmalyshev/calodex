@@ -352,6 +352,17 @@ export interface OnboardingWelcomeContent {
 }
 
 /**
+ * What an experiment arm shows before the plans sheet (ieat-app#3165, T1). `own-meal`: the account
+ * is let through for ONE analysis, so the user photographs their own meal and the sheet opens on its
+ * first verdict. `welcome-plate`: no analysis — a verdict worked on the welcome plate they already
+ * saw, computed against their plan, then the sheet. Absent: the live flow, the sheet straight after
+ * sign-up. A client renders an arm only when it declared it can (`?verdict=1`); the server enrols
+ * no other client in an experiment whose arms carry one.
+ */
+export const FIRST_VERDICT_ARMS = ["own-meal", "welcome-plate"] as const;
+export type FirstVerdictArm = typeof FIRST_VERDICT_ARMS[number];
+
+/**
  * The welcome heroes an experiment may name (ieat-app#2669).
  *
  * A KEY, never a URL: the images are bundled in the app (`lib/hero.ts` → `WELCOME_IMAGES`, which

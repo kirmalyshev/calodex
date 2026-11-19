@@ -188,6 +188,26 @@ describe("experiments (ieat-app#2669)", () => {
     const garbled = await session();
     expect((await (await admin("GET", "/v1/onboarding?order=abc", undefined, garbled)).json() as { order?: unknown }).order).toBeUndefined();
   });
+
+  it("saves an arm's first verdict and serves it only to a client that can render it (ieat-app#3165)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
+    expect((await admin("PUT", arm, { firstVerdict: "free-week" })).status).toBe(422);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/0`, { firstVerdict: "own-meal" })).status).toBe(422);
+    expect((await admin("PUT", arm, { firstVerdict: "own-meal", order: null })).status).toBe(422);
+    expect((await admin("PUT", arm, { firstVerdict: "welcome-plate" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+
+    const older = await session();
+    expect((await (await admin("GET", "/v1/onboarding", undefined, older)).json() as { firstVerdict?: unknown }).firstVerdict).toBeUndefined();
+    const newer = await session();
+    expect((await (await admin("GET", "/v1/onboarding?verdict=1", undefined, newer)).json() as { firstVerdict?: unknown }).firstVerdict)
+      .toBe("welcome-plate");
+  });
 });
 
 describe("the admin is off unless somebody holds the role", () => {

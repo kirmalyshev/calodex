@@ -16,7 +16,7 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, OnboardingPlace, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
@@ -738,6 +738,12 @@ export interface OnboardingVariant {
    * bumps `ONBOARDING_ORDER_VERSION`, which takes the old clients out; never on the control arm.
    */
   order?: readonly OnboardingPlace[];
+  /**
+   * What this arm shows before the plans sheet (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the
+   * live flow. `own-meal` is also an analysis `freeAnalysesFor` lets the account through for. Never
+   * on the control arm, which is the live flow by definition.
+   */
+  firstVerdict?: FirstVerdictArm;
 }
 
 export type OnboardingExperimentStatus = "draft" | "running" | "stopped";
