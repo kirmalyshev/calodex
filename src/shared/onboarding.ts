@@ -461,7 +461,8 @@ export interface OnboardingBeatsContent {
    * The answers said back as burn numbers under later questions — `{rest}`/`{burn}` are computed
    * kcal, never typed. Either may be empty (hidden).
    */
-  echo: { rest: string; days: string };
+  /** `days` is retired (ieat-app#3192: the Target screen no longer prints a burn line); a stored revision may still carry it and it is read by nothing. */
+  echo: { rest: string; days?: string };
   /**
    * The BMI beat's words. The band labels stay code (`bmiRangeLabel`, shared with Progress) —
    * only the title, the "BMI" glyph and the one-line explanation move.
@@ -497,7 +498,10 @@ export interface OnboardingPaceContent {
   rate: string;
   /** The words after the rate figure alone — "a week", said without the number. */
   rateSuffix: string;
+  /** "{target} around {month}" — `{kcal}` is still accepted in a stored revision and no longer shown (ieat-app#3192). */
   result: string;
+  /** The pace question per goal ("How fast you want to lose weight"), whole sentences. Absent → the `asks.pace` line. */
+  heading?: { lose: string; gain: string };
   echo: string;
 }
 
@@ -1288,7 +1292,7 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   },
   beats: {
     ageWhy: "Your metabolism changes with age, so we factor that in",
-    echo: { rest: "At rest: {rest}kcal a day", days: "Your days burn {burn}kcal" },
+    echo: { rest: "At rest: {rest}kcal a day" },
     baseline: { title: "Where you're starting", bmi: "BMI", what: "Body mass index" },
     prelim: {
       title: "Your plan", burn: "You burn", gap: "{delta} your pace",
@@ -1311,7 +1315,8 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   pace: {
     rate: "{rate} a week",
     rateSuffix: "a week",
-    result: "{target} around {month} · {kcal}kcal a day",
+    result: "{target} around {month}",
+    heading: { lose: "How fast you want to lose weight", gain: "How fast you want to gain weight" },
     echo: "From {from} to {to}.",
   },
   plan: {
@@ -1758,7 +1763,7 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
         if (!["rest", "days"].includes(k)) push(`beats.echo.${k} is not a used key`);
       }
       tmpl(echo.rest, "beats.echo.rest", { allowed: ["rest"], requiredPh: ["rest"], max: MAX_LINE });
-      tmpl(echo.days, "beats.echo.days", { allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
+      if (echo.days !== undefined) tmpl(echo.days, "beats.echo.days", { allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
     }
     const base = beats.baseline as Record<string, unknown> | undefined;
     if (typeof base !== "object" || base === null) push("beats.baseline is required");
@@ -1823,11 +1828,15 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   if (typeof pace !== "object" || pace === null) push("pace is required");
   else {
     for (const k of Object.keys(pace)) {
-      if (!["rate", "rateSuffix", "result", "echo"].includes(k)) push(`pace.${k} is not a used key`);
+      if (!["rate", "rateSuffix", "result", "heading", "echo"].includes(k)) push(`pace.${k} is not a used key`);
     }
     tmpl(pace.rate, "pace.rate", { required: true, allowed: ["rate"], requiredPh: ["rate"], max: MAX_LINE });
     tmpl(pace.rateSuffix, "pace.rateSuffix", { required: true });
-    tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month", "kcal"], requiredPh: ["target", "month", "kcal"], max: MAX_LINE });
+    tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month", "kcal"], requiredPh: ["target", "month"], max: MAX_LINE });
+    const heading = pace.heading as Record<string, unknown> | undefined;
+    if (heading !== undefined) {
+      for (const k of ["lose", "gain"]) tmpl(heading[k], `pace.heading.${k}`, { max: MAX_LINE });
+    }
     tmpl(pace.echo, "pace.echo", { allowed: ["from", "to"], requiredPh: ["from", "to"], max: MAX_LINE });
   }
 
@@ -2098,7 +2107,7 @@ function usableBeats(b: OnboardingBeatsContent | undefined): b is OnboardingBeat
     && hasKeys(b.baseline, ["title", "bmi", "what"])
     && hasKeys(b.prelim, ["title", "burn", "gap", "eat", "perDay", "keepTitle"])
     && typeof b.echo === "object" && b.echo !== null
-    && typeof b.echo.rest === "string" && typeof b.echo.days === "string";
+    && typeof b.echo.rest === "string";
 }
 
 /** A block with bubbles and every key this binary reads. Missing one means the block is a version behind. */

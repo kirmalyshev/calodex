@@ -1616,15 +1616,18 @@ describe("the preliminary plan card", () => {
 });
 
 describe("the echoes under the numbers (#2514)", () => {
-  it("names the resting burn on the activity question and the day's burn on the target", async () => {
+  it("names the resting burn on the activity question; the target and pace screens print no kcal (#3192)", async () => {
     const session = await signIn();
     const activity = await walkTo(session, "activity");
     expect(activity).toMatch(/<p class="qecho">At rest: \d+kcal a day<\/p>/);
     expect(activity).toContain(".ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }");
     const target = await walkTo(session, "target_weight_kg");
-    expect(target).toMatch(/<p class="qsub">Your days burn \d+kcal<\/p>/);
-    // Under the heading, as the iOS target step draws it — not under the ruler.
-    expect(target.indexOf(`class="qsub"`)).toBeLessThan(target.indexOf(`class="ctl"`));
+    // ieat-app#3192: the target question carries no burn line, and the pace question names the goal.
+    expect(target).not.toContain(`class="qsub"`);
+    expect(target).not.toMatch(/days burn/i);
+    const pace = await walkTo(session, "pace");
+    expect(pace).toMatch(/How fast you want to (lose|gain) weight/);
+    expect(pace).not.toMatch(/kcal a day/);
   });
 });
 

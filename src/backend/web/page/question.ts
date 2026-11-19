@@ -9,8 +9,8 @@
 
 import {
   currentBrand,
-  basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, explainTargets, fill, heightDisplayValue, kcalNumbers, MIN_AGE,
-  minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, pacePreview, PACES, rulerLabels, RULER_TICKS,
+  basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, fill, heightDisplayValue, kcalNumbers, MIN_AGE,
+  minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, paceHeading, pacePreview, PACES, rulerLabels, RULER_TICKS,
   LB_PER_KG, lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
   targetRange,
   weightDisplay, weightDisplayValue,
@@ -503,14 +503,10 @@ export function question(v: QuestionView): string {
     }
     case "target": {
       const { seg, control } = targetControl(v);
-      const burn = explainTargets(v.profile, v.today).basis.tdee;
-      return page(v, {
-        seg, control,
-        sub: burn === null ? undefined : fill(v.content.beats.echo.days, { burn: kcalNumbers(v.lang)(burn) }),
-      });
+      return page(v, { seg, control });
     }
     case "pace":
-      return page(v, { control: paceControl(v, paceEcho(v.profile, v.units, v.lang, v.content)) });
+      return page({ ...v, lines: [...paceHeading(v.content, v.profile.goal, v.lines)] }, { control: paceControl(v, paceEcho(v.profile, v.units, v.lang, v.content)) });
     default:
       // A field prompt this file does not draw is a bug, not a page — fail loud in dev.
       return page(v, {

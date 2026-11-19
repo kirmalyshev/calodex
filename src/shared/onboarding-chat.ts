@@ -783,6 +783,15 @@ export function paceEcho(p: Profile, units: Units | null, lang: Lang, content: O
 }
 
 /**
+ * The pace question, named for the goal the user picked (ieat-app#3192): "How fast you want to lose
+ * weight". Maintain — and a revision that predates `heading` — keep the screen's own `asks.pace` line.
+ */
+export function paceHeading(content: OnboardingContent, goal: Profile["goal"], asked: readonly string[]): readonly string[] {
+  const h = goal === "lose" || goal === "gain" ? content.pace.heading?.[goal] : undefined;
+  return h ? [h] : asked;
+}
+
+/**
  * The BMI meter on `baseline` (07b): the bar runs 15 → 40 and is labelled at the WHO band edges
  * between, as the board draws it. `at` is a value's place on the bar, 0–100.
  */
@@ -805,7 +814,7 @@ export const BMI_AXIS = {
  */
 export interface PacePreview {
   ratePerWeek: number | null;
-  /** "{target} around {month} · {kcal}kcal a day" — null where the projection honestly has none. */
+  /** "{target} around {month}" — null where the projection honestly has none. */
   line: string | null;
   marker: "cap" | "floor" | null;
   markerText: string | null;

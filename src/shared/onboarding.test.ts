@@ -561,7 +561,7 @@ describe("the blocks around the questions (ieat-app#2757)", () => {
     expect(bad((c) => { c.target.suggestion.down = ""; return c; }).join(" ")).toContain("target.suggestion.down");
     expect(bad((c) => { c.target.markers.now = "now"; return c; }).join(" ")).toContain("{weight}");
     expect(bad((c) => { c.pace.rate = "fast"; return c; }).join(" ")).toContain("{rate}");
-    expect(bad((c) => { c.pace.result = "{target} soon"; return c; }).join(" ")).toContain("{kcal}");
+    expect(bad((c) => { c.pace.result = "{target} soon"; return c; }).join(" ")).toContain("{month}");
     expect(bad((c) => { c.pace.echo = "{bogus}"; return c; }).join(" ")).toContain("{bogus}");
     expect(bad((c) => { c.target.suggestion.up = "try {wish}"; return c; }).join(" ")).toContain("{wish}");
   });

@@ -390,7 +390,7 @@ describe("the plan's computed words", () => {
     expect(p.ratePerWeek).not.toBeNull();
     expect(Math.abs(p.ratePerWeek! * 10 - Math.round(p.ratePerWeek! * 10))).toBe(0);
     expect(p.line).toContain("68kg");
-    expect(p.line).toContain("kcal a day");
+    expect(p.line).not.toContain("kcal");
     expect(p.line).not.toContain("{");
   });
 

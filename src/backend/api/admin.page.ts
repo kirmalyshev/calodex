@@ -1331,7 +1331,6 @@ details.how p { margin-top: 8px; }
     sectionHead(card, "The beats");
     field(card, "Why we ask — under the age question (may be empty)", t.ageWhy, function (v) { t.ageWhy = v; });
     field(card, "Resting echo — {rest} is computed (may be empty)", t.echo.rest, function (v) { t.echo.rest = v; });
-    field(card, "Days echo — {burn} is computed (may be empty)", t.echo.days, function (v) { t.echo.days = v; });
     field(card, "Baseline title", t.baseline.title, function (v) { t.baseline.title = v; });
     field(card, 'Baseline: "BMI" glyph', t.baseline.bmi, function (v) { t.baseline.bmi = v; });
     field(card, "Baseline: one-line explanation", t.baseline.what, function (v) { t.baseline.what = v; });
@@ -1366,7 +1365,10 @@ details.how p { margin-top: 8px; }
     sectionHead(card, "The pace");
     field(card, 'Rate line — {rate} is computed', t.rate, function (v) { t.rate = v; });
     field(card, 'Rate suffix ("a week")', t.rateSuffix, function (v) { t.rateSuffix = v; });
-    field(card, 'Result — {target} {month} {kcal} are computed', t.result, function (v) { t.result = v; });
+    field(card, 'Result — {target} {month} are computed', t.result, function (v) { t.result = v; });
+    t.heading = t.heading || { lose: "", gain: "" };
+    field(card, 'Question when the goal is lose weight (empty: the generic Pace line)', t.heading.lose, function (v) { t.heading.lose = v; });
+    field(card, 'Question when the goal is gain weight (empty: the generic Pace line)', t.heading.gain, function (v) { t.heading.gain = v; });
     field(card, 'Answer echo — {from} {to} are computed (may be empty)', t.echo, function (v) { t.echo = v; });
     return card;
   }
