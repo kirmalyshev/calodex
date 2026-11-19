@@ -12,6 +12,10 @@ import type { EngineDeps } from "./deps.ts";
  * A FIRST delivery naming an account is also one `subscription_<type>` analytics event; a retried
  * one is not, because the event id is already logged.
  */
+/** RevenueCat's type as an event name; `SUBSCRIPTION_PAUSED` is `subscription_paused`, not doubled. */
+export const subscriptionEvent = (type: string): string =>
+  `subscription_${type.toLowerCase().replace(/^subscription_/, "")}`;
+
 export async function logRevenueCatEvent(
   deps: EngineDeps, row: RevenueCatEventRow,
   lifecycle: { is_trial_conversion: boolean | null; cancel_reason: string | null } = { is_trial_conversion: null, cancel_reason: null },
@@ -22,7 +26,7 @@ export async function logRevenueCatEvent(
   }
   if (!fresh || row.userId === null) return;
   // Every subscription_* event shares one prop list; `track` drops a type the catalog does not list.
-  const event = `subscription_${row.type.toLowerCase()}` as "subscription_renewal";
+  const event = subscriptionEvent(row.type) as "subscription_renewal";
   await track(deps, row.userId, event, {
     product_id: row.productId, period_type: row.periodType, presented_offering_id: row.presentedOfferingId,
     price: row.price, currency: row.currency, store: row.store, country_code: row.countryCode,

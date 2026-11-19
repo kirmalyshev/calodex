@@ -927,3 +927,12 @@ describe("every delivery is logged", () => {
     spy.mockRestore(); warn.mockRestore();
   });
 });
+
+describe("subscription event names (ieat-app#3196)", () => {
+  it("never doubles the prefix RevenueCat's own type already carries", async () => {
+    const { subscriptionEvent } = await import("../engine/acquisition.ts");
+    expect(subscriptionEvent("SUBSCRIPTION_PAUSED")).toBe("subscription_paused");
+    expect(subscriptionEvent("SUBSCRIPTION_EXTENDED")).toBe("subscription_extended");
+    expect(subscriptionEvent("RENEWAL")).toBe("subscription_renewal");
+  });
+});

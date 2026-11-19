@@ -145,8 +145,8 @@ export const ANALYTICS_EVENTS = {
   subscription_billing_issue: SUBSCRIPTION,
   subscription_expiration: SUBSCRIPTION,
   subscription_non_renewing_purchase: SUBSCRIPTION,
-  subscription_subscription_paused: SUBSCRIPTION,
-  subscription_subscription_extended: SUBSCRIPTION,
+  subscription_paused: SUBSCRIPTION,
+  subscription_extended: SUBSCRIPTION,
   subscription_temporary_entitlement_grant: SUBSCRIPTION,
   subscription_refund_reversed: SUBSCRIPTION,
   // Coming back
