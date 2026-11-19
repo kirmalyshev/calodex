@@ -108,6 +108,7 @@ export const ANALYTICS_EVENTS = {
   // Onboarding
   onboarding_step: { surfaces: BOTH, props: ["place", "action", "ms", "field"] },
   onboarding_plan_completed: { surfaces: BOTH, props: [] },
+  first_verdict_shown: { surfaces: APP, props: [] },
   health_connect_result: { surfaces: APP, props: ["connected"] },
   // Accounts
   signup_completed: { surfaces: BOTH, props: ["provider", "after_onboarding"] },
