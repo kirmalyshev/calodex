@@ -1810,14 +1810,12 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       noteYearly: w.yearlyCheckoutUrl === "" ? ""
         : w.trialDays > 0
           ? fill(pay.trialNote, {
-            days: String(w.trialDays),
             renewal: fill(pay.pricePerYear, { price: cur(w.yearlyPrice) }),
           })
           : fill(pay.renewNoteYearly, { price: cur(w.yearlyPrice) }),
       noteMonthly: w.monthlyCheckoutUrl === "" ? ""
         : w.trialDays > 0
           ? fill(pay.trialNote, {
-            days: String(w.trialDays),
             renewal: fill(pay.pricePerMonth, { price: cur(w.monthlyPrice) }),
           })
           : fill(pay.renewNoteMonthly, { price: cur(w.monthlyPrice) }),
