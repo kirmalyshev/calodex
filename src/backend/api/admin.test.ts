@@ -2036,6 +2036,7 @@ describe("arm screens body rules (#3167, review round 1)", () => {
     const screens = { baseline: [{ template: "beat", version: 1 }] };
     expect((await admin("PUT", arm, { screens, content: {} })).status).toBe(422);
     expect((await admin("PUT", arm, { screens, order: null })).status).toBe(422);
+    expect((await admin("PUT", arm, { screens, firstVerdict: null })).status).toBe(422);
     const armOf = async () => (await store.listOnboardingExperiments()).find((e) => e.id === experiment.id)!.variants[1]!;
     expect((await armOf()).screens).toBeUndefined();
     expect((await admin("PUT", arm, { screens })).status).toBe(200);

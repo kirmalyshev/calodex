@@ -960,6 +960,10 @@ export async function startOnboardingExperiment(
   if (web && experiment.variants.some((v) => v.firstVerdict !== undefined)) {
     return { ok: false, errors: ['an arm with a first verdict runs on the app only — set surfaces to ["app"]'] };
   }
+  // Template screens are the app's too (ieat-app#3167, Q4): the web declares no renderer.
+  if (web && experiment.variants.some((v) => v.screens !== undefined)) {
+    return { ok: false, errors: ['an arm with template screens runs on the app only — set surfaces to ["app"]'] };
+  }
   // Re-checked at the start like the order: a stored arm this build does not know, or one on the
   // control (the live flow by definition), must not reach a client typed as a valid arm.
   for (const [i, v] of experiment.variants.entries()) {

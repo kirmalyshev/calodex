@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "bun:test";
-import { DEFAULT_ONBOARDING_CONTENT, LANGS, TEMPLATE_RENDERER_VERSION, type OnboardingContent, type ScreenTemplateDraft } from "@eait/shared";
+import { DEFAULT_ONBOARDING_CONTENT, FIRST_VERDICT_VERSION, LANGS, TEMPLATE_RENDERER_VERSION, type OnboardingContent, type ScreenTemplateDraft } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { logMail } from "../mail/log.ts";
 import { demoPorts } from "../llm/demo.ts";
@@ -34,7 +34,7 @@ const draft = (over: Partial<ScreenTemplateDraft> = {}): ScreenTemplateDraft => 
 });
 const content = (version: number): OnboardingContent => ({ ...structuredClone(DEFAULT_ONBOARDING_CONTENT), version });
 const experiment = (screens: unknown) => ({
-  id: crypto.randomUUID(), lang: "en" as const, status: "draft" as const, rules: {},
+  id: crypto.randomUUID(), lang: "en" as const, status: "draft" as const, rules: { surfaces: ["app" as const] } as { surfaces?: ("app" | "web")[] },
   variants: [{ control: true, weight: 0, content: content(41) }, { weight: 1, content: content(42), ...(screens ? { screens } : {}) }],
   created_by: admin, created_at: new Date().toISOString(), started_at: null, stopped_at: null, revision: 1,
 });
@@ -186,6 +186,29 @@ describe("review round 1 (#3167)", () => {
     await store.setSwitch("onboarding.experiments", true, admin);
     expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: false, errors: ["arm 1: screens.baseline[0]: nope@1 does not exist"] });
     expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)?.status).toBe("draft");
+  });
+
+  it("refuses to start a screens arm that the web would enrol nobody into", async () => {
+    await saveScreenTemplate(deps, admin, "day", draft());
+    const e = experiment(null);
+    e.rules = {};
+    await store.putOnboardingExperiment(e as never);
+    await saveOnboardingVariantScreens(deps, e.id, 1, { baseline: [{ template: "day", version: 1 }] });
+    await store.setSwitch("onboarding.experiments", true, admin);
+    expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: false, errors: ['an arm with template screens runs on the app only — set surfaces to ["app"]'] });
+  });
+
+  it("serves an arm's first verdict and its screens together", async () => {
+    await saveScreenTemplate(deps, admin, "day", draft());
+    const e = experiment(null);
+    (e.variants[1] as Record<string, unknown>).firstVerdict = "welcome-plate";
+    await store.putOnboardingExperiment(e as never);
+    expect(await saveOnboardingVariantScreens(deps, e.id, 1, { baseline: [{ template: "day", version: 1 }] })).toEqual({ ok: true });
+    await store.setSwitch("onboarding.experiments", true, admin);
+    expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: true });
+    const r = await onboardingServedFor(deps, userId, { ...at("Europe/Berlin"), verdictVersion: FIRST_VERDICT_VERSION });
+    expect(r.firstVerdict).toBe("welcome-plate");
+    expect(r.screens?.slots.baseline?.template).toBe("day");
   });
 
   it("answers a lost version race as a conflict", async () => {
