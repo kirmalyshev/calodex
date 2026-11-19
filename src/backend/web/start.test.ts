@@ -1846,6 +1846,21 @@ describe("the soft offer after the plan", () => {
       .toBe(`https://pay.rev.cat/y/${userId}`);
     expect((await get("/start/checkout?plan=monthly", session)).headers.get("location"))
       .toBe(`https://pay.rev.cat/m/${userId}`);
+    // The exit link needs the admin's web switch on top of its configuration (#3155).
+    await store.setSwitch("paywall.exit-offer.web", true, crypto.randomUUID());
+    expect((await get("/start/checkout?plan=exit", session)).headers.get("location"))
+      .toBe(`https://pay.rev.cat/u/${userId}`);
+  });
+
+  // #3155 — switched off, `plan=exit` is the same as a plan the host never configured: no route.
+  it("answers plan=exit only while the admin's web exit-offer switch is on", async () => {
+    router({ ...CONFIG, webPaywall: { ...PAYWALL,
+      exitOfferCheckoutUrl: "https://pay.rev.cat/u/{userId}",
+      exitOfferPrice: 23.99 } });
+    const session = await signIn();
+    const userId = await webUser(session);
+    expect((await get("/start/checkout?plan=exit", session)).status).toBe(404);
+    await store.setSwitch("paywall.exit-offer.web", true, crypto.randomUUID());
     expect((await get("/start/checkout?plan=exit", session)).headers.get("location"))
       .toBe(`https://pay.rev.cat/u/${userId}`);
   });

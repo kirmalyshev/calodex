@@ -16,6 +16,12 @@ export const SWITCH_DEFAULT: Record<SwitchKey, boolean> = {
   // Ships OFF (ieat-app#2669): while it is, every onboarding request gets control and no
   // assignment is written. Flipping it takes effect on the next fetch, no deploy.
   "onboarding.experiments": false,
+  // Both ship OFF (ieat-app#3155): a paywall decline meets the exit offer only after the admin
+  // arms its platform. Read per profile response, so a flip lands on the next fetch — on the
+  // phone that is an OTA-free answer, no deploy and no build — and `web` is also read per
+  // `/start/checkout?plan=exit`, where off answers 404 like a plan never configured.
+  "paywall.exit-offer.ios": false,
+  "paywall.exit-offer.web": false,
 };
 
 export async function switchOn(deps: EngineDeps, key: SwitchKey): Promise<boolean> {

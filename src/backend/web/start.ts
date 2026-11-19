@@ -46,7 +46,7 @@ import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
   onboardingContentFor, onboardingServedFor, mintPairingCode, patchProfile, profileView,
-  sendEmailCode, signInWithProvider, verifyEmailCode,
+  sendEmailCode, signInWithProvider, switchOn, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
 } from "../engine/index.ts";
@@ -1761,7 +1761,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       plan === null ? config.webPaywall.yearlyCheckoutUrl || config.webPaywall.monthlyCheckoutUrl
       : plan === "yearly" ? config.webPaywall.yearlyCheckoutUrl
       : plan === "monthly" ? config.webPaywall.monthlyCheckoutUrl
-      : plan === "exit" ? config.webPaywall.exitOfferCheckoutUrl
+      // `exit` is also gated on the admin's web switch (ieat-app#3155): off answers like a plan
+      // the operator never configured — no route.
+      : plan === "exit" ? (await switchOn(ctx.deps, "paywall.exit-offer.web") ? config.webPaywall.exitOfferCheckoutUrl : "")
       : "";
     if (target === "") return notFound();
     return seeOther(target.replaceAll("{userId}", encodeURIComponent(userId)));

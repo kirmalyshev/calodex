@@ -51,7 +51,11 @@ export interface WebPaywall {
   yearly: YearlyPlan | null;
   /** Monthly — null when no monthly checkout is configured. */
   monthly: PaywallPlan | null;
-  /** The offer shown once after the plans are declined — null = a decline goes to the app. */
+  /**
+   * The offer shown once after the plans are declined — null = a decline goes to the app. The
+   * admin's `web` switch un-arms it too (ieat-app#3155): switched off is this same null, the
+   * shape of one never configured.
+   */
   exitOffer: ExitOffer | null;
   /**
    * The legal footer's Terms href — the operator's `TERMS_URL`, verbatim. "" means no terms are
@@ -118,4 +122,27 @@ export function offerMath(regularYearly: number, offer: number): OfferMath | nul
   const percentOff = Math.floor(((regularYearly - offer) / regularYearly) * 100);
   if (percentOff < 1) return null;
   return { percentOff, perMonth: perMonth(offer) };
+}
+
+/**
+ * The admin's per-platform arming of the decline → offer (ieat-app#3155), as
+ * `ProfileResponse.exitOfferEnabled` carries it. One flag per platform the offer can surface on,
+ * each defaulting OFF.
+ */
+export interface ExitOfferSwitches {
+  ios: boolean;
+  web: boolean;
+}
+
+/**
+ * The admin's arm for the decline → offer, per platform (ieat-app#3155), read off a profile
+ * answer's `exitOfferEnabled`. Present AND true means on — anything else is off, including a
+ * server that predates the field and sends none at all, which is why the parameter's own type
+ * lets the field be absent rather than asking every caller to cast an old answer into a new one.
+ */
+export function exitOfferOn(
+  profile: { exitOfferEnabled?: ExitOfferSwitches } | null | undefined,
+  platform: "ios" | "web",
+): boolean {
+  return profile?.exitOfferEnabled?.[platform] === true;
 }
