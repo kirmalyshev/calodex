@@ -2313,7 +2313,16 @@ export interface OnboardingFunnel {
   range: AdminWindowEcho;
   contentVersion: number;
   rows: FunnelRow[];
+  /** Every value each dimension holds in the window, sorted, whatever filters narrowed the counts (ieat-app#3196). */
+  dimensions: FunnelDimensions;
 }
+
+/** The funnel's single-value dimensions (ieat-app#3196): the stamped event context, and the account's `acq_source`. */
+export const FUNNEL_DIMENSIONS = ["surface", "app_version", "lang", "country", "acq_source"] as const;
+export type FunnelDimension = (typeof FUNNEL_DIMENSIONS)[number];
+export type FunnelDimensions = Record<FunnelDimension, string[]> & { arm: { experiment_id: string; arm: string }[] };
+/** What narrows the funnel: each key present keeps only the events whose value equals it. */
+export type FunnelFilters = Partial<Record<FunnelDimension | "experiment_id" | "arm", string>>;
 
 /** The compiled-in English flow with the brand filled: what a client draws before the server answers. The raw table, tokens intact, is `DEFAULT_ONBOARDING_CONTENT_RAW`. */
 export const DEFAULT_ONBOARDING_CONTENT: OnboardingContent = branded(DEFAULT_ONBOARDING_CONTENT_RAW);

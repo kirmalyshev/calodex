@@ -246,3 +246,24 @@ test("the channel select re-reads the account list with channel=, and a row carr
 function json(body: unknown) {
   return { status: 200, contentType: "application/json", body: JSON.stringify(body) } as const;
 }
+
+test("the funnel's dimension selects narrow the request and keep their choice (ieat-app#3196)", async ({ page }) => {
+  const errors = watchConsole(page);
+  await stub(page);
+  const asked: string[] = [];
+  const dims = { surface: ["app", "web"], app_version: ["3.1"], lang: ["de"], country: ["DE"], acq_source: ["asa"], arm: [{ experiment_id: "exp-12345678", arm: "7" }] };
+  await page.route("**/admin/api/funnel**", (r) => {
+    const u = new URL(r.request().url());
+    if (!u.pathname.endsWith("/admin/api/funnel")) return r.fallback();
+    asked.push(u.search);
+    return r.fulfill(json({ ...FUNNEL, dimensions: dims }));
+  });
+  await page.goto("/admin#funnel");
+  await expect(page.locator("#funnel-dim-surface option")).toHaveCount(3);
+  await page.locator("#funnel-dim-surface").selectOption("web");
+  await expect.poll(() => asked.some((q) => q.includes("surface=web"))).toBe(true);
+  await page.locator("#funnel-dim-arm").selectOption({ label: "exp-1234 · arm 7" });
+  await expect.poll(() => asked.some((q) => q.includes("surface=web") && q.includes("experiment=exp-12345678&arm=7"))).toBe(true);
+  await expect(page.locator("#funnel-dim-surface")).toHaveValue("web");
+  expect(errors).toEqual([]);
+});

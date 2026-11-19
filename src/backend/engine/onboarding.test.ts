@@ -633,6 +633,10 @@ describe("experiments (ieat-app#2669)", () => {
     expect(raw.version).toBe(43);
     expect(view.arms[1]!.stats.assigned).toBe(1);
     expect(view.arms[1]!.stats.sessions).toBe(1);
+    expect(view.arms[1]!.stats).toMatchObject({ paid: 0, paid_rate: 0, by_surface: { app: { sessions: 1 }, web: { sessions: 0 } } });
+    await store.putEntitlement(userId, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "yearly", eventAt: "2098-01-01T00:00:00.000Z" });
+    view = (await onboardingExperiments(deps)).find((v) => v.experiment.id === e.id)!;
+    expect(view.arms[1]!.stats).toMatchObject({ paid: 1, paid_rate: 1 });
   });
 
   it("clones a control that predates ui/beats into an arm the editor can open", async () => {

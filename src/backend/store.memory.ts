@@ -5,10 +5,10 @@
 // resolves to null" is proving something about the engine rather than about a mock's mood.
 
 import type { AppId, DistributionChannel, MealReminders, ScreenTemplateDraft } from "@eait/shared";
-import { FOOD_SOURCE_IDS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
+import { FOOD_SOURCE_IDS, FUNNEL_DIMENSIONS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import type {
   DayTotals, FoodRef, HealthDay, Lang, MealRecord, NotificationCopySet, OffProduct,
-  OnboardingContentSet, OnboardingEvent,
+  FunnelDimensions, FunnelFilters, OnboardingContentSet, OnboardingEvent,
   Profile, Provider, PushKind, PushTemplateRow, SavedMeal,
 } from "@eait/shared";
 import {
@@ -21,7 +21,7 @@ import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, isTester, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
-  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type ExperimentSurfaceCounts, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
   type Acquisition, type RevenueCatEventRow,
@@ -62,7 +62,7 @@ export interface FunnelGrant {
  * `grantOf` reads the account's own entitlement record — the paid step's only source (#812). A
  * run counts as converted when its earliest recorded grant came at or after the run's first event.
  */
-export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string) => FunnelGrant | null = () => null): FunnelAggregate {
+export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string) => FunnelGrant | null = () => null): Omit<FunnelAggregate, "dimensions"> {
   const byPlace = new Map<string, { views: number; people: Set<string>; answers: number; backs: number; rejects: number; ms: number[] }>();
   const sessions = new Set<string>();
   const completed = new Set<string>();
@@ -1874,14 +1874,28 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return [...users.values()].filter((u) => u.onboarded_at && Date.parse(u.onboarded_at) >= since).length;
     },
 
-    async onboardingFunnel(range, staffIds = [], includeTesters = false) {
+    async onboardingFunnel(range, staffIds = [], includeTesters = false, filters: FunnelFilters = {}) {
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
-      return aggregateFunnel(
-        [...onboardingEvents.values()]
-          .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)
-            && (includeTesters || !tester(e.userId))),
-        funnelGrant);
+      const population = [...onboardingEvents.values()]
+        .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)
+          && (includeTesters || !tester(e.userId)));
+      const valueOf = (e: StoredEvent, k: keyof FunnelFilters) =>
+        k === "acq_source" ? acquisitions.get(e.userId)?.source ?? null : e.context[k];
+      const narrowed = population.filter((e) =>
+        (Object.keys(filters) as (keyof FunnelFilters)[]).every((k) => filters[k] === undefined || valueOf(e, k) === filters[k]));
+      const sorted = (vs: (string | null)[]) => [...new Set(vs.filter((v): v is string => v !== null))].sort();
+      const arms = new Map<string, { experiment_id: string; arm: string }>();
+      for (const e of population) {
+        if (e.context.experiment_id !== null && e.context.arm !== null) {
+          arms.set(`${e.context.experiment_id}\u0000${e.context.arm}`, { experiment_id: e.context.experiment_id, arm: e.context.arm });
+        }
+      }
+      const dimensions = {
+        ...Object.fromEntries(FUNNEL_DIMENSIONS.map((k) => [k, sorted(population.map((e) => valueOf(e, k)))])),
+        arm: [...arms.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, v]) => v),
+      } as FunnelDimensions;
+      return { ...aggregateFunnel(narrowed, funnelGrant), dimensions };
     },
 
     async adminOnboardingFlow(query) {
@@ -2095,9 +2109,13 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         // assignment outside it is out, and so are that account's events outside it.
         const assignedAt = Date.parse(a.assigned_at);
         if (assignedAt < lo || assignedAt > hi) continue;
+        const blank = () => ({ sessions: 0, completed: 0, completed_users: 0, fell_back: 0 });
         const row = out.get(a.variant_id)
-          ?? { variant_id: a.variant_id, assigned: 0, sessions: 0, completed: 0, completed_users: 0, fell_back: 0 };
+          ?? { variant_id: a.variant_id, assigned: 0, sessions: 0, completed: 0, completed_users: 0, fell_back: 0, paid: 0, by_surface: { app: blank(), web: blank() } };
         row.assigned += 1;
+        const grant = funnelGrant(a.user_id)?.firstGrantAt ?? null;
+        if (grant !== null && Date.parse(grant) >= assignedAt) row.paid += 1;
+        const bySurface = { app: new Map<string, { completed: boolean; fell: boolean }>(), web: new Map<string, { completed: boolean; fell: boolean }>() };
         // One session's verdicts: a run is completed if ANY of its events completes, and fell
         // back if ANY event names a revision other than the assigned one. The window is the
         // experiment's: events before the assignment — or after a stop — are the user's history,
@@ -2108,17 +2126,25 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           const at = Date.parse(e.at);
           if (at < assignedAt || at < lo || at > hi) continue;
           if (experiment?.stopped_at != null && at > Date.parse(experiment.stopped_at)) continue;
-          const r = runs.get(e.sessionId) ?? { completed: false, fell: false };
-          if (e.action === "complete") r.completed = true;
-          if (e.contentVersion !== a.variant_id) r.fell = true;
-          runs.set(e.sessionId, r);
+          const surface = e.context.surface === "web" ? "web" : "app";
+          for (const m of [runs, bySurface[surface]]) {
+            const r = m.get(e.sessionId) ?? { completed: false, fell: false };
+            if (e.action === "complete") r.completed = true;
+            if (e.contentVersion !== a.variant_id) r.fell = true;
+            m.set(e.sessionId, r);
+          }
         }
-        row.sessions += runs.size;
-        if ([...runs.values()].some((r) => r.completed)) row.completed_users += 1;
-        for (const r of runs.values()) {
-          if (r.completed) row.completed += 1;
-          if (r.fell) row.fell_back += 1;
-        }
+        const tally = (into: ExperimentSurfaceCounts, m: Map<string, { completed: boolean; fell: boolean }>) => {
+          into.sessions += m.size;
+          if ([...m.values()].some((r) => r.completed)) into.completed_users += 1;
+          for (const r of m.values()) {
+            if (r.completed) into.completed += 1;
+            if (r.fell) into.fell_back += 1;
+          }
+        };
+        tally(row, runs);
+        tally(row.by_surface.app, bySurface.app);
+        tally(row.by_surface.web, bySurface.web);
         out.set(a.variant_id, row);
       }
       return [...out.values()];

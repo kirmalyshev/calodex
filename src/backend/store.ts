@@ -18,7 +18,7 @@ import type {
   OnboardingContent, OnboardingContentSet,
   OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
-import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft } from "@eait/shared";
+import type { ArmScreens, FunnelDimensions, FunnelFilters, ScreenTemplate, ScreenTemplateDraft } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 import { ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 
@@ -648,6 +648,8 @@ export interface FunnelAggregate {
     /** Median time on screen before an answer, in ms. Null when nothing was answered. */
     medianMs: number | null;
   }[];
+  /** Every value in the window over the same population, NOT narrowed by the filters. */
+  dimensions: FunnelDimensions;
 }
 
 // ── The per-account funnel (#812) ────────────────────────────────────────────────────────────
@@ -860,6 +862,17 @@ export interface OnboardingExperimentFunnelRow {
    *  not per session, so a restart cannot inflate it. */
   completed_users: number;
   /** Runs that rendered a different revision than assigned — the fell-back count. */
+  fell_back: number;
+  /** Assigned users whose earliest grant clock is at or after the assignment (ieat-app#3196). */
+  paid: number;
+  /** The run counts by the events' stamped surface; a row from before the column is `app`. */
+  by_surface: Record<"app" | "web", ExperimentSurfaceCounts>;
+}
+
+export interface ExperimentSurfaceCounts {
+  sessions: number;
+  completed: number;
+  completed_users: number;
   fell_back: number;
 }
 
@@ -1818,7 +1831,7 @@ export interface Store {
   /** The funnel inside `range` (#2776), aggregated. Reads every user except staff-flagged ones (#2783) — this is the admin's view.
    * `staffIds` are accounts staff by config (`campaignStaffIds`), left out beside the flag.
    * TESTERS (`isTester`) are left out too unless `includeTesters` (ieat-app#2899). */
-  onboardingFunnel(range: AdminRange, staffIds?: string[], includeTesters?: boolean): Promise<FunnelAggregate>;
+  onboardingFunnel(range: AdminRange, staffIds?: string[], includeTesters?: boolean, filters?: FunnelFilters): Promise<FunnelAggregate>;
   /**
    * The per-account funnel (#812). `userId` absent → every account that sent an onboarding
    * event inside `range`, newest first, keyset-paged — the same population as

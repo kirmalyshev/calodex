@@ -4037,6 +4037,33 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(places.find((r) => r.variant_id === 41 && r.place === "goal")).toMatchObject({ people: 1, views: 1 });
       });
 
+      it("counts an arm's accounts paid after assignment, and splits its runs by surface (ieat-app#3196)", async () => {
+        const s = await open();
+        const e = exp({ id: `paid-arm-${RUN}` });
+        await s.putOnboardingExperiment(e); created.push(e.id);
+        const mk = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+        const before = await mk(), after = await mk(), never = await mk(), onWeb = await mk();
+        await s.putEntitlement(before, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: "2001-01-01T00:00:00.000Z" });
+        for (const u of [before, after, never, onWeb]) {
+          const a = await s.putOnboardingAssignment(u, e.id, 41);
+          await s.recordOnboardingEvents(u, [
+            { id: crypto.randomUUID(), sessionId: "p-" + u, place: "goal", action: "view", contentVersion: 41, at: a.assigned_at },
+            { id: crypto.randomUUID(), sessionId: "p-" + u, place: "goal", action: "complete", contentVersion: u === never ? 42 : 41, at: a.assigned_at },
+          ] as never, { surface: u === onWeb ? "web" : "app" } as never);
+          if (u === after || u === onWeb) {
+            await s.putEntitlement(u, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "yearly", eventAt: new Date(Date.parse(a.assigned_at) + 60_000).toISOString() });
+          }
+        }
+        const v41 = (await s.onboardingExperimentFunnel(e.id, { from: null, to: null })).find((r) => r.variant_id === 41);
+        expect(v41).toMatchObject({
+          assigned: 4, sessions: 4, completed: 4, paid: 2,
+          by_surface: {
+            app: { sessions: 3, completed: 3, completed_users: 3, fell_back: 1 },
+            web: { sessions: 1, completed: 1, completed_users: 1, fell_back: 0 },
+          },
+        });
+      });
+
       it("keeps an arm's order, and counts each arm's places inside the arm's own window (ieat-app#2788)", async () => {
         const s = await open();
         const order = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
@@ -5483,6 +5510,43 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect(goal.people - (baseGoal?.people ?? 0)).toBe(3);
       expect(goal.views - (baseGoal?.views ?? 0)).toBe(3);
       expect((await s.onboardingFunnel({ from: range.to, to: range.from })).sessions).toBe(0);
+    });
+
+    it("narrows the funnel by each context dimension, and lists every value the range holds (ieat-app#3196)", async () => {
+      const s = await open();
+      const all = { from: null, to: null };
+      const v = `9.${RUN}`;
+      const x = `dim-x-${RUN}`;
+      const app = await s.createUser("en");
+      const web = await s.createUser("en");
+      await s.putAcquisition(app, { source: `asa-${RUN}`, campaign: null, adGroup: null, keyword: null, via: "adservices" });
+      const at = new Date().toISOString();
+      const ev = (sid: string, action: string) => [{ id: crypto.randomUUID(), sessionId: sid, place: "goal", action, contentVersion: 1, at }];
+      const appCtx = { surface: "app", app_version: v, lang: "de", country: "AT", experiment_id: x, arm: "77" };
+      await s.recordOnboardingEvents(app, ev(`dim-app-${RUN}`, "view") as never, appCtx as never);
+      await s.recordOnboardingEvents(app, ev(`dim-app-${RUN}`, "complete") as never, appCtx as never);
+      await s.recordOnboardingEvents(web, ev(`dim-web-${RUN}`, "view") as never, { surface: "web", app_version: v, lang: "en", country: "DE" } as never);
+      await s.putEntitlement(app, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: new Date(Date.parse(at) + 60_000).toISOString() });
+      const f = (filters: Record<string, string>) => s.onboardingFunnel(all, [], false, { app_version: v, ...filters });
+
+      expect(await f({})).toMatchObject({ sessions: 2, completed: 1, paid: { converted: 1 } });
+      expect(await f({ surface: "app" })).toMatchObject({ sessions: 1, completed: 1, paid: { converted: 1 } });
+      expect(await f({ surface: "web" })).toMatchObject({ sessions: 1, completed: 0, paid: { converted: 0 } });
+      expect((await f({ lang: "de" })).sessions).toBe(1);
+      expect((await f({ country: "DE" })).sessions).toBe(1);
+      expect((await f({ acq_source: `asa-${RUN}` })).sessions).toBe(1);
+      expect((await f({ experiment_id: x, arm: "77" })).rows.find((r) => r.place === "goal")?.people).toBe(1);
+      expect((await f({ experiment_id: x, arm: "78" })).sessions).toBe(0);
+      expect((await f({ surface: "web", lang: "de" })).sessions).toBe(0);
+
+      const d = (await f({ surface: "web" })).dimensions;
+      expect(d.app_version).toContain(v);
+      expect(d.surface).toEqual(expect.arrayContaining(["app", "web"]));
+      expect(d.lang).toEqual(expect.arrayContaining(["de", "en"]));
+      expect(d.country).toEqual(expect.arrayContaining(["AT", "DE"]));
+      expect(d.acq_source).toContain(`asa-${RUN}`);
+      expect(d.arm).toContainEqual({ experiment_id: x, arm: "77" });
+      expect([...d.app_version].sort()).toEqual(d.app_version);
     });
 
     it("leaves a staff account's onboarding events out of the funnel (#2783)", async () => {
