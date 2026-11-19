@@ -4806,7 +4806,7 @@
               "number",
               "null"
             ],
-            "description": "The onboarding copy revision this account is served: its arm's, else the live one."
+            "description": "The onboarding copy revision this account was last served; before any serving, its arm's, else the live one."
           },
           "lang": {
             "anyOf": [
@@ -4835,14 +4835,14 @@
               "string",
               "null"
             ],
-            "description": "The assigned variant's content version, as text — the id the admin's arms carry."
+            "description": "The assigned variant's content version, as text — the id the admin's arms carry. With `experiment_id`, null unless the copy last served is that variant's."
           },
           "template": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The served screen template as `key@version`, or null."
+            "description": "The served templates, `key@version` comma-joined in slot order; on a funnel row, that row's own one. Null when none."
           },
           "acq_source": {
             "type": [
@@ -8931,6 +8931,30 @@
           "screens": {
             "$ref": "#/components/schemas/ServedScreens",
             "description": "The arm's template screens, one per slot whose local-hour window holds now (ieat-app#3167), absent for none. Sent only to a client that declared `?renderer=` at or above what the templates need. Strings are already in `lang`. A client that cannot validate a screen skips that slot and walks the compiled beat."
+          },
+          "experiment": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "arm": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "arm"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The experiment and arm this answer's copy is (ieat-app#3196), for the client's analytics super properties; null when it served the live flow, including an arm held but not drawable here."
           }
         },
         "required": [

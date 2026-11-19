@@ -15,7 +15,7 @@ export const ANALYTICS_SERVER_KEYS = [
   "acq_source", "acq_campaign", "acq_adgroup", "acq_keyword", "referrer",
 ] as const;
 
-/** What only the client knows about itself; the server reads the first six from request headers. */
+/** What only the client knows about itself; the server reads five from request headers and `surface` from the route. */
 export const ANALYTICS_CLIENT_KEYS = [
   "surface", "brand", "app_version", "build", "ota_update_id", "channel", "paywall_offering",
 ] as const;
@@ -32,14 +32,14 @@ export interface AnalyticsContext {
   ota_update_id: string | null;
   channel: DistributionChannel | null;
   paywall_offering: string | null;
-  /** The onboarding copy revision this account is served: its arm's, else the live one. */
+  /** The onboarding copy revision this account was last served; before any serving, its arm's, else the live one. */
   content_version: number | null;
   lang: Lang | null;
   country: string | null;
   experiment_id: string | null;
-  /** The assigned variant's content version, as text — the id the admin's arms carry. */
+  /** The assigned variant's content version, as text — the id the admin's arms carry. With `experiment_id`, null unless the copy last served is that variant's. */
   arm: string | null;
-  /** The served screen template as `key@version`, or null. */
+  /** The served templates, `key@version` comma-joined in slot order; on a funnel row, that row's own one. Null when none. */
   template: string | null;
   acq_source: string | null;
   acq_campaign: string | null;
@@ -54,6 +54,14 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
 const _exact: Same<keyof AnalyticsContext, AnalyticsContextKey> = true;
 void _exact;
 
+/**
+ * The one `acq_source` rule: a paid campaign outranks a referral, a referral outranks Apple's
+ * "organic". Both stores' funnel filter and dimension compute the same in their own terms.
+ */
+export function effectiveAcqSource(acquired: string | null, referred: boolean): string | null {
+  return acquired !== null && acquired !== "organic" ? acquired : referred ? "referral" : acquired;
+}
+
 export type AnalyticsServerContext = Pick<AnalyticsContext, (typeof ANALYTICS_SERVER_KEYS)[number]>;
 
 /** The context columns on `onboarding_events`, stamped by the server at record time. */
@@ -64,7 +72,7 @@ export const ONBOARDING_EVENT_CONTEXT_KEYS = [
 export type OnboardingEventContext = Pick<AnalyticsContext, (typeof ONBOARDING_EVENT_CONTEXT_KEYS)[number]>;
 
 export interface AnalyticsEventSpec {
-  /** Where the event is emitted — the web half is the target P4 builds to, not today's state. */
+  /** Where a client emits the event. */
   surfaces: readonly AnalyticsSurface[];
   /** Emitted by the server alone, from a delivery no client sees; `surfaces` is then empty. */
   server?: true;
@@ -91,16 +99,17 @@ const SUBSCRIPTION = {
 } as const;
 
 /**
- * Every product event by name. The app's `posthog?.capture(…)` calls and `paywall-events.ts` are
- * the source; the server's funnel is `onboarding_events` (`ONBOARDING_ACTIONS`), whose PostHog
- * twin is `onboarding_step`.
+ * Every product event by name. This catalog is the source: every client's captures and the
+ * server's `track` calls conform to it. The funnel is `onboarding_events` (`ONBOARDING_ACTIONS`),
+ * whose PostHog twin is `onboarding_step`. On the web, `onboarding_step`, `onboarding_plan_completed`,
+ * `signup_completed` and `signin_completed` are sent by the server, from /start.
  */
 export const ANALYTICS_EVENTS = {
   // Onboarding
   onboarding_step: { surfaces: BOTH, props: ["place", "action", "ms", "field"] },
   onboarding_plan_completed: { surfaces: BOTH, props: [] },
   health_connect_result: { surfaces: APP, props: ["connected"] },
-  // Accounts — the web half of these four is the server's, from /start
+  // Accounts
   signup_completed: { surfaces: BOTH, props: ["provider", "after_onboarding"] },
   signin_completed: { surfaces: BOTH, props: ["provider", "outcome"] },
   signed_out: { surfaces: BOTH, props: ["everywhere"] },

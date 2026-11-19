@@ -217,6 +217,26 @@ describe("experiments (ieat-app#2669)", () => {
       .toBe("welcome-plate");
   });
 
+  it("names the experiment and arm only when the arm's copy is what it served (ieat-app#3196)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, { firstVerdict: "welcome-plate" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+    type Served = { content: { version: number }; experiment?: unknown };
+    const get = async (path: string, token: string) => await (await admin("GET", path, undefined, token)).json() as Served;
+
+    const token = await session();
+    const armed = await get("/v1/onboarding?verdict=1", token);
+    expect(armed.experiment).toEqual({ id: experiment.id, arm: String(armed.content.version) });
+    const fellBack = await get("/v1/onboarding", token);
+    expect(fellBack.content.version).not.toBe(armed.content.version);
+    expect(fellBack.experiment).toBeNull();
+    expect((await get("/v1/onboarding", await session())).experiment).toBeNull();
+  });
+
   it("quotes the armed ask line on the lines route only with ?verdict= (ieat-app#3165)", async () => {
     const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
       .json() as { experiment: { id: string } };

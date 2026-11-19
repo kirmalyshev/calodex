@@ -5,7 +5,7 @@
 // resolves to null" is proving something about the engine rather than about a mock's mood.
 
 import type { AppId, DistributionChannel, MealReminders, ScreenTemplateDraft } from "@eait/shared";
-import { FOOD_SOURCE_IDS, FUNNEL_DIMENSIONS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
+import { FOOD_SOURCE_IDS, FUNNEL_DIMENSIONS, effectiveAcqSource, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import type {
   DayTotals, FoodRef, HealthDay, Lang, MealRecord, NotificationCopySet, OffProduct,
   FunnelDimensions, FunnelFilters, OnboardingContentSet, OnboardingEvent,
@@ -1904,7 +1904,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)
           && (includeTesters || !tester(e.userId)));
       const valueOf = (e: StoredEvent, k: keyof FunnelFilters) =>
-        k === "acq_source" ? acquisitions.get(e.userId)?.source ?? null : e.context[k];
+        k === "acq_source" ? effectiveAcqSource(acquisitions.get(e.userId)?.source ?? null, referredBy.has(e.userId))
+          : k === "surface" ? e.context.surface ?? "app" : e.context[k];
       const narrowed = population.filter((e) =>
         (Object.keys(filters) as (keyof FunnelFilters)[]).every((k) => filters[k] === undefined || valueOf(e, k) === filters[k]));
       const sorted = (vs: (string | null)[]) => [...new Set(vs.filter((v): v is string => v !== null))].sort();

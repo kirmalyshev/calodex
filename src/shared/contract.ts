@@ -1091,6 +1091,11 @@ export interface OnboardingContentResponse {
    * that slot and walks the compiled beat.
    */
   screens?: ServedScreens;
+  /**
+   * The experiment and arm this answer's copy is (ieat-app#3196), for the client's analytics super
+   * properties; null when it served the live flow, including an arm held but not drawable here.
+   */
+  experiment?: { id: string; arm: string } | null;
 }
 
 /**

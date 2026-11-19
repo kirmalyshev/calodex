@@ -1,8 +1,9 @@
 // The analytics context (ieat-app#3196): what a request says about the binary that sent it, and
-// what the server knows about the account. Both are read here and nowhere else, so the funnel rows,
-// `ProfileResponse.analytics` and every client's super properties agree.
+// what the server knows about the account. The server builds both for its own events and the funnel
+// rows, and sends the account's half in `ProfileResponse.analytics` for every client's super
+// properties; a funnel row's `template` is the client's own.
 import {
-  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
+  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, effectiveAcqSource, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
   TEMPLATE_SLOTS, usableContentFor, type AnalyticsContext, type AnalyticsServerContext, type AnalyticsSurface, type Lang,
   type OnboardingEventContext, type Profile,
 } from "@eait/shared";
@@ -43,9 +44,11 @@ async function heldArm(deps: EngineDeps, userId: string, lang: Lang): Promise<{ 
   }
 }
 
-/** The latest serving's templates, `key@version` in slot order, comma-joined; null when none. */
-function servedTemplates(served: OnboardingServedRecord[]): string | null {
-  const latest = served.reduce<OnboardingServedRecord | undefined>((a, r) => (!a || r.lastServedAt >= a.lastServedAt ? r : a), undefined);
+const latestServed = (served: OnboardingServedRecord[]) =>
+  served.reduce<OnboardingServedRecord | undefined>((a, r) => (!a || r.lastServedAt >= a.lastServedAt ? r : a), undefined);
+
+/** The serving's templates, `key@version` in slot order, comma-joined; null when none. */
+function servedTemplates(latest: OnboardingServedRecord | undefined): string | null {
   const refs = TEMPLATE_SLOTS.flatMap((slot) => {
     const ref = latest?.screens[slot];
     return ref ? [`${ref.template}@${ref.version}`] : [];
@@ -53,23 +56,41 @@ function servedTemplates(served: OnboardingServedRecord[]): string | null {
   return refs.length > 0 ? refs.join(",") : null;
 }
 
-/** What the server knows about an account, for its rows and for every client's super properties. */
+/**
+ * What the server knows about an account, for its rows and for every client's super properties.
+ * Never throws: on a failed read the account's half is null, and the profile and the funnel go on.
+ */
 export async function analyticsServerContext(deps: EngineDeps, userId: string, profile: Profile): Promise<AnalyticsServerContext> {
+  try {
+    return await readServerContext(deps, userId, profile);
+  } catch (e) {
+    const err = e as { name?: string; code?: string } | null;
+    console.error(`[eait] analytics: context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
+    const live = await deps.store.getOnboardingContent().then((c) => usableContentFor(profile.lang, c).version, () => null);
+    return {
+      ...(Object.fromEntries(ANALYTICS_SERVER_KEYS.map((k) => [k, null])) as AnalyticsServerContext),
+      content_version: live, lang: profile.lang, country: profile.country,
+    };
+  }
+}
+
+async function readServerContext(deps: EngineDeps, userId: string, profile: Profile): Promise<AnalyticsServerContext> {
   const [held, referral, acq, served] = await Promise.all([
     heldArm(deps, userId, profile.lang), deps.store.referralOf(userId), deps.store.acquisitionOf(userId),
     deps.store.onboardingServed(userId),
   ]);
   const referrer = referral?.referredBy ?? null;
+  const latest = latestServed(served);
+  const arm = held && latest?.contentVersion === held.variant.content.version ? held : null;
   return {
-    content_version: held?.variant.content.version
+    content_version: latest?.contentVersion ?? held?.variant.content.version
       ?? usableContentFor(profile.lang, await deps.store.getOnboardingContent()).version,
     lang: profile.lang,
     country: profile.country,
-    experiment_id: held?.experimentId ?? null,
-    arm: held ? String(held.variant.content.version) : null,
-    template: servedTemplates(served),
-    // A paid campaign outranks a referral; a referral outranks Apple's "organic".
-    acq_source: acq && acq.source !== "organic" ? acq.source : referrer !== null ? "referral" : acq?.source ?? null,
+    experiment_id: arm?.experimentId ?? null,
+    arm: arm ? String(arm.variant.content.version) : null,
+    template: servedTemplates(latest),
+    acq_source: effectiveAcqSource(acq?.source ?? null, referrer !== null),
     acq_campaign: acq?.campaign ?? null, acq_adgroup: acq?.adGroup ?? null, acq_keyword: acq?.keyword ?? null,
     referrer,
   };
@@ -104,12 +125,12 @@ export async function track<E extends AnalyticsEventName>(
 
 const PERSON_KEYS = ["acq_source", "acq_campaign", "acq_adgroup", "acq_keyword", "referrer"] as const;
 
-/** The columns `onboarding_events` carries: the request's half and the account's, nothing from the body. */
+/** The columns `onboarding_events` carries: the request's half and the account's. `template` is the row's own, from the body. */
 export async function onboardingEventContext(
   deps: EngineDeps, userId: string, request: AnalyticsRequest,
 ): Promise<OnboardingEventContext | undefined> {
   const profile = await deps.store.getProfile(userId);
   if (!profile) return undefined;
   const s = await analyticsServerContext(deps, userId, profile);
-  return { ...request, lang: s.lang, country: s.country, experiment_id: s.experiment_id, arm: s.arm, template: s.template };
+  return { ...request, lang: s.lang, country: s.country, experiment_id: s.experiment_id, arm: s.arm, template: null };
 }

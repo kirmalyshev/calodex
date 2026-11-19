@@ -234,7 +234,7 @@ export async function onboardingServedFor(
   userId: string | null,
   signals: OnboardingSignals,
   at: Date = new Date(),
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens; experiment?: { id: string; arm: string } }> {
   const control = usableContentFor(signals.lang, await deps.store.getOnboardingContent());
   const served = await servedRaw(deps, userId, signals, control, at);
   // The ONE place stored and variant copy is branded: the editor and the clone read it raw.
@@ -274,7 +274,7 @@ async function servedRaw(
   signals: OnboardingSignals,
   control: OnboardingContent,
   at: Date,
-): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens }> {
+): Promise<{ content: OnboardingContent; order?: readonly OnboardingPlace[]; firstVerdict?: FirstVerdictArm; screens?: ServedScreens; experiment?: { id: string; arm: string } }> {
   if (userId === null) return { content: control };
   const assigned = await assignVariant(deps, userId, signals, at);
   if (!assigned) return { content: control };
@@ -289,6 +289,7 @@ async function servedRaw(
     ...(order ? { order } : {}),
     ...(firstVerdict ? { firstVerdict } : {}),
     ...(screens ? { screens } : {}),
+    experiment: { id: assigned.experiment.id, arm: String(assigned.variant.content.version) },
   };
 }
 
@@ -360,7 +361,7 @@ export async function recordOnboardingEvents(
   deps: EngineDeps,
   userId: string,
   events: unknown,
-  request?: AnalyticsRequest,
+  request: AnalyticsRequest,
 ): Promise<number> {
   if (!Array.isArray(events)) return 0;
 
@@ -401,8 +402,12 @@ export async function recordOnboardingEvents(
 
   if (clean.length === 0) return 0;
   // The context is the SERVER's to stamp (ieat-app#3196): the request's headers, the account's row
-  // and its held arm. Whatever context-shaped keys an event carried were never read above.
-  const context = request ? await onboardingEventContext(deps, userId, request) : undefined;
+  // and its held arm. Of the body, only `template` is read; every other context-shaped key is not.
+  const context = await onboardingEventContext(deps, userId, request).catch((e: unknown) => {
+    const err = e as { name?: string; code?: string } | null;
+    console.error(`[eait] onboarding: event context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
+    return { ...request, lang: null, country: null, experiment_id: null, arm: null, template: null };
+  });
   return deps.store.recordOnboardingEvents(userId, clean, context);
 }
 

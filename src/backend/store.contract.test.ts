@@ -3272,10 +3272,12 @@ function contract(name: string, make: () => Promise<Store>) {
         channel: "testflight" as const, lang: "de" as const, country: "de", experiment_id: "exp-1", arm: "42", template: "hero@3",
       };
       await s.recordOnboardingEvents(u, [ev("stamped", 0)], context);
+      await s.recordOnboardingEvents(u, [{ ...ev("own", 500), template: "plate@2" }], context);
       await s.recordOnboardingEvents(u, [ev("bare", 1000)]);
       const [row] = (await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } })).rows;
       expect(row!.events!.map((e) => e.context)).toEqual([
         context,
+        { ...context, template: "plate@2" },
         { surface: null, brand: null, app_version: null, build: null, ota_update_id: null, channel: null,
           lang: null, country: null, experiment_id: null, arm: null, template: null },
       ]);
@@ -5630,6 +5632,35 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect(d.acq_source).toContain(`asa-${RUN}`);
       expect(d.arm).toContainEqual({ experiment_id: x, arm: "77" });
       expect([...d.app_version].sort()).toEqual(d.app_version);
+    });
+
+    it("counts a row with no surface as an app run, as the experiment's by_surface does (ieat-app#3196)", async () => {
+      const s = await open();
+      const u = await s.createUser("en");
+      const f = async (surface: string) => (await s.onboardingFunnel({ from: null, to: null }, [], false, { surface })).sessions;
+      const [app, web] = [await f("app"), await f("web")];
+      await s.recordOnboardingEvents(u, [{ id: crypto.randomUUID(), sessionId: `nosurf-${RUN}`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString() }]);
+      expect([await f("app") - app, await f("web") - web]).toEqual([1, 0]);
+    });
+
+    it("counts a referred account Apple called organic under acq_source=referral (ieat-app#3196)", async () => {
+      const s = await open();
+      const v = `8.${RUN}`;
+      const friend = await s.createUser("en");
+      const plain = await s.createUser("en");
+      expect(await s.redeemReferral(friend, (await s.referralOf(await s.createUser("en")))!.code, 7)).toBe("ok");
+      const organic = { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" } as const;
+      await s.putAcquisition(friend, organic);
+      await s.putAcquisition(plain, organic);
+      const at = new Date().toISOString();
+      for (const u of [friend, plain]) {
+        await s.recordOnboardingEvents(u, [{ id: crypto.randomUUID(), sessionId: `acq-${u}`, place: "goal", action: "view", contentVersion: 1, at }] as never,
+          { surface: "app", app_version: v } as never);
+      }
+      const f = (acq_source: string) => s.onboardingFunnel({ from: null, to: null }, [], false, { app_version: v, acq_source });
+      expect((await f("referral")).sessions).toBe(1);
+      expect((await f("organic")).sessions).toBe(1);
+      expect((await f("referral")).dimensions.acq_source).toEqual(expect.arrayContaining(["organic", "referral"]));
     });
 
     it("leaves a staff account's onboarding events out of the funnel (#2783)", async () => {
