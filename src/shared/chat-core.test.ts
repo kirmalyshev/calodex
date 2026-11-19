@@ -348,6 +348,19 @@ describe("the outbox (#708)", () => {
     expect(words.map((e) => "stored" in e && e.stored === true)).toEqual([true]);
   });
 
+  // `text.ts` writes nothing for these, so no page will ever supersede the words.
+  it.each([
+    ["target-gone", { kind: "target-gone", on: "correction" }],
+    ["a refusal", { kind: "cap-exceeded", scope: "user" }],
+    ["an empty answer", { kind: "answered", text: "" }],
+  ] as [string, HandleTextResult][])("a drained turn the server keeps no line for (%s) does not outlive the next page", async (_, result) => {
+    const { core, fake } = harness();
+    await core.landed(result, { id: "j1", text: "half that" });
+    fake.pages.push(page([said("Morning.")]));
+    core.refresh(); await settle();
+    expect(core.state.entries.some((e) => e.role === "user")).toBe(false);
+  });
+
   it("a job-sent turn's answer keeps its chips onto the stored line (#1347)", async () => {
     const { core, fake } = harness();
     // The send ran as a job: only its OUTCOME comes back, so `send` carries its words — the
