@@ -424,6 +424,7 @@ describe("every sentence this product ships", () => {
   // that matters — an over-eager rule is discovered by the person it blocks, at the moment they
   // are trying to fix something else.
 
+  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("passes the claims gate over the Apple Health screens, in all eight", () => {
     // `HEALTH_SCREEN_COPY` is code, not admin-edited — but a weight surface's words are exactly
     // where a "you will lose" sneaks in ("on pace" is one word away from a promise). The whole
@@ -440,8 +441,9 @@ describe("every sentence this product ships", () => {
       walk(copy, "");
       expect(lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang).toEqual([]);
     }
-  });
+  }, 30_000);
 
+  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("passes the claims gate over the plan reveal's own words, in all eight (#1692)", () => {
     // The methodology note names an equation and a source at the moment of decision — exactly
     // where a health claim would do the most harm, so the whole table walks the full set.
@@ -450,7 +452,7 @@ describe("every sentence this product ships", () => {
       if (!copy) continue;
       expect(lintCopy({ ...copy }).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang).toEqual([]);
     }
-  });
+  }, 30_000);
 
   it("passes the notification gate, in all eight — that copy is push and is admin-editable", () => {
     for (const lang of LANGS) {

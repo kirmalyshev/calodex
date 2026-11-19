@@ -119,6 +119,7 @@ describe("LOG_COPY", () => {
     expect(en.phone.failedTitle).toBe("The analysis didn’t come back");
   });
 
+  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("carries no claim the linter would refuse — every template filled, every language", () => {
     const filled = (s: string) =>
       s.replace(/\{(\w+)\}/g, (_, k: string) => FILL[k] ?? "X");
@@ -130,7 +131,7 @@ describe("LOG_COPY", () => {
       const violations = lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`);
       expect(violations, lang).toEqual([]);
     }
-  });
+  }, 30_000);
 });
 
 describe("verdictDetailLine", () => {

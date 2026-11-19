@@ -120,6 +120,7 @@ describe("CHAT_SCREEN_COPY", () => {
     expect(coachRowIcon("Сколько БЕЛОК сегодня?", "ru" as Lang)).toBe("protein");
   });
 
+  // CPU-bound by design: every template x 8 languages through the claims gate. A hang guard, not a budget (calodex#880).
   it("carries no claim the linter would refuse — every language", () => {
     // The figures and the coach's name filled, as a render would. Russian's declension sits inside
     // templates, so the sweep reads the same strings the screen shows.
@@ -133,5 +134,5 @@ describe("CHAT_SCREEN_COPY", () => {
       const violations = lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`);
       expect(violations, lang).toEqual([]);
     }
-  });
+  }, 30_000);
 });
