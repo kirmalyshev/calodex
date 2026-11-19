@@ -148,12 +148,11 @@ gets its meal names in that language.
   adjective in "you're not alone" picks a gender too; those were rephrased around the situation
   rather than the person, which is the move that works in all forty-two.
 
-- **A COUNTRY'S NAME IS CLDR'S, NOT COPY.** `COUNTRY_CODES` covers the market a shipped language's
-  speakers are standing in, as the funnel names each — it was `de | gb | us | other` while the
-  product shipped in eight languages, so a Vietnamese or Indonesian reader met "so I know your
-  supermarket, not somebody else's" above a
-  list whose only true answer was "Somewhere else". Growing it was only affordable because the
-  labels left the content: sixteen countries in forty-two languages is ~700 strings, and our own month
+- **A COUNTRY'S NAME IS CLDR'S, NOT COPY.** `COUNTRY_CODES` covers the dominant home of every
+  shipped language — it was `de | gb | us | other` while the product shipped in eight languages,
+  so a Vietnamese or Indonesian reader met "so I know your supermarket, not somebody else's" above
+  a list whose only true answer was "Somewhere else". Growing it was only affordable because the
+  labels left the content: thirty-nine countries in forty-two languages is ~1,600 strings, and our own month
   table had Spanish, Russian and Vietnamese wrong at once before `Intl` replaced it. So
   `countryLabel` reads `COUNTRY_NAMES`, generated from `Intl.DisplayNames` at build time (`bun src/scripts/country-names.ts`; Hermes has none, and `country-names.test.ts` fails on a missing language/country; the snapshot is one host's ICU, so there is deliberately no equality-with-runtime test), `countrySearchNames` is the local plus English name a search matches, `countryOptions` sorts with `Intl.Collator` because
   Austria files under Ö in German and А in Russian, and `other` is the ONE option still written by
