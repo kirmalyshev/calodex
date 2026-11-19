@@ -22,7 +22,7 @@ const KEYS = [
   "storeThanks", "catchingUp",
   "welcomeTitle", "welcomeSub", "welcomeBack",
   "subscribingPhone",
-  "goalCtaPhone", "subscribePhone",
+  "goalCtaPhone", "goalHeadingPhone", "subscribePhone",
   "trialEnds", "trialEndsNote", "trialEndsCancel", "renewsLabelPhone",
   "lapsedTitlePhone",
   "closeLabel", "restoreLink", "termsLink", "privacyLink",
@@ -132,6 +132,8 @@ describe("PAY_COPY", () => {
     // pay-dock / pay-lapsed (phone, ieat-app#2816): one full-width goal-worded button
     expect(en.goalCtaPhone).toEqual({ lose: "Start losing weight", gain: "Start gaining weight", maintain: "Keep my weight", none: "Count calories" });
     expect(en.subscribePhone).toBe("Subscribe");
+    // T1 arm B's welcome-plate verdict (ieat-app#3165): "How to <goal>", the same four goals
+    expect(en.goalHeadingPhone).toEqual({ lose: "How to lose weight", gain: "How to gain weight", maintain: "How to keep your weight", none: "How to count calories" });
     // pay-trial-ends (phone and web): the one reminder, named from the board
     expect(en.trialEnds).toBe("Your free trial ends tomorrow");
     expect(en.trialEndsNote).toBe("Then {renewal}. Cancel today and nothing is charged.");
