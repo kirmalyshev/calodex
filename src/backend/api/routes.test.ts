@@ -10,7 +10,7 @@ import { DEFAULT_MEAL_REMINDERS } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { DEMO_NOT_FOOD, demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
-import type { Store } from "../store.ts";
+import type { Store, SwitchKey } from "../store.ts";
 import type { EngineDeps } from "../engine/index.ts";
 import type { LlmPorts } from "../llm/port.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
@@ -273,8 +273,12 @@ describe("profile", () => {
       currency: "EUR",
     };
 
-    const viewFor = async (webPaywall: Config["webPaywall"], locale = "en-GB") => {
+    const viewFor = async (webPaywall: Config["webPaywall"], locale = "en-GB",
+        switches: Partial<Record<SwitchKey, boolean>> = {}) => {
       const s = memoryStore();
+      for (const [key, enabled] of Object.entries(switches)) {
+        await s.setSwitch(key as SwitchKey, enabled, crypto.randomUUID());
+      }
       const h = createRouter(
         { store: s, config: { ...CONFIG, webPaywall }, llm: demoPorts(), push: fakePush(), mail: logMail() },
         s, testVerifier);
@@ -289,7 +293,8 @@ describe("profile", () => {
     };
 
     it("sends both plans and the exit offer, priced and named for THIS account", async () => {
-      const view = await viewFor(SELLING);
+      // The offer needs the admin's web switch on top of its configuration (#3155).
+      const view = await viewFor(SELLING, "en-GB", { "paywall.exit-offer.web": true });
       const userId = view.profile.user_id;
       expect(view.paywall.trialDays).toBe(7);
       // Every checkout already carries this account's id — `{userId}` is filled here, never by a
@@ -313,9 +318,30 @@ describe("profile", () => {
     });
 
     it("formats the same prices in the account's own language", async () => {
-      const view = await viewFor(SELLING, "de-DE");
+      const view = await viewFor(SELLING, "de-DE", { "paywall.exit-offer.web": true });
       expect(view.paywall.yearly?.price).toBe("39,99 €");
       expect(view.paywall.exitOffer?.perMonth).toBe("2,00 €");
+    });
+
+    // #3155 — the admin's per-platform switch, sent on every response and OFF by default: a
+    // configured offer whose switch is off is no offer, the same shape as one never configured.
+    it("sends the exit-offer switches off by default, and then no offer however configured", async () => {
+      const view = await viewFor(SELLING);
+      expect(view.exitOfferEnabled).toEqual({ ios: false, web: false });
+      expect(view.paywall.exitOffer).toBeNull();
+    });
+
+    it("gates the offer on the web switch alone — the ios one never speaks for it", async () => {
+      const iosOnly = await viewFor(SELLING, "en-GB", { "paywall.exit-offer.ios": true });
+      expect(iosOnly.exitOfferEnabled).toEqual({ ios: true, web: false });
+      expect(iosOnly.paywall.exitOffer).toBeNull();
+      const web = await viewFor(SELLING, "en-GB", { "paywall.exit-offer.web": true });
+      const userId = web.profile.user_id;
+      expect(web.exitOfferEnabled).toEqual({ ios: false, web: true });
+      expect(web.paywall.exitOffer).toEqual({
+        checkoutUrl: `https://pay.rev.cat/u/${userId}`,
+        price: "€23.99", regularPrice: "€39.99", percentOff: 40, perMonth: "€2.00",
+      });
     });
 
     it("sends an empty paywall — plans null, offer null — when the host sells nothing", async () => {

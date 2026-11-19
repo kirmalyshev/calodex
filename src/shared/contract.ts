@@ -859,6 +859,17 @@ export interface ProfileResponse {
    */
   paywall: WebPaywall;
   /**
+   * The admin's exit-offer switches, per platform (ieat-app#3155) — `paywall.exit-offer.ios` and
+   * `paywall.exit-offer.web` in the admin's switches, read on every response so a flip needs no
+   * deploy.
+   *
+   * BOTH DEFAULT OFF, and a client draws the decline → offer only when its platform's flag is on
+   * AND the offer itself exists: on the web that is `paywall.exitOffer` non-null (already gated
+   * by `web` here), on the phone RevenueCat's `exit_offer` offering answering packages. A server
+   * that predates the field sends none — read that as off, which is the default anyway.
+   */
+  exitOfferEnabled: { ios: boolean; web: boolean };
+  /**
    * The coach's name in the account's language — `THREAD_COPY`'s `coach.name` — sent here because
    * the browser bundle cannot import the Lingui table that copy lives in (#92 review): Lingui words
    * reach a client only server-sent. Surfaces fill their `{coach}` placeholders with it. A server
