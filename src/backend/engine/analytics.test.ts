@@ -43,6 +43,21 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
       acq_source: "referral", acq_campaign: null, acq_adgroup: null, acq_keyword: null, referrer: code,
     });
   });
+
+  it("names the install's Apple Search Ads campaign, ad group and keyword, over the referral", async () => {
+    const { store, deps, userId } = await setup();
+    await store.putAcquisition(userId, { source: "apple_search_ads", campaign: "c1", adGroup: "g1", keyword: "k1", via: "adservices" });
+    const a = (await profileView(deps, userId))!.analytics;
+    expect([a.acq_source, a.acq_campaign, a.acq_adgroup, a.acq_keyword]).toEqual(["apple_search_ads", "c1", "g1", "k1"]);
+  });
+
+  it("keeps the referral when Apple says the install was organic", async () => {
+    const { store, deps, userId } = await setup();
+    const code = (await store.referralOf(await store.createUser("en")))!.code;
+    await store.redeemReferral(userId, code, 7);
+    await store.putAcquisition(userId, { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" });
+    expect((await profileView(deps, userId))!.analytics.acq_source).toBe("referral");
+  });
 });
 
 describe("analyticsRequestOf (ieat-app#3196)", () => {
