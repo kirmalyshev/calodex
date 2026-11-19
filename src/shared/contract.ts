@@ -405,6 +405,12 @@ export const ROUTES = {
   /** POST — the notification extension reports a push arrived. See `PushDeliveredRequest`. */
   pushDelivered: "/v1/push/delivered",
   /**
+   * POST — this install's Apple AdServices attribution token (ieat-app#3196). See
+   * `AttributionRequest`. The server asks Apple and keeps the answer on the account; the reply says
+   * only whether that is done.
+   */
+  attribution: "/v1/attribution",
+  /**
    * GET — the tips-and-offers consent (`PushConsentResponse`); POST — set it (`PushConsentRequest`).
    * Offers default OFF; `notifications` (default ON) silences every push for the account.
    */
@@ -2264,3 +2270,32 @@ export function parseNumbersLogRequest(body: unknown): NumbersLogRequest | null 
 export const FOOD_SEARCH_LIMIT = 25;
 /** The server never answers with more than this many rows, whatever the client asks for. */
 export const FOOD_SEARCH_MAX_LIMIT = 50;
+
+/**
+ * The app's Apple AdServices token (ieat-app#3196), from `AAAttribution.attributionToken()`. The
+ * server sends it to Apple and stores what Apple says on the caller's account; it is never logged
+ * and never stored. A bound, not a format: Apple's tokens are a few hundred characters.
+ */
+export interface AttributionRequest {
+  token: string;
+}
+
+export const MAX_ATTRIBUTION_TOKEN = 4096;
+
+export function isAttributionRequest(body: unknown): body is AttributionRequest {
+  if (typeof body !== "object" || body === null) return false;
+  const t = (body as Record<string, unknown>).token;
+  return typeof t === "string" && t.length > 0 && t.length <= MAX_ATTRIBUTION_TOKEN;
+}
+
+/**
+ * What became of the token, and nothing about where the account came from. The HTTP status says the
+ * same: `resolved` 200 (stored now or already; stop sending), `pending` 202 (Apple has no answer yet;
+ * send the same token again in a few seconds), `invalid` 422 (Apple refused this token; get a new
+ * one), `unavailable` 503 (Apple or the server could not answer; retry later).
+ */
+export const ATTRIBUTION_STATUS = { resolved: 200, pending: 202, invalid: 422, unavailable: 503 } as const;
+export type AttributionStatus = keyof typeof ATTRIBUTION_STATUS;
+export interface AttributionResponse {
+  status: AttributionStatus;
+}

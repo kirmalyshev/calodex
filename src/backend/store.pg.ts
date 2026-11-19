@@ -33,7 +33,7 @@ import { type ChatMessage,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
-  type ClockedEntitlement, type StoreOptions, type StoredPhoto,
+  type ClockedEntitlement, type StoreOptions, type StoredPhoto, type Acquisition, type RevenueCatEventRow,
 } from "./store.ts";
 
 /**
@@ -115,6 +115,7 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   weights: "user_id",
   milestones: "user_id",
   turns: "user_id",
+  revenuecat_events: "user_id",
   // A grant and a share belong to the REFERRER — the account whose card counts them. Every write to
   // either that names another account (a grant, a merge) is unscoped and says why in `SCOPE`.
   referral_grants: "referrer_id",
@@ -686,6 +687,41 @@ alter table users add column if not exists entitlement_trial boolean not null de
 -- push_tokens.app is the BRAND, not the channel -- so every existing account starts unknown.
 alter table users add column if not exists channel text check (channel in ('appstore', 'testflight', 'dev'));
 alter table users add column if not exists channel_first text check (channel_first in ('appstore', 'testflight', 'dev'));
+-- Where the account came from (ieat-app#3196). acq_via says who said so: 'adservices' is Apple's
+-- answer to the app's attribution token and is never replaced; 'revenuecat' is RevenueCat's copy
+-- from a webhook's subscriber attributes and fills only until Apple answers. Analytics only;
+-- gates nothing. Absent from mergeUsers' plain column list: it moves by its own rule there.
+alter table users add column if not exists acq_source   text;
+alter table users add column if not exists acq_campaign text;
+alter table users add column if not exists acq_adgroup  text;
+alter table users add column if not exists acq_keyword  text;
+alter table users add column if not exists acq_via      text check (acq_via in ('adservices', 'revenuecat'));
+-- Every RevenueCat webhook delivery (ieat-app#3196), beside the resolved entitlement on users.
+-- Keyed on RevenueCat's event id, so a redelivery writes nothing. user_id is null for a delivery
+-- that names no account of ours; otherwise it goes with the account and moves with a merge. In
+-- RLS_TABLES. price is RevenueCat's USD figure. No subscriber attribute but the four acquisition
+-- ones is kept: the rest can carry an email or a name.
+create table if not exists revenuecat_events (
+  id                          text primary key,
+  user_id                     uuid references users(id) on delete cascade,
+  type                        text not null,
+  product_id                  text,
+  period_type                 text,
+  presented_offering_id       text,
+  price                       double precision,
+  currency                    text,
+  price_in_purchased_currency double precision,
+  store                       text,
+  country_code                text,
+  environment                 text,
+  event_at                    timestamptz not null,
+  received_at                 timestamptz not null default now(),
+  acq_source                  text,
+  acq_campaign                text,
+  acq_adgroup                 text,
+  acq_keyword                 text
+);
+create index if not exists revenuecat_events_user_idx on revenuecat_events(user_id, event_at);
 -- Whether the most recently applied grant came from RevenueCat's SANDBOX. Added with its repair in
 -- one step, so the heuristic below runs exactly once, on rows written BEFORE the column existed;
 -- every grant written after that carries its own event's flag.
@@ -2019,6 +2055,13 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // The one user id in this codebase that comes out of a request body. Declaring it is TIGHTER than
   // not: the webhook then cannot write a row belonging to anybody but the account it names.
   putEntitlement: 0,
+  // Every delivery is logged, including one naming no account of ours (a TRANSFER, RevenueCat's own
+  // anonymous id), which no declared user could write. Insert-only, behind the webhook's secret.
+  recordRevenueCatEvent: "unscoped",
+  revenueCatEventsOf: 0,
+  acquisitionOf: 0,
+  // From the app's own token, or from the webhook naming the account as `putEntitlement` does.
+  putAcquisition: 0,
   dropPushToken: 0,
   pushTokensFor: 0,
   setTimezone: 0,
@@ -3123,6 +3166,16 @@ export async function postgresStore(
         // Funnel rows move too: signing in halfway through onboarding is normal, and a run split
         // across two user ids reads as two abandoned runs.
         await tx`update onboarding_events set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        await tx`update revenuecat_events set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        // Where the person came from: the anonymous session's answer fills a gap, or replaces a
+        // RevenueCat copy with Apple's own — the rule `putAcquisition` keeps. Matches store.memory.ts.
+        await tx`
+          update users into_u set
+            acq_source = from_u.acq_source, acq_campaign = from_u.acq_campaign,
+            acq_adgroup = from_u.acq_adgroup, acq_keyword = from_u.acq_keyword, acq_via = from_u.acq_via
+          from users from_u
+          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId} and from_u.acq_via is not null
+            and (into_u.acq_via is null or (into_u.acq_via = 'revenuecat' and from_u.acq_via = 'adservices'))`;
         // Experiment assignments move by the gap rule below: the account that already holds one
         // keeps it, the anonymous session's fills what is missing. An assignment is what makes a
         // variant sticky, and a run split across two ids would assign the same person twice.
@@ -3542,6 +3595,67 @@ export async function postgresStore(
         }
         return true;
       });
+    },
+
+    async recordRevenueCatEvent(e) {
+      const a = e.acquisition;
+      // The owner is resolved IN the insert: an id naming no account of ours (or one deleted since)
+      // is kept with no owner rather than failing the foreign key, which would be a 500 and a
+      // RevenueCat retry, forever, for a delivery that was always going to be logged.
+      const rows = await sql`
+        insert into revenuecat_events (
+          id, user_id, type, product_id, period_type, presented_offering_id, price, currency,
+          price_in_purchased_currency, store, country_code, environment, event_at,
+          acq_source, acq_campaign, acq_adgroup, acq_keyword)
+        values (
+          ${e.id}, (select id from users where id = ${e.userId}::uuid), ${e.type}, ${e.productId}, ${e.periodType},
+          ${e.presentedOfferingId}, ${e.price}, ${e.currency}, ${e.priceInPurchasedCurrency}, ${e.store},
+          ${e.countryCode}, ${e.environment}, ${new Date(e.eventAt)},
+          ${a?.source ?? null}, ${a?.campaign ?? null}, ${a?.adGroup ?? null}, ${a?.keyword ?? null})
+        on conflict (id) do nothing
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async revenueCatEventsOf(userId) {
+      const rows = await sql`
+        select * from revenuecat_events where user_id = ${userId} order by event_at, received_at`;
+      return rows.map((r: Record<string, unknown>): RevenueCatEventRow => {
+        const s = (v: unknown) => (v == null ? null : String(v));
+        const n = (v: unknown) => (v == null ? null : Number(v));
+        return {
+          id: String(r.id), userId: s(r.user_id), type: String(r.type), productId: s(r.product_id),
+          periodType: s(r.period_type), presentedOfferingId: s(r.presented_offering_id), price: n(r.price),
+          currency: s(r.currency), priceInPurchasedCurrency: n(r.price_in_purchased_currency), store: s(r.store),
+          countryCode: s(r.country_code), environment: s(r.environment),
+          eventAt: new Date(r.event_at as string).toISOString(),
+          acquisition: r.acq_source == null ? null : {
+            source: String(r.acq_source), campaign: s(r.acq_campaign), adGroup: s(r.acq_adgroup), keyword: s(r.acq_keyword),
+          },
+        };
+      });
+    },
+
+    async acquisitionOf(userId) {
+      const [r] = await sql`
+        select acq_source, acq_campaign, acq_adgroup, acq_keyword, acq_via from users
+        where id = ${userId} and acq_via is not null`;
+      if (!r) return null;
+      const s = (v: unknown) => (v == null ? null : String(v));
+      return {
+        source: String(r.acq_source), campaign: s(r.acq_campaign), adGroup: s(r.acq_adgroup),
+        keyword: s(r.acq_keyword), via: r.acq_via as Acquisition["via"],
+      };
+    },
+
+    async putAcquisition(userId, a) {
+      // The guard is the write's own: Apple's answer, once stored, is never replaced.
+      const rows = await sql`
+        update users set acq_source = ${a.source}, acq_campaign = ${a.campaign}, acq_adgroup = ${a.adGroup},
+          acq_keyword = ${a.keyword}, acq_via = ${a.via}
+        where id = ${userId} and acq_via is distinct from 'adservices'
+        returning id`;
+      return rows.length > 0;
     },
 
     async putEntitlement(userId, patch) {

@@ -18,8 +18,9 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 import {
-  applyRevenueCatEvent, applyRevenueCatTransfer, type EngineDeps, type RevenueCatEvent, type RevenueCatTransfer,
+  applyRevenueCatEvent, applyRevenueCatTransfer, logRevenueCatEvent, type EngineDeps, type RevenueCatEvent, type RevenueCatTransfer,
 } from "../engine/index.ts";
+import type { RevenueCatEventRow } from "../store.ts";
 import { timingSafeEqual } from "../auth/timingsafe.ts";
 
 /** How long the misconfiguration warning stays quiet after a delivery matched. */
@@ -168,6 +169,48 @@ export function parseRevenueCatEvent(body: unknown): RevenueCatEvent | null {
   };
 }
 
+/** A bounded string field, or null. The log keeps short identifiers, never a free-text blob. */
+const text = (v: unknown, max = 200): string | null => typeof v === "string" && v !== "" && v.length <= max ? v : null;
+const num = (v: unknown): number | null => typeof v === "number" && Number.isFinite(v) ? v : null;
+
+/** RevenueCat's `$mediaSource` as our `acq_source`: "Apple Search Ads" → "apple_search_ads". */
+const sourceKey = (v: string): string => v.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+/**
+ * A delivery as the event log keeps it (ieat-app#3196), or null when it carries no event id. Every
+ * type is kept, including the ones the entitlement logic ignores and a TRANSFER (no owner). Of the
+ * subscriber attributes, ONLY the four acquisition ones are read: the rest can carry an email.
+ */
+export function parseRevenueCatLog(body: unknown): RevenueCatEventRow | null {
+  const e = eventOf(body);
+  const id = text(e?.id);
+  const at = epochMs(e?.event_timestamp_ms);
+  if (e === null || id === null || at === null) return null;
+  const attrs = (typeof e.subscriber_attributes === "object" && e.subscriber_attributes !== null
+    ? e.subscriber_attributes : {}) as Record<string, unknown>;
+  const attr = (k: string) => text((attrs[k] as { value?: unknown } | undefined)?.value);
+  const media = attr("$mediaSource");
+  const source = media === null ? "" : sourceKey(media);
+  return {
+    id,
+    userId: typeof e.app_user_id === "string" && UUID.test(e.app_user_id) ? e.app_user_id : null,
+    type: text(e.type) ?? "",
+    productId: text(e.product_id),
+    periodType: text(e.period_type),
+    presentedOfferingId: text(e.presented_offering_id),
+    price: num(e.price),
+    currency: text(e.currency),
+    priceInPurchasedCurrency: num(e.price_in_purchased_currency),
+    store: text(e.store),
+    countryCode: text(e.country_code),
+    environment: text(e.environment),
+    eventAt: new Date(at).toISOString(),
+    acquisition: source === "" ? null : {
+      source, campaign: attr("$campaign"), adGroup: attr("$adGroup"), keyword: attr("$keyword"),
+    },
+  };
+}
+
 /**
  * Handle one delivery.
  *
@@ -228,6 +271,12 @@ export async function revenueCatWebhook(
   if (declared > MAX_BODY_BYTES) return json({ error: "too large" }, 413);
 
   const body = await req.json().catch(() => null);
+  // The log is analytics and must never cost anybody their purchase: a failed write is a warning,
+  // and the entitlement below is applied regardless.
+  const logged = parseRevenueCatLog(body);
+  if (logged) {
+    await logRevenueCatEvent(deps, logged).catch(() => console.warn("[eait] revenuecat: event log write failed"));
+  }
   const transfer = parseRevenueCatTransfer(body);
   if (transfer) {
     const moved = await applyRevenueCatTransfer(deps, transfer);

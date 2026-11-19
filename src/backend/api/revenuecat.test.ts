@@ -826,3 +826,62 @@ describe("the misconfiguration warning's quiet period", () => {
     } finally { warn.mockRestore(); }
   });
 });
+
+// ── The event log and acquisition (ieat-app#3196) ────────────────────────────────────────────
+describe("every delivery is logged", () => {
+  const attrs = {
+    $mediaSource: { value: "Apple Search Ads", updated_at_ms: 1 },
+    $campaign: { value: "Brand DE", updated_at_ms: 1 },
+    $adGroup: { value: "Exact", updated_at_ms: 1 },
+    $keyword: { value: "calorie counter", updated_at_ms: 1 },
+    $email: { value: "someone@example.com", updated_at_ms: 1 },
+  };
+
+  it("writes the purchase's facts and its acquisition attributes, once per event id", async () => {
+    const { userId } = await account();
+    const at = Date.parse("2026-11-19T10:00:00.000Z");
+    const e = purchase(userId, {
+      id: "evt-1", period_type: "TRIAL", presented_offering_id: "default", price: 0, currency: "EUR",
+      price_in_purchased_currency: 0, store: "APP_STORE", country_code: "DE", environment: "PRODUCTION",
+      event_timestamp_ms: at, subscriber_attributes: attrs,
+    });
+    expect((await deliver(e)).status).toBe(200);
+    expect(await deliver(e)).toBeTruthy();
+    expect(await store.revenueCatEventsOf(userId)).toEqual([{
+      id: "evt-1", userId, type: "INITIAL_PURCHASE", productId: "yearly", periodType: "TRIAL",
+      presentedOfferingId: "default", price: 0, currency: "EUR", priceInPurchasedCurrency: 0,
+      store: "APP_STORE", countryCode: "DE", environment: "PRODUCTION", eventAt: new Date(at).toISOString(),
+      acquisition: { source: "apple_search_ads", campaign: "Brand DE", adGroup: "Exact", keyword: "calorie counter" },
+    }]);
+    expect(await store.acquisitionOf(userId)).toEqual({
+      source: "apple_search_ads", campaign: "Brand DE", adGroup: "Exact", keyword: "calorie counter", via: "revenuecat",
+    });
+  });
+
+  it("logs an event the entitlement logic ignores, and leaves the entitlement exactly as before", async () => {
+    const { userId, token } = await account();
+    const res = await deliver(purchase(userId, { id: "evt-other", entitlement_ids: ["something_else"] }));
+    expect(await res.json()).toEqual({ ok: true, applied: false });
+    expect((await profile(token)).entitlement.active).toBe(false);
+    expect((await store.revenueCatEventsOf(userId)).map((r) => r.id)).toEqual(["evt-other"]);
+    expect(await store.acquisitionOf(userId)).toBeNull();
+  });
+
+  it("never replaces Apple's own AdServices answer with RevenueCat's", async () => {
+    const { userId } = await account();
+    const ads = { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" } as const;
+    await store.putAcquisition(userId, ads);
+    await deliver(purchase(userId, { id: "evt-2", subscriber_attributes: attrs }));
+    expect(await store.acquisitionOf(userId)).toEqual(ads);
+  });
+
+  it("still applies the entitlement when the log write fails", async () => {
+    const { userId, token } = await account();
+    const spy = spyOn(store, "recordRevenueCatEvent").mockImplementation(async () => { throw new Error("db down"); });
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    const res = await deliver(purchase(userId, { id: "evt-3" }));
+    expect(await res.json()).toEqual({ ok: true, applied: true });
+    expect((await profile(token)).entitlement.active).toBe(true);
+    spy.mockRestore(); warn.mockRestore();
+  });
+});

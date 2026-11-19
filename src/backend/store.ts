@@ -260,6 +260,41 @@ export interface StoredEntitlement {
 }
 
 /**
+ * Where an account came from (ieat-app#3196). `via` is who said so: `adservices` is Apple's own
+ * answer to the app's attribution token (`source` is `apple_search_ads` or `organic`, the rest
+ * Apple's numeric ids); `revenuecat` is RevenueCat's copy of the same, from a webhook's subscriber
+ * attributes (`source` its `$mediaSource`, normalised; the rest may be names). Apple's wins.
+ */
+export interface Acquisition {
+  source: string;
+  campaign: string | null;
+  adGroup: string | null;
+  keyword: string | null;
+  via: "adservices" | "revenuecat";
+}
+
+/** One RevenueCat webhook delivery, as logged. `price` is RevenueCat's, in USD. */
+export interface RevenueCatEventRow {
+  /** RevenueCat's event id — the idempotency key. */
+  id: string;
+  /** Ours, or null when the delivery names no account of ours (a TRANSFER, an anonymous id). */
+  userId: string | null;
+  type: string;
+  productId: string | null;
+  periodType: string | null;
+  presentedOfferingId: string | null;
+  price: number | null;
+  currency: string | null;
+  priceInPurchasedCurrency: number | null;
+  store: string | null;
+  countryCode: string | null;
+  environment: string | null;
+  eventAt: string;
+  /** The `$mediaSource`/`$campaign`/`$adGroup`/`$keyword` subscriber attributes, when sent. */
+  acquisition: Omit<Acquisition, "via"> | null;
+}
+
+/**
  * One event's effect: set the subscription's end, or set/clear the lifetime unlock, never both.
  *
  * Undefined means LEAVE ALONE, and that is the whole point. A monthly renewal says nothing about a
@@ -1448,6 +1483,28 @@ export interface Store {
    * creates a user.
    */
   moveEntitlement(fromUserId: string, intoUserId: string, eventAt: string): Promise<boolean>;
+
+  // ── Acquisition and the RevenueCat event log (ieat-app#3196) ───────────────────────────────
+  //
+  // The paid tier above is resolved state; this is the history beside it, kept for analytics and
+  // read by nothing that decides access. Both go with the account and move with a merge.
+
+  /**
+   * Append one RevenueCat delivery. Idempotent on the event id: true when written, false when the
+   * id is already logged. `userId` is null, or names no account, for a delivery that is not about
+   * one of ours — the row is still kept, owned by nobody. Never creates a user.
+   */
+  recordRevenueCatEvent(row: RevenueCatEventRow): Promise<boolean>;
+  /** This account's logged deliveries, oldest event first. */
+  revenueCatEventsOf(userId: string): Promise<RevenueCatEventRow[]>;
+  /** Where this account came from, or null when nothing has said. */
+  acquisitionOf(userId: string): Promise<Acquisition | null>;
+  /**
+   * Record where this account came from. The guard is in the write: a stored AdServices answer is
+   * never replaced, by anything; every other write replaces what is there. False when nothing was
+   * written — that guard, or no such account.
+   */
+  putAcquisition(userId: string, acquisition: Acquisition): Promise<boolean>;
 
   // ── Referrals (#899) ───────────────────────────────────────────────────────────────────────
   //

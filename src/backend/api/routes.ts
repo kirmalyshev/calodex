@@ -22,7 +22,7 @@ import {
   type MessageRequest, type OnboardingContentResponse, type OnboardingEventsRequest,
   type AttachPhotosResponse, type DeleteLineResponse, type OnboardingEventsResponse, type PatchProfileRequest, isRefusal,
   type HealthDaysRequest, type HealthDaysResponse, type HealthResponse, type LivenessResponse,
-  HEALTH_RETENTION_DAYS, MAX_HEALTH_DAYS_PER_BATCH, isPushConsentRequest, isPushDeliveredRequest, isPushOpenRequest, isPushTokenRequest, pushTokenFrom, isTimezone, type PushTokenResponse,
+  HEALTH_RETENTION_DAYS, MAX_HEALTH_DAYS_PER_BATCH, isPushConsentRequest, isAttributionRequest, ATTRIBUTION_STATUS, type AttributionResponse, isPushDeliveredRequest, isPushOpenRequest, isPushTokenRequest, pushTokenFrom, isTimezone, type PushTokenResponse,
   type PairCodeResponse, type PendingMealsResponse,
   AVERAGE_WEEKS_BACK, type AverageResponse, DIARY_RANGE_MAX_DAYS, isAcceptableWeightKg, isWeightRange, WEIGHT_RANGES, type DaysResponse, type WeightEditRequest, type WeightsResponse, type MilestonesResponse, type MilestonesSeenRequest,
   MAX_FOOD_QUERY, FOOD_LOG_MAX_GRAMS, normalizeBarcode, type FoodSearchResponse, type ProductResponse,
@@ -41,7 +41,7 @@ import {
   sendEmailCode, unlinkIdentity, verifyEmailCode,
   EMAIL_ADDRESS, normalizeEmail,
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
-  attachPhotos, recordPushOpen, recordPushDelivered, pushConsent, setPushConsent,
+  attachPhotos, attributeInstall, recordPushOpen, recordPushDelivered, pushConsent, setPushConsent,
   reanalyzeMeal, redateMeal, focusMeal, logSavedMeal, saveMealFromLog, followPhotoJob, listJobs, photoJob, queuePhoto, queueMealUpdate, removePhotoJob,
   foodSearch, productByBarcode, redeemReferral, shareReferral,
 } from "../engine/index.ts";
@@ -1000,6 +1000,17 @@ export function createRouter(
         const body = await req.json().catch(() => null);
         if (!isPushOpenRequest(body)) return json({ error: "send id required" }, 400);
         return json(await recordPushOpen(deps, userId, body));
+      }
+
+      // This install's AdServices token (ieat-app#3196). One engine call; it reaches Apple, so it
+      // takes the unbilled per-address bound. The answer names a status, never the attribution.
+      if (pathname === ROUTES.attribution && req.method === "POST") {
+        const wait = limit(req, peer, "attribution", deps.config.linesRateLimitPerHour, HOUR);
+        if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
+        const body = await req.json().catch(() => null);
+        if (!isAttributionRequest(body)) return json({ error: "token required" }, 400);
+        const status = await attributeInstall(deps, userId, body.token);
+        return json({ status } satisfies AttributionResponse, ATTRIBUTION_STATUS[status]);
       }
 
       // The notification extension's beacon (ieat-app#1763): same bound, same indistinguishable answer.
