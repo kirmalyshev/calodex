@@ -8976,6 +8976,10 @@
           "at": {
             "type": "string",
             "description": "Client clock, ISO. The server stamps its own arrival time separately."
+          },
+          "template": {
+            "type": "string",
+            "description": "The served template this screen was drawn from, `key@version` (ieat-app#3196). Client-reported, because only the client knows which slot it rendered; it labels the row and gates nothing."
           }
         },
         "required": [

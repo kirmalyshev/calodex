@@ -9,7 +9,7 @@
 
 import {
   COUNTRY_CODES, branded, DEFAULT_ONBOARDING_CONTENT, MAX_ONBOARDING_EVENTS_PER_BATCH, ONBOARDING_ACTIONS,
-  ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone,
+  ONBOARDING_PLACES, countryFromRegion, entitlementActive, entitlementLive, isReportableField, isTimezone, TEMPLATE_REF,
   localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   DEFAULT_ORDER, FIRST_VERDICT_ARMS, FIRST_VERDICT_VERSION, isFirstVerdictArm, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
@@ -356,6 +356,7 @@ export async function recordOnboardingEvents(
     // The privacy rule, enforced server-side. A value for a field that is not enumerated is
     // discarded rather than the event being rejected — losing one column beats losing the funnel.
     const value = field && isReportableField(field) ? str(e.value, 120) : "";
+    const template = str(e.template, 72);
 
     clean.push({
       id,
@@ -367,6 +368,7 @@ export async function recordOnboardingEvents(
       ...(ms !== undefined ? { ms } : {}),
       ...(field ? { field } : {}),
       ...(value ? { value } : {}),
+      ...(TEMPLATE_REF.test(template) ? { template } : {}),
     });
   }
 

@@ -228,8 +228,15 @@ describe("the context stamped on events (ieat-app#3196)", () => {
     })], request);
 
     expect(await stored()).toEqual([{
-      ...request, lang: "en", country: "de", experiment_id: id, arm: "42", template: null,
+      ...request, lang: "en", country: "de", experiment_id: id, arm: "42", template: "x@1",
     }]);
+  });
+
+  it("keeps the template the client says it drew, and only in key@version shape", async () => {
+    await recordOnboardingEvents(deps, userId, [
+      event({ id: "t1", template: "welcome-hero@3" }), event({ id: "t2", template: "<b>@1" }), event({ id: "t3", template: 7 }),
+    ], request);
+    expect((await stored()).map((c) => c.template).sort()).toEqual(["welcome-hero@3", null, null].sort());
   });
 
   it("names no arm while the experiments switch is off", async () => {

@@ -2242,7 +2242,15 @@ export interface OnboardingEvent {
   value?: string;
   /** Client clock, ISO. The server stamps its own arrival time separately. */
   at: string;
+  /**
+   * The served template this screen was drawn from, `key@version` (ieat-app#3196). Client-reported,
+   * because only the client knows which slot it rendered; it labels the row and gates nothing.
+   */
+  template?: string;
 }
+
+/** `key@version`, the one shape a reported template takes. */
+export const TEMPLATE_REF = /^[a-z0-9][a-z0-9_-]{0,63}@\d{1,6}$/;
 
 /** Fields whose answer may be sent as `value`. Everything else is recorded as answered, no more.
  * The enumerated picks are reportable — a tag list is already what `restrictions` sent — while a

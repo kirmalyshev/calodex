@@ -4200,7 +4200,7 @@ export async function postgresStore(
           values (${e.id}, ${userId}, ${e.sessionId}, ${e.place}, ${e.action}, ${e.contentVersion},
                   ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at}, ${new Date(now())},
                   ${c.surface}, ${c.brand}, ${c.app_version}, ${c.build}, ${c.ota_update_id}, ${c.channel},
-                  ${c.lang}, ${c.country}, ${c.experiment_id}, ${c.arm}, ${c.template})
+                  ${c.lang}, ${c.country}, ${c.experiment_id}, ${c.arm}, ${e.template ?? c.template})
           on conflict (id) do nothing
           returning id`;
         if (rows.length > 0) added++;

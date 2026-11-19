@@ -1863,7 +1863,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         // Keyed on the CLIENT's id, so a retried batch overwrites nothing and adds nothing. The
         // Postgres implementation gets the same behaviour from a primary key.
         if (onboardingEvents.has(e.id)) continue;
-        onboardingEvents.set(e.id, { ...clone(e), userId, receivedAt: now(), context: { ...NO_EVENT_CONTEXT, ...context } });
+        onboardingEvents.set(e.id, { ...clone(e), userId, receivedAt: now(), context: { ...NO_EVENT_CONTEXT, ...context, template: e.template ?? context?.template ?? null } });
         added++;
       }
       return added;
