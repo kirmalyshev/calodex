@@ -79,7 +79,6 @@ export function payScreen(frame: Frame): HTMLElement {
       if (w.trialDays > 0) {
         go.textContent = fill(pay.startTrial, { days: String(w.trialDays) });
         note.textContent = fill(pay.trialNote, {
-          days: String(w.trialDays),
           renewal: fill(sel.value === "yearly" ? pay.pricePerYear : pay.pricePerMonth,
             { price: sel.plan.price }),
         });

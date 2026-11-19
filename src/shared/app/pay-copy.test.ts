@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "bun:test";
 import { lintCopy } from "../claims.ts";
+import { fill } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { PAY_COPY, payCopyFor } from "./pay-copy.ts";
 
@@ -51,8 +52,8 @@ describe("PAY_COPY", () => {
       yearlySub: ["{trial}", "{price}"],
       monthlySub: ["{trial}", "{price}"],
       startTrial: ["{days}"],
-      trialNote: ["{days}", "{renewal}"],
-      trialNotePhone: ["{days}", "{renewal}"],
+      trialNote: ["{renewal}"],
+      trialNotePhone: ["{renewal}"],
       offerOff: ["{percent}"],
       offerPrice: ["{price}"],
       offerPerMonth: ["{price}"],
@@ -64,6 +65,22 @@ describe("PAY_COPY", () => {
         for (const ph of phs) {
           expect(copy[key as keyof typeof copy], `${lang}.${key}`).toContain(ph);
         }
+      }
+    }
+  });
+
+  it("never restates the trial the CTA already named, in any language (ieat-app#3160)", () => {
+    // `startTrial` owns the trial's length — "Try {days} days free" — and the terms line under it
+    // opened with the same "{days} days free", saying it twice on one screen. The line keeps what
+    // the store requires (the price after the trial, the period, auto-renew, the cancel path) but
+    // must not restate the length: no `{days}` placeholder, and it cannot open with the badge's
+    // own phrase — the rendered check also refuses a hardcoded restatement ("3 days free, then").
+    for (const lang of LANGS) {
+      const copy = PAY_COPY[lang]!;
+      const phrase = fill(copy.trialBadge, { days: "7" });
+      for (const key of ["trialNote", "trialNotePhone"] as const) {
+        expect(copy[key], `${lang}.${key}`).not.toContain("{days}");
+        expect(fill(copy[key], { days: "7", renewal: "X" }).startsWith(phrase), `${lang}.${key}`).toBe(false);
       }
     }
   });
@@ -86,8 +103,8 @@ describe("PAY_COPY", () => {
     expect(en.perMonthCaption).toBe("a month");
     expect(en.monthlySub).toBe("{trial}, {price} a month");
     expect(en.startTrial).toBe("Try {days} days free");
-    expect(en.trialNote).toBe("{days} days free, then {renewal}. Renews automatically until cancelled. Cancel any time in Profile › Subscription.");
-    expect(en.trialNotePhone).toBe("{days} days free, then {renewal}. Renews automatically until cancelled. Cancel in Settings › Apple ID › Subscriptions at least 24 hours before the trial ends.");
+    expect(en.trialNote).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel any time in Profile › Subscription.");
+    expect(en.trialNotePhone).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel in Settings › Apple ID › Subscriptions at least 24 hours before the trial ends.");
     // pay-gift
     expect(en.giftTitle).toBe("We have a gift for you");
     expect(en.giftAlt).toBe("A wrapped gift box");
