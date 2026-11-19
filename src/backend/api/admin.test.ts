@@ -197,6 +197,7 @@ describe("experiments (ieat-app#2669)", () => {
     expect((await admin("PUT", arm, { firstVerdict: "free-week" })).status).toBe(422);
     expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/0`, { firstVerdict: "own-meal" })).status).toBe(422);
     expect((await admin("PUT", arm, { firstVerdict: "own-meal", order: null })).status).toBe(422);
+    expect((await admin("PUT", arm, { firstVerdict: "own-meal", content: structuredClone(DEFAULT_ONBOARDING_CONTENT) })).status).toBe(422);
     expect((await admin("PUT", arm, { firstVerdict: "welcome-plate" })).status).toBe(200);
     expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
     await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
@@ -207,6 +208,25 @@ describe("experiments (ieat-app#2669)", () => {
     const newer = await session();
     expect((await (await admin("GET", "/v1/onboarding?verdict=1", undefined, newer)).json() as { firstVerdict?: unknown }).firstVerdict)
       .toBe("welcome-plate");
+  });
+
+  it("tells an own-meal account its one analysis on the profile, and asks once it is spent (ieat-app#3165)", async () => {
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" }))
+      .json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, { firstVerdict: "own-meal" })).status).toBe(200);
+    expect((await admin("PUT", `/admin/api/experiments/${experiment.id}`, { weights: [0, 1], rules: { surfaces: ["app"] } })).status).toBe(200);
+    await admin("PUT", `/admin/api/switches/onboarding.experiments`, { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`, {})).status).toBe(200);
+
+    const token = await session();
+    expect((await (await admin("GET", "/v1/onboarding?verdict=1", undefined, token)).json() as { firstVerdict?: unknown }).firstVerdict)
+      .toBe("own-meal");
+    const required = async () =>
+      ((await (await admin("GET", ROUTES.profile, undefined, token)).json()) as { limits: { subscriptionRequired: boolean } }).limits.subscriptionRequired;
+    expect(await required()).toBe(false);
+    await store.recordAnalysis((await store.userIdForToken(token))!, "2026-11-19", "photo");
+    expect(await required()).toBe(true);
   });
 });
 

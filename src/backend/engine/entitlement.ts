@@ -86,10 +86,10 @@ export interface UserCap {
 /** Null when there is no such account. */
 export async function userCap(deps: EngineDeps, userId: string): Promise<UserCap | null> {
   if (!(await deps.store.getProfile(userId))) return null;
-  const [own, spent] = await Promise.all([
-    deps.store.getFreeAnalyses(userId), deps.store.countUserAnalyses(userId),
+  const [own, effective, spent] = await Promise.all([
+    deps.store.getFreeAnalyses(userId), freeAnalysesFor(deps, userId), deps.store.countUserAnalyses(userId),
   ]);
-  return { freeAnalyses: own, effective: own ?? 0, spent };
+  return { freeAnalyses: own, effective, spent };
 }
 
 /** Null when there is no such account. `n` null takes the grant away. */
@@ -103,7 +103,8 @@ export async function setUserCap(deps: EngineDeps, userId: string, n: number | n
  *
  * `entitled` is `entitlementLive` and nothing else, for the reason at the top of this file: the
  * panel must not be a second opinion about what "paid" means, or it will eventually disagree with
- * the refusal. `effective` is the same `own ?? default` that `checkCaps` refuses with.
+ * the refusal. `effective` is the admin's grant (`own ?? 0`); one account's `userCap` adds T1's
+ * arm (ieat-app#3165), which a list of every account does not read per row.
  */
 export interface AdminUser extends AdminUserRow {
   entitled: boolean;

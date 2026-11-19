@@ -1054,9 +1054,10 @@ export interface OnboardingContentResponse {
   order?: readonly string[];
   /**
    * The experiment arm's first verdict (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the live
-   * flow. Sent only to a client that declared `?verdict=1`; the server enrols no other client in an
-   * experiment whose arms carry one. `own-meal` arrives with the one analysis already allowed, so
-   * `limits.subscriptionRequired` is false until it is spent — the arm is that, read off the profile.
+   * flow. Sent only to a client that declared `?verdict=` at or above `FIRST_VERDICT_VERSION`; the
+   * server enrols no other client in an experiment whose arms carry one. `own-meal` lets an account
+   * with no analyses yet through for one, so the client reads `limits.subscriptionRequired` — the
+   * paywall's answer, never the arm — to decide whether the sheet comes before the first meal.
    */
   firstVerdict?: FirstVerdictArm;
 }

@@ -1024,7 +1024,7 @@ export function createRouter(
         if (!Array.isArray(body?.lines)) return json({ error: "lines required" }, 400);
         // `?order=` — the SAME value the client sent `GET /v1/onboarding`: the thread quotes the ask
         // line a client with it was shown, so a different one quotes a line the screen did not show.
-        const out = await appendLines(deps, userId, body.lines, { orderVersion: orderVersionOf(url) });
+        const out = await appendLines(deps, userId, body.lines, { orderVersion: orderVersionOf(url), verdictVersion: versionOf(url, "verdict") });
         if (body.lines.length > 0 && out.appended === 0) return json({ error: out.reason ?? "bad-line" }, 400);
         return json(out satisfies AppendLinesResponse);
       }

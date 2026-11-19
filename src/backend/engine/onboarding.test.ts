@@ -899,6 +899,23 @@ describe("experiments (ieat-app#2669)", () => {
       expect(seen.get("welcome-plate")!).toBeGreaterThan(15);
     });
 
+    it("quotes in the thread the armed copy to a capable client, the live copy to an older one", async () => {
+      const e = experiment({
+        variants: [
+          { control: true, weight: 0, content: variantContent(41, "Control") },
+          { weight: 1, content: variantContent(42), firstVerdict: "welcome-plate" },
+        ],
+      });
+      e.variants[1]!.content.screens.find((x) => x.id === "goal")!.asks.goal!.lines = ["The arm asks the goal"];
+      await startExperiment(e);
+      const said = async () => (await store.chatBefore(userId, null, 10)).map((m) => m.text);
+      const line = [{ role: "assistant" as const, ask: { prompt: "goal", line: 0 } }];
+      expect(await appendLines(deps, userId, line, { verdictVersion: FIRST_VERDICT_VERSION })).toEqual({ appended: 1 });
+      expect(await said()).toContain("The arm asks the goal");
+      expect(await appendLines(deps, userId, line)).toEqual({ appended: 1 });
+      expect((await said()).filter((t) => t === "The arm asks the goal")).toHaveLength(1);
+    });
+
     describe("arm A's one analysis", () => {
       const { unpaidRefused } = require("./caps.ts") as typeof import("./caps.ts");
       const armed = async (arm: "own-meal" | "welcome-plate") => {
@@ -961,6 +978,12 @@ describe("experiments (ieat-app#2669)", () => {
       it("gives an unassigned account nothing", async () => {
         await startExperiment(t1());
         expect(await unpaidRefused(deps, userId)).toBe(true);
+      });
+
+      it("shows the admin the arm's analysis on the account's cap", async () => {
+        const { userCap } = await import("./entitlement.ts");
+        await armed("own-meal");
+        expect(await userCap(deps, userId)).toEqual({ freeAnalyses: null, effective: 1, spent: 0 });
       });
 
       it("does not add the arm's analysis on top of an admin grant", async () => {
