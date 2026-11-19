@@ -43,6 +43,10 @@ const ACCOUNTS = {
     startedAt: "2026-11-06T08:00:00.000Z", lastPlace: "summary", sessions: 1,
     completed: true, paywall: true,
     paid: { kind: "trial", productId: "monthly_499", msFromStart: 60000, live: false },
+  }, {
+    userId: "55555555-4444-3333-2222-111111111111", lang: "en", country: "us",
+    startedAt: "2026-11-05T07:00:00.000Z", lastPlace: "paywall", sessions: 1,
+    completed: true, paywall: true, paywallResult: "declined", paid: null,
   }],
 };
 
@@ -99,13 +103,18 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   const row = page.locator("#funnel-users .fa-row", { hasText: USER.slice(0, 8) });
   await expect(row).toBeVisible();
   await expect(row).toContainText("Saw their plan");
-  await expect(row).toContainText("finished");
-  await expect(row).toContainText("paywall");
+  await expect(row).toContainText("answered the questions");
+  await expect(row).toContainText("reached the plan unpaid");
   await expect(row).toContainText("monthly · 2h");
 
   // A run that stopped before finishing says so — the last screen alone read as an outcome.
   const quit = page.locator("#funnel-users .fa-row", { hasText: "99999999" });
   await expect(quit).toContainText("left at Chose a goal");
+
+  // The plans sheet is a place (ieat-app#3136): a decline reads as its own last screen, with the
+  // result — not as "left at sign-up".
+  const declined = page.locator("#funnel-users .fa-row", { hasText: "55555555" });
+  await expect(declined).toContainText("Paywall · declined");
 
   // A record that lapsed is named, not read as still paying.
   await expect(page.locator("#funnel-users .fa-row", { hasText: "77777777" })).toContainText("trial ended");

@@ -803,13 +803,17 @@ describe("the interstitials", () => {
     expect(at("situation")).toBeLessThan(at("diet"));
     expect(at("diet")).toBeLessThan(at("medical"));
     expect(at("medical")).toBeLessThan(at("summary"));
-    // The account step lands between the plan and the country — the design's order, fixed here.
+    // The account step lands between the plan and the country — the design's order, fixed here —
+    // and the plans sheet is the place between them (ieat-app#3136): a decline must read as the
+    // run's last screen, not as "left at sign-up".
     expect(at("summary")).toBeLessThan(at("signup"));
-    expect(at("signup")).toBeLessThan(at("country"));
+    expect(at("signup")).toBeLessThan(at("paywall"));
+    expect(at("paywall")).toBeLessThan(at("country"));
     // The friend's-link step (#899) is the optional one after the country, before Apple Health.
     expect(at("country")).toBeLessThan(at("referral"));
     expect(at("referral")).toBeLessThan(at("health"));
     expect(ONBOARDING_INTERSTITIALS as readonly string[]).toContain("referral");
+    expect(ONBOARDING_INTERSTITIALS as readonly string[]).toContain("paywall");
   });
 });
 
@@ -819,8 +823,9 @@ describe("the analytics vocabulary", () => {
     // questionnaire about an identified person, and analytics rows outlive the account. The
     // enumerable picks — the counted/barrier/situation picks, diet and medical, whose v2 lists
     // are tamer than the retired eight — travel as tag lists the way `restrictions` always did.
+    // `paywall` is in the list too: its result is a fixed three-word vocabulary, not an answer.
     for (const f of REPORTABLE_FIELDS) {
-      expect(["goal", "sex", "activity", "pace", "counted_before", "barriers", "situations", "streak_goal_days", "diet", "medical", "country"]).toContain(f);
+      expect(["goal", "sex", "activity", "pace", "counted_before", "barriers", "situations", "streak_goal_days", "diet", "medical", "country", "paywall"]).toContain(f);
     }
     for (const f of ["weight_kg", "height_cm", "birth_year", "target_weight_kg"]) {
       expect(REPORTABLE_FIELDS as readonly string[]).not.toContain(f);
