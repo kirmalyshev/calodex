@@ -3405,9 +3405,10 @@ describe("refer a friend", () => {
     const page = await res.text();
     expect(page).toContain(escape(PAGE_COPY.inviteHeading));
     expect(page).toContain(`href="${LISTING}?ct=referral"`);
-    expect(page).toContain(`data-copy="https://eait.fit/r/${code}"`);
+    expect(page).not.toContain("data-copy");
     expect(page).toContain(`href="/start?ref=${code}"`);
-    expect(page).toContain(escape(fill(PAGE_COPY.inviteCopied, { link: `eait.fit/r/${code}` })));
+    // No "copied for the app" line: the app has no step to paste it into (#3222).
+    expect(page).not.toContain('class="note"');
     // It sets nothing and is no one's session.
     expect(res.headers.getSetCookie()).toEqual([]);
     await get(`/r/${code}`, undefined, { "user-agent": "facebookexternalhit/1.1" });
