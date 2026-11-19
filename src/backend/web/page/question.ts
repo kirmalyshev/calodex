@@ -8,6 +8,7 @@
 // field (the walk's `?draft=` and the toggle's POST are how a typed value crosses a unit change).
 
 import {
+  currentBrand,
   basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, explainTargets, fill, heightDisplayValue, kcalNumbers, MIN_AGE,
   minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, pacePreview, PACES, rulerLabels, RULER_TICKS,
   LB_PER_KG, lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
@@ -77,7 +78,7 @@ ${actions}
 ${opts.foot ?? ctaSubmit(v.content.ui.continueLabel)}
 </form></div></div>`;
   // A question page's title is the product — the question itself is the h1 already on screen.
-  return shell("eait", body, v.lang, "ob");
+  return shell(currentBrand().name, body, v.lang, "ob");
 }
 
 // ── The option screens (01 goal · 04 sex · 08 activity · 11 counted/barrier/situation · 14 diet · 14b medical) ──

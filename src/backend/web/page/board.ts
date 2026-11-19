@@ -6,7 +6,7 @@
 // The boards are `product/design/pro/onboarding/web/00-welcome.html … 14b-medical.html`; the
 // markup names are theirs (`.wtop`, `.dash`, `.say`, `.opt`…) so the two cannot quietly drift.
 
-import { dashPlaces, servedOrder, type Lang, type OnboardingPlace } from "@eait/shared";
+import { currentBrand, dashPlaces, servedOrder, type Lang, type OnboardingPlace } from "@eait/shared";
 import { brandSvg } from "@eait/shared/ui/icons";
 import { escape } from "./shell.ts";
 
@@ -14,7 +14,7 @@ import { escape } from "./shell.ts";
  * product here, nothing links out (§9). */
 export function wtop(): string {
   return `<div class="wtop"><span class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}` +
-    `eait</span><span class="sp"></span></div>`;
+    `${escape(currentBrand().name)}</span><span class="sp"></span></div>`;
 }
 
 /**

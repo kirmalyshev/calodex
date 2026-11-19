@@ -23,7 +23,7 @@
  * so the policy on the response is `default-src 'none'` with a per-request nonce and NO
  * `'unsafe-inline'` — and a nonce cannot come from a constant.
  */
-import { ADMIN_PUSH_MAX_RECIPIENTS, LANG_LABEL, PUSH_ROUTES } from "@eait/shared";
+import { ADMIN_PUSH_MAX_RECIPIENTS, currentBrand, LANG_LABEL, PUSH_ROUTES } from "@eait/shared";
 import { fontFaces } from "@eait/shared/design";
 import { lightVars } from "@eait/shared/palette";
 import { brandSvg } from "@eait/shared/ui/icons";
@@ -33,7 +33,7 @@ export const adminPage = (nonce: string): string => `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>eait — onboarding admin</title>
+<title>${currentBrand().name} — onboarding admin</title>
 <!-- Empty data: icon. An anonymous request for an unknown path on this origin is answered 401
      by resolveUserId before anything can 404 it, so /favicon.ico logged a console error on every
      page load. A console that always has an error in it is a console nobody reads. -->
@@ -519,7 +519,7 @@ details.how p { margin-top: 8px; }
 
 <div class="center" id="gate">
   <div class="card gatecard">
-    <div class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}eait admin</div>
+    <div class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}${currentBrand().name} admin</div>
     <p>Sign in with a staff account.</p>
     <p id="gate-error" class="hidden gate-error"></p>
     <div class="actions"><a class="btn primary big" id="signin" href="/start">Sign in</a></div>
@@ -528,7 +528,7 @@ details.how p { margin-top: 8px; }
 
 <div class="center hidden" id="denied">
   <div class="card gatecard">
-    <div class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}eait admin</div>
+    <div class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}${currentBrand().name} admin</div>
     <h2>That account cannot administer this instance.</h2>
     <p>It is signed in, but it is not staff. Ask a staff member to make this account staff, or sign in with another.</p>
     <div class="actions"><button id="other-account">Sign in with another account</button></div>
@@ -537,7 +537,7 @@ details.how p { margin-top: 8px; }
 
 <div class="adm hidden" id="app">
   <nav class="anav" aria-label="Admin">
-    <span class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}eait <small>admin</small></span>
+    <span class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}${currentBrand().name} <small>admin</small></span>
     <h6>Operate</h6>
     <a href="#numbers" data-nav="numbers">Numbers</a>
     <a href="#pushes" data-nav="pushes">Pushes</a>
@@ -555,7 +555,7 @@ details.how p { margin-top: 8px; }
     <div class="who">Signed in · staff</div>
   </nav>
   <div class="atop">
-    <span class="brand">eait admin</span>
+    <span class="brand">${currentBrand().name} admin</span>
     <select id="switcher" aria-label="View">
       <optgroup label="Operate">
         <option value="numbers">Numbers</option>
@@ -4496,7 +4496,7 @@ details.how p { margin-top: 8px; }
     $("view-title").textContent = VIEWS[id].title;
     $("lang").classList.toggle("hidden", id !== "onboarding");
     $("copy-new").classList.toggle("hidden", id !== "templates");
-    document.title = "eait admin — " + VIEWS[id].title;
+    document.title = "${currentBrand().name} admin — " + VIEWS[id].title;
     Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"), function (a) {
       var on = a.getAttribute("data-nav") === id;
       a.classList.toggle("on", on);
