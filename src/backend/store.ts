@@ -18,7 +18,7 @@ import type {
   OnboardingContent, OnboardingContentSet,
   OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
-import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft } from "@eait/shared";
+import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
 /**
@@ -792,6 +792,24 @@ export interface OnboardingAssignment {
   /** The assigned variant's content `version`. */
   variant_id: number;
   assigned_at: string;
+}
+
+/**
+ * What `GET /v1/onboarding` served one account (ieat-app#3194): the content revision, the language,
+ * the surface and, per slot, the template revision that replaced that beat (`{}` for none). One row
+ * per distinct serving — a repeat moves `lastServedAt` only — so the admin's journal can say what a
+ * run was shown without a row per request.
+ */
+export interface OnboardingServed {
+  contentVersion: number;
+  lang: Lang;
+  surface: "app" | "web";
+  screens: Partial<Record<TemplateSlot, { template: string; version: number }>>;
+}
+export interface OnboardingServedRecord extends OnboardingServed {
+  /** First served, ISO. */
+  servedAt: string;
+  lastServedAt: string;
 }
 
 /** One arm's numbers in an experiment's funnel, grouped by the assigned variant. */
@@ -1827,6 +1845,10 @@ export interface Store {
   putOnboardingAssignment(userId: string, experimentId: string, variantId: number): Promise<OnboardingAssignment>;
   /** Every assignment to one experiment — the results table's read, by assignment (intention to treat). */
   onboardingAssignments(experimentId: string): Promise<OnboardingAssignment[]>;
+  /** Record one serving of `GET /v1/onboarding` (ieat-app#3194): a new row, or `lastServedAt` moved on an identical one. */
+  recordOnboardingServed(userId: string, served: OnboardingServed): Promise<void>;
+  /** Every serving this account was recorded, oldest first. */
+  onboardingServed(userId: string): Promise<OnboardingServedRecord[]>;
   /**
    * The per-variant funnel for one experiment: users, sessions and completions grouped by the
    * assigned variant, plus the sessions that rendered a DIFFERENT revision than assigned — the

@@ -4055,6 +4055,55 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.healthDaysSince(b, "0000-01-01")).toEqual([]);
     });
 
+    // ── What GET /v1/onboarding served (ieat-app#3194) ───────────────────────────────────────
+
+    describe("onboarding served (ieat-app#3194)", () => {
+      const served = (over: Record<string, unknown> = {}) => ({
+        contentVersion: 42, lang: "de" as const, surface: "app" as const,
+        screens: { baseline: { template: "day", version: 3 } }, ...over,
+      });
+
+      it("keeps one row per distinct serving, oldest first, and moves only its last stamp", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "de")).userId;
+        expect(await s.onboardingServed(u)).toEqual([]);
+        await s.recordOnboardingServed(u, served());
+        const [first] = await s.onboardingServed(u);
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served());
+        await s.recordOnboardingServed(u, served({ contentVersion: 43, screens: {} }));
+        const rows = await s.onboardingServed(u);
+        expect(rows.map((r) => [r.contentVersion, r.lang, r.surface, r.screens])).toEqual([
+          [42, "de", "app", { baseline: { template: "day", version: 3 } }],
+          [43, "de", "app", {}],
+        ]);
+        expect(rows[0]!.servedAt).toBe(first!.servedAt);
+        expect(Date.parse(rows[0]!.lastServedAt)).toBeGreaterThan(Date.parse(first!.lastServedAt));
+      });
+
+      it("is the account's own: another account reads none of it, and erasure takes it", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "de")).userId;
+        const other = (await s.upsertDeviceUser(device(), "de")).userId;
+        await s.recordOnboardingServed(u, served());
+        expect(await s.onboardingServed(other)).toEqual([]);
+        await s.deleteUser(u);
+        expect(await s.onboardingServed(u)).toEqual([]);
+      });
+
+      it("moves on merge, a serving both accounts hold kept once", async () => {
+        const s = await open();
+        const anon = (await s.upsertDeviceUser(device(), "de")).userId;
+        const real = (await s.upsertDeviceUser(device(), "de")).userId;
+        await s.recordOnboardingServed(anon, served());
+        await s.recordOnboardingServed(anon, served({ contentVersion: 7 }));
+        await s.recordOnboardingServed(real, served());
+        await s.mergeUsers(anon, real);
+        expect((await s.onboardingServed(real)).map((r) => r.contentVersion).sort()).toEqual([42, 7].sort());
+        expect(await s.onboardingServed(anon)).toEqual([]);
+      });
+    });
+
     // ── The admin switches (#563) ─────────────────────────────────────────────────────────────
 
     describe("the admin switches", () => {
