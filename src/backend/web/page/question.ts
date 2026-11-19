@@ -9,8 +9,8 @@
 
 import {
   currentBrand,
-  basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, explainTargets, fill, heightDisplayValue, kcalNumbers, MIN_AGE,
-  minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, pacePreview, PACES, rulerLabels, RULER_TICKS,
+  basalMetabolicRate, BANDS, capNote, chatCopyFor, cmToFtIn, countText, DEFAULT_STREAK_GOAL, fill, heightDisplayValue, kcalNumbers, MIN_AGE,
+  minHealthyWeightKg, numbers, ONBOARDING_NEUTRAL, paceEcho, paceHeading, pacePreview, PACES, rulerLabels, RULER_TICKS,
   LB_PER_KG, lbToKg, optionLabel, rulerTickPhase, screenOptions, screenOptionValues, spellUnit, streakDelta, suggestedTargetKg, targetGoalLine,
   targetRange,
   weightDisplay, weightDisplayValue,
@@ -393,12 +393,9 @@ function targetControl(v: QuestionView): { seg: string; control: string } {
 
 // ── The pace screen (10) — three computed candidates ──────────────────────────────────────────
 
-/** A pace result line ("72kg around March 2027 · 1490kcal a day") as the board's card: the
- *  arrival on top, the day's kcal under it in bold. A line with no " · " is the card alone. */
+/** A pace result line ("72kg around March 2027") as the board's card (ieat-app#3192: no kcal under it). */
 function whenCard(line: string): string {
-  const at = line.lastIndexOf(" · ");
-  return at === -1 ? `<div class="when num">${escape(line)}</div>`
-    : `<div class="when num"><span>${escape(line.slice(0, at))}</span>${escape(line.slice(at + 3))}</div>`;
+  return `<div class="when num">${escape(line)}</div>`;
 }
 
 /**
@@ -503,14 +500,11 @@ export function question(v: QuestionView): string {
     }
     case "target": {
       const { seg, control } = targetControl(v);
-      const burn = explainTargets(v.profile, v.today).basis.tdee;
-      return page(v, {
-        seg, control,
-        sub: burn === null ? undefined : fill(v.content.beats.echo.days, { burn: kcalNumbers(v.lang)(burn) }),
-      });
+      return page(v, { seg, control });
     }
     case "pace":
-      return page(v, { control: paceControl(v, paceEcho(v.profile, v.units, v.lang, v.content)) });
+      const named = { ...v, lines: [...paceHeading(v.content, v.profile.goal, v.lines, v.lang)] };
+      return page(named, { control: paceControl(named, paceEcho(v.profile, v.units, v.lang, v.content)) });
     default:
       // A field prompt this file does not draw is a bug, not a page — fail loud in dev.
       return page(v, {

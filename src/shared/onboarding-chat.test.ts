@@ -380,6 +380,18 @@ describe("the plan's computed words", () => {
     expect(line).toContain("what your body burns in a day");
   });
 
+  it("cuts the kcal tail off a stored result (ieat-app#3192)", () => {
+    const en = DEFAULT_ONBOARDING_CONTENT;
+    const legacy = { ...en, pace: { ...en.pace, result: "{target} around {month} · {kcal}kcal a day" } };
+    const p = pacePreview(her, "steady", SEP_24, "en", legacy)!;
+    expect(p.line).toBe(pacePreview(her, "steady", SEP_24, "en", en)!.line);
+    expect(p.line).not.toMatch(/kcal|\{/);
+    const ru = { ...en, pace: { ...en.pace, result: "{target} · ориентир — {month} · {kcal}ккал в день" } };
+    const r = pacePreview(her, "steady", SEP_24, "ru", ru)!.line!;
+    expect(r).toContain("ориентир");
+    expect(r).not.toMatch(/ккал|\{/);
+  });
+
   it("shows the pace the GUARDS produced, never the one that was asked", () => {
     // Steady requests 0.5kg/wk; the persona's deficit cap hands back less — and the pace
     // screen's big number is the computed `kgPerWeek` rounded, not `PACE_KG_PER_WEEK`. A screen
@@ -389,7 +401,7 @@ describe("the plan's computed words", () => {
     expect(p.ratePerWeek).not.toBeNull();
     expect(Math.abs(p.ratePerWeek! * 10 - Math.round(p.ratePerWeek! * 10))).toBe(0);
     expect(p.line).toContain("68kg");
-    expect(p.line).toContain("kcal a day");
+    expect(p.line).not.toContain("kcal");
     expect(p.line).not.toContain("{");
   });
 

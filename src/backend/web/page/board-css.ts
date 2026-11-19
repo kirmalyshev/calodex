@@ -235,7 +235,6 @@ export const BOARD_CSS = `
 .ob .paceresbox { margin-top: 30px; }
 .ob .when { display: inline-block; padding: 14px 26px; border-radius: 18px; background: var(--surface);
             font-size: 16px; font-weight: 700; }
-.ob .when span { display: block; font-weight: 500; color: var(--muted); font-size: 15px; margin-bottom: 2px; }
 .ob .cap { text-align: center; margin-top: 10px; }
 .ob .cap summary { list-style: none; cursor: pointer; display: inline-block; }
 .ob .cap summary::-webkit-details-marker { display: none; }

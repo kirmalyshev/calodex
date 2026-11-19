@@ -1464,7 +1464,7 @@ describe("a target that runs the wrong way", () => {
 // moments are GET pages a POST redirects to.
 
 /** Walk a session to the question named, one real POST at a time, and return its HTML. */
-const walkTo = async (session: string, stopAt: string): Promise<string> => {
+const walkTo = async (session: string, stopAt: string, over: Record<string, string | string[]> = {}): Promise<string> => {
   let next = "/start/q";
   for (let i = 0; i < 20; i++) {
     const page = await get(next, session);
@@ -1482,7 +1482,7 @@ const walkTo = async (session: string, stopAt: string): Promise<string> => {
     const id = m[1]!;
     if (id === stopAt) return html;
     const action = html.match(/action="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "/start/q";
-    const res = await post(action, { prompt: id, answer: ANSWERS[id]! }, session);
+    const res = await post(action, { prompt: id, answer: { ...ANSWERS, ...over }[id]! }, session);
     next = res.headers.get("location") ?? "/start/q";
     if (res.status !== 303) throw new Error(`${id} refused: ${res.status}`);
   }
@@ -1619,16 +1619,28 @@ describe("the preliminary plan card", () => {
 });
 
 describe("the echoes under the numbers (#2514)", () => {
-  it("names the resting burn on the activity question and the day's burn on the target", async () => {
+  it("names the resting burn on the activity question; the target and pace screens print no kcal (#3192)", async () => {
     const session = await signIn();
     const activity = await walkTo(session, "activity");
     expect(activity).toMatch(/<p class="qecho">At rest: \d+kcal a day<\/p>/);
     expect(activity).toContain(".ob .qecho { margin: -10px 0 0; font-size: 15px; color: var(--muted); }");
     const target = await walkTo(session, "target_weight_kg");
-    expect(target).toMatch(/<p class="qsub">Your days burn \d+kcal<\/p>/);
-    // Under the heading, as the iOS target step draws it — not under the ruler.
-    expect(target.indexOf(`class="qsub"`)).toBeLessThan(target.indexOf(`class="ctl"`));
+    // ieat-app#3192: the target question carries no burn line, and the pace question names the goal.
+    expect(target).not.toContain(`class="qsub"`);
+    expect(target).not.toMatch(/days burn/i);
+    const pace = await walkTo(session, "pace");
+    expect(pace).not.toMatch(/kcal a day/);
   });
+});
+
+describe("the pace question names the goal (#3192)", () => {
+  for (const [goal, text] of [["lose", "How fast you want to lose weight"], ["gain", "How fast you want to gain weight"]] as const) {
+    it(`${goal}: ${text}`, async () => {
+      const session = await signIn();
+      const pace = await walkTo(session, "pace", goal === "gain" ? { goal, target_weight_kg: "90" } : { goal });
+      expect(pace).toContain(text);
+    });
+  }
 });
 
 describe("the unit toggle", () => {
@@ -3119,7 +3131,8 @@ describe("the whole onboarding flow, in every language the app speaks", () => {
         // `{loseTail}`, `{floor}` and friends are substituted before the page is written, so the
         // stored sentence is not the rendered one — but the words around the hole are.
         const screen = content.screens.find((x) => x.id === screenForStep(id as never));
-        const ask = screen?.asks[id as keyof typeof screen.asks]?.lines[0];
+        // The pace question is named for the goal (#3192): the walk answers "lose".
+        const ask = id === "pace" ? content.pace.heading?.lose : screen?.asks[id as keyof typeof screen.asks]?.lines[0];
         if (ask) {
           const fixed = ask.split(/\{\w+\}/).reduce((a, b) => (b.length > a.length ? b : a), "");
           expect(html, `${lang}.${id} did not ask in ${lang}`).toContain(escape(fixed));

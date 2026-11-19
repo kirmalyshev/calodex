@@ -73,7 +73,6 @@ describe("every language's onboarding content", () => {
       expect(c.summary.capNote, lang).toContain("{share}");
       // The beats' computed fills — a hidden (empty) template drops its placeholder legitimately.
       if (c.beats.echo.rest !== "") expect(c.beats.echo.rest, lang).toContain("{rest}");
-      if (c.beats.echo.days !== "") expect(c.beats.echo.days, lang).toContain("{burn}");
       expect(c.beats.prelim.gap, lang).toContain("{delta}");
       expect(c.beats.prelim.keepTitle, lang).toContain("{burn}");
       // The target ruler's and the pace screen's computed fills.
@@ -84,7 +83,9 @@ describe("every language's onboarding content", () => {
       expect(c.target.suggestion.up, lang).toContain("{pct}");
       expect(c.pace.rate, lang).toContain("{rate}");
       expect(c.pace.result, lang).toContain("{target}");
-      expect(c.pace.result, lang).toContain("{kcal}");
+      expect(c.pace.result, lang).not.toContain("{kcal}");
+      expect(c.pace.heading?.lose, lang).toBeTruthy();
+      expect(c.pace.heading?.gain, lang).toBeTruthy();
       if (c.pace.echo !== "") {
         expect(c.pace.echo, lang).toContain("{from}");
         expect(c.pace.echo, lang).toContain("{to}");
@@ -255,3 +256,51 @@ function flatten(node: unknown, at = "", out: Record<string, string> = {}): Reco
   }
   return out;
 }
+
+describe("pace heading (ieat-app#3192)", () => {
+  it("names the goal; maintain keeps the asked line; a revision without it gets the compiled-in one", async () => {
+    const { paceHeading } = await import("./onboarding-chat.ts");
+    const en = onboardingContentFor("en");
+    expect(paceHeading(en, "lose", ["How fast?"], "en")).toEqual(["How fast you want to lose weight"]);
+    expect(paceHeading(en, "gain", ["How fast?"], "en")).toEqual(["How fast you want to gain weight"]);
+    expect(paceHeading(en, "maintain", ["How fast?"], "en")).toEqual(["How fast?"]);
+    const { heading: _gone, ...paceOld } = en.pace;
+    const old = { ...en, pace: paceOld };
+    expect(paceHeading(old, "lose", ["How fast?"], "de")).toEqual([onboardingContentFor("de").pace.heading!.lose]);
+  });
+  it("no pace result prints a kcal figure", () => {
+    for (const lang of LANGS) expect(onboardingContentFor(lang).pace.result, lang).not.toContain("{kcal}");
+  });
+});
+
+describe("pace heading and legacy revisions (ieat-app#3192)", () => {
+  it("still serves echo.days as an empty string: a shipped build discards the whole beats block without a string there", () => {
+    for (const lang of LANGS) expect(onboardingContentFor(lang).beats.echo.days, lang).toBe("");
+  });
+  it("never swaps or copies: lose and gain differ in every language except where script is the only difference", () => {
+    for (const lang of LANGS) {
+      const h = onboardingContentFor(lang).pace.heading!;
+      expect(h.lose, lang).not.toBe(h.gain);
+      expect(h.lose, lang).not.toBe(onboardingContentFor(lang).screens.find((x) => x.id === "pace")?.asks?.pace?.lines?.[0]);
+    }
+  });
+  it("a blank or non-string heading falls back to the asked line", async () => {
+    const { paceHeading } = await import("./onboarding-chat.ts");
+    const en = onboardingContentFor("en");
+    const blank = { ...en, pace: { ...en.pace, heading: { lose: "  ", gain: "" } } };
+    expect(paceHeading(blank, "lose", ["How fast?"], "en")).toEqual(["How fast?"]);
+    expect(paceHeading(blank, "gain", ["How fast?"], "en")).toEqual(["How fast?"]);
+  });
+  it("validates old revisions: echo.days with {burn}; refuses no days, refuses a new {kcal} in result; a null or odd heading", () => {
+    const en = onboardingContentFor("en");
+    const ok = (f: (c: any) => void) => { const c = structuredClone(en) as any; f(c); return validateOnboardingContent(c); };
+    expect(ok((c) => { c.beats.echo.days = "Your days burn {burn}kcal"; }).ok).toBe(true);
+    expect(ok((c) => { delete c.beats.echo.days; }).ok).toBe(false);
+    expect(ok((c) => { c.beats.echo.days = ""; }).ok).toBe(true);
+    expect(ok((c) => { c.pace.result = "{target} around {month} · {kcal}kcal a day"; }).ok).toBe(false);
+    expect(ok((c) => { delete c.pace.heading; }).ok).toBe(true);
+    const nul = ok((c) => { c.pace.heading = null; });
+    expect(nul.ok).toBe(false);
+    expect(ok((c) => { c.pace.heading.extra = "x"; }).ok).toBe(false);
+  });
+});

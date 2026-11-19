@@ -51,7 +51,7 @@ import { lintCopy } from "./claims.ts";
  *
  *   - the wrong-direction check on the goal weight ("you're at 93 and asked to lose to 95") reads
  *     the current weight, so weight comes first;
- *   - the pace screen prints a landing month and a kcal a day, which need the activity multiplier,
+ *   - the pace screen prints a landing month, which needs the activity multiplier,
  *     so activity comes before the target.
  */
 export const ONBOARDING_STEPS = [
@@ -458,10 +458,13 @@ export interface OnboardingBeatsContent {
   /** Under the age question: why it is asked. May be empty (hidden). */
   ageWhy: string;
   /**
-   * The answers said back as burn numbers under later questions — `{rest}`/`{burn}` are computed
-   * kcal, never typed. Either may be empty (hidden).
+   * The answer said back under the activity question — `{rest}` is the computed resting burn, may
+   * be empty (hidden). `days` is retired (ieat-app#3192: the Target screen prints no burn line); a
+   * stored revision may still carry it and nothing reads it. It is still SERVED as "" (a hidden line):
+   * a shipped build's `usableBeats` requires a string there and would otherwise discard the whole
+   * beats block. Drop it only after the OTA that stops reading it.
    */
-  echo: { rest: string; days: string };
+  echo: { rest: string; days?: string };
   /**
    * The BMI beat's words. The band labels stay code (`bmiRangeLabel`, shared with Progress) —
    * only the title, the "BMI" glyph and the one-line explanation move.
@@ -489,15 +492,19 @@ export interface OnboardingTargetContent {
 /**
  * The pace screen's words (ieat-app#2757). `rate`/`rateSuffix`/`result` are required; `echo` — the
  * answer said back above the pick — may be empty and renders nothing (ieat-app#2756). `{rate}` is
- * the projected rate with unit; `{target}`/`{month}`/`{kcal}` the projection's figure, month and
- * plan; `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code —
+ * the projected rate with unit; `{target}`/`{month}` the projection's figure and month (a stored
+ * `result` may still carry a ` · …{kcal}…` segment: it is cut off when read, and a new save is
+ * refused for it — ieat-app#3192); `{from}`/`{to}` the user's two weights. `capMarker`/`floorMarker`/`capNoteTail` stay code —
  * the cap and floor's own explanation is bound to `explainTargets`, not editable copy.
  */
 export interface OnboardingPaceContent {
   rate: string;
   /** The words after the rate figure alone — "a week", said without the number. */
   rateSuffix: string;
+  /** "{target} around {month}" — a stored revision may still carry a trailing " · …{kcal}…" segment, cut when read; a new save with `{kcal}` is refused (ieat-app#3192). */
   result: string;
+  /** The pace question per goal ("How fast you want to lose weight"), whole sentences. Absent → the language's compiled-in heading; blank → the `asks.pace` line. */
+  heading?: { lose: string; gain: string };
   echo: string;
 }
 
@@ -1288,7 +1295,7 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   },
   beats: {
     ageWhy: "Your metabolism changes with age, so we factor that in",
-    echo: { rest: "At rest: {rest}kcal a day", days: "Your days burn {burn}kcal" },
+    echo: { rest: "At rest: {rest}kcal a day", days: "" },
     baseline: { title: "Where you're starting", bmi: "BMI", what: "Body mass index" },
     prelim: {
       title: "Your plan", burn: "You burn", gap: "{delta} your pace",
@@ -1311,7 +1318,8 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   pace: {
     rate: "{rate} a week",
     rateSuffix: "a week",
-    result: "{target} around {month} · {kcal}kcal a day",
+    result: "{target} around {month}",
+    heading: { lose: "How fast you want to lose weight", gain: "How fast you want to gain weight" },
     echo: "From {from} to {to}.",
   },
   plan: {
@@ -1758,7 +1766,9 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
         if (!["rest", "days"].includes(k)) push(`beats.echo.${k} is not a used key`);
       }
       tmpl(echo.rest, "beats.echo.rest", { allowed: ["rest"], requiredPh: ["rest"], max: MAX_LINE });
-      tmpl(echo.days, "beats.echo.days", { allowed: ["burn"], requiredPh: ["burn"], max: MAX_LINE });
+      // Retired (#3192) and read by nothing here, but a SHIPPED build's `usableBeats` requires a string
+      // and discards the whole beats block without one: a save must keep it (an empty string hides the line).
+      if (typeof echo.days !== "string") push("beats.echo.days must be a string (leave it empty: shipped builds still require the key)");
     }
     const base = beats.baseline as Record<string, unknown> | undefined;
     if (typeof base !== "object" || base === null) push("beats.baseline is required");
@@ -1823,11 +1833,19 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
   if (typeof pace !== "object" || pace === null) push("pace is required");
   else {
     for (const k of Object.keys(pace)) {
-      if (!["rate", "rateSuffix", "result", "echo"].includes(k)) push(`pace.${k} is not a used key`);
+      if (!["rate", "rateSuffix", "result", "heading", "echo"].includes(k)) push(`pace.${k} is not a used key`);
     }
     tmpl(pace.rate, "pace.rate", { required: true, allowed: ["rate"], requiredPh: ["rate"], max: MAX_LINE });
     tmpl(pace.rateSuffix, "pace.rateSuffix", { required: true });
-    tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month", "kcal"], requiredPh: ["target", "month", "kcal"], max: MAX_LINE });
+    tmpl(pace.result, "pace.result", { required: true, allowed: ["target", "month"], requiredPh: ["target", "month"], max: MAX_LINE });
+    const heading = pace.heading as Record<string, unknown> | undefined;
+    if (heading !== undefined) {
+      if (typeof heading !== "object" || heading === null) push("pace.heading must be an object");
+      else {
+        for (const k of Object.keys(heading)) if (k !== "lose" && k !== "gain") push(`pace.heading.${k} is not a used key`);
+        for (const k of ["lose", "gain"]) tmpl(heading[k], `pace.heading.${k}`, { max: MAX_LINE });
+      }
+    }
     tmpl(pace.echo, "pace.echo", { allowed: ["from", "to"], requiredPh: ["from", "to"], max: MAX_LINE });
   }
 
@@ -2098,7 +2116,7 @@ function usableBeats(b: OnboardingBeatsContent | undefined): b is OnboardingBeat
     && hasKeys(b.baseline, ["title", "bmi", "what"])
     && hasKeys(b.prelim, ["title", "burn", "gap", "eat", "perDay", "keepTitle"])
     && typeof b.echo === "object" && b.echo !== null
-    && typeof b.echo.rest === "string" && typeof b.echo.days === "string";
+    && typeof b.echo.rest === "string";
 }
 
 /** A block with bubbles and every key this binary reads. Missing one means the block is a version behind. */
