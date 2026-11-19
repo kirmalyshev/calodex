@@ -32,7 +32,7 @@ import { type ChatMessage,
   PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
   type AdminOnboardingAccount, type AdminOnboardingEvent,
   type MealPatch,
-  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto,
 } from "./store.ts";
 
@@ -1170,6 +1170,27 @@ create table if not exists onboarding_assignments (
 );
 create index if not exists onboarding_assignments_experiment_idx on onboarding_assignments(experiment_id);
 
+-- Onboarding screen templates (ieat-app#3167): global content like onboarding_content, so no
+-- user_id and not in RLS_TABLES. Append-only per key — the primary key is what makes a concurrent
+-- second put of the same version lose rather than overwrite. Assets are content-addressed.
+create table if not exists screen_templates (
+  key        text not null,
+  version    integer not null,
+  renderer   integer not null,
+  blocks     jsonb not null,
+  strings    jsonb not null,
+  note       text,
+  created_by text not null,
+  created_at timestamptz not null default now(),
+  primary key (key, version)
+);
+create table if not exists template_assets (
+  sha256     text primary key,
+  mime       text not null,
+  bytes      bytea not null,
+  created_at timestamptz not null default now()
+);
+
 -- The thread. One row per line of the conversation, in the order it happened. meal_id is a
 -- reference, not a copy: the card is read from meals on request, so it always shows the meal as
 -- it is now, and goes null (not missing) if the meal ever goes. Erased with the user — it holds
@@ -1508,6 +1529,17 @@ const toPromptRevision = (r: Record<string, unknown>): PromptRevision => ({
   text: String(r.text),
   source: (r.source === "admin" ? "admin" : "shipped"),
   updated_at: new Date(r.updated_at as string).toISOString(),
+});
+
+const toScreenTemplate = (r: Record<string, unknown>): ScreenTemplateRecord => ({
+  key: String(r.key),
+  version: num(r.version),
+  renderer: num(r.renderer),
+  blocks: json<ScreenTemplateRecord["blocks"]>(r.blocks, []),
+  strings: json<ScreenTemplateRecord["strings"]>(r.strings, {}),
+  ...(r.note == null ? {} : { note: String(r.note) }),
+  created_by: String(r.created_by),
+  created_at: new Date(r.created_at as string).toISOString(),
 });
 
 const toOnboardingExperiment = (r: Record<string, unknown>): OnboardingExperiment => ({
@@ -1876,6 +1908,12 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // The experiment rows belong to nobody either — the admin's definitions. The ASSIGNMENTS do:
   // `onboardingAssignment` and `putOnboardingAssignment` take the user id, `onboardingAssignments`
   // (plural) is the admin's per-experiment results read, unscoped like `onboardingFunnel`.
+  listScreenTemplates: "unscoped",
+  screenTemplate: "unscoped",
+  putScreenTemplate: "unscoped",
+  putTemplateAsset: "unscoped",
+  templateAsset: "unscoped",
+  knownTemplateAssets: "unscoped",
   listOnboardingExperiments: "unscoped",
   runningOnboardingExperiment: "unscoped",
   putOnboardingExperiment: "unscoped",
@@ -3719,6 +3757,50 @@ export async function postgresStore(
 
     // ── Onboarding experiments (ieat-app#2669) ──────────────────────────────────────────────
 
+    async listScreenTemplates() {
+      const rows = await sql`
+        select distinct on (key) key, version, renderer, blocks, strings, note, created_by, created_at
+        from screen_templates order by key, version desc`;
+      return rows.map(toScreenTemplate);
+    },
+
+    async screenTemplate(key, version) {
+      const rows = await sql`
+        select key, version, renderer, blocks, strings, note, created_by, created_at
+        from screen_templates where key = ${key} and version = ${version}`;
+      return rows.length === 0 ? null : toScreenTemplate(rows[0]!);
+    },
+
+    async putScreenTemplate(key, draft, createdBy) {
+      // The next version is computed IN the insert; a concurrent put that computed the same one
+      // hits the primary key and this answers null rather than overwriting it.
+      const rows = await sql`
+        insert into screen_templates (key, version, renderer, blocks, strings, note, created_by)
+        select ${key}, coalesce(max(version), 0) + 1, ${draft.renderer}, ${draft.blocks}::jsonb,
+               ${draft.strings}::jsonb, ${draft.note ?? null}, ${createdBy}
+        from screen_templates where key = ${key}
+        on conflict (key, version) do nothing
+        returning key, version, renderer, blocks, strings, note, created_by, created_at`;
+      return rows.length === 0 ? null : toScreenTemplate(rows[0]!);
+    },
+
+    async putTemplateAsset(sha256, mime, bytes) {
+      await sql`insert into template_assets (sha256, mime, bytes) values (${sha256}, ${mime}, ${bytes})
+        on conflict (sha256) do nothing`;
+    },
+
+    async templateAsset(sha256) {
+      const rows = await sql`select mime, bytes from template_assets where sha256 = ${sha256}`;
+      return rows.length === 0 ? null : { mime: String(rows[0]!.mime), bytes: new Uint8Array(rows[0]!.bytes) };
+    },
+
+    async knownTemplateAssets(shas) {
+      // Built by hand like getMeals' list: only hex digests reach it.
+      const literal = `{${shas.filter((x) => /^[0-9a-f]{64}$/.test(x)).join(",")}}`;
+      const rows = await sql`select sha256 from template_assets where sha256 = any(${literal}::text[])`;
+      return new Set<string>(rows.map((r: { sha256: string }) => r.sha256));
+    },
+
     async listOnboardingExperiments() {
       const rows = await sql`
         select id, lang, status, rules, variants, created_by, created_at, started_at, stopped_at,
@@ -5334,7 +5416,7 @@ export async function postgresStore(
         if (opts.limit) {
           const own = acct[0].free_analyses;
           const max = opts.limit.over === "day" ? opts.limit.max
-            : (own === null || own === undefined ? 0 : num(own));
+            : Math.max(own === null || own === undefined ? 0 : num(own), opts.limit.floor);
           const rows = opts.limit.over === "day"
             ? await tx`select count(*)::int as n from analyses where user_id = ${userId} and date = ${date} and scope = ${scope}`
             : await tx`select count(*)::int as n from analyses where user_id = ${userId}`;

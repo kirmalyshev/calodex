@@ -10,7 +10,8 @@ import type {
 } from "./types.ts";
 import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
-import type { OnboardingContent, OnboardingEvent } from "./onboarding.ts";
+import type { FirstVerdictArm, OnboardingContent, OnboardingEvent } from "./onboarding.ts";
+import type { ServedScreens } from "./screen-template.ts";
 import type { TargetBasis } from "./targets.ts";
 import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
@@ -334,6 +335,11 @@ export const ROUTES = {
   onboarding: "/v1/onboarding",
   /** POST — a batch of onboarding funnel events. Fire-and-forget from the app's point of view. */
   onboardingEvents: "/v1/onboarding/events",
+  /**
+   * GET — one image a screen template shows (ieat-app#3167). Public and immutable:
+   * content-addressed, global, never a user's data, so a client may cache it forever.
+   */
+  onboardingAsset: (sha256: string) => `/v1/onboarding/assets/${encodeURIComponent(sha256)}`,
   /**
    * POST, multipart: `photo` (one to `maxPhotosPerMeal` angles of one meal), `caption`, and the two
    * fields every billed turn carries — `clientId` and `capturedAt`, as {@link MessageRequest} says.
@@ -804,6 +810,12 @@ export interface ProfileResponse {
    */
   isAdmin: boolean;
   /**
+   * Whether this is a staff / test account — the same decision the campaign segments use
+   * (`isStaffAccount`: the DB flag, or the env bootstrap list). ADVISORY: the app tags its analytics
+   * person with it so staff are filterable out of the paywall funnel (ieat-app#3162). It gates nothing.
+   */
+  isStaff: boolean;
+  /**
    * What this server will actually accept. Carried here because the profile is fetched at boot and
    * on every refresh, so the app learns the limits of the environment it is talking to instead of
    * assuming the ones it was compiled with.
@@ -1052,6 +1064,21 @@ export interface OnboardingContentResponse {
    * `servedOrder`, so an order it cannot validate is the default, never a broken walk.
    */
   order?: readonly string[];
+  /**
+   * The experiment arm's first verdict (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the live
+   * flow. Sent only to a client that declared `?verdict=` at or above `FIRST_VERDICT_VERSION`; the
+   * server enrols no other client in an experiment whose arms carry one. `own-meal` lets an account
+   * with no analyses yet through for one, so the client reads `limits.subscriptionRequired` — the
+   * paywall's answer, never the arm — to decide whether the sheet comes before the first meal.
+   */
+  firstVerdict?: FirstVerdictArm;
+  /**
+   * The arm's template screens, one per slot whose local-hour window holds now (ieat-app#3167),
+   * absent for none. Sent only to a client that declared `?renderer=` at or above what the
+   * templates need. Strings are already in `lang`. A client that cannot validate a screen skips
+   * that slot and walks the compiled beat.
+   */
+  screens?: ServedScreens;
 }
 
 /**

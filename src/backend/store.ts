@@ -16,8 +16,9 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, OnboardingPlace, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
+import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
 /**
@@ -46,9 +47,11 @@ export interface NewJob {
  * The allowance a `chargeAnalysis` write enforces, resolved by the engine per request:
  * `day` is this scope's rows on the charge's `date` (the paid daily photo cap); `lifetime` is every
  * analyses row the account holds against `free_analyses`, which the write reads off the account row
- * it has locked — the number and the count are decided inside the same transaction.
+ * it has locked — the number and the count are decided inside the same transaction. `floor` is the
+ * least the engine allows whatever that column says (T1's `own-meal` arm, ieat-app#3165; 0 is none): the
+ * write enforces the larger of the two, so a grant edited mid-charge is still read under the lock.
  */
-export type SpendLimit = { over: "day"; max: number } | { over: "lifetime" };
+export type SpendLimit = { over: "day"; max: number } | { over: "lifetime"; floor: number };
 /** `chargeAnalysis`'s answer: the charge's id and whether this call took it, `"cap"` on the limit, `"lost"` on a gone lease. */
 export type ChargeOutcome = { analysisId: string; fresh: boolean } | "cap" | "lost";
 
@@ -738,6 +741,24 @@ export interface OnboardingVariant {
    * bumps `ONBOARDING_ORDER_VERSION`, which takes the old clients out; never on the control arm.
    */
   order?: readonly OnboardingPlace[];
+  /**
+   * What this arm shows before the plans sheet (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the
+   * live flow. `own-meal` is also an analysis `freeAnalysesFor` lets the account through for. Never
+   * on the control arm, which is the live flow by definition.
+   */
+  firstVerdict?: FirstVerdictArm;
+  /**
+   * The template screens this arm shows, by slot (ieat-app#3167), absent for none. Validated by
+   * `validateArmScreens` and against the stored templates when SAVED; a client below the highest
+   * `renderer` they name is enrolled in no experiment holding them. Never on the control arm.
+   */
+  screens?: ArmScreens;
+}
+
+/** A stored template revision (ieat-app#3167): global, append-only, no `user_id`. */
+export interface ScreenTemplateRecord extends ScreenTemplate {
+  created_by: string;
+  created_at: string;
 }
 
 export type OnboardingExperimentStatus = "draft" | "running" | "stopped";
@@ -1747,6 +1768,25 @@ export interface Store {
    * answer, nothing a client could tell one person by.
    */
   countOnboardedSince(hours: number): Promise<number>;
+
+  // ── Onboarding screen templates (ieat-app#3167) ─────────────────────────────────────────────
+  //
+  // Global content, like `onboarding_content`: no `user_id`, every method `unscoped` in SCOPE.
+  // Templates are append-only revisions per key; assets are content-addressed by sha256.
+
+  /** The LATEST revision of every template key, key order. */
+  listScreenTemplates(): Promise<ScreenTemplateRecord[]>;
+  /** One revision, or null. */
+  screenTemplate(key: string, version: number): Promise<ScreenTemplateRecord | null>;
+  /** Append the next revision of `key` (1 for a new key). Null when a concurrent put took that
+   *  version first — the caller re-reads and retries; nothing is overwritten. */
+  putScreenTemplate(key: string, draft: ScreenTemplateDraft, createdBy: string): Promise<ScreenTemplateRecord | null>;
+  /** Store an uploaded image; a second upload of the same bytes is a no-op. */
+  putTemplateAsset(sha256: string, mime: string, bytes: Uint8Array): Promise<void>;
+  /** One asset's bytes, or null. */
+  templateAsset(sha256: string): Promise<{ mime: string; bytes: Uint8Array } | null>;
+  /** Which of `shas` are stored. */
+  knownTemplateAssets(shas: readonly string[]): Promise<Set<string>>;
 
   // ── Onboarding experiments (ieat-app#2669) ──────────────────────────────────────────────────
   //

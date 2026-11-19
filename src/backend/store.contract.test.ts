@@ -3656,6 +3656,43 @@ function contract(name: string, make: () => Promise<Store>) {
     //
     // The experiment row is global, like the switches above it — a `running` one left behind would
     // be served to every later test in this database, so each is stopped when its test is done.
+    describe("screen templates (ieat-app#3167)", () => {
+      const draft = (note: string) => ({ renderer: 1, blocks: [{ type: "spacer" as const, size: "s" as const }], strings: { en: {} }, note });
+      it("appends revisions per key and lists the latest", async () => {
+        const s = await open();
+        const key = `tpl-${RUN}`;
+        const one = await s.putScreenTemplate(key, draft("first"), "admin-1");
+        const two = await s.putScreenTemplate(key, draft("second"), "admin-1");
+        expect(one?.version).toBe(1);
+        expect(two?.version).toBe(2);
+        expect((await s.screenTemplate(key, 1))?.note).toBe("first");
+        expect((await s.screenTemplate(key, 2))?.blocks).toEqual([{ type: "spacer", size: "s" }]);
+        expect(await s.screenTemplate(key, 3)).toBeNull();
+        const latest = (await s.listScreenTemplates()).filter((t) => t.key === key);
+        expect(latest.map((t) => t.version)).toEqual([2]);
+      });
+      it("never hands one version to two concurrent puts", async () => {
+        const s = await open();
+        const key = `race-${RUN}`;
+        const got = await Promise.all([1, 2, 3, 4].map((n) => s.putScreenTemplate(key, draft(`n${n}`), "admin-1")));
+        const versions = got.filter((t) => t !== null).map((t) => t!.version);
+        expect(new Set(versions).size).toBe(versions.length);
+        for (const t of got) if (t) expect((await s.screenTemplate(key, t.version))?.note).toBe(t.note);
+      });
+      it("stores an asset once, by its sha256, and says which are known", async () => {
+        const s = await open();
+        const sha = (RUN + "0".repeat(64)).slice(0, 64).replace(/[^0-9a-f]/g, "a");
+        const bytes = new Uint8Array([0xff, 0xd8, 0xff, 1, 2, 3]);
+        await s.putTemplateAsset(sha, "image/jpeg", bytes);
+        await s.putTemplateAsset(sha, "image/jpeg", bytes);
+        const got = await s.templateAsset(sha);
+        expect(got?.mime).toBe("image/jpeg");
+        expect([...(got?.bytes ?? [])]).toEqual([...bytes]);
+        expect(await s.knownTemplateAssets([sha, "b".repeat(64)])).toEqual(new Set([sha]));
+        expect(await s.templateAsset("c".repeat(64))).toBeNull();
+      });
+    });
+
     describe("onboarding experiments", () => {
       const exp = (over: Record<string, unknown> = {}) => ({
         id: `exp-${crypto.randomUUID()}`,
@@ -6314,7 +6351,10 @@ if (PG_URL) {
         // #899: the referrer is found by code, rewarded from a webhook, and its friends counted —
         // each of these touches a second account's row by design.
         "grantReferralWeek",
-        "hasAdmin", "heartbeatJobs", "identityFor", "listCampaigns", "listOnboardingExperiments", "listPushTemplates",
+        "hasAdmin", "heartbeatJobs", "identityFor",
+        // ieat-app#3167: screen templates and their assets are global content, like onboarding_content.
+        "knownTemplateAssets",
+        "listCampaigns", "listOnboardingExperiments", "listPushTemplates", "listScreenTemplates",
         "markCampaignRunning", "mergeUsers",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
@@ -6327,12 +6367,12 @@ if (PG_URL) {
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "recentSends", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",
-        "revokeToken", "runningOnboardingExperiment", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
-        "setSwitch", "spendEmailCode", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "updateCampaign",
+        "revokeToken", "runningOnboardingExperiment", "screenTemplate", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
+        "setSwitch", "spendEmailCode", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "templateAsset", "updateCampaign",
         "upsertDeviceUser", "userIdForIdentity", "userIdForToken",
       ]);
     });

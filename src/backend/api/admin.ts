@@ -47,14 +47,15 @@ import {
 import {
   adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
-  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
+  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
-  sendTestPush, pushOpenView, pushRecentView, sendAdminPush,
+  sendTestPush, pushOpenView, pushRecentView, adminUserPushLog, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
   resetOnboardingContent, saveOnboardingContent, saveSwitch, setUserCap, userCap,
   type EngineDeps,
+  listScreenTemplates, saveOnboardingVariantScreens, saveScreenTemplate, screenTemplateRevision, uploadTemplateAsset,
 } from "../engine/index.ts";
 import { adminPage } from "./admin.page.ts";
 
@@ -420,6 +421,31 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     }
     return json({ experiment: await createOnboardingExperiment(deps, adminId, body.lang as Lang) });
   }
+  // ── Screen templates (ieat-app#3167) ──────────────────────────────────────────────────────
+  //
+  // Kirill on this page and the coordinator through the eait-admin MCP reach the same verbs. A
+  // template is append-only: a PUT is the next revision, validated in every language first.
+  if (req.method === "GET" && pathname === "/admin/api/templates") {
+    return json({ templates: await listScreenTemplates(deps) });
+  }
+  const tplMatch = /^\/admin\/api\/templates\/([a-z0-9-]+)(?:\/(\d+))?$/.exec(pathname);
+  if (tplMatch !== null && req.method === "GET" && tplMatch[2] !== undefined) {
+    const t = await screenTemplateRevision(deps, tplMatch[1]!, Number(tplMatch[2]));
+    return t ? json({ template: t }) : notFound();
+  }
+  if (tplMatch !== null && req.method === "PUT" && tplMatch[2] === undefined) {
+    const body = await req.json().catch(() => null);
+    if (body === null || typeof body !== "object") return json({ errors: ["body must be JSON"] }, 422);
+    const result = await saveScreenTemplate(deps, adminId, tplMatch[1]!, body);
+    return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, result.conflict ? 409 : 422);
+  }
+  if (req.method === "POST" && pathname === "/admin/api/template-assets") {
+    // Refused before the body is read when the length is declared over the cap.
+    if (Number(req.headers.get("content-length") ?? 0) > deps.config.maxUploadBytes) return json({ errors: [`over ${deps.config.maxUploadBytes} bytes`] }, 422);
+    const result = await uploadTemplateAsset(deps, new Uint8Array(await req.arrayBuffer()));
+    return result.ok ? json({ sha256: result.sha256 }) : json({ errors: result.errors }, 422);
+  }
+
   const expMatch = /^\/admin\/api\/experiments\/([^/]+)(?:\/(variants)(?:\/(\d+))?|\/(start|stop))?$/.exec(pathname);
   if (expMatch !== null) {
     const id = expMatch[1]!;
@@ -431,11 +457,23 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     }
     if (req.method === "PUT" && sub === "variants") {
       const raw: unknown = await req.json().catch(() => ({}));
-      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown };
+      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown; firstVerdict?: unknown; screens?: unknown };
       const index = Number(expMatch[3]);
-      // Two editors, two bodies, never both (ieat-app#2788): `{order}` is the order editor's save
+      // `{screens}` is its own editor's body too (ieat-app#3167), alone; `{}` clears them.
+      if ("screens" in body) {
+        if (body.content !== undefined || "order" in body || "firstVerdict" in body) return json({ errors: ["send the screens alone"] }, 422);
+        const result = await saveOnboardingVariantScreens(deps, id, index, body.screens);
+        return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+      }
+      // One editor per body, never two at once (ieat-app#2788): `{order}` is the order editor's save
       // (`null` clears it), anything else the copy editor's. A body carrying both is refused rather
-      // than half-written — a content save is committed before an order could be refused.
+      // than half-written — a content save is committed before an order could be refused. `{firstVerdict}`
+      // is the third, alone the same way (ieat-app#3165; `null` clears it).
+      if ("firstVerdict" in body) {
+        if (body.content !== undefined || "order" in body) return json({ errors: ["send the first verdict alone"] }, 422);
+        const result = await saveOnboardingVariantFirstVerdict(deps, id, index, body.firstVerdict);
+        return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+      }
       if ("order" in body) {
         if (body.content !== undefined) return json({ errors: ["send the copy or the order, not both"] }, 422);
         const result = await saveOnboardingVariantOrder(deps, id, index, body.order);
@@ -694,9 +732,14 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       const out = await sendTestPush(deps, userId, Date.now(), body?.imageUrl, body?.route);
       return json(out, out.ok ? 200 : !out.ok && (out.reason === "image-not-allowed" || out.reason === "route-not-allowed") ? 400 : 409);
     }
+    // The account's own history, every state kept (ieat-app#3168): the same read backs the
+    // composer's result line (the newest row is the send just made) and the pane's Pushes tab,
+    // which asks for the bound rather than the composer's default twenty.
     if (req.method === "GET" && push[2] === "log") {
-      const rows = await deps.store.sendLogFor(userId, 20);
-      return json({ sends: rows.map(({ token: _token, ...row }) => row) });
+      const raw = url.searchParams.get("limit");
+      if (raw !== null && raw !== "" && !/^\d{1,4}$/.test(raw)) return json({ error: "bad-limit" }, 400);
+      const view = await adminUserPushLog(deps, userId, raw ? Number(raw) : 20);
+      return view ? json(view) : notFound();
     }
   }
 

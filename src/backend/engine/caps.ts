@@ -9,16 +9,16 @@ import type { Refusal } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import type { SpendLimit } from "../store.ts";
 import { GatewayRefusal, type OnCall, type OnCost } from "../llm/port.ts";
-import { dailyPhotoCap, entitlementFor, freeAnalysesFor } from "./entitlement.ts";
+import { dailyPhotoCap, entitlementFor, firstVerdictAllowance, freeAnalysesFor } from "./entitlement.ts";
 import { isAnonymous } from "./identity.ts";
 
 export type CapScope = "photo" | "text";
 
 /**
  * Whether an account with no live entitlement is refused: always, unless a self-hosted instance
- * switched the paywall off (`config.paywall`), or the admin granted it
- * analyses it has not spent (a development store grants every account some — `dev/grant.ts`).
- * There is no default sample (ieat-app#2364). The profile's `subscriptionRequired` is this answer.
+ * switched the paywall off (`config.paywall`), or `freeAnalysesFor` allows it analyses it has not
+ * spent — the admin's grant (a development store grants every account some — `dev/grant.ts`) or
+ * T1's `own-meal` arm (ieat-app#3165). There is no default sample (ieat-app#2364). The profile's `subscriptionRequired` is this answer.
  */
 export async function unpaidRefused(deps: EngineDeps, userId: string): Promise<boolean> {
   if (!deps.config.paywall) return false;
@@ -111,8 +111,9 @@ const LLM_CALL_KIND: Record<string, string> = {
 /**
  * What this account's charge may still spend, resolved per request — an entitlement lapsed an hour
  * ago stops working an hour ago. The paid tier's limit is the daily photo allowance; an unpaid
- * one's is the admin grant counted over a lifetime of rows (`unpaidRefused`'s same rule, which the
- * guarded write then enforces rather than repeats); and the paywall being off, or a scope the caps
+ * one's is `freeAnalysesFor` counted over a lifetime of rows (`unpaidRefused`'s same rule, which the
+ * guarded write then enforces rather than repeats — the grant read under its lock, the arm passed
+ * as the `floor`); and the paywall being off, or a scope the caps
  * do not meter, is no limit at all.
  */
 async function chargeLimit(deps: EngineDeps, userId: string, scope: CapScope): Promise<SpendLimit | null> {
@@ -120,7 +121,11 @@ async function chargeLimit(deps: EngineDeps, userId: string, scope: CapScope): P
     const cap = scope === "photo" ? dailyPhotoCap(deps.config) : 0;
     return cap > 0 ? { over: "day", max: cap } : null;
   }
-  return deps.config.paywall ? { over: "lifetime" } : null;
+  if (!deps.config.paywall) return null;
+  // The arm's analysis is a floor under the grant, which the write still reads under its lock. It
+  // is read again here, after `checkCaps` read it: an experiment stopped (or a switch read failed)
+  // in between refuses at the charge, the authority — as a grant edited in between already does.
+  return { over: "lifetime", floor: await firstVerdictAllowance(deps, userId) };
 }
 
 export type ChargedAnalysis = { analysisId: string; fresh: boolean; onCost: OnCost; onCall: OnCall };

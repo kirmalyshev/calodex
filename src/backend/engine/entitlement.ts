@@ -13,11 +13,13 @@
 import {
   DIARY_WINDOW_DAYS, KCAL_PER_KG, entitlementActive, entitlementLive, explainTargets, forgivingStreak, localDate,
   referralBonusEnd,
-  trialDaysLeft, windowStart, type AdminWindowEcho, type DistributionChannel, type Entitlement, type Goal, type Lang,
+  trialDaysLeft, windowStart, type AdminWindowEcho, type DistributionChannel, type Entitlement,
+  type Goal, type Lang,
 } from "@eait/shared";
 import type { Config } from "../config.ts";
 import type { AdminUserRow, EntitlementPatch, StoredEntitlement } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
+import { switchOn } from "./switches.ts";
 import { adminWindowEcho } from "./admin.ts";
 import { isStoreReviewer } from "./email.ts";
 import { referralRewardDays } from "./referral.ts";
@@ -26,18 +28,49 @@ import { referralRewardDays } from "./referral.ts";
  * The photos-per-day allowance of an ENTITLED account, resolved in one place.
  *
  * There is no unentitled allowance to resolve: without an entitlement the account has what the
- * admin granted it (`freeAnalysesFor`, none by default — ieat-app#2364) and nothing per day.
+ * admin granted it or T1's arm allows it (`freeAnalysesFor`, none by default — ieat-app#2364) and
+ * nothing per day.
  */
 export function dailyPhotoCap(config: Config): number {
   return config.paidDailyPhotoCap;
 }
 
 /**
- * The analyses the admin granted THIS account before an entitlement is required — none unless one
- * was granted (ieat-app#2364: no default sample). `checkCaps` refuses with it and `limitsOf` reports it.
+ * The analyses THIS account may run before an entitlement is required — none unless the admin
+ * granted some (ieat-app#2364: no default sample), or the account holds T1's `own-meal` arm
+ * (ieat-app#3165), which allows ONE, counted against every analysis the account has. Never on top
+ * of a grant — the larger of the two. `checkCaps` refuses with it, `limitsOf` reports it, and the
+ * guarded charge enforces the arm's part as its `floor` (`chargeLimit`).
  */
 export async function freeAnalysesFor(deps: EngineDeps, userId: string): Promise<number> {
-  return (await deps.store.getFreeAnalyses(userId)) ?? 0;
+  const [granted, arm] = await Promise.all([deps.store.getFreeAnalyses(userId), firstVerdictAllowance(deps, userId)]);
+  return Math.max(granted ?? 0, arm);
+}
+
+/**
+ * The analyses T1 allows this account (ieat-app#3165): ONE when any arm it HOLDS is `own-meal`,
+ * none otherwise. Held = its stored assignment in a running experiment whose arms carry one, in
+ * whichever language the client asked for it — `GET /v1/onboarding` assigns by `?lang=` before the
+ * profile's, so an account can hold arms in two languages and the profile's is not the key. Never
+ * recomputed, and read here rather than through `assignVariant`, which may WRITE one: a cap check
+ * must never enrol anybody. An arm held by an account that later asks from a client that cannot
+ * render it (`servedRaw` serves that client the live flow) still counts: assignment needs a
+ * capable client, so that takes a second device or a downgrade. A stopped experiment, or the
+ * experiments switch off, grants nothing more. The experiment and assignment reads throw on a store
+ * failure, like `getFreeAnalyses`; the switch is read through `switchOn`, whose rule is
+ * that a switch never fails a meal, so a failed switch read is logged and means no arm.
+ */
+export async function firstVerdictAllowance(deps: EngineDeps, userId: string): Promise<number> {
+  if (!(await switchOn(deps, "onboarding.experiments"))) return 0;
+  // ponytail: lists every experiment per cap check — a handful of rows; a store method keyed on
+  // the user's assignments when the table grows.
+  const armed = (await deps.store.listOnboardingExperiments())
+    .filter((e) => e.status === "running" && e.variants.some((v) => v.firstVerdict === "own-meal"));
+  for (const experiment of armed) {
+    const row = await deps.store.onboardingAssignment(userId, experiment.id);
+    if (row && experiment.variants.find((v) => v.content.version === row.variant_id)?.firstVerdict === "own-meal") return 1;
+  }
+  return 0;
 }
 
 /** One account's sample, as the admin sees it. */
@@ -51,10 +84,10 @@ export interface UserCap {
 /** Null when there is no such account. */
 export async function userCap(deps: EngineDeps, userId: string): Promise<UserCap | null> {
   if (!(await deps.store.getProfile(userId))) return null;
-  const [own, spent] = await Promise.all([
-    deps.store.getFreeAnalyses(userId), deps.store.countUserAnalyses(userId),
+  const [own, effective, spent] = await Promise.all([
+    deps.store.getFreeAnalyses(userId), freeAnalysesFor(deps, userId), deps.store.countUserAnalyses(userId),
   ]);
-  return { freeAnalyses: own, effective: own ?? 0, spent };
+  return { freeAnalyses: own, effective, spent };
 }
 
 /** Null when there is no such account. `n` null takes the grant away. */
@@ -68,7 +101,8 @@ export async function setUserCap(deps: EngineDeps, userId: string, n: number | n
  *
  * `entitled` is `entitlementLive` and nothing else, for the reason at the top of this file: the
  * panel must not be a second opinion about what "paid" means, or it will eventually disagree with
- * the refusal. `effective` is the same `own ?? default` that `checkCaps` refuses with.
+ * the refusal. `effective` is the admin's grant (`own ?? 0`); one account's `userCap` adds T1's
+ * arm (ieat-app#3165), which a list of every account does not read per row.
  */
 export interface AdminUser extends AdminUserRow {
   entitled: boolean;
