@@ -24,7 +24,6 @@ import {
 import type { IconName } from "./icons.ts";
 import { RADIUS, SHADOW } from "../design.ts";
 import { LANG_TAG, spellUnit, UNIT_KCAL, kcalNumbers, weekdayShort, wholeNumbers, type Lang } from "../lang.ts";
-import { MOUTHS, spudSvg, type MascotMood } from "../mascot.ts";
 
 /** Text or an attribute value, made inert. The one escaper both surfaces get. */
 export const esc = (text: string): string =>
@@ -468,10 +467,6 @@ export const energyBarsSvg = (
 // transcribed into a string here. The lettered accent disc and the name line `.gname` — the
 // "{coach} · nutritionist" the correction boards carry.
 
-/** Spud at 28 px, mood-named, decorative beside its `.say` text. `large` is the 36 px variant. */
-export const spudAvatar = (mood: MascotMood, o: { large?: boolean } = {}): string =>
-  `<span class="spud ${mood}${o.large ? " lg" : ""}" aria-hidden="true"></span>`;
-
 /** The lettered accent disc — the letter itself is `.gabie::before`, so the markup carries none. */
 export const gabieAvatar = (): string => `<span class="gabie" aria-hidden="true"></span>`;
 
@@ -479,13 +474,13 @@ export const gabieAvatar = (): string => `<span class="gabie" aria-hidden="true"
 export const gabieName = (name: string): string => `<div class="gname">${esc(name)}</div>`;
 
 /**
- * The attribution chip: the eait mark's face plus the localized label — the "eait analysis" tag
- * on a chart — on a surface pill. The streak chip is the same pill with an icon instead of the
- * face (`icon` + `aria`, and `.ic` padding the board draws), so surfaces share the one chip.
+ * The attribution chip: the localized label — the "eait analysis" tag on a chart — on a surface
+ * pill, no mark beside it. The streak chip is the same pill with an icon (`icon` + `aria`, and `.ic`
+ * padding the board draws), so surfaces share the one chip.
  */
-export const tagx = (o: { text: string; mood?: MascotMood; icon?: IconName; aria?: string }): string =>
+export const tagx = (o: { text: string; icon?: IconName; aria?: string }): string =>
   `<span class="tagx${o.icon !== undefined ? " ic" : ""}"${o.aria !== undefined ? ` aria-label="${esc(o.aria)}"` : ""}>` +
-  (o.icon !== undefined ? ico(o.icon) : `<span class="wm ${o.mood ?? "happy"}" aria-hidden="true"></span>`) +
+  (o.icon !== undefined ? ico(o.icon) : "") +
   `${esc(o.text)}</span>`;
 
 // ── Buttons and option rows ──────────────────────────────────────────────────────────────────
@@ -733,28 +728,17 @@ ${[0, 1, 2, 3, 4, 5, 6].map((i) => `.week .wtint.a${i}{left:calc(${i}*(100% - 44
 .lab{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .ec .row{margin-bottom:10px}
 
-/* The avatars. Each mood's --face is mascot.ts's own SVG as a data URL — the same drawing the
-   surfaces inline elsewhere, so a board and a bubble never carry two potatoes. .wm is the 20px
-   wordmark size; .tagx shrinks it to 18 for the chip. */
-.spud{width:28px;height:28px;flex:0 0 28px;border-radius:50%;
-  background:var(--accent-tint) var(--face) center/78% no-repeat}
-.spud.lg{width:36px;height:36px;flex-basis:36px}
-.wm{width:20px;height:20px;border-radius:50%;flex:0 0 auto;
-  background:var(--accent-tint) var(--face) center/78% no-repeat}
-${(Object.keys(MOUTHS) as MascotMood[]).map((m) =>
-  `.spud.${m},.wm.${m}{--face:url("data:image/svg+xml,${encodeURIComponent(spudSvg(m, `face-${m}`))}")}`
-).join("\n")}
+/* The avatars. */
 .gabie{width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:var(--accent);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;font:700 13px/1 var(--sans)}
 .gabie::before{content:"G"}
 .say{display:flex;gap:10px;align-items:flex-start}
 .gname{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 2px}
 
-/* The attribution chip — the eait face plus words; the streak chip is the same pill at .ic. */
+/* The attribution chip — words; the streak chip is the same pill at .ic. */
 .tagx{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border-radius:999px;
   padding:3px 9px 3px 4px;font-size:12px;font-weight:600;color:var(--ink);
   box-shadow:0 1px 3px rgba(23,25,28,.16);white-space:nowrap}
-.tagx .wm{width:18px;height:18px;flex-basis:18px}
 .tagx .ico{width:16px;height:16px}
 .tagx .i-streak{color:var(--macro-carbs)}
 .tagx.ic{padding:4px 10px}

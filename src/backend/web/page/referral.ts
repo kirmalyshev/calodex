@@ -4,7 +4,6 @@
 
 import type { Lang } from "@eait/shared";
 import { currentBrand, fill } from "@eait/shared";
-import { spudSvg } from "@eait/shared/mascot";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -70,7 +69,7 @@ export function referralStep(v: ReferralStepView): string {
 <div class="wmain one refstep"><div class="wcol">
 ${dash("referral", v.lang)}
 <div class="refmid"><div class="ref">
-<div class="say sayi"><span class="spud">${spudSvg("wave", "spud-ref")}</span><h1 class="q">${escape(c.referralAsk)}</h1></div>
+<div class="say sayi"><h1 class="q">${escape(c.referralAsk)}</h1></div>
 <p class="muted-sub">${escape(c.referralLead)}</p>
 ${v.done ? notice : ""}
 ${form}

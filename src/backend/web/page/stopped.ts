@@ -1,5 +1,4 @@
 import type { Lang } from "@eait/shared";
-import { spudSvg } from "@eait/shared/mascot";
 import { wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
 
@@ -17,7 +16,7 @@ export function stopped(
   return shell(title, `
 ${wtop()}
 <div class="wmain one"><div class="wcol mid">
-<div class="card stopcard"><div class="say"><span class="spud">${spudSvg("care", "spud-stop")}</span>
+<div class="card stopcard"><div class="say">
 <div><p class="d d22">${escape(title)}</p>
 <p class="muted-sub mt6">${escape(body)}</p>
 ${lines.map((l) => `<p class="muted-sub">${escape(l)}</p>`).join("")}</div></div></div>
