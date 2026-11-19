@@ -1871,7 +1871,7 @@ describe("the soft offer after the plan", () => {
     const session = await signIn();
     await answerAll(session, ANSWERS);
     const html = await (await get("/start/offer", session)).text();
-    expect(html).toContain('href="https://calodex.app/privacy"');
+    expect(html).toContain('href="https://eait.fit/privacy"');
   });
 
   it("lets the offer go quietly — × is the web app's first meal", async () => {
@@ -3374,9 +3374,9 @@ describe("refer a friend", () => {
     const page = await res.text();
     expect(page).toContain(escape(PAGE_COPY.inviteHeading));
     expect(page).toContain(`href="${LISTING}?ct=referral"`);
-    expect(page).toContain(`data-copy="https://calodex.app/r/${code}"`);
+    expect(page).toContain(`data-copy="https://eait.fit/r/${code}"`);
     expect(page).toContain(`href="/start?ref=${code}"`);
-    expect(page).toContain(escape(fill(PAGE_COPY.inviteCopied, { link: `calodex.app/r/${code}` })));
+    expect(page).toContain(escape(fill(PAGE_COPY.inviteCopied, { link: `eait.fit/r/${code}` })));
     // It sets nothing and is no one's session.
     expect(res.headers.getSetCookie()).toEqual([]);
     await get(`/r/${code}`, undefined, { "user-agent": "facebookexternalhit/1.1" });
@@ -3434,7 +3434,7 @@ describe("refer a friend", () => {
     expect(country.headers.get("location")).toBe("/start/referral");
 
     const step = await (await get("/start/referral", `${signed}; ${ref}`)).text();
-    expect(step).toContain(`value="calodex.app/r/${code}"`);
+    expect(step).toContain(`value="api.eait.fit/r/${code}"`);
     expect(step).toContain(escape(PAGE_COPY.referralAsk));
     // The bar tops the plain column, and only the step below it is centred (`web/ob-referral.html`).
     expect(step).toMatch(/<div class="wmain one refstep"><div class="wcol">\s*<div class="wbar">.*?class="dash".*?<\/div><\/div>\s*<div class="refmid"><div class="ref">/s);

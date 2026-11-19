@@ -324,7 +324,7 @@ describe("the profile's referral card", () => {
     const { referrer } = await pair();
     const view = (await profileView(deps, referrer))!.referral;
     expect(view).toEqual({
-      link: `https://calodex.app/r/${await codeOf(referrer)}`, applied: false, joined: 1, subscribed: 0, weeksEarned: 0, bankedDays: 0,
+      link: `https://eait.fit/r/${await codeOf(referrer)}`, applied: false, joined: 1, subscribed: 0, weeksEarned: 0, bankedDays: 0,
     });
   });
 
@@ -358,11 +358,17 @@ describe("the profile's referral card", () => {
     expect((await adminUsers(deps, { q: referrer, limit: 1 })).users[0]!.entitled).toBe(true);
   });
 
-  it("falls back to the web origin, then the API's, for the eait brand's link", async () => {
-    installBrandSource();
+  it("falls back to the web origin, then the API's, for the link", async () => {
     mount({}, { landingUrl: "", publicWebUrl: "https://app.example" });
     const me = await account();
-    expect((await withBrand("eait", () => profileView(deps, me)))!.referral.link).toBe(`https://app.example/r/${await codeOf(me)}`);
+    expect((await profileView(deps, me))!.referral.link).toBe(`https://app.example/r/${await codeOf(me)}`);
+  });
+
+  // ieat-app#3154: a request naming a brand other than the default links that brand's own domain.
+  it("links another brand's own domain", async () => {
+    installBrandSource();
+    const me = await account();
+    expect((await withBrand("eait", () => profileView(deps, me)))!.referral.link).toBe(`https://eait.fit/r/${await codeOf(me)}`);
   });
 });
 

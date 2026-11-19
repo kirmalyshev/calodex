@@ -69,7 +69,7 @@ test("copy under the eait brand is unchanged", () => {
   expect(now.split("\n").length).toBe(was.length);
 });
 
-test("a probe brand leaves no default name in the copy it serves", () => {
+test("a probe brand leaves no eait in the copy it serves", () => {
   const probe = { app: "probe" as never, name: "Zapex", storeName: "Zapex", domain: "zz.example", mailFrom: "Zapex <x@zz.example>" } as const;
   shared.setBrandSource(() => probe);
   const left: string[] = [];
