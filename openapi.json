@@ -670,6 +670,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "renderer",
+            "in": "query",
+            "required": false,
+            "description": "The template renderer this client can draw (`TEMPLATE_RENDERER_VERSION`). Absent is 0: no experiment with template screens enrolls it, and `screens` is never sent.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -699,6 +708,46 @@
             "bearer": []
           }
         ]
+      }
+    },
+    "/v1/onboarding/assets/{sha256}": {
+      "get": {
+        "operationId": "get_onboardingAsset",
+        "summary": "One image a screen template shows. Content-addressed and immutable; bytes with their mime.",
+        "parameters": [
+          {
+            "name": "sha256",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": []
       }
     },
     "/v1/onboarding/events": {
@@ -5133,6 +5182,216 @@
           "not_enough"
         ]
       },
+      "Block": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "headline",
+                  "body"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "description": "A key into the template's own `strings`."
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "spud"
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "A key into the template's own `strings`."
+                }
+              },
+              "mood": {
+                "$ref": "#/components/schemas/MascotMood"
+              }
+            },
+            "required": [
+              "type",
+              "lines",
+              "mood"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "bullets"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "icon": {
+                      "type": "string",
+                      "enum": [
+                        "check",
+                        "camera",
+                        "chart",
+                        "heart",
+                        "clock",
+                        "spark"
+                      ]
+                    },
+                    "text": {
+                      "type": "string",
+                      "description": "A key into the template's own `strings`."
+                    }
+                  },
+                  "required": [
+                    "icon",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "type",
+              "items"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "image"
+              },
+              "asset": {
+                "type": "string",
+                "description": "An uploaded asset, by the sha256 of its bytes."
+              },
+              "alt": {
+                "type": "string",
+                "description": "A key into the template's own `strings`."
+              }
+            },
+            "required": [
+              "type",
+              "asset",
+              "alt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "demo-verdict"
+              },
+              "plate": {
+                "$ref": "#/components/schemas/WelcomeImageKey"
+              }
+            },
+            "required": [
+              "type",
+              "plate"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "plan-recap"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "price"
+              },
+              "product": {
+                "type": "string",
+                "enum": [
+                  "yearly",
+                  "monthly"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "product"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "cta"
+              },
+              "label": {
+                "type": "string",
+                "description": "A key into the template's own `strings`."
+              },
+              "action": {
+                "$ref": "#/components/schemas/CtaAction"
+              }
+            },
+            "required": [
+              "type",
+              "label",
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "spacer"
+              },
+              "size": {
+                "type": "string",
+                "enum": [
+                  "s",
+                  "m",
+                  "l"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "size"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
       "BmiRange": {
         "type": "string",
         "enum": [
@@ -5501,6 +5760,38 @@
           "stopped",
           "onoff",
           "now"
+        ]
+      },
+      "CtaAction": {
+        "type": "string",
+        "enum": [
+          "next",
+          "back",
+          "open-paywall",
+          "open-camera",
+          "skip-to:goal",
+          "skip-to:sex",
+          "skip-to:age",
+          "skip-to:height",
+          "skip-to:weight",
+          "skip-to:activity",
+          "skip-to:target",
+          "skip-to:pace",
+          "skip-to:counted",
+          "skip-to:barrier",
+          "skip-to:situation",
+          "skip-to:diet",
+          "skip-to:medical",
+          "skip-to:country",
+          "skip-to:streak",
+          "skip-to:welcome",
+          "skip-to:baseline",
+          "skip-to:prelim",
+          "skip-to:summary",
+          "skip-to:signup",
+          "skip-to:paywall",
+          "skip-to:referral",
+          "skip-to:health"
         ]
       },
       "DailyTotals": {
@@ -7133,6 +7424,18 @@
           }
         ]
       },
+      "MascotMood": {
+        "type": "string",
+        "enum": [
+          "care",
+          "wave",
+          "think",
+          "idle",
+          "happy",
+          "joy"
+        ],
+        "description": "The moods the web surfaces draw. `cheer` is deliberately not one of them — sparkles and both arms up is reward theatre in one drawing. `joy` (v5) IS one: it is the same wide open smile the app's `cheer` draws, with default eyes and none of the theatre."
+      },
       "MealAnalysis": {
         "type": "object",
         "properties": {
@@ -8491,6 +8794,10 @@
               "type": "string"
             },
             "description": "The experiment arm's order of the span from the welcome to the sign-up (#2788), absent for the default. The contract: a server sends it only to a client that declared `?order=` at or above `ONBOARDING_ORDER_VERSION`, and enrols an older client in no experiment with an ordered arm. Typed as strings because it is NOT yet trusted: a client hands it to `promptsFor`, which runs `servedOrder`, so an order it cannot validate is the default, never a broken walk."
+          },
+          "screens": {
+            "$ref": "#/components/schemas/ServedScreens",
+            "description": "The arm's template screens, one per slot whose local-hour window holds now (ieat-app#3167), absent for none. Sent only to a client that declared `?renderer=` at or above what the templates need. Strings are already in `lang`. A client that cannot validate a screen skips that slot and walks the compiled beat."
           }
         },
         "required": [
@@ -10915,6 +11222,94 @@
           "onboarding-done",
           "dropped"
         ]
+      },
+      "ServedScreen": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Block"
+            }
+          },
+          "strings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "description": "A key into the template's own `strings`."
+            }
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sha256": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sha256",
+                "url"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "template",
+          "version",
+          "blocks",
+          "strings",
+          "assets"
+        ],
+        "additionalProperties": false,
+        "description": "What `GET /v1/onboarding` sends for one slot: strings already resolved to the served language."
+      },
+      "ServedScreens": {
+        "type": "object",
+        "properties": {
+          "slots": {
+            "type": "object",
+            "properties": {
+              "welcome": {
+                "$ref": "#/components/schemas/ServedScreen"
+              },
+              "baseline": {
+                "$ref": "#/components/schemas/ServedScreen"
+              },
+              "prelim": {
+                "$ref": "#/components/schemas/ServedScreen"
+              },
+              "after:summary": {
+                "$ref": "#/components/schemas/ServedScreen"
+              },
+              "after:signup": {
+                "$ref": "#/components/schemas/ServedScreen"
+              },
+              "before:paywall": {
+                "$ref": "#/components/schemas/ServedScreen"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "slots"
+        ],
+        "additionalProperties": false,
+        "description": "Every slot's screen for one client, beside the words in `GET /v1/onboarding` (#3167)."
       },
       "Sex": {
         "type": "string",
