@@ -1,4 +1,4 @@
-import { MIN_MODEL_CALL_TIMEOUT_MS, REMINDER_TIME, SERVER_LLM_TIMEOUT_MS } from "@eait/shared";
+import { BRANDS, DEFAULT_APP, MIN_MODEL_CALL_TIMEOUT_MS, REMINDER_TIME, SERVER_LLM_TIMEOUT_MS } from "@eait/shared";
 import { DEFAULT_SESSION_TTL_MS } from "./auth/tokens.ts";
 import { AGENT_PROVIDERS } from "./llm/local-agent.ts";
 
@@ -513,7 +513,7 @@ export interface Config {
   landingUrl: string;
 
   /**
-   * The document the sign-up's "I agree to eait's Terms" links (#311). Unlike `landingUrl` this
+   * The document the sign-up's "I agree to the Terms" links for the default brand (#311). Unlike `landingUrl` this
    * is the href itself, not an origin a path is appended to — the terms live wherever the
    * operator published them, not necessarily on a landing of theirs.
    *
@@ -796,7 +796,7 @@ export function configDefaults(): Config {
     eveningLineTime: { hour: REMINDER_TIME.hour, minute: REMINDER_TIME.minute },
     mailProvider: "log",
     resendApiKey: "",
-    mailFrom: "eait <login@eait.fit>",
+    mailFrom: BRANDS[DEFAULT_APP].mailFrom,
     emailCodesPerHour: 5,
     emailCodesPerDay: 10,
     storeReviewEmail: "",

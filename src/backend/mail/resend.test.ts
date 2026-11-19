@@ -26,3 +26,9 @@ test("the default brand sends from the configured address", async () => {
 test("a request naming another brand sends as that brand", async () => {
   expect(await fromOf((send) => withBrand("eait", send))).toBe("eait <login@eait.fit>");
 });
+
+test("an instance that sets no sender sends as the default brand", async () => {
+  const { configDefaults } = await import("../config.ts");
+  const { BRANDS, DEFAULT_APP } = await import("@eait/shared");
+  expect(configDefaults().mailFrom).toBe(BRANDS[DEFAULT_APP].mailFrom);
+});
