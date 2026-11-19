@@ -12,7 +12,8 @@
 //  4. NO USER ID FROM A REQUEST — except this one, which is the whole point of the route and is
 //     therefore the one place it must be argued for. See `parseRevenueCatEvent`.
 //
-// It answers 200 to everything it is willing to read, including events it deliberately ignores. A
+// It answers 200 to everything it is willing to read, including events it deliberately ignores,
+// except a delivery whose event log write failed: that is a 500 so the retry logs it. A
 // non-2xx makes RevenueCat retry, and retrying an event that was correctly ignored means being
 // told the same irrelevant thing all day.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -271,30 +272,37 @@ export async function revenueCatWebhook(
   if (declared > MAX_BODY_BYTES) return json({ error: "too large" }, 413);
 
   const body = await req.json().catch(() => null);
-  // The log is analytics and must never cost anybody their purchase: a failed write is a warning,
-  // and the entitlement below is applied regardless.
+  // The log is analytics and must never cost anybody their purchase: the entitlement below is
+  // applied regardless, then a failed write answers 500. The retry is safe: the entitlement is
+  // clock-guarded and the log insert does nothing on a conflict.
   const logged = parseRevenueCatLog(body);
+  let logFailed = false;
   if (logged) {
     const e = eventOf(body);
     const lifecycle = {
       is_trial_conversion: typeof e?.is_trial_conversion === "boolean" ? e.is_trial_conversion : null,
       cancel_reason: text(e?.cancel_reason),
     };
-    await logRevenueCatEvent(deps, logged, lifecycle).catch(() => console.warn("[eait] revenuecat: event log write failed"));
+    await logRevenueCatEvent(deps, logged, lifecycle).catch((err: unknown) => {
+      logFailed = true;
+      const { name, code } = (err ?? {}) as { name?: unknown; code?: unknown };
+      console.warn(`[eait] revenuecat: event log write failed, event ${logged.id} ${logged.type}: ${String(name ?? "error")} ${String(code ?? "-")}`);
+    });
   }
+  const done = (body: { ok: true; applied: boolean }): Response => logFailed ? json({ ...body, ok: false }, 500) : json(body);
   const transfer = parseRevenueCatTransfer(body);
   if (transfer) {
     const moved = await applyRevenueCatTransfer(deps, transfer);
     if (moved.applied) console.log("[eait] revenuecat: entitlement transferred");
     else console.warn(`[eait] revenuecat: a transfer moved no entitlement, ${describeTransfer(body)} (#687)`);
-    return json({ ok: true, applied: moved.applied });
+    return done({ ok: true, applied: moved.applied });
   }
   const event = parseRevenueCatEvent(body);
   // A delivery this server cannot read is still a delivery it should stop being sent. 200, because
   // a 400 buys retries of a message that will never parse any differently.
   if (!event) {
     console.warn("[eait] revenuecat: unreadable delivery ignored");
-    return json({ ok: true, applied: false });
+    return done({ ok: true, applied: false });
   }
 
   const outcome = await applyRevenueCatEvent(deps, event);
@@ -327,5 +335,5 @@ export async function revenueCatWebhook(
       `expected ${deps.config.revenueCatEntitlementId}. Check the RevenueCat dashboard.`,
     );
   }
-  return json({ ok: true, applied: outcome.applied });
+  return done({ ok: true, applied: outcome.applied });
 }

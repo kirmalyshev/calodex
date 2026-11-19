@@ -1001,14 +1001,23 @@ describe("every delivery is logged", () => {
     expect(await store.acquisitionOf(userId)).toEqual(ads);
   });
 
-  it("still applies the entitlement when the log write fails", async () => {
+  it("still applies the entitlement when the log write fails, then answers 500 so the retry logs it", async () => {
     const { userId, token } = await account();
-    const spy = spyOn(store, "recordRevenueCatEvent").mockImplementation(async () => { throw new Error("db down"); });
+    const spy = spyOn(store, "recordRevenueCatEvent").mockImplementation(async () => {
+      throw Object.assign(new Error("db down"), { name: "PostgresError", code: "57P01" });
+    });
     const warn = spyOn(console, "warn").mockImplementation(() => {});
-    const res = await deliver(purchase(userId, { id: "evt-3" }));
-    expect(await res.json()).toEqual({ ok: true, applied: true });
+    const delivery = purchase(userId, { id: "evt-3" });
+    const res = await deliver(delivery);
+    expect(res.status).toBe(500);
     expect((await profile(token)).entitlement.active).toBe(true);
+    expect(warn.mock.calls.map((c) => String(c[0]))).toContain(
+      "[eait] revenuecat: event log write failed, event evt-3 INITIAL_PURCHASE: PostgresError 57P01",
+    );
     spy.mockRestore(); warn.mockRestore();
+    expect((await deliver(delivery)).status).toBe(200);
+    expect((await store.revenueCatEventsOf(userId)).map((r) => r.id)).toEqual(["evt-3"]);
+    expect((await profile(token)).entitlement.active).toBe(true);
   });
 });
 
