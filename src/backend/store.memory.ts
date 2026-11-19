@@ -4,7 +4,7 @@
 // are enforced here exactly as they are in Postgres, so a test that proves "another user's meal id
 // resolves to null" is proving something about the engine rather than about a mock's mood.
 
-import type { AppId, DistributionChannel, MealReminders } from "@eait/shared";
+import type { AppId, DistributionChannel, MealReminders, ScreenTemplateDraft } from "@eait/shared";
 import { FOOD_SOURCE_IDS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import type {
   DayTotals, FoodRef, HealthDay, Lang, MealRecord, NotificationCopySet, OffProduct,
@@ -21,7 +21,7 @@ import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, isTester, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
-  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
   type AdminOnboardingAccount, type AdminOnboardingEvent,
 } from "./store.ts";
@@ -389,6 +389,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const onboardingEvents = new Map<string, StoredEvent>(); // event id -> event
   // Experiments by id; assignments by `${userId}\n${experimentId}`, the primary key in Postgres.
   const onboardingExperiments = new Map<string, OnboardingExperiment>();
+  // ieat-app#3167: key → revisions in version order; sha256 → asset.
+  const screenTemplates = new Map<string, ScreenTemplateRecord[]>();
+  const templateAssets = new Map<string, { mime: string; bytes: Uint8Array }>();
   const onboardingAssignments = new Map<string, OnboardingAssignment>();
   // `${userId}\n${date}` -> the day. One row per user per date, exactly as in Postgres, so the
   // upsert semantics the tests assert are the semantics production has.
@@ -1930,6 +1933,37 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         rows: page,
         nextCursor: rows.length > after + page.length && last ? `${last.startedAt}~${last.userId}` : null,
       };
+    },
+
+    async listScreenTemplates() {
+      return [...screenTemplates.keys()].sort().map((k) => clone(screenTemplates.get(k)!.at(-1)!));
+    },
+
+    async screenTemplate(key: string, version: number) {
+      const t = screenTemplates.get(key)?.find((r) => r.version === version);
+      return t ? clone(t) : null;
+    },
+
+    async putScreenTemplate(key: string, draft: ScreenTemplateDraft, createdBy: string) {
+      const revs = screenTemplates.get(key) ?? [];
+      const rec: ScreenTemplateRecord = {
+        ...clone(draft), key, version: revs.length + 1, created_by: createdBy, created_at: new Date().toISOString(),
+      };
+      screenTemplates.set(key, [...revs, rec]);
+      return clone(rec);
+    },
+
+    async putTemplateAsset(sha256: string, mime: string, bytes: Uint8Array) {
+      if (!templateAssets.has(sha256)) templateAssets.set(sha256, { mime, bytes: new Uint8Array(bytes) });
+    },
+
+    async templateAsset(sha256: string) {
+      const a = templateAssets.get(sha256);
+      return a ? { mime: a.mime, bytes: new Uint8Array(a.bytes) } : null;
+    },
+
+    async knownTemplateAssets(shas: readonly string[]) {
+      return new Set(shas.filter((s) => templateAssets.has(s)));
     },
 
     async listOnboardingExperiments() {
