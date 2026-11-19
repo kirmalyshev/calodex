@@ -2,7 +2,7 @@
 // nothing here decides access, and nothing here is sent to a client.
 
 import type { RevenueCatEventRow } from "../store.ts";
-import type { AttributionStatus } from "@eait/shared";
+import { ANALYTICS_EVENTS, type AnalyticsEventName, type AttributionStatus } from "@eait/shared";
 import { track } from "./analytics.ts";
 import type { EngineDeps } from "./deps.ts";
 
@@ -12,9 +12,19 @@ import type { EngineDeps } from "./deps.ts";
  * A FIRST delivery naming an account is also one `subscription_<type>` analytics event; a retried
  * one is not, because the event id is already logged.
  */
-/** RevenueCat's type as an event name; `SUBSCRIPTION_PAUSED` is `subscription_paused`, not doubled. */
-export const subscriptionEvent = (type: string): string =>
-  `subscription_${type.toLowerCase().replace(/^subscription_/, "")}`;
+type SubscriptionEvent = Extract<AnalyticsEventName, `subscription_${string}`>;
+
+/** RevenueCat types logged in `revenuecat_events` and sent nowhere: no owner, or no subscription. */
+export const UNTRACKED_REVENUECAT_TYPES: readonly string[] = ["TRANSFER", "TEST", "INVOICE_ISSUANCE"];
+
+/** RevenueCat's type as a server event, or null; `SUBSCRIPTION_PAUSED` is `subscription_paused`, not doubled. */
+export function subscriptionEvent(type: string): SubscriptionEvent | null {
+  const name = `subscription_${type.toLowerCase().replace(/^subscription_/, "")}`;
+  return Object.hasOwn(ANALYTICS_EVENTS, name) && "server" in ANALYTICS_EVENTS[name as AnalyticsEventName]
+    ? name as SubscriptionEvent : null;
+}
+
+const warnedTypes = new Set<string>();
 
 export async function logRevenueCatEvent(
   deps: EngineDeps, row: RevenueCatEventRow,
@@ -25,9 +35,12 @@ export async function logRevenueCatEvent(
   if (row.userId !== null && row.acquisition !== null) {
     await deps.store.putAcquisition(row.userId, { ...row.acquisition, via: "revenuecat" }).catch((e: unknown) => { failed = e ?? new Error("putAcquisition"); });
   }
-  if (fresh && row.userId !== null) {
-    // Every subscription_* event shares one prop list; `track` drops a type the catalog does not list.
-    const event = subscriptionEvent(row.type) as "subscription_renewal";
+  const event = subscriptionEvent(row.type);
+  if (event === null && !UNTRACKED_REVENUECAT_TYPES.includes(row.type) && !warnedTypes.has(row.type)) {
+    warnedTypes.add(row.type);
+    console.warn(`[eait] revenuecat: type ${row.type} maps to no analytics event`);
+  }
+  if (fresh && row.userId !== null && event !== null) {
     await track(deps, row.userId, event, {
       product_id: row.productId, period_type: row.periodType, presented_offering_id: row.presentedOfferingId,
       price_usd: row.price, price: row.priceInPurchasedCurrency, currency: row.currency, store: row.store, country_code: row.countryCode,

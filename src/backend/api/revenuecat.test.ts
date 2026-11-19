@@ -1044,4 +1044,35 @@ describe("subscription event names (ieat-app#3196)", () => {
     expect(subscriptionEvent("SUBSCRIPTION_EXTENDED")).toBe("subscription_extended");
     expect(subscriptionEvent("RENEWAL")).toBe("subscription_renewal");
   });
+
+  it("maps every documented RevenueCat type to a server event or an explicit ignore, and reaches every server event", async () => {
+    const { subscriptionEvent, UNTRACKED_REVENUECAT_TYPES } = await import("../engine/acquisition.ts");
+    const { ANALYTICS_EVENTS } = await import("@eait/shared");
+    const documented = [
+      "INITIAL_PURCHASE", "RENEWAL", "CANCELLATION", "UNCANCELLATION", "NON_RENEWING_PURCHASE", "SUBSCRIPTION_PAUSED",
+      "EXPIRATION", "BILLING_ISSUE", "PRODUCT_CHANGE", "TRANSFER", "SUBSCRIPTION_EXTENDED", "TEMPORARY_ENTITLEMENT_GRANT",
+      "REFUND_REVERSED", "INVOICE_ISSUANCE", "TEST",
+    ];
+    for (const type of documented) {
+      const event = subscriptionEvent(type);
+      if (event === null) expect(UNTRACKED_REVENUECAT_TYPES).toContain(type);
+      else expect(ANALYTICS_EVENTS[event]).toMatchObject({ server: true });
+    }
+    const reached = new Set<string | null>(documented.map(subscriptionEvent));
+    const server = Object.entries(ANALYTICS_EVENTS).filter(([, spec]) => "server" in spec).map(([name]) => name);
+    for (const name of server) expect(reached).toContain(name);
+    expect(subscriptionEvent("PURCHASE_COMPLETED")).toBeNull();
+  });
+
+  it("warns once about a type that maps to no catalog event", async () => {
+    const { userId } = await account();
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "SOMETHING_NEW" }));
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "SOMETHING_NEW" }));
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "TEST" }));
+    const lines = warn.mock.calls.map((c) => String(c[0])).filter((l) => l.includes("no analytics event"));
+    warn.mockRestore();
+    expect(lines).toEqual(["[eait] revenuecat: type SOMETHING_NEW maps to no analytics event"]);
+    expect(sink.captured).toHaveLength(0);
+  });
 });
