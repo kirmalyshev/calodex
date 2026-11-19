@@ -4363,8 +4363,9 @@ export async function postgresStore(
       // `effectiveAcqSource`, over `users u`.
       const effectiveAcq = sql`(case when u.acq_source is not null and u.acq_source <> 'organic' then u.acq_source
         when u.referred_by is not null then 'referral' else u.acq_source end)`;
+      // A row with no surface is an app run, as `by_surface` counts it.
       const narrow = sql`
-        and (${eq(filters.surface) === null} or e.surface = ${eq(filters.surface)})
+        and (${eq(filters.surface) === null} or coalesce(e.surface, 'app') = ${eq(filters.surface)})
         and (${eq(filters.app_version) === null} or e.app_version = ${eq(filters.app_version)})
         and (${eq(filters.lang) === null} or e.lang = ${eq(filters.lang)})
         and (${eq(filters.country) === null} or e.country = ${eq(filters.country)})
@@ -4442,7 +4443,7 @@ export async function postgresStore(
              and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
              and e.user_id <> all(${configStaff}::uuid[])
         )
-        select distinct 'surface' as k, surface as v, null::text as x from ev where surface is not null
+        select distinct 'surface' as k, coalesce(surface, 'app') as v, null::text as x from ev
         union select 'app_version', app_version, null from ev where app_version is not null
         union select 'lang', lang, null from ev where lang is not null
         union select 'country', country, null from ev where country is not null

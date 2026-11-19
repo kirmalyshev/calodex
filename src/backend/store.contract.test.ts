@@ -5634,6 +5634,15 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect([...d.app_version].sort()).toEqual(d.app_version);
     });
 
+    it("counts a row with no surface as an app run, as the experiment's by_surface does (ieat-app#3196)", async () => {
+      const s = await open();
+      const u = await s.createUser("en");
+      const f = async (surface: string) => (await s.onboardingFunnel({ from: null, to: null }, [], false, { surface })).sessions;
+      const [app, web] = [await f("app"), await f("web")];
+      await s.recordOnboardingEvents(u, [{ id: crypto.randomUUID(), sessionId: `nosurf-${RUN}`, place: "goal", action: "view", contentVersion: 1, at: new Date().toISOString() }]);
+      expect([await f("app") - app, await f("web") - web]).toEqual([1, 0]);
+    });
+
     it("counts a referred account Apple called organic under acq_source=referral (ieat-app#3196)", async () => {
       const s = await open();
       const v = `8.${RUN}`;
