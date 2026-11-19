@@ -13,6 +13,7 @@ import { fillCopy as fill } from "./copy.ts";
 import { blobSrc } from "./kit.ts";
 import { el, lang, names, redrawScreen, refusalWords } from "./shell.ts";
 import { shrinkPhotos } from "./photo.ts";
+import * as analytics from "./analytics.ts";
 
 type State = "reading" | "waiting" | "question" | "refused" | "failed";
 
@@ -84,6 +85,8 @@ export async function enqueue(files: File[], from?: FlyFrom): Promise<void> {
     flyFrom: from === undefined ? null : { ...from, at: Date.now() }, update: null,
   };
   jobs = [job, ...jobs];
+  // The diary's queue: the first meal has its own flow (`first-meal.ts`), through `sendOrKeep`.
+  analytics.capture("meal_photo_queued", { is_first_meal: false, has_caption: false });
   changed();
   redrawScreen();
   void run(job);
@@ -103,6 +106,7 @@ export function enqueueUpdate(meal: MealRecord, body: MealUpdateBody, grams?: { 
     update: { kind: body.kind, mealId: meal.id, steps: MEAL_UPDATE_STEPS[body.kind], body, name: names(meal.items), kcal: meal.kcal, ...(grams ? { grams } : {}) },
   };
   jobs = [job, ...jobs];
+  analytics.capture("meal_update_submitted", { update_kind: body.kind, has_meal_context: true, submitted_from_chat: false });
   thumbOf(job, meal);
   changed();
   redrawScreen();
@@ -265,6 +269,7 @@ async function settle(job: Job, result: PhotoLast | MealUpdateLast | null, words
   if (!jobs.includes(job)) return;
   if (job.update) return settleUpdate(job, result, words);
   if (result?.kind === "logged") {
+    analytics.capture("meal_logged", { requires_follow_up: Boolean(result.question), is_first_meal: false });
     if (result.question) {
       Object.assign(job, { state: "question", mealId: result.mealId, kcal: result.analysis.kcal, items: result.analysis.items });
       changed();
@@ -282,6 +287,7 @@ async function settle(job: Job, result: PhotoLast | MealUpdateLast | null, words
       return;
     }
   }
+  analytics.capture("meal_photo_failed", { result: result === null ? "refused" : result.kind === "not-food" ? "refused" : result.kind });
   job.state = result?.kind === "not-food" ? "refused" : "failed";
   job.words = result === null || result.kind === "not-food" || result.kind === "analysis-failed" || result.kind === "outcome-unknown"
     ? words : refusalWords(new ApiError(0, { error: result.kind }, result.kind));

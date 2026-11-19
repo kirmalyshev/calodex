@@ -48,6 +48,7 @@ import { closeAllPanels, openDialog, openPanel, toast } from "../panel.ts";
 import { openWeighIn } from "../weigh.ts";
 import * as analytics from "../analytics.ts";
 import {
+  patchProfile,
   clear, COPY, el, forgetProfile, keptWords, lang, refusalWords, render, setHeldProposal,
   setLastThread, type Frame,
 } from "../shell.ts";
@@ -240,11 +241,7 @@ export async function youScreen(frame: Frame, mode: "profile" | "settings" = "pr
   /** A PATCH whose failure lands as a line under the rows it was made on, the control re-armed. */
   const patch = async (body_: Record<string, unknown>, onError: (err: unknown) => void): Promise<void> => {
     try {
-      const res = await api<ProfileResponse>("/profile", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body_),
-      });
+      const res = await patchProfile(body_);
       me = res;
       forgetProfile();
       void draw();
@@ -318,11 +315,7 @@ export async function youScreen(frame: Frame, mode: "profile" | "settings" = "pr
     card.append(optRow(you.phone.language, LANG_LABEL[lang], () => {
       pickPanel(you.phone.language, LANGS_READY.map((c) => ({ value: c, label: LANG_LABEL[c] })), lang, (v) => {
         noticeBox.tell(null);
-        void api("/profile", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ lang: v }),
-        }).then(() => location.reload())
+        void patchProfile({ lang: v }).then(() => location.reload())
           .catch((err: unknown) => { console.error(err); noticeBox.tell(refusalWords(err)); });
       });
     }));
@@ -396,9 +389,12 @@ export async function youScreen(frame: Frame, mode: "profile" | "settings" = "pr
     btn.append(kitEl(`<i class="ico i-share" aria-hidden="true"></i>`), document.createTextNode(R.share));
     // The share sheet where the browser has one, else the clipboard. Counted when it FINISHED —
     // a cancelled sheet counts nothing — by a channel label only: a browser does not say which app.
-    const counted = (via: string) => apiSend("/referral/shared", {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ via }),
-    }).catch(() => {});
+    const counted = (via: string) => {
+      analytics.capture("referral_shared", { via });
+      return apiSend("/referral/shared", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ via }),
+      }).catch(() => {});
+    };
     btn.addEventListener("click", () => {
       const text = fill(R.shareText, { link: r.link });
       if (typeof navigator.share === "function") {
@@ -685,11 +681,7 @@ export async function youScreen(frame: Frame, mode: "profile" | "settings" = "pr
       const medNow = p.restrictions.filter((t) => (MEDICAL_TAGS as readonly string[]).includes(t));
       if (draft.medical.join(",") !== medNow.join(",")) patchBody.medical = [...draft.medical];
       try {
-        const res = await api<ProfileResponse>("/profile", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(patchBody),
-        });
+        const res = await patchProfile(patchBody);
         const prevKcal = me!.targets.kcal;
         me = res;
         forgetProfile();
@@ -792,11 +784,7 @@ export async function youScreen(frame: Frame, mode: "profile" | "settings" = "pr
         if (draft[r.key] !== (r.set !== null ? String(r.set) : "")) patchBody[r.key] = draft[r.key] === "" ? null : Number(draft[r.key]);
       }
       try {
-        me = await api<ProfileResponse>("/profile", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(patchBody),
-        });
+        me = await patchProfile(patchBody);
         forgetProfile();
         close();
         void draw();
@@ -932,6 +920,7 @@ export async function youScreen(frame: Frame, mode: "profile" | "settings" = "pr
       void (async () => {
         try {
           await api("/account", { method: "DELETE" });
+          analytics.capture("account_deleted");
         } catch (err) {
           if (err instanceof Unauthenticated) { closeAllPanels(); await render(); return; }
           console.error(err);
@@ -967,11 +956,11 @@ export async function youScreen(frame: Frame, mode: "profile" | "settings" = "pr
       body.append(offer);
     } else {
       body.append(statRow(you.phone.signedInWith, listConjunction(lang, providers)));
-      body.append(actRow(you.web.signOutBrowser, () => { close(); void leave(); }));
+      body.append(actRow(you.web.signOutBrowser, () => { analytics.capture("signed_out", { everywhere: false }); close(); void leave(); }));
       const everywhere = actRow(you.phone.signOutEverywhere, () => {
         everywhere.disabled = true;
         void api("/auth/signout/all", { method: "POST" })
-          .then(() => leave())
+          .then(() => { analytics.capture("signed_out", { everywhere: true }); return leave(); })
           .catch(async (err: unknown) => {
             everywhere.disabled = false;
             if (err instanceof Unauthenticated) { closeAllPanels(); await render(); return; }

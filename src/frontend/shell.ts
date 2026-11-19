@@ -137,6 +137,15 @@ export const profile = async (): Promise<ProfileResponse> => {
   return profileCache;
 };
 
+/** Every profile write: the PATCH, then `profile_edited` naming the fields changed — never a value but units. */
+export async function patchProfile(body: Record<string, unknown>): Promise<ProfileResponse> {
+  const res = await api<ProfileResponse>("/profile", {
+    method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  });
+  analytics.capture("profile_edited", { fields: Object.keys(body), ...("units" in body ? { units: String(body.units) } : {}) });
+  return res;
+}
+
 /** Forget the profile — the sign-out in `youScreen` calls it before re-rendering. */
 export const forgetProfile = (): void => { profileCache = null; };
 
@@ -515,8 +524,12 @@ export function failBadge(id: string, resend: () => void, drop?: () => void): HT
 export function keptLineEl(
   e: WebQueued,
   tag: "li" | "div",
-  act: { resend: () => void; drop: () => void },
+  given: { resend: () => void; drop: () => void },
 ): HTMLElement {
+  const act = {
+    resend: () => { analytics.capture("chat_outbox_action", { action: "resend" }); given.resend(); },
+    drop: () => { analytics.capture("chat_outbox_action", { action: "discard" }); given.drop(); },
+  };
   const copy = chatScreenCopyFor(lang);
   const state = keptState(e.held);
   const li = el(tag, `me ${state}${e.kind === "photo" ? " pic" : ""}`);
@@ -821,8 +834,12 @@ export function answered(r: { kind: string }): void {
  */
 export async function sendOrKeep(
   entry: WebQueued,
-  hooks?: { onLine?: (line: unknown) => void; onResult?: (r: MessageResponse | PhotoLast) => void },
+  hooks?: { onLine?: (line: unknown) => void; onResult?: (r: MessageResponse | PhotoLast) => void; retry?: boolean },
 ): Promise<string | void> {
+  // Read before the send: a meal logged by it flips `hasLoggedMeal` on the next profile.
+  const first = profileCache?.hasLoggedMeal === false;
+  if (entry.kind === "photo") analytics.capture("meal_photo_queued", { is_first_meal: first, has_caption: (entry.text ?? "") !== "" });
+  else analytics.capture("chat_message_sent", { has_focus_meal: entry.focusMealId != null, is_retry: hooks?.retry === true });
   // OLDER KEPT TURNS GO FIRST: with anything of this account's still waiting, this one joins the end
   // rather than reaching the server ahead of turns said before it (`joinsQueue`).
   const attempted = entry.userId === "" || !joinsQueue(outbox.entries, entry.userId);
@@ -835,6 +852,9 @@ export async function sendOrKeep(
     try {
       const r = await sendTurn(entry, hooks?.onLine, abort.signal);
       answered(r);
+      const kind: string = r.kind;
+      if (kind === "logged") analytics.capture("meal_logged", { requires_follow_up: Boolean((r as { question?: unknown }).question), is_first_meal: first });
+      else if (entry.kind === "photo" && (kind === "not-food" || kind === "analysis-failed")) analytics.capture("meal_photo_failed", { result: kind === "not-food" ? "refused" : kind });
       // The first-meal flow needs the result itself — a logged meal IS its next screen, and a
       // proposal is confirmed on the spot rather than left as a card nobody is looking at.
       hooks?.onResult?.(r);
@@ -846,6 +866,7 @@ export async function sendOrKeep(
       // a drain that fails on one holds it (`attemptOf`): the kept bubble says so and offers its
       // ways out, and a resend mints a new id rather than replaying one that may be spent.
       const failure = failureOf(err);
+      if (entry.kind === "photo") analytics.capture("meal_photo_failed", { result: failure.kind });
       if (outcomeUnknown(failure.kind)) entry = { ...entry, held: failure };
       else if (!noAnswer(err)) throw err;
     } finally {

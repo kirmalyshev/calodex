@@ -17,7 +17,7 @@ import { weightDisplayValue, weightToKg, type UnitSystem } from "../shared/ui/un
 import { youCopyFor } from "../shared/app/you-copy.ts";
 import type { ProfileRejected, ProfileResponse, WeightsResponse } from "@eait/shared/contract";
 import { api, ApiError, Unauthenticated } from "./api.ts";
-import { clear, el, keptWords, lang, render } from "./shell.ts";
+import { patchProfile, clear, el, keptWords, lang, render } from "./shell.ts";
 import { openPanel, toast } from "./panel.ts";
 
 /**
@@ -191,11 +191,7 @@ export function openWeighIn(me: ProfileResponse, onSaved: (res: ProfileResponse)
     saving = true;
     save.disabled = true;
     try {
-      const res = await api<ProfileResponse>("/profile", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ weight_kg: kg }),
-      });
+      const res = await patchProfile({ weight_kg: kg });
       close();
       // The toast is the board's saved line — "{w}kg, saved" (a web save is always a typed
       // weigh-in) — plus the plan's move when the figure moved it.

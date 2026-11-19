@@ -170,7 +170,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
           && (next === undefined || next.role === "user")
           && !entries.some((e) => e.role === "assistant" && e.kind === "meal" && e.mealId === entry.pendingId)) {
           const words = entry.text;
-          const resend = (): void => sendText(words);
+          const resend = (): void => sendText(words, true);
           const act = el("div", "act");
           act.append(smallCta(copy().resend, resend), ts);
           li.classList.add("failed");
@@ -216,7 +216,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
       // Past its clock the offer is a failed send, never a card under a dead question: her words,
       // the red ! and Resend (`states-not-sent`), the same turn as the phone's.
       const words = lastLine.text;
-      const resend = (): void => { setHeldProposal(null); sendText(words); };
+      const resend = (): void => { setHeldProposal(null); sendText(words, true); };
       const drop = (): void => { setHeldProposal(null); void draw(); };
       const act = el("div", "act");
       act.append(smallCta(copy().resend, resend));
@@ -474,13 +474,13 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
   };
 
   /** A starter or a suggestion is just the words — the same send the composer performs. */
-  const sendText = (text: string): void => {
+  const sendText = (text: string, retry = false): void => {
     turn(async () => {
       const saved = await sendHers({
         id: crypto.randomUUID(), userId: uid ?? "", kind: "text", text, photos: [],
         capturedAt: new Date().toISOString(),
         ...(focusMeal !== null ? { focusMealId: focusMeal.id } : {}),
-      });
+      }, retry);
       return saved;
     });
   };
@@ -523,11 +523,11 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
 
   /** Send her turn. A refusal stays HER bubble (#1520): kept held, the reason drawn on it with
       Delete, and her words never go back to the field. */
-  const sendHers = async (entry: Parameters<typeof sendOrKeep>[0]): Promise<string | void> => {
+  const sendHers = async (entry: Parameters<typeof sendOrKeep>[0], retry = false): Promise<string | void> => {
     readerUp = null; // her own send lands her on the newest line (Telegram's rule)
     const unbusy = showBusy(entry);
     try {
-      return await sendOrKeep(entry, { onResult: rememberLive });
+      return await sendOrKeep(entry, { onResult: rememberLive, retry });
     } catch (err) {
       if (!(err instanceof ApiError) || uid === null) throw err;
       await outbox.add({ ...entry, held: failureOf(err) });

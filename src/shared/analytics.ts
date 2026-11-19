@@ -81,11 +81,11 @@ const APP = ["app"] as const;
 export const ANALYTICS_EVENTS = {
   // Onboarding
   onboarding_step: { surfaces: BOTH, props: ["place", "action", "ms", "field"] },
-  onboarding_plan_completed: { surfaces: BOTH, props: [] },
+  onboarding_plan_completed: { surfaces: APP, props: [] },
   health_connect_result: { surfaces: APP, props: ["connected"] },
   // Accounts
-  signup_completed: { surfaces: BOTH, props: ["provider", "after_onboarding"] },
-  signin_completed: { surfaces: BOTH, props: ["provider", "outcome"] },
+  signup_completed: { surfaces: APP, props: ["provider", "after_onboarding"] },
+  signin_completed: { surfaces: APP, props: ["provider", "outcome"] },
   signed_out: { surfaces: BOTH, props: ["everywhere"] },
   account_deleted: { surfaces: BOTH, props: [] },
   profile_edited: { surfaces: BOTH, props: ["fields", "units"] },
@@ -117,7 +117,7 @@ export const ANALYTICS_EVENTS = {
   paywall_purchase_started: { surfaces: BOTH, props: ["plan", "trial_shown", "storefront"] },
   paywall_offer_step: { surfaces: BOTH, props: ["step"] },
   paywall_dismissed: { surfaces: BOTH, props: ["result", "blocked"] },
-  subscription_purchase_completed: { surfaces: BOTH, props: ["plan_type"] },
+  subscription_purchase_completed: { surfaces: APP, props: ["plan_type"] },
   subscription_purchase_failed: { surfaces: APP, props: ["reason", "code", "readable_code"] },
   purchases_restored: { surfaces: APP, props: ["active"] },
   // Coming back
