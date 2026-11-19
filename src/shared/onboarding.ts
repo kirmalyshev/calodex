@@ -460,7 +460,9 @@ export interface OnboardingBeatsContent {
   /**
    * The answer said back under the activity question — `{rest}` is the computed resting burn, may
    * be empty (hidden). `days` is retired (ieat-app#3192: the Target screen prints no burn line); a
-   * stored revision may still carry it and nothing reads it.
+   * stored revision may still carry it and nothing reads it. It is still SERVED as "" (a hidden line):
+   * a shipped build's `usableBeats` requires a string there and would otherwise discard the whole
+   * beats block. Drop it only after the OTA that stops reading it.
    */
   echo: { rest: string; days?: string };
   /**
@@ -1293,7 +1295,7 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   },
   beats: {
     ageWhy: "Your metabolism changes with age, so we factor that in",
-    echo: { rest: "At rest: {rest}kcal a day" },
+    echo: { rest: "At rest: {rest}kcal a day", days: "" },
     baseline: { title: "Where you're starting", bmi: "BMI", what: "Body mass index" },
     prelim: {
       title: "Your plan", burn: "You burn", gap: "{delta} your pace",

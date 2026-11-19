@@ -213,7 +213,7 @@ const FR: OnboardingContent = {
   },
   beats: {
     ageWhy: "Ton métabolisme change avec l’âge, on en tient compte",
-    echo: { rest: "Au repos : {rest}kcal par jour" },
+    echo: { rest: "Au repos : {rest}kcal par jour", days: "" },
     baseline: { title: "Ton point de départ", bmi: "IMC", what: "Indice de masse corporelle" },
     prelim: { title: "Ton plan", burn: "Tu brûles", gap: "{delta} ton rythme", eat: "Tu manges", perDay: "kcal par jour", keepTitle: "Tu brûles environ {burn}kcal" },
   },
@@ -482,7 +482,7 @@ const DE: OnboardingContent = {
   },
   beats: {
     ageWhy: "Dein Stoffwechsel verändert sich mit dem Alter, das rechnen wir ein",
-    echo: { rest: "Im Ruhezustand: {rest}kcal am Tag" },
+    echo: { rest: "Im Ruhezustand: {rest}kcal am Tag", days: "" },
     baseline: { title: "Dein Ausgangspunkt", bmi: "BMI", what: "Body-Mass-Index" },
     prelim: { title: "Dein Plan", burn: "Du verbrennst", gap: "{delta} dein Tempo", eat: "Du isst", perDay: "kcal am Tag", keepTitle: "Du verbrennst etwa {burn}kcal" },
   },
@@ -751,7 +751,7 @@ const IT: OnboardingContent = {
   },
   beats: {
     ageWhy: "Il tuo metabolismo cambia con l’età, e ne teniamo conto",
-    echo: { rest: "A riposo: {rest}kcal al giorno" },
+    echo: { rest: "A riposo: {rest}kcal al giorno", days: "" },
     baseline: { title: "Il tuo punto di partenza", bmi: "IMC", what: "Indice di massa corporea" },
     prelim: { title: "Il tuo piano", burn: "Tu bruci", gap: "{delta} il tuo ritmo", eat: "Tu mangi", perDay: "kcal al giorno", keepTitle: "Bruci circa {burn}kcal" },
   },
@@ -1020,7 +1020,7 @@ const ES: OnboardingContent = {
   },
   beats: {
     ageWhy: "Tu metabolismo cambia con la edad, y lo tenemos en cuenta",
-    echo: { rest: "En reposo: {rest}kcal al día" },
+    echo: { rest: "En reposo: {rest}kcal al día", days: "" },
     baseline: { title: "Tu punto de partida", bmi: "IMC", what: "Índice de masa corporal" },
     prelim: { title: "Tu plan", burn: "Quemas", gap: "{delta} tu ritmo", eat: "Comes", perDay: "kcal al día", keepTitle: "Quemas unas {burn}kcal" },
   },
@@ -1289,7 +1289,7 @@ const VI: OnboardingContent = {
   },
   beats: {
     ageWhy: "Trao đổi chất thay đổi theo tuổi, nên chúng tôi tính cả điều đó",
-    echo: { rest: "Lúc nghỉ: {rest}kcal một ngày" },
+    echo: { rest: "Lúc nghỉ: {rest}kcal một ngày", days: "" },
     baseline: { title: "Điểm xuất phát của bạn", bmi: "BMI", what: "Chỉ số khối cơ thể" },
     prelim: { title: "Kế hoạch của bạn", burn: "Bạn đốt", gap: "{delta} tốc độ của bạn", eat: "Bạn ăn", perDay: "kcal một ngày", keepTitle: "Bạn đốt khoảng {burn}kcal" },
   },
@@ -1558,7 +1558,7 @@ const ID: OnboardingContent = {
   },
   beats: {
     ageWhy: "Metabolismemu berubah seiring usia, jadi kami memperhitungkannya",
-    echo: { rest: "Saat istirahat: {rest}kcal sehari" },
+    echo: { rest: "Saat istirahat: {rest}kcal sehari", days: "" },
     baseline: { title: "Titik awalmu", bmi: "IMT", what: "Indeks massa tubuh" },
     prelim: { title: "Rencanamu", burn: "Kamu membakar", gap: "{delta} tempomu", eat: "Kamu makan", perDay: "kcal sehari", keepTitle: "Kamu membakar sekitar {burn}kcal" },
   },
@@ -1827,7 +1827,7 @@ const RU: OnboardingContent = {
   },
   beats: {
     ageWhy: "С возрастом обмен веществ меняется, мы это учитываем",
-    echo: { rest: "В покое: {rest}ккал в день" },
+    echo: { rest: "В покое: {rest}ккал в день", days: "" },
     baseline: { title: "Твоя точка отсчёта", bmi: "ИМТ", what: "Индекс массы тела" },
     prelim: { title: "Твой план", burn: "Ты сжигаешь", gap: "{delta} твой темп", eat: "Ты ешь", perDay: "ккал в день", keepTitle: "Ты сжигаешь около {burn}ккал" },
   },
@@ -2206,7 +2206,7 @@ const TE: OnboardingContent = {
   },
   beats: {
     ageWhy: "వయసుతో పాటు మీ జీవక్రియ మారుతుంది, అందుకే దాన్ని లెక్కలోకి తీసుకుంటాం",
-    echo: { rest: "విశ్రాంతిలో: రోజుకు {rest}kcal" },
+    echo: { rest: "విశ్రాంతిలో: రోజుకు {rest}kcal", days: "" },
     baseline: { title: "మీ ప్రారంభ స్థాయి", bmi: "BMI", what: "బాడీ మాస్ ఇండెక్స్" },
     prelim: { title: "మీ ప్రణాళిక", burn: "మీరు ఖర్చు చేసేది", gap: "{delta} మీ వేగం", eat: "మీరు తింటారు", perDay: "kcal రోజుకు", keepTitle: "మీరు సుమారు {burn}kcal ఖర్చు చేస్తారు" },
   },
@@ -2585,7 +2585,7 @@ const TA: OnboardingContent = {
   },
   beats: {
     ageWhy: "வயதுடன் உங்கள் வளர்சிதை மாற்றம் மாறுகிறது, அதனால் அதைக் கணக்கில் கொள்கிறோம்",
-    echo: { rest: "ஓய்வில்: ஒரு நாளைக்கு {rest}kcal" },
+    echo: { rest: "ஓய்வில்: ஒரு நாளைக்கு {rest}kcal", days: "" },
     baseline: { title: "உங்கள் தொடக்க நிலை", bmi: "BMI", what: "உடல் நிறை குறியீட்டெண்" },
     prelim: { title: "உங்கள் திட்டம்", burn: "நீங்கள் எரிப்பது", gap: "{delta} உங்கள் வேகம்", eat: "நீங்கள் சாப்பிடுவது", perDay: "kcal ஒரு நாளைக்கு", keepTitle: "நீங்கள் சுமார் {burn}kcal எரிக்கிறீர்கள்" },
   },
@@ -2964,7 +2964,7 @@ const PA: OnboardingContent = {
   },
   beats: {
     ageWhy: "ਉਮਰ ਨਾਲ ਤੁਹਾਡਾ ਮੈਟਾਬੋਲਿਜ਼ਮ ਬਦਲਦਾ ਹੈ, ਇਸ ਲਈ ਅਸੀਂ ਇਸ ਨੂੰ ਧਿਆਨ ਵਿੱਚ ਰੱਖਦੇ ਹਾਂ",
-    echo: { rest: "ਆਰਾਮ ਦੀ ਹਾਲਤ ਵਿੱਚ: {rest}kcal ਪ੍ਰਤੀ ਦਿਨ" },
+    echo: { rest: "ਆਰਾਮ ਦੀ ਹਾਲਤ ਵਿੱਚ: {rest}kcal ਪ੍ਰਤੀ ਦਿਨ", days: "" },
     baseline: { title: "ਤੁਹਾਡਾ ਸ਼ੁਰੂਆਤੀ ਆਧਾਰ", bmi: "BMI", what: "ਬਾਡੀ ਮਾਸ ਇੰਡੈਕਸ" },
     prelim: { title: "ਤੁਹਾਡੀ ਯੋਜਨਾ", burn: "ਤੁਸੀਂ ਖ਼ਰਚ ਕਰਦੇ ਹੋ", gap: "{delta} ਤੁਹਾਡੀ ਰਫ਼ਤਾਰ", eat: "ਤੁਸੀਂ ਖਾਂਦੇ ਹੋ", perDay: "kcal ਪ੍ਰਤੀ ਦਿਨ", keepTitle: "ਤੁਸੀਂ ਲਗਭਗ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹੋ" },
   },
@@ -3343,7 +3343,7 @@ const OR: OnboardingContent = {
   },
   beats: {
     ageWhy: "ବୟସ ସହ ଆପଣଙ୍କ ମେଟାବୋଲିଜମ୍ ବଦଳେ, ତେଣୁ ଆମେ ତାହା ହିସାବକୁ ନେଉ",
-    echo: { rest: "ବିଶ୍ରାମରେ: {rest}kcal ପ୍ରତିଦିନ" },
+    echo: { rest: "ବିଶ୍ରାମରେ: {rest}kcal ପ୍ରତିଦିନ", days: "" },
     baseline: { title: "ଆପଣଙ୍କ ଆରମ୍ଭିକ ଆଧାର", bmi: "BMI", what: "ବଡି ମାସ୍ ଇଣ୍ଡେକ୍ସ" },
     prelim: { title: "ଆପଣଙ୍କ ଯୋଜନା", burn: "ଆପଣ ଖର୍ଚ୍ଚ କରନ୍ତି", gap: "{delta} ଆପଣଙ୍କ ଗତି", eat: "ଆପଣ ଖାଆନ୍ତି", perDay: "kcal ପ୍ରତିଦିନ", keepTitle: "ଆପଣ ପ୍ରାୟ {burn}kcal ଖର୍ଚ୍ଚ କରନ୍ତି" },
   },
@@ -3722,7 +3722,7 @@ const MR: OnboardingContent = {
   },
   beats: {
     ageWhy: "वयानुसार तुमचा मेटाबॉलिझम बदलतो, म्हणून आम्ही तेही लक्षात घेतो",
-    echo: { rest: "विश्रांतीत: दिवसाला {rest}kcal" },
+    echo: { rest: "विश्रांतीत: दिवसाला {rest}kcal", days: "" },
     baseline: { title: "तुमचा सुरुवातीचा आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
     prelim: { title: "तुमची योजना", burn: "तुम्ही खर्च करता", gap: "{delta} तुमचा वेग", eat: "तुम्ही खाता", perDay: "kcal दिवसाला", keepTitle: "तुम्ही सुमारे {burn}kcal खर्च करता" },
   },
@@ -4101,7 +4101,7 @@ const ML: OnboardingContent = {
   },
   beats: {
     ageWhy: "പ്രായത്തിനനുസരിച്ച് നിങ്ങളുടെ മെറ്റബോളിസം മാറുന്നു, അതിനാൽ ഞങ്ങൾ അത് കണക്കിലെടുക്കുന്നു",
-    echo: { rest: "വിശ്രമത്തിൽ: ദിവസം {rest}kcal" },
+    echo: { rest: "വിശ്രമത്തിൽ: ദിവസം {rest}kcal", days: "" },
     baseline: { title: "നിങ്ങളുടെ തുടക്കനില", bmi: "BMI", what: "ബോഡി മാസ് ഇൻഡക്സ്" },
     prelim: { title: "നിങ്ങളുടെ പ്ലാൻ", burn: "നിങ്ങൾ ചെലവഴിക്കുന്നത്", gap: "{delta} നിങ്ങളുടെ ഗതി", eat: "നിങ്ങൾ കഴിക്കുന്നത്", perDay: "kcal ദിവസം", keepTitle: "നിങ്ങൾ ഏകദേശം {burn}kcal ചെലവഴിക്കുന്നു" },
   },
@@ -4480,7 +4480,7 @@ const KN: OnboardingContent = {
   },
   beats: {
     ageWhy: "ವಯಸ್ಸಿನೊಂದಿಗೆ ನಿಮ್ಮ ಚಯಾಪಚಯ ಬದಲಾಗುತ್ತದೆ, ಹಾಗಾಗಿ ನಾವು ಅದನ್ನು ಲೆಕ್ಕಕ್ಕೆ ತೆಗೆದುಕೊಳ್ಳುತ್ತೇವೆ",
-    echo: { rest: "ವಿಶ್ರಾಂತಿಯಲ್ಲಿ: ದಿನಕ್ಕೆ {rest}kcal" },
+    echo: { rest: "ವಿಶ್ರಾಂತಿಯಲ್ಲಿ: ದಿನಕ್ಕೆ {rest}kcal", days: "" },
     baseline: { title: "ನಿಮ್ಮ ಆರಂಭಿಕ ಸ್ಥಿತಿ", bmi: "BMI", what: "ಬಾಡಿ ಮಾಸ್ ಇಂಡೆಕ್ಸ್" },
     prelim: { title: "ನಿಮ್ಮ ಯೋಜನೆ", burn: "ನೀವು ಖರ್ಚು ಮಾಡುತ್ತೀರಿ", gap: "{delta} ನಿಮ್ಮ ವೇಗ", eat: "ನೀವು ತಿನ್ನುತ್ತೀರಿ", perDay: "kcal ದಿನಕ್ಕೆ", keepTitle: "ನೀವು ಸುಮಾರು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತೀರಿ" },
   },
@@ -4859,7 +4859,7 @@ const GU: OnboardingContent = {
   },
   beats: {
     ageWhy: "ઉંમર સાથે તમારું મેટાબોલિઝમ બદલાય છે, તેથી અમે તેને ધ્યાનમાં લઈએ છીએ",
-    echo: { rest: "આરામની સ્થિતિમાં: {rest}kcal પ્રતિ દિવસ" },
+    echo: { rest: "આરામની સ્થિતિમાં: {rest}kcal પ્રતિ દિવસ", days: "" },
     baseline: { title: "તમારો શરૂઆતનો આધાર", bmi: "BMI", what: "બોડી માસ ઇન્ડેક્સ" },
     prelim: { title: "તમારી યોજના", burn: "તમે ખર્ચો છો", gap: "{delta} તમારી ઝડપ", eat: "તમે ખાઓ છો", perDay: "kcal પ્રતિ દિવસ", keepTitle: "તમે લગભગ {burn}kcal ખર્ચો છો" },
   },
@@ -5238,7 +5238,7 @@ const BN: OnboardingContent = {
   },
   beats: {
     ageWhy: "বয়সের সঙ্গে আপনার মেটাবলিজম বদলায়, তাই আমরা সেটা হিসাবে রাখি",
-    echo: { rest: "বিশ্রামে: দিনে {rest}kcal" },
+    echo: { rest: "বিশ্রামে: দিনে {rest}kcal", days: "" },
     baseline: { title: "আপনার শুরুর অবস্থা", bmi: "BMI", what: "বডি মাস ইনডেক্স" },
     prelim: { title: "আপনার পরিকল্পনা", burn: "আপনি খরচ করেন", gap: "{delta} আপনার গতি", eat: "আপনি খান", perDay: "kcal দিনে", keepTitle: "আপনি প্রায় {burn}kcal খরচ করেন" },
   },
@@ -5617,7 +5617,7 @@ const PT_PT: OnboardingContent = {
   },
   beats: {
     ageWhy: "O teu metabolismo muda com a idade, por isso temos isso em conta",
-    echo: { rest: "Em repouso: {rest}kcal por dia" },
+    echo: { rest: "Em repouso: {rest}kcal por dia", days: "" },
     baseline: { title: "O teu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
     prelim: { title: "O teu plano", burn: "Gastas", gap: "{delta} o teu ritmo", eat: "Comes", perDay: "kcal por dia", keepTitle: "Gastas cerca de {burn}kcal" },
   },
@@ -5996,7 +5996,7 @@ const MS: OnboardingContent = {
   },
   beats: {
     ageWhy: "Metabolisme anda berubah mengikut usia, jadi kami mengambil kira perkara itu",
-    echo: { rest: "Ketika rehat: {rest}kcal sehari" },
+    echo: { rest: "Ketika rehat: {rest}kcal sehari", days: "" },
     baseline: { title: "Titik permulaan anda", bmi: "BMI", what: "Indeks jisim badan" },
     prelim: { title: "Pelan anda", burn: "Anda membakar", gap: "{delta} kadar anda", eat: "Anda makan", perDay: "kcal sehari", keepTitle: "Anda membakar kira-kira {burn}kcal" },
   },
@@ -6375,7 +6375,7 @@ const CA: OnboardingContent = {
   },
   beats: {
     ageWhy: "El metabolisme canvia amb l'edat, i ho tenim en compte",
-    echo: { rest: "En repòs: {rest}kcal al dia" },
+    echo: { rest: "En repòs: {rest}kcal al dia", days: "" },
     baseline: { title: "El teu punt de partida", bmi: "IMC", what: "Índex de massa corporal" },
     prelim: { title: "El teu pla", burn: "Cremes", gap: "{delta} el teu ritme", eat: "Menjes", perDay: "kcal al dia", keepTitle: "Cremes unes {burn}kcal" },
   },
@@ -6754,7 +6754,7 @@ const SL: OnboardingContent = {
   },
   beats: {
     ageWhy: "Presnova se s starostjo spreminja, zato to upoštevamo",
-    echo: { rest: "V mirovanju: {rest}kcal na dan" },
+    echo: { rest: "V mirovanju: {rest}kcal na dan", days: "" },
     baseline: { title: "Tvoje izhodišče", bmi: "ITM", what: "Indeks telesne mase" },
     prelim: { title: "Tvoj načrt", burn: "Porabiš", gap: "{delta} tvoj tempo", eat: "Ješ", perDay: "kcal na dan", keepTitle: "Porabiš približno {burn}kcal" },
   },
@@ -7133,7 +7133,7 @@ const HR: OnboardingContent = {
   },
   beats: {
     ageWhy: "Metabolizam se mijenja s godinama, pa to uračunavamo",
-    echo: { rest: "U mirovanju: {rest}kcal dnevno" },
+    echo: { rest: "U mirovanju: {rest}kcal dnevno", days: "" },
     baseline: { title: "Tvoja polazna točka", bmi: "BMI", what: "Indeks tjelesne mase" },
     prelim: { title: "Tvoj plan", burn: "Trošiš", gap: "{delta} tvoj tempo", eat: "Jedeš", perDay: "kcal dnevno", keepTitle: "Trošiš oko {burn}kcal" },
   },
@@ -7512,7 +7512,7 @@ const SK: OnboardingContent = {
   },
   beats: {
     ageWhy: "Metabolizmus sa s vekom mení, preto to zohľadňujeme",
-    echo: { rest: "V pokoji: {rest}kcal denne" },
+    echo: { rest: "V pokoji: {rest}kcal denne", days: "" },
     baseline: { title: "Tvoj východiskový bod", bmi: "BMI", what: "Index telesnej hmotnosti" },
     prelim: { title: "Tvoj plán", burn: "Spáliš", gap: "{delta} tvoje tempo", eat: "Ješ", perDay: "kcal denne", keepTitle: "Spáliš asi {burn}kcal" },
   },
@@ -7891,7 +7891,7 @@ const NO: OnboardingContent = {
   },
   beats: {
     ageWhy: "Stoffskiftet endrer seg med alderen, så vi regner det inn",
-    echo: { rest: "I hvile: {rest}kcal om dagen" },
+    echo: { rest: "I hvile: {rest}kcal om dagen", days: "" },
     baseline: { title: "Utgangspunktet ditt", bmi: "KMI", what: "Kroppsmasseindeks" },
     prelim: { title: "Planen din", burn: "Du forbrenner", gap: "{delta} tempoet ditt", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrenner rundt {burn}kcal" },
   },
@@ -8270,7 +8270,7 @@ const FI: OnboardingContent = {
   },
   beats: {
     ageWhy: "Aineenvaihdunta muuttuu iän myötä, joten otamme sen huomioon",
-    echo: { rest: "Levossa: {rest}kcal päivässä" },
+    echo: { rest: "Levossa: {rest}kcal päivässä", days: "" },
     baseline: { title: "Lähtötasosi", bmi: "BMI", what: "Painoindeksi" },
     prelim: { title: "Suunnitelmasi", burn: "Kulutat", gap: "{delta} tahtisi", eat: "Syöt", perDay: "kcal päivässä", keepTitle: "Kulutat noin {burn}kcal" },
   },
@@ -8649,7 +8649,7 @@ const DA: OnboardingContent = {
   },
   beats: {
     ageWhy: "Dit stofskifte ændrer sig med alderen, så det regner vi med",
-    echo: { rest: "I hvile: {rest}kcal om dagen" },
+    echo: { rest: "I hvile: {rest}kcal om dagen", days: "" },
     baseline: { title: "Dit udgangspunkt", bmi: "BMI", what: "Body mass index" },
     prelim: { title: "Din plan", burn: "Du forbrænder", gap: "{delta} dit tempo", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrænder cirka {burn}kcal" },
   },
@@ -9028,7 +9028,7 @@ const HU: OnboardingContent = {
   },
   beats: {
     ageWhy: "Az anyagcseréd az életkorral változik, ezt is beszámítjuk",
-    echo: { rest: "Nyugalomban: napi {rest}kcal" },
+    echo: { rest: "Nyugalomban: napi {rest}kcal", days: "" },
     baseline: { title: "A kiindulópontod", bmi: "BMI", what: "Testtömegindex" },
     prelim: { title: "A terved", burn: "Elégetsz", gap: "{delta} a tempód", eat: "Eszel", perDay: "kcal naponta", keepTitle: "Nagyjából {burn}kcal-t égetsz el" },
   },
@@ -9407,7 +9407,7 @@ const EL: OnboardingContent = {
   },
   beats: {
     ageWhy: "Ο μεταβολισμός σου αλλάζει με την ηλικία, γι' αυτό το υπολογίζουμε",
-    echo: { rest: "Σε ηρεμία: {rest}kcal την ημέρα" },
+    echo: { rest: "Σε ηρεμία: {rest}kcal την ημέρα", days: "" },
     baseline: { title: "Το σημείο εκκίνησής σου", bmi: "ΔΜΣ", what: "Δείκτης μάζας σώματος" },
     prelim: { title: "Το πλάνο σου", burn: "Καίς", gap: "{delta} ο ρυθμός σου", eat: "Τρως", perDay: "kcal την ημέρα", keepTitle: "Καίς περίπου {burn}kcal" },
   },
@@ -9786,7 +9786,7 @@ const RO: OnboardingContent = {
   },
   beats: {
     ageWhy: "Metabolismul se schimbă odată cu vârsta, așa că ținem cont de asta",
-    echo: { rest: "În repaus: {rest}kcal pe zi" },
+    echo: { rest: "În repaus: {rest}kcal pe zi", days: "" },
     baseline: { title: "Punctul tău de pornire", bmi: "IMC", what: "Indicele de masă corporală" },
     prelim: { title: "Planul tău", burn: "Arzi", gap: "{delta} ritmul tău", eat: "Mănânci", perDay: "kcal pe zi", keepTitle: "Arzi cam {burn}kcal" },
   },
@@ -10165,7 +10165,7 @@ const CS: OnboardingContent = {
   },
   beats: {
     ageWhy: "S věkem se mění metabolismus, a tak s tím počítáme",
-    echo: { rest: "V klidu: {rest}kcal denně" },
+    echo: { rest: "V klidu: {rest}kcal denně", days: "" },
     baseline: { title: "Tvůj výchozí bod", bmi: "BMI", what: "Index tělesné hmotnosti" },
     prelim: { title: "Tvůj plán", burn: "Spálíš", gap: "{delta} tvoje tempo", eat: "Jíš", perDay: "kcal denně", keepTitle: "Spálíš zhruba {burn}kcal" },
   },
@@ -10544,7 +10544,7 @@ const HI: OnboardingContent = {
   },
   beats: {
     ageWhy: "उम्र के साथ आपका मेटाबॉलिज़्म बदलता है, इसलिए हम इसे ध्यान में रखते हैं",
-    echo: { rest: "आराम की स्थिति में: {rest}kcal प्रति दिन" },
+    echo: { rest: "आराम की स्थिति में: {rest}kcal प्रति दिन", days: "" },
     baseline: { title: "आपका शुरुआती आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
     prelim: { title: "आपकी योजना", burn: "आप खर्च करते हैं", gap: "{delta} आपकी रफ़्तार", eat: "आप खाते हैं", perDay: "kcal प्रति दिन", keepTitle: "आप लगभग {burn}kcal खर्च करते हैं" },
   },
@@ -10923,7 +10923,7 @@ const TH: OnboardingContent = {
   },
   beats: {
     ageWhy: "การเผาผลาญเปลี่ยนไปตามอายุ เราจึงนำมาคำนวณด้วย",
-    echo: { rest: "ขณะพัก: {rest}kcal ต่อวัน" },
+    echo: { rest: "ขณะพัก: {rest}kcal ต่อวัน", days: "" },
     baseline: { title: "จุดเริ่มต้นของคุณ", bmi: "BMI", what: "ดัชนีมวลกาย" },
     prelim: { title: "แผนของคุณ", burn: "คุณเผาผลาญ", gap: "{delta} ความเร็วของคุณ", eat: "คุณกิน", perDay: "kcal ต่อวัน", keepTitle: "คุณเผาผลาญประมาณ {burn}kcal" },
   },
@@ -11302,7 +11302,7 @@ const SV: OnboardingContent = {
   },
   beats: {
     ageWhy: "Ämnesomsättningen förändras med åldern, så vi räknar med det",
-    echo: { rest: "I vila: {rest}kcal per dag" },
+    echo: { rest: "I vila: {rest}kcal per dag", days: "" },
     baseline: { title: "Din utgångspunkt", bmi: "BMI", what: "Kroppsmasseindex" },
     prelim: { title: "Din plan", burn: "Du förbränner", gap: "{delta} ditt tempo", eat: "Du äter", perDay: "kcal per dag", keepTitle: "Du förbränner cirka {burn}kcal" },
   },
@@ -11681,7 +11681,7 @@ const UK: OnboardingContent = {
   },
   beats: {
     ageWhy: "З віком обмін речовин змінюється, тож ми це враховуємо",
-    echo: { rest: "У спокої: {rest}ккал на день" },
+    echo: { rest: "У спокої: {rest}ккал на день", days: "" },
     baseline: { title: "Твоя точка відліку", bmi: "ІМТ", what: "Індекс маси тіла" },
     prelim: { title: "Твій план", burn: "Ти спалюєш", gap: "{delta} твій темп", eat: "Ти їси", perDay: "ккал на день", keepTitle: "Ти спалюєш близько {burn}ккал" },
   },
@@ -12060,7 +12060,7 @@ const NL: OnboardingContent = {
   },
   beats: {
     ageWhy: "Je stofwisseling verandert met de leeftijd, dus daar rekenen we mee",
-    echo: { rest: "In rust: {rest}kcal per dag" },
+    echo: { rest: "In rust: {rest}kcal per dag", days: "" },
     baseline: { title: "Je uitgangspunt", bmi: "BMI", what: "Body mass index" },
     prelim: { title: "Je plan", burn: "Je verbrandt", gap: "{delta} je tempo", eat: "Je eet", perDay: "kcal per dag", keepTitle: "Je verbrandt ongeveer {burn}kcal" },
   },
@@ -12439,7 +12439,7 @@ const PL: OnboardingContent = {
   },
   beats: {
     ageWhy: "Metabolizm zmienia się z wiekiem, więc to uwzględniamy",
-    echo: { rest: "W spoczynku: {rest}kcal dziennie" },
+    echo: { rest: "W spoczynku: {rest}kcal dziennie", days: "" },
     baseline: { title: "Twój punkt wyjścia", bmi: "BMI", what: "Wskaźnik masy ciała" },
     prelim: { title: "Twój plan", burn: "Spalasz", gap: "{delta} twoje tempo", eat: "Jesz", perDay: "kcal dziennie", keepTitle: "Spalasz około {burn}kcal" },
   },
@@ -12818,7 +12818,7 @@ const TR: OnboardingContent = {
   },
   beats: {
     ageWhy: "Metabolizman yaşla değişir, biz de bunu hesaba katarız",
-    echo: { rest: "Dinlenirken: günde {rest}kcal" },
+    echo: { rest: "Dinlenirken: günde {rest}kcal", days: "" },
     baseline: { title: "Başlangıç noktan", bmi: "VKİ", what: "Vücut kitle indeksi" },
     prelim: { title: "Planın", burn: "Yakarsın", gap: "{delta} tempon", eat: "Yersin", perDay: "kcal/gün", keepTitle: "Yaklaşık {burn}kcal yakarsın" },
   },
@@ -13197,7 +13197,7 @@ const ZH_HANT: OnboardingContent = {
   },
   beats: {
     ageWhy: "你的代謝會隨年齡改變，所以我們把它納入計算",
-    echo: { rest: "靜止時：每天 {rest}大卡" },
+    echo: { rest: "靜止時：每天 {rest}大卡", days: "" },
     baseline: { title: "你的起點", bmi: "身體質量指數（BMI）", what: "身體質量指數" },
     prelim: { title: "你的計畫", burn: "你消耗", gap: "{delta} 你的步調", eat: "你攝取", perDay: "大卡/天", keepTitle: "你消耗約 {burn}大卡" },
   },
@@ -13576,7 +13576,7 @@ const ZH_HANS: OnboardingContent = {
   },
   beats: {
     ageWhy: "代谢会随年龄变化，所以我们会把它考虑进去",
-    echo: { rest: "静息时：每天{rest}千卡" },
+    echo: { rest: "静息时：每天{rest}千卡", days: "" },
     baseline: { title: "你的起点", bmi: "身体质量指数（BMI）", what: "身体质量指数" },
     prelim: { title: "你的计划", burn: "你消耗", gap: "{delta} 你的节奏", eat: "你摄入", perDay: "千卡/天", keepTitle: "你消耗约 {burn}千卡" },
   },
@@ -13955,7 +13955,7 @@ const KO: OnboardingContent = {
   },
   beats: {
     ageWhy: "나이에 따라 대사가 달라지니 그만큼 반영해요",
-    echo: { rest: "휴식 중: 하루 {rest}kcal" },
+    echo: { rest: "휴식 중: 하루 {rest}kcal", days: "" },
     baseline: { title: "현재 기준점", bmi: "BMI", what: "체질량지수" },
     prelim: { title: "내 계획", burn: "소모", gap: "내 속도 {delta}", eat: "섭취", perDay: "kcal/일", keepTitle: "하루에 약 {burn}kcal를 써요" },
   },
@@ -14334,7 +14334,7 @@ const JA: OnboardingContent = {
   },
   beats: {
     ageWhy: "代謝は年齢とともに変わるので、それも計算に入れます",
-    echo: { rest: "安静時：1日{rest}kcal" },
+    echo: { rest: "安静時：1日{rest}kcal", days: "" },
     baseline: { title: "あなたの現在地", bmi: "BMI", what: "ボディマス指数" },
     prelim: { title: "あなたのプラン", burn: "あなたが消費", gap: "あなたのペース {delta}", eat: "あなたが食べる", perDay: "kcal/日", keepTitle: "あなたは約{burn}kcalを消費します" },
   },
@@ -14713,7 +14713,7 @@ const PT_BR: OnboardingContent = {
   },
   beats: {
     ageWhy: "Seu metabolismo muda com a idade, por isso levamos isso em conta",
-    echo: { rest: "Em repouso: {rest}kcal por dia" },
+    echo: { rest: "Em repouso: {rest}kcal por dia", days: "" },
     baseline: { title: "Seu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
     prelim: { title: "Seu plano", burn: "Você gasta", gap: "{delta} seu ritmo", eat: "Você come", perDay: "kcal por dia", keepTitle: "Você gasta cerca de {burn}kcal" },
   },

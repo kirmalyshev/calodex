@@ -274,6 +274,9 @@ describe("pace heading (ieat-app#3192)", () => {
 });
 
 describe("pace heading and legacy revisions (ieat-app#3192)", () => {
+  it("still serves echo.days as an empty string: a shipped build discards the whole beats block without a string there", () => {
+    for (const lang of LANGS) expect(onboardingContentFor(lang).beats.echo.days, lang).toBe("");
+  });
   it("never swaps or copies: lose and gain differ in every language except where script is the only difference", () => {
     for (const lang of LANGS) {
       const h = onboardingContentFor(lang).pace.heading!;

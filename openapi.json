@@ -8460,7 +8460,7 @@
               "rest"
             ],
             "additionalProperties": false,
-            "description": "The answer said back under the activity question — `{rest}` is the computed resting burn, may be empty (hidden). `days` is retired (ieat-app#3192: the Target screen prints no burn line); a stored revision may still carry it and nothing reads it."
+            "description": "The answer said back under the activity question — `{rest}` is the computed resting burn, may be empty (hidden). `days` is retired (ieat-app#3192: the Target screen prints no burn line); a stored revision may still carry it and nothing reads it. It is still SERVED as \"\" (a hidden line): a shipped build's `usableBeats` requires a string there and would otherwise discard the whole beats block. Drop it only after the OTA that stops reading it."
           },
           "baseline": {
             "type": "object",
