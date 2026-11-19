@@ -355,6 +355,10 @@ describe("profile", () => {
         { "paywall.exit-offer.web": true });
       expect(view.exitOfferEnabled).toEqual({ ios: false, web: true });
       expect(view.paywall.exitOffer).toBeNull();
+      // And the third leg: an offer whose own discount cannot stand is no offer, switch or no.
+      const noMath = await viewFor({ ...SELLING, exitOfferRegularPrice: 0 }, "en-GB",
+        { "paywall.exit-offer.web": true });
+      expect(noMath.paywall.exitOffer).toBeNull();
     });
 
     it("re-reads the switch per response — a flip back off disarms what was armed", async () => {

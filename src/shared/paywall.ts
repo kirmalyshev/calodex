@@ -7,7 +7,6 @@
 // `offerMath` itself, which is why the math takes numbers rather than display strings.
 
 import { LANG_TAG } from "./lang.ts";
-import type { ProfileResponse } from "./contract.ts";
 import type { Lang } from "./types.ts";
 
 /**
