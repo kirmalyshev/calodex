@@ -4,7 +4,9 @@
 import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, type AnalyticsServerContext } from "../../shared/analytics.ts";
+import {
+  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, SERVER_SENT_WEB_EVENTS, type AnalyticsServerContext,
+} from "../../shared/analytics.ts";
 import { currentBrand } from "../../shared/brand.ts";
 import { webContext } from "../analytics.ts";
 
@@ -18,9 +20,7 @@ const captured = new Set(browserSources().flatMap((src) => [...src.matchAll(/\bc
 const webEvents = Object.entries(ANALYTICS_EVENTS)
   .filter(([, spec]) => (spec.surfaces as readonly string[]).includes("web")).map(([name]) => name);
 
-// The web's onboarding is `/start`, served by the backend before this client has anybody to be:
-// its steps, the plan and the sign-ups are the server's to send, with surface `web`, never a browser capture.
-const SERVER_WRITTEN = ["onboarding_step", "onboarding_plan_completed", "signup_completed", "signin_completed"];
+const SERVER_WRITTEN: readonly string[] = SERVER_SENT_WEB_EVENTS;
 
 describe("the web's events are the catalog's", () => {
   it("captures every event the catalog marks web", () => {

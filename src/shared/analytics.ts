@@ -159,3 +159,8 @@ export const ANALYTICS_EVENTS = {
 } as const satisfies Record<string, AnalyticsEventSpec>;
 
 export type AnalyticsEventName = keyof typeof ANALYTICS_EVENTS;
+
+/** `/start` runs before the web client has anybody to be: the server sends these, with surface `web`. */
+export const SERVER_SENT_WEB_EVENTS: readonly AnalyticsEventName[] = [
+  "onboarding_step", "onboarding_plan_completed", "signup_completed", "signin_completed",
+];

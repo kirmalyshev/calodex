@@ -1,4 +1,7 @@
 import { describe, expect, it, spyOn } from "bun:test";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { ANALYTICS_EVENTS, SERVER_SENT_WEB_EVENTS } from "@eait/shared";
 import { posthogAnalytics } from "./posthog.ts";
 
 const KEY = "phc_test_key_never_logged";
@@ -57,5 +60,17 @@ describe("the PostHog adapter (ieat-app#3196)", () => {
     } finally {
       errors.mockRestore();
     }
+  });
+});
+
+describe("what the server tracks (ieat-app#3196)", () => {
+  it("is a server event or one /start sends for the web", () => {
+    const backend = join(import.meta.dir, "..");
+    const names = (readdirSync(backend, { recursive: true }) as string[])
+      .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts") && !f.includes("node_modules"))
+      .flatMap((f) => [...readFileSync(join(backend, f), "utf8").matchAll(/\btrack\(\s*[^,()]+,\s*[^,()]+,\s*"([^"]+)"/g)].map((m) => m[1]!));
+    expect(names.length).toBeGreaterThan(0);
+    const server = (n: string) => Object.hasOwn(ANALYTICS_EVENTS, n) && "server" in ANALYTICS_EVENTS[n as keyof typeof ANALYTICS_EVENTS];
+    expect(names.filter((n) => !server(n) && !(SERVER_SENT_WEB_EVENTS as readonly string[]).includes(n))).toEqual([]);
   });
 });
