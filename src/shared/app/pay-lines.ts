@@ -22,11 +22,3 @@ export function yearlySaveLine(
     percent: nb(paywallPercent(m.percentOff, lang)),
   });
 }
-
-/** The promise under the CTA: only for yearly with a trial the store says is owed. */
-export function trialPromiseLine(
-  pay: Pick<PayCopy, "trialPromise">, selected: "yearly" | "monthly", yearlyTrialDays: number | null | undefined,
-): string | null {
-  return selected === "yearly" && typeof yearlyTrialDays === "number"
-    ? fill(pay.trialPromise, { days: String(yearlyTrialDays) }) : null;
-}

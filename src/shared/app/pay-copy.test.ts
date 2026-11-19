@@ -106,7 +106,7 @@ describe("PAY_COPY", () => {
     expect(en.monthlySub).toBe("{trial}, {price} a month");
     expect(en.startTrial).toBe("Try {days} days free");
     expect(en.trialNote).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel any time in Profile › Subscription.");
-    expect(en.trialNotePhone).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel in Settings › Apple ID › Subscriptions at least 24 hours before the trial ends.");
+    expect(en.trialNotePhone).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel in Settings › Apple ID › Subscriptions at least 24 hours before the trial ends. We'll remind you before the trial ends.");
     // pay-gift
     expect(en.giftTitle).toBe("We have a gift for you");
     expect(en.giftAlt).toBe("A wrapped gift box");
