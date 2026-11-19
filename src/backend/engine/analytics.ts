@@ -2,7 +2,7 @@
 // what the server knows about the account. Both are read here and nowhere else, so the funnel rows,
 // `ProfileResponse.analytics` and every client's super properties agree.
 import {
-  APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
+  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, type AnalyticsEventName, type AnalyticsEventSpec, APP_HEADER, BUILD_HEADER, CHANNEL_HEADER, UPDATE_HEADER, VERSION_HEADER, parseApp, parseChannel, parseClientTag,
   usableContentFor, type AnalyticsContext, type AnalyticsServerContext, type AnalyticsSurface, type Lang,
   type OnboardingEventContext, type Profile,
 } from "@eait/shared";
@@ -64,6 +64,35 @@ export async function analyticsServerContext(deps: EngineDeps, userId: string, p
     referrer,
   };
 }
+
+type EventProps<E extends AnalyticsEventName> = { [K in (typeof ANALYTICS_EVENTS)[E]["props"][number]]?: unknown };
+
+/**
+ * One event only the server sees, to the analytics sink, with the whole context: the request's half
+ * (null throughout when there is no client request, as on a webhook) and the account's. The
+ * acquisition keys are also `$set` on the person. A name or a prop the catalog does not list is
+ * dropped. Never throws: a failure is logged and the caller carries on.
+ */
+export async function track<E extends AnalyticsEventName>(
+  deps: EngineDeps, userId: string, event: E, props: EventProps<E>, request: AnalyticsRequest | null,
+): Promise<void> {
+  if (!deps.analytics || !Object.hasOwn(ANALYTICS_EVENTS, event)) return;
+  const spec: AnalyticsEventSpec = ANALYTICS_EVENTS[event];
+  try {
+    const profile = await deps.store.getProfile(userId);
+    const server = profile ? await analyticsServerContext(deps, userId, profile) : {};
+    const context: Record<string, unknown> = {
+      ...Object.fromEntries(ANALYTICS_CONTEXT_KEYS.map((k) => [k, null])), ...request, ...server,
+    };
+    const own = Object.fromEntries(Object.entries(props).filter(([k]) => spec.props.includes(k)));
+    const $set = Object.fromEntries(PERSON_KEYS.map((k) => [k, context[k]]));
+    deps.analytics.capture(userId, event, { ...own, ...context, $set });
+  } catch (e) {
+    console.error(`[eait] analytics: ${event} not tracked: ${(e as Error | null)?.name ?? "error"}`);
+  }
+}
+
+const PERSON_KEYS = ["acq_source", "acq_campaign", "acq_adgroup", "acq_keyword", "referrer"] as const;
 
 /** The columns `onboarding_events` carries: the request's half and the account's, nothing from the body. */
 export async function onboardingEventContext(

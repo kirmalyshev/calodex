@@ -14,6 +14,7 @@ import type { Store } from "../store.ts";
 import type { EngineDeps } from "../engine/index.ts";
 import { createRouter } from "./routes.ts";
 import { fakePush } from "../push/fake.ts";
+import { fakeAnalytics } from "../analytics/fake.ts";
 import { logMail } from "../mail/log.ts";
 import {
   REVENUECAT_WEBHOOK_PATH, createRevenueCatWebhook, describeTransfer, parseRevenueCatEvent,
@@ -35,10 +36,12 @@ const base: Config = {
 
 let store: Store;
 let handle: (req: Request) => Promise<Response>;
+let sink: ReturnType<typeof fakeAnalytics>;
 
 function mount(config: Config) {
   store = memoryStore();
-  const deps: EngineDeps = { store, config, llm: demoPorts(), push: fakePush(), mail: logMail() };
+  sink = fakeAnalytics();
+  const deps: EngineDeps = { store, config, llm: demoPorts(), push: fakePush(), mail: logMail(), analytics: sink };
   handle = createRouter(deps, store, verifier);
 }
 
@@ -77,6 +80,45 @@ const purchase = (userId: string, over: Record<string, unknown> = {}) => ({
   expiration_at_ms: Date.now() + 30 * 24 * 60 * 60 * 1000,
   event_timestamp_ms: Date.now(),
   ...over,
+});
+
+describe("the subscription lifecycle reaches analytics (ieat-app#3196)", () => {
+  it("emits exactly one event per delivery, with the purchase's props and the account's context", async () => {
+    const { userId } = await account();
+    const delivery = purchase(userId, {
+      id: crypto.randomUUID(), period_type: "TRIAL", presented_offering_id: "default", price: 39.99,
+      currency: "EUR", store: "APP_STORE", country_code: "DE", environment: "PRODUCTION",
+    });
+    expect((await deliver(delivery)).status).toBe(200);
+    expect(sink.captured).toHaveLength(1);
+    const { event, userId: who, props } = sink.captured[0]!;
+    expect(event).toBe("subscription_initial_purchase");
+    expect(who).toBe(userId);
+    expect(props).toMatchObject({
+      product_id: "yearly", period_type: "TRIAL", presented_offering_id: "default", price: 39.99, currency: "EUR",
+      store: "APP_STORE", country_code: "DE", environment: "PRODUCTION", is_trial_conversion: null, cancel_reason: null,
+      surface: null, lang: "en",
+    });
+    // RevenueCat retries a delivery it is unsure of: the same event id is not a second event.
+    await deliver(delivery);
+    expect(sink.captured).toHaveLength(1);
+  });
+
+  it("names a refund and a trial conversion through their props", async () => {
+    const { userId } = await account();
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "RENEWAL", is_trial_conversion: true }));
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "CANCELLATION", cancel_reason: "CUSTOMER_SUPPORT" }));
+    expect(sink.captured.map((c) => [c.event, c.props.is_trial_conversion, c.props.cancel_reason])).toEqual([
+      ["subscription_renewal", true, null],
+      ["subscription_cancellation", null, "CUSTOMER_SUPPORT"],
+    ]);
+  });
+
+  it("sends nothing for a type the catalog does not list", async () => {
+    const { userId } = await account();
+    await deliver(purchase(userId, { id: crypto.randomUUID(), type: "TEST" }));
+    expect(sink.captured).toHaveLength(0);
+  });
 });
 
 describe("the webhook's credential", () => {

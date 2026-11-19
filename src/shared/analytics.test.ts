@@ -24,10 +24,12 @@ describe("the analytics context (ieat-app#3196)", () => {
 });
 
 describe("the event catalog", () => {
-  it("has snake_case names and props, and at least one known surface per event", () => {
+  it("has snake_case names and props, and a known surface per event unless only the server emits it", () => {
     for (const [name, e] of Object.entries(ANALYTICS_EVENTS)) {
       expect(name).toMatch(snake);
-      expect(e.surfaces.length).toBeGreaterThan(0);
+      const server = "server" in e && e.server === true;
+      expect(e.surfaces.length > 0 || server).toBe(true);
+      if (server) expect(e.surfaces).toEqual([]);
       for (const s of e.surfaces) expect(ANALYTICS_SURFACES).toContain(s);
       for (const p of e.props) expect(p).toMatch(snake);
     }
@@ -41,6 +43,21 @@ describe("the event catalog", () => {
 
   it("carries the onboarding step on both surfaces", () => {
     expect(ANALYTICS_EVENTS.onboarding_step.surfaces).toEqual(["app", "web"]);
+  });
+
+  it("carries the sign-ups and the plan on the web too, because /start's server emits them", () => {
+    for (const name of ["signup_completed", "signin_completed", "onboarding_plan_completed"] as const) {
+      expect(ANALYTICS_EVENTS[name].surfaces).toEqual(["app", "web"]);
+    }
+  });
+
+  it("lists the subscription lifecycle as the server's alone", () => {
+    const server = Object.entries(ANALYTICS_EVENTS).filter(([, e]) => "server" in e).map(([n]) => n);
+    expect(server).toContain("subscription_initial_purchase");
+    expect(server).toContain("subscription_renewal");
+    expect(server).toContain("subscription_cancellation");
+    expect(server).toContain("subscription_expiration");
+    for (const n of server) expect(n.startsWith("subscription_")).toBe(true);
   });
 });
 

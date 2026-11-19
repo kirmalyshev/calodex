@@ -66,12 +66,28 @@ export type OnboardingEventContext = Pick<AnalyticsContext, (typeof ONBOARDING_E
 export interface AnalyticsEventSpec {
   /** Where the event is emitted — the web half is the target P4 builds to, not today's state. */
   surfaces: readonly AnalyticsSurface[];
+  /** Emitted by the server alone, from a delivery no client sees; `surfaces` is then empty. */
+  server?: true;
   /** The event's own props; the context rides every event already and is never listed here. */
   props: readonly string[];
 }
 
 const BOTH = ["app", "web"] as const;
 const APP = ["app"] as const;
+
+/**
+ * One RevenueCat webhook delivery, as `subscription_<type lowercased>`. A refund is a cancellation
+ * whose `cancel_reason` is `CUSTOMER_SUPPORT`; a trial conversion is a renewal with
+ * `is_trial_conversion`. A type not listed below is logged in `revenuecat_events` and sent nowhere.
+ */
+const SUBSCRIPTION = {
+  surfaces: [],
+  server: true,
+  props: [
+    "product_id", "period_type", "presented_offering_id", "price", "currency", "store", "country_code", "environment",
+    "is_trial_conversion", "cancel_reason",
+  ],
+} as const;
 
 /**
  * Every product event by name. The app's `posthog?.capture(…)` calls and `paywall-events.ts` are
@@ -81,11 +97,11 @@ const APP = ["app"] as const;
 export const ANALYTICS_EVENTS = {
   // Onboarding
   onboarding_step: { surfaces: BOTH, props: ["place", "action", "ms", "field"] },
-  onboarding_plan_completed: { surfaces: APP, props: [] },
+  onboarding_plan_completed: { surfaces: BOTH, props: [] },
   health_connect_result: { surfaces: APP, props: ["connected"] },
-  // Accounts
-  signup_completed: { surfaces: APP, props: ["provider", "after_onboarding"] },
-  signin_completed: { surfaces: APP, props: ["provider", "outcome"] },
+  // Accounts — the web half of these four is the server's, from /start
+  signup_completed: { surfaces: BOTH, props: ["provider", "after_onboarding"] },
+  signin_completed: { surfaces: BOTH, props: ["provider", "outcome"] },
   signed_out: { surfaces: BOTH, props: ["everywhere"] },
   account_deleted: { surfaces: BOTH, props: [] },
   profile_edited: { surfaces: BOTH, props: ["fields", "units", "lang_set"] },
@@ -120,6 +136,19 @@ export const ANALYTICS_EVENTS = {
   subscription_purchase_completed: { surfaces: APP, props: ["plan_type"] },
   subscription_purchase_failed: { surfaces: APP, props: ["reason", "code", "readable_code"] },
   purchases_restored: { surfaces: APP, props: ["active"] },
+  // The subscription lifecycle, from RevenueCat's webhook
+  subscription_initial_purchase: SUBSCRIPTION,
+  subscription_renewal: SUBSCRIPTION,
+  subscription_product_change: SUBSCRIPTION,
+  subscription_cancellation: SUBSCRIPTION,
+  subscription_uncancellation: SUBSCRIPTION,
+  subscription_billing_issue: SUBSCRIPTION,
+  subscription_expiration: SUBSCRIPTION,
+  subscription_non_renewing_purchase: SUBSCRIPTION,
+  subscription_subscription_paused: SUBSCRIPTION,
+  subscription_subscription_extended: SUBSCRIPTION,
+  subscription_temporary_entitlement_grant: SUBSCRIPTION,
+  subscription_refund_reversed: SUBSCRIPTION,
   // Coming back
   notification_permission_result: { surfaces: BOTH, props: ["granted", "can_ask_again"] },
   push_opened: { surfaces: BOTH, props: ["reply"] },
