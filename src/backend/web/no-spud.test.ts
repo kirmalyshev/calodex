@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 
-// ieat-app#3177: no web page draws the Calodex mascot.
-test("no /start page draws or styles Calodex", () => {
+// ieat-app#3177: no web page draws the Spud mascot.
+test("no /start page draws or styles Spud", () => {
   const dir = new URL("./page/", import.meta.url).pathname;
   const files = readdirSync(dir).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
   for (const f of files) {

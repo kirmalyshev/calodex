@@ -183,7 +183,7 @@ test("the kit's measurements are pro.css's", async ({ page }) => {
   // The hero is a raw block — its rounding is the container's, not the component's.
   await expect(page.locator(".hero")).toHaveCSS("border-radius", "0px");
 
-  // The lettered avatar is the accent one; no Calodex disc exists.
+  // The lettered avatar is the accent one; no Spud disc exists.
   await expect(page.locator(".spud")).toHaveCount(0);
   await expect(page.locator(".gabie")).toHaveCSS("background-color", "rgb(30, 107, 60)");
   await expect(page.locator(".gabie")).toHaveCSS("border-radius", "50%");

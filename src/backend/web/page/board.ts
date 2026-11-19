@@ -10,7 +10,7 @@ import { currentBrand, dashPlaces, servedOrder, type Lang, type OnboardingPlace 
 import { brandSvg } from "@eait/shared/ui/icons";
 import { escape } from "./shell.ts";
 
-/** The wordmark bar — the app icon, not Calodex (DIRECTION §6). No navigation: onboarding is the
+/** The wordmark bar — the app icon, not the Spud mascot (DIRECTION §6). No navigation: onboarding is the
  * product here, nothing links out (§9). */
 export function wtop(): string {
   return `<div class="wtop"><span class="brand">${brandSvg("eait", { size: 20, class: "appicon" })}` +
@@ -40,7 +40,7 @@ export function dash(place: OnboardingPlace, lang: Lang, back?: { href: string; 
 
 /**
  * The ask — the question as the page's 34px heading, left, under the bar (ieat-app#2050's CZ
- * frame). No Calodex beside it on the web (Kirill, 12 Oct). `lines` is the ask's lines: the last is
+ * frame). No Spud mascot beside it on the web (Kirill, 12 Oct). `lines` is the ask's lines: the last is
  * the question, anything before it is a line under the heading — the board is one sentence deep.
  */
 export function say(lines: readonly string[], sub?: string): string {

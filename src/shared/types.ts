@@ -335,7 +335,7 @@ export function renderableVerdicts(verdicts: unknown): VerdictDimension[] {
 }
 
 /**
- * Calodex's face over a verdict, from the COMPUTED pills (principal, 2026-09-25: the first verdict
+ * The mascot's face over a verdict, from the COMPUTED pills (principal, 2026-09-25: the first verdict
  * follows the pills, never hard-coded praise). The worst pill decides: very high → care, high →
  * think, every pill on plan → joy. No readable pill is no verdict to praise, so a neutral face.
  * Only faces both the app and `mascot.ts` draw.

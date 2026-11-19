@@ -3754,7 +3754,7 @@ export const CHAT_SCREEN_COPY: Localized<ChatScreenCopy> = {
     movedCaption: "Taşındı — yeni gün: {day}.",
     composerThread: "Ne yediğini söyle ya da sor",
     proposalCheck: "Bugüne kaydediyorum, doğru mu?",
-    attachHint: "Calodex'un okuması için dosya ekle",
+    attachHint: "Calodex'in okuması için dosya ekle",
     proposalAccept: "Kaydet",
     proposalDecline: "Hayır",
     expired: "Bunun süresi doldu. Tekrar anlat, yeniden okuyayım.",
