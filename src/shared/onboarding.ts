@@ -1766,8 +1766,9 @@ export function validateOnboardingContent(input: unknown): ContentValidation {
         if (!["rest", "days"].includes(k)) push(`beats.echo.${k} is not a used key`);
       }
       tmpl(echo.rest, "beats.echo.rest", { allowed: ["rest"], requiredPh: ["rest"], max: MAX_LINE });
-      // Retired (#3192): a stored `days` is tolerated and read by nothing, so it is not policed.
-      if (echo.days !== undefined && typeof echo.days !== "string") push("beats.echo.days must be a string");
+      // Retired (#3192) and read by nothing here, but a SHIPPED build's `usableBeats` requires a string
+      // and discards the whole beats block without one: a save must keep it (an empty string hides the line).
+      if (typeof echo.days !== "string") push("beats.echo.days must be a string (leave it empty: shipped builds still require the key)");
     }
     const base = beats.baseline as Record<string, unknown> | undefined;
     if (typeof base !== "object" || base === null) push("beats.baseline is required");

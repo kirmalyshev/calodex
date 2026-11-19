@@ -291,11 +291,12 @@ describe("pace heading and legacy revisions (ieat-app#3192)", () => {
     expect(paceHeading(blank, "lose", ["How fast?"], "en")).toEqual(["How fast?"]);
     expect(paceHeading(blank, "gain", ["How fast?"], "en")).toEqual(["How fast?"]);
   });
-  it("validates old revisions: echo.days with {burn}, no days, refuses a new {kcal} in result; a null or odd heading", () => {
+  it("validates old revisions: echo.days with {burn}; refuses no days, refuses a new {kcal} in result; a null or odd heading", () => {
     const en = onboardingContentFor("en");
     const ok = (f: (c: any) => void) => { const c = structuredClone(en) as any; f(c); return validateOnboardingContent(c); };
     expect(ok((c) => { c.beats.echo.days = "Your days burn {burn}kcal"; }).ok).toBe(true);
-    expect(ok((c) => { delete c.beats.echo.days; }).ok).toBe(true);
+    expect(ok((c) => { delete c.beats.echo.days; }).ok).toBe(false);
+    expect(ok((c) => { c.beats.echo.days = ""; }).ok).toBe(true);
     expect(ok((c) => { c.pace.result = "{target} around {month} · {kcal}kcal a day"; }).ok).toBe(false);
     expect(ok((c) => { delete c.pace.heading; }).ok).toBe(true);
     const nul = ok((c) => { c.pace.heading = null; });
