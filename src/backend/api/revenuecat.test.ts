@@ -156,8 +156,14 @@ describe("a delivery naming an account a sign-in merged away", () => {
     await store.mergeUsers(anon.userId, real.userId);
 
     const renewedTo = Date.now() + 365 * 24 * 60 * 60 * 1000;
+    const log = spyOn(console, "log");
     const res = await deliver(purchase(anon.userId, { type: "RENEWAL", expiration_at_ms: renewedTo }));
+    const lines = log.mock.calls.map((c) => String(c[0]));
+    log.mockRestore();
     expect(await res.json()).toEqual({ ok: true, applied: true });
+    // The resolution is logged as the id pair, and nothing from the payload (#3201).
+    expect(lines.some((l) => l.includes(anon.userId) && l.includes(real.userId))).toBe(true);
+    expect(lines.some((l) => l.includes("RENEWAL") || l.includes("yearly"))).toBe(false);
     expect((await profile(real.token)).entitlement.expiresAt).toBe(new Date(renewedTo).toISOString());
   });
 
@@ -364,6 +370,19 @@ describe("a transfer between accounts", () => {
     await store.mergeUsers(anon.userId, real.userId);
     const res = await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [real.userId] }));
     expect(res.status).toBe(200);
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+
+  // Never resolved: the survivor's record holds its own purchases too, and a TRANSFER moves a record
+  // whole (#3201 review). The survivor keeps what it has; the destination is under-granted, #687's ceiling.
+  it("leaves the survivor's grant alone when the source was merged away", async () => {
+    const anon = await account();
+    const real = await account();
+    const other = await account();
+    await deliver(purchase(anon.userId, { event_timestamp_ms: Date.now() - 60_000 }));
+    await store.mergeUsers(anon.userId, real.userId);
+
+    await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [other.userId] }));
     expect((await profile(real.token)).entitlement.active).toBe(true);
   });
 

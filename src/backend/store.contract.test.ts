@@ -645,6 +645,18 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.mergedInto(anon)).toBeNull();
     });
 
+    // #3201: a chain A→B→C resolves A straight to C.
+    it("follows a chain of merges to the last survivor", async () => {
+      const s = await open();
+      const { userId: a } = await s.upsertDeviceUser(device(), "en");
+      const { userId: b } = await s.upsertDeviceUser(device(), "en");
+      const { userId: c } = await s.upsertDeviceUser(device(), "en");
+      await s.mergeUsers(a, b);
+      await s.mergeUsers(b, c);
+      expect(await s.mergedInto(a)).toBe(c);
+      expect(await s.mergedInto(b)).toBe(c);
+    });
+
     // A TRANSFER (#687): the grants move per grant, newer clock wins; the source keeps its record
     // with both cleared and stamped at the transfer, so an older delivery cannot write them back.
     it("moves both grants on a transfer, and fences the source at the transfer's clock", async () => {

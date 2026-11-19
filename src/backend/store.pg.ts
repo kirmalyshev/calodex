@@ -3223,6 +3223,8 @@ export async function postgresStore(
         // Tokens are deleted, not moved: a token that pointed at the now-empty account must stop
         // working rather than silently start addressing someone else's diary.
         await tx`delete from tokens where user_id = ${fromUserId}`;
+        // Re-pointed BEFORE the delete: `on delete cascade` would otherwise erase A→B when B goes.
+        await tx`update merged_users set into_id = ${intoUserId} where into_id = ${fromUserId}`;
         await tx`delete from users where id = ${fromUserId}`;
         await tx`
           insert into merged_users (from_id, into_id) values (${fromUserId}, ${intoUserId})
