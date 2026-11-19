@@ -26,7 +26,7 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
 
   it("carries every server key, and with the request's half and the offering makes the whole context", async () => {
     const { deps, userId } = await setup();
-    const analytics = (await profileView(deps, userId))!.analytics;
+    const analytics = (await profileView(deps, userId))!.analytics!;
     expect(Object.keys(analytics).sort()).toEqual([...ANALYTICS_SERVER_KEYS].sort());
     const whole = { ...analyticsRequestOf(new Headers(), "app"), paywall_offering: null, ...analytics };
     expect(Object.keys(whole).sort()).toEqual([...ANALYTICS_CONTEXT_KEYS].sort());
@@ -49,7 +49,7 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
   it("names the install's Apple Search Ads campaign, ad group and keyword, over the referral", async () => {
     const { store, deps, userId } = await setup();
     await store.putAcquisition(userId, { source: "apple_search_ads", campaign: "c1", adGroup: "g1", keyword: "k1", via: "adservices" });
-    const a = (await profileView(deps, userId))!.analytics;
+    const a = (await profileView(deps, userId))!.analytics!;
     expect([a.acq_source, a.acq_campaign, a.acq_adgroup, a.acq_keyword]).toEqual(["apple_search_ads", "c1", "g1", "k1"]);
   });
 
@@ -58,12 +58,12 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     const code = (await store.referralOf(await store.createUser("en")))!.code;
     await store.redeemReferral(userId, code, 7);
     await store.putAcquisition(userId, { source: "organic", campaign: null, adGroup: null, keyword: null, via: "adservices" });
-    expect((await profileView(deps, userId))!.analytics.acq_source).toBe("referral");
+    expect((await profileView(deps, userId))!.analytics!.acq_source).toBe("referral");
   });
 
   it("names the copy last served, else the held arm's, else the live one", async () => {
     const { store, deps, userId } = await setup();
-    const version = async () => (await profileView(deps, userId))!.analytics.content_version;
+    const version = async () => (await profileView(deps, userId))!.analytics!.content_version;
     expect(await version()).toBe(DEFAULT_ONBOARDING_CONTENT.version);
     await holdArm(store, userId, 42);
     expect(await version()).toBe(42);
@@ -73,7 +73,7 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
 
   it("names the held arm only when the copy last served is that arm's", async () => {
     const { store, deps, userId } = await setup();
-    const arm = async () => { const a = (await profileView(deps, userId))!.analytics; return [a.experiment_id, a.arm]; };
+    const arm = async () => { const a = (await profileView(deps, userId))!.analytics!; return [a.experiment_id, a.arm]; };
     const id = await holdArm(store, userId, 42);
     expect(await arm()).toEqual([null, null]);
     await serve(store, userId, DEFAULT_ONBOARDING_CONTENT.version);
@@ -82,20 +82,14 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     expect(await arm()).toEqual([id, "42"]);
   });
 
-  it("never fails the profile: a failed read is logged and the account's half is null", async () => {
+  it("never fails the profile: a failed read is logged and the context is null, so no client overwrites what it has", async () => {
     const { store, deps, userId } = await setup();
     await store.patchProfile(userId, { country: "de" });
     store.acquisitionOf = async () => { throw Object.assign(new Error("db down"), { code: "57P01" }); };
     const errors = spyOn(console, "error").mockImplementation(() => {});
     try {
-      expect((await profileView(deps, userId))!.analytics).toEqual({
-        content_version: DEFAULT_ONBOARDING_CONTENT.version, lang: "de", country: "de",
-        experiment_id: null, arm: null, template: null,
-        acq_source: null, acq_campaign: null, acq_adgroup: null, acq_keyword: null, referrer: null,
-      });
+      expect((await profileView(deps, userId))!.analytics).toBeNull();
       expect(errors).toHaveBeenCalledWith("[eait] analytics: context read failed: Error 57P01");
-      store.getOnboardingContent = async () => { throw new Error("db down"); };
-      expect((await profileView(deps, userId))!.analytics.content_version).toBeNull();
     } finally {
       errors.mockRestore();
     }
@@ -108,7 +102,7 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
       contentVersion: 2, lang: "de", surface: "app",
       screens: { prelim: { template: "hero", version: 3 }, baseline: { template: "plate", version: 2 } },
     });
-    expect((await profileView(deps, userId))!.analytics.template).toBe("plate@2,hero@3");
+    expect((await profileView(deps, userId))!.analytics!.template).toBe("plate@2,hero@3");
   });
 });
 
@@ -170,7 +164,22 @@ describe("track — one server-side event, with the whole context (ieat-app#3196
     expect(who).toBe(userId);
     expect(props).toMatchObject({ provider: "google", after_onboarding: true, surface: "web", lang: "de", country: "de" });
     for (const k of ANALYTICS_CONTEXT_KEYS) expect(props).toHaveProperty(k);
-    expect(props.$set).toEqual({ acq_source: null, acq_campaign: null, acq_adgroup: null, acq_keyword: null, referrer: null });
+    expect(props.$set).toEqual({});
+  });
+
+  it("sets only the person props it knows, so a failed read never blanks real attribution", async () => {
+    const { store, deps, sink, userId } = await setup();
+    await store.putAcquisition(userId, { source: "apple_search_ads", campaign: "c1", adGroup: null, keyword: null, via: "adservices" });
+    await track(deps, userId, "signup_completed", { provider: "google", after_onboarding: true }, null);
+    expect(sink.captured[0]!.props.$set).toEqual({ acq_source: "apple_search_ads", acq_campaign: "c1" });
+  });
+
+  it("sends nothing for an id that is no account of ours, a deleted one included", async () => {
+    const { store, deps, sink, userId } = await setup();
+    await store.deleteUser(userId);
+    await track(deps, userId, "subscription_expiration", {}, null);
+    await track(deps, crypto.randomUUID(), "subscription_expiration", {}, null);
+    expect(sink.captured).toEqual([]);
   });
 
   it("with no request, says so with nulls rather than inventing a surface", async () => {

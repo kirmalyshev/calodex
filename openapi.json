@@ -10816,8 +10816,15 @@
             "description": "{@link  ReferralView }  — this account's link and what it has done (#899)."
           },
           "analytics": {
-            "$ref": "#/components/schemas/AnalyticsServerContext",
-            "description": "What the server knows for the analytics context (ieat-app#3196), registered as super properties by the app and the web alike. Labels events, gates nothing."
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsServerContext"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the server knows for the analytics context (ieat-app#3196), registered as super properties by the app and the web alike. Labels events, gates nothing. Null when it could not be read: keep what was registered before rather than clearing it."
           }
         },
         "required": [

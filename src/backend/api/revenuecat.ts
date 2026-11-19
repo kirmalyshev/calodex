@@ -12,8 +12,7 @@
 //  4. NO USER ID FROM A REQUEST — except this one, which is the whole point of the route and is
 //     therefore the one place it must be argued for. See `parseRevenueCatEvent`.
 //
-// It answers 200 to everything it is willing to read, including events it deliberately ignores,
-// except a delivery whose event log write failed: that is a 500 so the retry logs it. A
+// It answers 200 to everything it is willing to read, including events it deliberately ignores. A
 // non-2xx makes RevenueCat retry, and retrying an event that was correctly ignored means being
 // told the same irrelevant thing all day.
 // ─────────────────────────────────────────────────────────────────────────────────────────────

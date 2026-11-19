@@ -5,7 +5,7 @@ import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, SERVER_SENT_WEB_EVENTS, type AnalyticsServerContext,
+  ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, SERVER_SENT_WEB_EVENTS, type AnalyticsServerContext,
 } from "../../shared/analytics.ts";
 import { currentBrand } from "../../shared/brand.ts";
 import { capture, webContext } from "../analytics.ts";
@@ -59,6 +59,12 @@ describe("the web's events are the catalog's", () => {
 });
 
 describe("webContext — the super properties", () => {
+  it("is the browser's own half alone when the server could not say, so registering it blanks nothing", () => {
+    const ctx = webContext(null);
+    expect(ctx).toMatchObject({ surface: "web" });
+    for (const k of ANALYTICS_SERVER_KEYS) expect(ctx).not.toHaveProperty(k);
+  });
+
   const server: AnalyticsServerContext = {
     content_version: 7, lang: "de", country: "DE", experiment_id: "x1", arm: "7", template: "plan@2",
     acq_source: "asa", acq_campaign: "c", acq_adgroup: "g", acq_keyword: "k", referrer: "R1",

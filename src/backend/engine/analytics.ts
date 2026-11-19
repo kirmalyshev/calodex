@@ -59,19 +59,16 @@ function servedTemplates(latest: OnboardingServedRecord | undefined): string | n
 
 /**
  * What the server knows about an account, for its rows and for every client's super properties.
- * Never throws: on a failed read the account's half is null, and the profile and the funnel go on.
+ * Never throws: a failed read is logged and answers null, which means "unknown", so no sink writes
+ * a blank over what it already has.
  */
-export async function analyticsServerContext(deps: EngineDeps, userId: string, profile: Profile): Promise<AnalyticsServerContext> {
+export async function analyticsServerContext(deps: EngineDeps, userId: string, profile: Profile): Promise<AnalyticsServerContext | null> {
   try {
     return await readServerContext(deps, userId, profile);
   } catch (e) {
     const err = e as { name?: string; code?: string } | null;
     console.error(`[eait] analytics: context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
-    const live = await deps.store.getOnboardingContent().then((c) => usableContentFor(profile.lang, c).version, () => null);
-    return {
-      ...(Object.fromEntries(ANALYTICS_SERVER_KEYS.map((k) => [k, null])) as AnalyticsServerContext),
-      content_version: live, lang: profile.lang, country: profile.country,
-    };
+    return null;
   }
 }
 
@@ -102,7 +99,7 @@ type EventProps<E extends AnalyticsEventName> = { [K in (typeof ANALYTICS_EVENTS
 /**
  * One event only the server sees, to the analytics sink, with the whole context: the request's half
  * (null throughout when there is no client request, as on a webhook) and the account's. The
- * acquisition keys are also `$set` on the person. A name or a prop the catalog does not list is
+ * acquisition and referral keys it knows are also `$set` on the person; an id that is no account sends nothing. A name or a prop the catalog does not list is
  * dropped. Never throws: a failure is logged and the caller carries on.
  */
 export async function track<E extends AnalyticsEventName>(
@@ -112,12 +109,13 @@ export async function track<E extends AnalyticsEventName>(
   const spec: AnalyticsEventSpec = ANALYTICS_EVENTS[event];
   try {
     const profile = await deps.store.getProfile(userId);
-    const server = profile ? await analyticsServerContext(deps, userId, profile) : {};
+    if (!profile) return;
+    const server = await analyticsServerContext(deps, userId, profile);
     const context: Record<string, unknown> = {
-      ...Object.fromEntries(ANALYTICS_CONTEXT_KEYS.map((k) => [k, null])), ...request, ...server,
+      ...Object.fromEntries(ANALYTICS_CONTEXT_KEYS.map((k) => [k, null])), ...request, ...(server ?? {}),
     };
     const own = Object.fromEntries(Object.entries(props).filter(([k]) => spec.props.includes(k)));
-    const $set = Object.fromEntries(PERSON_KEYS.map((k) => [k, context[k]]));
+    const $set = Object.fromEntries(PERSON_KEYS.flatMap((k) => (context[k] == null ? [] : [[k, context[k]]])));
     deps.analytics.capture(userId, event, { ...own, ...context, $set });
   } catch (e) {
     console.error(`[eait] analytics: ${event} not tracked: ${(e as Error | null)?.name ?? "error"}`);
@@ -131,7 +129,6 @@ export async function onboardingEventContext(
   deps: EngineDeps, userId: string, request: AnalyticsRequest,
 ): Promise<OnboardingEventContext | undefined> {
   const profile = await deps.store.getProfile(userId);
-  if (!profile) return undefined;
-  const s = await analyticsServerContext(deps, userId, profile);
-  return { ...request, lang: s.lang, country: s.country, experiment_id: s.experiment_id, arm: s.arm, template: null };
+  const s = profile ? await analyticsServerContext(deps, userId, profile) : null;
+  return { ...request, lang: s?.lang ?? null, country: s?.country ?? null, experiment_id: s?.experiment_id ?? null, arm: s?.arm ?? null, template: null };
 }

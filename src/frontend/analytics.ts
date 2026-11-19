@@ -21,17 +21,17 @@ import { scrubPageUrls } from "./route.ts";
 const key = typeof document === "undefined" ? "" : document.querySelector<HTMLMetaElement>('meta[name="eait-posthog"]')?.content ?? "";
 
 /** The whole context, the ONE builder: what a browser knows of itself, then what the server sent. */
-export const webContext = (server: AnalyticsServerContext): AnalyticsContext => ({
+export const webContext = (server: AnalyticsServerContext | null): Partial<AnalyticsContext> => ({
   surface: "web", brand: currentBrand().app,
   // No binary, no OTA, no store channel, no RevenueCat offering: the web sells the profile's checkout links.
   app_version: null, build: null, ota_update_id: null, channel: null, paywall_offering: null,
-  ...server,
+  ...(server ?? {}),
 });
 
 let client: PostHog | null = null;
 
 /** Start as this account, or switch to it, and (re-)register its context on every event. */
-export function identify(userId: string, server: AnalyticsServerContext): void {
+export function identify(userId: string, server: AnalyticsServerContext | null): void {
   if (key === "") return;
   if (client === null) {
     posthog.init(key, {

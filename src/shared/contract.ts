@@ -910,9 +910,10 @@ export interface ProfileResponse {
   referral: ReferralView;
   /**
    * What the server knows for the analytics context (ieat-app#3196), registered as super properties
-   * by the app and the web alike. Labels events, gates nothing.
+   * by the app and the web alike. Labels events, gates nothing. Null when it could not be read: keep
+   * what was registered before rather than clearing it.
    */
-  analytics: AnalyticsServerContext;
+  analytics: AnalyticsServerContext | null;
 }
 
 /**
