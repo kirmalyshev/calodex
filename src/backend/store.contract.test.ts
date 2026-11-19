@@ -3272,10 +3272,12 @@ function contract(name: string, make: () => Promise<Store>) {
         channel: "testflight" as const, lang: "de" as const, country: "de", experiment_id: "exp-1", arm: "42", template: "hero@3",
       };
       await s.recordOnboardingEvents(u, [ev("stamped", 0)], context);
+      await s.recordOnboardingEvents(u, [{ ...ev("own", 500), template: "plate@2" }], context);
       await s.recordOnboardingEvents(u, [ev("bare", 1000)]);
       const [row] = (await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } })).rows;
       expect(row!.events!.map((e) => e.context)).toEqual([
         context,
+        { ...context, template: "plate@2" },
         { surface: null, brand: null, app_version: null, build: null, ota_update_id: null, channel: null,
           lang: null, country: null, experiment_id: null, arm: null, template: null },
       ]);

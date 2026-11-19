@@ -239,6 +239,12 @@ describe("the context stamped on events (ieat-app#3196)", () => {
     expect((await stored()).map((c) => c.template).sort()).toEqual(["welcome-hero@3", null, null].sort());
   });
 
+  it("names a template only when the client reported one for that screen, never the account's served list", async () => {
+    await store.recordOnboardingServed(userId, { contentVersion: 1, lang: "en", surface: "app", screens: { baseline: { template: "plate", version: 2 } } });
+    await recordOnboardingEvents(deps, userId, [event({ place: "goal" })], request);
+    expect((await stored()).map((c) => c.template)).toEqual([null]);
+  });
+
   it("names no arm while the experiments switch is off", async () => {
     await recordOnboardingEvents(deps, userId, [event()], request);
     expect(await stored()).toEqual([{ ...request, lang: "en", country: null, experiment_id: null, arm: null, template: null }]);

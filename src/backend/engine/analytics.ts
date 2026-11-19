@@ -104,12 +104,12 @@ export async function track<E extends AnalyticsEventName>(
 
 const PERSON_KEYS = ["acq_source", "acq_campaign", "acq_adgroup", "acq_keyword", "referrer"] as const;
 
-/** The columns `onboarding_events` carries: the request's half and the account's, nothing from the body. */
+/** The columns `onboarding_events` carries: the request's half and the account's. `template` is the row's own, from the body. */
 export async function onboardingEventContext(
   deps: EngineDeps, userId: string, request: AnalyticsRequest,
 ): Promise<OnboardingEventContext | undefined> {
   const profile = await deps.store.getProfile(userId);
   if (!profile) return undefined;
   const s = await analyticsServerContext(deps, userId, profile);
-  return { ...request, lang: s.lang, country: s.country, experiment_id: s.experiment_id, arm: s.arm, template: s.template };
+  return { ...request, lang: s.lang, country: s.country, experiment_id: s.experiment_id, arm: s.arm, template: null };
 }
