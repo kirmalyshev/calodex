@@ -393,11 +393,15 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const screenTemplates = new Map<string, ScreenTemplateRecord[]>();
   const templateAssets = new Map<string, { mime: string; bytes: Uint8Array }>();
   const onboardingAssignments = new Map<string, OnboardingAssignment>();
-  // ieat-app#3194: what GET /v1/onboarding served, one row per distinct serving, insertion order.
+  // ieat-app#3194: what GET /v1/onboarding served, insertion order. Screens compare as Postgres's jsonb
+  // `=` does — key order is not part of the value.
   const onboardingServedRows: (OnboardingServedRecord & { userId: string })[] = [];
+  const canonical = (v: unknown): string => JSON.stringify(v, (_k, x: unknown) =>
+    x && typeof x === "object" && !Array.isArray(x)
+      ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x);
   const sameServing = (a: OnboardingServedRecord, b: Omit<OnboardingServedRecord, "servedAt" | "lastServedAt">) =>
     a.contentVersion === b.contentVersion && a.lang === b.lang && a.surface === b.surface
-    && JSON.stringify(a.screens) === JSON.stringify(b.screens);
+    && canonical(a.screens) === canonical(b.screens);
   // `${userId}\n${date}` -> the day. One row per user per date, exactly as in Postgres, so the
   // upsert semantics the tests assert are the semantics production has.
   const healthDays = new Map<string, HealthDay & { userId: string }>();
@@ -1119,13 +1123,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           onboardingAssignments.set(`${intoUserId}\n${a.experiment_id}`, { ...a, user_id: intoUserId });
         }
       }
-      // What was served moves with the funnel rows it explains; a serving both hold is kept once.
-      for (let i = onboardingServedRows.length - 1; i >= 0; i--) {
-        const r = onboardingServedRows[i]!;
-        if (r.userId !== fromUserId) continue;
-        if (onboardingServedRows.some((t) => t.userId === intoUserId && sameServing(t, r))) onboardingServedRows.splice(i, 1);
-        else r.userId = intoUserId;
-      }
+      // What was served moves with the funnel rows it explains, every row: each is a dated serving.
+      for (const r of onboardingServedRows) if (r.userId === fromUserId) r.userId = intoUserId;
 
       // The merged-away account's identities are DROPPED, not repointed. It is anonymous by the
       // time we get here, so those are the device identity and, since #205, possibly a `telegram`
@@ -2061,13 +2060,17 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async recordOnboardingServed(userId, served) {
       const at = new Date(now()).toISOString();
-      const row = onboardingServedRows.find((r) => r.userId === userId && sameServing(r, served));
-      if (row) row.lastServedAt = at;
+      // Only the LATEST row absorbs a repeat, as in Postgres.
+      const latest = onboardingServedRows.filter((r) => r.userId === userId)
+        .reduce<(typeof onboardingServedRows)[number] | undefined>((m, r) => (!m || r.servedAt >= m.servedAt ? r : m), undefined);
+      if (latest && sameServing(latest, served)) latest.lastServedAt = at;
       else onboardingServedRows.push({ ...clone(served), userId, servedAt: at, lastServedAt: at });
     },
 
     async onboardingServed(userId) {
-      return onboardingServedRows.filter((r) => r.userId === userId).map(({ userId: _u, ...r }) => clone(r));
+      return onboardingServedRows.filter((r) => r.userId === userId)
+        .sort((a, b) => Date.parse(a.servedAt) - Date.parse(b.servedAt))
+        .map(({ userId: _u, ...r }) => clone(r));
     },
 
     async onboardingExperimentFunnel(experimentId, range, staffIds = []) {

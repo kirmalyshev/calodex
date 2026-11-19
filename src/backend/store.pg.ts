@@ -1172,8 +1172,8 @@ create table if not exists onboarding_assignments (
 create index if not exists onboarding_assignments_experiment_idx on onboarding_assignments(experiment_id);
 
 -- What GET /v1/onboarding served one account (ieat-app#3194): the content version, the language,
--- the surface and each slot's template key and version. One row per distinct serving, so a repeat
--- request moves last_served_at instead of adding a row. In RLS_TABLES, erased with the account.
+-- the surface and each slot's template key and version. A repeat of the account's LATEST row moves
+-- last_served_at; anything else is a new row, so A, B, A reads as three. In RLS_TABLES, erased with the account.
 create table if not exists onboarding_served (
   user_id         uuid not null references users(id) on delete cascade,
   content_version integer not null,
@@ -1182,8 +1182,9 @@ create table if not exists onboarding_served (
   screens         jsonb not null default '{}'::jsonb,
   served_at       timestamptz not null default now(),
   last_served_at  timestamptz not null default now(),
-  primary key (user_id, content_version, lang, surface, screens)
+  id              bigint generated always as identity primary key
 );
+create index if not exists onboarding_served_user_idx on onboarding_served(user_id, served_at);
 
 -- Onboarding screen templates (ieat-app#3167): global content like onboarding_content, so no
 -- user_id and not in RLS_TABLES. Append-only per key — the primary key is what makes a concurrent
@@ -3137,14 +3138,7 @@ export async function postgresStore(
               select 1 from onboarding_assignments t
               where t.user_id = ${intoUserId} and t.experiment_id = a.experiment_id)`;
         await tx`update onboarding_assignments set user_id = ${intoUserId} where user_id = ${fromUserId}`;
-        // What was served moves with the funnel rows it explains; a serving both hold is kept once.
-        await tx`
-          delete from onboarding_served f
-          where f.user_id = ${fromUserId}
-            and exists (
-              select 1 from onboarding_served t
-              where t.user_id = ${intoUserId} and t.content_version = f.content_version
-                and t.lang = f.lang and t.surface = f.surface and t.screens = f.screens)`;
+        // What was served moves with the funnel rows it explains, every row: each is a dated serving.
         await tx`update onboarding_served set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         // Health days move, but NEVER over a day the real account already has. The direction is
         // anonymous -> real, and the real account's history is the one with deliberate corrections
@@ -3927,18 +3921,29 @@ export async function postgresStore(
 
     async recordOnboardingServed(userId, served) {
       const at = new Date(now());
+      // Only the LATEST row may absorb a repeat. Two concurrent first GETs can both miss it and insert
+      // twice — a duplicate dated serving, which the journal's match reads the same; accepted.
       await sql`
+        with latest as (
+          select id, content_version, lang, surface, screens from onboarding_served
+          where user_id = ${userId} order by served_at desc, id desc limit 1
+        ), moved as (
+          update onboarding_served s set last_served_at = ${at}
+          from latest l
+          where s.id = l.id and l.content_version = ${served.contentVersion} and l.lang = ${served.lang}
+            and l.surface = ${served.surface} and l.screens = ${served.screens}::jsonb
+          returning s.id
+        )
         insert into onboarding_served (user_id, content_version, lang, surface, screens, served_at, last_served_at)
-        values (${userId}, ${served.contentVersion}, ${served.lang}, ${served.surface}, ${served.screens}, ${at}, ${at})
-        on conflict (user_id, content_version, lang, surface, screens) do update
-          set last_served_at = excluded.last_served_at`;
+        select ${userId}::uuid, ${served.contentVersion}::int, ${served.lang}, ${served.surface}, ${served.screens}::jsonb, ${at}::timestamptz, ${at}::timestamptz
+        where not exists (select 1 from moved)`;
     },
 
     async onboardingServed(userId) {
       const rows = await sql`
         select content_version, lang, surface, screens, served_at, last_served_at
         from onboarding_served where user_id = ${userId}
-        order by served_at, content_version`;
+        order by served_at, id`;
       return rows.map((r: Record<string, unknown>) => ({
         contentVersion: Number(r.content_version),
         lang: r.lang as Lang,

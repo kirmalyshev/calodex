@@ -4063,7 +4063,7 @@ function contract(name: string, make: () => Promise<Store>) {
         screens: { baseline: { template: "day", version: 3 } }, ...over,
       });
 
-      it("keeps one row per distinct serving, oldest first, and moves only its last stamp", async () => {
+      it("moves only the LATEST row on an identical repeat; a serving that came back after another is a new row", async () => {
         const s = await open();
         const u = (await s.upsertDeviceUser(device(), "de")).userId;
         expect(await s.onboardingServed(u)).toEqual([]);
@@ -4071,14 +4071,22 @@ function contract(name: string, make: () => Promise<Store>) {
         const [first] = await s.onboardingServed(u);
         await Bun.sleep(5);
         await s.recordOnboardingServed(u, served());
+        const [moved] = await s.onboardingServed(u);
+        expect(moved!.servedAt).toBe(first!.servedAt);
+        expect(Date.parse(moved!.lastServedAt)).toBeGreaterThan(Date.parse(first!.lastServedAt));
+        await Bun.sleep(5);
         await s.recordOnboardingServed(u, served({ contentVersion: 43, screens: {} }));
+        await Bun.sleep(5);
+        // Keys in another order are the same screens, in both stores.
+        await s.recordOnboardingServed(u, served({ screens: { baseline: { version: 3, template: "day" } } }));
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served());
         const rows = await s.onboardingServed(u);
         expect(rows.map((r) => [r.contentVersion, r.lang, r.surface, r.screens])).toEqual([
           [42, "de", "app", { baseline: { template: "day", version: 3 } }],
           [43, "de", "app", {}],
+          [42, "de", "app", { baseline: { template: "day", version: 3 } }],
         ]);
-        expect(rows[0]!.servedAt).toBe(first!.servedAt);
-        expect(Date.parse(rows[0]!.lastServedAt)).toBeGreaterThan(Date.parse(first!.lastServedAt));
       });
 
       it("is the account's own: another account reads none of it, and erasure takes it", async () => {
@@ -4091,7 +4099,7 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(await s.onboardingServed(u)).toEqual([]);
       });
 
-      it("moves on merge, a serving both accounts hold kept once", async () => {
+      it("moves every row on merge", async () => {
         const s = await open();
         const anon = (await s.upsertDeviceUser(device(), "de")).userId;
         const real = (await s.upsertDeviceUser(device(), "de")).userId;
@@ -4099,7 +4107,7 @@ function contract(name: string, make: () => Promise<Store>) {
         await s.recordOnboardingServed(anon, served({ contentVersion: 7 }));
         await s.recordOnboardingServed(real, served());
         await s.mergeUsers(anon, real);
-        expect((await s.onboardingServed(real)).map((r) => r.contentVersion).sort()).toEqual([42, 7].sort());
+        expect((await s.onboardingServed(real)).map((r) => r.contentVersion).sort()).toEqual([42, 42, 7].sort());
         expect(await s.onboardingServed(anon)).toEqual([]);
       });
     });
