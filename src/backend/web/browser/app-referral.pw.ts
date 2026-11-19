@@ -15,7 +15,7 @@ test("the card shares the account's link and counts the share when the sheet fin
   await card.getByRole("button", { name: "Share link" }).click();
   expect((await counted).postDataJSON()).toEqual({ via: "web-share" });
   const shared = await page.evaluate("window.shared") as { text: string }[];
-  expect(shared[0]!.text).toMatch(/^A week of eait free: \S+\/r\/[A-HJ-NP-Z2-9]{6}$/);
+  expect(shared[0]!.text).toMatch(/^A week of Calodex free: \S+\/r\/[A-HJ-NP-Z2-9]{6}$/);
 });
 
 test("without a share sheet it copies the link instead, and says so", async ({ inWebApp: page, context }) => {
