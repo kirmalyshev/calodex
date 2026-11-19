@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { exitOfferOn, offerMath, paywallPercent, paywallPrice, perMonth } from "./paywall.ts";
+import { exitOfferOn, offerMath, paywallPercent, paywallPrice, perMonth, swapCurrencySign } from "./paywall.ts";
 
 // The one arithmetic the web paywall (#96) and the native one (#928) share: the exit offer's
 // percent off and its per-month equivalent, derived from the two prices that were actually
@@ -52,6 +52,26 @@ describe("paywallPrice", () => {
     expect(paywallPrice(39.99, "EUR", "de")).toBe("39,99 €");
     expect(paywallPrice(39.99, "USD", "en")).toBe("$39.99");
   });
+
+  // ieat-app#3163: a bare "$" on an Australian or New Zealand sheet reads as US dollars, a ruble
+  // price shows kopecks nobody quotes, and the ringgit is RM.
+  it("names AUD and NZD with their own sign, in every language", () => {
+    expect(paywallPrice(39.99, "AUD", "en")).toBe("A$39.99");
+    expect(paywallPrice(39.99, "NZD", "en")).toBe("NZ$39.99");
+    expect(paywallPrice(39.99, "AUD", "de").replace(/\s/g, " ")).toBe("39,99 A$");
+    expect(paywallPrice(39.99, "NZD", "fr")).toContain("NZ$");
+  });
+
+  it("drops the kopecks on RUB, rounded to the whole ruble", () => {
+    expect(paywallPrice(3333, "RUB", "ru").replace(/\s/g, " ")).toBe("3 333 ₽");
+    expect(paywallPrice(277.75, "RUB", "ru").replace(/\s/g, " ")).toBe("278 ₽");
+    expect(paywallPrice(277.75, "RUB", "en")).not.toContain(".");
+  });
+
+  it("writes MYR as RM", () => {
+    expect(paywallPrice(39.99, "MYR", "en")).toContain("RM");
+    expect(paywallPrice(39.99, "MYR", "en")).not.toContain("MYR");
+  });
 });
 
 // ieat-app#3155: the admin arms the decline → offer per platform and the flag travels on
@@ -83,5 +103,45 @@ describe("paywallPercent", () => {
     expect(paywallPercent(40, "en")).toBe("40%");
     expect(paywallPercent(40, "fr")).toBe("40 %");
     expect(paywallPercent(40, "de")).toBe("40 %");
+  });
+});
+
+// ieat-app#3163: the yearly card's second line is computed from the storefront's own two prices.
+describe("yearly per-month line", () => {
+  it("reads €3.33 and 33% off twelve monthlies at €4.99 / €39.99", () => {
+    const m = offerMath(4.99 * 12, 39.99);
+    expect(m).toEqual({ percentOff: 33, perMonth: 3.33 });
+  });
+  it("is absent when the yearly is no cheaper than twelve monthlies", () => {
+    expect(offerMath(4.99 * 12, 59.88)).toBeNull();
+  });
+});
+
+// Hermes has no NumberFormat.formatToParts and answers its own symbols (#3163 review): the price
+// must still come out, with the right sign, when the method is gone.
+describe("paywallPrice without formatToParts", () => {
+  it("still prices AUD, NZD, MYR and RUB", () => {
+    const proto = Intl.NumberFormat.prototype as { formatToParts?: unknown };
+    const saved = proto.formatToParts;
+    delete proto.formatToParts;
+    try {
+      expect(paywallPrice(39.99, "AUD", "en")).toBe("A$39.99");
+      expect(paywallPrice(39.99, "NZD", "en")).toBe("NZ$39.99");
+      expect(paywallPrice(39.99, "MYR", "en")).toContain("RM");
+      expect(paywallPrice(278, "RUB", "en")).not.toContain(".");
+    } finally { proto.formatToParts = saved; }
+  });
+});
+
+// The spellings Hermes answers with, which bun's ICU never produces.
+describe("swapCurrencySign", () => {
+  it("takes every spelling of the sign", () => {
+    expect(swapCurrencySign("AU$39.99", "AUD")).toBe("A$39.99");
+    expect(swapCurrencySign("39,99 $AU", "AUD")).toBe("39,99 A$");
+    expect(swapCurrencySign("$39.99", "AUD")).toBe("A$39.99");
+    expect(swapCurrencySign("$NZ39.99", "NZD")).toBe("NZ$39.99");
+    expect(swapCurrencySign("MYR 39.99", "MYR")).toBe("RM 39.99");
+    expect(swapCurrencySign("RM39.99", "MYR")).toBe("RM39.99");
+    expect(swapCurrencySign("$39.99", "USD")).toBe("$39.99");
   });
 });

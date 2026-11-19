@@ -16,7 +16,7 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, OnboardingPlace, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
@@ -46,9 +46,11 @@ export interface NewJob {
  * The allowance a `chargeAnalysis` write enforces, resolved by the engine per request:
  * `day` is this scope's rows on the charge's `date` (the paid daily photo cap); `lifetime` is every
  * analyses row the account holds against `free_analyses`, which the write reads off the account row
- * it has locked — the number and the count are decided inside the same transaction.
+ * it has locked — the number and the count are decided inside the same transaction. `floor` is the
+ * least the engine allows whatever that column says (T1's `own-meal` arm, ieat-app#3165; 0 is none): the
+ * write enforces the larger of the two, so a grant edited mid-charge is still read under the lock.
  */
-export type SpendLimit = { over: "day"; max: number } | { over: "lifetime" };
+export type SpendLimit = { over: "day"; max: number } | { over: "lifetime"; floor: number };
 /** `chargeAnalysis`'s answer: the charge's id and whether this call took it, `"cap"` on the limit, `"lost"` on a gone lease. */
 export type ChargeOutcome = { analysisId: string; fresh: boolean } | "cap" | "lost";
 
@@ -738,6 +740,12 @@ export interface OnboardingVariant {
    * bumps `ONBOARDING_ORDER_VERSION`, which takes the old clients out; never on the control arm.
    */
   order?: readonly OnboardingPlace[];
+  /**
+   * What this arm shows before the plans sheet (ieat-app#3165, `FIRST_VERDICT_ARMS`), absent for the
+   * live flow. `own-meal` is also an analysis `freeAnalysesFor` lets the account through for. Never
+   * on the control arm, which is the live flow by definition.
+   */
+  firstVerdict?: FirstVerdictArm;
 }
 
 export type OnboardingExperimentStatus = "draft" | "running" | "stopped";

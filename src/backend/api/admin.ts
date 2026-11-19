@@ -47,10 +47,10 @@ import {
 import {
   adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
-  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantOrder, setOnboardingExperiment,
+  onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
   onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, promptHistory, PUSH_STATS_MAX_DAYS, referralAdminView, savePrompt,
-  sendTestPush, pushOpenView, pushRecentView, sendAdminPush,
+  sendTestPush, pushOpenView, pushRecentView, adminUserPushLog, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
   resetOnboardingContent, saveOnboardingContent, saveSwitch, setUserCap, userCap,
@@ -431,11 +431,17 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     }
     if (req.method === "PUT" && sub === "variants") {
       const raw: unknown = await req.json().catch(() => ({}));
-      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown };
+      const body = (raw !== null && typeof raw === "object" ? raw : {}) as { content?: unknown; order?: unknown; firstVerdict?: unknown };
       const index = Number(expMatch[3]);
-      // Two editors, two bodies, never both (ieat-app#2788): `{order}` is the order editor's save
+      // One editor per body, never two at once (ieat-app#2788): `{order}` is the order editor's save
       // (`null` clears it), anything else the copy editor's. A body carrying both is refused rather
-      // than half-written — a content save is committed before an order could be refused.
+      // than half-written — a content save is committed before an order could be refused. `{firstVerdict}`
+      // is the third, alone the same way (ieat-app#3165; `null` clears it).
+      if ("firstVerdict" in body) {
+        if (body.content !== undefined || "order" in body) return json({ errors: ["send the first verdict alone"] }, 422);
+        const result = await saveOnboardingVariantFirstVerdict(deps, id, index, body.firstVerdict);
+        return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
+      }
       if ("order" in body) {
         if (body.content !== undefined) return json({ errors: ["send the copy or the order, not both"] }, 422);
         const result = await saveOnboardingVariantOrder(deps, id, index, body.order);
@@ -694,9 +700,14 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       const out = await sendTestPush(deps, userId, Date.now(), body?.imageUrl, body?.route);
       return json(out, out.ok ? 200 : !out.ok && (out.reason === "image-not-allowed" || out.reason === "route-not-allowed") ? 400 : 409);
     }
+    // The account's own history, every state kept (ieat-app#3168): the same read backs the
+    // composer's result line (the newest row is the send just made) and the pane's Pushes tab,
+    // which asks for the bound rather than the composer's default twenty.
     if (req.method === "GET" && push[2] === "log") {
-      const rows = await deps.store.sendLogFor(userId, 20);
-      return json({ sends: rows.map(({ token: _token, ...row }) => row) });
+      const raw = url.searchParams.get("limit");
+      if (raw !== null && raw !== "" && !/^\d{1,4}$/.test(raw)) return json({ error: "bad-limit" }, 400);
+      const view = await adminUserPushLog(deps, userId, raw ? Number(raw) : 20);
+      return view ? json(view) : notFound();
     }
   }
 

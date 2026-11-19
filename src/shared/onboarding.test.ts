@@ -1059,3 +1059,14 @@ describe("the order the countries are offered in", () => {
     }
   });
 });
+
+describe("the first-verdict arms (ieat-app#3165)", () => {
+  it("bumps FIRST_VERDICT_VERSION with the arm list — a client below it cannot draw a new arm", async () => {
+    const { FIRST_VERDICT_ARMS, FIRST_VERDICT_VERSION, isFirstVerdictArm } = await import("./onboarding.ts");
+    // Change this pair together: an arm added without a bump reaches builds that cannot render it.
+    expect([FIRST_VERDICT_VERSION, [...FIRST_VERDICT_ARMS]]).toEqual([1, ["own-meal", "welcome-plate"]]);
+    expect(isFirstVerdictArm("own-meal")).toBe(true);
+    expect(isFirstVerdictArm("free-week")).toBe(false);
+    expect(isFirstVerdictArm(undefined)).toBe(false);
+  });
+});

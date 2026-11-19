@@ -68,3 +68,37 @@ export async function pushRecentView(deps: EngineDeps, limit: number): Promise<{
     })),
   };
 }
+
+/**
+ * The send_log rows one account's push history shows (ieat-app#3168): every state kept — a dry run
+ * and a holdout are this account's history even though nothing left the server — the text as sent,
+ * and what the receipts said after. An explicit allowlist, like `RecentSend`, so a new `send_log`
+ * column cannot leak into it: no token, no ticket, and no `userId` (the route already names it).
+ */
+export interface UserPushLogSend {
+  id: string; kind: string; ref: string | null; templateKey: string; lang: string;
+  variant: string | null; state: string;
+  /** As sent (#844); null for a transactional send and for a row written before the text was stored. */
+  title: string | null; body: string | null;
+  createdAt: string; deliveredAt: string | null; receiptAt: string | null; receiptError: string | null;
+}
+
+/**
+ * The most rows one history request may return. A bound rather than a page, like ADMIN_MEAL_ROWS:
+ * the account's own daily bound caps how fast rows accrue, and the near end is the end a support
+ * question is about.
+ */
+export const ADMIN_PUSH_LOG_MAX = 500;
+
+/** This account's sends, newest first; null when there is no such account. */
+export async function adminUserPushLog(deps: EngineDeps, userId: string, limit: number): Promise<{ sends: UserPushLogSend[] } | null> {
+  if (await deps.store.getProfile(userId) === null) return null;
+  const rows = await deps.store.sendLogFor(userId, Math.min(Math.max(1, Math.floor(limit)), ADMIN_PUSH_LOG_MAX));
+  return {
+    sends: rows.map((r) => ({
+      id: r.id, kind: r.kind, ref: r.ref, templateKey: r.templateKey, lang: r.lang, variant: r.variant,
+      state: r.state, title: r.title, body: r.body,
+      createdAt: r.createdAt, deliveredAt: r.deliveredAt, receiptAt: r.receiptAt, receiptError: r.receiptError,
+    })),
+  };
+}
