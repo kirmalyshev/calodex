@@ -360,7 +360,7 @@ export async function recordOnboardingEvents(
   deps: EngineDeps,
   userId: string,
   events: unknown,
-  request?: AnalyticsRequest,
+  request: AnalyticsRequest,
 ): Promise<number> {
   if (!Array.isArray(events)) return 0;
 
@@ -402,7 +402,11 @@ export async function recordOnboardingEvents(
   if (clean.length === 0) return 0;
   // The context is the SERVER's to stamp (ieat-app#3196): the request's headers, the account's row
   // and its held arm. Whatever context-shaped keys an event carried were never read above.
-  const context = request ? await onboardingEventContext(deps, userId, request) : undefined;
+  const context = await onboardingEventContext(deps, userId, request).catch((e: unknown) => {
+    const err = e as { name?: string; code?: string } | null;
+    console.error(`[eait] onboarding: event context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
+    return { ...request, lang: null, country: null, experiment_id: null, arm: null, template: null };
+  });
   return deps.store.recordOnboardingEvents(userId, clean, context);
 }
 
