@@ -146,7 +146,7 @@ gets its meal names in that language.
   language bucket, because nothing but Russian has Cyrillic in it — and the three `copy.i18n`
   tests fail naming the key. Fifteen sentences, four of them in `fr`/`it`/`es`/`ru` where the
   adjective in "you're not alone" picks a gender too; those were rephrased around the situation
-  rather than the person, which is the move that works in all eight.
+  rather than the person, which is the move that works in all forty-two.
 
 - **A COUNTRY'S NAME IS CLDR'S, NOT COPY.** `COUNTRY_CODES` covers the market a shipped language's
   speakers are standing in, as the funnel names each — it was `de | gb | us | other` while the
@@ -173,7 +173,7 @@ gets its meal names in that language.
 - **A `Localized` table proves a language is PRESENT, never that it is complete.** `localizedGaps`
   stops at the table — `lang.ts` says so — so everything one level inside it is a test's job. That
   is where the remaining holes live: `HEALTH_COPY.labels` spreads the English underneath every
-  language, so a new metric is present in all eight and correct in one (`health-copy.test.ts`
+  language, so a new metric is present in all forty-two and correct in one (`health-copy.test.ts`
   asserts the non-English labels DIFFER, with the genuine coincidences pinned as `lang.key` pairs);
   and the four `Record<…>` copy maps are keyed by their id union rather than by `string`, so the
   compiler names the language that forgets one instead of a `!` throwing inside a chat bubble.

@@ -106,7 +106,7 @@ describe("the shipped copy", () => {
 
   it("offers 'other' as a sex, labelled in every shipped language", () => {
     // A third enum value the chips cannot render is a dead option. `screenOptionValues` supplies
-    // the order; the content owes each a label, in all eight.
+    // the order; the content owes each a label, in every language.
     for (const lang of LANGS) {
       const sex = onboardingContentFor(lang).screens.find((s) => s.id === "sex")!;
       expect(sex.options?.other?.label.trim(), `sex.options.other (${lang})`).toBeTruthy();

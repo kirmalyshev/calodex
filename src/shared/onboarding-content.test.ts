@@ -18,7 +18,7 @@ import { chatCopyFor } from "./onboarding-chat-copy.ts";
 // guards the admin's write, in every language.
 
 describe("every language's onboarding content", () => {
-  it("is the same editorial revision, so one funnel number covers all eight", () => {
+  it("is the same editorial revision, so one funnel number covers every language", () => {
     for (const lang of LANGS) {
       expect(onboardingContentFor(lang).version, lang).toBe(DEFAULT_ONBOARDING_CONTENT.version);
     }

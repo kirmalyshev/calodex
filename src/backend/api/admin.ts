@@ -242,8 +242,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
 
   // ── Onboarding copy ────────────────────────────────────────────────────────────────────────
   //
-  // `?lang=` PICKS ONE LANGUAGE, AND THE EDITOR EDITS ONE AT A TIME. Eight tabs of one form is
-  // eight times the JavaScript for a page that is already the largest hand-written one here; a
+  // `?lang=` PICKS ONE LANGUAGE, AND THE EDITOR EDITS ONE AT A TIME. A tab per language is
+  // forty-two times the JavaScript for a page that is already the largest hand-written one here; a
   // select that reloads is the same capability and is four lines of it. Absent or unknown is
   // English, so every bookmark that predates #358 still opens the page it used to.
   //

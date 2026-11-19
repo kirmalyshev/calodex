@@ -683,7 +683,7 @@ export function countryFlag(code: string): string | null {
  * the editor never offered.
  *
  * `other` is excluded: it is a sentinel, not a region, and "Somewhere else" is the product's
- * voice. It stays in the content, in all eight, and stays required.
+ * voice. It stays in the content, in every language, and stays required.
  */
 export const optionLabelIsData = (id: OnboardingScreenId, value: string): boolean =>
   id === "country" && value !== "other";
