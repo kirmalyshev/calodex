@@ -425,7 +425,7 @@ msgstr "কিছু গোলমাল হয়েছে, তবু হয়�
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.coach.name"
-msgstr "Spud"
+msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

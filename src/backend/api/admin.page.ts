@@ -909,9 +909,9 @@ details.how p { margin-top: 8px; }
         <details class="how">
           <summary>How saving works</summary>
           <p class="muted">
-            Every word Spud says to POSE a question, plus the option labels, the front door, the plan, the sign-up, the referral, Apple Health, the Live Activity and the first meal.
+            Every word Calodex says to POSE a question, plus the option labels, the front door, the plan, the sign-up, the referral, Apple Health, the Live Activity and the first meal.
             The <em>questions</em> are fixed in code — they feed the calorie target — and so is their default
-            order (an experiment arm may reorder them, in Experiments), and so are Spud's replies and the support cards, which carry citations. Saving bumps the content
+            order (an experiment arm may reorder them, in Experiments), and so are Calodex's replies and the support cards, which carry citations. Saving bumps the content
             version, which is what the funnel is grouped by.
           </p>
           <p class="muted">
@@ -1167,7 +1167,7 @@ details.how p { margin-top: 8px; }
     head.appendChild(grow);
     card.appendChild(head);
 
-    // What Spud SAYS to ask each field. One box per bubble: the flow is a conversation, so a
+    // What Calodex SAYS to ask each field. One box per bubble: the flow is a conversation, so a
     // question can be one sentence or three, and each entry is one thing he sends.
     screen.asks = screen.asks || {};
     info.fields.forEach(function (fieldName) {

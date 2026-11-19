@@ -685,7 +685,7 @@ create table if not exists referral_refusals (
   reason text not null check (reason in ('unknown', 'own', 'already', 'paid')),
   at     timestamptz not null
 );
--- When Spud spoke the first verdict. Null until then; the claim is one atomic update.
+-- When Calodex spoke the first verdict. Null until then; the claim is one atomic update.
 alter table users add column if not exists first_verdict_at timestamptz;
 alter table users add column if not exists entitlement_event_at   timestamptz;
 -- Whether the CURRENT period is a free trial. Defaults false, which is what a row written before
@@ -3071,7 +3071,7 @@ export async function postgresStore(
           update saved_meals set user_id = ${intoUserId} where user_id = ${fromUserId}
             and source_meal_id not in (select source_meal_id from saved_meals where user_id = ${intoUserId})`;
         await tx`update chat_messages set user_id = ${intoUserId} where user_id = ${fromUserId}`;
-        // The greeting travels with the thread that holds it, or Spud says "First one in." twice.
+        // The greeting travels with the thread that holds it, or Calodex says "First one in." twice.
         await tx`
           update users set first_verdict_at = coalesce(
             first_verdict_at, (select first_verdict_at from users where id = ${fromUserId}))

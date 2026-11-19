@@ -206,7 +206,7 @@ const FR: OnboardingContent = {
   ui: {
     continueLabel: "Continuer",
     saveKept: "Impossible d'enregistrer. Ta réponse est toujours là. Continuer l'envoie à nouveau.",
-    idlePlaceholder: "Écrire à Spud…",
+    idlePlaceholder: "Écrire à Calodex…",
     optionContinues: "Sélectionne et continue",
     stepper: { continue: "Continuer", less: "Moins", more: "Plus" },
     units: { years: "ans", yearsCount: { one: "{n} an", other: "{n} ans" } },
@@ -474,7 +474,7 @@ const DE: OnboardingContent = {
   ui: {
     continueLabel: "Weiter",
     saveKept: "Das konnte nicht gespeichert werden. Deine Antwort ist noch da. Mit Weiter wird sie erneut gesendet.",
-    idlePlaceholder: "Nachricht an Spud…",
+    idlePlaceholder: "Nachricht an Calodex…",
     optionContinues: "Wählt aus und fährt fort",
     stepper: { continue: "Weiter", less: "Weniger", more: "Mehr" },
     units: { years: "Jahre", yearsCount: { one: "{n} Jahr", other: "{n} Jahre" } },
@@ -742,7 +742,7 @@ const IT: OnboardingContent = {
   ui: {
     continueLabel: "Continua",
     saveKept: "Non è stato possibile salvare. La tua risposta è ancora qui. Con Continua viene inviata di nuovo.",
-    idlePlaceholder: "Scrivi a Spud…",
+    idlePlaceholder: "Scrivi a Calodex…",
     optionContinues: "Seleziona e continua",
     stepper: { continue: "Continua", less: "Meno", more: "Più" },
     units: { years: "anni", yearsCount: { one: "{n} anno", other: "{n} anni" } },
@@ -1010,7 +1010,7 @@ const ES: OnboardingContent = {
   ui: {
     continueLabel: "Continuar",
     saveKept: "No se pudo guardar. Tu respuesta sigue aquí. Con Continuar se envía otra vez.",
-    idlePlaceholder: "Escribe a Spud…",
+    idlePlaceholder: "Escribe a Calodex…",
     optionContinues: "Selecciona y continúa",
     stepper: { continue: "Continuar", less: "Menos", more: "Más" },
     units: { years: "años", yearsCount: { one: "{n} año", other: "{n} años" } },
@@ -1278,7 +1278,7 @@ const VI: OnboardingContent = {
   ui: {
     continueLabel: "Tiếp tục",
     saveKept: "Không lưu được. Câu trả lời của bạn vẫn còn đây. Bấm Tiếp tục để gửi lại.",
-    idlePlaceholder: "Nhắn cho Spud…",
+    idlePlaceholder: "Nhắn cho Calodex…",
     optionContinues: "Chọn và tiếp tục",
     stepper: { continue: "Tiếp tục", less: "Bớt", more: "Thêm" },
     units: { years: "tuổi", yearsCount: { other: "{n} tuổi" } },
@@ -1546,7 +1546,7 @@ const ID: OnboardingContent = {
   ui: {
     continueLabel: "Lanjutkan",
     saveKept: "Tidak bisa disimpan. Jawabanmu masih di sini. Lanjutkan akan mengirimnya lagi.",
-    idlePlaceholder: "Kirim pesan ke Spud…",
+    idlePlaceholder: "Kirim pesan ke Calodex…",
     optionContinues: "Pilih dan lanjutkan",
     stepper: { continue: "Lanjut", less: "Kurangi", more: "Tambah" },
     units: { years: "tahun", yearsCount: { other: "{n} tahun" } },
@@ -1814,7 +1814,7 @@ const RU: OnboardingContent = {
   ui: {
     continueLabel: "Продолжить",
     saveKept: "Не удалось сохранить. Твой ответ всё ещё здесь. «Продолжить» отправит его снова.",
-    idlePlaceholder: "Написать Spud…",
+    idlePlaceholder: "Написать Calodex…",
     optionContinues: "Выбирает и продолжает",
     stepper: { continue: "Продолжить", less: "Меньше", more: "Больше" },
     units: { years: "лет", yearsCount: { one: "{n} год", few: "{n} года", many: "{n} лет", other: "{n} года" } },
@@ -1914,7 +1914,7 @@ const TE: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -2192,7 +2192,7 @@ const TE: OnboardingContent = {
   ui: {
     continueLabel: "కొనసాగించండి",
     saveKept: "అది సేవ్ కాలేదు. మీ సమాధానం ఇంకా ఇక్కడే ఉంది. \"కొనసాగించండి\" నొక్కితే అది మళ్ళీ పంపబడుతుంది.",
-    idlePlaceholder: "Spudకు మెసేజ్ పంపండి…",
+    idlePlaceholder: "Calodexకు మెసేజ్ పంపండి…",
     optionContinues: "Selects and continues",
     stepper: { continue: "కొనసాగించండి", less: "తక్కువ", more: "ఎక్కువ" },
     units: { years: "ఏళ్లు", yearsCount: { one: "{n} ఏడాది", other: "{n} ఏళ్లు" } },
@@ -2292,7 +2292,7 @@ const TA: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -2570,7 +2570,7 @@ const TA: OnboardingContent = {
   ui: {
     continueLabel: "தொடர்க",
     saveKept: "அதைச் சேமிக்க முடியவில்லை. உங்கள் பதில் இன்னும் இங்கே உள்ளது. தொடர்க என்பதை அழுத்தினால் மீண்டும் அனுப்பப்படும்.",
-    idlePlaceholder: "Spud-க்குச் செய்தி…",
+    idlePlaceholder: "Calodex-க்குச் செய்தி…",
     optionContinues: "Selects and continues",
     stepper: { continue: "தொடர்க", less: "குறைவு", more: "அதிகம்" },
     units: { years: "ஆண்டுகள்", yearsCount: { one: "{n} ஆண்டு", other: "{n} ஆண்டுகள்" } },
@@ -2670,7 +2670,7 @@ const PA: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -2948,7 +2948,7 @@ const PA: OnboardingContent = {
   ui: {
     continueLabel: "ਜਾਰੀ ਰੱਖੋ",
     saveKept: "ਇਹ ਸੇਵ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਤੁਹਾਡਾ ਜਵਾਬ ਹਾਲੇ ਵੀ ਇੱਥੇ ਹੈ। ਜਾਰੀ ਰੱਖੋ ਦਬਾਉਣ 'ਤੇ ਇਹ ਦੁਬਾਰਾ ਭੇਜਿਆ ਜਾਵੇਗਾ।",
-    idlePlaceholder: "Spud ਨੂੰ ਮੈਸੇਜ ਕਰੋ…",
+    idlePlaceholder: "Calodex ਨੂੰ ਮੈਸੇਜ ਕਰੋ…",
     optionContinues: "Selects and continues",
     stepper: { continue: "ਜਾਰੀ ਰੱਖੋ", less: "ਘੱਟ", more: "ਵੱਧ" },
     units: { years: "ਸਾਲ", yearsCount: { one: "{n} ਸਾਲ", other: "{n} ਸਾਲ" } },
@@ -3048,7 +3048,7 @@ const OR: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -3326,7 +3326,7 @@ const OR: OnboardingContent = {
   ui: {
     continueLabel: "ଜାରି ରଖନ୍ତୁ",
     saveKept: "ଏହା ସେଭ୍ ହୋଇପାରିଲା ନାହିଁ। ଆପଣଙ୍କ ଉତ୍ତର ଏଠାରେ ଅଛି। “ଜାରି ରଖନ୍ତୁ” ଦବାଇଲେ ଏହା ପୁଣି ପଠାହେବ।",
-    idlePlaceholder: "Spud କୁ ମେସେଜ୍ କରନ୍ତୁ…",
+    idlePlaceholder: "Calodex କୁ ମେସେଜ୍ କରନ୍ତୁ…",
     optionContinues: "Selects and continues",
     stepper: { continue: "ଜାରି ରଖନ୍ତୁ", less: "କମ୍", more: "ଅଧିକ" },
     units: { years: "ବର୍ଷ", yearsCount: { one: "{n} ବର୍ଷ", other: "{n} ବର୍ଷ" } },
@@ -3426,7 +3426,7 @@ const MR: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -3704,7 +3704,7 @@ const MR: OnboardingContent = {
   ui: {
     continueLabel: "पुढे जा",
     saveKept: "हे सेव्ह करता आले नाही. तुमचे उत्तर अजून इथेच आहे. पुढे जा दाबल्यास ते पुन्हा पाठवले जाईल.",
-    idlePlaceholder: "Spud ला मेसेज करा…",
+    idlePlaceholder: "Calodex ला मेसेज करा…",
     optionContinues: "Selects and continues",
     stepper: { continue: "पुढे जा", less: "कमी", more: "जास्त" },
     units: { years: "वर्षे", yearsCount: { one: "{n} वर्ष", other: "{n} वर्षे" } },
@@ -3804,7 +3804,7 @@ const ML: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -4082,7 +4082,7 @@ const ML: OnboardingContent = {
   ui: {
     continueLabel: "തുടരുക",
     saveKept: "അത് സംരക്ഷിക്കാനായില്ല. നിങ്ങളുടെ ഉത്തരം ഇപ്പോഴും ഇവിടെയുണ്ട്. തുടരുക അമർത്തിയാൽ അത് വീണ്ടും അയയ്ക്കും.",
-    idlePlaceholder: "Spud-ന് സന്ദേശം അയയ്ക്കൂ…",
+    idlePlaceholder: "Calodex-ന് സന്ദേശം അയയ്ക്കൂ…",
     optionContinues: "Selects and continues",
     stepper: { continue: "തുടരുക", less: "കുറവ്", more: "കൂടുതൽ" },
     units: { years: "വയസ്സ്", yearsCount: { one: "{n} വയസ്സ്", other: "{n} വയസ്സ്" } },
@@ -4182,7 +4182,7 @@ const KN: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -4460,7 +4460,7 @@ const KN: OnboardingContent = {
   ui: {
     continueLabel: "ಮುಂದುವರಿಸಿ",
     saveKept: "ಅದನ್ನು ಉಳಿಸಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಉತ್ತರ ಇನ್ನೂ ಇಲ್ಲೇ ಇದೆ. ಮುಂದುವರಿಸಿ ಒತ್ತಿದರೆ ಅದು ಮತ್ತೆ ಕಳುಹಿಸಲ್ಪಡುತ್ತದೆ.",
-    idlePlaceholder: "Spud ಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ…",
+    idlePlaceholder: "Calodex ಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ…",
     optionContinues: "Selects and continues",
     stepper: { continue: "ಮುಂದುವರಿಸಿ", less: "ಕಡಿಮೆ", more: "ಹೆಚ್ಚು" },
     units: { years: "ವರ್ಷ", yearsCount: { one: "{n} ವರ್ಷ", other: "{n} ವರ್ಷಗಳು" } },
@@ -4560,7 +4560,7 @@ const GU: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -4838,7 +4838,7 @@ const GU: OnboardingContent = {
   ui: {
     continueLabel: "ચાલુ રાખો",
     saveKept: "આ સેવ ન થઈ શક્યું. તમારો જવાબ હજી અહીં જ છે. ચાલુ રાખો દબાવતાં તે ફરીથી મોકલાશે.",
-    idlePlaceholder: "Spud ને મેસેજ કરો…",
+    idlePlaceholder: "Calodex ને મેસેજ કરો…",
     optionContinues: "Selects and continues",
     stepper: { continue: "ચાલુ રાખો", less: "ઓછું", more: "વધુ" },
     units: { years: "વર્ષ", yearsCount: { one: "{n} વર્ષ", other: "{n} વર્ષ" } },
@@ -4938,7 +4938,7 @@ const BN: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -5216,7 +5216,7 @@ const BN: OnboardingContent = {
   ui: {
     continueLabel: "চালিয়ে যান",
     saveKept: "এটি সেভ করা যায়নি। আপনার উত্তর এখনও এখানে আছে। চালিয়ে যান চাপলে আবার পাঠানো হবে।",
-    idlePlaceholder: "Spud-কে মেসেজ করুন…",
+    idlePlaceholder: "Calodex-কে মেসেজ করুন…",
     optionContinues: "Selects and continues",
     stepper: { continue: "চালিয়ে যান", less: "কম", more: "বেশি" },
     units: { years: "বছর", yearsCount: { one: "{n} বছর", other: "{n} বছর" } },
@@ -5316,7 +5316,7 @@ const PT_PT: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -5594,7 +5594,7 @@ const PT_PT: OnboardingContent = {
   ui: {
     continueLabel: "Continuar",
     saveKept: "Não foi possível guardar. A tua resposta continua aqui. Continuar envia-a de novo.",
-    idlePlaceholder: "Mensagem para o Spud…",
+    idlePlaceholder: "Mensagem para o Calodex…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Continuar", less: "Menos", more: "Mais" },
     units: { years: "anos", yearsCount: { one: "{n} ano", other: "{n} anos" } },
@@ -5694,7 +5694,7 @@ const MS: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -5972,7 +5972,7 @@ const MS: OnboardingContent = {
   ui: {
     continueLabel: "Teruskan",
     saveKept: "Itu tidak dapat disimpan. Jawapan anda masih ada di sini. Teruskan akan menghantarnya semula.",
-    idlePlaceholder: "Mesej Spud…",
+    idlePlaceholder: "Mesej Calodex…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Teruskan", less: "Kurang", more: "Lagi" },
     units: { years: "tahun", yearsCount: { one: "{n} tahun", other: "{n} tahun" } },
@@ -6072,7 +6072,7 @@ const CA: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -6350,7 +6350,7 @@ const CA: OnboardingContent = {
   ui: {
     continueLabel: "Continua",
     saveKept: "No s'ha pogut desar. La teva resposta encara és aquí. Amb Continua, s'envia de nou.",
-    idlePlaceholder: "Escriu a Spud…",
+    idlePlaceholder: "Escriu a Calodex…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Continua", less: "Menys", more: "Més" },
     units: { years: "anys", yearsCount: { one: "{n} any", other: "{n} anys" } },
@@ -6450,7 +6450,7 @@ const SL: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -6728,7 +6728,7 @@ const SL: OnboardingContent = {
   ui: {
     continueLabel: "Nadaljuj",
     saveKept: "Tega ni bilo mogoče shraniti. Tvoj odgovor je še vedno tu. Gumb Nadaljuj ga pošlje znova.",
-    idlePlaceholder: "Sporočilo za Spuda…",
+    idlePlaceholder: "Sporočilo za Calodexa…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Nadaljuj", less: "Manj", more: "Več" },
     units: { years: "let", yearsCount: { one: "{n} leto", other: "{n} let" } },
@@ -6828,7 +6828,7 @@ const HR: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -7106,7 +7106,7 @@ const HR: OnboardingContent = {
   ui: {
     continueLabel: "Nastavi",
     saveKept: "To se nije moglo spremiti. Odgovor je još tu. Dodirom na Nastavi šalje se ponovno.",
-    idlePlaceholder: "Poruka za Spuda…",
+    idlePlaceholder: "Poruka za Calodexa…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Nastavi", less: "Manje", more: "Više" },
     units: { years: "god.", yearsCount: { one: "{n} godina", other: "{n} god." } },
@@ -7206,7 +7206,7 @@ const SK: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -7484,7 +7484,7 @@ const SK: OnboardingContent = {
   ui: {
     continueLabel: "Pokračovať",
     saveKept: "Nepodarilo sa to uložiť. Tvoja odpoveď je stále tu. Ťuknutím na Pokračovať ju pošleš znova.",
-    idlePlaceholder: "Spud čaká na správu…",
+    idlePlaceholder: "Calodex čaká na správu…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Pokračovať", less: "Menej", more: "Viac" },
     units: { years: "rokov", yearsCount: { one: "{n} rok", other: "{n} r." } },
@@ -7584,7 +7584,7 @@ const NO: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -7862,7 +7862,7 @@ const NO: OnboardingContent = {
   ui: {
     continueLabel: "Fortsett",
     saveKept: "Det kunne ikke lagres. Svaret ditt er fortsatt her. Fortsett sender det på nytt.",
-    idlePlaceholder: "Melding til Spud…",
+    idlePlaceholder: "Melding til Calodex…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Fortsett", less: "Mindre", more: "Mer" },
     units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
@@ -7962,7 +7962,7 @@ const FI: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -8240,7 +8240,7 @@ const FI: OnboardingContent = {
   ui: {
     continueLabel: "Jatka",
     saveKept: "Tallennus epäonnistui. Vastauksesi on yhä tässä. Jatka lähettää sen uudelleen.",
-    idlePlaceholder: "Kirjoita Spudille…",
+    idlePlaceholder: "Kirjoita Calodexille…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Jatka", less: "Vähemmän", more: "Enemmän" },
     units: { years: "vuotta", yearsCount: { one: "{n} vuosi", other: "{n} vuotta" } },
@@ -8340,7 +8340,7 @@ const DA: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -8618,7 +8618,7 @@ const DA: OnboardingContent = {
   ui: {
     continueLabel: "Fortsæt",
     saveKept: "Det kunne ikke gemmes. Dit svar er her stadig. Fortsæt sender det igen.",
-    idlePlaceholder: "Skriv til Spud…",
+    idlePlaceholder: "Skriv til Calodex…",
     optionContinues: "Selects and continues",
     stepper: { continue: "Fortsæt", less: "Mindre", more: "Mere" },
     units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
@@ -8718,7 +8718,7 @@ const HU: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -8996,7 +8996,7 @@ const HU: OnboardingContent = {
   ui: {
     continueLabel: "Tovább",
     saveKept: "Ezt nem sikerült menteni. A válaszod még itt van. A Tovább újra elküldi.",
-    idlePlaceholder: "Üzenet Spudnak…",
+    idlePlaceholder: "Üzenet Calodexnek…",
     optionContinues: "Kiválasztja és folytat",
     stepper: { continue: "Tovább", less: "Kevesebb", more: "Több" },
     units: { years: "év", yearsCount: { one: "{n} év", other: "{n} év" } },
@@ -9096,7 +9096,7 @@ const EL: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -9374,7 +9374,7 @@ const EL: OnboardingContent = {
   ui: {
     continueLabel: "Συνέχεια",
     saveKept: "Δεν ήταν δυνατή η αποθήκευση. Η απάντησή σου είναι ακόμα εδώ. Πάτα Συνέχεια για να σταλεί ξανά.",
-    idlePlaceholder: "Μήνυμα προς Spud…",
+    idlePlaceholder: "Μήνυμα προς Calodex…",
     optionContinues: "Επιλέγει και συνεχίζει",
     stepper: { continue: "Συνέχεια", less: "Λιγότερο", more: "Περισσότερο" },
     units: { years: "έτη", yearsCount: { one: "{n} έτος", other: "{n} έτη" } },
@@ -9474,7 +9474,7 @@ const RO: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -9752,7 +9752,7 @@ const RO: OnboardingContent = {
   ui: {
     continueLabel: "Continuă",
     saveKept: "Nu s-a putut salva. Răspunsul tău e încă aici. Continuă îl trimite din nou.",
-    idlePlaceholder: "Scrie-i lui Spud…",
+    idlePlaceholder: "Scrie-i lui Calodex…",
     optionContinues: "Selectează și continuă",
     stepper: { continue: "Continuă", less: "Mai puțin", more: "Mai mult" },
     units: { years: "ani", yearsCount: { one: "{n} an", other: "{n} ani" } },
@@ -9852,7 +9852,7 @@ const CS: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -10130,7 +10130,7 @@ const CS: OnboardingContent = {
   ui: {
     continueLabel: "Pokračovat",
     saveKept: "Nepodařilo se to uložit. Tvoje odpověď tu pořád je. Tlačítko Pokračovat ji odešle znovu.",
-    idlePlaceholder: "Zpráva pro Spud…",
+    idlePlaceholder: "Zpráva pro Calodex…",
     optionContinues: "Vybere a pokračuje",
     stepper: { continue: "Pokračovat", less: "Méně", more: "Více" },
     units: { years: "let", yearsCount: { one: "{n} rok", other: "{n} let" } },
@@ -10230,7 +10230,7 @@ const HI: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -10508,7 +10508,7 @@ const HI: OnboardingContent = {
   ui: {
     continueLabel: "जारी रखें",
     saveKept: "यह सेव नहीं हो सका। आपका जवाब अभी भी यहीं है। जारी रखें दबाने पर यह फिर से भेजा जाएगा।",
-    idlePlaceholder: "Spud को मैसेज करें…",
+    idlePlaceholder: "Calodex को मैसेज करें…",
     optionContinues: "चुनें और जारी रखें",
     stepper: { continue: "जारी रखें", less: "कम", more: "ज़्यादा" },
     units: { years: "साल", yearsCount: { one: "{n} साल", other: "{n} साल" } },
@@ -10608,7 +10608,7 @@ const TH: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -10886,7 +10886,7 @@ const TH: OnboardingContent = {
   ui: {
     continueLabel: "ต่อไป",
     saveKept: "บันทึกไม่สำเร็จ คำตอบของคุณยังอยู่ แตะ ต่อไป เพื่อส่งอีกครั้ง",
-    idlePlaceholder: "ส่งข้อความถึง Spud…",
+    idlePlaceholder: "ส่งข้อความถึง Calodex…",
     optionContinues: "เลือกและดำเนินการต่อ",
     stepper: { continue: "ต่อไป", less: "น้อยลง", more: "มากขึ้น" },
     units: { years: "ปี", yearsCount: { one: "{n} ปี", other: "{n} ปี" } },
@@ -10986,7 +10986,7 @@ const SV: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -11264,7 +11264,7 @@ const SV: OnboardingContent = {
   ui: {
     continueLabel: "Fortsätt",
     saveKept: "Kunde inte spara det. Ditt svar finns kvar. Fortsätt skickar det igen.",
-    idlePlaceholder: "Skriv till Spud…",
+    idlePlaceholder: "Skriv till Calodex…",
     optionContinues: "Väljer och fortsätter",
     stepper: { continue: "Fortsätt", less: "Mindre", more: "Mer" },
     units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
@@ -11364,7 +11364,7 @@ const UK: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -11642,7 +11642,7 @@ const UK: OnboardingContent = {
   ui: {
     continueLabel: "Продовжити",
     saveKept: "Не вдалося зберегти. Твоя відповідь усе ще тут. «Продовжити» надішле її знову.",
-    idlePlaceholder: "Написати Spud…",
+    idlePlaceholder: "Написати Calodex…",
     optionContinues: "Вибирає й продовжує",
     stepper: { continue: "Продовжити", less: "Менше", more: "Більше" },
     units: { years: "років", yearsCount: { one: "{n} рік", other: "{n} р." } },
@@ -11742,7 +11742,7 @@ const NL: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -12020,7 +12020,7 @@ const NL: OnboardingContent = {
   ui: {
     continueLabel: "Verder",
     saveKept: "Dat kon niet worden opgeslagen. Je antwoord staat er nog. Met Verder stuur je het opnieuw.",
-    idlePlaceholder: "Bericht aan Spud…",
+    idlePlaceholder: "Bericht aan Calodex…",
     optionContinues: "Selecteert en gaat verder",
     stepper: { continue: "Verder", less: "Minder", more: "Meer" },
     units: { years: "jaar", yearsCount: { one: "{n} jaar", other: "{n} jaar" } },
@@ -12120,7 +12120,7 @@ const PL: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -12398,7 +12398,7 @@ const PL: OnboardingContent = {
   ui: {
     continueLabel: "Dalej",
     saveKept: "Nie udało się tego zapisać. Twoja odpowiedź wciąż tu jest. „Dalej” wyśle ją ponownie.",
-    idlePlaceholder: "Wiadomość do Spuda…",
+    idlePlaceholder: "Wiadomość do Calodexa…",
     optionContinues: "Wybiera i przechodzi dalej",
     stepper: { continue: "Dalej", less: "Mniej", more: "Więcej" },
     units: { years: "lat", yearsCount: { one: "{n} rok", other: "{n} l." } },
@@ -12498,7 +12498,7 @@ const TR: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -12776,7 +12776,7 @@ const TR: OnboardingContent = {
   ui: {
     continueLabel: "Devam",
     saveKept: "Kaydedilemedi. Yanıtın hâlâ burada. Devam onu tekrar gönderir.",
-    idlePlaceholder: "Spud'a yaz…",
+    idlePlaceholder: "Calodex'e yaz…",
     optionContinues: "Seçer ve devam eder",
     stepper: { continue: "Devam", less: "Daha az", more: "Daha fazla" },
     units: { years: "yaş", yearsCount: { one: "{n} yaş", other: "{n} yaş" } },
@@ -12876,7 +12876,7 @@ const ZH_HANT: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -13154,7 +13154,7 @@ const ZH_HANT: OnboardingContent = {
   ui: {
     continueLabel: "繼續",
     saveKept: "無法儲存。你的答案還在，按「繼續」會再傳送一次。",
-    idlePlaceholder: "傳訊息給 Spud…",
+    idlePlaceholder: "傳訊息給 Calodex…",
     optionContinues: "選取並繼續",
     stepper: { continue: "繼續", less: "減少", more: "增加" },
     units: { years: "歲", yearsCount: { one: "{n} 歲", other: "{n} 歲" } },
@@ -13254,7 +13254,7 @@ const ZH_HANS: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -13532,7 +13532,7 @@ const ZH_HANS: OnboardingContent = {
   ui: {
     continueLabel: "继续",
     saveKept: "无法保存。你的回答还在，点击“继续”会再次发送。",
-    idlePlaceholder: "给 Spud 发消息…",
+    idlePlaceholder: "给 Calodex 发消息…",
     optionContinues: "选择并继续",
     stepper: { continue: "继续", less: "减少", more: "增加" },
     units: { years: "岁", yearsCount: { one: "{n}岁", other: "{n}岁" } },
@@ -13632,7 +13632,7 @@ const KO: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -13910,7 +13910,7 @@ const KO: OnboardingContent = {
   ui: {
     continueLabel: "계속",
     saveKept: "저장하지 못했어요. 답변은 그대로 있어요. 계속을 누르면 다시 보내요.",
-    idlePlaceholder: "Spud에게 메시지…",
+    idlePlaceholder: "Calodex에게 메시지…",
     optionContinues: "선택하고 계속",
     stepper: { continue: "계속", less: "줄이기", more: "늘리기" },
     units: { years: "세", yearsCount: { one: "{n}세", other: "{n}세" } },
@@ -14010,7 +14010,7 @@ const JA: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -14288,7 +14288,7 @@ const JA: OnboardingContent = {
   ui: {
     continueLabel: "続ける",
     saveKept: "保存できませんでした。回答は残っています。「続ける」でもう一度送信します。",
-    idlePlaceholder: "Spudにメッセージ…",
+    idlePlaceholder: "Calodexにメッセージ…",
     optionContinues: "選択して次へ進みます",
     stepper: { continue: "続ける", less: "減らす", more: "増やす" },
     units: { years: "歳", yearsCount: { one: "{n}歳", other: "{n}歳" } },
@@ -14388,7 +14388,7 @@ const PT_BR: OnboardingContent = {
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
   // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
   // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
-  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Spud's
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
   // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
   //
   // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
@@ -14666,7 +14666,7 @@ const PT_BR: OnboardingContent = {
   ui: {
     continueLabel: "Continuar",
     saveKept: "Não foi possível salvar. Sua resposta continua aqui. Continuar envia de novo.",
-    idlePlaceholder: "Mensagem para o Spud…",
+    idlePlaceholder: "Mensagem para o Calodex…",
     optionContinues: "Seleciona e continua",
     stepper: { continue: "Continuar", less: "Menos", more: "Mais" },
     units: { years: "anos", yearsCount: { one: "{n} ano", other: "{n} anos" } },

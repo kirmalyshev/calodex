@@ -1,5 +1,5 @@
 // The web APPLICATION's chat (#493) — the SPA at `/`, not `/start/chat`. W7 (#94) drew it
-// Register P: the thread column, Spud's say lines, the proposal card, the coach bar, the
+// Register P: the thread column, Calodex's say lines, the proposal card, the coach bar, the
 // kept turns' dimmed photo with Send again — all of it under the shared composer.
 //
 // It only read the thread until this: no photo picker, no text box, no send. These drive its
@@ -18,7 +18,7 @@ const FIXTURE = "src/backend/web/browser/fixture-meal.png";
 /** The empty thread's prompt — `composerAsk`; a populated one reads `composerThread`. */
 const ASK = "What did you eat?";
 
-test("first open draws Spud's greeting and the three starters, in the struggles' order", async ({ inWebApp: page }) => {
+test("first open draws Calodex's greeting and the three starters, in the struggles' order", async ({ inWebApp: page }) => {
   // An empty stored thread is the boards' `chat-empty`: the greeting is her first AND newest line.
   await expect(page.locator(".thread .gname")).toHaveCount(0);
   await expect(page.locator(".thread")).toContainText("Tell me what you ate, or ask me anything.");
@@ -110,7 +110,7 @@ test("a proposal's No resolves the card and logs nothing", async ({ inWebApp: pa
   expect(((await day.json()) as DayResponse).meals).toHaveLength(0);
 });
 
-test("a question is answered by Spud, with the app icon on the newest line", async ({ inWebApp: page }) => {
+test("a question is answered by Calodex, with the app icon on the newest line", async ({ inWebApp: page }) => {
   await page.getByPlaceholder(ASK).fill("how did my week go?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   const answer = page.locator(".thread li.them", { hasText: "Demo answer" });
@@ -250,7 +250,7 @@ test("dropping a proposal the server no longer holds is what was asked, and says
 
 test("a turn whose answer never arrived keeps the photo and offers Send again", async ({ inWebApp: page }) => {
   // The connection went with the turn still running: the server may have logged it. Since #708 the
-  // page keeps the photo — dimmed, under Spud's "Couldn't reach Calodex." with the resend beside it.
+  // page keeps the photo — dimmed, under Calodex's "Couldn't reach Calodex." with the resend beside it.
   await page.route("**/api/v1/meals/photo", (r) => r.abort("connectionreset"));
   await page.locator('input[type="file"]').setInputFiles(FIXTURE);
   await page.getByRole("button", { name: "Send the photo" }).click();
@@ -353,7 +353,7 @@ test("#/chat?focus= opens the meal's correction — its card, her opener, the wo
   });
   const mealId = ((await day.json()) as DayResponse).meals[0]!.id;
   await page.goto(`/#/chat?focus=${mealId}`);
-  // The meal's card first — thumb, name, kcal, dots — then Spud naming what he read.
+  // The meal's card first — thumb, name, kcal, dots — then Calodex naming what he read.
   const card = page.locator(".thread li.focus-meal .card");
   await expect(card).toBeVisible();
   await expect(card).toContainText("kcal");

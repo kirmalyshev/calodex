@@ -174,7 +174,7 @@ describe("where a killed run picks up", () => {
   });
 });
 
-describe("what Spud asks", () => {
+describe("what Calodex asks", () => {
   it("reads the admin's words for a profile question", () => {
     expect(askLines(promptById("goal"), { content, lang: "en" }, profile())[0]).toContain("What are you here to do?");
   });

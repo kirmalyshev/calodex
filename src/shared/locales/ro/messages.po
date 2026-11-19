@@ -425,7 +425,7 @@ msgstr "Ceva n-a mers bine și s-ar putea să fi trecut totuși. Verifică /toda
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.coach.name"
-msgstr "Spud"
+msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

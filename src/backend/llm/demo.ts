@@ -114,7 +114,7 @@ export const DEMO_NOT_FOOD = "no food in this one";
 /**
  * A caption that holds the answer open: the pieces arrive 8 s apart instead of 150 ms (#305).
  *
- * The camera's pending state (the photos two to a row, Spud's line and the empty card — #607) is
+ * The camera's pending state (the photos two to a row, Calodex's line and the empty card — #607) is
  * on screen only between Analyze and the card, about a second against this analyzer, and an
  * accessibility audit racing a one-second window is a flaky gate. The a11y walk types this caption
  * so the screen stays pending long enough to audit. Keyed on the caption for the reason

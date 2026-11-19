@@ -67,7 +67,7 @@ export const BOARD_CSS = `
 
 /* ── the ask ── */
 .ob .say { display: block; }
-/* The post-payment screens (country) head with the app icon where a question's Spud sat — the
+/* The post-payment screens (country) head with the app icon where a question's Calodex sat — the
    iOS QuestionHead appIcon, 28px beside the same 34px ask. */
 .ob .say.sayi { display: flex; align-items: center; gap: 12px; }
 .ob .say.sayi .appicon { width: 28px; height: 28px; flex: 0 0 28px; }

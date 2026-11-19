@@ -431,7 +431,7 @@ msgstr "Un problème est survenu, mais c'est peut-être quand même passé. Vér
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.coach.name"
-msgstr "Spud"
+msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

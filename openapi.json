@@ -2780,7 +2780,7 @@
     "/v1/messages/lines": {
       "post": {
         "operationId": "post_messagesLines",
-        "summary": "The user's own words and Spud's scripted lines, by id. Not charged.",
+        "summary": "The user's own words and Calodex's scripted lines, by id. Not charged.",
         "parameters": [
           {
             "name": "order",
@@ -4833,7 +4833,7 @@
           "lines"
         ],
         "additionalProperties": false,
-        "description": "`POST /v1/messages/lines`. What the APP may put in the thread without a model turn: the user's own words (an onboarding answer, a choice) and Spud's scripted lines BY ID — never assistant prose from the client. All-or-nothing: one bad line and nothing is written."
+        "description": "`POST /v1/messages/lines`. What the APP may put in the thread without a model turn: the user's own words (an onboarding answer, a choice) and Calodex's scripted lines BY ID — never assistant prose from the client. All-or-nothing: one bad line and nothing is written."
       },
       "AppendLinesResponse": {
         "type": "object",
@@ -5606,12 +5606,12 @@
           "health",
           "streak_goal_days"
         ],
-        "description": "Everything Spud asks or shows, in the DEFAULT order (`ONBOARDING_PLACES`); `promptsFor` applies an arm's.\n\nA prompt with a `field` fills a profile column and its answer survives the app being killed. A prompt without one is conversation: asked while the run is live, skipped on a resume that has already passed it (see `resumeAt`)."
+        "description": "Everything Calodex asks or shows, in the DEFAULT order (`ONBOARDING_PLACES`); `promptsFor` applies an arm's.\n\nA prompt with a `field` fills a profile column and its answer survives the app being killed. A prompt without one is conversation: asked while the run is live, skipped on a resume that has already passed it (see `resumeAt`)."
       },
       "ChatSpeaker": {
         "type": "string",
         "const": "gabie",
-        "description": "Who said an assistant line. Absent is the app's own voice; `gabie` is the coach who answers in Chat (S9). The flag kept its name — the face above it is `coach.name`'s, Spud since #1041."
+        "description": "Who said an assistant line. Absent is the app's own voice; `gabie` is the coach who answers in Chat (S9). The flag kept its name — the face above it is `coach.name`'s, Calodex since #1041."
       },
       "CoachFocus": {
         "type": "object",
@@ -7566,7 +7566,7 @@
           },
           "question": {
             "$ref": "#/components/schemas/MealQuestion",
-            "description": "The one thing Spud would ask about this plate, when there is one worth asking.\n\nABSENT is the normal case, and the surface must render nothing for it: the engine only asks about a low-confidence plate, past an account's first meal, when the account could afford the reply. The answer goes back through the ordinary text turn with this meal in focus, so the chips are a shortcut for typing rather than a route of their own."
+            "description": "The one thing Calodex would ask about this plate, when there is one worth asking.\n\nABSENT is the normal case, and the surface must render nothing for it: the engine only asks about a low-confidence plate, past an account's first meal, when the account could afford the reply. The answer goes back through the ordinary text turn with this meal in focus, so the chips are a shortcut for typing rather than a route of their own."
           },
           "verdictLabels": {
             "type": "array",
@@ -7580,7 +7580,7 @@
               "string",
               "null"
             ],
-            "description": "Spud's one-sentence verdict for the card — `verdictHeadline`; null when the verdicts say nothing."
+            "description": "Calodex's one-sentence verdict for the card — `verdictHeadline`; null when the verdicts say nothing."
           }
         },
         "required": [
@@ -8051,7 +8051,7 @@
               "string",
               "null"
             ],
-            "description": "Spud's one-sentence verdict after the edit — `verdictHeadline`; null when nothing to say."
+            "description": "Calodex's one-sentence verdict after the edit — `verdictHeadline`; null when nothing to say."
           },
           "line": {
             "type": [
@@ -8437,7 +8437,7 @@
           "lines"
         ],
         "additionalProperties": false,
-        "description": "What Spud says to pose ONE question, and what the input looks like while it is open.\n\n`lines` is a list because Spud sends bubbles, not paragraphs: \"A little about you, for the calorie formula. Which fits you?\" is one bubble, and the age that follows it is another. One entry, one bubble. The FIRST line is the question and is required; a later line may be empty, and an empty line renders nothing (ieat-app#2756)."
+        "description": "What Calodex says to pose ONE question, and what the input looks like while it is open.\n\n`lines` is a list because Calodex sends bubbles, not paragraphs: \"A little about you, for the calorie formula. Which fits you?\" is one bubble, and the age that follows it is another. One entry, one bubble. The FIRST line is the question and is required; a later line may be empty, and an empty line renders nothing (ieat-app#2756)."
       },
       "OnboardingBeatsContent": {
         "type": "object",
@@ -9239,7 +9239,7 @@
           "switched"
         ],
         "additionalProperties": false,
-        "description": "The refusals (ieat-app#2757, area e): what Spud says when an answer is not a number, an age is ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy card (safety), the cap/floor explanation, `switched.lose` (the pacing brake), the computed promises and `goalEdit.*` (Settings)."
+        "description": "The refusals (ieat-app#2757, area e): what Calodex says when an answer is not a number, an age is ambiguous, a target points the wrong way from the weight, and after the goal is flipped. All REQUIRED, none hide. `{weight}`/`{target}` are the two figures that disagree, `{year}` the year the digits would mean, `{age}` the age. What stays code: the under-age stop and the below-healthy card (safety), the cap/floor explanation, `switched.lose` (the pacing brake), the computed promises and `goalEdit.*` (Settings)."
       },
       "OnboardingScreenContent": {
         "type": "object",
@@ -9252,7 +9252,7 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/OnboardingAskContent"
             },
-            "description": "What Spud says to ask each field in this group, keyed by the field name.\n\nREQUIRED FOR EVERY FIELD THE GROUP COLLECTS. A missing entry is a question with nothing to ask it with, which in a chat is not a degraded screen — it is a conversation that stops."
+            "description": "What Calodex says to ask each field in this group, keyed by the field name.\n\nREQUIRED FOR EVERY FIELD THE GROUP COLLECTS. A missing entry is a question with nothing to ask it with, which in a chat is not a degraded screen — it is a conversation that stops."
           },
           "options": {
             "type": "object",

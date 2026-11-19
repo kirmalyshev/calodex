@@ -569,7 +569,7 @@ describe("editing the system prompts", () => {
     // Rows, not a fallback: the store holds the shipped text from the moment it exists, so this
     // screen shows the same thing the transport reads.
     expect(prompts.every((p) => p.version === 1 && p.source === "shipped")).toBe(true);
-    expect(prompts.find((p) => p.key === "coach")!.text).toContain("You are Spud");
+    expect(prompts.find((p) => p.key === "coach")!.text).toContain("You are Calodex");
   });
 
   it("saves an edit, and serves it back as a stored revision", async () => {
@@ -979,7 +979,7 @@ describe("reading one account's thread", () => {
     };
     expect(body.entries.map((e) => e.text))
       .toEqual(["how much protein have I had", "About 90g so far today.", "Nice one."]);
-    // `speaker` is the whole of "who answered": null is Spud, so every line from before Gabie
+    // `speaker` is the whole of "who answered": null is Calodex, so every line from before Gabie
     // existed stays his.
     expect(body.entries[1]!.speaker).toBe("gabie");
     expect(body.entries[2]!.speaker ?? null).toBeNull();

@@ -525,7 +525,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     // In Postgres this is the cascade on the foreign key; here it is this line. A code that
     // outlived its account would mint a session for a user id nothing resolves.
     for (const [h, c] of pairingCodes) if (c.userId === userId) pairingCodes.delete(h);
-    // The thread holds the medical free text a person typed at Spud. It goes with the account.
+    // The thread holds the medical free text a person typed at Calodex. It goes with the account.
     for (let i = chat.length - 1; i >= 0; i--) if (chat[i]!.userId === userId) chat.splice(i, 1);
     firstVerdictSpoken.delete(userId);
     for (let i = analyses.length - 1; i >= 0; i--) {
@@ -1067,7 +1067,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         }
       }
       for (const m of chat) if (m.userId === fromUserId) m.userId = intoUserId;
-      // The greeting travels with the thread that holds it, or Spud says "First one in." twice.
+      // The greeting travels with the thread that holds it, or Calodex says "First one in." twice.
       if (firstVerdictSpoken.delete(fromUserId)) firstVerdictSpoken.add(intoUserId);
       // The paid tier moves too — see store.pg.ts for why this is the one entry here that is
       // somebody's money. Per grant, NEWER CLOCK WINS, whole grant at a time.

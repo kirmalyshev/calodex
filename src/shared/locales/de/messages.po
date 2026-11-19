@@ -431,7 +431,7 @@ msgstr "Etwas ist schiefgegangen, und es kann trotzdem durchgegangen sein. Schau
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.coach.name"
-msgstr "Spud"
+msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

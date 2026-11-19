@@ -4,7 +4,7 @@
 // themes are one `prefers-color-scheme` block over the palette the app and the landing page already
 // share, and every interaction is a form. That is the same decision the landing page makes, plus
 // one more reason — this surface handles POSTs, and a page that loads no script is a page with no
-// third-party origin to allow in its own CSP. The one script it carries types Spud's onboarding
+// third-party origin to allow in its own CSP. The one script it carries types Calodex's onboarding
 // lines out (`TYPING_SCRIPT`); it never changes, so the policy names it by hash rather than by a
 // nonce, and every page works without it — the full text is in the markup.
 
@@ -168,7 +168,7 @@ label.check {
 }
 .figure { font-family: var(--display); font-size: 2.6rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
 
-/* Spud's one line back on the answer just given — the small avatar beside the beat, and the
+/* Calodex's one line back on the answer just given — the small avatar beside the beat, and the
    mood's own face inside it (the reaction decides which mouth is drawn, not the page). */
 .spk { display: flex; gap: .7rem; align-items: flex-start; margin: 0 0 .6rem; }
 .spk .av {

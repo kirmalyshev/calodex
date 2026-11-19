@@ -425,7 +425,7 @@ msgstr "Algo deu errado, e talvez tenha sido enviado mesmo assim. Confira /today
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.coach.name"
-msgstr "Spud"
+msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

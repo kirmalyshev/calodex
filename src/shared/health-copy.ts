@@ -1193,7 +1193,7 @@ export interface HealthScreenCopy {
     /** The notice when the weigh-in read fails — the screen keeps what it had, says why. */
     loadFailed: string;
     /**
-     * Spud's line, eight whole sentences: a weigh-in trend read against the pace the plan was
+     * Calodex's line, eight whole sentences: a weigh-in trend read against the pace the plan was
      * built on. `Down`/`Up` by the direction the goal needs, ×3 for the observed rate COMPARED
      * with the pace chosen (slower than it, on it, faster) — never "slow: the pace you chose",
      * which blames the user for both halves of the sentence at once. `lineFlat` for a maintain
@@ -1212,7 +1212,7 @@ export interface HealthScreenCopy {
     paces: Record<Pace, string>;
   };
   /**
-   * Spud's line under the intake card — the same three cases `weekLine` computed in English:
+   * Calodex's line under the intake card — the same three cases `weekLine` computed in English:
    * every day inside the plan, some days over but the mean inside it, or the mean itself over.
    * `{days}` is `countText(days, n)` — "2 days over" reads "Two days over" nowhere, and that is
    * deliberate: the numeral is what every other card on this surface shows.

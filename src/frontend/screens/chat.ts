@@ -1,4 +1,4 @@
-// Chat — Spud's thread and the shared composer (`#/chat`, W7 #94).
+// Chat — Calodex's thread and the shared composer (`#/chat`, W7 #94).
 //
 // The boards are `product/design/pro/web/chat*.html` + `states-*.html`: a quiet column of lines —
 // mine right and tinted, the app's left — with the coach's `.say` block carrying his name on
@@ -127,7 +127,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
 
     const list = el("ul", "thread");
     // #1520, Telegram's thread: HER bubble carries what happened to her send — the meal it logged,
-    // the proposal it made, the refusal or failure it met — and Spud's lines are his bubbles. The
+    // the proposal it made, the refusal or failure it met — and Calodex's lines are his bubbles. The
     // grouping (2/8 px, inner corners, the icon and the tail on a run's last line) is the CSS's,
     // off the siblings; this loop only decides what each bubble holds.
     let lastMe: HTMLElement | null = null;
@@ -253,7 +253,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     // KEPT FOR LATER, in the order they go (#708): her bubble, and what is happening to it ON it —
     // pending (a clock: the outbox sends it on its own), failed (the red !, Resend; nothing will
     // send it again by itself) or refused (the server's reason inside, and Resend or Delete; the
-    // turns behind it go on without it). Spud never speaks for her send, and her words never go back to the field.
+    // turns behind it go on without it). Calodex never speaks for her send, and her words never go back to the field.
     for (const e of keptLines) {
       const resend = (): void => turn(async () => { if (e.held === undefined) { await flush(); } else { await outbox.resend(e.id, uid!); } });
       // Deleting a held turn drops it; nothing was waiting on it, so the flush is only a courtesy.
@@ -511,7 +511,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     mine.append(el("div", "ts", timeFmt(new Date())));
     const theirs = el("li", "them");
     const dots = el("div", "dots");
-    dots.setAttribute("aria-label", fill(copy().phone.typing, { coach: coachName() ?? "Spud" }));
+    dots.setAttribute("aria-label", fill(copy().phone.typing, { coach: coachName() ?? "Calodex" }));
     dots.append(el("i", ""), el("i", ""), el("i", ""));
     theirs.append(sayBlock((col) => col.append(dots)));
     listEl.append(mine, theirs);

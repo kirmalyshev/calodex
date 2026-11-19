@@ -494,7 +494,7 @@ export function failBadge(id: string, resend: () => void, drop?: () => void): HT
  * KEPT FOR LATER as HER line (#708, #1520): what is happening to her send drawn ON her bubble —
  * pending (a clock: the outbox sends it on its own), failed (the red !, Resend; nothing will
  * send it again by itself) or refused (the server's reason inside, and Resend or Delete; the
- * turns behind it go on without it). Spud never speaks for her send, and her words never go back to the field.
+ * turns behind it go on without it). Calodex never speaks for her send, and her words never go back to the field.
  * The chat draws these inside its thread (`li`); Home draws them above the composer (`div`,
  * ieat-app#1546 — `web-today-composer-failed`).
  */

@@ -84,7 +84,7 @@ async function kitSheet(page: Page): Promise<void> {
     // A hairline list is the same row outside the card grid — the form .card.flat wraps it in.
     `<div class="card flat" style="padding:0 16px">${optionRow({ text: "Language", icon: "person", tag: "div" })}${optionRow({ text: "Sign out", tag: "div" })}</div>`,
     // The lettered avatar, with the name line.
-    `<div class="say">${gabieAvatar()}<div>${gabieName("Spud")}<p>Tell me what I got wrong.</p></div></div>`,
+    `<div class="say">${gabieAvatar()}<div>${gabieName("Calodex")}<p>Tell me what I got wrong.</p></div></div>`,
   ].join("\n");
   // Land on the app's origin first — on the quietest page it has, /health — so the fonts'
   // relative route resolves there, and so the shell's own bundle is not running when setContent
@@ -183,11 +183,11 @@ test("the kit's measurements are pro.css's", async ({ page }) => {
   // The hero is a raw block — its rounding is the container's, not the component's.
   await expect(page.locator(".hero")).toHaveCSS("border-radius", "0px");
 
-  // The lettered avatar is the accent one; no Spud disc exists.
+  // The lettered avatar is the accent one; no Calodex disc exists.
   await expect(page.locator(".spud")).toHaveCount(0);
   await expect(page.locator(".gabie")).toHaveCSS("background-color", "rgb(30, 107, 60)");
   await expect(page.locator(".gabie")).toHaveCSS("border-radius", "50%");
-  await expect(page.locator(".gname")).toContainText("Spud");
+  await expect(page.locator(".gname")).toContainText("Calodex");
 });
 
 test("reduced motion: the kit draws its end state and animates nothing", async ({ page }) => {

@@ -425,7 +425,7 @@ msgstr "Nekaj je šlo narobe, morda pa je vseeno šlo skozi. Preveri /today, pre
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.coach.name"
-msgstr "Spud"
+msgstr "Calodex"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

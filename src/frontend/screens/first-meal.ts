@@ -17,7 +17,7 @@
 
 
 
-// The one-meal flow's Spud lines are onboarding CONTENT (ieat-app#2757): the compiled-in revision
+// The one-meal flow's Calodex lines are onboarding CONTENT (ieat-app#2757): the compiled-in revision
 // draws first, and the served one (the admin's words, or an experiment's) replaces it when it lands.
 import { onboardingContentFor } from "../../shared/onboarding-content.ts";
 import { usableFirstMeal } from "../../shared/onboarding.ts";
@@ -249,7 +249,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
           { onResult: (r) => { if (r.kind === "proposed" || r.kind === "answered") got.result = r; } },
         );
         if (got.result === null) { if (keptNote !== undefined) say(keptNote); return; }
-        // An answered question is Spud's reply, shown where it was asked — it logs nothing.
+        // An answered question is Calodex's reply, shown where it was asked — it logs nothing.
         if (got.result.kind === "answered") { say(got.result.text); return; }
         // A typed meal is PROPOSED first, and this screen is the confirmation — the ask already
         // said what it was, so a second tap would ask the same thing again. The proposal was the
@@ -271,7 +271,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
   // the account's language. A screen in this bundle holds no i18n catalog to compose them itself.
   type VerdictWords = { verdictLabels: VerdictLabel[]; verdictHeadline: string | null };
   const verdictSheet = (analysis: MealAnalysis, mealId: string, words: VerdictWords): HTMLElement => {
-    // web/first-verdict.html: the sheet centred over Home — Spud's "Your first macros", the photo
+    // web/first-verdict.html: the sheet centred over Home — Calodex's "Your first macros", the photo
     // with its item callouts, the card's name and kcal, macros, the pills, then the two actions.
     const scrim = el("div", "fscrim");
     const dlg = el("div", "card fsheet rise");

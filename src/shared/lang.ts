@@ -831,23 +831,23 @@ export const describeGaps = (gaps: readonly LocalizedGap[]): string[] =>
  * HOW IT DECIDES. A gendered WORD is only a defect when it describes the READER, so a hit needs
  * two things near each other: a gendered form, and a second-person marker (`ты`, `тебе`, `твой`…).
  * A first-person marker (`я`, `мне`, `мой`) nearer to the word than any second-person one EXEMPTS
- * it, because that is Spud talking about himself and his gender is his own to have. The window is
+ * it, because that is Calodex talking about himself and his gender is his own to have. The window is
  * counted in TOKENS OF ANY SCRIPT, so `Ты {days} дней подряд записывал еду` and `Ты 5 дней подряд
  * держался плана` are caught — an earlier version counted Cyrillic words only, which quietly
  * exempted every templated sentence in the codebase.
  *
  * WHAT IT CANNOT DO, stated because the alternative is a false claim. Russian drops the pronoun
  * constantly, and `Отлично справился сегодня` is gendered with no marker of person at all — while
- * `Записал.` is Spud saying "noted" about himself and is perfectly fine. The two are
+ * `Записал.` is Calodex saying "noted" about himself and is perfectly fine. The two are
  * indistinguishable without understanding the sentence, so pro-drop is NOT covered and a check
- * that guessed would fire on Spud's own voice every second line. `validateOnboardingContent` and
+ * that guessed would fire on Calodex's own voice every second line. `validateOnboardingContent` and
  * `validateNotificationCopy` run this on admin-typed Russian, which is where a human is present to
  * read the rejection; for the compiled-in tables it is a reviewer's job, and `AGENTS.md` says so.
  */
 // TWO CLASSES, because they need different evidence.
 //
 // GATED: a past-tense verb, and the numeral-adjective `один`. These are only about the reader when
-// a second-person marker is nearby — `один раз` is "once" and `Записал.` is Spud.
+// a second-person marker is nearby — `один раз` is "once" and `Записал.` is Calodex.
 const RU_GENDERED_GATED = new RegExp(
   "^(?:"
   + "[а-яё]+л(?:а|ся|ась)?"
@@ -862,7 +862,7 @@ const RU_NOT_A_VERB = new Set(["ккал", "стол", "угол", "мл", "ру
 // STANDALONE: short adjectives and participles. `Готов?` is a whole screen's call to action and
 // carries no pronoun at all, and `поправь граммы сам` has only an imperative. These are gendered
 // wherever they appear, so they need no second-person marker — only the absence of a first-person
-// one, which is still Spud describing himself.
+// one, which is still Calodex describing himself.
 const RU_GENDERED_ALONE = new RegExp(
   "^(?:"
   + "готов|уверен|рад|должен|должн|сам|сама|прав|голоден|голодн|сыт|занят|доволен|довольн"
@@ -917,7 +917,7 @@ export function genderedRussian(root: unknown): { at: string; text: string }[] {
       const second = nearest(RU_SECOND, i);
       // A gated word says nothing about the reader unless the reader is in the sentence.
       if (!alone && second === Infinity) continue;
-      // Spud, about Spud — but only when he is actually there. With NEITHER marker present both
+      // Calodex, about Calodex — but only when he is actually there. With NEITHER marker present both
       // distances are Infinity, and `Infinity <= Infinity` had been exempting every standalone.
       const first = nearest(RU_FIRST, i);
       if (first !== Infinity && first <= second) continue;

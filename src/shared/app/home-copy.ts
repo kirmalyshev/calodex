@@ -9,7 +9,7 @@
 // `verdictPillLabel`/`verdictNoun` (`verdicts.ts`); the kcal under a meal's figure is `UNIT_KCAL`;
 // every number is `wholeNumbers`/`numbers`, every date and weekday and the picker's month are
 // `Intl` off `LANG_TAG` — none of those are copy. `{coach}` is not needed on this surface: the boards
-// draw Spud, and since #462 the words name nobody — the composer speaks first person.
+// draw Calodex, and since #462 the words name nobody — the composer speaks first person.
 //
 // THE {n} RULE: the boards draw a figure and its label as two elements ("368" over "kcal left",
 // "55g" over "Protein left"), so the LABEL is a string here and the figure is `wholeNumbers` —
@@ -51,7 +51,7 @@ export interface HomeCopy {
   /** phone: the same chip with a streak goal set — drawn "4/14", read "4 of 14 days". */
   phoneStreakGoalAria: string;
   /**
-   * phone: Spud's one line under the meals — `phone/today-picker` draws it behind the sheet.
+   * phone: Calodex's one line under the meals — `phone/today-picker` draws it behind the sheet.
    * `{nutrient}` is the constraining macro's name as the sentence wants it (`verdictNoun`) and
    * `{grams}` its figure; the kcal-left figure is the card's alone — the line carries the advice
    * (#1000), so the day total is stated once on the screen. One fixed shape, not a lever the copy
@@ -125,7 +125,7 @@ export interface HomeCopy {
     carbs: { left: string; over: string };
     satfat: { left: string; over: string };
   };
-  /** The empty day — the dashed card's line beside Spud, both clients. */
+  /** The empty day — the dashed card's line beside Calodex, both clients. */
   nothingLogged: string;
   /** `states-diary-failed`, both clients — the card above "Try again". */
   diaryFailed: string;

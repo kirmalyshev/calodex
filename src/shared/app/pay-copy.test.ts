@@ -100,7 +100,7 @@ describe("PAY_COPY", () => {
     expect(en.perMonthSave).toBe("{price}/month · save {percent}");
     expect(en.benefitPhoto).toBe("One photo logs a meal");
     expect(en.benefitPlan).toBe("Every meal checked against your plan");
-    expect(en.benefitChat).toBe("Ask Spud about your day");
+    expect(en.benefitChat).toBe("Ask Calodex about your day");
     expect(en.yearlySub).toBe("{trial}, {price} a year");
     expect(en.perMonthCaption).toBe("a month");
     expect(en.monthlySub).toBe("{trial}, {price} a month");
