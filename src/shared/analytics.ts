@@ -79,12 +79,13 @@ const APP = ["app"] as const;
  * One RevenueCat webhook delivery, as `subscription_<type lowercased>`. A refund is a cancellation
  * whose `cancel_reason` is `CUSTOMER_SUPPORT`; a trial conversion is a renewal with
  * `is_trial_conversion`. A type not listed below is logged in `revenuecat_events` and sent nowhere.
+ * `price_usd` is RevenueCat's USD `price`; `price` is what was paid, in `currency`.
  */
 const SUBSCRIPTION = {
   surfaces: [],
   server: true,
   props: [
-    "product_id", "period_type", "presented_offering_id", "price", "currency", "store", "country_code", "environment",
+    "product_id", "period_type", "presented_offering_id", "price_usd", "price", "currency", "store", "country_code", "environment",
     "is_trial_conversion", "cancel_reason",
   ],
 } as const;

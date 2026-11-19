@@ -30,7 +30,7 @@ export async function logRevenueCatEvent(
     const event = subscriptionEvent(row.type) as "subscription_renewal";
     await track(deps, row.userId, event, {
       product_id: row.productId, period_type: row.periodType, presented_offering_id: row.presentedOfferingId,
-      price: row.price, currency: row.currency, store: row.store, country_code: row.countryCode,
+      price_usd: row.price, price: row.priceInPurchasedCurrency, currency: row.currency, store: row.store, country_code: row.countryCode,
       environment: row.environment, ...lifecycle,
     }, null);
   }

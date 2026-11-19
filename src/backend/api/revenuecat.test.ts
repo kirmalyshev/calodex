@@ -87,7 +87,7 @@ describe("the subscription lifecycle reaches analytics (ieat-app#3196)", () => {
     const { userId } = await account();
     const delivery = purchase(userId, {
       id: crypto.randomUUID(), period_type: "TRIAL", presented_offering_id: "default", price: 39.99,
-      currency: "EUR", store: "APP_STORE", country_code: "DE", environment: "PRODUCTION",
+      price_in_purchased_currency: 36.99, currency: "EUR", store: "APP_STORE", country_code: "DE", environment: "PRODUCTION",
     });
     expect((await deliver(delivery)).status).toBe(200);
     expect(sink.captured).toHaveLength(1);
@@ -95,7 +95,7 @@ describe("the subscription lifecycle reaches analytics (ieat-app#3196)", () => {
     expect(event).toBe("subscription_initial_purchase");
     expect(who).toBe(userId);
     expect(props).toMatchObject({
-      product_id: "yearly", period_type: "TRIAL", presented_offering_id: "default", price: 39.99, currency: "EUR",
+      product_id: "yearly", period_type: "TRIAL", presented_offering_id: "default", price_usd: 39.99, price: 36.99, currency: "EUR",
       store: "APP_STORE", country_code: "DE", environment: "PRODUCTION", is_trial_conversion: null, cancel_reason: null,
       surface: null, lang: "en",
     });
