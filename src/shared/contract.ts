@@ -810,6 +810,12 @@ export interface ProfileResponse {
    */
   isAdmin: boolean;
   /**
+   * Whether this is a staff / test account — the same decision the campaign segments use
+   * (`isStaffAccount`: the DB flag, or the env bootstrap list). ADVISORY: the app tags its analytics
+   * person with it so staff are filterable out of the paywall funnel (ieat-app#3162). It gates nothing.
+   */
+  isStaff: boolean;
+  /**
    * What this server will actually accept. Carried here because the profile is fetched at boot and
    * on every refresh, so the app learns the limits of the environment it is talking to instead of
    * assuming the ones it was compiled with.

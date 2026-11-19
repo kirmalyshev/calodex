@@ -410,7 +410,7 @@ export interface OnboardingBuildingContent {
 
 /** The payoff — the plan card. Editable too, because it is the most-read thing in the flow. */
 export interface OnboardingSummaryContent {
-  /** "Here is your plan". */
+  /** "Your plan". */
   lines: string[];
   kcalLabel: string;
   /**
@@ -1042,8 +1042,10 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
   // headline — `lines` may be empty, and the button is "Get started". v24 (ieat-app#2757): `ui`
   // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
   // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
-  // revision may never reuse a number that was already issued.
-  version: 28,
+  // revision may never reuse a number that was already issued. v29 (ieat-app#3176): the plan
+  // line and the baseline title drop their "Here is …" lead-in in every language — new words,
+  // new number.
+  version: 29,
   welcome: {
     lines: [],
     cta: "Get started",
@@ -1261,7 +1263,7 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
     floorBody: "The arithmetic wanted to go lower. We don't set targets below this without medical supervision, so this is where yours sits. It'll also say so on your diary.",
   },
   summary: {
-    lines: ["Here is your plan"],
+    lines: ["Your plan"],
     kcalLabel: "kcal a day",
     floorMarker: "capped for safety · never below {floor}",
     macros: {

@@ -296,7 +296,7 @@ const FR: ChatCopy = {
   },
   units: { years: "ans", yearsCount: { one: "{n} an", other: "{n} ans" } },
   baseline: {
-    title: "Voici ton point de départ",
+    title: "Ton point de départ",
     bmi: "IMC",
     what: "Indice de masse corporelle",
     bands: { under: "moins de 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 et plus" },
@@ -389,7 +389,7 @@ const DE: ChatCopy = {
   },
   units: { years: "Jahre", yearsCount: { one: "{n} Jahr", other: "{n} Jahre" } },
   baseline: {
-    title: "Das ist dein Ausgangspunkt",
+    title: "Dein Ausgangspunkt",
     bmi: "BMI",
     what: "Body-Mass-Index",
     bands: { under: "unter 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 und mehr" },
@@ -482,7 +482,7 @@ const IT: ChatCopy = {
   },
   units: { years: "anni", yearsCount: { one: "{n} anno", other: "{n} anni" } },
   baseline: {
-    title: "Ecco il tuo punto di partenza",
+    title: "Il tuo punto di partenza",
     bmi: "IMC",
     what: "Indice di massa corporea",
     bands: { under: "sotto 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 e oltre" },
@@ -575,7 +575,7 @@ const ES: ChatCopy = {
   },
   units: { years: "años", yearsCount: { one: "{n} año", other: "{n} años" } },
   baseline: {
-    title: "Este es tu punto de partida",
+    title: "Tu punto de partida",
     bmi: "IMC",
     what: "Índice de masa corporal",
     bands: { under: "menos de 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 o más" },
@@ -668,7 +668,7 @@ const VI: ChatCopy = {
   },
   units: { years: "tuổi", yearsCount: { other: "{n} tuổi" } },
   baseline: {
-    title: "Đây là điểm xuất phát của bạn",
+    title: "Điểm xuất phát của bạn",
     bmi: "BMI",
     what: "Chỉ số khối cơ thể",
     bands: { under: "dưới 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "từ 30 trở lên" },
@@ -761,7 +761,7 @@ const ID: ChatCopy = {
   },
   units: { years: "tahun", yearsCount: { other: "{n} tahun" } },
   baseline: {
-    title: "Ini titik awalmu",
+    title: "Titik awalmu",
     bmi: "IMT",
     what: "Indeks massa tubuh",
     bands: { under: "di bawah 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ke atas" },
@@ -856,7 +856,7 @@ const RU: ChatCopy = {
   },
   units: { years: "лет", yearsCount: { one: "{n} год", few: "{n} года", many: "{n} лет", other: "{n} года" } },
   baseline: {
-    title: "Вот твоя точка отсчёта",
+    title: "Твоя точка отсчёта",
     bmi: "ИМТ",
     what: "Индекс массы тела",
     bands: { under: "ниже 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 и выше" },
@@ -956,7 +956,7 @@ const TE: ChatCopy = {
   },
   units: { years: "ఏళ్లు", yearsCount: { one: "{n} ఏడాది", other: "{n} ఏళ్లు" } },
   baseline: {
-    title: "ఇదే మీ ప్రారంభ స్థాయి",
+    title: "మీ ప్రారంభ స్థాయి",
     bmi: "BMI",
     what: "బాడీ మాస్ ఇండెక్స్",
     bands: { under: "18.5 కంటే తక్కువ", healthy: "18.5–24.9", over: "25–29.9", obese: "30 మరియు అంతకంటే ఎక్కువ" },
@@ -1051,7 +1051,7 @@ const TA: ChatCopy = {
   },
   units: { years: "ஆண்டுகள்", yearsCount: { one: "{n} ஆண்டு", other: "{n} ஆண்டுகள்" } },
   baseline: {
-    title: "இதோ உங்கள் தொடக்க நிலை",
+    title: "உங்கள் தொடக்க நிலை",
     bmi: "BMI",
     what: "உடல் நிறை குறியீட்டெண்",
     bands: { under: "18.5-க்குக் கீழ்", healthy: "18.5–24.9", over: "25–29.9", obese: "30 மற்றும் அதற்கு மேல்" },
@@ -1146,7 +1146,7 @@ const PA: ChatCopy = {
   },
   units: { years: "ਸਾਲ", yearsCount: { one: "{n} ਸਾਲ", other: "{n} ਸਾਲ" } },
   baseline: {
-    title: "ਇਹ ਰਿਹਾ ਤੁਹਾਡਾ ਸ਼ੁਰੂਆਤੀ ਆਧਾਰ",
+    title: "ਤੁਹਾਡਾ ਸ਼ੁਰੂਆਤੀ ਆਧਾਰ",
     bmi: "BMI",
     what: "ਬਾਡੀ ਮਾਸ ਇੰਡੈਕਸ",
     bands: { under: "18.5 ਤੋਂ ਘੱਟ", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ਅਤੇ ਇਸ ਤੋਂ ਵੱਧ" },
@@ -1241,7 +1241,7 @@ const OR: ChatCopy = {
   },
   units: { years: "ବର୍ଷ", yearsCount: { one: "{n} ବର୍ଷ", other: "{n} ବର୍ଷ" } },
   baseline: {
-    title: "ଏହା ଆପଣଙ୍କ ଆରମ୍ଭିକ ଆଧାର",
+    title: "ଆପଣଙ୍କ ଆରମ୍ଭିକ ଆଧାର",
     bmi: "BMI",
     what: "ବଡି ମାସ୍ ଇଣ୍ଡେକ୍ସ",
     bands: { under: "18.5 ତଳେ", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ଏବଂ ତାହାଠାରୁ ଅଧିକ" },
@@ -1336,7 +1336,7 @@ const MR: ChatCopy = {
   },
   units: { years: "वर्षे", yearsCount: { one: "{n} वर्ष", other: "{n} वर्षे" } },
   baseline: {
-    title: "हा आहे तुमचा सुरुवातीचा आधार",
+    title: "तुमचा सुरुवातीचा आधार",
     bmi: "BMI",
     what: "बॉडी मास इंडेक्स",
     bands: { under: "18.5 पेक्षा कमी", healthy: "18.5–24.9", over: "25–29.9", obese: "30 आणि त्यापेक्षा जास्त" },
@@ -1431,7 +1431,7 @@ const ML: ChatCopy = {
   },
   units: { years: "വയസ്സ്", yearsCount: { one: "{n} വയസ്സ്", other: "{n} വയസ്സ്" } },
   baseline: {
-    title: "ഇതാ നിങ്ങളുടെ തുടക്കനില",
+    title: "നിങ്ങളുടെ തുടക്കനില",
     bmi: "BMI",
     what: "ബോഡി മാസ് ഇൻഡക്സ്",
     bands: { under: "18.5-ൽ താഴെ", healthy: "18.5–24.9", over: "25–29.9", obese: "30-ഉം അതിനും മുകളിൽ" },
@@ -1526,7 +1526,7 @@ const KN: ChatCopy = {
   },
   units: { years: "ವರ್ಷ", yearsCount: { one: "{n} ವರ್ಷ", other: "{n} ವರ್ಷಗಳು" } },
   baseline: {
-    title: "ಇದು ನಿಮ್ಮ ಆರಂಭಿಕ ಸ್ಥಿತಿ",
+    title: "ನಿಮ್ಮ ಆರಂಭಿಕ ಸ್ಥಿತಿ",
     bmi: "BMI",
     what: "ಬಾಡಿ ಮಾಸ್ ಇಂಡೆಕ್ಸ್",
     bands: { under: "18.5 ಕ್ಕಿಂತ ಕಡಿಮೆ", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ಮತ್ತು ಅದಕ್ಕಿಂತ ಹೆಚ್ಚು" },
@@ -1621,7 +1621,7 @@ const GU: ChatCopy = {
   },
   units: { years: "વર્ષ", yearsCount: { one: "{n} વર્ષ", other: "{n} વર્ષ" } },
   baseline: {
-    title: "આ રહ્યો તમારો શરૂઆતનો આધાર",
+    title: "તમારો શરૂઆતનો આધાર",
     bmi: "BMI",
     what: "બોડી માસ ઇન્ડેક્સ",
     bands: { under: "18.5 થી ઓછું", healthy: "18.5–24.9", over: "25–29.9", obese: "30 અને તેથી વધુ" },
@@ -1716,7 +1716,7 @@ const BN: ChatCopy = {
   },
   units: { years: "বছর", yearsCount: { one: "{n} বছর", other: "{n} বছর" } },
   baseline: {
-    title: "এই হলো আপনার শুরুর অবস্থা",
+    title: "আপনার শুরুর অবস্থা",
     bmi: "BMI",
     what: "বডি মাস ইনডেক্স",
     bands: { under: "18.5-এর নিচে", healthy: "18.5–24.9", over: "25–29.9", obese: "30 এবং তার বেশি" },
@@ -1811,7 +1811,7 @@ const PT_PT: ChatCopy = {
   },
   units: { years: "anos", yearsCount: { one: "{n} ano", other: "{n} anos" } },
   baseline: {
-    title: "Este é o teu ponto de partida",
+    title: "O teu ponto de partida",
     bmi: "IMC",
     what: "Índice de massa corporal",
     bands: { under: "abaixo de 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ou mais" },
@@ -1906,7 +1906,7 @@ const MS: ChatCopy = {
   },
   units: { years: "tahun", yearsCount: { one: "{n} tahun", other: "{n} tahun" } },
   baseline: {
-    title: "Ini titik permulaan anda",
+    title: "Titik permulaan anda",
     bmi: "BMI",
     what: "Indeks jisim badan",
     bands: { under: "bawah 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ke atas" },
@@ -2001,7 +2001,7 @@ const CA: ChatCopy = {
   },
   units: { years: "anys", yearsCount: { one: "{n} any", other: "{n} anys" } },
   baseline: {
-    title: "Aquest és el teu punt de partida",
+    title: "El teu punt de partida",
     bmi: "IMC",
     what: "Índex de massa corporal",
     bands: { under: "menys de 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 o més" },
@@ -2096,7 +2096,7 @@ const SL: ChatCopy = {
   },
   units: { years: "let", yearsCount: { one: "{n} leto", other: "{n} let" } },
   baseline: {
-    title: "To je tvoje izhodišče",
+    title: "Tvoje izhodišče",
     bmi: "ITM",
     what: "Indeks telesne mase",
     bands: { under: "pod 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 in več" },
@@ -2191,7 +2191,7 @@ const HR: ChatCopy = {
   },
   units: { years: "god.", yearsCount: { one: "{n} godina", other: "{n} god." } },
   baseline: {
-    title: "Ovo je tvoja polazna točka",
+    title: "Tvoja polazna točka",
     bmi: "BMI",
     what: "Indeks tjelesne mase",
     bands: { under: "ispod 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 i više" },
@@ -2286,7 +2286,7 @@ const SK: ChatCopy = {
   },
   units: { years: "rokov", yearsCount: { one: "{n} rok", other: "{n} r." } },
   baseline: {
-    title: "Tu je tvoj východiskový bod",
+    title: "Tvoj východiskový bod",
     bmi: "BMI",
     what: "Index telesnej hmotnosti",
     bands: { under: "pod 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 a viac" },
@@ -2381,7 +2381,7 @@ const NO: ChatCopy = {
   },
   units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
   baseline: {
-    title: "Her er utgangspunktet ditt",
+    title: "Utgangspunktet ditt",
     bmi: "KMI",
     what: "Kroppsmasseindeks",
     bands: { under: "under 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 og over" },
@@ -2476,7 +2476,7 @@ const FI: ChatCopy = {
   },
   units: { years: "vuotta", yearsCount: { one: "{n} vuosi", other: "{n} vuotta" } },
   baseline: {
-    title: "Tässä on lähtötasosi",
+    title: "Lähtötasosi",
     bmi: "BMI",
     what: "Painoindeksi",
     bands: { under: "alle 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 tai yli" },
@@ -2571,7 +2571,7 @@ const DA: ChatCopy = {
   },
   units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
   baseline: {
-    title: "Her er dit udgangspunkt",
+    title: "Dit udgangspunkt",
     bmi: "BMI",
     what: "Body mass index",
     bands: { under: "under 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 og derover" },
@@ -2666,7 +2666,7 @@ const HU: ChatCopy = {
   },
   units: { years: "év", yearsCount: { one: "{n} év", other: "{n} év" } },
   baseline: {
-    title: "Itt a kiindulópontod",
+    title: "A kiindulópontod",
     bmi: "BMI",
     what: "Testtömegindex",
     bands: { under: "18.5 alatt", healthy: "18.5–24.9", over: "25–29.9", obese: "30 vagy több" },
@@ -2761,7 +2761,7 @@ const EL: ChatCopy = {
   },
   units: { years: "έτη", yearsCount: { one: "{n} έτος", other: "{n} έτη" } },
   baseline: {
-    title: "Αυτό είναι το σημείο εκκίνησής σου",
+    title: "Το σημείο εκκίνησής σου",
     bmi: "ΔΜΣ",
     what: "Δείκτης μάζας σώματος",
     bands: { under: "κάτω από 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 και άνω" },
@@ -2856,7 +2856,7 @@ const RO: ChatCopy = {
   },
   units: { years: "ani", yearsCount: { one: "{n} an", other: "{n} ani" } },
   baseline: {
-    title: "Iată punctul tău de pornire",
+    title: "Punctul tău de pornire",
     bmi: "IMC",
     what: "Indicele de masă corporală",
     bands: { under: "sub 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 și peste" },
@@ -2951,7 +2951,7 @@ const CS: ChatCopy = {
   },
   units: { years: "let", yearsCount: { one: "{n} rok", other: "{n} let" } },
   baseline: {
-    title: "Tady je tvůj výchozí bod",
+    title: "Tvůj výchozí bod",
     bmi: "BMI",
     what: "Index tělesné hmotnosti",
     bands: { under: "pod 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 a více" },
@@ -3046,7 +3046,7 @@ const HI: ChatCopy = {
   },
   units: { years: "साल", yearsCount: { one: "{n} साल", other: "{n} साल" } },
   baseline: {
-    title: "यह रहा आपका शुरुआती आधार",
+    title: "आपका शुरुआती आधार",
     bmi: "BMI",
     what: "बॉडी मास इंडेक्स",
     bands: { under: "18.5 से कम", healthy: "18.5–24.9", over: "25–29.9", obese: "30 और उससे अधिक" },
@@ -3141,7 +3141,7 @@ const TH: ChatCopy = {
   },
   units: { years: "ปี", yearsCount: { one: "{n} ปี", other: "{n} ปี" } },
   baseline: {
-    title: "นี่คือจุดเริ่มต้นของคุณ",
+    title: "จุดเริ่มต้นของคุณ",
     bmi: "BMI",
     what: "ดัชนีมวลกาย",
     bands: { under: "ต่ำกว่า 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ขึ้นไป" },
@@ -3236,7 +3236,7 @@ const SV: ChatCopy = {
   },
   units: { years: "år", yearsCount: { one: "{n} år", other: "{n} år" } },
   baseline: {
-    title: "Här är din utgångspunkt",
+    title: "Din utgångspunkt",
     bmi: "BMI",
     what: "Kroppsmasseindex",
     bands: { under: "under 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 och högre" },
@@ -3331,7 +3331,7 @@ const UK: ChatCopy = {
   },
   units: { years: "років", yearsCount: { one: "{n} рік", other: "{n} р." } },
   baseline: {
-    title: "Ось твоя точка відліку",
+    title: "Твоя точка відліку",
     bmi: "ІМТ",
     what: "Індекс маси тіла",
     bands: { under: "нижче 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 і вище" },
@@ -3426,7 +3426,7 @@ const NL: ChatCopy = {
   },
   units: { years: "jaar", yearsCount: { one: "{n} jaar", other: "{n} jaar" } },
   baseline: {
-    title: "Dit is je uitgangspunt",
+    title: "Je uitgangspunt",
     bmi: "BMI",
     what: "Body mass index",
     bands: { under: "onder 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 en hoger" },
@@ -3616,7 +3616,7 @@ const TR: ChatCopy = {
   },
   units: { years: "yaş", yearsCount: { one: "{n} yaş", other: "{n} yaş" } },
   baseline: {
-    title: "İşte başlangıç noktan",
+    title: "Başlangıç noktan",
     bmi: "VKİ",
     what: "Vücut kitle indeksi",
     bands: { under: "18.5 altı", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ve üzeri" },
@@ -3711,7 +3711,7 @@ const ZH_HANT: ChatCopy = {
   },
   units: { years: "歲", yearsCount: { one: "{n} 歲", other: "{n} 歲" } },
   baseline: {
-    title: "這是你的起點",
+    title: "你的起點",
     bmi: "身體質量指數（BMI）",
     what: "身體質量指數",
     bands: { under: "低於 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 及以上" },
@@ -3806,7 +3806,7 @@ const ZH_HANS: ChatCopy = {
   },
   units: { years: "岁", yearsCount: { one: "{n}岁", other: "{n}岁" } },
   baseline: {
-    title: "这是你的起点",
+    title: "你的起点",
     bmi: "身体质量指数（BMI）",
     what: "身体质量指数",
     bands: { under: "低于 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 及以上" },
@@ -3901,7 +3901,7 @@ const KO: ChatCopy = {
   },
   units: { years: "세", yearsCount: { one: "{n}세", other: "{n}세" } },
   baseline: {
-    title: "현재 기준점이에요",
+    title: "현재 기준점",
     bmi: "BMI",
     what: "체질량지수",
     bands: { under: "18.5 미만", healthy: "18.5–24.9", over: "25–29.9", obese: "30 이상" },
@@ -3996,7 +3996,7 @@ const JA: ChatCopy = {
   },
   units: { years: "歳", yearsCount: { one: "{n}歳", other: "{n}歳" } },
   baseline: {
-    title: "あなたの現在地です",
+    title: "あなたの現在地",
     bmi: "BMI",
     what: "ボディマス指数",
     bands: { under: "18.5 未満", healthy: "18.5–24.9", over: "25–29.9", obese: "30 以上" },
@@ -4091,7 +4091,7 @@ const PT_BR: ChatCopy = {
   },
   units: { years: "anos", yearsCount: { one: "{n} ano", other: "{n} anos" } },
   baseline: {
-    title: "Este é seu ponto de partida",
+    title: "Seu ponto de partida",
     bmi: "IMC",
     what: "Índice de massa corporal",
     bands: { under: "abaixo de 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 ou mais" },
