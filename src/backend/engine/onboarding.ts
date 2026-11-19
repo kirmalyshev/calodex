@@ -13,14 +13,14 @@ import {
   localDate, localTime,
   onboardingContentFor as compiledContentFor, storedContentSet, usableContent, usableContentFor,
   DEFAULT_ORDER, FIRST_VERDICT_ARMS, FIRST_VERDICT_VERSION, isFirstVerdictArm, ONBOARDING_ORDER_VERSION, servedOrder, validateOnboardingContent, validateOnboardingOrder,
-  type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
+  type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent, type OnboardingContentSet,
   type DistributionChannel, type FirstVerdictArm, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
 import { resolveScreen, type ServedScreen, type ServedScreens, type TemplateSlot } from "@eait/shared";
 import { rendererNeeded, screensStartErrors, servedScreens, templateAssetUrl } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
-import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingServed, OnboardingServedRecord, OnboardingVariant, TemplateRef } from "../store.ts";
+import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingServed, OnboardingServedRecord, OnboardingSurface, OnboardingVariant, TemplateRef } from "../store.ts";
 import { adminRangeOf, adminWindowEcho } from "./admin.ts";
 import { referralBonusOf } from "./entitlement.ts";
 
@@ -60,7 +60,7 @@ export async function onboardingContent(deps: EngineDeps, lang: Lang): Promise<O
 export interface OnboardingSignals {
   lang: Lang;
   /** Where the words will render — an experiment may rule a surface out. */
-  surface: "app" | "web";
+  surface: OnboardingSurface;
   /** The device locale region (or the browser's Accept-Language one): an ISO alpha-2 code. */
   region?: string | null;
   /** The device's IANA zone, for a local-hours rule. Unknown or absent means "not eligible". */
@@ -607,21 +607,24 @@ export async function adminUserOnboarding(
 
 /**
  * One run (a `session_id`) as it was served (ieat-app#3194). `served` is the serving of the run's
- * content version with the latest stamp at or before the run's first event (plus `SERVED_DRIFT_MS`
- * for the client's clock), or null — "not recorded", never a guess. The arm comes from the
- * account's assignment whose variant IS that version. `lang` and `copy` need the record.
+ * content version with the latest stamp at or before the run's first event — or, when none precedes
+ * it, the earliest within `SERVED_DRIFT_MS` after (the client's clock) — or null: "not recorded",
+ * never a guess. `lang` and `copy` need that record.
  */
 export interface AdminOnboardingRun {
   sessionId: string;
   contentVersion: number;
-  /** `arm` is the experiments table's label: "control" or "variant N" (1-based). Null: no experiment. */
-  experiment: { id: string; arm: string } | null;
+  /**
+   * The account's arm: `arm` is the experiments table's label, "control" or "variant N" (1-based).
+   * `fellBack`: the account holds that arm but this run showed another version. Null: no experiment.
+   */
+  experiment: { id: string; arm: string; fellBack: boolean } | null;
   lang: Lang | null;
-  served: { at: string; surface: OnboardingSignals["surface"]; screens: OnboardingServed["screens"] } | null;
+  served: { at: string; surface: OnboardingSurface; screens: OnboardingServed["screens"] } | null;
   /**
    * Each place's words as served, a plain-text render keyed by place — a template's where one
-   * replaced the beat. Places whose words are code (or that the kept copy lacks) are absent. Null
-   * when nothing recorded the serving, or this version's copy is not kept (the live row keeps no history).
+   * replaced the beat. Places whose words are code, or that the kept copy lacks, are absent. Null
+   * when nothing recorded the serving, or nothing keeps exactly this version's words.
    */
   copy: Record<string, string> | null;
 }
@@ -629,60 +632,61 @@ export interface AdminOnboardingRun {
 /** How far a client's clock may run behind the server's when a run is matched to its serving. */
 const SERVED_DRIFT_MS = 2 * 60_000;
 
+const armLabel = (e: OnboardingExperiment, i: number) => (e.variants[i]!.control === true ? "control" : `variant ${i + 1}`);
+
 export async function onboardingRuns(deps: EngineDeps, userId: string, events: AdminOnboardingEvent[]): Promise<AdminOnboardingRun[]> {
   if (events.length === 0) return [];
   const served = await deps.store.onboardingServed(userId);
   const experiments = await deps.store.listOnboardingExperiments();
-  const assigned = new Map<string, number>();
+  const held: { e: OnboardingExperiment; i: number }[] = [];
   for (const e of experiments) {
     const as = await deps.store.onboardingAssignment(userId, e.id);
-    if (as) assigned.set(e.id, as.variant_id);
+    const i = as ? e.variants.findIndex((x) => x.content.version === as.variant_id) : -1;
+    if (i >= 0) held.push({ e, i });
   }
-  const stored = await deps.store.getOnboardingContent();
+  const stored = storedContentSet(await deps.store.getOnboardingContent());
   const firsts = new Map<string, AdminOnboardingEvent>();
   for (const e of events) if (!firsts.has(e.sessionId)) firsts.set(e.sessionId, e);
   const runs: AdminOnboardingRun[] = [];
   for (const first of firsts.values()) {
     const v = first.contentVersion;
     const rec = servedFor(served, v, first.at);
-    let experiment: AdminOnboardingRun["experiment"] = null;
-    let arm: OnboardingVariant | null = null;
-    for (const e of experiments) {
-      const i = e.variants.findIndex((x) => x.content.version === v);
-      if (i < 0 || assigned.get(e.id) !== v) continue;
-      arm = e.variants[i]!;
-      experiment = { id: e.id, arm: arm.control === true ? "control" : `variant ${i + 1}` };
-    }
+    // The arm this run showed; else the one arm the account holds (in the served language, when known): it fell back.
+    const exact = held.find((h) => h.e.variants[h.i]!.content.version === v);
+    const others = held.filter((h) => rec === null || h.e.lang === rec.lang);
+    const hit = exact ?? (others.length === 1 ? others[0]! : null);
+    const experiment = hit ? { id: hit.e.id, arm: armLabel(hit.e, hit.i), fellBack: hit !== exact } : null;
     const places = new Set(events.filter((e) => e.sessionId === first.sessionId).map((e) => e.place));
     runs.push({
       sessionId: first.sessionId, contentVersion: v, experiment, lang: rec?.lang ?? null,
       served: rec ? { at: rec.servedAt, surface: rec.surface, screens: rec.screens } : null,
-      copy: rec ? await runCopy(deps, arm, stored, v, rec, places) : null,
+      copy: rec ? await runCopy(deps, exact ? exact.e.variants[exact.i]! : null, stored, v, rec, places) : null,
     });
   }
   return runs;
 }
 
-/** The serving of version `v` with the latest stamp at or before the run's first event (plus drift), or null. */
+/** The latest serving of `v` at or before `at`; else the earliest within the drift after it; else null. */
 function servedFor(rows: OnboardingServedRecord[], v: number, at: string): OnboardingServedRecord | null {
-  const by = Date.parse(at) + SERVED_DRIFT_MS;
-  return rows.filter((r) => r.contentVersion === v && Date.parse(r.servedAt) <= by)
-    .reduce<OnboardingServedRecord | null>((m, r) => (m === null || r.servedAt >= m.servedAt ? r : m), null);
+  const t = Date.parse(at);
+  const same = rows.filter((r) => r.contentVersion === v);
+  const before = same.filter((r) => Date.parse(r.servedAt) <= t);
+  if (before.length > 0) return before.reduce((m, r) => (r.servedAt >= m.servedAt ? r : m));
+  const after = same.filter((r) => Date.parse(r.servedAt) <= t + SERVED_DRIFT_MS);
+  return after.length > 0 ? after.reduce((m, r) => (r.servedAt < m.servedAt ? r : m)) : null;
 }
 
 /**
- * The words of version `v` in the served language, from what still holds exactly them: the run's
- * arm (its own words only — never patched from today's copy), else the live copy or the compiled
- * one when that IS version `v`. Null otherwise.
+ * The words of version `v` in the served language, from what holds exactly them: the run's arm, or
+ * the stored row's own copy for that language when it IS version `v` — each its own blocks only,
+ * never filled from another revision. Compiled copy is never used: it changes without a version bump.
  */
 async function runCopy(
-  deps: EngineDeps, arm: OnboardingVariant | null, stored: unknown, v: number,
+  deps: EngineDeps, arm: OnboardingVariant | null, stored: OnboardingContentSet, v: number,
   rec: OnboardingServedRecord, places: Set<string>,
 ): Promise<Record<string, string> | null> {
-  const live = usableContentFor(rec.lang, stored);
-  const compiled = compiledContentFor(rec.lang);
-  const found: Partial<OnboardingContent> | null = arm ? arm.content
-    : live.version === v ? live : compiled.version === v ? compiled : null;
+  const row = stored[rec.lang];
+  const found: Partial<OnboardingContent> | null = arm ? arm.content : row?.version === v ? row : null;
   if (found === null) return null;
   const content = branded(found);
   const copy: Record<string, string> = {};

@@ -74,10 +74,20 @@ describe("serveOnboarding records what it served (ieat-app#3194)", () => {
 
   it("never fails GET /v1/onboarding when the record cannot be written", async () => {
     await running();
-    store.recordOnboardingServed = async () => { throw new Error("db down"); };
-    const served = await serveOnboarding(deps, userId, signals);
-    expect(served.content.version).toBe(42);
-    expect(served.screens?.slots.baseline?.template).toBe("day");
+    store.recordOnboardingServed = async () => { throw Object.assign(new Error(`row for ${userId} refused`), { code: "23503" }); };
+    const logged: string[] = [];
+    const was = console.error;
+    console.error = (...a: unknown[]) => { logged.push(a.map(String).join(" ")); };
+    try {
+      const served = await serveOnboarding(deps, userId, signals);
+      expect(served.content.version).toBe(42);
+      expect(served.screens?.slots.baseline?.template).toBe("day");
+      await Bun.sleep(0);
+    } finally {
+      console.error = was;
+    }
+    expect(logged).toEqual(["[eait] onboarding serving not recorded (content v42, app): Error 23503"]);
+    expect(logged.join()).not.toContain(userId);
   });
 });
 
@@ -106,21 +116,24 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     expect(run!.copy!.baseline).toBe("See how it works\n[Continue]");
   });
 
-  it("says control for the control arm, and no arm when the run shows another version than the one assigned", async () => {
+  it("says control for the control arm, and 'fell back' when an assigned account's run shows another version", async () => {
     const e = await running();
     await store.putOnboardingAssignment(userId, e.id, 41);
     await store.recordOnboardingEvents(userId, [event("c", "welcome", "view", 41), event("x", "welcome", "view", 42)] as never);
     const [control, other] = await runs();
-    expect(control!.experiment).toEqual({ id: e.id, arm: "control" });
-    expect(other!.experiment).toBeNull();
+    expect(control!.experiment).toEqual({ id: e.id, arm: "control", fellBack: false });
+    expect(other!.experiment).toEqual({ id: e.id, arm: "control", fellBack: true });
   });
 
   it("derives the arm for a run nothing recorded the serving of, and guesses nothing else", async () => {
     const e = await running();
     await store.putOnboardingAssignment(userId, e.id, 42);
-    await store.recordOnboardingEvents(userId, [event("old", "welcome", "view", 42), event("lost", "welcome", "view", 9)] as never);
-    const [old, lost] = await runs();
-    expect(old).toMatchObject({ sessionId: "old", experiment: { id: e.id, arm: "variant 2" }, lang: null, served: null, copy: null });
+    const stranger = await store.createUser("en");
+    await store.recordOnboardingEvents(userId, [event("old", "welcome", "view", 42)] as never);
+    await store.recordOnboardingEvents(stranger, [event("lost", "welcome", "view", 9)] as never);
+    const [old] = await runs();
+    const [lost] = (await adminUserOnboarding(deps, stranger))!.runs;
+    expect(old).toMatchObject({ sessionId: "old", experiment: { id: e.id, arm: "variant 2", fellBack: false }, lang: null, served: null, copy: null });
     expect(lost).toMatchObject({ sessionId: "lost", contentVersion: 9, experiment: null, lang: null, served: null, copy: null });
   });
 
@@ -138,14 +151,55 @@ describe("adminUserOnboarding: each run as it was served (ieat-app#3194)", () =>
     await store.recordOnboardingEvents(userId, [
       event("r1", "welcome", "view", 7, { at: at(1) }),
       event("r2", "welcome", "view", 7, { at: at(11) }),
-      // The client's clock runs a minute behind the server's: still this serving.
-      event("r3", "welcome", "view", 7, { at: at(19) }),
+      event("r3", "welcome", "view", 7, { at: at(21) }),
     ] as never);
     const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
     expect(byId.early!.served).toBeNull();
     expect(byId.r1!.served!.at).toBe(at(0));
     expect(byId.r2!.served!.at).toBe(at(10));
     expect(byId.r3!.served!.at).toBe(at(20));
+  });
+
+  it("prefers a serving before the run to one just after it, and reaches past it only by the drift", async () => {
+    const base = Date.parse("2026-11-19T10:00:00Z");
+    const at = (min: number) => new Date(base + min * 60_000).toISOString();
+    let clock = base;
+    store = memoryStore({ now: () => clock });
+    deps = { ...deps, store };
+    userId = await store.createUser("en");
+    const serve = (v: number, lang: "en" | "de", min: number) => {
+      clock = Date.parse(at(min));
+      return store.recordOnboardingServed(userId, { contentVersion: v, lang, surface: "app", screens: {} });
+    };
+    await serve(7, "en", -10);
+    await serve(7, "de", 1);
+    await serve(8, "en", 31);
+    await serve(9, "en", 40);
+    await store.recordOnboardingEvents(userId, [
+      event("before", "welcome", "view", 7, { at: at(0) }),
+      // Nothing before it: the client's clock runs a minute behind, so the serving a minute later is its own.
+      event("behind", "welcome", "view", 8, { at: at(30) }),
+      event("far", "welcome", "view", 9, { at: at(37) }),
+    ] as never);
+    const byId = Object.fromEntries((await runs()).map((r) => [r.sessionId, r]));
+    expect(byId.before!.lang).toBe("en");
+    expect(byId.behind!.served!.at).toBe(at(31));
+    expect(byId.far!.served).toBeNull();
+  });
+
+  it("renders no compiled copy and no word the live row does not itself hold", async () => {
+    await store.recordOnboardingServed(userId, { contentVersion: DEFAULT_ONBOARDING_CONTENT.version, lang: "en", surface: "app", screens: {} });
+    await store.recordOnboardingEvents(userId, [event("compiled", "welcome", "view", DEFAULT_ONBOARDING_CONTENT.version)] as never);
+    const [compiled] = await runs();
+    expect(compiled).toMatchObject({ lang: "en", copy: null });
+
+    const other = await store.createUser("en");
+    const v = await store.putOnboardingContent("en", { version: 0, welcome: { lines: ["Row hello"], cta: "Row go", signin: "Row in" } } as never, 600);
+    await store.recordOnboardingServed(other, { contentVersion: v, lang: "en", surface: "app", screens: {} });
+    await store.recordOnboardingEvents(other, [event("row", "welcome", "view", v), event("row", "summary", "view", v)] as never);
+    const [row] = (await adminUserOnboarding(deps, other))!.runs;
+    expect(row!.copy!.welcome).toBe("Row hello\n[Row go]\n[Row in]");
+    expect(row!.copy!.summary).toBeUndefined();
   });
 
   it("renders today's live copy only for a run at its version, and nothing for a version nothing keeps", async () => {

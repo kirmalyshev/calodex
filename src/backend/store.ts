@@ -709,6 +709,9 @@ export interface AdminOnboardingPage {
 
 // ── Onboarding experiments (ieat-app#2669) ─────────────────────────────────────────────────────
 
+/** Where onboarding copy renders: the app, or the browser's /start. */
+export type OnboardingSurface = "app" | "web";
+
 /** The targeting rules an experiment row carries — every absent rule means "everyone". */
 export interface OnboardingExperimentRules {
   /** ISO alpha-2 lowercase, the same codes `countryFromRegion` answers with. Empty/absent: any. */
@@ -720,7 +723,7 @@ export interface OnboardingExperimentRules {
    */
   hours?: [number, number];
   /** Which surfaces may enroll. Empty/absent: both. */
-  surfaces?: ("app" | "web")[];
+  surfaces?: OnboardingSurface[];
 }
 
 /**
@@ -794,18 +797,19 @@ export interface OnboardingAssignment {
   assigned_at: string;
 }
 
-/**
- * What `GET /v1/onboarding` served one account (ieat-app#3194): the content revision, the language,
- * the surface and, per slot, the template revision that replaced that beat (`{}` for none). One row
- * per distinct serving — a repeat moves `lastServedAt` only — so the admin's journal can say what a
- * run was shown without a row per request.
- */
 /** One served template revision, by key and version. */
 export interface TemplateRef { template: string; version: number }
+
+/**
+ * What `GET /v1/onboarding` served one account (ieat-app#3194): the content revision, the language,
+ * the surface and, per slot, the template revision that replaced that beat (`{}` for none). A repeat
+ * of the account's LATEST serving moves its `lastServedAt`; anything else is a new row, so A, B, A
+ * reads as three servings.
+ */
 export interface OnboardingServed {
   contentVersion: number;
   lang: Lang;
-  surface: NonNullable<OnboardingExperimentRules["surfaces"]>[number];
+  surface: OnboardingSurface;
   screens: Partial<Record<TemplateSlot, TemplateRef>>;
 }
 export interface OnboardingServedRecord extends OnboardingServed {
@@ -1847,7 +1851,7 @@ export interface Store {
   putOnboardingAssignment(userId: string, experimentId: string, variantId: number): Promise<OnboardingAssignment>;
   /** Every assignment to one experiment — the results table's read, by assignment (intention to treat). */
   onboardingAssignments(experimentId: string): Promise<OnboardingAssignment[]>;
-  /** Record one serving of `GET /v1/onboarding` (ieat-app#3194): a new row, or `lastServedAt` moved on an identical one. */
+  /** Record one serving of `GET /v1/onboarding` (ieat-app#3194): moves the latest row's `lastServedAt` when it is identical, else a new row. */
   recordOnboardingServed(userId: string, served: OnboardingServed): Promise<void>;
   /** Every serving this account was recorded, oldest first. */
   onboardingServed(userId: string): Promise<OnboardingServedRecord[]>;

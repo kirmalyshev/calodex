@@ -30,7 +30,7 @@ import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
-  type AdminOnboardingAccount, type AdminOnboardingEvent, type OnboardingServedRecord,
+  type AdminOnboardingAccount, type AdminOnboardingEvent, type OnboardingServedRecord, type OnboardingSurface,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto,
@@ -3947,7 +3947,7 @@ export async function postgresStore(
       return rows.map((r: Record<string, unknown>) => ({
         contentVersion: Number(r.content_version),
         lang: r.lang as Lang,
-        surface: r.surface as "app" | "web",
+        surface: r.surface as OnboardingSurface,
         screens: json<OnboardingServedRecord["screens"]>(r.screens, {}),
         servedAt: (r.served_at as Date).toISOString(),
         lastServedAt: (r.last_served_at as Date).toISOString(),
