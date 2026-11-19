@@ -1447,6 +1447,20 @@ export function parseChannel(v: unknown): DistributionChannel | null {
   return (DISTRIBUTION_CHANNELS as readonly unknown[]).includes(v) ? (v as DistributionChannel) : null;
 }
 
+/**
+ * The binary's version, build number and OTA update id (ieat-app#3196), the siblings of
+ * `CHANNEL_HEADER`. CLIENT-REPORTED, so they label analytics rows and gate nothing, ever. Absent on an
+ * older build and on the web; a value `parseClientTag` refuses is dropped, never stored.
+ */
+export const VERSION_HEADER = "x-eait-version";
+export const BUILD_HEADER = "x-eait-build";
+export const UPDATE_HEADER = "x-eait-update";
+
+/** A version, build or update id as a header carries it, or null: at most 64 of `[A-Za-z0-9._+-]`. */
+export function parseClientTag(v: unknown): string | null {
+  return typeof v === "string" && /^[A-Za-z0-9._+-]{1,64}$/.test(v) ? v : null;
+}
+
 /** A bound on a value that is stored per device and re-sent on every launch. Expo's are ~40 chars. */
 export const MAX_PUSH_TOKEN = 200;
 

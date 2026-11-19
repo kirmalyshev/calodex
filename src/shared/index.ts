@@ -88,3 +88,4 @@ export * from "./push.ts";
 export * from "./campaign.ts";
 export * from "./meal-reminders.ts";
 export * from "./plate-verdicts.ts";
+export * from "./analytics.ts";
