@@ -4377,7 +4377,7 @@ details.how p { margin-top: 8px; }
         + '<strong>' + esc(e.lang) + ' · ' + esc(e.status) + '</strong>'
         + '<span class="muted">' + esc(e.id.slice(0, 8)) + '</span></div>'
         + '<p class="muted">' + esc(ruleText(e.rules)) + '</p>';
-      var arms = '<table><thead><tr><th>arm</th><th class="r">weight</th><th class="r">version</th>'
+      var arms = '<div class="scrollx"><table><thead><tr><th>arm</th><th class="r">weight</th><th class="r">version</th>'
         + '<th class="r">assigned</th><th class="r">sessions</th><th class="r">completed</th>'
         + '<th class="r">rate</th><th class="r">95% CI</th><th class="r">fell back</th>'
         + '<th class="r">paid</th><th class="r">paid rate</th><th class="r">app / web runs</th><th></th></tr></thead><tbody>';
@@ -4401,7 +4401,7 @@ details.how p { margin-top: 8px; }
               : '<td></td>')
           + '</tr>';
       });
-      arms += '</tbody></table>';
+      arms += '</tbody></table></div>';
       var measured = view.arms.filter(function (a) { return a.stats.ci !== null; });
       if (measured.length >= 2) {
         var overlap = measured.every(function (a) {
