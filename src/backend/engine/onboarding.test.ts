@@ -853,7 +853,7 @@ describe("experiments (ieat-app#2669)", () => {
       expect(await startOnboardingExperiment(deps, web.id)).toMatchObject({ ok: false });
       const stale = t1();
       stale.rules = { surfaces: ["app"] } as never;
-      (stale.variants[2] as { firstVerdict: string }).firstVerdict = "retired-arm";
+      (stale.variants[2] as unknown as { firstVerdict: string }).firstVerdict = "retired-arm";
       await store.putOnboardingExperiment(stale as never);
       expect(await startOnboardingExperiment(deps, stale.id)).toMatchObject({ ok: false, errors: ["arm 2: not a first verdict this server can serve"] });
       const app = { ...t1(), rules: { surfaces: ["app"] } };
@@ -909,7 +909,7 @@ describe("experiments (ieat-app#2669)", () => {
       e.variants[1]!.content.screens.find((x) => x.id === "goal")!.asks.goal!.lines = ["The arm asks the goal"];
       await startExperiment(e);
       const said = async () => (await store.chatBefore(userId, null, 10)).map((m) => m.text);
-      const line = [{ role: "assistant" as const, ask: { prompt: "goal", line: 0 } }];
+      const line = [{ role: "assistant" as const, ask: { prompt: "goal" as const, line: 0 } }];
       expect(await appendLines(deps, userId, line, { verdictVersion: FIRST_VERDICT_VERSION })).toEqual({ appended: 1 });
       expect(await said()).toContain("The arm asks the goal");
       expect(await appendLines(deps, userId, line)).toEqual({ appended: 1 });
