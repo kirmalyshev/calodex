@@ -2441,6 +2441,26 @@ describe("POST /v1/meals/update/queue", () => {
 describe("refer a friend (#899)", () => {
   const me = async (token: string) => await (await get(ROUTES.profile, token)).json() as ProfileResponse;
 
+  it("the country write answers with no invite link, so no shipped build asks for a friend's link; a read still has it (#3195)", async () => {
+    const token = await session();
+    const written = await (await patch(ROUTES.profile, { country: "de" }, token)).json() as ProfileResponse;
+    expect(written.referral.link).toBe("");
+    expect((await me(token)).referral.link).toMatch(/\/r\/[A-HJ-NP-Z2-9]{6}$/);
+    const other = await (await patch(ROUTES.profile, { height_cm: 171 }, token)).json() as ProfileResponse;
+    expect(other.referral.link).toMatch(/\/r\//);
+  });
+
+  it("a friend's code entered after sign-up still earns the free week (#3195)", async () => {
+    const referrer = await session();
+    const friend = await session();
+    await patch(ROUTES.profile, { country: "de" }, friend);
+    const link = (await me(referrer)).referral.link;
+    expect((await post(ROUTES.referralRedeem, { code: link }, friend)).status).toBe(200);
+    const view = await me(friend);
+    expect(view.referral.applied).toBe(true);
+    expect(view.entitlement.active).toBe(true);
+  });
+
   it("applies a friend's link once, and answers each refusal at its status", async () => {
     const referrer = await session();
     const friend = await session();
