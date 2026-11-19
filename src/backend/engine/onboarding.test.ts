@@ -149,6 +149,20 @@ describe("events", () => {
     expect(n).toBe(0);
   });
 
+  // ieat-app#3136: the plans sheet is a place, and its answer is the enumerated result —
+  // purchased / declined / failed. `paywall` is a reportable field, so the result survives the
+  // privacy filter like any enumerated pick does.
+  it("keeps the paywall's shown-and-answered pair, with its result", async () => {
+    const n = await recordOnboardingEvents(deps, userId, [
+      event({ place: "paywall", action: "view", at: "2026-11-01T10:00:00.000Z" }),
+      event({ place: "paywall", action: "answer", field: "paywall", value: "declined", at: "2026-11-01T10:00:04.000Z" }),
+    ]);
+    expect(n).toBe(2);
+    const rows = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
+    expect(rows[0]!.events!.map((e) => `${e.place}:${e.action}`)).toEqual(["paywall:view", "paywall:answer"]);
+    expect(rows[0]!.events![1]!.value).toBe("declined");
+  });
+
   it("strips a value for a field that is not enumerated", async () => {
     // THE PRIVACY RULE, enforced on the write. A client that sends a body weight as an event value
     // must not be able to put it in the analytics table, whatever the app promises to send.

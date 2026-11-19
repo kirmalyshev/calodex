@@ -2335,7 +2335,7 @@ details.how p { margin-top: 8px; }
     activity: "Described their activity", target: "Set a target weight", possible: "Read \u201cthis is possible\u201d",
     pace: "Picked a pace", struggles: "Named their struggles", streak: "Chose a streak", diet: "Gave their diet",
     medical: "Answered the medical question", ontrack: "Saw the on-track note", how: "Saw how it works",
-    summary: "Saw their plan", signup: "Saw the sign-up screen", country: "Chose a country",
+    summary: "Saw their plan", signup: "Saw the sign-up screen", paywall: "Saw the plans sheet", country: "Chose a country",
     referral: "Gave a referral code", health: "Saw the health connect screen"
   };
 
@@ -2348,10 +2348,10 @@ details.how p { margin-top: 8px; }
     target: "Target weight", possible: "Possible", pace: "Pace", prelim: "Early plan",
     counted: "Counted before", barrier: "Barriers", situation: "Situations", struggles: "Struggles",
     diet: "Diet", medical: "Medical", ontrack: "On track", how: "How it works",
-    summary: "Plan", signup: "Sign up", country: "Country", referral: "Referral",
+    summary: "Plan", signup: "Sign up", paywall: "Paywall", country: "Country", referral: "Referral",
     health: "Health", streak: "Streak"
   };
-  var ACTION_WORDS = { view: "viewed", answer: "answered", back: "went back", reject: "declined", complete: "finished", leave: "left" };
+  var ACTION_WORDS = { view: "viewed", answer: "answered", back: "went back", reject: "declined", complete: "answered the questions", leave: "left" };
 
   // TestFlight, dev and sandbox accounts are left out of the funnel unless this is ticked (ieat-app#2899).
   function funnelQuery() {
@@ -2384,7 +2384,7 @@ details.how p { margin-top: 8px; }
         return;
       }
       var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.people }; });
-      steps.push({ name: "Finished onboarding", id: "complete", n: f.completed, fin: true });
+      steps.push({ name: "Answered the questions", id: "complete", n: f.completed, fin: true });
       // The funnel's last step (#812): of the starters, the runs whose account's own entitlement
       // record's earliest grant lands at or after the run's start — the server's record, never a
       // client event; a record older than that is a payment this run did not cause.
@@ -2584,9 +2584,17 @@ details.how p { margin-top: 8px; }
 
   /** What the run came to — one outcome word, red when the account simply stopped turning up. */
   function outcomeChip(a, flags) {
-    if (a.completed) { flags.appendChild(el("span", "chip g", "finished")); return; }
+    if (a.completed) { flags.appendChild(el("span", "chip g", "answered the questions")); return; }
     flags.appendChild(el("span", "chip b",
       a.lastPlace ? "left at " + (STEP_NAMES[a.lastPlace] || a.lastPlace) : "left early"));
+  }
+
+  /** The LAST SCREEN cell (ieat-app#3136): the paywall's own answer rides beside its place, so a
+   * decline reads "Paywall · declined" rather than "Saw the sign-up screen". */
+  function lastPlaceLabel(a) {
+    if (!a.lastPlace) return null;
+    if (a.lastPlace === "paywall" && a.paywallResult) return "Paywall · " + a.paywallResult;
+    return STEP_NAMES[a.lastPlace] || a.lastPlace;
   }
 
   function funnelRow(a) {
@@ -2607,10 +2615,10 @@ details.how p { margin-top: 8px; }
     var started = a.startedAt ? atLabel(a.startedAt) : "—";
     if (a.sessions > 1) started += " · " + a.sessions + " runs";
     row.appendChild(el("span", "muted s", started));
-    row.appendChild(el("span", "s", a.lastPlace ? (STEP_NAMES[a.lastPlace] || a.lastPlace) : "—"));
+    row.appendChild(el("span", "s", lastPlaceLabel(a) || "—"));
     var flags = el("span", "fa-flags");
     outcomeChip(a, flags);
-    if (a.paywall) flags.appendChild(el("span", "chip n", "paywall"));
+    if (a.paywall) flags.appendChild(el("span", "chip n", "reached the plan unpaid"));
     flags.appendChild(el("span", "chip " + (a.paid ? (a.paid.live ? (a.paid.kind === "trial" ? "w" : "g") : "n") : ""), paidLabel(a.paid)));
     channelChips(flags, a.channel, a.sandbox);
     row.appendChild(flags);
@@ -3565,10 +3573,10 @@ details.how p { margin-top: 8px; }
         if (view.sessions > 1) meta += (meta ? " · " : "") + view.sessions + " runs";
         row.appendChild(el("span", "muted meta", meta || "—"));
         row.appendChild(el("span", "muted s", view.startedAt ? atLabel(view.startedAt) : "—"));
-        row.appendChild(el("span", "s", view.lastPlace ? (STEP_NAMES[view.lastPlace] || view.lastPlace) : "—"));
+        row.appendChild(el("span", "s", lastPlaceLabel(view) || "—"));
         var flags = el("span", "fa-flags");
         outcomeChip(view, flags);
-        if (view.paywall) flags.appendChild(el("span", "chip n", "paywall"));
+        if (view.paywall) flags.appendChild(el("span", "chip n", "reached the plan unpaid"));
         flags.appendChild(el("span", "chip " + (view.paid ? (view.paid.live ? (view.paid.kind === "trial" ? "w" : "g") : "n") : ""), paidLabel(view.paid)));
         row.appendChild(flags);
         sum.appendChild(row);

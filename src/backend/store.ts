@@ -647,6 +647,12 @@ export interface AdminOnboardingAccount {
   /** The earliest view's stamp inside `range` of a screen that presents the paywall (`summary`, `health`), or null. */
   sawPaywallAt: string | null;
   /**
+   * The sheet's own answer (ieat-app#3136): the value of the newest `paywall` event that carries
+   * one — `purchased` / `declined` / `failed` — or null before a build recorded the place. Lets
+   * the row's last screen read "paywall · declined", not just "paywall".
+   */
+  paywallResult: string | null;
+  /**
    * `least(expires_event_at, lifetime_event_at)`: the earliest instant either grant clock
    * holds, carried so the engine can order it against `startedAt` and `sawPaywallAt` — the
    * same comparison `aggregateFunnel` makes for `paid.converted`; a change to the conversion

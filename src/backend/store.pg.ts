@@ -4147,6 +4147,7 @@ export async function postgresStore(
           sessions: num(r.sessions),
           completed: r.completed === true,
           sawPaywallAt: iso(r.paywall_at),
+          paywallResult: (r.paywall_result as string | null) ?? null,
           entitledAt: hasRecord ? iso(r.first_grant) : null,
           entitlement: !hasRecord ? null : {
             expiresAt: iso(r.entitlement_expires_at),
@@ -4177,6 +4178,8 @@ export async function postgresStore(
                  count(distinct e.session_id)::int as sessions,
                  bool_or(e.action = 'complete') as completed,
                  min(e.at) filter (where e.action = 'view' and e.place in ('summary','health')) as paywall_at,
+                 (array_agg(e.value order by e.at desc, e.received_at desc, e.id desc)
+                    filter (where e.place = 'paywall' and e.value is not null))[1] as paywall_result,
                  (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] as last_place
             from users u left join onboarding_events e
               on e.user_id = u.id
@@ -4225,6 +4228,8 @@ export async function postgresStore(
                count(distinct e.session_id)::int as sessions,
                bool_or(e.action = 'complete') as completed,
                min(e.at) filter (where e.action = 'view' and e.place in ('summary','health')) as paywall_at,
+               (array_agg(e.value order by e.at desc, e.received_at desc, e.id desc)
+                  filter (where e.place = 'paywall' and e.value is not null))[1] as paywall_result,
                (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] as last_place
           from onboarding_events e join users u on u.id = e.user_id
          where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})

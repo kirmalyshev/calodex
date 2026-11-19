@@ -3303,6 +3303,44 @@ function contract(name: string, make: () => Promise<Store>) {
         userId: "not-a-uuid", range: { from: null, to: null } })).rows).toEqual([]);
     });
 
+    // ieat-app#3136: the plans sheet is an onboarding place. A decline used to leave the run's
+    // last screen reading "sign-up", because the paywall was never a place the journal could name.
+    it("adminOnboardingFlow reports a paywall decline as last place paywall, in its run", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const t0 = Date.now();
+      const isoAt = (ms: number) => new Date(t0 + ms).toISOString();
+      const sid = `paywall-${RUN}`;
+      // The journal a declining build 131+ user sends: questions done, the plan seen, the sign-up
+      // linked, the sheet shown and closed without a purchase — one run, one session.
+      const ev = (n: number, over: Record<string, unknown>) => ({
+        id: `${sid}-${n}`, sessionId: sid, place: "summary" as const, action: "view" as const,
+        contentVersion: 1, at: isoAt(n * 1000), ...over,
+      });
+      await s.recordOnboardingEvents(u, [
+        ev(1, { action: "complete" }),
+        ev(2, { place: "signup" }),
+        ev(3, { place: "paywall" }),
+        ev(4, { place: "paywall", action: "answer", field: "paywall", value: "declined" }),
+      ] as never);
+
+      const { rows } = await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } });
+      expect(rows.length).toBe(1);
+      expect(rows[0]!.lastPlace).toBe("paywall");
+      expect(rows[0]!.paywallResult).toBe("declined");
+      expect(rows[0]!.sessions).toBe(1);
+      expect(rows[0]!.completed).toBe(true);
+      // The journal line keeps the answer's word, so the row can read "paywall · declined".
+      expect(rows[0]!.events!.at(-1)).toMatchObject({ place: "paywall", action: "answer", value: "declined" });
+
+      // And the LATEST paywall answer is the result — a decline later purchased reads purchased.
+      await s.recordOnboardingEvents(u, [
+        ev(5, { place: "paywall", action: "answer", field: "paywall", value: "purchased" }),
+      ] as never);
+      const after = (await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } })).rows;
+      expect(after[0]!.paywallResult).toBe("purchased");
+    });
+
     it("adminOnboardingFlow's leftAt keeps only accounts whose run's last screen it is (#814)", async () => {
       const s = await open();
       const t0 = Date.now();

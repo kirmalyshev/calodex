@@ -457,6 +457,12 @@ export interface AdminOnboardingUserRow {
    */
   paywall: boolean;
   /**
+   * The sheet's own answer, from the newest `paywall` event carrying a value —
+   * `purchased` / `declined` / `failed`, or null on a run whose build never recorded the
+   * place (ieat-app#3136). Rendered beside `lastPlace`, so a decline reads "paywall · declined".
+   */
+  paywallResult: string | null;
+  /**
    * The account's conversion state off its server-side record, or null — `trial` when the
    * current period is one, else the plan the product id names (the exclusive kind; the
    * aggregate's `paid.trial` is instead an OVERLAY counted beside its plan). `msFromStart` is
@@ -496,6 +502,7 @@ function flowRow(a: AdminOnboardingAccount, now: number): AdminOnboardingUserRow
     sessions: a.sessions, completed: a.completed,
     paywall: a.sawPaywallAt !== null && (a.entitlement === null
       || (a.entitledAt !== null && Date.parse(a.entitledAt) > Date.parse(a.sawPaywallAt))),
+    paywallResult: a.paywallResult,
     paid,
     channel: a.channel,
     sandbox: a.entitlement?.sandbox === true,

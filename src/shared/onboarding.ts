@@ -118,7 +118,9 @@ export type OnboardingScreenId = (typeof ONBOARDING_SCREENS)[number];
  * `onboarding-chat-copy.ts`, never admin copy, because one of them carries a health number.
  * `signup` is the
  * account step between the plan and `country` — it belongs to the sign-in surface, and this list
- * only holds its place in the order. `referral` is the optional friend's-link step after the
+ * only holds its place in the order. `paywall` is the plans sheet between them (ieat-app#3136):
+ * recorded by the app when the sheet stands in the run's path, with its result as the answer —
+ * without it the funnel's last screen after a decline reads "sign-up". `referral` is the optional friend's-link step after the
  * country (#899) — it stores nothing on the profile; a code is applied by its own route, and the
  * READER of this place is the admin's funnel table, which prices the step's drop-off on the app and
  * on the web alike. `health` is the post-sign-up Apple Health offer; on a surface
@@ -129,7 +131,7 @@ export type OnboardingScreenId = (typeof ONBOARDING_SCREENS)[number];
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
 export const ONBOARDING_INTERSTITIALS = [
-  "welcome", "baseline", "prelim", "summary", "signup", "referral", "health",
+  "welcome", "baseline", "prelim", "summary", "signup", "paywall", "referral", "health",
 ] as const;
 export type OnboardingInterstitial = (typeof ONBOARDING_INTERSTITIALS)[number];
 
@@ -144,7 +146,7 @@ export type OnboardingInterstitial = (typeof ONBOARDING_INTERSTITIALS)[number];
  */
 export const ONBOARDING_PLACES = [
   "welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
-  "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup", "country", "referral", "health", "streak",
+  "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup", "paywall", "country", "referral", "health", "streak",
 ] as const;
 export type OnboardingPlace = OnboardingScreenId | OnboardingInterstitial;
 
@@ -152,13 +154,13 @@ export type OnboardingPlace = OnboardingScreenId | OnboardingInterstitial;
  * The progress dash's segments — the places between the welcome and the plan, in the DEFAULT walk
  * order (`onboarding/*` boards, fourteen `<i>` each). An arm's dash is `dashPlaces(order)`.
  *
- * The welcome is before the count; `signup`, `country`, `referral`, `health` and `streak` sit
- * past it (the phone asks the streak goal after the first verdict, the web after the plan). So
- * the bar is `ONBOARDING_PLACES` minus those six, and
+ * The welcome is before the count; `signup`, `paywall`, `country`, `referral`, `health` and
+ * `streak` sit past it (the phone asks the streak goal after the first verdict, the web after
+ * the plan). So the bar is `ONBOARDING_PLACES` minus those seven, and
  * `summary` — the plan — is the last segment lit.
  */
 export const DASH_PLACES: readonly OnboardingPlace[] = ONBOARDING_PLACES.filter(
-  (p) => !["welcome", "signup", "country", "referral", "health", "streak"].includes(p),
+  (p) => !["welcome", "signup", "paywall", "country", "referral", "health", "streak"].includes(p),
 );
 
 /** The dash position of a place, or -1 for a place that is not a segment (the welcome et al.). */
@@ -2204,10 +2206,11 @@ export interface OnboardingEvent {
 
 /** Fields whose answer may be sent as `value`. Everything else is recorded as answered, no more.
  * The enumerated picks are reportable — a tag list is already what `restrictions` sent — while a
- * typed number or free text never is. */
-export const REPORTABLE_FIELDS: readonly OnboardingStep[] = [
+ * typed number or free text never is. `paywall` is not a question: its "answer" is the sheet's
+ * three-word result (purchased / declined / failed), enumerable like the picks (ieat-app#3136). */
+export const REPORTABLE_FIELDS: readonly (OnboardingStep | "paywall")[] = [
   "goal", "sex", "activity", "pace", "counted_before", "barriers", "situations",
-  "streak_goal_days", "diet", "medical", "country",
+  "streak_goal_days", "diet", "medical", "country", "paywall",
 ];
 
 export function isReportableField(field: string): boolean {
