@@ -141,8 +141,8 @@ const editorLang = (url: URL): Lang => {
  * admin as an empty box to fill rather than as a save that is refused for a reason nobody can see.
  *
  * `options` LEAVES OUT THE ONES CLDR NAMES, which today is every country but `other`. An editor
- * that drew those boxes would be asking an admin to type fifteen country names in each of eight
- * languages, for a label the renderer takes from the platform anyway — and the validator does not
+ * that drew those boxes would be asking an admin to type sixteen country names in each of
+ * forty-two languages, for a label the renderer takes from the platform anyway — and the validator does not
  * require them, so the boxes would be optional, ignored and wrong within a release.
  */
 function editorMeta() {

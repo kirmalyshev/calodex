@@ -593,9 +593,10 @@ export interface OnboardingContent {
  * home most of that language's users are standing in. It was `de | gb | us | other` while the
  * product shipped in eight, which meant a Vietnamese or Indonesian speaker met a question no
  * region of theirs could answer and an option list whose only true entry was "Somewhere else" —
- * under a sentence that says "so I know your supermarket, not somebody else's". Later waves made
- * `LANGS` four times wider than its markets, and a cohort's country joins as the funnel names it
- * (pt-BR's Brazil, Croatian's Croatia). `onboarding.test.ts` holds the expectation per language —
+ * under a sentence that says "so I know your supermarket, not somebody else's". Later waves took
+ * `LANGS` from eight to forty-two while the list stayed a wave behind, and a cohort's country
+ * joins as the funnel names it (pt-BR's Brazil, Croatian's Croatia). `onboarding.test.ts` holds
+ * the expectation per language —
  * the home where the list covers it, `other` where it does not yet — and fails by name; the list
  * may grow past it and must never shrink below it.
  *

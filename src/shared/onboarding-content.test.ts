@@ -46,7 +46,7 @@ describe("every language's onboarding content", () => {
   it("labels every option in every language — a blank chip is a tappable hole", () => {
     // THROUGH THE SAME FALLBACK THE RENDERER USES, not against the stored content, because the
     // content is no longer the only source: a country's name is CLDR's (`optionLabel`), and
-    // asserting the content carries one would demand fifteen countries in eight languages be
+    // asserting the content carries one would demand sixteen countries in forty-two languages be
     // typed by hand. What must hold is that the chip has words on it, wherever they came from.
     for (const lang of LANGS) {
       for (const screen of onboardingContentFor(lang).screens) {
