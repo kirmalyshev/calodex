@@ -1046,7 +1046,7 @@ details.how p { margin-top: 8px; }
       <div class="ph"><b>Recent flips</b><span class="grow"></span><span class="status" id="switch-status"></span></div>
       <div class="pb flips" id="switch-recent"></div>
     </div>
-    <p class="muted">A flip applies to the next analysis. Nothing already logged changes.</p>
+    <p class="muted">A flip applies to the next read — an analysis, a profile fetch. Nothing already logged changes.</p>
   </div></div>
 </section>
 
@@ -3308,8 +3308,11 @@ details.how p { margin-top: 8px; }
 
   // ── Food database switches (#563) ──────────────────────────────────────────────────────────
 
-  var SWITCH_LABELS = { "grounding.photo": "Photo", "grounding.text": "Text", "prompt.photo-lean": "Lean photo prompt" };
-  var SWITCH_WHAT = { "grounding.photo": "ground photo analyses in the food catalog", "grounding.text": "ground typed meals in the food catalog", "prompt.photo-lean": "answer photos with the lean prompt and schema (default off)" };
+  var SWITCH_LABELS = { "grounding.photo": "Photo", "grounding.text": "Text", "prompt.photo-lean": "Lean photo prompt",
+    "paywall.exit-offer.ios": "Exit offer (iOS)", "paywall.exit-offer.web": "Exit offer (web)" };
+  var SWITCH_WHAT = { "grounding.photo": "ground photo analyses in the food catalog", "grounding.text": "ground typed meals in the food catalog", "prompt.photo-lean": "answer photos with the lean prompt and schema (default off)",
+    "paywall.exit-offer.ios": "show the cheaper yearly after a paywall decline on the phone (default off)",
+    "paywall.exit-offer.web": "show the cheaper yearly after a paywall decline in the browser (default off)" };
 
   // The actor behind a flip: the address when the account holds one, the id when it does not —
   // and a link either way, opened the way an Accounts row click opens the account.

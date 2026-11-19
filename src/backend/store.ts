@@ -471,7 +471,11 @@ export interface PortionCorrection {
  * per key — `SWITCH_DEFAULT` in `engine/switches.ts` — because `prompt.photo-lean` ships off
  * where the grounding switches shipped on.
  */
-export const SWITCH_KEYS = ["grounding.photo", "grounding.text", "prompt.photo-lean", "onboarding.experiments"] as const;
+export const SWITCH_KEYS = [
+  "grounding.photo", "grounding.text", "prompt.photo-lean", "onboarding.experiments",
+  // The exit offer, one per platform it can surface on (ieat-app#3155).
+  "paywall.exit-offer.ios", "paywall.exit-offer.web",
+] as const;
 export type SwitchKey = (typeof SWITCH_KEYS)[number];
 
 /** One flip of one switch: the append-only row, `set_at` an ISO string on both stores. */
