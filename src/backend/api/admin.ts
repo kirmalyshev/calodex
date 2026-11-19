@@ -436,8 +436,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   if (tplMatch !== null && req.method === "PUT" && tplMatch[2] === undefined) {
     const body = await req.json().catch(() => null);
     if (body === null || typeof body !== "object") return json({ errors: ["body must be JSON"] }, 422);
-    const result = await saveScreenTemplate(deps, adminId, tplMatch[1]!, body as never);
-    return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, result.errors[0]?.startsWith("another save") ? 409 : 422);
+    const result = await saveScreenTemplate(deps, adminId, tplMatch[1]!, body);
+    return result.ok ? json({ version: result.version }) : json({ errors: result.errors }, result.conflict ? 409 : 422);
   }
   if (req.method === "POST" && pathname === "/admin/api/template-assets") {
     const result = await uploadTemplateAsset(deps, new Uint8Array(await req.arrayBuffer()));
@@ -460,7 +460,7 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
       // A third editor, a third body (ieat-app#3167): `{screens}` alone, `{}` clearing them.
       if ("screens" in body) {
         if (body.content !== undefined || "order" in body) return json({ errors: ["send the screens alone"] }, 422);
-        const result = await saveOnboardingVariantScreens(deps, id, index, body.screens as never);
+        const result = await saveOnboardingVariantScreens(deps, id, index, body.screens);
         return result.ok ? json({ ok: true }) : json({ errors: result.errors }, 422);
       }
       // Two editors, two bodies, never both (ieat-app#2788): `{order}` is the order editor's save

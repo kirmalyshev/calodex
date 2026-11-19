@@ -83,7 +83,7 @@ describe("validateArmScreens (#3167)", () => {
   it("refuses an unknown slot and an out-of-range hour", () => {
     const errs = validateArmScreens({ "after:goal": [{ template: "t", version: 1 }], welcome: [{ template: "t", version: 1, when: { hours: [18, 24] } }] } as never);
     expect(errs).toContain("screens.after:goal is not a slot");
-    expect(errs).toContain("screens.welcome[0].when.hours must be two hours 0–23");
+    expect(errs).toContain("screens.welcome[0].when.hours must be two different hours 0–23 (omit `when` for any hour)");
   });
 });
 
@@ -99,6 +99,7 @@ describe("hourInWindow — the USER's local hour (#3167 Q1)", () => {
 describe("resolveScreen (#3167)", () => {
   it("sends only the served language's strings", () => {
     const s = resolveScreen({ key: "t", version: 3, ...good() }, "de", (sha) => `/v1/onboarding/assets/${sha}`);
+    if (!s) throw new Error("expected a screen");
     expect(s.template).toBe("t");
     expect(s.version).toBe(3);
     expect(s.strings.go).toBe("Continue");
@@ -115,8 +116,56 @@ describe("pickArmScreen (#3167)", () => {
     expect(pickArmScreen([evening, always], 19)?.template).toBe("eve");
     expect(pickArmScreen([evening, always], 9)?.template).toBe("all");
   });
+  it("falls through to the unwindowed entry when the hour is unknown", () => {
+    expect(pickArmScreen([evening, always], null)?.template).toBe("all");
+  });
   it("serves nothing when no window holds and no entry is unwindowed, or the hour is unknown", () => {
     expect(pickArmScreen([evening], 9)).toBeNull();
     expect(pickArmScreen([evening], null)).toBeNull();
+  });
+});
+
+describe("validateScreenTemplate — review round 1 (#3167)", () => {
+  const assets = new Set(["a".repeat(64)]);
+  it("refuses a field a block does not have: a template is data, not a layout", () => {
+    const t = good();
+    (t.blocks[0] as Record<string, unknown>).color = "#f00";
+    expect(validateScreenTemplate(t, assets)).toContain("blocks[0] has unknown fields: color");
+  });
+  it("refuses a skip action: no template may jump past a compiled question", () => {
+    const t = good();
+    (t.blocks as unknown[])[3] = { type: "cta", label: "go", action: "skip-to:paywall" };
+    expect(validateScreenTemplate(t, assets)).toContain("blocks[3].action 'skip-to:paywall' is not an action");
+  });
+  it("refuses a format character that would hide a claim from the gate", () => {
+    const t = good();
+    t.strings.en!.h = "Guaran\u200Bteed";
+    expect(validateScreenTemplate(t, assets)).toContain("strings.en.h has a format character");
+  });
+  it("refuses Russian that genders the reader", () => {
+    const t = good();
+    t.strings.ru!.h = "Что ты ел?";
+    expect(validateScreenTemplate(t, assets).some((e) => e.startsWith("strings.ru") && e.includes("gendered"))).toBe(true);
+  });
+});
+
+describe("validateArmScreens — review round 1 (#3167)", () => {
+  it("refuses an empty window, an unknown field, and an unwindowed entry before another", () => {
+    const errs = validateArmScreens({
+      welcome: [{ template: "t", version: 1, when: { hours: [9, 9] } }],
+      "after:signup": [{ template: "all", version: 1 }, { template: "eve", version: 1, when: { hours: [18, 23] } }],
+      prelim: [{ template: "t", version: 1, href: "x" }],
+    } as never);
+    expect(errs).toContain("screens.welcome[0].when.hours must be two different hours 0–23 (omit `when` for any hour)");
+    expect(errs).toContain("screens.after:signup[0] has no window, so the entries after it are never served — put it last");
+    expect(errs).toContain("screens.prelim[0] has unknown fields: href");
+  });
+});
+
+describe("resolveScreen — a language added later (#3167)", () => {
+  it("is null when the served language lacks a key, so the slot is skipped, never blank", () => {
+    const t = { key: "t", version: 1, ...good() };
+    delete t.strings.fr!.go;
+    expect(resolveScreen(t, "fr", (x) => x)).toBeNull();
   });
 });

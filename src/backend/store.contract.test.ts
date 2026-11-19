@@ -3671,6 +3671,14 @@ function contract(name: string, make: () => Promise<Store>) {
         const latest = (await s.listScreenTemplates()).filter((t) => t.key === key);
         expect(latest.map((t) => t.version)).toEqual([2]);
       });
+      it("never hands one version to two concurrent puts", async () => {
+        const s = await open();
+        const key = `race-${RUN}`;
+        const got = await Promise.all([1, 2, 3, 4].map((n) => s.putScreenTemplate(key, draft(`n${n}`), "admin-1")));
+        const versions = got.filter((t) => t !== null).map((t) => t!.version);
+        expect(new Set(versions).size).toBe(versions.length);
+        for (const t of got) if (t) expect((await s.screenTemplate(key, t.version))?.note).toBe(t.note);
+      });
       it("stores an asset once, by its sha256, and says which are known", async () => {
         const s = await open();
         const sha = (RUN + "0".repeat(64)).slice(0, 64).replace(/[^0-9a-f]/g, "a");

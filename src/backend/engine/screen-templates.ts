@@ -12,24 +12,25 @@ import { imageMime } from "../llm/port.ts";
 import type { OnboardingVariant } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
 
-type Result<T = object> = ({ ok: true } & T) | { ok: false; errors: string[] };
+type Result<T = object> = ({ ok: true } & T) | { ok: false; errors: string[]; conflict?: true };
 
 /** The public URL an asset is fetched from. */
 export const templateAssetUrl = (sha256: string) => ROUTES.onboardingAsset(sha256);
 
 /** Append the next revision of `key`, after every check `validateScreenTemplate` makes. */
 export async function saveScreenTemplate(
-  deps: EngineDeps, adminId: string, key: string, draft: ScreenTemplateDraft,
+  deps: EngineDeps, adminId: string, key: string, raw: unknown,
 ): Promise<Result<{ version: number }>> {
+  const draft = raw as ScreenTemplateDraft;
   if (!TEMPLATE_KEY.test(key)) return { ok: false, errors: ["key must be lowercase letters, digits and hyphens"] };
   const shas = Array.isArray(draft?.blocks)
     ? draft.blocks.flatMap((b) => (b?.type === "image" && typeof b.asset === "string" ? [b.asset] : []))
     : [];
-  const errors = validateScreenTemplate(draft, await deps.store.knownTemplateAssets(shas));
+  const errors = validateScreenTemplate(raw, await deps.store.knownTemplateAssets(shas));
   if (errors.length > 0) return { ok: false, errors };
   const { renderer, blocks, strings, note } = draft;
   const saved = await deps.store.putScreenTemplate(key, { renderer, blocks, strings, ...(note ? { note } : {}) }, adminId);
-  return saved ? { ok: true, version: saved.version } : { ok: false, errors: ["another save took this version — save again"] };
+  return saved ? { ok: true, version: saved.version } : { ok: false, conflict: true, errors: ["another save took this version — save again"] };
 }
 
 /** Store an uploaded image, sniffed by its bytes and capped like a meal photo. */
@@ -72,15 +73,16 @@ async function missingTemplates(deps: EngineDeps, screens: ArmScreens): Promise<
 
 /** Set (or, with `{}`, clear) one draft arm's screens. Never on control: control is the compiled flow. */
 export async function saveOnboardingVariantScreens(
-  deps: EngineDeps, id: string, index: number, screens: ArmScreens,
+  deps: EngineDeps, id: string, index: number, raw: unknown,
 ): Promise<Result> {
   const experiment = (await deps.store.listOnboardingExperiments()).find((e) => e.id === id);
   if (!experiment) return { ok: false, errors: ["experiment not found"] };
   if (!Number.isInteger(index) || index < 0 || index >= experiment.variants.length) return { ok: false, errors: ["no such variant"] };
   if (experiment.variants[index]!.control) return { ok: false, errors: ["the control arm walks the compiled flow — it takes no screens"] };
   if (experiment.status !== "draft") return { ok: false, errors: ["only a draft's arms take screens — a running arm is frozen"] };
-  const errors = validateArmScreens(screens);
+  const errors = validateArmScreens(raw);
   if (errors.length > 0) return { ok: false, errors };
+  const screens = raw as ArmScreens;
   const missing = await missingTemplates(deps, screens);
   if (missing.length > 0) return { ok: false, errors: missing };
   const empty = Object.keys(screens).length === 0;
@@ -93,7 +95,7 @@ export async function saveOnboardingVariantScreens(
   return wrote ? { ok: true } : { ok: false, errors: ["the experiment changed under you — reload the page"] };
 }
 
-/** The errors that keep an experiment's screens from starting: a template deleted or never saved. */
+/** The errors that keep an experiment's screens from starting: a slot or a revision that is not valid now. */
 export async function screensStartErrors(deps: EngineDeps, variants: readonly OnboardingVariant[]): Promise<string[]> {
   const errors: string[] = [];
   for (const [i, v] of variants.entries()) {
@@ -110,7 +112,7 @@ export async function rendererNeeded(deps: EngineDeps, variants: readonly Onboar
     for (const entries of Object.values(v.screens ?? {})) {
       for (const e of entries ?? []) {
         const t = await deps.store.screenTemplate(e.template, e.version);
-        // A template that vanished cannot be drawn by anyone: nobody enrols.
+        // A revision never saved (an arm written around `saveOnboardingVariantScreens`) cannot be drawn: nobody enrols.
         need = Math.max(need, t ? t.renderer : Number.POSITIVE_INFINITY);
       }
     }
@@ -123,19 +125,23 @@ export async function rendererNeeded(deps: EngineDeps, variants: readonly Onboar
  * none of whose entries holds now is absent, so the client walks the compiled beat there. Never throws.
  */
 export async function servedScreens(
-  deps: EngineDeps, variant: OnboardingVariant, lang: Lang, tz: string | null | undefined, at: Date,
+  deps: EngineDeps, variant: OnboardingVariant, lang: Lang, tz: string | null | undefined, renderer: number, at: Date,
 ): Promise<ServedScreens | undefined> {
   if (!variant.screens) return undefined;
   try {
+    // Only to a client that can draw them; the words and the order still serve without.
+    if ((await rendererNeeded(deps, [variant])) > renderer) return undefined;
     const hour = typeof tz === "string" && isTimezone(tz) ? Number(localTime(tz, at).slice(0, 2)) : null;
     const slots: ServedScreens["slots"] = {};
     for (const [slot, entries] of Object.entries(variant.screens) as [TemplateSlot, NonNullable<ArmScreens[TemplateSlot]>][]) {
       const pick = pickArmScreen(entries, hour);
       if (!pick) continue;
       const t = await deps.store.screenTemplate(pick.template, pick.version);
-      if (t) slots[slot] = resolveScreen(t, lang, templateAssetUrl);
+      const served = t ? resolveScreen(t, lang, templateAssetUrl) : null;
+      if (served) slots[slot] = served;
+      else console.error(`[eait] screen ${pick.template}@${pick.version} not served for ${lang}: ${t ? "a string is missing" : "no such revision"}`);
     }
-    return { slots };
+    return Object.keys(slots).length > 0 ? { slots } : undefined;
   } catch (err) {
     console.error("[eait] screen template read failed", err);
     return undefined;

@@ -241,10 +241,8 @@ async function servedRaw(
   if (!assigned) return { content: control };
   const { order } = assigned.variant;
   if (order && !readsOrder(signals)) return { content: control };
-  // Screens only to a client that can draw them (ieat-app#3167); the words and order still serve.
-  const screens = (await rendererNeeded(deps, [assigned.variant])) <= (signals.renderer ?? 0)
-    ? await servedScreens(deps, assigned.variant, signals.lang, signals.tz, at)
-    : undefined;
+  // Screens only to a client that can draw them (ieat-app#3167); never throws.
+  const screens = await servedScreens(deps, assigned.variant, signals.lang, signals.tz, signals.renderer ?? 0, at);
   return { content: usableContent(assigned.variant.content, control), ...(order ? { order } : {}), ...(screens ? { screens } : {}) };
 }
 

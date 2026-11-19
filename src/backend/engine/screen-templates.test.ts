@@ -121,3 +121,75 @@ describe("arm screens (#3167)", () => {
     expect(await store.onboardingAssignment(userId, e.id)).toBeNull();
   });
 });
+
+describe("review round 1 (#3167)", () => {
+  const running = async (screens: unknown, weights = [0, 1]) => {
+    await saveScreenTemplate(deps, admin, "day", draft());
+    const e = experiment(null);
+    e.variants[0]!.weight = weights[0]!;
+    e.variants[1]!.weight = weights[1]!;
+    await store.putOnboardingExperiment(e as never);
+    expect(await saveOnboardingVariantScreens(deps, e.id, 1, screens)).toEqual({ ok: true });
+    await store.setSwitch("onboarding.experiments", true, admin);
+    expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: true });
+    return e;
+  };
+
+  it("serves the arm's words with no screens when a template read throws — never stops onboarding", async () => {
+    await running({ welcome: [{ template: "day", version: 1 }] });
+    await onboardingServedFor(deps, userId, at("Europe/Berlin"));
+    store.screenTemplate = async () => { throw new Error("db down"); };
+    const r = await onboardingServedFor(deps, userId, at("Europe/Berlin"));
+    expect(r.content.version).toBe(42);
+    expect(r.screens).toBeUndefined();
+  });
+
+  it("serves no screens to an enrolled user's later client that cannot draw them", async () => {
+    const e = await running({ welcome: [{ template: "day", version: 1 }] });
+    expect((await onboardingServedFor(deps, userId, at("Europe/Berlin"))).screens).toBeDefined();
+    const old = await onboardingServedFor(deps, userId, { ...at("Europe/Berlin"), renderer: 0 });
+    expect(old.screens).toBeUndefined();
+    expect(old.content.version).toBe(42);
+    expect((await store.onboardingAssignment(userId, e.id))?.variant_id).toBe(42);
+  });
+
+  it("keeps an old client out even when it would have rolled control", async () => {
+    const e = await running({ welcome: [{ template: "day", version: 1 }] }, [1, 0]);
+    await onboardingServedFor(deps, userId, { ...at("Europe/Berlin"), renderer: 0 });
+    expect(await store.onboardingAssignment(userId, e.id)).toBeNull();
+  });
+
+  it("serves the unwindowed entry when the device zone is unknown", async () => {
+    await saveScreenTemplate(deps, admin, "eve", draft());
+    await running({ welcome: [{ template: "eve", version: 1, when: { hours: [18, 23] } }, { template: "day", version: 1 }] });
+    const r = await onboardingServedFor(deps, userId, at("Not/AZone"));
+    expect(r.screens?.slots.welcome?.template).toBe("day");
+  });
+
+  it("omits screens entirely when no slot's window holds now", async () => {
+    await saveScreenTemplate(deps, admin, "eve", draft());
+    await running({ welcome: [{ template: "eve", version: 1, when: { hours: [18, 23] } }] });
+    const r = await onboardingServedFor(deps, userId, at("Europe/Berlin"), new Date("2026-11-19T08:00:00Z"));
+    expect(r.screens).toBeUndefined();
+  });
+
+  it("freezes a running arm's screens, and keeps them through a content save of the draft", async () => {
+    const e = await running({ welcome: [{ template: "day", version: 1 }] });
+    expect((await saveOnboardingVariantScreens(deps, e.id, 1, {})).ok).toBe(false);
+    const stored = (await store.listOnboardingExperiments()).find((x) => x.id === e.id)!;
+    expect(stored.variants[1]!.screens).toEqual({ welcome: [{ template: "day", version: 1 }] });
+  });
+
+  it("refuses to start an arm whose stored screens name a revision that was never saved", async () => {
+    const e = experiment({ welcome: [{ template: "nope", version: 1 }] });
+    await store.putOnboardingExperiment(e as never);
+    await store.setSwitch("onboarding.experiments", true, admin);
+    expect(await startOnboardingExperiment(deps, e.id)).toEqual({ ok: false, errors: ["arm 1: screens.welcome[0]: nope@1 does not exist"] });
+    expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)?.status).toBe("draft");
+  });
+
+  it("answers a lost version race as a conflict", async () => {
+    store.putScreenTemplate = async () => null;
+    expect(await saveScreenTemplate(deps, admin, "t", draft())).toEqual({ ok: false, conflict: true, errors: ["another save took this version — save again"] });
+  });
+});

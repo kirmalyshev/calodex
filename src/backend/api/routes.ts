@@ -384,7 +384,7 @@ export function createRouter(
       const asset = assetMatch ? await templateAsset(deps, assetMatch[1]!) : null;
       if (!asset) return json({ error: "not-found" }, 404);
       return new Response(asset.bytes, {
-        headers: { "content-type": asset.mime, "cache-control": "public, max-age=31536000, immutable" },
+        headers: { "content-type": asset.mime, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" },
       });
     }
 

@@ -1845,6 +1845,7 @@ describe("screen templates over the admin API (ieat-app#3167)", () => {
     expect(asset.status).toBe(200);
     expect(asset.headers.get("content-type")).toBe("image/jpeg");
     expect(asset.headers.get("cache-control")).toContain("immutable");
+    expect(asset.headers.get("x-content-type-options")).toBe("nosniff");
     expect(new Uint8Array(await asset.arrayBuffer())).toEqual(JPEG);
     expect((await handle(new Request(url(ROUTES.onboardingAsset("0".repeat(64)))))).status).toBe(404);
   });
@@ -1887,5 +1888,34 @@ describe("screen templates over the admin API (ieat-app#3167)", () => {
     const res = await (await get("&renderer=1")).json() as { screens?: { slots: Record<string, { strings: Record<string, string> }> } };
     // The first fetch without a renderer enrolled nobody, so this one can.
     expect(res.screens?.slots["after:summary"]?.strings.h).toBe("One more thing");
+  });
+});
+
+describe("arm screens body rules (#3167, review round 1)", () => {
+  it("takes the screens alone, clears them with {}, and answers a lost race 409", async () => {
+    await mountWithAdmin();
+    await admin("PUT", "/admin/api/templates/beat", {
+      renderer: 1, blocks: [{ type: "headline", text: "h" }, { type: "cta", label: "go", action: "next" }],
+      strings: Object.fromEntries(LANGS.map((l) => [l, { h: "One more thing", go: "Continue" }])),
+    });
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" })).json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
+    const screens = { welcome: [{ template: "beat", version: 1 }] };
+    expect((await admin("PUT", arm, { screens, content: {} })).status).toBe(422);
+    expect((await admin("PUT", arm, { screens, order: null })).status).toBe(422);
+    const armOf = async () => (await store.listOnboardingExperiments()).find((e) => e.id === experiment.id)!.variants[1]!;
+    expect((await armOf()).screens).toBeUndefined();
+    expect((await admin("PUT", arm, { screens })).status).toBe(200);
+    expect((await armOf()).screens).toEqual(screens);
+    expect((await admin("PUT", arm, { screens: {} })).status).toBe(200);
+    expect((await armOf()).screens).toBeUndefined();
+
+    store.putScreenTemplate = async () => null;
+    const raced = await admin("PUT", "/admin/api/templates/beat", {
+      renderer: 1, blocks: [{ type: "headline", text: "h" }, { type: "cta", label: "go", action: "next" }],
+      strings: Object.fromEntries(LANGS.map((l) => [l, { h: "One more thing", go: "Continue" }])),
+    });
+    expect(raced.status).toBe(409);
   });
 });

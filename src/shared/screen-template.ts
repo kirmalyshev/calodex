@@ -8,8 +8,9 @@
 // Validated on the WRITE (`validateScreenTemplate`), because a stored template meets no reviewer.
 
 import { lintCopy } from "./claims.ts";
+import { genderedRussian } from "./lang.ts";
 import type { MascotMood } from "./mascot.ts";
-import { ONBOARDING_CLAIM_RULES, WELCOME_IMAGE_KEYS, type OnboardingPlace, type WelcomeImageKey } from "./onboarding.ts";
+import { ONBOARDING_CLAIM_RULES, WELCOME_IMAGE_KEYS, type WelcomeImageKey } from "./onboarding.ts";
 import { LANGS, type Lang } from "./types.ts";
 
 /**
@@ -23,7 +24,7 @@ export const TEMPLATE_SLOTS = ["welcome", "baseline", "prelim", "after:summary",
 export type TemplateSlot = (typeof TEMPLATE_SLOTS)[number];
 
 export const CTA_ACTIONS = ["next", "back", "open-paywall", "open-camera"] as const;
-export type CtaAction = (typeof CTA_ACTIONS)[number] | `skip-to:${OnboardingPlace}`;
+export type CtaAction = (typeof CTA_ACTIONS)[number];
 const FORWARD: readonly string[] = ["next", "open-paywall", "open-camera"];
 
 export const BULLET_ICONS = ["check", "camera", "chart", "heart", "clock", "spark"] as const;
@@ -94,8 +95,9 @@ const DIGIT = /\p{Nd}/u;
 // Format characters and lone surrogates, as `validateStoredPrompt` refuses them.
 const BAD_CHAR = /\p{Cf}|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u;
 
+// `[h, h]` is refused: an empty window is an entry that saves, starts and is never served.
 const isHourPair = (h: unknown): h is [number, number] =>
-  Array.isArray(h) && h.length === 2 && h.every((n) => Number.isInteger(n) && n >= 0 && n <= 23);
+  Array.isArray(h) && h.length === 2 && h.every((n) => Number.isInteger(n) && n >= 0 && n <= 23) && h[0] !== h[1];
 
 /** `[from, to)`, wrapping past midnight: `[22, 6)` is ten at night to six in the morning. */
 export const hourInWindow = (hour: number, [from, to]: [number, number]): boolean =>
@@ -115,10 +117,25 @@ function keysOf(b: Block): StringKey[] {
 
 const isStr = (v: unknown): v is string => typeof v === "string" && v !== "";
 
+/** The fields each block type may carry. Anything else is refused, never stored: a template is data
+ *  the client reads by these names, and a `url` or `color` riding along is the free form it is not. */
+const BLOCK_FIELDS: Record<Block["type"], readonly string[]> = {
+  headline: ["text"], body: ["text"], spud: ["lines", "mood"], bullets: ["items"], image: ["asset", "alt"],
+  "demo-verdict": ["plate"], "plan-recap": [], price: ["product"], cta: ["label", "action"], spacer: ["size"],
+};
+
 /** One message per problem; empty means valid. Every block field is checked, because the input is JSON. */
 function blockErrors(raw: unknown, at: string, assets: ReadonlySet<string>): string[] {
   const b = raw as Record<string, unknown>;
   if (typeof b !== "object" || b === null) return [`${at} must be an object`];
+  const allowed = BLOCK_FIELDS[b.type as Block["type"]];
+  if (allowed) {
+    const extra = Object.keys(b).filter((k) => k !== "type" && !allowed.includes(k));
+    if (extra.length > 0) return [`${at} has unknown fields: ${extra.join(", ")}`];
+  }
+  if (b.type === "bullets" && Array.isArray(b.items) && b.items.some((i) => typeof i === "object" && i !== null && Object.keys(i).some((k) => k !== "icon" && k !== "text"))) {
+    return [`${at}.items has unknown fields`];
+  }
   const need = (f: string) => (isStr(b[f]) ? [] : [`${at}.${f} must be a string key`]);
   switch (b.type) {
     case "headline": case "body": return need("text");
@@ -144,7 +161,7 @@ function blockErrors(raw: unknown, at: string, assets: ReadonlySet<string>): str
     case "price": return b.product === "yearly" || b.product === "monthly" ? [] : [`${at}.product must be yearly or monthly`];
     case "cta": {
       const a = String(b.action);
-      const known = (CTA_ACTIONS as readonly string[]).includes(a) || a.startsWith("skip-to:");
+      const known = (CTA_ACTIONS as readonly string[]).includes(a);
       return [...need("label"), ...(known ? [] : [`${at}.action '${a}' is not an action`])];
     }
     case "spacer": return ["s", "m", "l"].includes(b.size as string) ? [] : [`${at}.size must be s, m or l`];
@@ -152,8 +169,9 @@ function blockErrors(raw: unknown, at: string, assets: ReadonlySet<string>): str
   }
 }
 
-/** Every reason a template may not be saved. `assets` is the set of uploaded sha256s. */
-export function validateScreenTemplate(t: ScreenTemplateDraft, assets: ReadonlySet<string>): string[] {
+/** Every reason a template may not be saved. `assets` is the set of uploaded sha256s. Takes raw JSON. */
+export function validateScreenTemplate(raw: unknown, assets: ReadonlySet<string>): string[] {
+  const t = raw as ScreenTemplateDraft;
   const errs: string[] = [];
   if (!Number.isInteger(t?.renderer) || t.renderer < 1) errs.push("renderer must be a positive integer");
   else if (t.renderer > TEMPLATE_RENDERER_VERSION) errs.push(`renderer ${t.renderer} is newer than ${TEMPLATE_RENDERER_VERSION}`);
@@ -186,12 +204,15 @@ export function validateScreenTemplate(t: ScreenTemplateDraft, assets: ReadonlyS
       errs.push(`${v.field} claims '${v.span}' (${v.pattern})`);
     }
   }
+  // Russian past tense has no neutral form; stored copy meets the same check compiled copy does.
+  for (const g of genderedRussian(strings.ru ?? {})) errs.push(`strings.ru${g.at} is gendered: "${g.text}"`);
   if (t.note !== undefined && typeof t.note !== "string") errs.push("note must be a string");
   return errs;
 }
 
-/** Every reason an arm's `screens` may not be saved. Whether each template exists is the engine's check. */
-export function validateArmScreens(screens: ArmScreens): string[] {
+/** Every reason an arm's `screens` may not be saved. Whether each template exists is the engine's check. Takes raw JSON. */
+export function validateArmScreens(raw: unknown): string[] {
+  const screens = raw as ArmScreens;
   const errs: string[] = [];
   if (typeof screens !== "object" || screens === null || Array.isArray(screens)) return ["screens must be an object"];
   for (const [slot, entries] of Object.entries(screens)) {
@@ -199,9 +220,13 @@ export function validateArmScreens(screens: ArmScreens): string[] {
     if (!Array.isArray(entries) || entries.length === 0) { errs.push(`screens.${slot} must list at least one template`); continue; }
     entries.forEach((e, i) => {
       const at = `screens.${slot}[${i}]`;
+      const extra = typeof e === "object" && e !== null ? Object.keys(e).filter((k) => !["template", "version", "when"].includes(k)) : [];
+      if (extra.length > 0) errs.push(`${at} has unknown fields: ${extra.join(", ")}`);
+      // The first entry with no window is served at every hour, so one listed before another hides it.
+      if (e?.when === undefined && i < entries.length - 1) errs.push(`${at} has no window, so the entries after it are never served — put it last`);
       if (typeof e?.template !== "string" || !TEMPLATE_KEY.test(e.template)) errs.push(`${at}.template must be a template key`);
       if (!Number.isInteger(e?.version) || e.version < 1) errs.push(`${at}.version must be a positive integer`);
-      if (e?.when !== undefined && !isHourPair(e.when?.hours)) errs.push(`${at}.when.hours must be two hours 0–23`);
+      if (e?.when !== undefined && !isHourPair(e.when?.hours)) errs.push(`${at}.when.hours must be two different hours 0–23 (omit \`when\` for any hour)`);
     });
   }
   return errs;
@@ -216,16 +241,21 @@ export function pickArmScreen(entries: readonly ArmScreen[], hour: number | null
   return null;
 }
 
-/** One template as one client sees it: only its language's strings, assets as URLs. */
-export function resolveScreen(t: ScreenTemplate, lang: Lang, assetUrl: (sha256: string) => string): ServedScreen {
+/**
+ * One template as one client sees it: only its language's strings, assets as URLs. Null when the
+ * language lacks a key — a language added after the template was saved — so the slot is skipped
+ * rather than served with a blank button.
+ */
+export function resolveScreen(t: ScreenTemplate, lang: Lang, assetUrl: (sha256: string) => string): ServedScreen | null {
   const table = t.strings[lang] ?? {};
   const keys = [...new Set(t.blocks.flatMap(keysOf))];
+  if (keys.some((k) => typeof table[k] !== "string" || table[k] === "")) return null;
   const shas = [...new Set(t.blocks.flatMap((b) => (b.type === "image" ? [b.asset] : [])))];
   return {
     template: t.key,
     version: t.version,
     blocks: t.blocks,
-    strings: Object.fromEntries(keys.map((k) => [k, table[k] ?? ""])),
+    strings: Object.fromEntries(keys.map((k) => [k, table[k]!])),
     assets: shas.map((sha256) => ({ sha256, url: assetUrl(sha256) })),
   };
 }
