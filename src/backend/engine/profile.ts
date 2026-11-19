@@ -23,6 +23,7 @@ import { evaluateMilestones } from "./milestones.ts";
 import { switchOn } from "./switches.ts";
 import { dailyPhotoCap, entitlementFor } from "./entitlement.ts";
 import { referralView } from "./referral.ts";
+import { isStaffAccount } from "./notify.ts";
 import { MAX_WINDOW_DAYS } from "./diary.ts";
 import { unpaidRefused } from "./caps.ts";
 import { legalUrls } from "../brand.ts";
@@ -138,6 +139,7 @@ export async function profileView(deps: EngineDeps, userId: string): Promise<Pro
     // one for the hour the zones disagree, and `ageFrom` keeps the band check honest.
     age: ageFrom(profile.birth_year, new Date(`${localDate(deps.config.timezone)}T12:00:00Z`)),
     isAdmin: await deps.store.roleOf(userId) === "admin",
+    isStaff: await isStaffAccount(deps, userId),
     limits: await limitsOf(deps, userId, entitlement.active), timezone: deps.config.timezone, entitlement,
     healthConnected: await healthConnected(deps, userId),
     telegramBot: deps.config.telegramBotUsername || null,
@@ -462,6 +464,7 @@ export async function patchProfile(
       profile, targets, microGoals: microGoals(profile, targets), basis, onboarded: profile.onboarded_at !== null,
       age: ageFrom(profile.birth_year, new Date(`${localDate(deps.config.timezone)}T12:00:00Z`)),
       isAdmin: await deps.store.roleOf(userId) === "admin",
+    isStaff: await isStaffAccount(deps, userId),
       limits: await limitsOf(deps, userId, entitlement.active), timezone: deps.config.timezone, entitlement,
       healthConnected: await healthConnected(deps, userId),
       telegramBot: deps.config.telegramBotUsername || null,
