@@ -115,7 +115,7 @@ gets its meal names in that language.
   carries its own unit word in its template; the four places that CONCATENATE one onto a figure
   (the plan card, the diary headline, a Telegram meal line) read `UNIT_KCAL`, because a Russian plan
   card read "1 500 kcal" with "Порог — 1500 ккал." two lines under it. That table is a SPELLING and
-  not a unit: the same quantity in all eight, which is the `LANG_LABEL` situation and not the
+  not a unit: the same quantity in all forty-two, which is the `LANG_LABEL` situation and not the
   imperial one. `HEALTH_FIELDS.unit` stays SI and this does not license changing it.
 - **Numbers and dates are `Intl`.** `numbers(lang)` keeps a tenth (a weight somebody typed);
   `wholeNumbers(lang)` rounds (a kcal from a photo, where a decimal claims a precision the analyzer
@@ -133,7 +133,7 @@ gets its meal names in that language.
   is watching them.
 - **A sentence is a TEMPLATE, never fragments joined by code.** `trendSummary` built the VoiceOver
   line by concatenating "by", "from", "to", "Lowest" around the numbers. Word order is not a
-  constant across eight languages, and for a reader with low vision that sentence IS the chart. It
+  constant across forty-two languages, and for a reader with low vision that sentence IS the chart. It
   is one string per language with named placeholders now. The same rule caught Russian's `по`,
   which governs the dative plural: `HealthCopy.periods[p].per` exists beside `noun` because one
   field cannot be both `неделя` and `неделям`.
@@ -146,13 +146,14 @@ gets its meal names in that language.
   language bucket, because nothing but Russian has Cyrillic in it — and the three `copy.i18n`
   tests fail naming the key. Fifteen sentences, four of them in `fr`/`it`/`es`/`ru` where the
   adjective in "you're not alone" picks a gender too; those were rephrased around the situation
-  rather than the person, which is the move that works in all eight.
+  rather than the person, which is the move that works in all forty-two.
 
-- **A COUNTRY'S NAME IS CLDR'S, NOT COPY.** `COUNTRY_CODES` covers every market where one of the
-  eight is spoken — it was `de | gb | us | other` while the product shipped in eight languages, so
-  a Vietnamese or Indonesian reader met "so I know your supermarket, not somebody else's" above a
+- **A COUNTRY'S NAME IS CLDR'S, NOT COPY.** `COUNTRY_CODES` covers the market a shipped language's
+  speakers are standing in, as the funnel names each — it was `de | gb | us | other` while the
+  product shipped in eight languages, so a Vietnamese or Indonesian reader met "so I know your
+  supermarket, not somebody else's" above a
   list whose only true answer was "Somewhere else". Growing it was only affordable because the
-  labels left the content: fifteen countries in eight languages is 120 strings, and our own month
+  labels left the content: sixteen countries in forty-two languages is ~700 strings, and our own month
   table had Spanish, Russian and Vietnamese wrong at once before `Intl` replaced it. So
   `countryLabel` reads `COUNTRY_NAMES`, generated from `Intl.DisplayNames` at build time (`bun src/scripts/country-names.ts`; Hermes has none, and `country-names.test.ts` fails on a missing language/country; the snapshot is one host's ICU, so there is deliberately no equality-with-runtime test), `countrySearchNames` is the local plus English name a search matches, `countryOptions` sorts with `Intl.Collator` because
   Austria files under Ö in German and А in Russian, and `other` is the ONE option still written by
@@ -172,7 +173,7 @@ gets its meal names in that language.
 - **A `Localized` table proves a language is PRESENT, never that it is complete.** `localizedGaps`
   stops at the table — `lang.ts` says so — so everything one level inside it is a test's job. That
   is where the remaining holes live: `HEALTH_COPY.labels` spreads the English underneath every
-  language, so a new metric is present in all eight and correct in one (`health-copy.test.ts`
+  language, so a new metric is present in all forty-two and correct in one (`health-copy.test.ts`
   asserts the non-English labels DIFFER, with the genuine coincidences pinned as `lang.key` pairs);
   and the four `Record<…>` copy maps are keyed by their id union rather than by `string`, so the
   compiler names the language that forgets one instead of a `!` throwing inside a chat bubble.
@@ -230,8 +231,8 @@ gets its meal names in that language.
   *Onboarding's option chips:* `screenOptionValues(screenId, lang)` for the VALUES and
   `content.options[value]?.label ?? optionLabel(screenId, value, lang)` for the label. Not
   `SCREEN_OPTIONS` and not the content alone — the country list is sorted by the reader's own
-  alphabet and its names come from CLDR, so a client that indexes the constant renders fifteen
-  countries in code order and a client that trusts the content renders fourteen blanks.
+  alphabet and its names come from CLDR, so a client that indexes the constant renders the
+  countries in code order and a client that trusts the content renders a blank per country.
   **AND NOT `ChatPrompt.options`, which the country prompt no longer carries.** It held a fourth
   copy of the list, `optionsFor` read it first, and growing `COUNTRY_CODES` changed nothing on
   either surface until it went — typecheck green, every unit test passing, three countries still

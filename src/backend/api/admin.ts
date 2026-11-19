@@ -141,8 +141,8 @@ const editorLang = (url: URL): Lang => {
  * admin as an empty box to fill rather than as a save that is refused for a reason nobody can see.
  *
  * `options` LEAVES OUT THE ONES CLDR NAMES, which today is every country but `other`. An editor
- * that drew those boxes would be asking an admin to type fifteen country names in each of eight
- * languages, for a label the renderer takes from the platform anyway — and the validator does not
+ * that drew those boxes would be asking an admin to type sixteen country names in each of
+ * forty-two languages, for a label the renderer takes from the platform anyway — and the validator does not
  * require them, so the boxes would be optional, ignored and wrong within a release.
  */
 function editorMeta() {
@@ -242,8 +242,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
 
   // ── Onboarding copy ────────────────────────────────────────────────────────────────────────
   //
-  // `?lang=` PICKS ONE LANGUAGE, AND THE EDITOR EDITS ONE AT A TIME. Eight tabs of one form is
-  // eight times the JavaScript for a page that is already the largest hand-written one here; a
+  // `?lang=` PICKS ONE LANGUAGE, AND THE EDITOR EDITS ONE AT A TIME. A tab per language is
+  // forty-two times the JavaScript for a page that is already the largest hand-written one here; a
   // select that reloads is the same capability and is four lines of it. Absent or unknown is
   // English, so every bookmark that predates #358 still opens the page it used to.
   //
