@@ -163,7 +163,7 @@ describe("the App Link's landing", () => {
     // English, never "signed in": the token reached this browser, not the app.
     expect(html).toContain(`href="https://api.eait.fit${ROUTES.authAppleAndroidApp}?state=${STATE}&amp;id_token=tok"`);
     expect(html).toContain("One more step");
-    expect(html).toContain("Tap to finish signing in to eait.");
+    expect(html).toContain("Tap to finish signing in to Calodex.");
     expect(html).toContain("Install the app and sign in again.");
     // Apple's error is carried to the tap the same way the token is.
     const err = await get(h, `${ROUTES.authAppleAndroidApp}?state=${STATE}&error=user_cancelled_authorize`);

@@ -32,8 +32,11 @@ export const APP_HEADER = "x-eait-app";
 /** The brand a header or column names, or null when it names none. */
 export const knownApp = (raw?: string | null): AppId | null => ((APPS as readonly string[]).includes(raw ?? "") ? (raw as AppId) : null);
 
+/** The brand of anything that names none: the store app is Calodex (ieat-app#3154). */
+export const DEFAULT_APP: AppId = "calodex";
+
 /** `knownApp`, falling back to the default brand: for copy, where a wrong word beats a refusal. */
-export const parseApp = (raw?: string | null): AppId => knownApp(raw) ?? "eait";
+export const parseApp = (raw?: string | null): AppId => knownApp(raw) ?? DEFAULT_APP;
 
 export const BRAND_TOKENS = ["app_name", "domain", "d_app_name", "qu_app_name", "app_name_s", "az", "Az", "app_name_tel", "nouvel"] as const;
 
@@ -54,11 +57,11 @@ export const brandValues = (b: Brand = source()): Record<(typeof BRAND_TOKENS)[n
   };
 };
 
-let source: () => Brand = () => BRANDS.eait;
+let source: () => Brand = () => BRANDS[DEFAULT_APP];
 /**
  * The server points it at the request's brand (backend/brand.ts). A client with a non-default brand
  * must call it once before its first render; nothing outside the server does yet. Outside a request
- * and with no source installed the brand is `eait`.
+ * and with no source installed the brand is `DEFAULT_APP`.
  */
 export const setBrandSource = (src: () => Brand): void => { source = src; };
 export const currentBrand = (): Brand => source();

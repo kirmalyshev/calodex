@@ -2,6 +2,7 @@
 // paid period, and the third grant both of them make — which every reader of "paid" must count.
 
 import { beforeEach, describe, expect, it } from "bun:test";
+import { installBrandSource, withBrand } from "../brand.ts";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { logMail } from "../mail/log.ts";
@@ -323,7 +324,7 @@ describe("the profile's referral card", () => {
     const { referrer } = await pair();
     const view = (await profileView(deps, referrer))!.referral;
     expect(view).toEqual({
-      link: `https://eait.fit/r/${await codeOf(referrer)}`, applied: false, joined: 1, subscribed: 0, weeksEarned: 0, bankedDays: 0,
+      link: `https://calodex.app/r/${await codeOf(referrer)}`, applied: false, joined: 1, subscribed: 0, weeksEarned: 0, bankedDays: 0,
     });
   });
 
@@ -357,10 +358,11 @@ describe("the profile's referral card", () => {
     expect((await adminUsers(deps, { q: referrer, limit: 1 })).users[0]!.entitled).toBe(true);
   });
 
-  it("falls back to the web origin, then the API's, for the link", async () => {
+  it("falls back to the web origin, then the API's, for the eait brand's link", async () => {
+    installBrandSource();
     mount({}, { landingUrl: "", publicWebUrl: "https://app.example" });
     const me = await account();
-    expect((await profileView(deps, me))!.referral.link).toBe(`https://app.example/r/${await codeOf(me)}`);
+    expect((await withBrand("eait", () => profileView(deps, me)))!.referral.link).toBe(`https://app.example/r/${await codeOf(me)}`);
   });
 });
 
