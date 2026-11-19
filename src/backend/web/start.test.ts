@@ -3545,9 +3545,13 @@ describe("the web funnel (ieat-app#3196)", () => {
     expect(new Set(events.map((e) => e.sessionId)).size).toBe(1);
   });
 
+  // /start sends to analytics without waiting, so a test waits for what it reads.
+  const eventually = async (done: () => boolean) => { for (let i = 0; i < 200 && !done(); i++) await Bun.sleep(10); };
+
   it("sends one onboarding_step per funnel row, and the plan once, to analytics", async () => {
     const session = await answerAll(undefined, ANSWERS);
     const userId = await webUser(session);
+    await eventually(() => sink.captured.some((c) => c.event === "onboarding_plan_completed"));
     const [row] = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
     const steps = sink.captured.filter((c) => c.event === "onboarding_step");
     // As a multiset: rows written in the same millisecond come back from the store in either order.
@@ -3560,10 +3564,12 @@ describe("the web funnel (ieat-app#3196)", () => {
 
   it("sends signup_completed once for the account the walk made, and signin_completed on a return", async () => {
     const { userId } = await signedUp("web-analytics");
+    await eventually(() => sink.captured.some((c) => c.event === "signup_completed"));
     const signups = sink.captured.filter((c) => c.event === "signup_completed");
     expect(signups).toHaveLength(1);
     expect(signups[0]).toMatchObject({ userId, props: { provider: "google", after_onboarding: true, surface: "web" } });
     await signIn("web-analytics");
+    await eventually(() => sink.captured.some((c) => c.event === "signin_completed"));
     expect(sink.captured.filter((c) => c.event === "signup_completed")).toHaveLength(1);
     expect(sink.captured.filter((c) => c.event === "signin_completed").map((c) => [c.userId, c.props.provider]))
       .toEqual([[userId, "google"]]);
