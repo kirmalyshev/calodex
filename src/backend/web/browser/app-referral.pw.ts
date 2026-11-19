@@ -77,7 +77,7 @@ test("while the bonus keeps the account in, the card says until when", async ({ 
     body.entitlement.active = true;
     body.entitlement.bonusUntil = until.toISOString();
   });
-  await expect(page.getByLabel("Refer a friend")).toContainText(`eait is yours until ${bonusDate("en", String(p.timezone))}.`);
+  await expect(page.getByLabel("Refer a friend")).toContainText(`Calodex is yours until ${bonusDate("en", String(p.timezone))}.`);
 });
 
 // German writes its short month with a full stop ("12. Okt."): the sentence's own full stop is
@@ -89,7 +89,7 @@ test("a date that ends in a full stop ends the sentence once", async ({ inWebApp
     body.entitlement.bonusUntil = until.toISOString();
   });
   const card = page.getByLabel(/Freunde einladen|Refer a friend/);
-  await expect(card).toContainText(`eait gehört dir bis ${bonusDate("de", String(p.timezone))}.`);
+  await expect(card).toContainText(`Calodex gehört dir bis ${bonusDate("de", String(p.timezone))}.`);
   await expect(card).not.toContainText("..");
 });
 
