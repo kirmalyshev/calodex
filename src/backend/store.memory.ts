@@ -1178,7 +1178,6 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // rather than silently start addressing someone else's diary.
       for (const [h, row] of tokens) if (row.userId === fromUserId) tokens.delete(h);
       users.delete(fromUserId);
-      for (const [from, into] of mergedAway) if (into === fromUserId) mergedAway.set(from, intoUserId);
       mergedAway.set(fromUserId, intoUserId);
       // Goes with the row, exactly as `eraseUser` takes it. Postgres gets both of these for free —
       // one is a column on a deleted row, the other is a column this method never copies.

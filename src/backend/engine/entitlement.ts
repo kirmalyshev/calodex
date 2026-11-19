@@ -406,8 +406,11 @@ export interface RevenueCatTransfer {
  */
 export async function applyRevenueCatTransfer(deps: EngineDeps, t: RevenueCatTransfer): Promise<ApplyOutcome> {
   if (t.sandbox && !deps.config.revenueCatAcceptSandbox) return { applied: false, reason: "sandbox" };
-  const into = t.to[0];
-  if (into === undefined) return { applied: false, reason: "not-applied" };
+  const named = t.to[0];
+  if (named === undefined) return { applied: false, reason: "not-applied" };
+  // A restore on a device still configured with the anonymous id names an account a sign-in
+  // merged away (#2694); its purchases belong to the survivor.
+  const into = (await deps.store.mergedInto(named)) ?? named;
   const eventAt = new Date(t.eventTimestampMs).toISOString();
   let moved = false;
   for (const from of t.from) moved = (await deps.store.moveEntitlement(from, into, eventAt)) || moved;

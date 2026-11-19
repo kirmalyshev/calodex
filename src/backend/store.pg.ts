@@ -121,6 +121,8 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   referral_events: "referrer_id",
   // A refund is the friend's own row.
   referral_refunds: "referred_id",
+  // A merged-away id belongs to the account that absorbed it (#2694); read and written unscoped.
+  merged_users: "into_id",
 };
 
 /**
@@ -3222,7 +3224,6 @@ export async function postgresStore(
         // working rather than silently start addressing someone else's diary.
         await tx`delete from tokens where user_id = ${fromUserId}`;
         await tx`delete from users where id = ${fromUserId}`;
-        await tx`update merged_users set into_id = ${intoUserId} where into_id = ${fromUserId}`;
         await tx`
           insert into merged_users (from_id, into_id) values (${fromUserId}, ${intoUserId})
           on conflict (from_id) do update set into_id = excluded.into_id`;

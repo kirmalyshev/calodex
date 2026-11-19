@@ -171,6 +171,18 @@ describe("a delivery naming an account a sign-in merged away", () => {
     expect((await profile(real.token)).entitlement.active).toBe(true);
   });
 
+  it("grants and refunds a lifetime unlock on the survivor", async () => {
+    const anon = await account();
+    const real = await account();
+    await store.mergeUsers(anon.userId, real.userId);
+    const lifetime = { type: "NON_RENEWING_PURCHASE", product_id: "lifetime", expiration_at_ms: null };
+
+    await deliver(purchase(anon.userId, { ...lifetime, event_timestamp_ms: Date.now() - 60_000 }));
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+    await deliver(purchase(anon.userId, { ...lifetime, type: "CANCELLATION" }));
+    expect((await profile(real.token)).entitlement.active).toBe(false);
+  });
+
   it("still refuses a delivery older than the survivor's grant", async () => {
     const anon = await account();
     const real = await account();
@@ -352,6 +364,18 @@ describe("a transfer between accounts", () => {
     await store.mergeUsers(anon.userId, real.userId);
     const res = await deliver(transfer({ transferred_from: [anon.userId], transferred_to: [real.userId] }));
     expect(res.status).toBe(200);
+    expect((await profile(real.token)).entitlement.active).toBe(true);
+  });
+
+  it("transfers onto the survivor when the destination was merged away", async () => {
+    const buyer = await account();
+    const anon = await account();
+    const real = await account();
+    await deliver(purchase(buyer.userId, { event_timestamp_ms: Date.now() - 60_000 }));
+    await store.mergeUsers(anon.userId, real.userId);
+
+    const res = await deliver(transfer({ transferred_from: [buyer.userId], transferred_to: [anon.userId] }));
+    expect(await res.json()).toEqual({ ok: true, applied: true });
     expect((await profile(real.token)).entitlement.active).toBe(true);
   });
 

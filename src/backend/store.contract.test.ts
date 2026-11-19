@@ -6409,7 +6409,7 @@ if (PG_URL) {
           and (c.relname = 'users' or exists (
             select 1 from information_schema.columns col
             where col.table_schema = 'public' and col.table_name = c.relname
-              and col.column_name in ('user_id', 'referrer_id', 'referred_id')))
+              and col.column_name in ('user_id', 'referrer_id', 'referred_id', 'into_id')))
         order by c.relname`;
 
       // A catalog query that matched nothing -- or matched one table FEWER than the list it is
