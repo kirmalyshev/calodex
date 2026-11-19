@@ -1021,6 +1021,22 @@ describe("every delivery is logged", () => {
   });
 });
 
+describe("a failed acquisition write (ieat-app#3196)", () => {
+  it("still tracks the event, and the retry stores the acquisition without a second event", async () => {
+    const { userId } = await account();
+    const attrs = { $mediaSource: { value: "Apple Search Ads", updated_at_ms: 1 } };
+    const spy = spyOn(store, "putAcquisition").mockImplementation(async () => { throw new Error("db down"); });
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    const delivery = purchase(userId, { id: "evt-acq", subscriber_attributes: attrs });
+    expect((await deliver(delivery)).status).toBe(500);
+    expect(sink.captured.map((c) => c.event)).toEqual(["subscription_initial_purchase"]);
+    spy.mockRestore(); warn.mockRestore();
+    expect((await deliver(delivery)).status).toBe(200);
+    expect((await store.acquisitionOf(userId))?.source).toBe("apple_search_ads");
+    expect(sink.captured).toHaveLength(1);
+  });
+});
+
 describe("subscription event names (ieat-app#3196)", () => {
   it("never doubles the prefix RevenueCat's own type already carries", async () => {
     const { subscriptionEvent } = await import("../engine/acquisition.ts");

@@ -21,17 +21,20 @@ export async function logRevenueCatEvent(
   lifecycle: { is_trial_conversion: boolean | null; cancel_reason: string | null } = { is_trial_conversion: null, cancel_reason: null },
 ): Promise<void> {
   const fresh = await deps.store.recordRevenueCatEvent(row);
+  let failed: unknown = null;
   if (row.userId !== null && row.acquisition !== null) {
-    await deps.store.putAcquisition(row.userId, { ...row.acquisition, via: "revenuecat" });
+    await deps.store.putAcquisition(row.userId, { ...row.acquisition, via: "revenuecat" }).catch((e: unknown) => { failed = e ?? new Error("putAcquisition"); });
   }
-  if (!fresh || row.userId === null) return;
-  // Every subscription_* event shares one prop list; `track` drops a type the catalog does not list.
-  const event = subscriptionEvent(row.type) as "subscription_renewal";
-  await track(deps, row.userId, event, {
-    product_id: row.productId, period_type: row.periodType, presented_offering_id: row.presentedOfferingId,
-    price: row.price, currency: row.currency, store: row.store, country_code: row.countryCode,
-    environment: row.environment, ...lifecycle,
-  }, null);
+  if (fresh && row.userId !== null) {
+    // Every subscription_* event shares one prop list; `track` drops a type the catalog does not list.
+    const event = subscriptionEvent(row.type) as "subscription_renewal";
+    await track(deps, row.userId, event, {
+      product_id: row.productId, period_type: row.periodType, presented_offering_id: row.presentedOfferingId,
+      price: row.price, currency: row.currency, store: row.store, country_code: row.countryCode,
+      environment: row.environment, ...lifecycle,
+    }, null);
+  }
+  if (failed !== null) throw failed;
 }
 
 /**
