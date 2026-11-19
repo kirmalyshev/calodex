@@ -1815,3 +1815,77 @@ it("the admin page's title and header name the brand", () => {
   expect(page).toContain("<title>Calodex — onboarding admin</title>");
   expect(page).not.toMatch(/>\s*eait\b|"eait admin|<title>eait/);
 });
+
+describe("screen templates over the admin API (ieat-app#3167)", () => {
+  const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1]);
+  const strings = (s: Record<string, string>) => Object.fromEntries(LANGS.map((l) => [l, { ...s }]));
+  const upload = (bytes: Uint8Array, token = adminBearer) => handle(new Request(url("/admin/api/template-assets"), {
+    method: "POST", headers: { "content-type": "application/octet-stream", authorization: `Bearer ${token}` }, body: bytes,
+  }));
+
+  it("uploads an image, saves a template using it, lists it and serves the asset publicly", async () => {
+    await mountWithAdmin();
+    const up = await upload(JPEG);
+    expect(up.status).toBe(200);
+    const { sha256 } = await up.json() as { sha256: string };
+    const draft = {
+      renderer: 1,
+      blocks: [{ type: "image", asset: sha256, alt: "a" }, { type: "cta", label: "go", action: "next" }],
+      strings: strings({ a: "A plate", go: "Continue" }),
+    };
+    const put = await admin("PUT", "/admin/api/templates/plate-beat", draft);
+    expect(put.status).toBe(200);
+    expect(await put.json()).toEqual({ version: 1 });
+    const list = await (await admin("GET", "/admin/api/templates")).json() as { templates: { key: string; version: number }[] };
+    expect(list.templates.map((t) => [t.key, t.version])).toEqual([["plate-beat", 1]]);
+    const one = await admin("GET", "/admin/api/templates/plate-beat/1");
+    expect(((await one.json()) as { template: { blocks: unknown[] } }).template.blocks).toHaveLength(2);
+
+    const asset = await handle(new Request(url(ROUTES.onboardingAsset(sha256))));
+    expect(asset.status).toBe(200);
+    expect(asset.headers.get("content-type")).toBe("image/jpeg");
+    expect(asset.headers.get("cache-control")).toContain("immutable");
+    expect(new Uint8Array(await asset.arrayBuffer())).toEqual(JPEG);
+    expect((await handle(new Request(url(ROUTES.onboardingAsset("0".repeat(64)))))).status).toBe(404);
+  });
+
+  it("refuses an invalid template with the reasons, and a non-image upload", async () => {
+    await mountWithAdmin();
+    const bad = await admin("PUT", "/admin/api/templates/t", { renderer: 1, blocks: [{ type: "webview" }], strings: {} });
+    expect(bad.status).toBe(422);
+    expect(((await bad.json()) as { errors: string[] }).errors).toContain("blocks[0].type 'webview' is not a block");
+    expect((await upload(new TextEncoder().encode("<svg/>"))).status).toBe(422);
+  });
+
+  it("is invisible to an ordinary account", async () => {
+    await mountWithAdmin();
+    const plain = await session();
+    expect((await admin("GET", "/admin/api/templates", undefined, plain)).status).toBe(404);
+    expect((await upload(JPEG, plain)).status).toBe(404);
+  });
+
+  it("sets an arm's screens, and GET /v1/onboarding serves them to a renderer that can draw them", async () => {
+    await mountWithAdmin();
+    await admin("PUT", "/admin/api/templates/beat", {
+      renderer: 1, blocks: [{ type: "headline", text: "h" }, { type: "cta", label: "go", action: "next" }],
+      strings: strings({ h: "One more thing", go: "Continue" }),
+    });
+    const { experiment } = await (await admin("POST", "/admin/api/experiments", { lang: "en" })).json() as { experiment: { id: string } };
+    await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
+    const set = await admin("PUT", `/admin/api/experiments/${experiment.id}/variants/1`, { screens: { "after:summary": [{ template: "beat", version: 1 }] } });
+    expect(set.status).toBe(200);
+    await admin("PUT", `/admin/api/experiments/${experiment.id}`, { rules: { surfaces: ["app"] }, weights: [0, 1] });
+    await admin("PUT", "/admin/api/switches/onboarding.experiments", { enabled: true });
+    expect((await admin("POST", `/admin/api/experiments/${experiment.id}/start`)).status).toBe(200);
+
+    const user = await session();
+    const get = (q: string) => handle(new Request(url(`${ROUTES.onboarding}?lang=en&tz=Europe/Berlin&order=${ONBOARDING_ORDER_VERSION}${q}`), {
+      headers: { authorization: `Bearer ${user}` },
+    }));
+    const old = await (await get("")).json() as { screens?: unknown };
+    expect(old.screens).toBeUndefined();
+    const res = await (await get("&renderer=1")).json() as { screens?: { slots: Record<string, { strings: Record<string, string> }> } };
+    // The first fetch without a renderer enrolled nobody, so this one can.
+    expect(res.screens?.slots["after:summary"]?.strings.h).toBe("One more thing");
+  });
+});

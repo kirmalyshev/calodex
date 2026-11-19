@@ -79,6 +79,11 @@ export interface ServedScreen {
   assets: { sha256: string; url: string }[];
 }
 
+/** Every slot's screen for one client, beside the words in `GET /v1/onboarding` (#3167). */
+export interface ServedScreens {
+  slots: Partial<Record<TemplateSlot, ServedScreen>>;
+}
+
 export const TEMPLATE_KEY = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const MAX_BLOCKS = 12;
 const MAX_TEXT = 240;

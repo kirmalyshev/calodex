@@ -11,6 +11,7 @@ import type {
 import { FOCUS_MINUTES } from "./types.ts";
 import type { Diet, MedicalTag } from "./targets.ts";
 import type { OnboardingContent, OnboardingEvent } from "./onboarding.ts";
+import type { ServedScreens } from "./screen-template.ts";
 import type { TargetBasis } from "./targets.ts";
 import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
@@ -334,6 +335,11 @@ export const ROUTES = {
   onboarding: "/v1/onboarding",
   /** POST — a batch of onboarding funnel events. Fire-and-forget from the app's point of view. */
   onboardingEvents: "/v1/onboarding/events",
+  /**
+   * GET — one image a screen template shows (ieat-app#3167). Public and immutable:
+   * content-addressed, global, never a user's data, so a client may cache it forever.
+   */
+  onboardingAsset: (sha256: string) => `/v1/onboarding/assets/${encodeURIComponent(sha256)}`,
   /**
    * POST, multipart: `photo` (one to `maxPhotosPerMeal` angles of one meal), `caption`, and the two
    * fields every billed turn carries — `clientId` and `capturedAt`, as {@link MessageRequest} says.
@@ -1052,6 +1058,13 @@ export interface OnboardingContentResponse {
    * `servedOrder`, so an order it cannot validate is the default, never a broken walk.
    */
   order?: readonly string[];
+  /**
+   * The arm's template screens, one per slot whose local-hour window holds now (ieat-app#3167),
+   * absent for none. Sent only to a client that declared `?renderer=` at or above what the
+   * templates need. Strings are already in `lang`. A client that cannot validate a screen skips
+   * that slot and walks the compiled beat.
+   */
+  screens?: ServedScreens;
 }
 
 /**

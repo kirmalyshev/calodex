@@ -96,8 +96,12 @@ export const API: readonly Endpoint[] = [
     query: {
       lang: "A Lang code. The account's language when absent, English when unknown.",
       order: "The order capability this client can walk (`ONBOARDING_ORDER_VERSION`). Absent is 0: no experiment with an ordered arm enrolls it, and `order` is never sent.",
+      renderer: "The template renderer this client can draw (`TEMPLATE_RENDERER_VERSION`). Absent is 0: no experiment with template screens enrolls it, and `screens` is never sent.",
     },
     summary: "The onboarding copy this server is serving.", responses: { 200: "OnboardingContentResponse" } },
+  { route: "onboardingAsset", method: "GET", path: "/v1/onboarding/assets/{sha256}", auth: "none",
+    summary: "One image a screen template shows. Content-addressed and immutable; bytes with their mime.",
+    responses: { 200: { type: "string", format: "binary" }, 404: ERROR } },
   { route: "onboardingEvents", method: "POST", path: "/v1/onboarding/events", auth: "bearer",
     summary: "A batch of onboarding funnel events.",
     request: { json: "OnboardingEventsRequest" }, responses: { 200: "OnboardingEventsResponse" } },

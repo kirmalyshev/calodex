@@ -37,7 +37,7 @@ import type { Store } from "../store.ts";
 import {
   MAX_WINDOW_DAYS, appendLines, cancelPendingMeal, logFoodMeal, logNumbersMeal, chatHistory, confirmPendingMeal, day, days, average, deleteLine, deleteMealById, editLine,
   editMeal, handleText,
-  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, onboardingServedFor, patchProfile, pendingMeals, profileView,
+  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, onboardingServedFor, templateAsset, patchProfile, pendingMeals, profileView,
   sendEmailCode, unlinkIdentity, verifyEmailCode,
   EMAIL_ADDRESS, normalizeEmail,
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
@@ -375,6 +375,18 @@ export function createRouter(
       { ok: true, demo: deps.llm.canned === true } satisfies LivenessResponse,
       options.draining?.() === true ? 503 : 200,
     );
+
+    // A screen template's image (ieat-app#3167). Unauthenticated: content-addressed and global — the
+    // sha256 is the whole name, nothing in it is anybody's — so the app's image cache fetches it
+    // like any static file, and it never changes.
+    const assetMatch = /^\/v1\/onboarding\/assets\/([0-9a-f]{64})$/.exec(pathname);
+    if (req.method === "GET" && pathname.startsWith("/v1/onboarding/assets/")) {
+      const asset = assetMatch ? await templateAsset(deps, assetMatch[1]!) : null;
+      if (!asset) return json({ error: "not-found" }, 404);
+      return new Response(asset.bytes, {
+        headers: { "content-type": asset.mime, "cache-control": "public, max-age=31536000, immutable" },
+      });
+    }
 
     // Android's domain-verification document (ieat-app#2434), served by the backend rather than at
     // the edge so a self-hosted install answers it too. Unauthenticated: the OS fetches it during
@@ -833,11 +845,13 @@ export function createRouter(
           region: url.searchParams.get("region"),
           tz: url.searchParams.get("tz"),
           orderVersion: orderVersionOf(url),
+          renderer: rendererOf(url),
         });
         return json({
           content: served.content,
           lang,
           ...(served.order ? { order: served.order } : {}),
+          ...(served.screens ? { screens: served.screens } : {}),
         } satisfies OnboardingContentResponse);
       }
 
@@ -1437,6 +1451,12 @@ export function createRouter(
       return json({ error: "internal" }, 500);
     }
   };
+}
+
+/** The template renderer a client declared with `?renderer=` (ieat-app#3167): absent or not a number is 0. */
+function rendererOf(url: URL): number {
+  const n = Number(url.searchParams.get("renderer") ?? 0);
+  return Number.isFinite(n) ? n : 0;
 }
 
 /** The order capability a client declared with `?order=` (ieat-app#2788): absent or not a number is 0. */

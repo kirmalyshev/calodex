@@ -5,8 +5,8 @@
 // read is a slot the client skips, and onboarding walks the compiled flow.
 
 import {
-  isTimezone, localTime, pickArmScreen, resolveScreen, TEMPLATE_KEY, validateArmScreens, validateScreenTemplate,
-  type ArmScreens, type Lang, type ScreenTemplateDraft, type ServedScreen, type TemplateSlot,
+  isTimezone, localTime, ROUTES, pickArmScreen, resolveScreen, TEMPLATE_KEY, validateArmScreens, validateScreenTemplate,
+  type ArmScreens, type Lang, type ScreenTemplateDraft, type ServedScreens, type TemplateSlot,
 } from "@eait/shared";
 import { imageMime } from "../llm/port.ts";
 import type { OnboardingVariant } from "../store.ts";
@@ -15,7 +15,7 @@ import type { EngineDeps } from "./deps.ts";
 type Result<T = object> = ({ ok: true } & T) | { ok: false; errors: string[] };
 
 /** The public URL an asset is fetched from. */
-export const templateAssetUrl = (sha256: string) => `/v1/onboarding/assets/${sha256}`;
+export const templateAssetUrl = (sha256: string) => ROUTES.onboardingAsset(sha256);
 
 /** Append the next revision of `key`, after every check `validateScreenTemplate` makes. */
 export async function saveScreenTemplate(
@@ -40,6 +40,21 @@ export async function uploadTemplateAsset(deps: EngineDeps, bytes: Uint8Array): 
   const sha256 = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
   await deps.store.putTemplateAsset(sha256, mime, bytes);
   return { ok: true, sha256 };
+}
+
+/** One asset for the public route, or null. */
+export async function templateAsset(deps: EngineDeps, sha256: string) {
+  return deps.store.templateAsset(sha256);
+}
+
+/** The admin's list: the latest revision of every key. */
+export async function listScreenTemplates(deps: EngineDeps) {
+  return deps.store.listScreenTemplates();
+}
+
+/** One revision for the admin, or null. */
+export async function screenTemplateRevision(deps: EngineDeps, key: string, version: number) {
+  return deps.store.screenTemplate(key, version);
 }
 
 /** Every template revision an arm names that does not exist, as an error line. */
@@ -101,11 +116,6 @@ export async function rendererNeeded(deps: EngineDeps, variants: readonly Onboar
     }
   }
   return need;
-}
-
-/** What `GET /v1/onboarding` sends beside the words: one screen per slot whose window holds now. */
-export interface ServedScreens {
-  slots: Partial<Record<TemplateSlot, ServedScreen>>;
 }
 
 /**

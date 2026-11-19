@@ -16,7 +16,8 @@ import {
   type AdminWindowEcho, type ContentValidation, type CountryCode, type FunnelRow, type Lang, type OnboardingContent,
   type DistributionChannel, type OnboardingEvent, type OnboardingFunnel, type OnboardingPlace, type OrderRefusal,
 } from "@eait/shared";
-import { rendererNeeded, screensStartErrors, servedScreens, type ServedScreens } from "./screen-templates.ts";
+import type { ServedScreens } from "@eait/shared";
+import { rendererNeeded, screensStartErrors, servedScreens } from "./screen-templates.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
 import type { AdminMetrics, AdminOnboardingAccount, AdminOnboardingEvent, AdminRange, FunnelAggregate, OnboardingExperiment, OnboardingVariant } from "../store.ts";
