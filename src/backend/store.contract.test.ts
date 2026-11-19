@@ -3330,7 +3330,9 @@ function contract(name: string, make: () => Promise<Store>) {
         ev("c", 2, { action: "complete", at: isoAt(6000) }),
       ] as never);
 
-      const range = { from: null, to: null };
+      // The window opens at this test's own start: `barrier` rows left by earlier runs on a
+      // database that is not fresh were RECEIVED before it, so they are outside the answer.
+      const range = { from: new Date(t0), to: null };
       const page = await s.adminOnboardingFlow({ range, leftAt: "barrier" });
       const ids = page.rows.map((r) => r.userId);
       expect(ids).toContain(uA);
