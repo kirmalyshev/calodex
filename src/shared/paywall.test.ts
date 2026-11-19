@@ -105,3 +105,14 @@ describe("paywallPercent", () => {
     expect(paywallPercent(40, "de")).toBe("40 %");
   });
 });
+
+// ieat-app#3163: the yearly card's second line is computed from the storefront's own two prices.
+describe("yearly per-month line", () => {
+  it("reads €3.33 and 33% off twelve monthlies at €4.99 / €39.99", () => {
+    const m = offerMath(4.99 * 12, 39.99);
+    expect(m).toEqual({ percentOff: 33, perMonth: 3.33 });
+  });
+  it("is absent when the yearly is no cheaper than twelve monthlies", () => {
+    expect(offerMath(4.99 * 12, 59.88)).toBeNull();
+  });
+});
