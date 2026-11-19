@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "Önce web'de plan sorularını yanıtla."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "kalori"
@@ -421,11 +426,6 @@ msgstr "Sodyum"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "Bir şeyler ters gitti ama işlem yine de gerçekleşmiş olabilir. Tekrar göndermeden önce /today komutuna bak."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Spud"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

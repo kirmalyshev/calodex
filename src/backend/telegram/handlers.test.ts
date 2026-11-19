@@ -230,8 +230,8 @@ describe("text", () => {
     const chat = fakeChat();
     await h.text(from, "how much protein have I had today?", chat);
     expect(chat.sent).toHaveLength(1);
-    // S9: the answer goes out signed — "Spud: " from the localized coach name, not a literal.
-    expect(chat.sent[0]!.text).toStartWith("Spud: ");
+    // S9: the answer goes out signed — "Calodex: " from the localized coach name, not a literal.
+    expect(chat.sent[0]!.text).toStartWith("Calodex: ");
     expect(chat.sent[0]!.text).toContain("(Demo answer.)");
     expect(chat.sent[0]!.buttons).toBeUndefined();
   });
@@ -297,7 +297,7 @@ describe("tapping Log it / Not this", () => {
     expect((await store.mealsForDate(userId, (await store.getMeal(userId, pendingId))!.date))).toHaveLength(1);
   });
 
-  it("Not this drops it, in Spud's scripted words", async () => {
+  it("Not this drops it, in Calodex's scripted words", async () => {
     const { from, userId, pendingId } = await proposed();
     const tap = fakeChat();
     await h.tap(from, `no:${pendingId}`, tap);

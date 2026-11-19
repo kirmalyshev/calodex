@@ -396,7 +396,7 @@ export const livePendings = (entries: ThreadEntry[]): string[] =>
  * An answered turn that changed nothing has no line, and the server keeps none for it either.
  * Dropped HERE rather than returned as null from the row, because the avatar and the spacing are
  * decided from the PREVIOUS row: with an invisible entry in the data, the reply after it lost
- * Spud's face and was grouped as though he had already been speaking.
+ * Calodex's face and was grouped as though he had already been speaking.
  *
  * AND ONE CARD PER MEAL, for the reason `oneCardPerMeal` gives.
  */
@@ -419,7 +419,7 @@ export function hasLiveSuggestions(visible: ThreadEntry[]): boolean {
 /**
  * Who a row belongs to: the user, the coach on his answers, and the app's own voice on
  * everything else it says or shows. A stored row carrying `speaker: "gabie"` is the coach's —
- * the flag kept its name; the name drawn above it is `coach.name`'s, Spud since #1041.
+ * the flag kept its name; the name drawn above it is `coach.name`'s, Calodex since #1041.
  */
 export function speakerOf(entry: ThreadEntry): "user" | "spud" | "gabie" {
   if (entry.role === "user") return "user";
@@ -507,7 +507,7 @@ export function lineIsMeal(entry: ThreadEntry & { role: "user" }, entries: Threa
 
 // ── The rows the Chat tab draws (#1520) ─────────────────────────────────────────────────────────
 // Both clients draw a thread as rows: HER bubble, which carries what happened to her send (the meal
-// it logged, the proposal it made, the refusal or failure it met), and Spud's own lines, his face on
+// it logged, the proposal it made, the refusal or failure it met), and Calodex's own lines, his face on
 // the last of each run. Pure, so the phone and the web read one rule.
 
 type UserEntry = Extract<ThreadEntry, { role: "user" }>;
@@ -521,7 +521,7 @@ export type ChatRow =
   | { kind: "me"; entry: UserEntry; outcome: ThreadEntry | null; state: SendState }
   | { kind: "them"; entry: ThreadEntry; face: boolean };
 
-/** Results that are about her send, so her bubble carries them; `answered` and `not-food` stay Spud's. */
+/** Results that are about her send, so her bubble carries them; `answered` and `not-food` stay Calodex's. */
 const ABSORBED_RESULTS: ReadonlySet<string> = new Set([
   "logged", "updated", "redated", "proposed", "expired", "target-gone",
   "not-onboarded", "identity-required", "cap-exceeded", "subscription-required", "analysis-failed",

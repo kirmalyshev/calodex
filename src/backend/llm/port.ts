@@ -237,7 +237,7 @@ export interface TextInput {
    */
   resolveMeal?: (index: number) => Promise<{ analysis: MealAnalysis; images: Uint8Array[] } | null>;
   /**
-   * The question Spud asked about that meal, still unanswered.
+   * The question Calodex asked about that meal, still unanswered.
    *
    * Present only when there is one to answer, because the prompt line it produces tells the model
    * this message IS the answer — a standing instruction to read every message as a correction.
@@ -288,7 +288,7 @@ export interface CoachContext {
 export interface CoachHistoryLine {
   role: "user" | "assistant";
   text: string;
-  /** On an assistant line: who said it. Absent is Spud. */
+  /** On an assistant line: who said it. Absent is Calodex. */
   speaker?: ChatSpeaker;
 }
 

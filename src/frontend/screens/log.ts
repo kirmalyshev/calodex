@@ -314,7 +314,7 @@ export function logScreen(frame: Frame): HTMLElement {
 
     if (first) {
       // The phone board's content in the logged frame: the heading, the same photo and card,
-      // Correct and Continue — Spud's paragraph is gone (the board's own note).
+      // Correct and Continue — Calodex's paragraph is gone (the board's own note).
       side.append(say(L.firstVerdict, true), mealCard(r, ".4s"));
       const btns = el("div", "logbtns");
       btns.append(

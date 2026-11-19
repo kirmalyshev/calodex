@@ -52,13 +52,13 @@ export {
 } from "./email.ts";
 export {
   addOnboardingVariant, assignVariant, createOnboardingExperiment, onboardingContent,
-  onboardingContentFor, onboardingExperiments, onboardingServedFor, orderRefusalText, saveOnboardingContent,
+  onboardingContentFor, onboardingExperiments, onboardingServedFor, serveOnboarding, orderRefusalText, saveOnboardingContent,
   saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder,
   resetOnboardingContent, recordOnboardingEvents, sanitizeExperimentRules, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment, wilsonInterval,
   adminMetrics,
-  onboardingFunnel, adminOnboardingUsers, adminUserOnboarding,
-  type AdminOnboardingUserRow, type OnboardingExperimentView, type OnboardingSignals,
+  onboardingFunnel, adminOnboardingUsers, adminUserOnboarding, onboardingRuns,
+  type AdminOnboardingRun, type AdminOnboardingUserRow, type OnboardingExperimentView, type OnboardingSignals,
 } from "./onboarding.ts";
 export {
   listScreenTemplates, saveOnboardingVariantScreens, saveScreenTemplate, screenTemplateRevision, templateAsset, uploadTemplateAsset,

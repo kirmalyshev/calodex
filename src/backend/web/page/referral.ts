@@ -44,7 +44,7 @@ export interface ReferralStepView {
   lang: Lang;
 }
 
-/** The friend's-link step: Spud's ask, the field, and Continue or Skip. Nothing is stored on Skip. */
+/** The friend's-link step: Calodex's ask, the field, and Continue or Skip. Nothing is stored on Skip. */
 export function referralStep(v: ReferralStepView): string {
   const c = pageCopyFor(v.lang);
   const notice = v.notice === null ? ""

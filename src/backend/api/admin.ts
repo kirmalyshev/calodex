@@ -597,7 +597,7 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // and nobody can erase.
   //
   // READ-ONLY, and that is the interesting half: there is no method here but GET, so the admin
-  // cannot send a message as the coach. A phone cannot put a sentence in Spud's mouth
+  // cannot send a message as the coach. A phone cannot put a sentence in Calodex's mouth
   // (`POST /v1/messages/lines` takes scripted ids only) and neither can this.
   const chat = pathname.match(/^\/admin\/api\/users\/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\/chat$/);
   if (chat && req.method === "GET") {

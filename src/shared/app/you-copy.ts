@@ -208,7 +208,7 @@ export interface YouCopy {
     /** Its title: "Your weight". */
     weightTitle: string;
     /**
-     * Spud's check over the keypad: "{source} says {w}kg. Is that right?" —
+     * Calodex's check over the keypad: "{source} says {w}kg. Is that right?" —
      * `{source}` is the provider's name ("Health", "Apple Health").
      */
     weightCheckKg: string;
@@ -246,7 +246,7 @@ export interface YouCopy {
     weightSourceOnLb: string;
     /** The plan recomputing live on the weigh-in and the save: "{from} → {to}kcal a day". */
     planRevised: string;
-    /** Spud's confirmation on the saved board: "{w}kg from {source}, saved". */
+    /** Calodex's confirmation on the saved board: "{w}kg from {source}, saved". */
     savedNoteKg: string;
     savedNoteLb: string;
     /** A typed weight's saved line — "{w}kg, saved"; there is no {source} to name. */

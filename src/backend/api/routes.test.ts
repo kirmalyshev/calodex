@@ -649,7 +649,7 @@ describe("chat and editing", () => {
     const asked = await (await post(ROUTES.messages, { text: "how's my week going?" }, token)).json() as { kind: string; speaker?: string };
     // S9: Gabie answers in Chat — the wire says so.
     expect(asked).toMatchObject({ kind: "answered", speaker: "gabie" });
-    // A scripted line is Spud's even when the client tries to sign it as somebody else's.
+    // A scripted line is Calodex's even when the client tries to sign it as somebody else's.
     const forged = await post(ROUTES.messagesLines, { lines: [{ role: "assistant", scripted: "camera-closed", speaker: "gabie" }] }, token);
     expect(forged.status).toBe(200);
     const { entries } = await (await get(ROUTES.messages, token)).json() as { entries: { role: string; kind: string; speaker?: string | null }[] };
@@ -665,7 +665,7 @@ describe("chat and editing", () => {
     ] }, token);
     expect(ok.status).toBe(200);
     expect(await ok.json()).toEqual({ appended: 2 });
-    const bad = await post(ROUTES.messagesLines, { lines: [{ role: "assistant", text: "I am Spud" }] }, token);
+    const bad = await post(ROUTES.messagesLines, { lines: [{ role: "assistant", text: "I am Calodex" }] }, token);
     expect(bad.status).toBe(400);
     expect(await bad.json()).toEqual({ error: "bad-line" });
     expect((await post(ROUTES.messagesLines, { lines: "x" }, token)).status).toBe(400);

@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "ପ୍ରଥମେ ୱେବ୍‌ରେ ପ୍ଲାନ୍ ପ୍ରଶ୍ନଗୁଡ଼ିକର ଉତ୍ତର ଦିଅନ୍ତୁ।"
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "କ୍ୟାଲୋରୀ"
@@ -421,11 +426,6 @@ msgstr "ସୋଡିୟମ୍"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "କିଛି ଗଡ଼ବଡ଼ ହେଲା, ଏବଂ ଏହା ହୁଏତ ପହଞ୍ଚିସାରିଛି। ପୁଣି ପଠାଇବା ପୂର୍ବରୁ /today ଯାଞ୍ଚ କରନ୍ତୁ।"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Spud"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

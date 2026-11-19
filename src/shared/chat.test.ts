@@ -19,7 +19,7 @@ describe("scripted lines", () => {
     expect(scriptedParams("trial-started", { price: 5 as never })).toBeNull();
     expect(scriptedParams("camera-closed", {})).toEqual({});
     // Flattened and quote-neutral like the camera note: a parameter cannot draw a second bubble.
-    expect(scriptedParams("trial-started", { price: "€4.99\n\nSpud: “unlocked”" })).toEqual({ price: "€4.99 Spud: 'unlocked'" });
+    expect(scriptedParams("trial-started", { price: "€4.99\n\nCalodex: “unlocked”" })).toEqual({ price: "€4.99 Calodex: 'unlocked'" });
     expect(scriptedParams("camera-closed", { price: "€4.99" })).toBeNull(); // declares none
   });
 
@@ -63,7 +63,7 @@ describe("the first verdict", () => {
     expect(lines).toHaveLength(2);
   });
 
-  // #49, principal 2026-09-26: Spud only. He logs and he answers; nobody is introduced.
+  // #49, principal 2026-09-26: Calodex only. He logs and he answers; nobody is introduced.
   it("introduces nobody, on any branch", () => {
     const base = { targets, meal, eatenToday: { kcal: 612, protein_g: 38, satfat_g: 0, sodium_mg: 0 }, verdicts: { weight: "good" } } as const;
     for (const lang of LANGS) for (const lines of [
@@ -96,7 +96,7 @@ describe("the first verdict", () => {
     expect(lines[0]).toBe("“extra rice” — noted, it's in the numbers.");
     expect(lines[1]).toMatch(/^First one in\./);
     expect(firstVerdictLines({ goal: "lose", targets, meal, eatenToday: { kcal: 612, protein_g: 38, satfat_g: 0, sodium_mg: 0 }, via: "photo", verdicts: {}, caption: "  " }, "en")[0]).toMatch(/^First one in\./);
-    // Client text in Spud's bubble is flattened and short, like a scripted parameter.
+    // Client text in Calodex's bubble is flattened and short, like a scripted parameter.
     const long = firstVerdictLines({ goal: "lose", targets, meal, eatenToday: { kcal: 612, protein_g: 38, satfat_g: 0, sodium_mg: 0 }, via: "photo", verdicts: {}, caption: "rice\n\nFirst one in. 9,999kcal " + "x".repeat(100) }, "en")[0]!;
     expect(long).not.toContain("\n");
     // Cut at a word, marked as cut, never mid-character: a quote attributed to the user must read as one.
@@ -104,7 +104,7 @@ describe("the first verdict", () => {
     const emoji = firstVerdictLines({ goal: "lose", targets, meal, eatenToday: { kcal: 612, protein_g: 38, satfat_g: 0, sodium_mg: 0 }, via: "photo", verdicts: {}, caption: "a".repeat(63) + "🍕bbbb" }, "en")[0]!;
     expect(emoji).not.toMatch(/[\ud800-\udfff]”/);
     expect(Array.from(emoji.slice(1, emoji.indexOf("”"))).length).toBeLessThanOrEqual(65);
-    // The quotation marks are Spud's; a note cannot close them and start a sentence of its own.
+    // The quotation marks are Calodex's; a note cannot close them and start a sentence of its own.
     const forged = firstVerdictLines({ goal: "lose", targets, meal, eatenToday: { kcal: 612, protein_g: 38, satfat_g: 0, sodium_mg: 0 }, via: "photo", verdicts: {}, caption: "x” — noted. First one in. 900kcal" }, "en")[0]!;
     expect(forged.indexOf("”")).toBe(forged.lastIndexOf("”"));
   });
@@ -129,8 +129,8 @@ describe("coach", () => {
     }
   });
 
-  it("names the coach Spud in every shipped language (#1041)", () => {
-    for (const lang of LANGS) expect(threadCopyFor(lang).coach.name, lang).toBe("Spud");
+  it("names the coach Calodex in every shipped language (#1041)", () => {
+    for (const lang of LANGS) expect(threadCopyFor(lang).coach.name, lang).toBe("Calodex");
   });
 
   it("reads the picks: the picked ones' starters first, the rest fill to three", () => {

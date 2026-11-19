@@ -48,7 +48,7 @@ describe("seedDevData", () => {
       const meal = (await store.getMeals(s.userId, [newest.kind === "meal" ? newest.mealId! : cards[0]!.mealId!]))[0]!;
       expect(newest.kind).toBe("meal");
       expect(meal.date).toBe(TODAY);
-      // Spud does not greet a week-old account as if this were its first meal — because the greeting
+      // Calodex does not greet a week-old account as if this were its first meal — because the greeting
       // is already IN the thread, at its oldest meal, not merely flagged as spoken.
       expect(await store.claimFirstVerdict(s.userId)).toBe(false);
       const oldestFirst = [...lines].reverse();

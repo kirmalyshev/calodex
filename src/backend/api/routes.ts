@@ -37,7 +37,7 @@ import type { Store } from "../store.ts";
 import {
   MAX_WINDOW_DAYS, appendLines, cancelPendingMeal, logFoodMeal, logNumbersMeal, chatHistory, confirmPendingMeal, day, days, average, deleteLine, deleteMealById, editLine,
   editMeal, handleText,
-  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, onboardingServedFor, templateAsset, patchProfile, pendingMeals, profileView,
+  healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, serveOnboarding, templateAsset, patchProfile, pendingMeals, profileView,
   sendEmailCode, unlinkIdentity, verifyEmailCode,
   EMAIL_ADDRESS, normalizeEmail,
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
@@ -840,7 +840,7 @@ export function createRouter(
         // (ieat-app#2669): a request without them is still answered — missing means "not
         // eligible", never an error. `?order=` is the order capability (ieat-app#2788),
         // `orderVersionOf`. `?verdict=` is the first-verdict capability (ieat-app#3165).
-        const served = await onboardingServedFor(deps, userId, {
+        const served = await serveOnboarding(deps, userId, {
           lang, surface: "app",
           region: url.searchParams.get("region"),
           tz: url.searchParams.get("tz"),
@@ -1028,7 +1028,7 @@ export function createRouter(
           ...(Number.isInteger(pageLimit) && pageLimit > 0 ? { limit: pageLimit } : {}),
         }));
       }
-      // The app's own lines: the user's words and Spud's scripted lines by id. All-or-nothing, and
+      // The app's own lines: the user's words and Calodex's scripted lines by id. All-or-nothing, and
       // a rejected batch is a 400 rather than a partial thread.
       if (req.method === "POST" && pathname === ROUTES.messagesLines) {
         // Unbilled, so no cap reaches it; per address, like the health sync, and BEFORE the body.

@@ -34,7 +34,7 @@ export interface MealCopy {
 
   /**
    * The coach's name line above his line on the correct sheet (web + phone
-   * `meal-{edit,edited}.html`): just the name, no role — "Spud", not a credential (#1041).
+   * `meal-{edit,edited}.html`): just the name, no role — "Calodex", not a credential (#1041).
    * `{coach}` is `THREAD_COPY`'s `coach.name`, never a literal.
    */
   coachLine: string;

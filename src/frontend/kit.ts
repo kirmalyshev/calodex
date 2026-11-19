@@ -121,7 +121,7 @@ export const optionRowEl = (o: Parameters<typeof optionRowMarkup>[0]): Element =
 export const gabieAvatarEl = (): Element => kitEl(gabieAvatarMarkup());
 
 /** The coach's mark in the thread (#2813): the app icon at 28 — the same `brandSvg` the shell's
-    wordmark parses — where a `.say` used to hang Spud's disc. `svg()`, not `kitEl`: the art is a
+    wordmark parses — where a `.say` used to hang the Spud mascot's disc. `svg()`, not `kitEl`: the art is a
     string of ours with nothing to escape, and the element keeps its SVG namespace. */
 export const eaitIconEl = (): Element =>
   new DOMParser().parseFromString(brandSvg("eait", { size: 28, class: "eait" }), "image/svg+xml").documentElement;
