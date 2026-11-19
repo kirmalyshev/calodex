@@ -395,7 +395,7 @@ export interface OnboardingBuildingContent {
 
 /** The payoff — the plan card. Editable too, because it is the most-read thing in the flow. */
 export interface OnboardingSummaryContent {
-  /** "Here is your plan". */
+  /** "Your plan". */
   lines: string[];
   kcalLabel: string;
   /**
@@ -1246,7 +1246,7 @@ export const DEFAULT_ONBOARDING_CONTENT_RAW: OnboardingContent = {
     floorBody: "The arithmetic wanted to go lower. We don't set targets below this without medical supervision, so this is where yours sits. It'll also say so on your diary.",
   },
   summary: {
-    lines: ["Here is your plan"],
+    lines: ["Your plan"],
     kcalLabel: "kcal a day",
     floorMarker: "capped for safety · never below {floor}",
     macros: {

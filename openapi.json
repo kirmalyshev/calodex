@@ -9097,7 +9097,7 @@
             "items": {
               "type": "string"
             },
-            "description": "\"Here is your plan\"."
+            "description": "\"Your plan\"."
           },
           "kcalLabel": {
             "type": "string"

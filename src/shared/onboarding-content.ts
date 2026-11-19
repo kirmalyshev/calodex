@@ -193,7 +193,7 @@ const FR: OnboardingContent = {
     floorBody: "Le calcul voulait descendre plus bas. Sans suivi médical, on ne fixe pas d'objectif en dessous, donc le tien s'arrête ici. Ton journal le dira aussi.",
   },
   summary: {
-    lines: ["Voilà ton plan"],
+    lines: ["Ton plan"],
     kcalLabel: "kcal par jour",
     floorMarker: "plafonné par sécurité · jamais sous {floor}",
     macros: {
@@ -214,7 +214,7 @@ const FR: OnboardingContent = {
   beats: {
     ageWhy: "Ton métabolisme change avec l’âge, on en tient compte",
     echo: { rest: "Au repos : {rest}kcal par jour", days: "Tes journées brûlent {burn}kcal" },
-    baseline: { title: "Voici ton point de départ", bmi: "IMC", what: "Indice de masse corporelle" },
+    baseline: { title: "Ton point de départ", bmi: "IMC", what: "Indice de masse corporelle" },
     prelim: { title: "Ton plan", burn: "Tu brûles", gap: "{delta} ton rythme", eat: "Tu manges", perDay: "kcal par jour", keepTitle: "Tu brûles environ {burn}kcal" },
   },
   target: {
@@ -461,7 +461,7 @@ const DE: OnboardingContent = {
     floorBody: "Die Rechnung wollte tiefer. Ohne ärztliche Begleitung setzen wir keine Ziele darunter, also liegt deins genau hier. In deinem Tagebuch steht das auch.",
   },
   summary: {
-    lines: ["Hier ist dein Plan"],
+    lines: ["Dein Plan"],
     kcalLabel: "kcal pro Tag",
     floorMarker: "aus Sicherheitsgründen begrenzt · nie unter {floor}",
     macros: {
@@ -482,7 +482,7 @@ const DE: OnboardingContent = {
   beats: {
     ageWhy: "Dein Stoffwechsel verändert sich mit dem Alter, das rechnen wir ein",
     echo: { rest: "Im Ruhezustand: {rest}kcal am Tag", days: "Deine Tage verbrennen {burn}kcal" },
-    baseline: { title: "Das ist dein Ausgangspunkt", bmi: "BMI", what: "Body-Mass-Index" },
+    baseline: { title: "Dein Ausgangspunkt", bmi: "BMI", what: "Body-Mass-Index" },
     prelim: { title: "Dein Plan", burn: "Du verbrennst", gap: "{delta} dein Tempo", eat: "Du isst", perDay: "kcal am Tag", keepTitle: "Du verbrennst etwa {burn}kcal" },
   },
   target: {
@@ -729,7 +729,7 @@ const IT: OnboardingContent = {
     floorBody: "Il calcolo voleva scendere ancora. Senza controllo medico non fissiamo obiettivi sotto questa soglia, quindi il tuo resta qui. Lo dirà anche il tuo diario.",
   },
   summary: {
-    lines: ["Ecco il tuo piano"],
+    lines: ["Il tuo piano"],
     kcalLabel: "kcal al giorno",
     floorMarker: "limitato per sicurezza · mai sotto {floor}",
     macros: {
@@ -750,7 +750,7 @@ const IT: OnboardingContent = {
   beats: {
     ageWhy: "Il tuo metabolismo cambia con l’età, e ne teniamo conto",
     echo: { rest: "A riposo: {rest}kcal al giorno", days: "Le tue giornate bruciano {burn}kcal" },
-    baseline: { title: "Ecco il tuo punto di partenza", bmi: "IMC", what: "Indice di massa corporea" },
+    baseline: { title: "Il tuo punto di partenza", bmi: "IMC", what: "Indice di massa corporea" },
     prelim: { title: "Il tuo piano", burn: "Tu bruci", gap: "{delta} il tuo ritmo", eat: "Tu mangi", perDay: "kcal al giorno", keepTitle: "Bruci circa {burn}kcal" },
   },
   target: {
@@ -810,7 +810,7 @@ const IT: OnboardingContent = {
     tell: "Raccontami cosa hai mangiato",
     keepGoing: "Avanti",
     correct: "Correggi il pasto",
-    afterAsk: "Ecco il primo. Lo vuoi per ogni pasto?",
+    afterAsk: "Il primo è fatto. Lo vuoi per ogni pasto?",
   },
   refusals: {
     invalid: {
@@ -997,7 +997,7 @@ const ES: OnboardingContent = {
     floorBody: "El cálculo quería bajar más. Sin supervisión médica no fijamos objetivos por debajo de esto, así que el tuyo se queda aquí. Tu diario también lo dirá.",
   },
   summary: {
-    lines: ["Aquí está tu plan"],
+    lines: ["Tu plan"],
     kcalLabel: "kcal al día",
     floorMarker: "limitado por seguridad · nunca por debajo de {floor}",
     macros: {
@@ -1018,7 +1018,7 @@ const ES: OnboardingContent = {
   beats: {
     ageWhy: "Tu metabolismo cambia con la edad, y lo tenemos en cuenta",
     echo: { rest: "En reposo: {rest}kcal al día", days: "Tus días queman {burn}kcal" },
-    baseline: { title: "Este es tu punto de partida", bmi: "IMC", what: "Índice de masa corporal" },
+    baseline: { title: "Tu punto de partida", bmi: "IMC", what: "Índice de masa corporal" },
     prelim: { title: "Tu plan", burn: "Quemas", gap: "{delta} tu ritmo", eat: "Comes", perDay: "kcal al día", keepTitle: "Quemas unas {burn}kcal" },
   },
   target: {
@@ -1265,7 +1265,7 @@ const VI: OnboardingContent = {
     floorBody: "Phép tính muốn xuống thấp hơn. Không có bác sĩ theo dõi thì chúng mình không đặt mục tiêu thấp hơn mức này, nên của bạn dừng ở đây. Nhật ký cũng sẽ ghi vậy.",
   },
   summary: {
-    lines: ["Kế hoạch của bạn đây"],
+    lines: ["Kế hoạch của bạn"],
     kcalLabel: "kcal mỗi ngày",
     floorMarker: "đã giới hạn vì an toàn · không bao giờ dưới {floor}",
     macros: {
@@ -1286,7 +1286,7 @@ const VI: OnboardingContent = {
   beats: {
     ageWhy: "Trao đổi chất thay đổi theo tuổi, nên chúng tôi tính cả điều đó",
     echo: { rest: "Lúc nghỉ: {rest}kcal một ngày", days: "Những ngày của bạn đốt {burn}kcal" },
-    baseline: { title: "Đây là điểm xuất phát của bạn", bmi: "BMI", what: "Chỉ số khối cơ thể" },
+    baseline: { title: "Điểm xuất phát của bạn", bmi: "BMI", what: "Chỉ số khối cơ thể" },
     prelim: { title: "Kế hoạch của bạn", burn: "Bạn đốt", gap: "{delta} tốc độ của bạn", eat: "Bạn ăn", perDay: "kcal một ngày", keepTitle: "Bạn đốt khoảng {burn}kcal" },
   },
   target: {
@@ -1533,7 +1533,7 @@ const ID: OnboardingContent = {
     floorBody: "Hitungannya mengarah lebih rendah lagi. Tanpa pengawasan medis kami tidak menetapkan target di bawah ini, jadi punyamu berhenti di sini. Buku harianmu juga akan menyebutkannya.",
   },
   summary: {
-    lines: ["Ini rencanamu"],
+    lines: ["Rencanamu"],
     kcalLabel: "kcal per hari",
     floorMarker: "dibatasi demi keamanan · tidak pernah di bawah {floor}",
     macros: {
@@ -1554,7 +1554,7 @@ const ID: OnboardingContent = {
   beats: {
     ageWhy: "Metabolismemu berubah seiring usia, jadi kami memperhitungkannya",
     echo: { rest: "Saat istirahat: {rest}kcal sehari", days: "Harimu membakar {burn}kcal" },
-    baseline: { title: "Ini titik awalmu", bmi: "IMT", what: "Indeks massa tubuh" },
+    baseline: { title: "Titik awalmu", bmi: "IMT", what: "Indeks massa tubuh" },
     prelim: { title: "Rencanamu", burn: "Kamu membakar", gap: "{delta} tempomu", eat: "Kamu makan", perDay: "kcal sehari", keepTitle: "Kamu membakar sekitar {burn}kcal" },
   },
   target: {
@@ -1801,7 +1801,7 @@ const RU: OnboardingContent = {
     floorBody: "Расчёт хотел уйти ниже. Без наблюдения врача мы не ставим цели ниже этой отметки, так что твоя — здесь. В дневнике это тоже будет написано.",
   },
   summary: {
-    lines: ["Вот твой план"],
+    lines: ["Твой план"],
     kcalLabel: "ккал в день",
     floorMarker: "ограничено ради безопасности · никогда ниже {floor}",
     macros: {
@@ -1822,7 +1822,7 @@ const RU: OnboardingContent = {
   beats: {
     ageWhy: "С возрастом обмен веществ меняется, мы это учитываем",
     echo: { rest: "В покое: {rest}ккал в день", days: "Твои дни сжигают {burn}ккал" },
-    baseline: { title: "Вот твоя точка отсчёта", bmi: "ИМТ", what: "Индекс массы тела" },
+    baseline: { title: "Твоя точка отсчёта", bmi: "ИМТ", what: "Индекс массы тела" },
     prelim: { title: "Твой план", burn: "Ты сжигаешь", gap: "{delta} твой темп", eat: "Ты ешь", perDay: "ккал в день", keepTitle: "Ты сжигаешь около {burn}ккал" },
   },
   target: {
@@ -2174,7 +2174,7 @@ const TE: OnboardingContent = {
     floorBody: "లెక్క ఇంకా తక్కువకు వెళ్లాలనుకుంది. వైద్య పర్యవేక్షణ లేకుండా దీని కంటే తక్కువ లక్ష్యాలను మేము పెట్టము, అందుకే మీది ఇక్కడే ఉంది. మీ డైరీలో కూడా ఇదే చెబుతుంది.",
   },
   summary: {
-    lines: ["ఇదే మీ ప్లాన్"],
+    lines: ["మీ ప్లాన్"],
     kcalLabel: "రోజుకు kcal",
     floorMarker: "భద్రత కోసం పరిమితం · ఎప్పుడూ {floor} కంటే తక్కువ కాదు",
     macros: {
@@ -2200,7 +2200,7 @@ const TE: OnboardingContent = {
   beats: {
     ageWhy: "వయసుతో పాటు మీ జీవక్రియ మారుతుంది, అందుకే దాన్ని లెక్కలోకి తీసుకుంటాం",
     echo: { rest: "విశ్రాంతిలో: రోజుకు {rest}kcal", days: "మీ రోజులు {burn}kcal ఖర్చు చేస్తాయి" },
-    baseline: { title: "ఇదే మీ ప్రారంభ స్థాయి", bmi: "BMI", what: "బాడీ మాస్ ఇండెక్స్" },
+    baseline: { title: "మీ ప్రారంభ స్థాయి", bmi: "BMI", what: "బాడీ మాస్ ఇండెక్స్" },
     prelim: { title: "మీ ప్రణాళిక", burn: "మీరు ఖర్చు చేసేది", gap: "{delta} మీ వేగం", eat: "మీరు తింటారు", perDay: "kcal రోజుకు", keepTitle: "మీరు సుమారు {burn}kcal ఖర్చు చేస్తారు" },
   },
   target: {
@@ -2552,7 +2552,7 @@ const TA: OnboardingContent = {
     floorBody: "கணக்கு இதைவிடக் குறைவாகச் செல்ல விரும்பியது. மருத்துவக் கண்காணிப்பு இல்லாமல் இதற்குக் கீழ் இலக்குகளை அமைப்பதில்லை, எனவே உங்களுடையது இங்கே உள்ளது. உங்கள் நாட்குறிப்பிலும் இது குறிப்பிடப்படும்.",
   },
   summary: {
-    lines: ["இதோ உங்கள் திட்டம்"],
+    lines: ["உங்கள் திட்டம்"],
     kcalLabel: "ஒரு நாளைக்கு kcal",
     floorMarker: "பாதுகாப்புக்காக வரம்பு · எப்போதும் குறைந்தது {floor}",
     macros: {
@@ -2578,7 +2578,7 @@ const TA: OnboardingContent = {
   beats: {
     ageWhy: "வயதுடன் உங்கள் வளர்சிதை மாற்றம் மாறுகிறது, அதனால் அதைக் கணக்கில் கொள்கிறோம்",
     echo: { rest: "ஓய்வில்: ஒரு நாளைக்கு {rest}kcal", days: "உங்கள் நாட்கள் {burn}kcal எரிக்கின்றன" },
-    baseline: { title: "இதோ உங்கள் தொடக்க நிலை", bmi: "BMI", what: "உடல் நிறை குறியீட்டெண்" },
+    baseline: { title: "உங்கள் தொடக்க நிலை", bmi: "BMI", what: "உடல் நிறை குறியீட்டெண்" },
     prelim: { title: "உங்கள் திட்டம்", burn: "நீங்கள் எரிப்பது", gap: "{delta} உங்கள் வேகம்", eat: "நீங்கள் சாப்பிடுவது", perDay: "kcal ஒரு நாளைக்கு", keepTitle: "நீங்கள் சுமார் {burn}kcal எரிக்கிறீர்கள்" },
   },
   target: {
@@ -2930,7 +2930,7 @@ const PA: OnboardingContent = {
     floorBody: "ਹਿਸਾਬ ਇਸ ਤੋਂ ਹੇਠਾਂ ਜਾਣਾ ਚਾਹੁੰਦਾ ਸੀ। ਡਾਕਟਰ ਦੀ ਨਿਗਰਾਨੀ ਤੋਂ ਬਿਨਾਂ ਅਸੀਂ ਇਸ ਤੋਂ ਘੱਟ ਟੀਚੇ ਨਹੀਂ ਰੱਖਦੇ, ਇਸ ਲਈ ਤੁਹਾਡਾ ਟੀਚਾ ਇੱਥੇ ਹੀ ਹੈ। ਤੁਹਾਡੀ ਡਾਇਰੀ ਵਿੱਚ ਵੀ ਇਹੀ ਲਿਖਿਆ ਹੋਵੇਗਾ।",
   },
   summary: {
-    lines: ["ਇਹ ਰਿਹਾ ਤੁਹਾਡਾ ਪਲਾਨ"],
+    lines: ["ਤੁਹਾਡਾ ਪਲਾਨ"],
     kcalLabel: "kcal ਪ੍ਰਤੀ ਦਿਨ",
     floorMarker: "ਸੁਰੱਖਿਆ ਲਈ ਸੀਮਤ · {floor} ਤੋਂ ਕਦੇ ਘੱਟ ਨਹੀਂ",
     macros: {
@@ -2956,7 +2956,7 @@ const PA: OnboardingContent = {
   beats: {
     ageWhy: "ਉਮਰ ਨਾਲ ਤੁਹਾਡਾ ਮੈਟਾਬੋਲਿਜ਼ਮ ਬਦਲਦਾ ਹੈ, ਇਸ ਲਈ ਅਸੀਂ ਇਸ ਨੂੰ ਧਿਆਨ ਵਿੱਚ ਰੱਖਦੇ ਹਾਂ",
     echo: { rest: "ਆਰਾਮ ਦੀ ਹਾਲਤ ਵਿੱਚ: {rest}kcal ਪ੍ਰਤੀ ਦਿਨ", days: "ਤੁਹਾਡੇ ਦਿਨ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹਨ" },
-    baseline: { title: "ਇਹ ਰਿਹਾ ਤੁਹਾਡਾ ਸ਼ੁਰੂਆਤੀ ਆਧਾਰ", bmi: "BMI", what: "ਬਾਡੀ ਮਾਸ ਇੰਡੈਕਸ" },
+    baseline: { title: "ਤੁਹਾਡਾ ਸ਼ੁਰੂਆਤੀ ਆਧਾਰ", bmi: "BMI", what: "ਬਾਡੀ ਮਾਸ ਇੰਡੈਕਸ" },
     prelim: { title: "ਤੁਹਾਡੀ ਯੋਜਨਾ", burn: "ਤੁਸੀਂ ਖ਼ਰਚ ਕਰਦੇ ਹੋ", gap: "{delta} ਤੁਹਾਡੀ ਰਫ਼ਤਾਰ", eat: "ਤੁਸੀਂ ਖਾਂਦੇ ਹੋ", perDay: "kcal ਪ੍ਰਤੀ ਦਿਨ", keepTitle: "ਤੁਸੀਂ ਲਗਭਗ {burn}kcal ਖ਼ਰਚ ਕਰਦੇ ਹੋ" },
   },
   target: {
@@ -3308,7 +3308,7 @@ const OR: OnboardingContent = {
     floorBody: "ହିସାବ ଆହୁରି କମ୍ ଯିବାକୁ ଚାହୁଁଥିଲା। ଚିକିତ୍ସକଙ୍କ ତତ୍ତ୍ୱାବଧାନ ବିନା ଆମେ ଏହାଠାରୁ କମ୍ ଲକ୍ଷ୍ୟ ସେଟ୍ କରୁନାହୁଁ, ତେଣୁ ଆପଣଙ୍କର ଏଠାରେ ରହିଲା। ଆପଣଙ୍କ ଡାଏରୀରେ ମଧ୍ୟ ଏହା ଲେଖାଥିବ।",
   },
   summary: {
-    lines: ["ଏହା ଆପଣଙ୍କ ପ୍ଲାନ୍"],
+    lines: ["ଆପଣଙ୍କ ପ୍ଲାନ୍"],
     kcalLabel: "kcal ପ୍ରତିଦିନ",
     floorMarker: "ସୁରକ୍ଷା ପାଇଁ ସୀମିତ · {floor} ରୁ କେବେ କମ୍ ନୁହେଁ",
     macros: {
@@ -3334,7 +3334,7 @@ const OR: OnboardingContent = {
   beats: {
     ageWhy: "ବୟସ ସହ ଆପଣଙ୍କ ମେଟାବୋଲିଜମ୍ ବଦଳେ, ତେଣୁ ଆମେ ତାହା ହିସାବକୁ ନେଉ",
     echo: { rest: "ବିଶ୍ରାମରେ: {rest}kcal ପ୍ରତିଦିନ", days: "ଆପଣଙ୍କ ଦିନ {burn}kcal ଖର୍ଚ୍ଚ କରେ" },
-    baseline: { title: "ଏହା ଆପଣଙ୍କ ଆରମ୍ଭିକ ଆଧାର", bmi: "BMI", what: "ବଡି ମାସ୍ ଇଣ୍ଡେକ୍ସ" },
+    baseline: { title: "ଆପଣଙ୍କ ଆରମ୍ଭିକ ଆଧାର", bmi: "BMI", what: "ବଡି ମାସ୍ ଇଣ୍ଡେକ୍ସ" },
     prelim: { title: "ଆପଣଙ୍କ ଯୋଜନା", burn: "ଆପଣ ଖର୍ଚ୍ଚ କରନ୍ତି", gap: "{delta} ଆପଣଙ୍କ ଗତି", eat: "ଆପଣ ଖାଆନ୍ତି", perDay: "kcal ପ୍ରତିଦିନ", keepTitle: "ଆପଣ ପ୍ରାୟ {burn}kcal ଖର୍ଚ୍ଚ କରନ୍ତି" },
   },
   target: {
@@ -3686,7 +3686,7 @@ const MR: OnboardingContent = {
     floorBody: "हिशोब यापेक्षा खाली जात होता. वैद्यकीय देखरेखीशिवाय आम्ही यापेक्षा कमी लक्ष्य ठेवत नाही, म्हणून तुमचे लक्ष्य इथेच आहे. तुमच्या डायरीतही असेच लिहिलेले असेल.",
   },
   summary: {
-    lines: ["हा आहे तुमचा प्लॅन"],
+    lines: ["तुमचा प्लॅन"],
     kcalLabel: "kcal दिवसाला",
     floorMarker: "सुरक्षेसाठी मर्यादित · कधीही {floor} पेक्षा कमी नाही",
     macros: {
@@ -3712,7 +3712,7 @@ const MR: OnboardingContent = {
   beats: {
     ageWhy: "वयानुसार तुमचा मेटाबॉलिझम बदलतो, म्हणून आम्ही तेही लक्षात घेतो",
     echo: { rest: "विश्रांतीत: दिवसाला {rest}kcal", days: "तुमचे दिवस {burn}kcal खर्च करतात" },
-    baseline: { title: "हा आहे तुमचा सुरुवातीचा आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
+    baseline: { title: "तुमचा सुरुवातीचा आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
     prelim: { title: "तुमची योजना", burn: "तुम्ही खर्च करता", gap: "{delta} तुमचा वेग", eat: "तुम्ही खाता", perDay: "kcal दिवसाला", keepTitle: "तुम्ही सुमारे {burn}kcal खर्च करता" },
   },
   target: {
@@ -4064,7 +4064,7 @@ const ML: OnboardingContent = {
     floorBody: "കണക്ക് ഇതിലും താഴേക്ക് പോകാൻ ആഗ്രഹിച്ചു. മെഡിക്കൽ മേൽനോട്ടമില്ലാതെ ഞങ്ങൾ ഇതിന് താഴെ ലക്ഷ്യം വയ്ക്കില്ല, അതിനാൽ നിങ്ങളുടേത് ഇവിടെയാണ്. നിങ്ങളുടെ ഡയറിയിലും അത് കാണിക്കും.",
   },
   summary: {
-    lines: ["ഇതാ നിങ്ങളുടെ പ്ലാൻ"],
+    lines: ["നിങ്ങളുടെ പ്ലാൻ"],
     kcalLabel: "kcal / ദിവസം",
     floorMarker: "സുരക്ഷയ്ക്കായി പരിധി · ഒരിക്കലും {floor}ന് താഴെയല്ല",
     macros: {
@@ -4090,7 +4090,7 @@ const ML: OnboardingContent = {
   beats: {
     ageWhy: "പ്രായത്തിനനുസരിച്ച് നിങ്ങളുടെ മെറ്റബോളിസം മാറുന്നു, അതിനാൽ ഞങ്ങൾ അത് കണക്കിലെടുക്കുന്നു",
     echo: { rest: "വിശ്രമത്തിൽ: ദിവസം {rest}kcal", days: "നിങ്ങളുടെ ദിവസങ്ങൾ {burn}kcal ചെലവഴിക്കുന്നു" },
-    baseline: { title: "ഇതാ നിങ്ങളുടെ തുടക്കനില", bmi: "BMI", what: "ബോഡി മാസ് ഇൻഡക്സ്" },
+    baseline: { title: "നിങ്ങളുടെ തുടക്കനില", bmi: "BMI", what: "ബോഡി മാസ് ഇൻഡക്സ്" },
     prelim: { title: "നിങ്ങളുടെ പ്ലാൻ", burn: "നിങ്ങൾ ചെലവഴിക്കുന്നത്", gap: "{delta} നിങ്ങളുടെ ഗതി", eat: "നിങ്ങൾ കഴിക്കുന്നത്", perDay: "kcal ദിവസം", keepTitle: "നിങ്ങൾ ഏകദേശം {burn}kcal ചെലവഴിക്കുന്നു" },
   },
   target: {
@@ -4442,7 +4442,7 @@ const KN: OnboardingContent = {
     floorBody: "ಲೆಕ್ಕಾಚಾರ ಇನ್ನೂ ಕೆಳಗೆ ಹೋಗಲು ಬಯಸಿತ್ತು. ವೈದ್ಯಕೀಯ ಮೇಲ್ವಿಚಾರಣೆಯಿಲ್ಲದೆ ನಾವು ಇದಕ್ಕಿಂತ ಕಡಿಮೆ ಗುರಿಗಳನ್ನು ಹೊಂದಿಸುವುದಿಲ್ಲ, ಹಾಗಾಗಿ ನಿಮ್ಮದು ಇಲ್ಲೇ ಇದೆ. ನಿಮ್ಮ ಡೈರಿಯಲ್ಲೂ ಇದನ್ನೇ ತೋರಿಸಲಾಗುತ್ತದೆ.",
   },
   summary: {
-    lines: ["ಇದು ನಿಮ್ಮ ಪ್ಲಾನ್"],
+    lines: ["ನಿಮ್ಮ ಪ್ಲಾನ್"],
     kcalLabel: "kcal ದಿನಕ್ಕೆ",
     floorMarker: "ಸುರಕ್ಷತೆಗಾಗಿ ಮಿತಿಗೊಳಿಸಲಾಗಿದೆ · ಯಾವಾಗಲೂ ಕನಿಷ್ಠ {floor}",
     macros: {
@@ -4468,7 +4468,7 @@ const KN: OnboardingContent = {
   beats: {
     ageWhy: "ವಯಸ್ಸಿನೊಂದಿಗೆ ನಿಮ್ಮ ಚಯಾಪಚಯ ಬದಲಾಗುತ್ತದೆ, ಹಾಗಾಗಿ ನಾವು ಅದನ್ನು ಲೆಕ್ಕಕ್ಕೆ ತೆಗೆದುಕೊಳ್ಳುತ್ತೇವೆ",
     echo: { rest: "ವಿಶ್ರಾಂತಿಯಲ್ಲಿ: ದಿನಕ್ಕೆ {rest}kcal", days: "ನಿಮ್ಮ ದಿನಗಳು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತವೆ" },
-    baseline: { title: "ಇದು ನಿಮ್ಮ ಆರಂಭಿಕ ಸ್ಥಿತಿ", bmi: "BMI", what: "ಬಾಡಿ ಮಾಸ್ ಇಂಡೆಕ್ಸ್" },
+    baseline: { title: "ನಿಮ್ಮ ಆರಂಭಿಕ ಸ್ಥಿತಿ", bmi: "BMI", what: "ಬಾಡಿ ಮಾಸ್ ಇಂಡೆಕ್ಸ್" },
     prelim: { title: "ನಿಮ್ಮ ಯೋಜನೆ", burn: "ನೀವು ಖರ್ಚು ಮಾಡುತ್ತೀರಿ", gap: "{delta} ನಿಮ್ಮ ವೇಗ", eat: "ನೀವು ತಿನ್ನುತ್ತೀರಿ", perDay: "kcal ದಿನಕ್ಕೆ", keepTitle: "ನೀವು ಸುಮಾರು {burn}kcal ಖರ್ಚು ಮಾಡುತ್ತೀರಿ" },
   },
   target: {
@@ -4820,7 +4820,7 @@ const GU: OnboardingContent = {
     floorBody: "ગણતરી આનાથી નીચે જવા માંગતી હતી. તબીબી દેખરેખ વિના અમે આનાથી ઓછું લક્ષ્ય નક્કી કરતા નથી, તેથી તમારું લક્ષ્ય અહીં જ છે. તમારી ડાયરીમાં પણ આ લખેલું હશે.",
   },
   summary: {
-    lines: ["આ રહ્યો તમારો પ્લાન"],
+    lines: ["તમારો પ્લાન"],
     kcalLabel: "kcal પ્રતિ દિવસ",
     floorMarker: "સુરક્ષા માટે મર્યાદિત · ક્યારેય {floor} થી ઓછું નહીં",
     macros: {
@@ -4846,7 +4846,7 @@ const GU: OnboardingContent = {
   beats: {
     ageWhy: "ઉંમર સાથે તમારું મેટાબોલિઝમ બદલાય છે, તેથી અમે તેને ધ્યાનમાં લઈએ છીએ",
     echo: { rest: "આરામની સ્થિતિમાં: {rest}kcal પ્રતિ દિવસ", days: "તમારા દિવસો {burn}kcal ખર્ચે છે" },
-    baseline: { title: "આ રહ્યો તમારો શરૂઆતનો આધાર", bmi: "BMI", what: "બોડી માસ ઇન્ડેક્સ" },
+    baseline: { title: "તમારો શરૂઆતનો આધાર", bmi: "BMI", what: "બોડી માસ ઇન્ડેક્સ" },
     prelim: { title: "તમારી યોજના", burn: "તમે ખર્ચો છો", gap: "{delta} તમારી ઝડપ", eat: "તમે ખાઓ છો", perDay: "kcal પ્રતિ દિવસ", keepTitle: "તમે લગભગ {burn}kcal ખર્ચો છો" },
   },
   target: {
@@ -5198,7 +5198,7 @@ const BN: OnboardingContent = {
     floorBody: "হিসাব আরও নিচে যেতে চাইছিল। চিকিৎসকের তত্ত্বাবধান ছাড়া আমরা এর নিচে লক্ষ্যমাত্রা রাখি না, তাই আপনারটা এখানেই। আপনার ডায়েরিতেও সেটা লেখা থাকবে।",
   },
   summary: {
-    lines: ["এই হলো আপনার প্ল্যান"],
+    lines: ["আপনার প্ল্যান"],
     kcalLabel: "kcal প্রতিদিন",
     floorMarker: "নিরাপত্তার জন্য সীমিত · কখনো {floor}-এর নিচে নয়",
     macros: {
@@ -5224,7 +5224,7 @@ const BN: OnboardingContent = {
   beats: {
     ageWhy: "বয়সের সঙ্গে আপনার মেটাবলিজম বদলায়, তাই আমরা সেটা হিসাবে রাখি",
     echo: { rest: "বিশ্রামে: দিনে {rest}kcal", days: "আপনার দিনগুলো {burn}kcal খরচ করে" },
-    baseline: { title: "এই হলো আপনার শুরুর অবস্থা", bmi: "BMI", what: "বডি মাস ইনডেক্স" },
+    baseline: { title: "আপনার শুরুর অবস্থা", bmi: "BMI", what: "বডি মাস ইনডেক্স" },
     prelim: { title: "আপনার পরিকল্পনা", burn: "আপনি খরচ করেন", gap: "{delta} আপনার গতি", eat: "আপনি খান", perDay: "kcal দিনে", keepTitle: "আপনি প্রায় {burn}kcal খরচ করেন" },
   },
   target: {
@@ -5576,7 +5576,7 @@ const PT_PT: OnboardingContent = {
     floorBody: "As contas queriam ir mais abaixo. Não definimos alvos abaixo disto sem acompanhamento médico, por isso o teu fica aqui. Isso também vai aparecer no teu diário.",
   },
   summary: {
-    lines: ["Aqui está o teu plano"],
+    lines: ["O teu plano"],
     kcalLabel: "kcal por dia",
     floorMarker: "limitado por segurança · nunca abaixo de {floor}",
     macros: {
@@ -5602,7 +5602,7 @@ const PT_PT: OnboardingContent = {
   beats: {
     ageWhy: "O teu metabolismo muda com a idade, por isso temos isso em conta",
     echo: { rest: "Em repouso: {rest}kcal por dia", days: "Os teus dias gastam {burn}kcal" },
-    baseline: { title: "Este é o teu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
+    baseline: { title: "O teu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
     prelim: { title: "O teu plano", burn: "Gastas", gap: "{delta} o teu ritmo", eat: "Comes", perDay: "kcal por dia", keepTitle: "Gastas cerca de {burn}kcal" },
   },
   target: {
@@ -5954,7 +5954,7 @@ const MS: OnboardingContent = {
     floorBody: "Kiraan mahu pergi lebih rendah. Kami tidak menetapkan sasaran di bawah ini tanpa pengawasan perubatan, jadi di sinilah sasaran anda. Ia juga dinyatakan dalam diari anda.",
   },
   summary: {
-    lines: ["Inilah pelan anda"],
+    lines: ["Pelan anda"],
     kcalLabel: "kcal sehari",
     floorMarker: "dihadkan demi keselamatan · tidak kurang daripada {floor}",
     macros: {
@@ -5980,7 +5980,7 @@ const MS: OnboardingContent = {
   beats: {
     ageWhy: "Metabolisme anda berubah mengikut usia, jadi kami mengambil kira perkara itu",
     echo: { rest: "Ketika rehat: {rest}kcal sehari", days: "Hari-hari anda membakar {burn}kcal" },
-    baseline: { title: "Ini titik permulaan anda", bmi: "BMI", what: "Indeks jisim badan" },
+    baseline: { title: "Titik permulaan anda", bmi: "BMI", what: "Indeks jisim badan" },
     prelim: { title: "Pelan anda", burn: "Anda membakar", gap: "{delta} kadar anda", eat: "Anda makan", perDay: "kcal sehari", keepTitle: "Anda membakar kira-kira {burn}kcal" },
   },
   target: {
@@ -6332,7 +6332,7 @@ const CA: OnboardingContent = {
     floorBody: "El càlcul volia baixar més. Sense supervisió mèdica no fixem objectius per sota d'aquest valor, així que el teu es queda aquí. El teu diari també ho indicarà.",
   },
   summary: {
-    lines: ["Aquest és el teu pla"],
+    lines: ["El teu pla"],
     kcalLabel: "kcal al dia",
     floorMarker: "limitat per seguretat · mai per sota de {floor}",
     macros: {
@@ -6358,7 +6358,7 @@ const CA: OnboardingContent = {
   beats: {
     ageWhy: "El metabolisme canvia amb l'edat, i ho tenim en compte",
     echo: { rest: "En repòs: {rest}kcal al dia", days: "Els teus dies cremen {burn}kcal" },
-    baseline: { title: "Aquest és el teu punt de partida", bmi: "IMC", what: "Índex de massa corporal" },
+    baseline: { title: "El teu punt de partida", bmi: "IMC", what: "Índex de massa corporal" },
     prelim: { title: "El teu pla", burn: "Cremes", gap: "{delta} el teu ritme", eat: "Menjes", perDay: "kcal al dia", keepTitle: "Cremes unes {burn}kcal" },
   },
   target: {
@@ -6710,7 +6710,7 @@ const SL: OnboardingContent = {
     floorBody: "Izračun bi šel nižje. Brez zdravniškega nadzora ne nastavljamo ciljnih vrednosti pod to mejo, zato je tvoja tukaj. To bo pisalo tudi v tvojem dnevniku.",
   },
   summary: {
-    lines: ["To je tvoj načrt"],
+    lines: ["Tvoj načrt"],
     kcalLabel: "kcal na dan",
     floorMarker: "omejeno zaradi varnosti · nikoli pod {floor}",
     macros: {
@@ -6736,7 +6736,7 @@ const SL: OnboardingContent = {
   beats: {
     ageWhy: "Presnova se s starostjo spreminja, zato to upoštevamo",
     echo: { rest: "V mirovanju: {rest}kcal na dan", days: "Tvoji dnevi porabijo {burn}kcal" },
-    baseline: { title: "To je tvoje izhodišče", bmi: "ITM", what: "Indeks telesne mase" },
+    baseline: { title: "Tvoje izhodišče", bmi: "ITM", what: "Indeks telesne mase" },
     prelim: { title: "Tvoj načrt", burn: "Porabiš", gap: "{delta} tvoj tempo", eat: "Ješ", perDay: "kcal na dan", keepTitle: "Porabiš približno {burn}kcal" },
   },
   target: {
@@ -7088,7 +7088,7 @@ const HR: OnboardingContent = {
     floorBody: "Izračun je htio ići niže. Bez liječničkog nadzora ne postavljamo ciljeve ispod ovoga, pa je tvoj upravo ovdje. To će pisati i u tvom dnevniku.",
   },
   summary: {
-    lines: ["Ovo je tvoj plan"],
+    lines: ["Tvoj plan"],
     kcalLabel: "kcal dnevno",
     floorMarker: "ograničeno radi sigurnosti · nikad ispod {floor}",
     macros: {
@@ -7114,7 +7114,7 @@ const HR: OnboardingContent = {
   beats: {
     ageWhy: "Metabolizam se mijenja s godinama, pa to uračunavamo",
     echo: { rest: "U mirovanju: {rest}kcal dnevno", days: "Tvoji dani troše {burn}kcal" },
-    baseline: { title: "Ovo je tvoja polazna točka", bmi: "BMI", what: "Indeks tjelesne mase" },
+    baseline: { title: "Tvoja polazna točka", bmi: "BMI", what: "Indeks tjelesne mase" },
     prelim: { title: "Tvoj plan", burn: "Trošiš", gap: "{delta} tvoj tempo", eat: "Jedeš", perDay: "kcal dnevno", keepTitle: "Trošiš oko {burn}kcal" },
   },
   target: {
@@ -7466,7 +7466,7 @@ const SK: OnboardingContent = {
     floorBody: "Výpočet chcel ísť nižšie. Bez lekárskeho dohľadu nenastavujeme normy pod toto minimum, takže tvoj zostáva tu. Uvidíš to aj v denníku.",
   },
   summary: {
-    lines: ["Tu je tvoj plán"],
+    lines: ["Tvoj plán"],
     kcalLabel: "kcal denne",
     floorMarker: "obmedzené kvôli bezpečnosti · nikdy pod {floor}",
     macros: {
@@ -7492,7 +7492,7 @@ const SK: OnboardingContent = {
   beats: {
     ageWhy: "Metabolizmus sa s vekom mení, preto to zohľadňujeme",
     echo: { rest: "V pokoji: {rest}kcal denne", days: "Tvoje dni spália {burn}kcal" },
-    baseline: { title: "Tu je tvoj východiskový bod", bmi: "BMI", what: "Index telesnej hmotnosti" },
+    baseline: { title: "Tvoj východiskový bod", bmi: "BMI", what: "Index telesnej hmotnosti" },
     prelim: { title: "Tvoj plán", burn: "Spáliš", gap: "{delta} tvoje tempo", eat: "Ješ", perDay: "kcal denne", keepTitle: "Spáliš asi {burn}kcal" },
   },
   target: {
@@ -7844,7 +7844,7 @@ const NO: OnboardingContent = {
     floorBody: "Regnestykket ville gå lavere. Vi setter ikke rammer under dette uten medisinsk oppfølging, så det er her din ligger. Det står også i dagboken din.",
   },
   summary: {
-    lines: ["Her er planen din"],
+    lines: ["Planen din"],
     kcalLabel: "kcal om dagen",
     floorMarker: "begrenset av sikkerhetshensyn · aldri under {floor}",
     macros: {
@@ -7870,7 +7870,7 @@ const NO: OnboardingContent = {
   beats: {
     ageWhy: "Stoffskiftet endrer seg med alderen, så vi regner det inn",
     echo: { rest: "I hvile: {rest}kcal om dagen", days: "Dagene dine forbrenner {burn}kcal" },
-    baseline: { title: "Her er utgangspunktet ditt", bmi: "KMI", what: "Kroppsmasseindeks" },
+    baseline: { title: "Utgangspunktet ditt", bmi: "KMI", what: "Kroppsmasseindeks" },
     prelim: { title: "Planen din", burn: "Du forbrenner", gap: "{delta} tempoet ditt", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrenner rundt {burn}kcal" },
   },
   target: {
@@ -8222,7 +8222,7 @@ const FI: OnboardingContent = {
     floorBody: "Laskelma olisi mennyt alemmas. Emme aseta tavoitetasoja tämän alle ilman lääkärin seurantaa, joten sinun tavoitetasosi on tässä. Se lukee myös päiväkirjassasi.",
   },
   summary: {
-    lines: ["Tässä on suunnitelmasi"],
+    lines: ["Suunnitelmasi"],
     kcalLabel: "kcal päivässä",
     floorMarker: "rajattu turvallisuuden vuoksi · ei koskaan alle {floor}",
     macros: {
@@ -8248,7 +8248,7 @@ const FI: OnboardingContent = {
   beats: {
     ageWhy: "Aineenvaihdunta muuttuu iän myötä, joten otamme sen huomioon",
     echo: { rest: "Levossa: {rest}kcal päivässä", days: "Päiväsi kuluttavat {burn}kcal" },
-    baseline: { title: "Tässä on lähtötasosi", bmi: "BMI", what: "Painoindeksi" },
+    baseline: { title: "Lähtötasosi", bmi: "BMI", what: "Painoindeksi" },
     prelim: { title: "Suunnitelmasi", burn: "Kulutat", gap: "{delta} tahtisi", eat: "Syöt", perDay: "kcal päivässä", keepTitle: "Kulutat noin {burn}kcal" },
   },
   target: {
@@ -8600,7 +8600,7 @@ const DA: OnboardingContent = {
     floorBody: "Regnestykket ville længere ned. Vi sætter ikke mål under dette uden lægelig opfølgning, så det er her, dit ligger. Det står også i din dagbog.",
   },
   summary: {
-    lines: ["Her er din plan"],
+    lines: ["Din plan"],
     kcalLabel: "kcal om dagen",
     floorMarker: "begrænset af hensyn til sikkerheden · aldrig under {floor}",
     macros: {
@@ -8626,7 +8626,7 @@ const DA: OnboardingContent = {
   beats: {
     ageWhy: "Dit stofskifte ændrer sig med alderen, så det regner vi med",
     echo: { rest: "I hvile: {rest}kcal om dagen", days: "Dine dage forbrænder {burn}kcal" },
-    baseline: { title: "Her er dit udgangspunkt", bmi: "BMI", what: "Body mass index" },
+    baseline: { title: "Dit udgangspunkt", bmi: "BMI", what: "Body mass index" },
     prelim: { title: "Din plan", burn: "Du forbrænder", gap: "{delta} dit tempo", eat: "Du spiser", perDay: "kcal om dagen", keepTitle: "Du forbrænder cirka {burn}kcal" },
   },
   target: {
@@ -8978,7 +8978,7 @@ const HU: OnboardingContent = {
     floorBody: "A számítás lejjebb menne. Orvosi felügyelet nélkül nem állítunk be ennél alacsonyabb célt, ezért a tiéd itt áll meg. A naplódban is ez fog szerepelni.",
   },
   summary: {
-    lines: ["Itt a terved"],
+    lines: ["A terved"],
     kcalLabel: "kcal naponta",
     floorMarker: "biztonsági korlát · sosem megy {floor} alá",
     macros: {
@@ -9004,7 +9004,7 @@ const HU: OnboardingContent = {
   beats: {
     ageWhy: "Az anyagcseréd az életkorral változik, ezt is beszámítjuk",
     echo: { rest: "Nyugalomban: napi {rest}kcal", days: "A napjaid elégetnek {burn}kcal-t" },
-    baseline: { title: "Itt a kiindulópontod", bmi: "BMI", what: "Testtömegindex" },
+    baseline: { title: "A kiindulópontod", bmi: "BMI", what: "Testtömegindex" },
     prelim: { title: "A terved", burn: "Elégetsz", gap: "{delta} a tempód", eat: "Eszel", perDay: "kcal naponta", keepTitle: "Nagyjából {burn}kcal-t égetsz el" },
   },
   target: {
@@ -9356,7 +9356,7 @@ const EL: OnboardingContent = {
     floorBody: "Ο υπολογισμός ήθελε να πάει πιο χαμηλά. Δεν ορίζουμε στόχους κάτω από αυτό χωρίς ιατρική παρακολούθηση, οπότε εδώ μένει ο δικός σου. Θα το γράφει και στο ημερολόγιό σου.",
   },
   summary: {
-    lines: ["Αυτό είναι το πλάνο σου"],
+    lines: ["Το πλάνο σου"],
     kcalLabel: "kcal την ημέρα",
     floorMarker: "περιορισμένο για ασφάλεια · ποτέ κάτω από {floor}",
     macros: {
@@ -9382,7 +9382,7 @@ const EL: OnboardingContent = {
   beats: {
     ageWhy: "Ο μεταβολισμός σου αλλάζει με την ηλικία, γι' αυτό το υπολογίζουμε",
     echo: { rest: "Σε ηρεμία: {rest}kcal την ημέρα", days: "Οι μέρες σου καίνε {burn}kcal" },
-    baseline: { title: "Αυτό είναι το σημείο εκκίνησής σου", bmi: "ΔΜΣ", what: "Δείκτης μάζας σώματος" },
+    baseline: { title: "Το σημείο εκκίνησής σου", bmi: "ΔΜΣ", what: "Δείκτης μάζας σώματος" },
     prelim: { title: "Το πλάνο σου", burn: "Καίς", gap: "{delta} ο ρυθμός σου", eat: "Τρως", perDay: "kcal την ημέρα", keepTitle: "Καίς περίπου {burn}kcal" },
   },
   target: {
@@ -9734,7 +9734,7 @@ const RO: OnboardingContent = {
     floorBody: "Calculul voia să coboare mai jos. Nu stabilim ținte sub acest nivel fără supraveghere medicală, așa că aici rămâne a ta. Scrie asta și în jurnalul tău.",
   },
   summary: {
-    lines: ["Iată planul tău"],
+    lines: ["Planul tău"],
     kcalLabel: "kcal pe zi",
     floorMarker: "limitat pentru siguranță · niciodată sub {floor}",
     macros: {
@@ -9760,7 +9760,7 @@ const RO: OnboardingContent = {
   beats: {
     ageWhy: "Metabolismul se schimbă odată cu vârsta, așa că ținem cont de asta",
     echo: { rest: "În repaus: {rest}kcal pe zi", days: "Zilele tale ard {burn}kcal" },
-    baseline: { title: "Iată punctul tău de pornire", bmi: "IMC", what: "Indicele de masă corporală" },
+    baseline: { title: "Punctul tău de pornire", bmi: "IMC", what: "Indicele de masă corporală" },
     prelim: { title: "Planul tău", burn: "Arzi", gap: "{delta} ritmul tău", eat: "Mănânci", perDay: "kcal pe zi", keepTitle: "Arzi cam {burn}kcal" },
   },
   target: {
@@ -10112,7 +10112,7 @@ const CS: OnboardingContent = {
     floorBody: "Výpočet chtěl jít níž. Bez lékařského dohledu cíle pod toto minimum nenastavujeme, takže tvůj zůstává tady. V deníku to bude uvedeno taky.",
   },
   summary: {
-    lines: ["Tady je tvůj plán"],
+    lines: ["Tvůj plán"],
     kcalLabel: "kcal denně",
     floorMarker: "omezeno kvůli bezpečnosti · nikdy pod {floor}",
     macros: {
@@ -10138,7 +10138,7 @@ const CS: OnboardingContent = {
   beats: {
     ageWhy: "S věkem se mění metabolismus, a tak s tím počítáme",
     echo: { rest: "V klidu: {rest}kcal denně", days: "Tvoje dny spálí {burn}kcal" },
-    baseline: { title: "Tady je tvůj výchozí bod", bmi: "BMI", what: "Index tělesné hmotnosti" },
+    baseline: { title: "Tvůj výchozí bod", bmi: "BMI", what: "Index tělesné hmotnosti" },
     prelim: { title: "Tvůj plán", burn: "Spálíš", gap: "{delta} tvoje tempo", eat: "Jíš", perDay: "kcal denně", keepTitle: "Spálíš zhruba {burn}kcal" },
   },
   target: {
@@ -10490,7 +10490,7 @@ const HI: OnboardingContent = {
     floorBody: "हिसाब इससे नीचे जाना चाहता था। डॉक्टर की निगरानी के बिना हम इससे कम लक्ष्य नहीं रखते, इसलिए आपका लक्ष्य यहीं है। आपकी डायरी में भी यही लिखा होगा।",
   },
   summary: {
-    lines: ["यह रहा आपका प्लान"],
+    lines: ["आपका प्लान"],
     kcalLabel: "kcal प्रति दिन",
     floorMarker: "सुरक्षा के लिए सीमित · {floor} से कभी कम नहीं",
     macros: {
@@ -10516,7 +10516,7 @@ const HI: OnboardingContent = {
   beats: {
     ageWhy: "उम्र के साथ आपका मेटाबॉलिज़्म बदलता है, इसलिए हम इसे ध्यान में रखते हैं",
     echo: { rest: "आराम की स्थिति में: {rest}kcal प्रति दिन", days: "आपके दिन {burn}kcal खर्च करते हैं" },
-    baseline: { title: "यह रहा आपका शुरुआती आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
+    baseline: { title: "आपका शुरुआती आधार", bmi: "BMI", what: "बॉडी मास इंडेक्स" },
     prelim: { title: "आपकी योजना", burn: "आप खर्च करते हैं", gap: "{delta} आपकी रफ़्तार", eat: "आप खाते हैं", perDay: "kcal प्रति दिन", keepTitle: "आप लगभग {burn}kcal खर्च करते हैं" },
   },
   target: {
@@ -10868,7 +10868,7 @@ const TH: OnboardingContent = {
     floorBody: "ตัวเลขคำนวณได้ต่ำกว่านี้ แต่เราไม่ตั้งเป้าต่ำกว่าระดับนี้หากไม่มีแพทย์ดูแล เป้าของคุณจึงอยู่ตรงนี้ ในไดอารี่ของคุณก็จะแสดงไว้ด้วย",
   },
   summary: {
-    lines: ["นี่คือแผนของคุณ"],
+    lines: ["แผนของคุณ"],
     kcalLabel: "kcal ต่อวัน",
     floorMarker: "จำกัดไว้เพื่อความปลอดภัย · ไม่ต่ำกว่า {floor}",
     macros: {
@@ -10894,7 +10894,7 @@ const TH: OnboardingContent = {
   beats: {
     ageWhy: "การเผาผลาญเปลี่ยนไปตามอายุ เราจึงนำมาคำนวณด้วย",
     echo: { rest: "ขณะพัก: {rest}kcal ต่อวัน", days: "วันของคุณเผาผลาญ {burn}kcal" },
-    baseline: { title: "นี่คือจุดเริ่มต้นของคุณ", bmi: "BMI", what: "ดัชนีมวลกาย" },
+    baseline: { title: "จุดเริ่มต้นของคุณ", bmi: "BMI", what: "ดัชนีมวลกาย" },
     prelim: { title: "แผนของคุณ", burn: "คุณเผาผลาญ", gap: "{delta} ความเร็วของคุณ", eat: "คุณกิน", perDay: "kcal ต่อวัน", keepTitle: "คุณเผาผลาญประมาณ {burn}kcal" },
   },
   target: {
@@ -11246,7 +11246,7 @@ const SV: OnboardingContent = {
     floorBody: "Räknestycket ville gå lägre. Vi sätter inga mål under det här utan medicinsk uppföljning, så här hamnar ditt. Det står även i din dagbok.",
   },
   summary: {
-    lines: ["Här är din plan"],
+    lines: ["Din plan"],
     kcalLabel: "kcal per dag",
     floorMarker: "begränsat för säkerhets skull · aldrig under {floor}",
     macros: {
@@ -11272,7 +11272,7 @@ const SV: OnboardingContent = {
   beats: {
     ageWhy: "Ämnesomsättningen förändras med åldern, så vi räknar med det",
     echo: { rest: "I vila: {rest}kcal per dag", days: "Dina dagar förbränner {burn}kcal" },
-    baseline: { title: "Här är din utgångspunkt", bmi: "BMI", what: "Kroppsmasseindex" },
+    baseline: { title: "Din utgångspunkt", bmi: "BMI", what: "Kroppsmasseindex" },
     prelim: { title: "Din plan", burn: "Du förbränner", gap: "{delta} ditt tempo", eat: "Du äter", perDay: "kcal per dag", keepTitle: "Du förbränner cirka {burn}kcal" },
   },
   target: {
@@ -11624,7 +11624,7 @@ const UK: OnboardingContent = {
     floorBody: "Розрахунок хотів піти нижче. Без нагляду лікаря ми не ставимо цілей нижче цієї позначки, тож твоя — тут. У щоденнику це теж буде вказано.",
   },
   summary: {
-    lines: ["Ось твій план"],
+    lines: ["Твій план"],
     kcalLabel: "ккал на день",
     floorMarker: "обмежено заради безпеки · ніколи не нижче {floor}",
     macros: {
@@ -11650,7 +11650,7 @@ const UK: OnboardingContent = {
   beats: {
     ageWhy: "З віком обмін речовин змінюється, тож ми це враховуємо",
     echo: { rest: "У спокої: {rest}ккал на день", days: "Твої дні спалюють {burn}ккал" },
-    baseline: { title: "Ось твоя точка відліку", bmi: "ІМТ", what: "Індекс маси тіла" },
+    baseline: { title: "Твоя точка відліку", bmi: "ІМТ", what: "Індекс маси тіла" },
     prelim: { title: "Твій план", burn: "Ти спалюєш", gap: "{delta} твій темп", eat: "Ти їси", perDay: "ккал на день", keepTitle: "Ти спалюєш близько {burn}ккал" },
   },
   target: {
@@ -12002,7 +12002,7 @@ const NL: OnboardingContent = {
     floorBody: "De berekening wilde lager uitkomen. Zonder medische begeleiding stellen we geen doel onder deze grens in, dus hier ligt het jouwe. Dat staat ook in je dagboek.",
   },
   summary: {
-    lines: ["Hier is je plan"],
+    lines: ["Je plan"],
     kcalLabel: "kcal per dag",
     floorMarker: "veiligheidshalve begrensd · nooit onder {floor}",
     macros: {
@@ -12028,7 +12028,7 @@ const NL: OnboardingContent = {
   beats: {
     ageWhy: "Je stofwisseling verandert met de leeftijd, dus daar rekenen we mee",
     echo: { rest: "In rust: {rest}kcal per dag", days: "Je dagen verbranden {burn}kcal" },
-    baseline: { title: "Dit is je uitgangspunt", bmi: "BMI", what: "Body mass index" },
+    baseline: { title: "Je uitgangspunt", bmi: "BMI", what: "Body mass index" },
     prelim: { title: "Je plan", burn: "Je verbrandt", gap: "{delta} je tempo", eat: "Je eet", perDay: "kcal per dag", keepTitle: "Je verbrandt ongeveer {burn}kcal" },
   },
   target: {
@@ -12380,7 +12380,7 @@ const PL: OnboardingContent = {
     floorBody: "Z rachunku wychodziło mniej. Bez nadzoru lekarza nie ustalamy celów poniżej tej wartości, więc twój jest właśnie tutaj. Zobaczysz to też w swoim dzienniku.",
   },
   summary: {
-    lines: ["Oto twój plan"],
+    lines: ["Twój plan"],
     kcalLabel: "kcal dziennie",
     floorMarker: "ograniczone dla bezpieczeństwa · nigdy poniżej {floor}",
     macros: {
@@ -12758,7 +12758,7 @@ const TR: OnboardingContent = {
     floorBody: "Hesap daha aşağı inmek istedi. Tıbbi gözetim olmadan bunun altında hedef koymuyoruz, o yüzden seninki burada. Bu, günlüğünde de yazacak.",
   },
   summary: {
-    lines: ["İşte planın"],
+    lines: ["Planın"],
     kcalLabel: "kcal / gün",
     floorMarker: "güvenlik için sınırlı · asla {floor} altına inmez",
     macros: {
@@ -12784,7 +12784,7 @@ const TR: OnboardingContent = {
   beats: {
     ageWhy: "Metabolizman yaşla değişir, biz de bunu hesaba katarız",
     echo: { rest: "Dinlenirken: günde {rest}kcal", days: "Günlerin {burn}kcal yakar" },
-    baseline: { title: "İşte başlangıç noktan", bmi: "VKİ", what: "Vücut kitle indeksi" },
+    baseline: { title: "Başlangıç noktan", bmi: "VKİ", what: "Vücut kitle indeksi" },
     prelim: { title: "Planın", burn: "Yakarsın", gap: "{delta} tempon", eat: "Yersin", perDay: "kcal/gün", keepTitle: "Yaklaşık {burn}kcal yakarsın" },
   },
   target: {
@@ -13136,7 +13136,7 @@ const ZH_HANT: OnboardingContent = {
     floorBody: "計算結果原本還想再往下。沒有醫療監督的情況下，我們不會設定低於這個數字的目標，所以你的目標就定在這裡。你的日記上也會註明這一點。",
   },
   summary: {
-    lines: ["這是你的計畫"],
+    lines: ["你的計畫"],
     kcalLabel: "大卡／天",
     floorMarker: "基於安全設限 · 絕不低於 {floor}",
     macros: {
@@ -13162,7 +13162,7 @@ const ZH_HANT: OnboardingContent = {
   beats: {
     ageWhy: "你的代謝會隨年齡改變，所以我們把它納入計算",
     echo: { rest: "靜止時：每天 {rest}大卡", days: "你的日子消耗 {burn}大卡" },
-    baseline: { title: "這是你的起點", bmi: "身體質量指數（BMI）", what: "身體質量指數" },
+    baseline: { title: "你的起點", bmi: "身體質量指數（BMI）", what: "身體質量指數" },
     prelim: { title: "你的計畫", burn: "你消耗", gap: "{delta} 你的步調", eat: "你攝取", perDay: "大卡/天", keepTitle: "你消耗約 {burn}大卡" },
   },
   target: {
@@ -13514,7 +13514,7 @@ const ZH_HANS: OnboardingContent = {
     floorBody: "按计算本可以更低。没有医生监督，我们不会把目标设得比这更低，所以你的目标就定在这里。你的日记里也会注明这一点。",
   },
   summary: {
-    lines: ["这是你的计划"],
+    lines: ["你的计划"],
     kcalLabel: "千卡/天",
     floorMarker: "出于安全已设限 · 绝不低于 {floor}",
     macros: {
@@ -13540,7 +13540,7 @@ const ZH_HANS: OnboardingContent = {
   beats: {
     ageWhy: "代谢会随年龄变化，所以我们会把它考虑进去",
     echo: { rest: "静息时：每天{rest}千卡", days: "你的日子消耗 {burn}千卡" },
-    baseline: { title: "这是你的起点", bmi: "身体质量指数（BMI）", what: "身体质量指数" },
+    baseline: { title: "你的起点", bmi: "身体质量指数（BMI）", what: "身体质量指数" },
     prelim: { title: "你的计划", burn: "你消耗", gap: "{delta} 你的节奏", eat: "你摄入", perDay: "千卡/天", keepTitle: "你消耗约 {burn}千卡" },
   },
   target: {
@@ -13892,7 +13892,7 @@ const KO: OnboardingContent = {
     floorBody: "계산상으로는 더 내려갈 수 있었어요. 의료진의 관리 없이는 이보다 낮은 목표를 정하지 않아서, 여기로 맞췄어요. 다이어리에도 이렇게 표시돼요.",
   },
   summary: {
-    lines: ["플랜이 준비됐어요"],
+    lines: ["내 플랜"],
     kcalLabel: "kcal/일",
     floorMarker: "안전을 위해 제한 · {floor} 미만으로는 안 내려가요",
     macros: {
@@ -13918,7 +13918,7 @@ const KO: OnboardingContent = {
   beats: {
     ageWhy: "나이에 따라 대사가 달라지니 그만큼 반영해요",
     echo: { rest: "휴식 중: 하루 {rest}kcal", days: "하루에는 {burn}kcal를 써요" },
-    baseline: { title: "현재 기준점이에요", bmi: "BMI", what: "체질량지수" },
+    baseline: { title: "현재 기준점", bmi: "BMI", what: "체질량지수" },
     prelim: { title: "내 계획", burn: "소모", gap: "내 속도 {delta}", eat: "섭취", perDay: "kcal/일", keepTitle: "하루에 약 {burn}kcal를 써요" },
   },
   target: {
@@ -14270,7 +14270,7 @@ const JA: OnboardingContent = {
     floorBody: "計算上はもっと低くなりましたが、医師の管理なしにこれより低い目標は設定しません。なので、あなたの目標はここになります。日記にもそう表示されます。",
   },
   summary: {
-    lines: ["あなたのプランです"],
+    lines: ["あなたのプラン"],
     kcalLabel: "kcal/日",
     floorMarker: "安全のため上限あり · {floor}未満にはなりません",
     macros: {
@@ -14296,7 +14296,7 @@ const JA: OnboardingContent = {
   beats: {
     ageWhy: "代謝は年齢とともに変わるので、それも計算に入れます",
     echo: { rest: "安静時：1日{rest}kcal", days: "あなたの一日は{burn}kcalを消費します" },
-    baseline: { title: "あなたの現在地です", bmi: "BMI", what: "ボディマス指数" },
+    baseline: { title: "あなたの現在地", bmi: "BMI", what: "ボディマス指数" },
     prelim: { title: "あなたのプラン", burn: "あなたが消費", gap: "あなたのペース {delta}", eat: "あなたが食べる", perDay: "kcal/日", keepTitle: "あなたは約{burn}kcalを消費します" },
   },
   target: {
@@ -14648,7 +14648,7 @@ const PT_BR: OnboardingContent = {
     floorBody: "A conta queria ir mais baixo. Não definimos metas abaixo disso sem acompanhamento médico, então a sua fica aqui. Isso também vai aparecer no seu diário.",
   },
   summary: {
-    lines: ["Aqui está seu plano"],
+    lines: ["Seu plano"],
     kcalLabel: "kcal por dia",
     floorMarker: "limitado por segurança · nunca abaixo de {floor}",
     macros: {
@@ -14674,7 +14674,7 @@ const PT_BR: OnboardingContent = {
   beats: {
     ageWhy: "Seu metabolismo muda com a idade, por isso levamos isso em conta",
     echo: { rest: "Em repouso: {rest}kcal por dia", days: "Seus dias gastam {burn}kcal" },
-    baseline: { title: "Este é seu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
+    baseline: { title: "Seu ponto de partida", bmi: "IMC", what: "Índice de massa corporal" },
     prelim: { title: "Seu plano", burn: "Você gasta", gap: "{delta} seu ritmo", eat: "Você come", perDay: "kcal por dia", keepTitle: "Você gasta cerca de {burn}kcal" },
   },
   target: {
