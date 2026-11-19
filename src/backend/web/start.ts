@@ -1490,8 +1490,11 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       }
       await patchProfile(ctx.deps, userId, { country: chosen });
       // The stored profile read above still says country=null. Onboarded, signed in, country just
-      // written: what is left is the optional friend's-link step, then the product.
-      return seeOther(REFERRAL_PATH);
+      // written: the friend's-link step is no longer asked (#3195). A link the walk arrived with
+      // (`?ref=`) is applied silently; a refusal (own, already, paid) is not worth a screen.
+      const ref = normalizeReferralCode(cookies[REF_COOKIE] ?? "");
+      if (ref !== null) await redeemReferral(ctx.deps, userId, ref);
+      return seeOther(ctx.hasWebApp ? "/" : CHAT_PATH, ref === null ? [] : [clearCookie(REF_COOKIE, secure)]);
     }
     return notFound();
   }
@@ -1866,7 +1869,7 @@ function noticeFor(result: { kind: string; scope?: string; on?: string }): strin
  * A card is resolved from the meal as it is NOW (`chatHistory` does the read), so a verdict on this
  * page never describes numbers that have since changed — and a meal that is gone says so rather
  * than rendering a stale one. `who` is the stored speaker: the coach answers questions, and everything
- * else is Spud, whose name the page does not repeat because he is the voice it opens in.
+ * else is Calodex, whose name the page does not repeat because he is the voice it opens in.
  */
 function threadLine(e: ChatEntry, lang: Lang): ChatLine {
   if (e.role === "user") {

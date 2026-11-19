@@ -18,7 +18,7 @@ import type {
   OnboardingContent, OnboardingContentSet,
   OnboardingEvent, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
-import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft } from "@eait/shared";
+import type { ArmScreens, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 
 /**
@@ -709,6 +709,9 @@ export interface AdminOnboardingPage {
 
 // ── Onboarding experiments (ieat-app#2669) ─────────────────────────────────────────────────────
 
+/** Where onboarding copy renders: the app, or the browser's /start. */
+export type OnboardingSurface = "app" | "web";
+
 /** The targeting rules an experiment row carries — every absent rule means "everyone". */
 export interface OnboardingExperimentRules {
   /** ISO alpha-2 lowercase, the same codes `countryFromRegion` answers with. Empty/absent: any. */
@@ -720,7 +723,7 @@ export interface OnboardingExperimentRules {
    */
   hours?: [number, number];
   /** Which surfaces may enroll. Empty/absent: both. */
-  surfaces?: ("app" | "web")[];
+  surfaces?: OnboardingSurface[];
 }
 
 /**
@@ -792,6 +795,27 @@ export interface OnboardingAssignment {
   /** The assigned variant's content `version`. */
   variant_id: number;
   assigned_at: string;
+}
+
+/** One served template revision, by key and version. */
+export interface TemplateRef { template: string; version: number }
+
+/**
+ * What `GET /v1/onboarding` served one account (ieat-app#3194): the content revision, the language,
+ * the surface and, per slot, the template revision that replaced that beat (`{}` for none). A repeat
+ * of the account's LATEST serving moves its `lastServedAt`; anything else is a new row, so A, B, A
+ * reads as three servings.
+ */
+export interface OnboardingServed {
+  contentVersion: number;
+  lang: Lang;
+  surface: OnboardingSurface;
+  screens: Partial<Record<TemplateSlot, TemplateRef>>;
+}
+export interface OnboardingServedRecord extends OnboardingServed {
+  /** First served, ISO. */
+  servedAt: string;
+  lastServedAt: string;
 }
 
 /** One arm's numbers in an experiment's funnel, grouped by the assigned variant. */
@@ -1437,6 +1461,14 @@ export interface Store {
    */
   moveEntitlement(fromUserId: string, intoUserId: string, eventAt: string): Promise<boolean>;
 
+  /**
+   * The account a sign-in merged `userId` into, or null when it was never merged away (#2694).
+   * RevenueCat keeps naming the anonymous id it was configured with, so every delivery after the
+   * merge (a renewal, a cancellation, a late purchase) names an account that no longer exists.
+   * Written by `mergeUsers`, forgotten when the survivor is erased.
+   */
+  mergedInto(userId: string): Promise<string | null>;
+
   // ── Referrals (#899) ───────────────────────────────────────────────────────────────────────
   //
   // `users.referral_code` (unique, made with the account), `users.referred_by` (set ONCE),
@@ -1827,6 +1859,10 @@ export interface Store {
   putOnboardingAssignment(userId: string, experimentId: string, variantId: number): Promise<OnboardingAssignment>;
   /** Every assignment to one experiment — the results table's read, by assignment (intention to treat). */
   onboardingAssignments(experimentId: string): Promise<OnboardingAssignment[]>;
+  /** Record one serving of `GET /v1/onboarding` (ieat-app#3194): moves the latest row's `lastServedAt` when it is identical, else a new row. */
+  recordOnboardingServed(userId: string, served: OnboardingServed): Promise<void>;
+  /** Every serving this account was recorded, oldest first. */
+  onboardingServed(userId: string): Promise<OnboardingServedRecord[]>;
   /**
    * The per-variant funnel for one experiment: users, sessions and completions grouped by the
    * assigned variant, plus the sessions that rendered a DIFFERENT revision than assigned — the

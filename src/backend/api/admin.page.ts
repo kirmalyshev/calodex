@@ -420,6 +420,9 @@ tr.tot td { font-weight: 600; background: var(--bg); }
 .fl-a { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: baseline; min-width: 0; }
 .fl-a em { font-style: normal; color: var(--muted); }
 .fl-t { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fl-copy { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.fl-copy summary { cursor: pointer; }
+.fl-copy pre { margin: 4px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--hair); color: var(--ink); white-space: pre-wrap; font: inherit; }
 .srow { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--hair); }
 .srow:last-child { border-bottom: 0; }
 .srow .t { flex: 1; min-width: 0; }
@@ -909,9 +912,9 @@ details.how p { margin-top: 8px; }
         <details class="how">
           <summary>How saving works</summary>
           <p class="muted">
-            Every word Spud says to POSE a question, plus the option labels, the front door, the plan, the sign-up, the referral, Apple Health, the Live Activity and the first meal.
+            Every word Calodex says to POSE a question, plus the option labels, the front door, the plan, the sign-up, the referral, Apple Health, the Live Activity and the first meal.
             The <em>questions</em> are fixed in code — they feed the calorie target — and so is their default
-            order (an experiment arm may reorder them, in Experiments), and so are Spud's replies and the support cards, which carry citations. Saving bumps the content
+            order (an experiment arm may reorder them, in Experiments), and so are Calodex's replies and the support cards, which carry citations. Saving bumps the content
             version, which is what the funnel is grouped by.
           </p>
           <p class="muted">
@@ -1167,7 +1170,7 @@ details.how p { margin-top: 8px; }
     head.appendChild(grow);
     card.appendChild(head);
 
-    // What Spud SAYS to ask each field. One box per bubble: the flow is a conversation, so a
+    // What Calodex SAYS to ask each field. One box per bubble: the flow is a conversation, so a
     // question can be one sentence or three, and each entry is one thing he sends.
     screen.asks = screen.asks || {};
     info.fields.forEach(function (fieldName) {
@@ -2690,11 +2693,25 @@ details.how p { margin-top: 8px; }
       s.events.push(e);
     });
     if (!sessions.length) { host.appendChild(el("p", "muted", "No onboarding events. Accounts that onboarded on the web (/start) send none.")); return; }
+    // ieat-app#3194: each run as it was served — arm, language, surface, templates, copy. A run the
+    // server has no record of says "not recorded" rather than a guess.
+    var runs = {};
+    (Array.isArray(view.runs) ? view.runs : []).forEach(function (r) { runs[r.sessionId] = r; });
     sessions.forEach(function (s, i) {
       var box = el("div", "fl-s");
       var ver = s.events[0].contentVersion;
-      box.appendChild(el("div", "fl-h", "Run " + (i + 1) + " · " + atLabel(s.events[0].at)
-        + (Number.isInteger(ver) ? " · content v" + ver : "")));
+      var run = runs[s.id] || null;
+      var head = ["Run " + (i + 1), atLabel(s.events[0].at)];
+      if (Number.isInteger(ver)) head.push("content v" + ver);
+      if (run) {
+        head.push(run.experiment ? "exp " + String(run.experiment.id).slice(0, 8) + " · " + run.experiment.arm
+          + (run.experiment.fellBack ? " · fell back (saw v" + ver + ")" : "") : "no experiment");
+        head.push(run.lang || "language not recorded");
+        head.push(run.served ? run.served.surface : "surface not recorded");
+      }
+      box.appendChild(el("div", "fl-h", head.join(" · ")));
+      if (run && !run.copy) box.appendChild(el("div", "muted fl-note", run.served ? "copy for v" + ver + " not kept" : "copy not recorded"));
+      var copied = {};
       var seen = {};
       var prevBack = false;
       var finished = s.events.some(function (e) { return e.action === "complete"; });
@@ -2702,7 +2719,7 @@ details.how p { margin-top: 8px; }
         var line = el("div", "fl-ev");
         var nm = el("span", "fl-p", PLACE_SHORT[e.place]
           || e.place.charAt(0).toUpperCase() + e.place.slice(1));
-        nm.appendChild(el("small", "", e.place));
+        nm.appendChild(el("small", "", e.place + " · " + atLabel(e.at)));
         line.appendChild(nm);
         var acts = el("span", "fl-a");
         // One mark for a step back (#814): a recorded "back" action reads "went back", and
@@ -2723,8 +2740,19 @@ details.how p { margin-top: 8px; }
         prevBack = e.action === "back";
         if (e.action === "view") seen[e.place] = true;
         if (!finished && j === s.events.length - 1) acts.appendChild(el("span", "chip b", "left here"));
+        var tpl = run && run.served && run.served.screens ? run.served.screens[e.place] : null;
+        if (tpl) acts.appendChild(el("span", "chip n", "template " + tpl.template + "@v" + tpl.version));
         line.appendChild(acts);
         line.appendChild(el("span", "fl-t", e.ms !== null ? Math.round(e.ms / 1000) + "s" : ""));
+        // The words as served, once per place, as TEXT: the strings are stored, never markup.
+        var words = run && run.copy ? run.copy[e.place] : null;
+        if (typeof words === "string" && !copied[e.place]) {
+          copied[e.place] = true;
+          var card = el("details", "fl-copy");
+          card.appendChild(el("summary", "", "copy as served"));
+          card.appendChild(el("pre", "", words));
+          line.appendChild(card);
+        }
         box.appendChild(line);
       });
       host.appendChild(box);

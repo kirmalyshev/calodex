@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   cta, esc, estimateChartSvg, gabieAvatar, gabieName, gramMacs, kitCss, mac, macs, mcard,
-  mealRow, optionRow, photoHero, planCard, ring, spudAvatar, tagx, twoWayChartSvg, verdictDot,
+  mealRow, optionRow, photoHero, planCard, ring, tagx, twoWayChartSvg, verdictDot,
   verdictList, weekBarsSvg, weekStrip, weightChartSvg,
 } from "./kit.ts";
 import { dayRing, estimateChart, ringDash, TWO_WAYS_CHART } from "./charts.ts";
@@ -245,7 +245,7 @@ describe("the charts", () => {
       label: "Estimated progress", byEait: "eait analysis",
     });
     expect(m).toContain('<div class="row between"><span class="lab">Estimated progress</span>');
-    expect(m).toContain('<span class="tagx"><span class="wm happy"');
+    expect(m).toContain('<span class="tagx">eait analysis');
     expect(m).toContain("eait analysis");
     expect(m).toContain('class="pgraph"');
     expect(m).toContain('role="img"');
@@ -309,31 +309,24 @@ describe("the charts", () => {
   });
 });
 
-describe("avatars — Spud's mood disc and Gabie's letter", () => {
-  test("spudAvatar is the 28 px disc with its mood class", () => {
-    expect(spudAvatar("happy")).toBe('<span class="spud happy" aria-hidden="true"></span>');
-    expect(spudAvatar("think", { large: true })).toContain('class="spud think lg"');
-  });
+describe("avatars — Gabie's letter", () => {
   test("gabieAvatar is the lettered disc; gabieName is the name line", () => {
     expect(gabieAvatar()).toBe('<span class="gabie" aria-hidden="true"></span>');
     expect(gabieName("Gabie · nutritionist")).toBe('<div class="gname">Gabie · nutritionist</div>');
     expect(gabieName("Gabie <script>")).toContain("&lt;script&gt;");
   });
-  test("every mood's --face is mascot.ts's own svg, data-urled once", () => {
+  test("the stylesheet carries no Calodex face (#3177)", () => {
     const css = kitCss();
-    for (const mood of ["happy", "think", "care", "idle", "wave", "joy"]) {
-      expect(css).toContain(`.spud.${mood},.wm.${mood}{--face:url("data:image/svg+xml,`);
-    }
-    expect(css).toContain('.spud{width:28px;height:28px');
+    expect(css).not.toMatch(/\.spud|\.wm|--face/);
     expect(css).toContain('.gabie::before{content:"G"}');
   });
 });
 
 describe("tagx — the attribution chip", () => {
-  test("the eait mark plus words, on a surface pill", () => {
+  test("words alone, on a surface pill, no mascot face", () => {
     const m = tagx({ text: "eait analysis" });
     expect(m).toContain('class="tagx"');
-    expect(m).toContain('class="wm happy"');
+    expect(m).not.toMatch(/class="[^"]*\bwm\b/);
     expect(m).toContain("eait analysis");
   });
   test("the streak chip is the same pill with an icon", () => {
@@ -438,9 +431,8 @@ describe("kitCss — the numbers the boards measure", () => {
     expect(rule(".hero")).toContain("overflow:hidden");
   });
 
-  test("the tagx pill and its face", () => {
+  test("the tagx pill", () => {
     expect(css).toContain(".tagx{display:inline-flex;align-items:center;gap:5px");
     expect(css).toContain("border-radius:999px");
-    expect(css).toContain(".tagx .wm{width:18px;height:18px");
   });
 });

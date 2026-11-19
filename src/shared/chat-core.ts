@@ -488,7 +488,7 @@ export function createChatCore(deps: ChatCoreDeps): ChatCore {
             entry,
           ], lang()));
           deps.onAnswer?.();
-          // The server wrote Spud's line after the card ("Updated — …"); only a page shows it.
+          // The server wrote Calodex's line after the card ("Updated — …"); only a page shows it.
           // Awaited, so the composer stays busy until it lands and nothing typed meanwhile is dropped.
           if (result.kind === "updated") await load(() => true);
         }
@@ -565,7 +565,7 @@ export function createChatCore(deps: ChatCoreDeps): ChatCore {
     // Marked in flight the moment it is tapped, before the await, so a second tap during a slow round
     // trip finds the buttons already inert rather than sending a second confirm.
     settling(entryId, true);
-    // The composer waits too: a confirm fetches the page that carries Spud's verdict, and a message
+    // The composer waits too: a confirm fetches the page that carries Calodex's verdict, and a message
     // typed during that fetch would be dropped by the merge.
     begin();
     try {
@@ -578,7 +578,7 @@ export function createChatCore(deps: ChatCoreDeps): ChatCore {
       // then the line says they did (#1462).
       const back = res.kind === "expired" && wordsBack(pendingId, entryId);
       replace(entryId, { id: entryId, role: "assistant", result: res, ...(back ? { back: true } : {}) });
-      // A first typed meal comes with Spud's verdict, written server-side; fetch it.
+      // A first typed meal comes with Calodex's verdict, written server-side; fetch it.
       if (res.kind === "logged") await load(() => true);
     } catch (e) {
       // Left as a live proposal on purpose. The meal was NOT logged, and the one thing this screen

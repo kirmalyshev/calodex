@@ -30,7 +30,7 @@ import { buildFoodIndex } from "./food-index.ts";
 import { type ChatMessage,
   ADMIN_METRICS_MAX_DAYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, planTransfer, portionPriorsFrom, storeDeadline, type AdminUserRow, type FunnelAggregate,
-  type AdminOnboardingAccount, type AdminOnboardingEvent,
+  type AdminOnboardingAccount, type AdminOnboardingEvent, type OnboardingServedRecord, type OnboardingSurface,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto,
@@ -104,6 +104,7 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   llm_calls: "user_id",
   onboarding_events: "user_id",
   onboarding_assignments: "user_id",
+  onboarding_served: "user_id",
   chat_messages: "user_id",
   push_tokens: "user_id",
   push_slot: "user_id",
@@ -121,6 +122,8 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   referral_events: "referrer_id",
   // A refund is the friend's own row.
   referral_refunds: "referred_id",
+  // A merged-away id belongs to the account that absorbed it (#2694); read and written unscoped.
+  merged_users: "into_id",
 };
 
 /**
@@ -636,6 +639,16 @@ alter table users add column if not exists referral_banked_days integer not null
 -- account is kept here, and grantReferralWeek refuses one, so the late payment earns nothing.
 -- The friend's account owns the row and takes it when it is erased: a store transaction id is a
 -- purchase somebody made, and outliving them is not this table's job.
+-- #2694: which account a sign-in merged a deleted anonymous one into. RevenueCat keeps naming the
+-- anonymous id it was configured with, so a renewal after the merge names an account that no longer
+-- exists; the webhook resolves it here. No foreign key on from_id (that row is gone by design).
+-- Goes with the survivor. Read unscoped: the id in a webhook IS the message.
+create table if not exists merged_users (
+  from_id   uuid primary key,
+  into_id   uuid not null references users(id) on delete cascade,
+  merged_at timestamptz not null default now()
+);
+create index if not exists merged_users_into on merged_users (into_id);
 create table if not exists referral_refunds (
   transaction_id text primary key,
   referred_id    uuid not null references users(id) on delete cascade,
@@ -673,7 +686,7 @@ create table if not exists referral_refusals (
   reason text not null check (reason in ('unknown', 'own', 'already', 'paid')),
   at     timestamptz not null
 );
--- When Spud spoke the first verdict. Null until then; the claim is one atomic update.
+-- When Calodex spoke the first verdict. Null until then; the claim is one atomic update.
 alter table users add column if not exists first_verdict_at timestamptz;
 alter table users add column if not exists entitlement_event_at   timestamptz;
 -- Whether the CURRENT period is a free trial. Defaults false, which is what a row written before
@@ -1169,6 +1182,21 @@ create table if not exists onboarding_assignments (
   primary key (user_id, experiment_id)
 );
 create index if not exists onboarding_assignments_experiment_idx on onboarding_assignments(experiment_id);
+
+-- What GET /v1/onboarding served one account (ieat-app#3194): the content version, the language,
+-- the surface and each slot's template key and version. A repeat of the account's LATEST row moves
+-- last_served_at; anything else is a new row, so A, B, A reads as three. In RLS_TABLES, erased with the account.
+create table if not exists onboarding_served (
+  user_id         uuid not null references users(id) on delete cascade,
+  content_version integer not null,
+  lang            text not null,
+  surface         text not null,
+  screens         jsonb not null default '{}'::jsonb,
+  served_at       timestamptz not null default now(),
+  last_served_at  timestamptz not null default now(),
+  id              bigint generated always as identity primary key
+);
+create index if not exists onboarding_served_user_idx on onboarding_served(user_id, served_at);
 
 -- Onboarding screen templates (ieat-app#3167): global content like onboarding_content, so no
 -- user_id and not in RLS_TABLES. Append-only per key — the primary key is what makes a concurrent
@@ -1868,6 +1896,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   mergeUsers: "unscoped",
   moveIdentity: "unscoped",
   moveEntitlement: "unscoped",
+  mergedInto: "unscoped",
   // One Expo push token is one INSTALLATION, and the upsert deliberately MOVES it between accounts
   // when a phone signs into a different one — the invariant on `push_tokens`. Scoped to the new
   // owner, the policy would hide the existing row and the move would become a duplicate.
@@ -1922,6 +1951,9 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   onboardingAssignment: 0,
   putOnboardingAssignment: 0,
   onboardingAssignments: "unscoped",
+  // ieat-app#3194: one account's own servings, by the user id it is handed.
+  recordOnboardingServed: 0,
+  onboardingServed: 0,
   onboardingExperimentFunnel: "unscoped",
   onboardingExperimentPlaces: "unscoped",
   // The counter the admin saves and the experiment variants share — global, like the row it bumps.
@@ -3058,7 +3090,7 @@ export async function postgresStore(
           update saved_meals set user_id = ${intoUserId} where user_id = ${fromUserId}
             and source_meal_id not in (select source_meal_id from saved_meals where user_id = ${intoUserId})`;
         await tx`update chat_messages set user_id = ${intoUserId} where user_id = ${fromUserId}`;
-        // The greeting travels with the thread that holds it, or Spud says "First one in." twice.
+        // The greeting travels with the thread that holds it, or Calodex says "First one in." twice.
         await tx`
           update users set first_verdict_at = coalesce(
             first_verdict_at, (select first_verdict_at from users where id = ${fromUserId}))
@@ -3119,6 +3151,8 @@ export async function postgresStore(
               select 1 from onboarding_assignments t
               where t.user_id = ${intoUserId} and t.experiment_id = a.experiment_id)`;
         await tx`update onboarding_assignments set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        // What was served moves with the funnel rows it explains, every row: each is a dated serving.
+        await tx`update onboarding_served set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         // Health days move, but NEVER over a day the real account already has. The direction is
         // anonymous -> real, and the real account's history is the one with deliberate corrections
         // in it. Filling a gap is a gift; overwriting is data loss with no undo. Matches
@@ -3210,7 +3244,12 @@ export async function postgresStore(
         // Tokens are deleted, not moved: a token that pointed at the now-empty account must stop
         // working rather than silently start addressing someone else's diary.
         await tx`delete from tokens where user_id = ${fromUserId}`;
+        // Re-pointed BEFORE the delete: `on delete cascade` would otherwise erase A→B when B goes.
+        await tx`update merged_users set into_id = ${intoUserId} where into_id = ${fromUserId}`;
         await tx`delete from users where id = ${fromUserId}`;
+        await tx`
+          insert into merged_users (from_id, into_id) values (${fromUserId}, ${intoUserId})
+          on conflict (from_id) do update set into_id = excluded.into_id`;
         return moved.length;
       });
     },
@@ -3484,6 +3523,11 @@ export async function postgresStore(
         trial: r.entitlement_trial === true,
         ...(r.entitlement_sandbox === true ? { sandbox: true } : {}),
       };
+    },
+
+    async mergedInto(userId) {
+      const rows = await sql`select into_id from merged_users where from_id = ${userId}`;
+      return rows.length > 0 ? String(rows[0].into_id) : null;
     },
 
     async moveEntitlement(fromUserId, intoUserId, eventAtIso) {
@@ -3896,6 +3940,41 @@ export async function postgresStore(
           set variant_id = onboarding_assignments.variant_id
         returning user_id, experiment_id, variant_id, assigned_at`;
       return toOnboardingAssignment(rows[0]!);
+    },
+
+    async recordOnboardingServed(userId, served) {
+      const at = new Date(now());
+      // Only the LATEST row may absorb a repeat. Two concurrent first GETs can both miss it and insert
+      // twice — a duplicate dated serving, which the journal's match reads the same; accepted.
+      await sql`
+        with latest as (
+          select id, content_version, lang, surface, screens from onboarding_served
+          where user_id = ${userId} order by served_at desc, id desc limit 1
+        ), moved as (
+          update onboarding_served s set last_served_at = ${at}
+          from latest l
+          where s.id = l.id and l.content_version = ${served.contentVersion} and l.lang = ${served.lang}
+            and l.surface = ${served.surface} and l.screens = ${served.screens}::jsonb
+          returning s.id
+        )
+        insert into onboarding_served (user_id, content_version, lang, surface, screens, served_at, last_served_at)
+        select ${userId}::uuid, ${served.contentVersion}::int, ${served.lang}, ${served.surface}, ${served.screens}::jsonb, ${at}::timestamptz, ${at}::timestamptz
+        where not exists (select 1 from moved)`;
+    },
+
+    async onboardingServed(userId) {
+      const rows = await sql`
+        select content_version, lang, surface, screens, served_at, last_served_at
+        from onboarding_served where user_id = ${userId}
+        order by served_at, id`;
+      return rows.map((r: Record<string, unknown>) => ({
+        contentVersion: Number(r.content_version),
+        lang: r.lang as Lang,
+        surface: r.surface as OnboardingSurface,
+        screens: json<OnboardingServedRecord["screens"]>(r.screens, {}),
+        servedAt: (r.served_at as Date).toISOString(),
+        lastServedAt: (r.last_served_at as Date).toISOString(),
+      }));
     },
 
     async onboardingAssignments(experimentId) {

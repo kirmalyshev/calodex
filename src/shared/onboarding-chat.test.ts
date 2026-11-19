@@ -24,7 +24,6 @@ import {
   streakDelta, weightDeltaDisplay, weightDisplay,
   type ChatPromptId, type Profile,
 } from "./index.ts";
-import { spudSvg } from "./mascot.ts";
 import { lbToKg } from "./ui/units.ts";
 import { onboardingContentFor } from "./onboarding-content.ts";
 
@@ -175,7 +174,7 @@ describe("where a killed run picks up", () => {
   });
 });
 
-describe("what Spud asks", () => {
+describe("what Calodex asks", () => {
   it("reads the admin's words for a profile question", () => {
     expect(askLines(promptById("goal"), { content, lang: "en" }, profile())[0]).toContain("What are you here to do?");
   });
@@ -635,10 +634,8 @@ describe("the diet and medical vocabularies", () => {
 });
 
 describe("the mascot's new face (C5)", () => {
-  it("adds joy to the shared vocabulary and draws it as an open smile", () => {
+  it("adds joy to the shared vocabulary", () => {
     expect(MASCOT_MOODS).toContain("joy");
-    const svg = spudSvg("joy", "spud-joy-test");
-    expect(svg).toContain(`fill="${"#3A2612"}"`);
   });
 });
 

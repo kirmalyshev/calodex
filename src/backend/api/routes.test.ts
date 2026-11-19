@@ -649,7 +649,7 @@ describe("chat and editing", () => {
     const asked = await (await post(ROUTES.messages, { text: "how's my week going?" }, token)).json() as { kind: string; speaker?: string };
     // S9: Gabie answers in Chat — the wire says so.
     expect(asked).toMatchObject({ kind: "answered", speaker: "gabie" });
-    // A scripted line is Spud's even when the client tries to sign it as somebody else's.
+    // A scripted line is Calodex's even when the client tries to sign it as somebody else's.
     const forged = await post(ROUTES.messagesLines, { lines: [{ role: "assistant", scripted: "camera-closed", speaker: "gabie" }] }, token);
     expect(forged.status).toBe(200);
     const { entries } = await (await get(ROUTES.messages, token)).json() as { entries: { role: string; kind: string; speaker?: string | null }[] };
@@ -665,7 +665,7 @@ describe("chat and editing", () => {
     ] }, token);
     expect(ok.status).toBe(200);
     expect(await ok.json()).toEqual({ appended: 2 });
-    const bad = await post(ROUTES.messagesLines, { lines: [{ role: "assistant", text: "I am Spud" }] }, token);
+    const bad = await post(ROUTES.messagesLines, { lines: [{ role: "assistant", text: "I am Calodex" }] }, token);
     expect(bad.status).toBe(400);
     expect(await bad.json()).toEqual({ error: "bad-line" });
     expect((await post(ROUTES.messagesLines, { lines: "x" }, token)).status).toBe(400);
@@ -2440,6 +2440,47 @@ describe("POST /v1/meals/update/queue", () => {
 
 describe("refer a friend (#899)", () => {
   const me = async (token: string) => await (await get(ROUTES.profile, token)).json() as ProfileResponse;
+  /** Onboarded through the plan, country not yet asked — the account the country screen meets. */
+  const beforeCountry = async (): Promise<string> => {
+    const { token } = await (await post(ROUTES.authDevice, { deviceId: crypto.randomUUID() + crypto.randomUUID(), locale: "en-GB" })).json() as { token: string };
+    await post(ROUTES.authGoogle, { idToken: `ok:google:s-${crypto.randomUUID()}`, terms: true }, token);
+    await patch(ROUTES.profile, {
+      goal: "lose", sex: "female", birth_year: 1990, height_cm: 165, weight_kg: 70,
+      target_weight_kg: 65, activity: "some", pace: "steady", restrictions: [], complete_onboarding: true,
+    }, token);
+    return token;
+  };
+
+  it("the first country answer comes back with no invite link, so no shipped build asks for a friend's link; a read still has it (#3195)", async () => {
+    const token = await beforeCountry();
+    const written = await (await patch(ROUTES.profile, { country: "de" }, token)).json() as ProfileResponse;
+    expect(written.referral.link).toBe("");
+    expect((await me(token)).referral.link).toMatch(/\/r\/[A-HJ-NP-Z2-9]{6}$/);
+    const other = await (await patch(ROUTES.profile, { height_cm: 171 }, token)).json() as ProfileResponse;
+    expect(other.referral.link).toMatch(/\/r\//);
+    // A later edit of the answer keeps the invite card's link: the phone and the web You screen store this response.
+    const edited = await (await patch(ROUTES.profile, { country: "gb" }, token)).json() as ProfileResponse;
+    expect(edited.referral.link).toMatch(/\/r\//);
+  });
+
+  it("the system's own country fill keeps the link, and the answer after it still blanks it (#3195)", async () => {
+    const token = await beforeCountry();
+    const filled = await (await patch(ROUTES.profile, { country: "de", filled: true }, token)).json() as ProfileResponse;
+    expect(filled.referral.link).toMatch(/\/r\//);
+    const answered = await (await patch(ROUTES.profile, { country: "de" }, token)).json() as ProfileResponse;
+    expect(answered.referral.link).toBe("");
+  });
+
+  it("a friend's code entered after sign-up still earns the free week (#3195)", async () => {
+    const referrer = await session();
+    const friend = await session();
+    await patch(ROUTES.profile, { country: "de" }, friend);
+    const link = (await me(referrer)).referral.link;
+    expect((await post(ROUTES.referralRedeem, { code: link }, friend)).status).toBe(200);
+    const view = await me(friend);
+    expect(view.referral.applied).toBe(true);
+    expect(view.entitlement.active).toBe(true);
+  });
 
   it("applies a friend's link once, and answers each refusal at its status", async () => {
     const referrer = await session();

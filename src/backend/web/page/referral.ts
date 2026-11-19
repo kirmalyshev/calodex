@@ -3,8 +3,8 @@
 // `web/ob-referral{,-applied,-invalid,-own,-used}.html`.
 
 import type { Lang } from "@eait/shared";
+import { brandSvg } from "@eait/shared/ui/icons";
 import { currentBrand, fill } from "@eait/shared";
-import { spudSvg } from "@eait/shared/mascot";
 import { pageCopyFor } from "../copy.ts";
 import { ctaLink, ctaSubmit, dash, say, wtop } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -55,7 +55,7 @@ export interface ReferralStepView {
   lang: Lang;
 }
 
-/** The friend's-link step: Spud's ask, the field, and Continue or Skip. Nothing is stored on Skip. */
+/** The friend's-link step: Calodex's ask, the field, and Continue or Skip. Nothing is stored on Skip. */
 export function referralStep(v: ReferralStepView): string {
   const c = pageCopyFor(v.lang);
   const notice = v.notice === null ? ""
@@ -70,7 +70,7 @@ export function referralStep(v: ReferralStepView): string {
 <div class="wmain one refstep"><div class="wcol">
 ${dash("referral", v.lang)}
 <div class="refmid"><div class="ref">
-<div class="say sayi"><span class="spud">${spudSvg("wave", "spud-ref")}</span><h1 class="q">${escape(c.referralAsk)}</h1></div>
+<div class="say sayi">${brandSvg("eait", { size: 28, class: "appicon" })}<h1 class="q">${escape(c.referralAsk)}</h1></div>
 <p class="muted-sub">${escape(c.referralLead)}</p>
 ${v.done ? notice : ""}
 ${form}

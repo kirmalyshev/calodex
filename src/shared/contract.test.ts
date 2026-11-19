@@ -6,7 +6,7 @@ import {
 } from "./contract.ts";
 import { emptyHealthDay } from "./health.ts";
 
-// The manual edit's body is the one place a client sends numbers the thread then repeats as Spud's
+// The manual edit's body is the one place a client sends numbers the thread then repeats as Calodex's
 // sentence. A shape check at the boundary keeps "Updated — NaN kcal" out of a permanent line.
 describe("isEditMealRequest", () => {
   it("accepts finite non-negative numbers and well-formed items, each optional", () => {

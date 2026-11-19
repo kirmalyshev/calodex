@@ -1,4 +1,4 @@
-// The web application in the Spud design (#52): the boards' transcript, its one composer, its
+// The web application in the Calodex design (#52): the boards' transcript, its one composer, its
 // navigation row and its diary rows — pinned by classes, accessible names and computed styles,
 // never by screenshots.
 

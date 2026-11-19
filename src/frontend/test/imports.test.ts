@@ -27,7 +27,6 @@ const WEB_MODULES = new Set([
   "brand.ts",
   "palette.ts",
   "design.ts",
-  "mascot.ts",
   "types.ts",
   "dates.ts",
   "meal-reminders.ts",

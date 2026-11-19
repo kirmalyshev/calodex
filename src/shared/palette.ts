@@ -40,7 +40,7 @@ export const light = {
   over: "#7A1A14",
   /** The calorie floor, and nothing else. */
   care: "#2F6FB0",
-  /** Chat (ieat-app#1520): the thread's ground one step below bg, Spud's bubble, muted on her tint (5:1). */
+  /** Chat (ieat-app#1520): the thread's ground one step below bg, Calodex's bubble, muted on her tint (5:1). */
   chatGround: "#EEECE6",
   chatBubble: "#FFFFFF",
   meMuted: "#5C6167",

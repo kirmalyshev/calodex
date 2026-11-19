@@ -2,8 +2,8 @@
 //
 // The markup itself is `shared/ui/kit.ts`'s — one string builder per component, the same strings
 // `/start` interpolates server-side, so neither surface can draw a second ring or a second meal
-// row. This module is the bridge: `kitEl` parses a builder's output into an element (spudFace's
-// move — generated markup, not `innerHTML` on a value that arrived from anywhere; every dynamic
+// row. This module is the bridge: `kitEl` parses a builder's output into an element (generated
+// markup, not `innerHTML` on a value that arrived from anywhere; every dynamic
 // part went through `esc` at build), and the `*El` wrappers are what screens call when a component
 // takes an event listener — `addEventListener`, never an `on*` attribute the CSP refuses.
 
@@ -12,7 +12,7 @@ import {
   bmiBar as bmiBarMarkup, cta as ctaMarkup, estimateChartSvg, gramMacs as gramMacsMarkup,
   mac as macMarkup, macs as macsMarkup, mcard as mcardMarkup, mealRow as mealRowMarkup,
   optionRow as optionRowMarkup, photoHero as photoHeroMarkup, planCard as planCardMarkup,
-  gabieAvatar as gabieAvatarMarkup, gabieName as gabieNameMarkup, spudAvatar as spudAvatarMarkup,
+  gabieAvatar as gabieAvatarMarkup, gabieName as gabieNameMarkup,
   payPlans as payPlansMarkup,
   ring as ringMarkup, scorePart as scorePartMarkup, scoreRow as scoreRowMarkup,
   ingredient as ingredientMarkup, twoWayChartSvg, verdictDot as verdictDotMarkup,
@@ -118,15 +118,10 @@ export const ctaEl = (o: Parameters<typeof ctaMarkup>[0]): Element => kitEl(ctaM
 export const optionRowEl = (o: Parameters<typeof optionRowMarkup>[0]): Element =>
   kitEl(optionRowMarkup(o));
 
-export const spudAvatarEl = (
-  mood: Parameters<typeof spudAvatarMarkup>[0],
-  o?: Parameters<typeof spudAvatarMarkup>[1],
-): Element => kitEl(spudAvatarMarkup(mood, o));
-
 export const gabieAvatarEl = (): Element => kitEl(gabieAvatarMarkup());
 
 /** The coach's mark in the thread (#2813): the app icon at 28 — the same `brandSvg` the shell's
-    wordmark parses — where a `.say` used to hang Spud's disc. `svg()`, not `kitEl`: the art is a
+    wordmark parses — where a `.say` used to hang the Spud mascot's disc. `svg()`, not `kitEl`: the art is a
     string of ours with nothing to escape, and the element keeps its SVG namespace. */
 export const eaitIconEl = (): Element =>
   new DOMParser().parseFromString(brandSvg("eait", { size: 28, class: "eait" }), "image/svg+xml").documentElement;

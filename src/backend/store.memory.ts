@@ -23,7 +23,7 @@ import { type ChatMessage,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
-  type AdminOnboardingAccount, type AdminOnboardingEvent,
+  type AdminOnboardingAccount, type AdminOnboardingEvent, type OnboardingServedRecord,
 } from "./store.ts";
 
 /** A stored funnel event: what the client sent, plus who and when we received it. */
@@ -179,6 +179,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const now = opts.now ?? Date.now;
 
   const users = new Map<string, Profile>();
+  /** merged-away id → survivor (#2694), as `merged_users` holds it. */
+  const mergedAway = new Map<string, string>();
   // WHEN the account was made. A column on `users` in Postgres and a second map here, like the
   // entitlement and the role — the admin's list (#374) is the only reader, and a store that could
   // not answer it would be a store the panel had to guess against.
@@ -393,6 +395,15 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const screenTemplates = new Map<string, ScreenTemplateRecord[]>();
   const templateAssets = new Map<string, { mime: string; bytes: Uint8Array }>();
   const onboardingAssignments = new Map<string, OnboardingAssignment>();
+  // ieat-app#3194: what GET /v1/onboarding served, insertion order. Screens compare as Postgres's jsonb
+  // `=` does — key order is not part of the value.
+  const onboardingServedRows: (OnboardingServedRecord & { userId: string })[] = [];
+  const canonical = (v: unknown): string => JSON.stringify(v, (_k, x: unknown) =>
+    x && typeof x === "object" && !Array.isArray(x)
+      ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x);
+  const sameServing = (a: OnboardingServedRecord, b: Omit<OnboardingServedRecord, "servedAt" | "lastServedAt">) =>
+    a.contentVersion === b.contentVersion && a.lang === b.lang && a.surface === b.surface
+    && canonical(a.screens) === canonical(b.screens);
   // `${userId}\n${date}` -> the day. One row per user per date, exactly as in Postgres, so the
   // upsert semantics the tests assert are the semantics production has.
   const healthDays = new Map<string, HealthDay & { userId: string }>();
@@ -492,6 +503,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
   const eraseUser = (userId: string): void => {
     users.delete(userId);
+    for (const [from, into] of mergedAway) if (into === userId) mergedAway.delete(from);
     createdAt.delete(userId);
     // Goes with the account. In Postgres this is a column on `users` and needs no statement at
     // all; here it is a second map, so it needs this line to keep the two stores honest.
@@ -522,7 +534,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     // In Postgres this is the cascade on the foreign key; here it is this line. A code that
     // outlived its account would mint a session for a user id nothing resolves.
     for (const [h, c] of pairingCodes) if (c.userId === userId) pairingCodes.delete(h);
-    // The thread holds the medical free text a person typed at Spud. It goes with the account.
+    // The thread holds the medical free text a person typed at Calodex. It goes with the account.
     for (let i = chat.length - 1; i >= 0; i--) if (chat[i]!.userId === userId) chat.splice(i, 1);
     firstVerdictSpoken.delete(userId);
     for (let i = analyses.length - 1; i >= 0; i--) {
@@ -543,6 +555,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     for (const [id, e] of onboardingEvents) if (e.userId === userId) onboardingEvents.delete(id);
     // Nor are the experiment assignments — `on delete cascade` in Postgres, this loop here.
     for (const [k, a] of onboardingAssignments) if (a.user_id === userId) onboardingAssignments.delete(k);
+    for (let i = onboardingServedRows.length - 1; i >= 0; i--) {
+      if (onboardingServedRows[i]!.userId === userId) onboardingServedRows.splice(i, 1);
+    }
     // A device the account no longer has is a device this server would still push to. In here
     // rather than in `deleteUser`, so the Apple server-to-server revocation path erases it too.
     for (const [token, row] of pushTokens) if (row.userId === userId) pushTokens.delete(token);
@@ -1064,7 +1079,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         }
       }
       for (const m of chat) if (m.userId === fromUserId) m.userId = intoUserId;
-      // The greeting travels with the thread that holds it, or Spud says "First one in." twice.
+      // The greeting travels with the thread that holds it, or Calodex says "First one in." twice.
       if (firstVerdictSpoken.delete(fromUserId)) firstVerdictSpoken.add(intoUserId);
       // The paid tier moves too — see store.pg.ts for why this is the one entry here that is
       // somebody's money. Per grant, NEWER CLOCK WINS, whole grant at a time.
@@ -1111,6 +1126,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           onboardingAssignments.set(`${intoUserId}\n${a.experiment_id}`, { ...a, user_id: intoUserId });
         }
       }
+      // What was served moves with the funnel rows it explains, every row: each is a dated serving.
+      for (const r of onboardingServedRows) if (r.userId === fromUserId) r.userId = intoUserId;
 
       // The merged-away account's identities are DROPPED, not repointed. It is anonymous by the
       // time we get here, so those are the device identity and, since #205, possibly a `telegram`
@@ -1175,6 +1192,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // rather than silently start addressing someone else's diary.
       for (const [h, row] of tokens) if (row.userId === fromUserId) tokens.delete(h);
       users.delete(fromUserId);
+      for (const [from, into] of mergedAway) if (into === fromUserId) mergedAway.set(from, intoUserId);
+      mergedAway.set(fromUserId, intoUserId);
       // Goes with the row, exactly as `eraseUser` takes it. Postgres gets both of these for free —
       // one is a column on a deleted row, the other is a column this method never copies.
       createdAt.delete(fromUserId);
@@ -1371,6 +1390,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // port is a field somebody will branch on. `storedEntitlement` is that projection, shared
       // with the admin list so the two cannot disagree about which fields leave.
       return storedEntitlement(userId);
+    },
+
+    async mergedInto(userId) {
+      return mergedAway.get(userId) ?? null;
     },
 
     async moveEntitlement(fromUserId, intoUserId, eventAt) {
@@ -2042,6 +2065,21 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return [...onboardingAssignments.values()]
         .filter((a) => a.experiment_id === experimentId)
         .map(clone);
+    },
+
+    async recordOnboardingServed(userId, served) {
+      const at = new Date(now()).toISOString();
+      // Only the LATEST row absorbs a repeat, as in Postgres.
+      const latest = onboardingServedRows.filter((r) => r.userId === userId)
+        .reduce<(typeof onboardingServedRows)[number] | undefined>((m, r) => (!m || r.servedAt >= m.servedAt ? r : m), undefined);
+      if (latest && sameServing(latest, served)) latest.lastServedAt = at;
+      else onboardingServedRows.push({ ...clone(served), userId, servedAt: at, lastServedAt: at });
+    },
+
+    async onboardingServed(userId) {
+      return onboardingServedRows.filter((r) => r.userId === userId)
+        .sort((a, b) => Date.parse(a.servedAt) - Date.parse(b.servedAt))
+        .map(({ userId: _u, ...r }) => clone(r));
     },
 
     async onboardingExperimentFunnel(experimentId, range, staffIds = []) {

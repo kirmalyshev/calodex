@@ -4,7 +4,7 @@
 // themes are one `prefers-color-scheme` block over the palette the app and the landing page already
 // share, and every interaction is a form. That is the same decision the landing page makes, plus
 // one more reason — this surface handles POSTs, and a page that loads no script is a page with no
-// third-party origin to allow in its own CSP. The one script it carries types Spud's onboarding
+// third-party origin to allow in its own CSP. The one script it carries types Calodex's onboarding
 // lines out (`TYPING_SCRIPT`); it never changes, so the policy names it by hash rather than by a
 // nonce, and every page works without it — the full text is in the markup.
 
@@ -110,7 +110,6 @@ img, svg { display: block; max-width: 100%; }
   padding: .15rem .7rem; margin: .4rem .4rem 0 0;
   font-size: .8125rem; color: var(--muted);
 }
-.spud { width: 64px; height: 64px; display: block; margin: 0 0 1rem; }
 /* The part of a line not yet typed. Laid out, read by a screen reader, not yet seen. */
 .untyped { color: transparent; }
 
@@ -169,7 +168,7 @@ label.check {
 }
 .figure { font-family: var(--display); font-size: 2.6rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
 
-/* Spud's one line back on the answer just given — the small avatar beside the beat, and the
+/* Calodex's one line back on the answer just given — the small avatar beside the beat, and the
    mood's own face inside it (the reaction decides which mouth is drawn, not the page). */
 .spk { display: flex; gap: .7rem; align-items: flex-start; margin: 0 0 .6rem; }
 .spk .av {
@@ -231,8 +230,6 @@ label.check {
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   color: var(--muted); background: var(--surface); border: 1px solid var(--hair); font-size: 1.15rem;
 }
-.offer-hero { width: 96px; margin: 1rem auto .5rem; }
-.offer-hero svg { width: 96px; height: 96px; }
 .offer .beat { text-align: center; color: var(--muted); margin: 0 0 .35rem; }
 .offer h1 { text-align: center; }
 .perk { display: flex; gap: .6rem; align-items: center; font-weight: 600; margin: 0 0 .55rem; }

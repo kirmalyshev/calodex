@@ -122,7 +122,7 @@ describe("verdictInlineText", () => {
 });
 
 // Principal, 2026-09-25: the first verdict follows the COMPUTED pills, never hard-coded praise.
-// Spud's face is part of what the verdict says, so it is decided by the worst pill on the card.
+// Calodex's face is part of what the verdict says, so it is decided by the worst pill on the card.
 describe("verdictMood", () => {
   it("cheers only when every pill on the card is on plan", () => {
     expect(verdictMood({ weight: "good", ldl: "good" })).toBe("joy");

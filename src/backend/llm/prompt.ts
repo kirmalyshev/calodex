@@ -479,7 +479,7 @@ Rules:
 - Never comment on the user's body, their weight, or whether they should be eating this.`;
 
 /**
- * What Spud asked, and that this message is the answer to it.
+ * What Calodex asked, and that this message is the answer to it.
  *
  * ONE wording, used by the router and by the correction prompt behind it. Two copies would let a
  * chip mean one thing to the call that decides what it is and another to the call that does the
@@ -487,7 +487,7 @@ Rules:
  * common path rather than the rare one.
  */
 function questionLine(question: { text: string; options: string[] }): string {
-  return `Spud asked about this meal: "${normalizePromptText(question.text, MAX_QUESTION)}" ` +
+  return `Calodex asked about this meal: "${normalizePromptText(question.text, MAX_QUESTION)}" ` +
     `(options: ${question.options.map((o) => normalizePromptText(o, MAX_OPTION)).join(" / ")}). ` +
     `The user's message is the answer; treat it as a correction of the focus meal.`;
 }
@@ -523,7 +523,7 @@ export function buildRouteText(input: {
   todayMeals: RecentMeal[];
   week: { date: string; kcal: number; protein_g: number }[];
   focusMeal?: unknown;
-  /** The question Spud asked about the focus meal and has not had an answer to. */
+  /** The question Calodex asked about the focus meal and has not had an answer to. */
   question?: { text: string; options: string[] } | undefined;
   /** The thread's tail, oldest first, so a follow-up routes as what it is. */
   recent?: CoachHistoryLine[] | undefined;
@@ -563,7 +563,7 @@ export function buildRouteText(input: {
   // Each line contained: the thread holds words the model wrote and words the user typed.
   if (input.recent && input.recent.length > 0) {
     lines.push(`The conversation just before this message:\n${input.recent
-      .map((l) => `- ${l.role === "user" ? "user" : "Spud"}: ${coachLine(l.text)}`).join("\n")}`);
+      .map((l) => `- ${l.role === "user" ? "user" : "Calodex"}: ${coachLine(l.text)}`).join("\n")}`);
   }
   // A chip's words are two of them. "In oil" against a meal in focus and nothing else routes to
   // `answer` — or, worse, to a new meal made out of the answer — because nothing in the prompt says
@@ -598,7 +598,7 @@ export function languageLine(lang: string): string {
 // ── The coach ────────────────────────────────────────────────────────────────────────────────
 
 /**
- * Spud, answering a question. #1041 (Kirill's ruling 2026-09-28) merged the thread's two
+ * Calodex, answering a question. #1041 (Kirill's ruling 2026-09-28) merged the thread's two
  * voices into one: the mascot who logs is the voice behind the Chat tab — every
  * assistant line is his. His rules are honest numbers, no cheering, no shame, one concrete
  * thing — and every rule below has a test naming it.
@@ -616,7 +616,7 @@ export function languageLine(lang: string): string {
  * --questions prod` replays that morning, and is how a change to this block is judged: the model
  * output before and after it, read side by side, not a test that the words are present.
  */
-export const SYSTEM_COACH = `You are Spud, the user's companion inside a photo-first food diary. The user is talking to you in the app's chat. You know their plan, what they have eaten today, their recent days, and you can look up their logged meals and their health data with tools. You speak as yourself, in the first person, and you never ask for their name.
+export const SYSTEM_COACH = `You are Calodex, the user's companion inside a photo-first food diary. The user is talking to you in the app's chat. You know their plan, what they have eaten today, their recent days, and you can look up their logged meals and their health data with tools. You speak as yourself, in the first person, and you never ask for their name.
 
 Who you are: you think in pans and portions before you think in figures — where the fat actually came from, what somebody can change tonight without shopping. You have seen every plate there is and none of them shocks you: a bad day is a Tuesday, not a confession, and you have never once been disappointed in anybody. That is not softness. You say the true thing plainly and you say it once, dry rather than jokey, and you would rather hand someone one change they will actually make than a plan they will admire and ignore. Your history is what you answer FROM; it is never what you answer about, and you never talk about yourself.
 

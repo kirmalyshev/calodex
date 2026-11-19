@@ -15,11 +15,9 @@
 //
 // Moved whole out of `main.ts` (#87); the register's own boards for it are W5's.
 
-import { verdictMood } from "../../shared/types.ts";
 
 
-import type { MascotMood } from "../../shared/mascot.ts";
-// The one-meal flow's Spud lines are onboarding CONTENT (ieat-app#2757): the compiled-in revision
+// The one-meal flow's Calodex lines are onboarding CONTENT (ieat-app#2757): the compiled-in revision
 // draws first, and the served one (the admin's words, or an experiment's) replaces it when it lands.
 import { onboardingContentFor } from "../../shared/onboarding-content.ts";
 import { usableFirstMeal } from "../../shared/onboarding.ts";
@@ -36,7 +34,7 @@ import { fillCopy as fill } from "../copy.ts";
 import { shrinkPhotos } from "../photo.ts";
 import { firstMealEdit, mealTitle, type Portion } from "../portion.ts";
 import { kitEl, payPlansEl } from "../kit.ts";
-import { ico, photoHero, spudAvatar } from "../../shared/ui/kit.ts";
+import { ico, photoHero } from "../../shared/ui/kit.ts";
 import { payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import {
   COPY, CONFIRM, MEAL, el, clear, kcal, lang, names, refusalWords, render, sendOrKeep,
@@ -44,10 +42,10 @@ import {
 } from "../shell.ts";
 import { routeBase } from "../route.ts";
 
-/** The boards' `.say` — Spud's disc beside one quiet line, inside the diary card. */
-function sayRow(mood: MascotMood, line: string): HTMLElement {
+/** The boards' `.say` — one quiet line, inside the diary card. */
+function sayRow(line: string): HTMLElement {
   const row = el("div", "say fline");
-  row.append(kitEl(spudAvatar(mood)), el("p", "", line));
+  row.append(el("p", "", line));
   return row;
 }
 
@@ -141,7 +139,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
   const askStep = (): HTMLElement => {
     const box = el("div", "step");
     // No offer preceded this screen on the web, so there is no `react` beat to answer it (#50).
-    box.append(sayRow("happy", fm.ask));
+    box.append(sayRow(fm.ask));
     const foot = el("div", "step-foot");
     const up = el("button", "cta p") as HTMLButtonElement;
     up.append(kitEl(ico("upload")), document.createTextNode(COPY.firstMealUpload));
@@ -155,7 +153,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
 
   const photoStep = (): HTMLElement => {
     const box = el("div", "step");
-    box.append(sayRow("happy", COPY.firstPhotoAsk));
+    box.append(sayRow(COPY.firstPhotoAsk));
     // A LABEL around the input, so the whole zone opens the chooser natively — a click needs no
     // script, and drag-and-drop is the affordance on top of it.
     const zone = el("label", "drop");
@@ -230,7 +228,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
 
   const typeStep = (): HTMLElement => {
     const box = el("div", "step");
-    box.append(sayRow("happy", COPY.firstTypeAsk));
+    box.append(sayRow(COPY.firstTypeAsk));
     const panel = el("div", "card");
     const lab = el("label", "lab", COPY.yourMeal);
     lab.setAttribute("for", "fm-meal");
@@ -251,7 +249,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
           { onResult: (r) => { if (r.kind === "proposed" || r.kind === "answered") got.result = r; } },
         );
         if (got.result === null) { if (keptNote !== undefined) say(keptNote); return; }
-        // An answered question is Spud's reply, shown where it was asked — it logs nothing.
+        // An answered question is Calodex's reply, shown where it was asked — it logs nothing.
         if (got.result.kind === "answered") { say(got.result.text); return; }
         // A typed meal is PROPOSED first, and this screen is the confirmation — the ask already
         // said what it was, so a second tap would ask the same thing again. The proposal was the
@@ -273,14 +271,14 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
   // the account's language. A screen in this bundle holds no i18n catalog to compose them itself.
   type VerdictWords = { verdictLabels: VerdictLabel[]; verdictHeadline: string | null };
   const verdictSheet = (analysis: MealAnalysis, mealId: string, words: VerdictWords): HTMLElement => {
-    // web/first-verdict.html: the sheet centred over Home — Spud's "Your first macros", the photo
+    // web/first-verdict.html: the sheet centred over Home — Calodex's "Your first macros", the photo
     // with its item callouts, the card's name and kcal, macros, the pills, then the two actions.
     const scrim = el("div", "fscrim");
     const dlg = el("div", "card fsheet rise");
     dlg.setAttribute("role", "dialog");
     dlg.setAttribute("aria-modal", "true");
     dlg.setAttribute("aria-label", COPY.firstVerdictBeat);
-    dlg.append(sayRow(verdictMood(analysis.verdicts), COPY.firstVerdictBeat));
+    dlg.append(sayRow(COPY.firstVerdictBeat));
     if (lastPhotoUrl !== null) {
       const corners = ["tl", "bl", "br"] as const;
       const hero = kitEl(photoHero({
@@ -404,7 +402,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
     scrim.style.top = `${document.querySelector<HTMLElement>(".wtop")?.offsetHeight ?? 0}px`;
     const dlg = el("div", "foffer");
     const box = el("div", "step");
-    box.append(sayRow("happy", fm.afterAsk));
+    box.append(sayRow(fm.afterAsk));
     const card = el("div", "card");
     card.append(el("b", "d d22", COPY.offerAsk));
     const pay = payCopyFor(lang);

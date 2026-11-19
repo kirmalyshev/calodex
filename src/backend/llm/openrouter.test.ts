@@ -89,7 +89,7 @@ const ANALYSIS = {
   sugar_g: 1.1, sodium_mg: 124, confidence: "medium", notes: "",
 };
 
-/** A meal already on the plate, and the question Spud asked about it. A chip answers these. */
+/** A meal already on the plate, and the question Calodex asked about it. A chip answers these. */
 const FOCUS = {
   isFood: true,
   items: [{ name: "Fried potatoes", name_en: "fried potatoes", grams: 250, kcal: 380,
@@ -181,7 +181,7 @@ describe("routeText", () => {
     expect(system!.content).toBe(SYSTEM_TEXT_CORRECTION);
     // The plate it must correct, and the question its two words are the answer to.
     expect(user!.content).toContain("Fried potatoes");
-    expect(user!.content).toContain(`Spud asked about this meal: "Cooked in oil, or dry?"`);
+    expect(user!.content).toContain(`Calodex asked about this meal: "Cooked in oil, or dry?"`);
     expect(user!.content).toContain("The user said: In oil");
   });
 
@@ -1037,7 +1037,10 @@ describe("call metrics", () => {
     const { seen, onCall } = collect();
     await expect(llm.analyzePhoto({ ...PHOTO_INPUT, onCall })).rejects.toThrow(/timeout/);
     expect(seen.map((m) => m.status)).toEqual(["timeout"]);
-    expect(seen[0]!.msTotal).toBeGreaterThanOrEqual(35);
+    // msTotal times the CALL, but the budget belongs to the TURN: the call gets what is left of the
+    // turn's deadline (#153), so it falls short of timeoutMs by whatever ran before send (#3225).
+    expect(Number.isFinite(seen[0]!.msTotal)).toBe(true);
+    expect(seen[0]!.msTotal).toBeGreaterThanOrEqual(0);
   });
 
   test("a streamed call reports the first content delta as first_item", async () => {

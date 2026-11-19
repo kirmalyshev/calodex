@@ -32,7 +32,7 @@ import { eatenAt, once } from "./turns.ts";
 const CONTEXT_DAYS = 7;
 
 /**
- * Is this message one of the options Spud offered, rather than something the user wrote?
+ * Is this message one of the options Calodex offered, rather than something the user wrote?
  *
  * Compared through `normalizePromptText` — the same sink the options were stored through — then
  * lower-cased, so case and stray whitespace do not decide it. A chip sends its option verbatim, so

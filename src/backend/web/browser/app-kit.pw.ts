@@ -13,7 +13,7 @@ import { fontFaces, motionCss } from "@eait/shared/design";
 import { iconCss } from "@eait/shared/ui/icons";
 import {
   cta, estimateChartSvg, gabieAvatar, gabieName, gramMacs, kitCss, mac, mcard, mealRow,
-  optionRow, photoHero, ring, spudAvatar, twoWayChartSvg, verdictList, weekBarsSvg, weekStrip,
+  optionRow, photoHero, ring, twoWayChartSvg, verdictList, weekBarsSvg, weekStrip,
   weightChartSvg, type WeekDayRow,
 } from "@eait/shared/ui/kit";
 import { expect, test } from "./fixtures.ts";
@@ -83,9 +83,8 @@ async function kitSheet(page: Page): Promise<void> {
     `<div class="opts">${optionRow({ text: "Lose weight", icon: "lose", tile: true, selected: true })}${optionRow({ text: "Keep weight", icon: "keep", tile: true })}</div>`,
     // A hairline list is the same row outside the card grid — the form .card.flat wraps it in.
     `<div class="card flat" style="padding:0 16px">${optionRow({ text: "Language", icon: "person", tag: "div" })}${optionRow({ text: "Sign out", tag: "div" })}</div>`,
-    // The avatars: Spud's mood disc and the lettered one, with the name line.
-    `<div class="say">${spudAvatar("think")}<div><p>Reading the plate.</p></div></div>`,
-    `<div class="say">${gabieAvatar()}<div>${gabieName("Spud")}<p>Tell me what I got wrong.</p></div></div>`,
+    // The lettered avatar, with the name line.
+    `<div class="say">${gabieAvatar()}<div>${gabieName("Calodex")}<p>Tell me what I got wrong.</p></div></div>`,
   ].join("\n");
   // Land on the app's origin first — on the quietest page it has, /health — so the fonts'
   // relative route resolves there, and so the shell's own bundle is not running when setContent
@@ -179,20 +178,16 @@ test("the kit's measurements are pro.css's", async ({ page }) => {
   const head = page.locator(".ec .row.between");
   await expect(head.locator(".lab")).toContainText("Estimated progress");
   await expect(head.locator(".tagx")).toContainText("eait analysis");
-  await expect(head.locator(".tagx .wm.happy")).toHaveCSS("width", "18px");
+  await expect(head.locator(".tagx .wm")).toHaveCount(0);
 
   // The hero is a raw block — its rounding is the container's, not the component's.
   await expect(page.locator(".hero")).toHaveCSS("border-radius", "0px");
 
-  // The avatars: Spud's 28 px disc draws its mood's face, the lettered one is the accent one.
-  await expect(page.locator(".spud.think")).toHaveCSS("width", "28px");
-  const face = await page.evaluate(
-    `getComputedStyle(document.querySelector(".spud.think")).backgroundImage`,
-  );
-  expect(face).toContain("data:image/svg+xml");
+  // The lettered avatar is the accent one; no Spud disc exists.
+  await expect(page.locator(".spud")).toHaveCount(0);
   await expect(page.locator(".gabie")).toHaveCSS("background-color", "rgb(30, 107, 60)");
   await expect(page.locator(".gabie")).toHaveCSS("border-radius", "50%");
-  await expect(page.locator(".gname")).toContainText("Spud");
+  await expect(page.locator(".gname")).toContainText("Calodex");
 });
 
 test("reduced motion: the kit draws its end state and animates nothing", async ({ page }) => {

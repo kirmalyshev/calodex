@@ -1,4 +1,4 @@
-// The thread's WORDS that are not the model's: Spud's scripted lines, and the first verdict.
+// The thread's WORDS that are not the model's: Calodex's scripted lines, and the first verdict.
 //
 // Both live here, in shared, because both sides need them to be the same sentences: the server
 // writes them into the thread, the app may render one before the round trip lands. A sentence
@@ -14,7 +14,7 @@ import { verdictNoun } from "./verdicts.ts";
 
 /**
  * Lines the APP may ask the server to append, BY ID. Never prose: the client names a line and the
- * server owns the words, so nothing a phone sends can put a sentence in Spud's mouth.
+ * server owns the words, so nothing a phone sends can put a sentence in Calodex's mouth.
  *
  * THE KEYS ARE THE CONTRACT AND THE WORDS ARE NOT. This is the id set two binaries agree on, so it
  * is the same in all eight languages and is deliberately NOT `Localized`; what each id SAYS lives
@@ -66,7 +66,7 @@ export const SCRIPTED_LINES = {
 export type ScriptedLineId = keyof typeof SCRIPTED_LINES;
 
 /**
- * The one rule for client text that ends up inside Spud's bubble: whitespace flattened, so it
+ * The one rule for client text that ends up inside Calodex's bubble: whitespace flattened, so it
  * cannot draw a second line; quotation marks neutralised, so it cannot close the ones around it.
  */
 const neutral = (text: string): string => text.replace(/[“”"]/g, "'").replace(/\s+/g, " ").trim();
@@ -260,7 +260,7 @@ export function capVerdictLines(
 }
 
 /**
- * A user's words, fit to be quoted inside Spud's bubble: whitespace flattened, cut at a word inside
+ * A user's words, fit to be quoted inside Calodex's bubble: whitespace flattened, cut at a word inside
  * the scripted-parameter bound and marked as cut, and never split inside a character — a quote
  * attributed to somebody must read as one thing they said.
  */
@@ -305,7 +305,7 @@ export function verdictHeadline(verdicts: MealVerdicts, lang: Lang): string | nu
 }
 
 /**
- * Spud's first verdict. Spoken ONCE, on the account's first
+ * Calodex's first verdict. Spoken ONCE, on the account's first
  * meal; later meals get the card and, in time, the 20:30 line. Deterministic on purpose: the model
  * is never asked for a verdict, and neither is it asked for these sentences.
  *
@@ -337,7 +337,7 @@ export function firstVerdictLines(i: FirstVerdictInput, lang: Lang): string[] {
   // #130: the sentence is computed — the cap line names the nutrient, the meal's amount and the
   // cap it ran past.
   lines.push(...capVerdictLines(i, lang));
-  // Client text in Spud's bubble: flattened and as short as a scripted parameter, so a caption
+  // Client text in Calodex's bubble: flattened and as short as a scripted parameter, so a caption
   // cannot draw a second line inside the bubble or impersonate the sentence that follows.
   const note = quotable(i.caption);
   if (note) lines.unshift(copy.noted({ note }));

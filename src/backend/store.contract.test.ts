@@ -631,6 +631,32 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.getEntitlement(other)).toBeNull();
     });
 
+    // #2694: RevenueCat keeps naming the anonymous id after a sign-in merged it away, so the merge
+    // records where it went, and erasing the survivor forgets it.
+    it("records which account a merge folded an anonymous one into", async () => {
+      const s = await open();
+      const { userId: anon } = await s.upsertDeviceUser(device(), "en");
+      const { userId: real } = await s.upsertDeviceUser(device(), "en");
+      expect(await s.mergedInto(anon)).toBeNull();
+      await s.mergeUsers(anon, real);
+      expect(await s.mergedInto(anon)).toBe(real);
+      expect(await s.mergedInto(real)).toBeNull();
+      await s.deleteUser(real);
+      expect(await s.mergedInto(anon)).toBeNull();
+    });
+
+    // #3201: a chain A→B→C resolves A straight to C.
+    it("follows a chain of merges to the last survivor", async () => {
+      const s = await open();
+      const { userId: a } = await s.upsertDeviceUser(device(), "en");
+      const { userId: b } = await s.upsertDeviceUser(device(), "en");
+      const { userId: c } = await s.upsertDeviceUser(device(), "en");
+      await s.mergeUsers(a, b);
+      await s.mergeUsers(b, c);
+      expect(await s.mergedInto(a)).toBe(c);
+      expect(await s.mergedInto(b)).toBe(c);
+    });
+
     // A TRANSFER (#687): the grants move per grant, newer clock wins; the source keeps its record
     // with both cleared and stamped at the transfer, so an older delivery cannot write them back.
     it("moves both grants on a transfer, and fences the source at the transfer's clock", async () => {
@@ -1679,7 +1705,7 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.chatBefore(a, null, 1))[0]!.text).toBeNull();
     });
 
-    it("keeps who spoke an assistant line, and Spud is the default", async () => {
+    it("keeps who spoke an assistant line, and Calodex is the default", async () => {
       const s = await open();
       const u = (await s.upsertDeviceUser(device(), "en")).userId;
       await s.appendChat(u, [
@@ -4055,6 +4081,63 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.healthDaysSince(b, "0000-01-01")).toEqual([]);
     });
 
+    // ── What GET /v1/onboarding served (ieat-app#3194) ───────────────────────────────────────
+
+    describe("onboarding served (ieat-app#3194)", () => {
+      const served = (over: Record<string, unknown> = {}) => ({
+        contentVersion: 42, lang: "de" as const, surface: "app" as const,
+        screens: { baseline: { template: "day", version: 3 } }, ...over,
+      });
+
+      it("moves only the LATEST row on an identical repeat; a serving that came back after another is a new row", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "de")).userId;
+        expect(await s.onboardingServed(u)).toEqual([]);
+        await s.recordOnboardingServed(u, served());
+        const [first] = await s.onboardingServed(u);
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served());
+        const [moved] = await s.onboardingServed(u);
+        expect(moved!.servedAt).toBe(first!.servedAt);
+        expect(Date.parse(moved!.lastServedAt)).toBeGreaterThan(Date.parse(first!.lastServedAt));
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served({ contentVersion: 43, screens: {} }));
+        await Bun.sleep(5);
+        // Keys in another order are the same screens, in both stores.
+        await s.recordOnboardingServed(u, served({ screens: { baseline: { version: 3, template: "day" } } }));
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served());
+        const rows = await s.onboardingServed(u);
+        expect(rows.map((r) => [r.contentVersion, r.lang, r.surface, r.screens])).toEqual([
+          [42, "de", "app", { baseline: { template: "day", version: 3 } }],
+          [43, "de", "app", {}],
+          [42, "de", "app", { baseline: { template: "day", version: 3 } }],
+        ]);
+      });
+
+      it("is the account's own: another account reads none of it, and erasure takes it", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "de")).userId;
+        const other = (await s.upsertDeviceUser(device(), "de")).userId;
+        await s.recordOnboardingServed(u, served());
+        expect(await s.onboardingServed(other)).toEqual([]);
+        await s.deleteUser(u);
+        expect(await s.onboardingServed(u)).toEqual([]);
+      });
+
+      it("moves every row on merge", async () => {
+        const s = await open();
+        const anon = (await s.upsertDeviceUser(device(), "de")).userId;
+        const real = (await s.upsertDeviceUser(device(), "de")).userId;
+        await s.recordOnboardingServed(anon, served());
+        await s.recordOnboardingServed(anon, served({ contentVersion: 7 }));
+        await s.recordOnboardingServed(real, served());
+        await s.mergeUsers(anon, real);
+        expect((await s.onboardingServed(real)).map((r) => r.contentVersion).sort()).toEqual([42, 42, 7].sort());
+        expect(await s.onboardingServed(anon)).toEqual([]);
+      });
+    });
+
     // ── The admin switches (#563) ─────────────────────────────────────────────────────────────
 
     describe("the admin switches", () => {
@@ -6355,7 +6438,7 @@ if (PG_URL) {
         // ieat-app#3167: screen templates and their assets are global content, like onboarding_content.
         "knownTemplateAssets",
         "listCampaigns", "listOnboardingExperiments", "listPushTemplates", "listScreenTemplates",
-        "markCampaignRunning", "mergeUsers",
+        "markCampaignRunning", "mergeUsers", "mergedInto",
         // #687: a RevenueCat TRANSFER moves a grant between two accounts, like the merge.
         "moveEntitlement",
         "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
@@ -6395,7 +6478,7 @@ if (PG_URL) {
           and (c.relname = 'users' or exists (
             select 1 from information_schema.columns col
             where col.table_schema = 'public' and col.table_name = c.relname
-              and col.column_name in ('user_id', 'referrer_id', 'referred_id')))
+              and col.column_name in ('user_id', 'referrer_id', 'referred_id', 'into_id')))
         order by c.relname`;
 
       // A catalog query that matched nothing -- or matched one table FEWER than the list it is

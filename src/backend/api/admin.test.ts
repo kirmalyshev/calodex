@@ -89,6 +89,13 @@ async function session(): Promise<string> {
 describe("experiments (ieat-app#2669)", () => {
   beforeEach(async () => { await mountWithAdmin(); });
 
+  it("records what GET /v1/onboarding served (ieat-app#3194)", async () => {
+    const token = await session();
+    expect((await admin("GET", "/v1/onboarding?lang=de", undefined, token)).status).toBe(200);
+    const rows = await store.onboardingServed((await store.userIdForToken(token))!);
+    expect(rows.map((r) => [r.lang, r.surface, r.screens])).toEqual([["de", "app", {}]]);
+  });
+
   it("lists nothing at first, and drafts are born with the control cloned", async () => {
     expect(await (await admin("GET", "/admin/api/experiments")).json()).toMatchObject({ experiments: [] });
     const created = await admin("POST", "/admin/api/experiments", { lang: "de" });
@@ -569,7 +576,7 @@ describe("editing the system prompts", () => {
     // Rows, not a fallback: the store holds the shipped text from the moment it exists, so this
     // screen shows the same thing the transport reads.
     expect(prompts.every((p) => p.version === 1 && p.source === "shipped")).toBe(true);
-    expect(prompts.find((p) => p.key === "coach")!.text).toContain("You are Spud");
+    expect(prompts.find((p) => p.key === "coach")!.text).toContain("You are Calodex");
   });
 
   it("saves an edit, and serves it back as a stored revision", async () => {
@@ -979,7 +986,7 @@ describe("reading one account's thread", () => {
     };
     expect(body.entries.map((e) => e.text))
       .toEqual(["how much protein have I had", "About 90g so far today.", "Nice one."]);
-    // `speaker` is the whole of "who answered": null is Spud, so every line from before Gabie
+    // `speaker` is the whole of "who answered": null is Calodex, so every line from before Gabie
     // existed stays his.
     expect(body.entries[1]!.speaker).toBe("gabie");
     expect(body.entries[2]!.speaker ?? null).toBeNull();

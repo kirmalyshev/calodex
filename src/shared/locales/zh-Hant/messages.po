@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "請先在網頁上回答計畫問題。"
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "熱量"
@@ -421,11 +426,6 @@ msgstr "鈉"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "發生錯誤，但可能已經送出了。再傳一次前，請先查看 /today。"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Spud"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

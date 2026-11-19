@@ -522,7 +522,7 @@ export function localAgentPorts(opts: Options): LlmPorts {
       `To answer, reply with ONLY a JSON object {"reply":"…","suggestions":["…"],"focus":"<optional nutrient name>"} — no prose outside the JSON.`,
     ].join("\n\n");
     const transcript = [
-      ...input.history.map((h) => `- ${h.role === "user" ? "user" : (h.speaker ?? "Spud")}: ${coachLine(h.text)}`),
+      ...input.history.map((h) => `- ${h.role === "user" ? "user" : (h.speaker ?? "Calodex")}: ${coachLine(h.text)}`),
       `- user: ${coachLine(input.text)}`,
     ];
     for (let round = 0; ; round++) {
@@ -543,7 +543,7 @@ export function localAgentPorts(opts: Options): LlmPorts {
       const calls = toolCallsOf(parsed);
       if (calls.length > 0 && !last) {
         emitDraft(draft, { system, user, images: [], model: opts.chatModel }, "ok");
-        transcript.push(`- Spud: ${coachLine(raw)}`);
+        transcript.push(`- Calodex: ${coachLine(raw)}`);
         for (const call of calls) {
           const result = await runTool(tools, call.name, call.arguments);
           transcript.push(`tool ${call.name} answered: ${JSON.stringify(result).slice(0, 12_000)}`);

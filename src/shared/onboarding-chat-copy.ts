@@ -36,7 +36,7 @@ export interface CardCopy {
 }
 
 
-/** Everything Spud says back, for one language. Branching stays in `onboarding-chat.ts`. */
+/** Everything Calodex says back, for one language. Branching stays in `onboarding-chat.ts`. */
 export interface ChatCopy {
   idlePlaceholder: string;
   /** The one button under every screen that answers something. */
@@ -155,7 +155,7 @@ export interface ChatCopy {
 }
 
 const EN: ChatCopy = {
-  idlePlaceholder:  "Message Spud…",
+  idlePlaceholder:  "Message Calodex…",
   continueLabel: "Continue",
   saveKept: "Couldn't save that. Your answer is still here. Continue sends it again.",
   underAgeCard:  {
@@ -250,7 +250,7 @@ const EN: ChatCopy = {
 };
 
 const FR: ChatCopy = {
-  idlePlaceholder:  "Écrire à Spud…",
+  idlePlaceholder:  "Écrire à Calodex…",
   continueLabel: "Continuer",
   saveKept: "Impossible d'enregistrer. Ta réponse est toujours là. Continuer l'envoie à nouveau.",
   underAgeCard:  {
@@ -343,7 +343,7 @@ const FR: ChatCopy = {
 };
 
 const DE: ChatCopy = {
-  idlePlaceholder:  "Nachricht an Spud…",
+  idlePlaceholder:  "Nachricht an Calodex…",
   continueLabel: "Weiter",
   saveKept: "Das konnte nicht gespeichert werden. Deine Antwort ist noch da. Mit Weiter wird sie erneut gesendet.",
   underAgeCard:  {
@@ -436,7 +436,7 @@ const DE: ChatCopy = {
 };
 
 const IT: ChatCopy = {
-  idlePlaceholder:  "Scrivi a Spud…",
+  idlePlaceholder:  "Scrivi a Calodex…",
   continueLabel: "Continua",
   saveKept: "Non è stato possibile salvare. La tua risposta è ancora qui. Con Continua viene inviata di nuovo.",
   underAgeCard:  {
@@ -529,7 +529,7 @@ const IT: ChatCopy = {
 };
 
 const ES: ChatCopy = {
-  idlePlaceholder:  "Escribe a Spud…",
+  idlePlaceholder:  "Escribe a Calodex…",
   continueLabel: "Continuar",
   saveKept: "No se pudo guardar. Tu respuesta sigue aquí. Con Continuar se envía otra vez.",
   underAgeCard:  {
@@ -622,7 +622,7 @@ const ES: ChatCopy = {
 };
 
 const VI: ChatCopy = {
-  idlePlaceholder:  "Nhắn cho Spud…",
+  idlePlaceholder:  "Nhắn cho Calodex…",
   continueLabel: "Tiếp tục",
   saveKept: "Không lưu được. Câu trả lời của bạn vẫn còn đây. Bấm Tiếp tục để gửi lại.",
   underAgeCard:  {
@@ -715,7 +715,7 @@ const VI: ChatCopy = {
 };
 
 const ID: ChatCopy = {
-  idlePlaceholder:  "Kirim pesan ke Spud…",
+  idlePlaceholder:  "Kirim pesan ke Calodex…",
   continueLabel: "Lanjutkan",
   saveKept: "Tidak bisa disimpan. Jawabanmu masih di sini. Lanjutkan akan mengirimnya lagi.",
   underAgeCard:  {
@@ -808,7 +808,7 @@ const ID: ChatCopy = {
 };
 
 const RU: ChatCopy = {
-  idlePlaceholder:  "Написать Spud…",
+  idlePlaceholder:  "Написать Calodex…",
   continueLabel: "Продолжить",
   saveKept: "Не удалось сохранить. Твой ответ всё ещё здесь. «Продолжить» отправит его снова.",
   underAgeCard:  {
@@ -908,7 +908,7 @@ const RU: ChatCopy = {
 };
 
 const TE: ChatCopy = {
-  idlePlaceholder:  "Spudకు మెసేజ్ పంపండి…",
+  idlePlaceholder:  "Calodexకు మెసేజ్ పంపండి…",
   continueLabel: "కొనసాగించండి",
   saveKept: "అది సేవ్ కాలేదు. మీ సమాధానం ఇంకా ఇక్కడే ఉంది. \"కొనసాగించండి\" నొక్కితే అది మళ్ళీ పంపబడుతుంది.",
   underAgeCard:  {
@@ -1003,7 +1003,7 @@ const TE: ChatCopy = {
 };
 
 const TA: ChatCopy = {
-  idlePlaceholder:  "Spud-க்குச் செய்தி…",
+  idlePlaceholder:  "Calodex-க்குச் செய்தி…",
   continueLabel: "தொடர்க",
   saveKept: "அதைச் சேமிக்க முடியவில்லை. உங்கள் பதில் இன்னும் இங்கே உள்ளது. தொடர்க என்பதை அழுத்தினால் மீண்டும் அனுப்பப்படும்.",
   underAgeCard:  {
@@ -1098,7 +1098,7 @@ const TA: ChatCopy = {
 };
 
 const PA: ChatCopy = {
-  idlePlaceholder:  "Spud ਨੂੰ ਮੈਸੇਜ ਕਰੋ…",
+  idlePlaceholder:  "Calodex ਨੂੰ ਮੈਸੇਜ ਕਰੋ…",
   continueLabel: "ਜਾਰੀ ਰੱਖੋ",
   saveKept: "ਇਹ ਸੇਵ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਤੁਹਾਡਾ ਜਵਾਬ ਹਾਲੇ ਵੀ ਇੱਥੇ ਹੈ। ਜਾਰੀ ਰੱਖੋ ਦਬਾਉਣ 'ਤੇ ਇਹ ਦੁਬਾਰਾ ਭੇਜਿਆ ਜਾਵੇਗਾ।",
   underAgeCard:  {
@@ -1193,7 +1193,7 @@ const PA: ChatCopy = {
 };
 
 const OR: ChatCopy = {
-  idlePlaceholder:  "Spud କୁ ମେସେଜ୍ କରନ୍ତୁ…",
+  idlePlaceholder:  "Calodex କୁ ମେସେଜ୍ କରନ୍ତୁ…",
   continueLabel: "ଜାରି ରଖନ୍ତୁ",
   saveKept: "ଏହା ସେଭ୍ ହୋଇପାରିଲା ନାହିଁ। ଆପଣଙ୍କ ଉତ୍ତର ଏଠାରେ ଅଛି। “ଜାରି ରଖନ୍ତୁ” ଦବାଇଲେ ଏହା ପୁଣି ପଠାହେବ।",
   underAgeCard:  {
@@ -1288,7 +1288,7 @@ const OR: ChatCopy = {
 };
 
 const MR: ChatCopy = {
-  idlePlaceholder:  "Spud ला मेसेज करा…",
+  idlePlaceholder:  "Calodex ला मेसेज करा…",
   continueLabel: "पुढे जा",
   saveKept: "हे सेव्ह करता आले नाही. तुमचे उत्तर अजून इथेच आहे. पुढे जा दाबल्यास ते पुन्हा पाठवले जाईल.",
   underAgeCard:  {
@@ -1383,7 +1383,7 @@ const MR: ChatCopy = {
 };
 
 const ML: ChatCopy = {
-  idlePlaceholder:  "Spud-ന് സന്ദേശം അയയ്ക്കൂ…",
+  idlePlaceholder:  "Calodex-ന് സന്ദേശം അയയ്ക്കൂ…",
   continueLabel: "തുടരുക",
   saveKept: "അത് സംരക്ഷിക്കാനായില്ല. നിങ്ങളുടെ ഉത്തരം ഇപ്പോഴും ഇവിടെയുണ്ട്. തുടരുക അമർത്തിയാൽ അത് വീണ്ടും അയയ്ക്കും.",
   underAgeCard:  {
@@ -1478,7 +1478,7 @@ const ML: ChatCopy = {
 };
 
 const KN: ChatCopy = {
-  idlePlaceholder:  "Spud ಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ…",
+  idlePlaceholder:  "Calodex ಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ…",
   continueLabel: "ಮುಂದುವರಿಸಿ",
   saveKept: "ಅದನ್ನು ಉಳಿಸಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಉತ್ತರ ಇನ್ನೂ ಇಲ್ಲೇ ಇದೆ. ಮುಂದುವರಿಸಿ ಒತ್ತಿದರೆ ಅದು ಮತ್ತೆ ಕಳುಹಿಸಲ್ಪಡುತ್ತದೆ.",
   underAgeCard:  {
@@ -1573,7 +1573,7 @@ const KN: ChatCopy = {
 };
 
 const GU: ChatCopy = {
-  idlePlaceholder:  "Spud ને મેસેજ કરો…",
+  idlePlaceholder:  "Calodex ને મેસેજ કરો…",
   continueLabel: "ચાલુ રાખો",
   saveKept: "આ સેવ ન થઈ શક્યું. તમારો જવાબ હજી અહીં જ છે. ચાલુ રાખો દબાવતાં તે ફરીથી મોકલાશે.",
   underAgeCard:  {
@@ -1668,7 +1668,7 @@ const GU: ChatCopy = {
 };
 
 const BN: ChatCopy = {
-  idlePlaceholder:  "Spud-কে মেসেজ করুন…",
+  idlePlaceholder:  "Calodex-কে মেসেজ করুন…",
   continueLabel: "চালিয়ে যান",
   saveKept: "এটি সেভ করা যায়নি। আপনার উত্তর এখনও এখানে আছে। চালিয়ে যান চাপলে আবার পাঠানো হবে।",
   underAgeCard:  {
@@ -1763,7 +1763,7 @@ const BN: ChatCopy = {
 };
 
 const PT_PT: ChatCopy = {
-  idlePlaceholder:  "Mensagem para o Spud…",
+  idlePlaceholder:  "Mensagem para o Calodex…",
   continueLabel: "Continuar",
   saveKept: "Não foi possível guardar. A tua resposta continua aqui. Continuar envia-a de novo.",
   underAgeCard:  {
@@ -1858,7 +1858,7 @@ const PT_PT: ChatCopy = {
 };
 
 const MS: ChatCopy = {
-  idlePlaceholder:  "Mesej Spud…",
+  idlePlaceholder:  "Mesej Calodex…",
   continueLabel: "Teruskan",
   saveKept: "Itu tidak dapat disimpan. Jawapan anda masih ada di sini. Teruskan akan menghantarnya semula.",
   underAgeCard:  {
@@ -1953,7 +1953,7 @@ const MS: ChatCopy = {
 };
 
 const CA: ChatCopy = {
-  idlePlaceholder:  "Escriu a Spud…",
+  idlePlaceholder:  "Escriu a Calodex…",
   continueLabel: "Continua",
   saveKept: "No s'ha pogut desar. La teva resposta encara és aquí. Amb Continua, s'envia de nou.",
   underAgeCard:  {
@@ -2048,7 +2048,7 @@ const CA: ChatCopy = {
 };
 
 const SL: ChatCopy = {
-  idlePlaceholder:  "Sporočilo za Spuda…",
+  idlePlaceholder:  "Sporočilo za Calodexa…",
   continueLabel: "Nadaljuj",
   saveKept: "Tega ni bilo mogoče shraniti. Tvoj odgovor je še vedno tu. Gumb Nadaljuj ga pošlje znova.",
   underAgeCard:  {
@@ -2143,7 +2143,7 @@ const SL: ChatCopy = {
 };
 
 const HR: ChatCopy = {
-  idlePlaceholder:  "Poruka za Spuda…",
+  idlePlaceholder:  "Poruka za Calodexa…",
   continueLabel: "Nastavi",
   saveKept: "To se nije moglo spremiti. Odgovor je još tu. Dodirom na Nastavi šalje se ponovno.",
   underAgeCard:  {
@@ -2238,7 +2238,7 @@ const HR: ChatCopy = {
 };
 
 const SK: ChatCopy = {
-  idlePlaceholder:  "Spud čaká na správu…",
+  idlePlaceholder:  "Calodex čaká na správu…",
   continueLabel: "Pokračovať",
   saveKept: "Nepodarilo sa to uložiť. Tvoja odpoveď je stále tu. Ťuknutím na Pokračovať ju pošleš znova.",
   underAgeCard:  {
@@ -2333,7 +2333,7 @@ const SK: ChatCopy = {
 };
 
 const NO: ChatCopy = {
-  idlePlaceholder:  "Melding til Spud…",
+  idlePlaceholder:  "Melding til Calodex…",
   continueLabel: "Fortsett",
   saveKept: "Det kunne ikke lagres. Svaret ditt er fortsatt her. Fortsett sender det på nytt.",
   underAgeCard:  {
@@ -2428,7 +2428,7 @@ const NO: ChatCopy = {
 };
 
 const FI: ChatCopy = {
-  idlePlaceholder:  "Kirjoita Spudille…",
+  idlePlaceholder:  "Kirjoita Calodexille…",
   continueLabel: "Jatka",
   saveKept: "Tallennus epäonnistui. Vastauksesi on yhä tässä. Jatka lähettää sen uudelleen.",
   underAgeCard:  {
@@ -2523,7 +2523,7 @@ const FI: ChatCopy = {
 };
 
 const DA: ChatCopy = {
-  idlePlaceholder:  "Skriv til Spud…",
+  idlePlaceholder:  "Skriv til Calodex…",
   continueLabel: "Fortsæt",
   saveKept: "Det kunne ikke gemmes. Dit svar er her stadig. Fortsæt sender det igen.",
   underAgeCard:  {
@@ -2618,7 +2618,7 @@ const DA: ChatCopy = {
 };
 
 const HU: ChatCopy = {
-  idlePlaceholder:  "Üzenet Spudnak…",
+  idlePlaceholder:  "Üzenet Calodexnek…",
   continueLabel: "Tovább",
   saveKept: "Ezt nem sikerült menteni. A válaszod még itt van. A Tovább újra elküldi.",
   underAgeCard:  {
@@ -2713,7 +2713,7 @@ const HU: ChatCopy = {
 };
 
 const EL: ChatCopy = {
-  idlePlaceholder:  "Μήνυμα προς Spud…",
+  idlePlaceholder:  "Μήνυμα προς Calodex…",
   continueLabel: "Συνέχεια",
   saveKept: "Δεν ήταν δυνατή η αποθήκευση. Η απάντησή σου είναι ακόμα εδώ. Πάτα Συνέχεια για να σταλεί ξανά.",
   underAgeCard:  {
@@ -2808,7 +2808,7 @@ const EL: ChatCopy = {
 };
 
 const RO: ChatCopy = {
-  idlePlaceholder:  "Scrie-i lui Spud…",
+  idlePlaceholder:  "Scrie-i lui Calodex…",
   continueLabel: "Continuă",
   saveKept: "Nu s-a putut salva. Răspunsul tău e încă aici. Continuă îl trimite din nou.",
   underAgeCard:  {
@@ -2903,7 +2903,7 @@ const RO: ChatCopy = {
 };
 
 const CS: ChatCopy = {
-  idlePlaceholder:  "Zpráva pro Spud…",
+  idlePlaceholder:  "Zpráva pro Calodex…",
   continueLabel: "Pokračovat",
   saveKept: "Nepodařilo se to uložit. Tvoje odpověď tu pořád je. Tlačítko Pokračovat ji odešle znovu.",
   underAgeCard:  {
@@ -2998,7 +2998,7 @@ const CS: ChatCopy = {
 };
 
 const HI: ChatCopy = {
-  idlePlaceholder:  "Spud को मैसेज करें…",
+  idlePlaceholder:  "Calodex को मैसेज करें…",
   continueLabel: "जारी रखें",
   saveKept: "यह सेव नहीं हो सका। आपका जवाब अभी भी यहीं है। जारी रखें दबाने पर यह फिर से भेजा जाएगा।",
   underAgeCard:  {
@@ -3093,7 +3093,7 @@ const HI: ChatCopy = {
 };
 
 const TH: ChatCopy = {
-  idlePlaceholder:  "ส่งข้อความถึง Spud…",
+  idlePlaceholder:  "ส่งข้อความถึง Calodex…",
   continueLabel: "ต่อไป",
   saveKept: "บันทึกไม่สำเร็จ คำตอบของคุณยังอยู่ แตะ ต่อไป เพื่อส่งอีกครั้ง",
   underAgeCard:  {
@@ -3188,7 +3188,7 @@ const TH: ChatCopy = {
 };
 
 const SV: ChatCopy = {
-  idlePlaceholder:  "Skriv till Spud…",
+  idlePlaceholder:  "Skriv till Calodex…",
   continueLabel: "Fortsätt",
   saveKept: "Kunde inte spara det. Ditt svar finns kvar. Fortsätt skickar det igen.",
   underAgeCard:  {
@@ -3283,7 +3283,7 @@ const SV: ChatCopy = {
 };
 
 const UK: ChatCopy = {
-  idlePlaceholder:  "Написати Spud…",
+  idlePlaceholder:  "Написати Calodex…",
   continueLabel: "Продовжити",
   saveKept: "Не вдалося зберегти. Твоя відповідь усе ще тут. «Продовжити» надішле її знову.",
   underAgeCard:  {
@@ -3378,7 +3378,7 @@ const UK: ChatCopy = {
 };
 
 const NL: ChatCopy = {
-  idlePlaceholder:  "Bericht aan Spud…",
+  idlePlaceholder:  "Bericht aan Calodex…",
   continueLabel: "Verder",
   saveKept: "Dat kon niet worden opgeslagen. Je antwoord staat er nog. Met Verder stuur je het opnieuw.",
   underAgeCard:  {
@@ -3473,7 +3473,7 @@ const NL: ChatCopy = {
 };
 
 const PL: ChatCopy = {
-  idlePlaceholder:  "Wiadomość do Spuda…",
+  idlePlaceholder:  "Wiadomość do Calodexa…",
   continueLabel: "Dalej",
   saveKept: "Nie udało się tego zapisać. Twoja odpowiedź wciąż tu jest. „Dalej” wyśle ją ponownie.",
   underAgeCard:  {
@@ -3568,7 +3568,7 @@ const PL: ChatCopy = {
 };
 
 const TR: ChatCopy = {
-  idlePlaceholder:  "Spud'a yaz…",
+  idlePlaceholder:  "Calodex'e yaz…",
   continueLabel: "Devam",
   saveKept: "Kaydedilemedi. Yanıtın hâlâ burada. Devam onu tekrar gönderir.",
   underAgeCard:  {
@@ -3663,7 +3663,7 @@ const TR: ChatCopy = {
 };
 
 const ZH_HANT: ChatCopy = {
-  idlePlaceholder:  "傳訊息給 Spud…",
+  idlePlaceholder:  "傳訊息給 Calodex…",
   continueLabel: "繼續",
   saveKept: "無法儲存。你的答案還在，按「繼續」會再傳送一次。",
   underAgeCard:  {
@@ -3758,7 +3758,7 @@ const ZH_HANT: ChatCopy = {
 };
 
 const ZH_HANS: ChatCopy = {
-  idlePlaceholder:  "给 Spud 发消息…",
+  idlePlaceholder:  "给 Calodex 发消息…",
   continueLabel: "继续",
   saveKept: "无法保存。你的回答还在，点击“继续”会再次发送。",
   underAgeCard:  {
@@ -3853,7 +3853,7 @@ const ZH_HANS: ChatCopy = {
 };
 
 const KO: ChatCopy = {
-  idlePlaceholder:  "Spud에게 메시지…",
+  idlePlaceholder:  "Calodex에게 메시지…",
   continueLabel: "계속",
   saveKept: "저장하지 못했어요. 답변은 그대로 있어요. 계속을 누르면 다시 보내요.",
   underAgeCard:  {
@@ -3948,7 +3948,7 @@ const KO: ChatCopy = {
 };
 
 const JA: ChatCopy = {
-  idlePlaceholder:  "Spudにメッセージ…",
+  idlePlaceholder:  "Calodexにメッセージ…",
   continueLabel: "続ける",
   saveKept: "保存できませんでした。回答は残っています。「続ける」でもう一度送信します。",
   underAgeCard:  {
@@ -4043,7 +4043,7 @@ const JA: ChatCopy = {
 };
 
 const PT_BR: ChatCopy = {
-  idlePlaceholder:  "Mensagem para o Spud…",
+  idlePlaceholder:  "Mensagem para o Calodex…",
   continueLabel: "Continuar",
   saveKept: "Não foi possível salvar. Sua resposta continua aqui. Continuar envia de novo.",
   underAgeCard:  {
@@ -4139,5 +4139,5 @@ const PT_BR: ChatCopy = {
 
 export const CHAT_COPY: Localized<ChatCopy> = { en: EN, fr: FR, de: DE, it: IT, es: ES, vi: VI, id: ID, ru: RU, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR };
 
-/** What Spud says back, in one language. English for one nobody has written yet. */
+/** What Calodex says back, in one language. English for one nobody has written yet. */
 export const chatCopyFor = (lang: Lang): ChatCopy => t(lang)(CHAT_COPY);

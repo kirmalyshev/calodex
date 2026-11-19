@@ -173,6 +173,11 @@ msgid "tg.refusal.not-onboarded"
 msgstr "முதலில் இணையத்தில் திட்டக் கேள்விகளுக்குப் பதிலளியுங்கள்."
 
 #. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
 #: src/shared/verdicts.ts
 msgid "verdict.noun.inline.weight"
 msgstr "கலோரிகள்"
@@ -421,11 +426,6 @@ msgstr "சோடியம்"
 #: src/backend/telegram/copy.ts
 msgid "tg.failed"
 msgstr "ஏதோ தவறு நடந்தது, ஆனாலும் அது சென்றிருக்கலாம். மீண்டும் அனுப்பும் முன் /today பாருங்கள்."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.coach.name"
-msgstr "Spud"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

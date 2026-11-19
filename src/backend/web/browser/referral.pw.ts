@@ -1,7 +1,7 @@
 // Refer a friend on /start (#899), end to end in a real browser: the friend's link opens the
 // invite page, "Start on the web" carries the code through the whole walk, and the step after the
-// country arrives with it filled in and applies it.
-import { expect, onboard, test } from "./fixtures.ts";
+// country applies it silently (#3195).
+import { expect, onboard, sessionToken, test } from "./fixtures.ts";
 
 // The fixture answers are metric; en-GB is the locale that draws them, as the other walks pin it.
 test.use({ locale: "en-GB" });
@@ -31,10 +31,9 @@ test("a friend's link: invite page, the walk, the step prefilled, applied", asyn
   await page.locator('label.opt:has(input[value="de"])').click();
   await page.locator('button[type="submit"]').last().click();
 
-  await expect(page).toHaveURL(/\/start\/referral$/);
-  const field = page.getByRole("textbox", { name: "Friend's invite link" });
-  await expect(field).toHaveValue(new RegExp(`/r/${code}$`));
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("Invite applied. Your free week starts now.");
-  await expect(page.getByRole("link", { name: "Continue", exact: true })).toBeVisible();
+  // No step is asked (#3195): the link the walk carried is applied at the country.
+  await expect(page).not.toHaveURL(/\/start\/referral/);
+  const webToken = await sessionToken(page);
+  const mine = await (await page.request.get("/api/v1/profile", { headers: { authorization: `Bearer ${webToken}` } })).json();
+  expect(mine.referral.applied).toBe(true);
 });
