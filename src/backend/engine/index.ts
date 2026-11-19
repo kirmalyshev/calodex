@@ -34,7 +34,7 @@ export {
   testSendCampaign, updateCampaign,
   type CampaignOverview, type CampaignRunResult, type CampaignTestResult, type DryRunResult,
 } from "./campaign.ts";
-export { recordPushOpen, recordPushDelivered, pushOpenView, pushRecentView, PUSH_STATS_MAX_DAYS, type PushOpenView } from "./push-open.ts";
+export { recordPushOpen, recordPushDelivered, pushOpenView, pushRecentView, adminUserPushLog, PUSH_STATS_MAX_DAYS, ADMIN_PUSH_LOG_MAX, type PushOpenView, type UserPushLogSend } from "./push-open.ts";
 export { pushConsent, setPushConsent, pushOffersAllowed, pushDevices } from "./push-consent.ts";
 export { profileView, patchProfile, hasLoggedMeal, type PatchOutcome } from "./profile.ts";
 export {

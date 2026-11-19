@@ -27,6 +27,7 @@ import { ADMIN_PUSH_MAX_RECIPIENTS, currentBrand, LANG_LABEL, PUSH_ROUTES } from
 import { fontFaces } from "@eait/shared/design";
 import { lightVars } from "@eait/shared/palette";
 import { brandSvg } from "@eait/shared/ui/icons";
+import { ADMIN_PUSH_LOG_MAX } from "../engine/push-open.ts";
 
 export const adminPage = (nonce: string): string => `<!doctype html>
 <html lang="en">
@@ -771,6 +772,7 @@ details.how p { margin-top: 8px; }
             <button data-tab="onboarding">Onboarding</button>
             <button data-tab="thread">Thread</button>
             <button data-tab="diary">Diary</button>
+            <button data-tab="pushes">Pushes</button>
             <button data-tab="push">Send a push</button>
           </span>
 
@@ -846,6 +848,19 @@ details.how p { margin-top: 8px; }
             <div class="hidden" id="onboarding-body">
               <div class="card" id="onboarding-summary"></div>
               <div class="card fl" id="onboarding-flow"></div>
+            </div>
+          </div>
+
+          <div id="tab-pushes" class="tab hidden">
+            <div id="pushlog-state"></div>
+            <div class="hidden" id="pushlog-body">
+              <div class="card flush"><div class="scrollx"><table id="pushlog">
+                <thead>
+                  <tr><th>When</th><th>Kind</th><th>Template</th><th>Lang</th><th>Var</th><th>Text</th><th>State</th><th>Error</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table></div></div>
+              <p class="muted" id="pushlog-status"></p>
             </div>
           </div>
 
@@ -3466,6 +3481,8 @@ details.how p { margin-top: 8px; }
     $("diary").querySelector("tbody").textContent = "";
     $("diary-from").value = "";
     $("diary-to").value = "";
+    $("pushlog").querySelector("tbody").textContent = "";
+    $("pushlog-status").textContent = "";
     $("composer-status").classList.add("hidden");
     $("composer-results").textContent = "";
     $("pane-name").textContent = u.email || shortId(u.userId);
@@ -3484,6 +3501,7 @@ details.how p { margin-top: 8px; }
     onboarding: function () { return loadUserOnboarding(); },
     thread: function () { return loadChat(false); },
     diary: function () { return loadDiary(true); },
+    pushes: function () { return loadPushLog(); },
     push: function () {}
   };
 
@@ -4013,6 +4031,48 @@ details.how p { margin-top: 8px; }
   }
 
   $("diary-load").addEventListener("click", function () { loadDiary(false); });
+
+  // ── Push history (ieat-app#3168) ───────────────────────────────────────────────────────────
+  // Every send_log row this account has, newest first — the dry runs and holdouts too, since the
+  // question here is "what did we decide about them", not only "what reached the phone".
+
+  function pushLogRow(s) {
+    var tr = document.createElement("tr");
+    td(tr, s.createdAt.slice(0, 16).replace("T", " "), 0, 99);
+    var kind = td(tr, s.kind, 0, 99);
+    if (s.ref) kind.appendChild(el("div", "muted", s.ref));
+    td(tr, s.templateKey, 0, 99);
+    td(tr, s.lang, 0, 99);
+    td(tr, s.variant || "—", 0, 99);
+    var t = document.createElement("td");
+    if (s.title === null && s.body === null) t.textContent = "—";
+    else { var b = document.createElement("b"); b.textContent = s.title || ""; t.appendChild(b); t.appendChild(document.createElement("br")); t.appendChild(document.createTextNode(s.body || "")); }
+    tr.appendChild(t);
+    var st = td(tr, s.state, 0, 99);
+    if (s.deliveredAt) st.appendChild(el("div", "muted", "on device " + s.deliveredAt.slice(5, 16).replace("T", " ")));
+    td(tr, s.receiptError || "—", 0, 99);
+    return tr;
+  }
+
+  function loadPushLog() {
+    var userId = sel && sel.userId;
+    if (!userId) return Promise.resolve();
+    paintBox($("pushlog-state"), $("pushlog-body"), "loading");
+    return api("GET", "/admin/api/users/" + encodeURIComponent(userId) + "/push-log?limit=${ADMIN_PUSH_LOG_MAX}").then(function (view) {
+      if (!sel || sel.userId !== userId) return;
+      var body = $("pushlog").querySelector("tbody");
+      body.textContent = "";
+      view.sends.forEach(function (s) { body.appendChild(pushLogRow(s)); });
+      $("pushlog-status").textContent = view.sends.length === 0
+        ? "Nothing has been sent to this account."
+        : view.sends.length + " sends" + (view.sends.length >= ${ADMIN_PUSH_LOG_MAX} ? " · newest ${ADMIN_PUSH_LOG_MAX}" : "");
+      paintBox($("pushlog-state"), $("pushlog-body"), "ready");
+    }).catch(function (e) {
+      if (!sel || sel.userId !== userId) return;
+      loadedTab.pushes = null;
+      paintBox($("pushlog-state"), $("pushlog-body"), "error", e, "the push history", function () { loadedTab.pushes = userId; loadPushLog(); }, "account");
+    });
+  }
 
   // ── Wiring ─────────────────────────────────────────────────────────────────────────────────
 
