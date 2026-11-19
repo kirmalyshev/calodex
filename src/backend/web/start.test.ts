@@ -32,6 +32,7 @@ import { AuthError, type Verifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
 import { chatHistory, day, handleText, linkTelegram, saveOnboardingContent } from "../engine/index.ts";
 import { createRouter } from "../api/routes.ts";
+import { fakeAnalytics } from "../analytics/fake.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { escape } from "./page.ts";
@@ -109,6 +110,7 @@ const CONFIG: Config = {
 
 let store: Store;
 let deps: EngineDeps;
+let sink: ReturnType<typeof fakeAnalytics>;
 let handle: (req: Request) => Promise<Response>;
 
 /**
@@ -141,7 +143,8 @@ function router(
   store = grantEveryAccount(memoryStore(storeOpts), 1_000_000);
   // Only when asked for: a test that sets `publicWebUrl` itself means what it set.
   const withWeb = webApp ? { ...config, publicWebUrl: WEB_ORIGIN } : config;
-  deps = { store, config: withWeb, llm, push: fakePush(), mail: logMail() };
+  sink = fakeAnalytics();
+  deps = { store, config: withWeb, llm, push: fakePush(), mail: logMail(), analytics: sink };
   const handler = createRouter(deps, store, testVerifier, { webProviders: providers });
   handle = (req) => handler(req);
 }
@@ -3545,5 +3548,29 @@ describe("the web funnel (ieat-app#3196)", () => {
     expect(events.find((e) => e.field === "weight_kg")).toMatchObject({ action: "answer", value: null });
     expect(events.filter((e) => e.action === "complete")).toMatchObject([{ place: "summary" }]);
     expect(new Set(events.map((e) => e.sessionId)).size).toBe(1);
+  });
+
+  it("sends one onboarding_step per funnel row, and the plan once, to analytics", async () => {
+    const session = await answerAll(undefined, ANSWERS);
+    const userId = await webUser(session);
+    const [row] = (await store.adminOnboardingFlow({ userId, range: { from: null, to: null } })).rows;
+    const steps = sink.captured.filter((c) => c.event === "onboarding_step");
+    // As a multiset: rows written in the same millisecond come back from the store in either order.
+    const key = (p: unknown, a: unknown, f: unknown) => `${String(p)}/${String(a)}/${String(f ?? "")}`;
+    expect(steps.map((c) => key(c.props.place, c.props.action, c.props.field)).sort())
+      .toEqual(row!.events!.map((e) => key(e.place, e.action, e.field)).sort());
+    expect(steps.every((c) => c.userId === userId && c.props.surface === "web" && "content_version" in c.props)).toBe(true);
+    expect(sink.captured.filter((c) => c.event === "onboarding_plan_completed")).toHaveLength(1);
+  });
+
+  it("sends signup_completed once for the account the walk made, and signin_completed on a return", async () => {
+    const { userId } = await signedUp("web-analytics");
+    const signups = sink.captured.filter((c) => c.event === "signup_completed");
+    expect(signups).toHaveLength(1);
+    expect(signups[0]).toMatchObject({ userId, props: { provider: "google", after_onboarding: true, surface: "web" } });
+    await signIn("web-analytics");
+    expect(sink.captured.filter((c) => c.event === "signup_completed")).toHaveLength(1);
+    expect(sink.captured.filter((c) => c.event === "signin_completed").map((c) => [c.userId, c.props.provider]))
+      .toEqual([[userId, "google"]]);
   });
 });

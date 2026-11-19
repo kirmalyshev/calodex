@@ -50,7 +50,7 @@ import {
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
 } from "../engine/index.ts";
-import { analyticsRequestOf } from "../engine/analytics.ts";
+import { analyticsRequestOf, track } from "../engine/analytics.ts";
 import { blankProfile, type Store } from "../store.ts";
 import { legalUrls } from "../brand.ts";
 import {
@@ -391,10 +391,28 @@ async function funnel(
   place: OnboardingPlace, action: "view" | "answer" | "complete", field?: string, value?: unknown,
 ): Promise<void> {
   const shown = Array.isArray(value) ? value.join(",") : value;
-  await recordOnboardingEvents(deps, userId, [{
+  const request = analyticsRequestOf(req.headers, "web");
+  const written = await recordOnboardingEvents(deps, userId, [{
     id: crypto.randomUUID(), sessionId: userId, place, action, contentVersion: content.version, at: new Date().toISOString(),
     ...(field ? { field, value: shown } : {}),
-  }], analyticsRequestOf(req.headers, "web")).catch((e: unknown) => console.error(`[eait] /start: funnel write failed: ${(e as Error | null)?.name ?? "error"}`));
+  }], request).catch((e: unknown) => { console.error(`[eait] /start: funnel write failed: ${(e as Error | null)?.name ?? "error"}`); return 0; });
+  // The browser cannot see these rows, so the server sends their PostHog twin (ieat-app#3196).
+  if (written === 0) return;
+  await track(deps, userId, "onboarding_step", { place, action, ...(field ? { field } : {}) }, request);
+  if (place === "summary" && action === "complete") await track(deps, userId, "onboarding_plan_completed", {}, request);
+}
+
+/** `signup_completed` / `signin_completed` for a /start sign-in, the way the app names them. */
+async function trackSignIn(
+  deps: EngineDeps, req: Request, provider: "apple" | "google" | "email", session: string | null,
+  result: { userId: string; outcome: string },
+): Promise<void> {
+  const request = analyticsRequestOf(req.headers, "web");
+  if (result.outcome === "created" || result.outcome === "linked") {
+    await track(deps, result.userId, "signup_completed", { provider, after_onboarding: session !== null }, request);
+  } else {
+    await track(deps, result.userId, "signin_completed", { provider, outcome: result.outcome }, request);
+  }
 }
 
 function walkFor(profile: Profile, content: OnboardingContent, order?: readonly string[]): ChatPrompt[] {
@@ -888,6 +906,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       console.error(`[eait] web sign-in failed: ${e instanceof AuthError ? e.reason : (e as Error)?.message}`);
       return failed();
     }
+    await trackSignIn(ctx.deps, req, name, userId, result);
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),
@@ -1039,6 +1058,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       if (result.kind === "rate-limited") return seeOther(`${START_PREFIX}/email/code?error=too-many&wait=${result.wait}`);
       return seeOther(`${START_PREFIX}/email/code?error=${result.kind === "code-wrong" ? "wrong" : "dead"}`);
     }
+    await trackSignIn(ctx.deps, req, "email", userId, result);
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),
