@@ -18,7 +18,8 @@ export const SWITCH_DEFAULT: Record<SwitchKey, boolean> = {
   "onboarding.experiments": false,
   // Both ship OFF (ieat-app#3155): a paywall decline meets the exit offer only after the admin
   // arms its platform. Read per profile response, so a flip lands on the next fetch — on the
-  // phone that is an OTA-free answer, no deploy and no build.
+  // phone that is an OTA-free answer, no deploy and no build — and `web` is also read per
+  // `/start/checkout?plan=exit`, where off answers 404 like a plan never configured.
   "paywall.exit-offer.ios": false,
   "paywall.exit-offer.web": false,
 };

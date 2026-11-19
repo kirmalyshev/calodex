@@ -12,7 +12,7 @@ import { MAX_PROFILE_TEXT,
   ageFrom, isAcceptableWeightKg, isDietTag, isMedicalTag, dateMinus, localDate, migrateActivityLevel, offerMath,
   paywallPrice, perMonth, threadCopyFor,
   type Lang, type Pace, type PatchProfileRequest, type Profile,
-  type Limits, type ProfileRejected, type ProfileResponse, type WebPaywall,
+  type ExitOfferSwitches, type Limits, type ProfileRejected, type ProfileResponse, type WebPaywall,
   ROUTES,
 } from "@eait/shared";
 import { FILLABLE_FIELDS, MICRO_GOAL_MAX, MIN_AGE, microGoals } from "@eait/shared";
@@ -55,6 +55,18 @@ async function limitsOf(deps: EngineDeps, userId: string, entitled: boolean): Pr
 }
 
 /**
+ * The admin's per-platform arming of the decline → offer (ieat-app#3155), read on every response
+ * so a flip lands on the next fetch, no deploy. `web` also gates `paywallOf`, so the offer never
+ * reaches a client its switch has not armed.
+ */
+async function exitOfferEnabledOf(deps: EngineDeps): Promise<ExitOfferSwitches> {
+  return {
+    ios: await switchOn(deps, "paywall.exit-offer.ios"),
+    web: await switchOn(deps, "paywall.exit-offer.web"),
+  };
+}
+
+/**
  * The web paywall, computed per account (#77): the operator's `EAIT__BACKEND__WEB_*` block with
  * every price formatted in the account's language and configured currency, the offer's discount
  * derived by the shared `offerMath` (never a fixed percentage), and `{userId}` filled into every
@@ -66,7 +78,7 @@ async function limitsOf(deps: EngineDeps, userId: string, entitled: boolean): Pr
  * at all: the decline then goes straight to the app. So is an offer the admin's `web` switch has
  * not armed (ieat-app#3155) — switched off is the same shape as never configured.
  */
-function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferOn: boolean): WebPaywall {
+function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed: boolean): WebPaywall {
   const w = deps.config.webPaywall;
   const url = (template: string) => template.replaceAll("{userId}", encodeURIComponent(userId));
   const price = (n: number) => paywallPrice(n, w.currency, lang);
@@ -82,7 +94,7 @@ function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferOn: bo
       checkoutUrl: url(w.monthlyCheckoutUrl),
       price: price(w.monthlyPrice),
     },
-    exitOffer: !exitOfferOn || w.exitOfferCheckoutUrl === "" || math === null ? null : {
+    exitOffer: !exitOfferArmed || w.exitOfferCheckoutUrl === "" || math === null ? null : {
       checkoutUrl: url(w.exitOfferCheckoutUrl),
       price: price(w.exitOfferPrice),
       regularPrice: price(w.exitOfferRegularPrice),
@@ -118,12 +130,7 @@ export async function profileView(deps: EngineDeps, userId: string): Promise<Pro
   if (!profile) return null;
   const { targets, basis } = explainTargets(profile);
   const entitlement = await entitlementFor(deps, userId);
-  // The admin's per-platform arming of the decline → offer (ieat-app#3155). `web` also gates
-  // `paywallOf` below, so the offer never reaches a client its switch has not armed.
-  const exitOfferEnabled = {
-    ios: await switchOn(deps, "paywall.exit-offer.ios"),
-    web: await switchOn(deps, "paywall.exit-offer.web"),
-  };
+  const exitOfferEnabled = await exitOfferEnabledOf(deps);
   return {
     profile, targets, microGoals: microGoals(profile, targets), basis, onboarded: profile.onboarded_at !== null,
     // Computed HERE, in this server's zone — a client that subtracts the year itself is off by
@@ -447,10 +454,7 @@ export async function patchProfile(
 
   const { targets, basis } = explainTargets(profile);
   const entitlement = await entitlementFor(deps, userId);
-  const exitOfferEnabled = {
-    ios: await switchOn(deps, "paywall.exit-offer.ios"),
-    web: await switchOn(deps, "paywall.exit-offer.web"),
-  };
+  const exitOfferEnabled = await exitOfferEnabledOf(deps);
   return {
     ok: true,
     view: {

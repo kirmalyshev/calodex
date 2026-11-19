@@ -6067,6 +6067,23 @@
         "additionalProperties": false,
         "description": "The one offer a decline leads to: the cheaper yearly plan, its regular price struck through."
       },
+      "ExitOfferSwitches": {
+        "type": "object",
+        "properties": {
+          "ios": {
+            "type": "boolean"
+          },
+          "web": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ios",
+          "web"
+        ],
+        "additionalProperties": false,
+        "description": "The admin's per-platform arming of the decline → offer (ieat-app#3155), as `ProfileResponse.exitOfferEnabled` carries it. One flag per platform the offer can surface on, each defaulting OFF."
+      },
       "FailWhy": {
         "type": "string",
         "enum": [
@@ -10307,20 +10324,7 @@
             "description": "The web paywall, computed from this server's `EAIT__BACKEND__WEB_*` block (#77).\n\nSENT, NEVER COMPILED, for the same reason `limits` is: the web app can be self-hosted, so the plans, prices and exit offer are the operator's variables, and this is how the bundle learns them — already formatted in the account's language and with `{userId}` already filled into every checkout link from this account's own id, because the RevenueCat webhook grants the purchase to `app_user_id` and nothing else.\n\nPlans and `exitOffer` are null where the operator configured no checkout. ALL NULL means the host sells nothing: no paywall surface at all, whatever `entitlement` and `limits` say about this account. A server that predates this field sends no `paywall` — a client reads that as absent too, exactly as it does `entitlement`."
           },
           "exitOfferEnabled": {
-            "type": "object",
-            "properties": {
-              "ios": {
-                "type": "boolean"
-              },
-              "web": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "ios",
-              "web"
-            ],
-            "additionalProperties": false,
+            "$ref": "#/components/schemas/ExitOfferSwitches",
             "description": "The admin's exit-offer switches, per platform (ieat-app#3155) — `paywall.exit-offer.ios` and `paywall.exit-offer.web` in the admin's switches, read on every response so a flip needs no deploy.\n\nBOTH DEFAULT OFF, and a client draws the decline → offer only when its platform's flag is on AND the offer itself exists: on the web that is `paywall.exitOffer` non-null (already gated by `web` here), on the phone RevenueCat's `exit_offer` offering answering packages. A server that predates the field sends none — read that as off, which is the default anyway."
           },
           "coachName": {
@@ -11176,7 +11180,7 @@
                 "type": "null"
               }
             ],
-            "description": "The offer shown once after the plans are declined — null = a decline goes to the app."
+            "description": "The offer shown once after the plans are declined — null = a decline goes to the app. The admin's `web` switch un-arms it too (ieat-app#3155): switched off is this same null, the shape of one never configured."
           },
           "termsUrl": {
             "type": "string",

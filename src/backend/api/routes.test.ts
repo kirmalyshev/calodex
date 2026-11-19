@@ -273,7 +273,7 @@ describe("profile", () => {
       currency: "EUR",
     };
 
-    const viewFor = async (webPaywall: Config["webPaywall"], locale = "en-GB",
+    const sessionFor = async (webPaywall: Config["webPaywall"], locale = "en-GB",
         switches: Partial<Record<SwitchKey, boolean>> = {}) => {
       const s = memoryStore();
       for (const [key, enabled] of Object.entries(switches)) {
@@ -287,6 +287,12 @@ describe("profile", () => {
         body: JSON.stringify({ deviceId: crypto.randomUUID() + crypto.randomUUID(), locale }),
       }));
       const { token } = await res.json() as { token: string };
+      return { h, s, token };
+    };
+
+    const viewFor = async (webPaywall: Config["webPaywall"], locale = "en-GB",
+        switches: Partial<Record<SwitchKey, boolean>> = {}) => {
+      const { h, token } = await sessionFor(webPaywall, locale, switches);
       return (await (await h(new Request(url(ROUTES.profile), {
         headers: { authorization: `Bearer ${token}` },
       }))).json() as ProfileResponse);
@@ -342,6 +348,37 @@ describe("profile", () => {
         checkoutUrl: `https://pay.rev.cat/u/${userId}`,
         price: "€23.99", regularPrice: "€39.99", percentOff: 40, perMonth: "€2.00",
       });
+    });
+
+    it("arms nothing on the switch alone — an unconfigured offer stays no offer", async () => {
+      const view = await viewFor({ ...SELLING, exitOfferCheckoutUrl: "" }, "en-GB",
+        { "paywall.exit-offer.web": true });
+      expect(view.exitOfferEnabled).toEqual({ ios: false, web: true });
+      expect(view.paywall.exitOffer).toBeNull();
+    });
+
+    it("re-reads the switch per response — a flip back off disarms what was armed", async () => {
+      const { h, s, token } = await sessionFor(SELLING, "en-GB", { "paywall.exit-offer.web": true });
+      const view = async () => (await (await h(new Request(url(ROUTES.profile), {
+        headers: { authorization: `Bearer ${token}` },
+      }))).json() as ProfileResponse);
+      expect((await view()).paywall.exitOffer).not.toBeNull();
+      await s.setSwitch("paywall.exit-offer.web", false, crypto.randomUUID());
+      const off = await view();
+      expect(off.exitOfferEnabled).toEqual({ ios: false, web: false });
+      expect(off.paywall.exitOffer).toBeNull();
+    });
+
+    it("PATCH answers the same flags and the same gate", async () => {
+      const { h, token } = await sessionFor(SELLING, "en-GB", { "paywall.exit-offer.web": true });
+      const res = await h(new Request(url(ROUTES.profile), {
+        method: "PATCH",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({ height_cm: 171 }),
+      }));
+      const body = await res.json() as ProfileResponse;
+      expect(body.exitOfferEnabled).toEqual({ ios: false, web: true });
+      expect(body.paywall.exitOffer).not.toBeNull();
     });
 
     it("sends an empty paywall — plans null, offer null — when the host sells nothing", async () => {

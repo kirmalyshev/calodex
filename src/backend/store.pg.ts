@@ -1320,7 +1320,7 @@ alter table llm_prompts add constraint llm_prompts_key_check
 -- THE ADMIN SWITCHES (#563). Append-only: the current value is the newest row per key and every
 -- earlier row is the audit trail of who flipped what and when. GLOBAL, for llm_prompts's reasons
 -- (no user_id, not in RLS_TABLES). The key list is written out by hand and compared with
--- SWITCH_KEYS by switches.schema.test.ts. A key with no row is ON.
+-- SWITCH_KEYS by switches.schema.test.ts. A key with no row reads its SWITCH_DEFAULT.
 create table if not exists admin_switches (
   id      bigserial primary key,
   key     text not null,
