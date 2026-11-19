@@ -458,6 +458,10 @@ export function normalizeForMatch(text: string): string {
  * her, not a promise of a result — and it names no number. The `gain`/`maintain`/`none` leaves
  * stay fully gated; only `lose` trips the rule.
  *
+ * `PAY_COPY.goalHeadingPhone.lose` is the same words as a heading (ieat-app#3165, Kirill 19 Nov):
+ * T1 arm B's welcome-plate screen is titled "How to <goal>", her own goal named back to her, with no
+ * number and no result — the screen under it is a calorie verdict, not a programme.
+ *
  * Keyed by a QUALIFIED name — `TABLE.key` — on purpose: a bare `planGoal` in some other table
  * must not drift under an exemption written for this one, and every other rule still reads the
  * exempted field (a "Goal: lose 6kg, guaranteed" is still refused).
@@ -465,6 +469,7 @@ export function normalizeForMatch(text: string): string {
 export const CLAIM_EXEMPTIONS: Readonly<Record<string, readonly string[]>> = {
   "CHAT_COPY.planGoal": ["weight-promise"],
   "PAY_COPY.goalCtaPhone.lose": ["weight-promise"],
+  "PAY_COPY.goalHeadingPhone.lose": ["weight-promise"],
 };
 
 /**
