@@ -116,3 +116,19 @@ describe("yearly per-month line", () => {
     expect(offerMath(4.99 * 12, 59.88)).toBeNull();
   });
 });
+
+// Hermes has no NumberFormat.formatToParts and answers its own symbols (#3163 review): the price
+// must still come out, with the right sign, when the method is gone.
+describe("paywallPrice without formatToParts", () => {
+  it("still prices AUD, NZD, MYR and RUB", () => {
+    const proto = Intl.NumberFormat.prototype as { formatToParts?: unknown };
+    const saved = proto.formatToParts;
+    delete proto.formatToParts;
+    try {
+      expect(paywallPrice(39.99, "AUD", "en")).toBe("A$39.99");
+      expect(paywallPrice(39.99, "NZD", "en")).toBe("NZ$39.99");
+      expect(paywallPrice(39.99, "MYR", "en")).toContain("RM");
+      expect(paywallPrice(278, "RUB", "en")).not.toContain(".");
+    } finally { proto.formatToParts = saved; }
+  });
+});

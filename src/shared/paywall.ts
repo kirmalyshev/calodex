@@ -77,15 +77,21 @@ export interface WebPaywall {
 export function paywallPrice(amount: number, currency: string, lang: Lang): string {
   // narrowSymbol, so a USD paywall reads "$39.99" to an English reader rather than "US$39.99".
   // Three currencies need more than that (ieat-app#3163): a bare "$" on AUD/NZD reads as US
-  // dollars, so their own sign replaces the symbol part and Intl keeps its side and spacing; a
-  // ruble price carries no kopecks. MYR's narrow symbol is already "RM".
+  // dollars, a ruble price carries no kopecks, and the ringgit is RM. The sign is swapped in the
+  // formatted STRING, never through `formatToParts`: Hermes has no NumberFormat.formatToParts
+  // (a TypeError in render, a process abort in Release), and its narrowSymbol answers "MYR",
+  // "A$" or "AU$" where ICU answers "$" or "RM" - so the pattern takes every spelling.
   const whole = currency === "RUB" ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {};
-  const parts = new Intl.NumberFormat(LANG_TAG[lang], { style: "currency", currency, currencyDisplay: "narrowSymbol", ...whole }).formatToParts(amount);
-  const sign = CURRENCY_SIGN[currency];
-  return parts.map((p) => (p.type === "currency" && sign ? sign : p.value)).join("");
+  const text = new Intl.NumberFormat(LANG_TAG[lang], { style: "currency", currency, currencyDisplay: "narrowSymbol", ...whole }).format(amount);
+  const swap = CURRENCY_SWAP[currency];
+  return swap ? text.replace(swap[0], swap[1]) : text;
 }
 
-const CURRENCY_SIGN: Record<string, string> = { AUD: "A$", NZD: "NZ$", MYR: "RM" };
+const CURRENCY_SWAP: Record<string, [RegExp, string]> = {
+  AUD: [/AU\$|A\$|\$AU|\$/, "A$"],
+  NZD: [/NZ\$|\$NZ|\$/, "NZ$"],
+  MYR: [/MYR|RM/, "RM"],
+};
 
 /**
  * The offer's percent off written in the reader's language — "40%" to an English reader, "40 %" to
