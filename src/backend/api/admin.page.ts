@@ -2705,10 +2705,10 @@ details.how p { margin-top: 8px; }
       if (run) {
         head.push(run.experiment ? "exp " + String(run.experiment.id).slice(0, 8) + " · " + run.experiment.arm : "no experiment");
         head.push(run.lang || "language not recorded");
-        head.push(run.surface || "surface not recorded");
+        head.push(run.served ? run.served.surface : "surface not recorded");
       }
       box.appendChild(el("div", "fl-h", head.join(" · ")));
-      if (run && !run.copy) box.appendChild(el("div", "muted fl-note", run.lang ? "copy for v" + ver + " not kept" : "copy not recorded"));
+      if (run && !run.copy) box.appendChild(el("div", "muted fl-note", run.served ? "copy for v" + ver + " not kept" : "copy not recorded"));
       var copied = {};
       var seen = {};
       var prevBack = false;
@@ -2738,7 +2738,7 @@ details.how p { margin-top: 8px; }
         prevBack = e.action === "back";
         if (e.action === "view") seen[e.place] = true;
         if (!finished && j === s.events.length - 1) acts.appendChild(el("span", "chip b", "left here"));
-        var tpl = run && run.screens ? run.screens[e.place] : null;
+        var tpl = run && run.served && run.served.screens ? run.served.screens[e.place] : null;
         if (tpl) acts.appendChild(el("span", "chip n", "template " + tpl.template + "@" + tpl.version));
         line.appendChild(acts);
         line.appendChild(el("span", "fl-t", e.ms !== null ? Math.round(e.ms / 1000) + "s" : ""));

@@ -65,11 +65,24 @@ const JOURNAL = {
   // ieat-app#3194: the run as served. The welcome copy carries markup on purpose — it must read as text.
   runs: [{
     sessionId: "sess-aaaa-1", contentVersion: 7,
-    experiment: { id: "abcd1234-0000-0000-0000-000000000000", arm: "variant 2", isControl: false },
-    lang: "de", surface: "app", servedAt: "2026-11-08T09:59:58.000Z",
-    screens: { baseline: { template: "evening-beat", version: 3 } },
+    experiment: { id: "abcd1234-0000-0000-0000-000000000000", arm: "variant 2" }, lang: "de",
+    served: { at: "2026-11-08T09:59:58.000Z", surface: "app", screens: { baseline: { template: "evening-beat", version: 3 } } },
     copy: { welcome: "Hallo <b>du</b>\n[Los]", baseline: "So geht es\n[Weiter]" },
   }],
+};
+
+/** Two runs nothing can render the words of: one never recorded, one whose version's copy is gone. */
+const QUIT = "99999999-8888-7777-6666-555555555555";
+const QUIT_JOURNAL = {
+  ...ACCOUNTS.accounts[1],
+  events: [
+    { sessionId: "q-1", place: "welcome", action: "view", contentVersion: 4, ms: null, field: null, value: null, at: "2026-11-07T09:00:00.000Z" },
+    { sessionId: "q-2", place: "goal", action: "view", contentVersion: 5, ms: null, field: null, value: null, at: "2026-11-07T10:00:00.000Z" },
+  ],
+  runs: [
+    { sessionId: "q-1", contentVersion: 4, experiment: null, lang: null, served: null, copy: null },
+    { sessionId: "q-2", contentVersion: 5, experiment: null, lang: "de", served: { at: "2026-11-07T09:59:00.000Z", surface: "app", screens: {} }, copy: null },
+  ],
 };
 
 async function stub(page: Page) {
@@ -86,6 +99,7 @@ async function stub(page: Page) {
   await page.route("**/admin/api/funnel**", (r) => r.fulfill(json(FUNNEL)));
   await page.route("**/admin/api/funnel/users**", (r) => r.fulfill(json(ACCOUNTS)));
   await page.route(`**/admin/api/users/${USER}/onboarding**`, (r) => r.fulfill(json(JOURNAL)));
+  await page.route(`**/admin/api/users/${QUIT}/onboarding**`, (r) => r.fulfill(json(QUIT_JOURNAL)));
 }
 
 /** Console errors are a failure, not noise: this page has no build step to catch them first. */
@@ -150,6 +164,15 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(welcome.locator("pre")).toHaveText("Hallo <b>du</b>\n[Los]");
   await expect(welcome.locator("b")).toHaveCount(0);
   await expect(flow.locator(".fl-copy")).toHaveCount(2);
+  // A run nothing recorded says so; a recorded run whose version's words are gone says that.
+  await page.locator("#funnel-users .fa-row", { hasText: "99999999" }).click();
+  const lost = page.locator(".fa-open").filter({ hasText: "Run 2" });
+  await expect(lost.locator(".fl-h").first()).toContainText("content v4 · no experiment · language not recorded · surface not recorded");
+  await expect(lost.locator(".fl-note").first()).toHaveText("copy not recorded");
+  await expect(lost.locator(".fl-h").nth(1)).toContainText("content v5 · no experiment · de · app");
+  await expect(lost.locator(".fl-note").nth(1)).toHaveText("copy for v5 not kept");
+  await expect(lost.locator(".fl-copy")).toHaveCount(0);
+  await page.locator("#funnel-users .fa-row", { hasText: "99999999" }).click();
 
   // The row is a keyboard button too: Enter opens, Enter again closes.
   await row.click();
