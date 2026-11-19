@@ -7,7 +7,7 @@ import { offerMath, paywallPercent, paywallPrice } from "../paywall.ts";
 import type { Lang } from "../types.ts";
 import type { PayCopy } from "./pay-copy.ts";
 
-const nb = (x: string) => x.replace(/[  ]/g, " ");
+const nb = (x: string) => x.replace(/[\u0020\u00A0\u202F]/g, "\u00A0");
 
 /** "€3.33/month · save 33%" — null when a price is missing or yearly is no real saving. */
 export function yearlySaveLine(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { exitOfferOn, offerMath, paywallPercent, paywallPrice, perMonth } from "./paywall.ts";
+import { exitOfferOn, offerMath, paywallPercent, paywallPrice, perMonth, swapCurrencySign } from "./paywall.ts";
 
 // The one arithmetic the web paywall (#96) and the native one (#928) share: the exit offer's
 // percent off and its per-month equivalent, derived from the two prices that were actually
@@ -130,5 +130,18 @@ describe("paywallPrice without formatToParts", () => {
       expect(paywallPrice(39.99, "MYR", "en")).toContain("RM");
       expect(paywallPrice(278, "RUB", "en")).not.toContain(".");
     } finally { proto.formatToParts = saved; }
+  });
+});
+
+// The spellings Hermes answers with, which bun's ICU never produces.
+describe("swapCurrencySign", () => {
+  it("takes every spelling of the sign", () => {
+    expect(swapCurrencySign("AU$39.99", "AUD")).toBe("A$39.99");
+    expect(swapCurrencySign("39,99 $AU", "AUD")).toBe("39,99 A$");
+    expect(swapCurrencySign("$39.99", "AUD")).toBe("A$39.99");
+    expect(swapCurrencySign("$NZ39.99", "NZD")).toBe("NZ$39.99");
+    expect(swapCurrencySign("MYR 39.99", "MYR")).toBe("RM 39.99");
+    expect(swapCurrencySign("RM39.99", "MYR")).toBe("RM39.99");
+    expect(swapCurrencySign("$39.99", "USD")).toBe("$39.99");
   });
 });

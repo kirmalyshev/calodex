@@ -83,6 +83,11 @@ export function paywallPrice(amount: number, currency: string, lang: Lang): stri
   // "A$" or "AU$" where ICU answers "$" or "RM" - so the pattern takes every spelling.
   const whole = currency === "RUB" ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {};
   const text = new Intl.NumberFormat(LANG_TAG[lang], { style: "currency", currency, currencyDisplay: "narrowSymbol", ...whole }).format(amount);
+  return swapCurrencySign(text, currency);
+}
+
+/** The sign swap on its own, so a test can hand it the spellings Hermes answers with. */
+export function swapCurrencySign(text: string, currency: string): string {
   const swap = CURRENCY_SWAP[currency];
   return swap ? text.replace(swap[0], swap[1]) : text;
 }
