@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { fill } from "./lang.ts";
+import { fill, LANGS_READY } from "./lang.ts";
 import { countText } from "./lang.ts";
 import { LANGS, PACES } from "./types.ts";
 import { HEALTH_FIELDS, HEALTH_GROUPS } from "./health.ts";
@@ -57,7 +57,7 @@ describe("what the health screen calls things", () => {
     // PRESENT in all eight and correct in one — and `localizedGaps` stops at the table, so it can
     // only see that the eight language keys exist. A reviewer deleted two German overrides and
     // both guards stayed green while the German health screen read "Sleep" and "Steps".
-    for (const lang of LANGS.filter((l) => l !== "en")) {
+    for (const lang of LANGS_READY.filter((l) => l !== "en")) {
       const same = [...HEALTH_GROUPS.map((g) => g.id), ...HEALTH_FIELDS.map((f) => f.key)]
         .filter((k) => healthLabel(k, lang) === healthLabel(k, "en"));
       expect(same.filter((k) => !SAME_WORD.has(`${lang}.${k}`)), lang).toEqual([]);

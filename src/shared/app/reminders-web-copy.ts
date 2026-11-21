@@ -62,6 +62,7 @@ export const REMINDERS_WEB_COPY: Record<Lang, RemindersWebCopy> = {
   pa: { note: "ਰੀਮਾਈਂਡਰ ਤੁਹਾਡੇ iPhone ਅਤੇ ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਆਉਂਦੇ ਹਨ।", prompt: "ਇਹ ਰੀਮਾਈਂਡਰ ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਪਾਓ", button: "ਸੂਚਨਾਵਾਂ ਚਾਲੂ ਕਰੋ" },
   ta: { note: "நினைவூட்டல்கள் உங்கள் iPhone-க்கும் இந்த உலாவிக்கும் வரும்.", prompt: "இந்த நினைவூட்டல்களை இந்த உலாவியில் பெறுங்கள்", button: "அறிவிப்புகளை இயக்கவும்" },
   te: { note: "రిమైండర్‌లు మీ iPhoneకు మరియు ఈ బ్రౌజర్‌కు వస్తాయి.", prompt: "ఈ రిమైండర్‌లను ఈ బ్రౌజర్‌లో పొందండి", button: "నోటిఫికేషన్‌లను ఆన్ చేయండి" },
+  ar: { note: "تصل التذكيرات على iPhone وفي هذا المتصفح.", prompt: "احصل على هذه التذكيرات في هذا المتصفح", button: "تفعيل الإشعارات" },
 };
 
 export const remindersWebCopyFor = (lang: Lang): RemindersWebCopy => branded(REMINDERS_WEB_COPY[lang]);

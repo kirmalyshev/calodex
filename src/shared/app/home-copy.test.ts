@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "bun:test";
 import { lintCopy } from "../claims.ts";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { HOME_COPY, homeCopyFor } from "./home-copy.ts";
 
@@ -33,7 +34,7 @@ const args = (s: string): string[] => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m
 describe("HOME_COPY", () => {
   it("has every key in every language, with English's placeholders intact", () => {
     const en = flat(HOME_COPY.en);
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = flat(HOME_COPY[lang]!);
       expect(Object.keys(copy).sort(), lang).toEqual(Object.keys(en).sort());
       for (const [key, text] of Object.entries(copy)) {
@@ -87,7 +88,7 @@ describe("HOME_COPY", () => {
   });
 
   it("passes the claims sweep in all eight", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       expect(lintCopy(flat(HOME_COPY[lang]!)).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang)
         .toEqual([]);
     }

@@ -6,7 +6,7 @@
 // its `PAGE_COPY`: what is gated is OUR sentences, not the rendered page.
 
 import { describe, expect, it } from "bun:test";
-import { LANGS, lintCopy } from "@eait/shared";
+import { LANGS, LANGS_READY, lintCopy } from "@eait/shared";
 import { COPY, WEB_COPY, webCopyFor } from "../copy.ts";
 
 /** Every string in the table, keyed well enough to name. `lintCopy` takes a flat record. */
@@ -52,7 +52,7 @@ describe("the copy the web client writes", () => {
   });
 
   it("names all eight and nothing else", () => {
-    expect(Object.keys(WEB_COPY).sort()).toEqual([...LANGS].sort());
+    expect(Object.keys(WEB_COPY).sort()).toEqual([...LANGS_READY].sort());
   });
 });
 

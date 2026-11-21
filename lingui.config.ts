@@ -1,13 +1,14 @@
 import { defineConfig } from "@lingui/conf";
 import { formatter } from "@lingui/format-po";
-import { LANGS } from "./src/shared/types.ts";
+import { LANGS_READY } from "./src/shared/lang.ts";
 
 /**
- * Lingui's catalogs, for the eight languages `LANGS` declares.
+ * Lingui's catalogs, for the languages `LANGS_READY` claims.
  *
- * THE LOCALE LIST IS READ FROM THE CODE, not typed again here. `LANGS` is what the server stores
- * and what the model answers in; a second list in a config file is the drift this repo removes
- * everywhere else it finds it.
+ * THE LOCALE LIST IS READ FROM THE CODE, not typed again here. The catalogs serve the surfaces
+ * the app can render — `LANGS_READY`, not `LANGS`: a language the UI has no words for (`ar` until
+ * #358's RTL pass) has no catalog, and reads English through the same key fallback `t()` has.
+ * A second list in a config file is the drift this repo removes everywhere else it finds it.
  *
  * `.po` RATHER THAN `.json`, which is Lingui's default and the reason is the whole point of
  * adopting a framework: every translation management system reads PO, none of them reads our
@@ -23,7 +24,7 @@ import { LANGS } from "./src/shared/types.ts";
  */
 export default defineConfig({
   sourceLocale: "en",
-  locales: [...LANGS],
+  locales: [...LANGS_READY],
   catalogs: [
     {
       path: "<rootDir>/src/shared/locales/{locale}/messages",

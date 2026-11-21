@@ -869,7 +869,7 @@ export function openRouterPorts(opts: Options): LlmPorts {
     const deadline = Date.now() + opts.timeoutMs;
     const { coach: persona } = await prompts();
     const messages: AgentMessage[] = [
-      { role: "system", content: `${persona}\n\n${buildCoachContext(input.context)}` },
+      { role: "system", content: `${persona}\n\n${buildCoachContext(input.context, input.text)}` },
       ...input.history.map((h): AgentMessage => ({ role: h.role, content: coachLine(h.text) })),
       { role: "user", content: coachLine(input.text) },
     ];

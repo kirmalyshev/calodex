@@ -49,6 +49,7 @@ const OPENERS: Record<Lang, RegExp> = {
   pa: /^ਇਹ ਰਿਹਾ/u,
   ta: /^இதோ/u,
   te: /^ఇదే/u,
+  ar: /^(هذا|هذه|إليك)/u,
 };
 
 describe("a title names the thing, it does not present it", () => {

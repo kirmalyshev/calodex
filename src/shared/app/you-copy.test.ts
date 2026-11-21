@@ -6,6 +6,7 @@
 // and the English is the boards' words.
 
 import { describe, expect, it } from "bun:test";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { lintCopy } from "../claims.ts";
 import { YOU_COPY, youCopyFor, youFacts } from "./you-copy.ts";
@@ -26,13 +27,13 @@ const placeholders = (s: string): string[] => [...new Set((s.match(/\{\w+\}/g) ?
 describe("YOU_COPY", () => {
   it("says the same keys in every language", () => {
     const en = Object.keys(flatten(YOU_COPY.en)).sort();
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       expect(Object.keys(flatten(YOU_COPY[lang])).sort(), lang).toEqual(en);
     }
   });
 
   it("has no empty string anywhere", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       for (const [at, text] of Object.entries(flatten(YOU_COPY[lang]))) {
         expect(text.length, `${lang}.${at}`).toBeGreaterThan(0);
       }
@@ -41,7 +42,7 @@ describe("YOU_COPY", () => {
 
   it("keeps every placeholder in every language — a dropped one renders a hole", () => {
     const en = flatten(YOU_COPY.en);
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = flatten(YOU_COPY[lang]);
       for (const [at, text] of Object.entries(en)) {
         expect(placeholders(copy[at] ?? ""), `${lang}.${at}`).toEqual(placeholders(text));
@@ -61,7 +62,7 @@ describe("YOU_COPY", () => {
     };
     const filled = (s: string) =>
       s.replace(/\{(\w+)\}/g, (_, k: string) => FILL[k] ?? "X");
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const fields: Record<string, string> = {};
       for (const [at, text] of Object.entries(flatten(YOU_COPY[lang]))) fields[at] = filled(text);
       const violations = lintCopy(fields).map((v) => `${v.field}: ${v.pattern} "${v.span}"`);

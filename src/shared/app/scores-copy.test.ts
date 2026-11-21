@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS } from "../types.ts";
 import { scoreFactorLabel, scoresAppCopy } from "./scores-copy.ts";
 import { logCopyFor } from "./log-copy.ts";

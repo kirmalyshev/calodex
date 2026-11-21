@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { LANGS_READY } from "./lang.ts";
 import { LANGS } from "./types.ts";
 import { streamCopyFor, threadCopyFor } from "./chat-copy.ts";
 import {
@@ -78,7 +79,7 @@ describe("the thread in eight languages", () => {
       (l: (typeof LANGS)[number]) => streamCopyFor(l).reading,
       (l: (typeof LANGS)[number]) => startersFor({ barriers: null, situations: null, goal: null }, l)[0]!,
     ]) {
-      expect(new Set(LANGS.map(sample)).size).toBe(LANGS.length);
+      expect(new Set(LANGS_READY.map(sample)).size).toBe(LANGS_READY.length);
     }
   });
 

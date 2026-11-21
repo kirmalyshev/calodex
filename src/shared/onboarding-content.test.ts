@@ -205,6 +205,7 @@ describe("every language's onboarding content", () => {
       pa: "ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਖਾਤੇ ਦੀ ਲੋੜ ਨਹੀਂ",
       ta: "தொடங்க கணக்கு தேவையில்லை",
       te: "ప్రారంభించడానికి ఖాతా అవసరం లేదు",
+      ar: "لا حاجة إلى حساب للبدء",
     };
     const freeText = /free text|texte libre|Freitext|testo libero|texto libre|Viết tự do|Teks bebas|Свободный текст/i;
     for (const lang of LANGS) {

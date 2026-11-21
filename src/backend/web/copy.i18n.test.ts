@@ -177,10 +177,10 @@ describe("the language picker on the plan page", () => {
 
 describe("the table itself", () => {
   it("names all eight and nothing else", () => {
-    expect(Object.keys(PAGE_COPY_BY_LANG).sort()).toEqual([...LANGS].sort());
+    expect(Object.keys(PAGE_COPY_BY_LANG).sort()).toEqual([...LANGS_READY].sort());
   });
   it("the App Link landing's table names them all too (#2434)", () => {
-    expect(Object.keys(APPLINK_COPY_BY_LANG).sort()).toEqual([...LANGS].sort());
+    expect(Object.keys(APPLINK_COPY_BY_LANG).sort()).toEqual([...LANGS_READY].sort());
     for (const lang of LANGS) {
       expect(Object.keys(appLinkCopyFor(lang)).sort(), lang).toEqual(Object.keys(appLinkCopyFor("en")).sort());
     }

@@ -54,8 +54,13 @@ export type { Lang };
  * IT IS AN HONEST LIST AND `localizedGaps` IS WHAT KEEPS IT HONEST. A language only belongs here
  * once every `Localized` table in the codebase carries it, and there is a test per workspace that
  * fails by name when one does not.
+ *
+ * `ar` is the one `Lang` not in it: stored and answered in since ieat-app#3310 — the coach's
+ * replies are plain text — but not yet RENDERED, because the UI's RTL layout is #358's ruling.
+ * Filtering rather than listing keeps the gate the same for the NEXT language: added to `LANGS`
+ * without its tables, it lands here anyway and the tests fail by name.
  */
-export const LANGS_READY: readonly Lang[] = [...LANGS];
+export const LANGS_READY: readonly Lang[] = LANGS.filter((l) => l !== "ar");
 
 /**
  * Each language's name IN ITSELF, and deliberately not `Localized`.
@@ -107,6 +112,7 @@ export const LANG_LABEL: Record<Lang, string> = {
   pa: "ਪੰਜਾਬੀ",
   ta: "தமிழ்",
   te: "తెలుగు",
+  ar: "العربية",
 };
 
 /**
@@ -157,6 +163,7 @@ export const LANG_FLAG: Record<Lang, string> = {
   pa: "🇮🇳",
   ta: "🇮🇳",
   te: "🇮🇳",
+  ar: "🇸🇦",
 };
 
 /**
@@ -213,6 +220,9 @@ export const LANG_TAG: Record<Lang, string> = {
   pa: "pa-IN-u-nu-latn",
   ta: "ta-IN-u-nu-latn",
   te: "te-IN-u-nu-latn",
+  // Latin digits, the same pick the Indic scripts above made: the app's figures are all written
+  // Western-Arabic, and RTL's own pass is #358's.
+  ar: "ar-EG-u-nu-latn",
 };
 
 /**
@@ -323,6 +333,7 @@ export const UNIT_KCAL: Record<Lang, string> = {
   uk: "ккал", sv: "kcal", th: "kcal", hi: "kcal", cs: "kcal", ro: "kcal", el: "kcal", hu: "kcal",
   da: "kcal", fi: "kcal", no: "kcal", sk: "kcal", hr: "kcal", sl: "kcal", ca: "kcal", ms: "kcal", "pt-PT": "kcal",
   bn: "kcal", gu: "kcal", kn: "kcal", ml: "kcal", mr: "kcal", or: "kcal", pa: "kcal", ta: "kcal", te: "kcal",
+  ar: "kcal",
 };
 
 /**
@@ -648,6 +659,18 @@ const PLURAL_CATEGORY: Record<Lang, (n: number) => Intl.LDMLPluralRule> = {
   or: oneIfOne,
   ta: oneIfOne,
   te: oneIfOne,
+  // CLDR: Arabic uses all six categories — 0 is `zero`, 1 is `one`, 2 is `two`, 3–10 of every
+  // hundred is `few`, 11–99 is `many`, and a round hundred (and anything past it) is `other`.
+  ar: (n) => {
+    const i = Math.trunc(Math.abs(n));
+    if (i === 0) return "zero";
+    if (i === 1) return "one";
+    if (i === 2) return "two";
+    const i100 = i % 100;
+    if (i100 >= 3 && i100 <= 10) return "few";
+    if (i100 >= 11 && i100 <= 99) return "many";
+    return "other";
+  },
 };
 
 /**

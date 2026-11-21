@@ -266,6 +266,9 @@ const LABEL_AUTO = "If, and only if, the photo is a printed nutrition-facts labe
 
 export function buildUserText(profile: Profile, targets: FoodTargets, opts: {
   caption?: string;
+  /** The user's own words this turn, when the turn has them — a photo turn's `caption` already
+   * counts as them. They, not the profile, steer the reply's language (ieat-app#3310). */
+  message?: string;
   /** The capture is a nutrition-facts label (ieat-app#2087); `false` leaves the label rule out. */
   label?: boolean;
   localTime?: string;
@@ -273,7 +276,7 @@ export function buildUserText(profile: Profile, targets: FoodTargets, opts: {
   portionPriors?: readonly PortionPrior[];
 } = {}): string {
   const lines = [
-    languageLine(profile.lang),
+    languageLine(profile.lang, opts.caption ?? opts.message),
     `The user's daily targets: ${targets.kcal}kcal, ${targets.protein_g}g protein.`,
   ];
   if (opts.localTime) lines.push(`Local time when the photo was taken: ${opts.localTime}.`);
@@ -323,7 +326,7 @@ export function buildUserText(profile: Profile, targets: FoodTargets, opts: {
     lines.push(
       `The user shops and eats in: ${country}. Use this ONLY to judge which products, ` +
       `brands and portion conventions are likely on the plate. It is NOT a language instruction — ` +
-      `write every name in ${LANG_LABEL[narrowLang(profile.lang)]} regardless.`,
+      `write every name in the requested reply language regardless.`,
     );
   }
   if (opts.repertoire && opts.repertoire.length > 0) {
@@ -435,7 +438,7 @@ export function buildTextMealText(input: {
   todayMeals: RecentMeal[];
 }): string {
   const lines = [
-    buildUserText(input.profile, input.targets, {}),
+    buildUserText(input.profile, input.targets, { message: input.text }),
     "",
   ];
   if (input.todayMeals.length > 0) {
@@ -503,7 +506,7 @@ export function buildTextCorrectionText(input: {
   photos?: number | undefined;
 }): string {
   const lines = [
-    buildUserText(input.profile, input.targets, {}),
+    buildUserText(input.profile, input.targets, { message: input.text }),
     "",
     `The meal currently logged (correct THIS, keep every item you were not told to change):\n${JSON.stringify(input.focusMeal)}`,
   ];
@@ -530,7 +533,7 @@ export function buildRouteText(input: {
 }): string {
   const { profile, targets } = input;
   const lines = [
-    languageLine(profile.lang),
+    languageLine(profile.lang, input.text),
     `Daily targets: ${targets.kcal}kcal, ${targets.protein_g}g protein.`,
   ];
   if (targets.satfat_g !== undefined) lines.push(`Saturated fat cap: ${targets.satfat_g}g.`);
@@ -589,9 +592,23 @@ export function buildRouteText(input: {
  *
  * `narrowLang` first, so a stored value this binary does not know still produces a sentence rather
  * than `undefined (xx)`.
+ *
+ * `message` is the user's own words this turn, when the turn HAS words. A bare profile code is the
+ * language they asked the APP for, not necessarily the one they are writing in: prod 21 Nov
+ * (ieat-app#3310) had a trial user ask every question in Arabic on an `en` profile — set by the
+ * phone's locale, not by them — and get twenty-four English replies in a row. The message's own
+ * language is the stronger signal when it is clearly one, and the model reads that better than
+ * any script table could: Latin letters alone cannot tell English from Portuguese, and the Arabic
+ * alphabet spells Farsi and Urdu too, so what reads "clearly" is left to the model and the profile
+ * stays the named fallback for what is not.
  */
-export function languageLine(lang: string): string {
+export function languageLine(lang: string, message?: string): string {
   const code = narrowLang(lang);
+  if (message !== undefined && /\p{L}/u.test(message)) {
+    return `Reply in the language of the user's message — the language their own words are written in — ` +
+      `when the message is clearly in one. When it is not — a word or two, a name, numbers — ` +
+      `reply in ${LANG_LABEL[code]} (${code}), the language they asked for.`;
+  }
   return `Reply in this language: ${LANG_LABEL[code]} (${code}). Every word you write is read by somebody who asked for that language.`;
 }
 
@@ -704,11 +721,11 @@ const MEDICAL_WORDS: Record<MedicalTag, string> = {
  * often enough — and a coach that says "fits well within your targets" over a day already 194g
  * of protein in has invented a number in the one way a reader cannot catch.
  */
-export function buildCoachContext(c: CoachContext): string {
+export function buildCoachContext(c: CoachContext, message?: string): string {
   const { profile, targets, basis } = c;
   const weighed = profile.weight_measured_at ? profile.weight_measured_at.slice(0, 10) : "date unknown";
   const lines = [
-    languageLine(profile.lang),
+    languageLine(profile.lang, message),
     `Today is ${c.today}, local time ${c.localTime}.`,
     `Goal: ${profile.goal ?? "unknown"}${profile.pace ? `, pace ${profile.pace}` : ""}${profile.target_weight_kg !== null ? `, target weight ${profile.target_weight_kg}kg` : ""}${profile.weight_kg !== null ? `, last known weight ${profile.weight_kg}kg (measured ${weighed}; the trend is in get_health)` : ""}.`,
     `Daily targets: ${targets.kcal}kcal, ${targets.protein_g}g protein.`,

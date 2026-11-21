@@ -8,7 +8,7 @@
 import { describe, expect, it } from "bun:test";
 import { LANGS } from "../types.ts";
 import { lintCopy } from "../claims.ts";
-import { fill } from "../lang.ts";
+import { fill, LANGS_READY } from "../lang.ts";
 import { LOG_COPY, logCopyFor, verdictDetailLine } from "./log-copy.ts";
 
 const SHARED = [
@@ -36,7 +36,7 @@ const FILL: Record<string, string> = {
 
 describe("LOG_COPY", () => {
   it("has every key in every language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = LOG_COPY[lang];
       expect(copy, lang).toBeDefined();
       for (const key of SHARED) expect(copy![key].length, `${lang}.${key}`).toBeGreaterThan(0);
@@ -57,7 +57,7 @@ describe("LOG_COPY", () => {
       ["dayOver", ["{over}"]],
       ["dayLeft", ["{left}"]],
     ];
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = LOG_COPY[lang]!;
       for (const [key, phs] of TEMPLATED) {
         for (const ph of phs) expect(copy[key as never] as string, `${lang}.${key}`).toContain(ph);

@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "bun:test";
 import { lintCopy } from "../claims.ts";
-import { fill } from "../lang.ts";
+import { fill, LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { PAY_COPY, payCopyFor } from "./pay-copy.ts";
 
@@ -30,7 +30,7 @@ const KEYS = [
 
 describe("PAY_COPY", () => {
   it("has every key in every language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = PAY_COPY[lang];
       expect(copy, lang).toBeDefined();
       for (const key of KEYS) {
@@ -60,7 +60,7 @@ describe("PAY_COPY", () => {
       offerPerMonth: ["{price}"],
       trialEndsNote: ["{renewal}"],
     };
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = PAY_COPY[lang]!;
       for (const [key, phs] of Object.entries(want)) {
         for (const ph of phs) {
@@ -76,7 +76,7 @@ describe("PAY_COPY", () => {
     // the store requires (the price after the trial, the period, auto-renew, the cancel path) but
     // must not restate the length: no `{days}` placeholder, and it cannot open with the badge's
     // own phrase — the rendered check also refuses a hardcoded restatement ("3 days free, then").
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = PAY_COPY[lang]!;
       const phrase = fill(copy.trialBadge, { days: "7" });
       for (const key of ["trialNote", "trialNotePhone"] as const) {
@@ -150,7 +150,7 @@ describe("PAY_COPY", () => {
     // The paywall is the most-attended copy in the product — a discount that overstates itself is
     // exactly what `exclusivity`/`guarantee` exist to stop, so the sweep runs here by name rather
     // than trusting a reviewer to notice.
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       // Flatten nested records so CLAIM_EXEMPTIONS can name a leaf (`PAY_COPY.goalCtaPhone.lose`).
       const fields: Record<string, string> = {};
       for (const [key, value] of Object.entries(PAY_COPY[lang]!)) {

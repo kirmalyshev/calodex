@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from "bun:test";
 import { lintCopy } from "../claims.ts";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { BARRIERS, SITUATIONS, type Profile } from "../types.ts";
 import {
@@ -24,7 +25,7 @@ const flatten = (node: unknown, at = "", out: Record<string, string> = {}): Reco
 describe("CHAT_SCREEN_COPY", () => {
   it("has every key in every language", () => {
     const enKeys = Object.keys(flatten(CHAT_SCREEN_COPY.en)).sort();
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = CHAT_SCREEN_COPY[lang];
       expect(copy, lang).toBeDefined();
       const flat = flatten(copy);
@@ -49,7 +50,7 @@ describe("CHAT_SCREEN_COPY", () => {
       mealLine: ["{name}", "{kcal}"],
       "phone.typing": ["{coach}"],
     };
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const flat = flatten(CHAT_SCREEN_COPY[lang]);
       for (const [key, placeholders] of Object.entries(withPlaceholders)) {
         for (const ph of placeholders) {
@@ -90,7 +91,7 @@ describe("CHAT_SCREEN_COPY", () => {
       { barriers: ["nobody", "forgot", "stressful"], situations: [], goal: "lose" },
       { barriers: [], situations: ["snacks"], goal: "lose" },
     ];
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       for (const set of sets) {
         const expected = starterRowsFor(set, lang).map((r) => r.text);
         const actual = starterRows(set, lang).map((r) => r.text);
@@ -125,7 +126,7 @@ describe("CHAT_SCREEN_COPY", () => {
     // templates, so the sweep reads the same strings the screen shows.
     const FILL: Record<string, string> = { coach: "Gabie", value: "54", target: "109", n: "34" };
     const filled = (s: string) => s.replace(/\{(\w+)\}/g, (_, k: string) => FILL[k] ?? "X");
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const fields: Record<string, string> = {};
       for (const [at, text] of Object.entries(flatten(CHAT_SCREEN_COPY[lang]))) {
         fields[at] = filled(text);

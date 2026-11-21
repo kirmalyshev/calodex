@@ -8,7 +8,7 @@
 import { describe, expect, it } from "bun:test";
 import { LANGS, type Lang } from "../types.ts";
 import { lintCopy } from "../claims.ts";
-import { countText } from "../lang.ts";
+import { countText, LANGS_READY } from "../lang.ts";
 import { HEALTH_COPY } from "../health-copy.ts";
 import { SHELL_COPY } from "./shell-copy.ts";
 import { CHAT_COPY } from "../onboarding-chat-copy.ts";
@@ -25,7 +25,7 @@ const fields = (copy: ProgressCopy) => walk(copy, "", {});
 
 describe("PROGRESS_COPY", () => {
   it("has every key in every language, placeholders included", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = PROGRESS_COPY[lang];
       expect(copy, lang).toBeDefined();
       const f = fields(copy!);
@@ -78,7 +78,7 @@ describe("PROGRESS_COPY", () => {
 
   it("reuses the words shared already — the shell's tab, health's label, the chart's name", () => {
     // A second copy of the same sentence is a second thing to translate and to drift.
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       expect(PROGRESS_COPY[lang]!.title, lang).toBe(SHELL_COPY[lang]!.navProgress);
       expect(PROGRESS_COPY[lang]!.weightLabel, lang).toBe(HEALTH_COPY[lang]!.labels.weight_kg!);
       expect(PROGRESS_COPY[lang]!.weightChartName, lang).toBe(CHAT_COPY[lang]!.chart.weightTrend);
@@ -95,7 +95,7 @@ describe("PROGRESS_COPY", () => {
   it("carries no claim the gate would refuse, in any of the eight", () => {
     // The templates themselves, unfilled — the corpus rule the other sweeps run. A filled
     // "минус 5кг" reads as description of what already happened, exactly the `planGoal` case.
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const named: Record<string, string> = {};
       for (const [k, v] of Object.entries(fields(PROGRESS_COPY[lang]!))) named[`PROGRESS_COPY.${k}`] = v;
       expect(lintCopy(named).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang).toEqual([]);
