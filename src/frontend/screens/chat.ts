@@ -502,6 +502,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
         img.src = src;
         img.alt = "";
         img.addEventListener("load", () => URL.revokeObjectURL(src), { once: true });
+        fitHero(hero, img, 4 / 3);
         hero.append(img);
       }
       mine.append(hero);
