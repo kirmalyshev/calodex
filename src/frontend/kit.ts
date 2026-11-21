@@ -93,6 +93,23 @@ export const photoHeroEl = (o: {
   callouts?: readonly HeroCallout[];
 }): Element => kitEl(photoHeroMarkup(o));
 
+/** The aspect a hero frame takes once the photo's size is known (#3297): the photo's own ratio,
+ *  never below the surface's designed `floor` — a landscape photo shows wide and whole, a
+ *  portrait keeps the designed frame — while the screen's `max-height` caps anything taller.
+ *  The app's `photoFitHeight` is the same rule in points. */
+export const heroAspect = (naturalWidth: number, naturalHeight: number, floor = 0): number =>
+  naturalWidth > 0 && naturalHeight > 0 ? Math.max(floor, naturalWidth / naturalHeight) : floor;
+
+/** Fit a hero frame to its photo: set `aspect-ratio` from the loaded image's natural size. */
+export const fitHero = (hero: HTMLElement, img: HTMLImageElement, floor = 0): void => {
+  const fit = () => {
+    const a = heroAspect(img.naturalWidth, img.naturalHeight, floor);
+    if (a > 0) hero.style.aspectRatio = `${a}`;
+  };
+  if (img.complete && img.naturalWidth > 0) fit();
+  else img.addEventListener("load", fit, { once: true });
+};
+
 export const estimateChartEl = (
   direction: Parameters<typeof estimateChartSvg>[0],
   labels: Parameters<typeof estimateChartSvg>[1],

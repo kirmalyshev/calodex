@@ -33,7 +33,7 @@ import { ApiError, Unauthenticated, api } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { shrinkPhotos } from "../photo.ts";
 import { firstMealEdit, mealTitle, type Portion } from "../portion.ts";
-import { kitEl, payPlansEl } from "../kit.ts";
+import { fitHero, kitEl, payPlansEl } from "../kit.ts";
 import { ico, photoHero } from "../../shared/ui/kit.ts";
 import { payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import {
@@ -297,6 +297,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
       // `.fhero`, never `.hero`: on this card the kit's `.hero` name is the kcal figure's, and a
       // second one would split what a reader (or the suite) resolves.
       hero.classList.replace("hero", "fhero");
+      fitHero(hero, hero.querySelector("img")!);
       dlg.append(hero);
     }
     const card = el("div", "card");

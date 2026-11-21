@@ -42,7 +42,7 @@ import {
 import { esc, ico, tagx } from "../../shared/ui/kit.ts";
 import type { IconName } from "../../shared/ui/icons.ts";
 import {
-  blobSrc, ingredientEl, kitEl, mcardEl, mealRowEl, photoHeroEl, scorePartEl, scoreRowEl,
+  blobSrc, fitHero, ingredientEl, kitEl, mcardEl, mealRowEl, photoHeroEl, scorePartEl, scoreRowEl,
   verdictListEl,
 } from "../kit.ts";
 import {
@@ -633,6 +633,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         box.append(kitEl(ico("chat")));
       } else {
         img.src = src;
+        fitHero(box, img);
       }
     });
     return box;
@@ -753,6 +754,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       const img = el("img", "") as HTMLImageElement;
       img.src = job.thumb;
       img.alt = "";
+      fitHero(heroBox, img);
       heroBox.append(img);
     }
     heroBox.append(el("i", "scan"));

@@ -47,7 +47,8 @@ export const firstMealCss = `
 
 /* The verdict sheet's photo block: .hero's OWN look (edge photo, corner callouts, the stamp) but
    not its name — on this sheet .hero is the kcal figure's class, read by the browser suite. */
-.fhero { position: relative; overflow: hidden; border-radius: 12px; height: 170px; background: #DDD8CE; }
+/* #3297: fitHero writes the photo's own aspect-ratio on load; the 170px cap is the design's. */
+.fhero { position: relative; overflow: hidden; border-radius: 12px; aspect-ratio: 2 / 1; max-height: 170px; background: #DDD8CE; }
 .fhero img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fhero .co { --copad: 14px; position: absolute; display: flex; align-items: center; gap: 6px;
   background: rgba(255,255,255,.94); border-radius: 8px; padding: 6px 9px; font-size: 12px; font-weight: 600;
