@@ -62,14 +62,16 @@ Everything is exported through `index.ts` (`export *`), so a new export needs no
 
 ## Localization (#358)
 
-**The product speaks forty-two languages: `en`, `fr`, `de`, `it`, `es`, `vi`, `id`, `ru` and, from
+**The product renders forty-two languages: `en`, `fr`, `de`, `it`, `es`, `vi`, `id`, `ru` and, from
 waves 1-4a of #2206, `pt-BR`, `ja`, `ko`, `zh-Hans`, `zh-Hant`, `tr`, `pl`, `nl`, `uk`, `sv`, `th`,
 `hi`, `cs`, `ro`, `el`, `hu`, `da`, `fi`, `no`, `sk`, `hr`, `sl`, `ca`, `ms`, `pt-PT`, `bn`, `gu`,
 `kn`, `ml`, `mr`, `or`, `pa`, `ta`, `te` (the target is every base language the App Store listing
-carries; Arabic, Hebrew and Urdu wait for the RTL ruling).** `LANGS`
-(`types.ts`) is what the server stores and the model answers in. `LANGS_READY` (`lang.ts`) is the
-smaller, honest claim — what the app can render ITSELF end to end — and it is what a picker offers.
-They are equal today and are two names because they mean different things: `PATCH /v1/profile`
+carries; Hebrew and Urdu wait for the RTL ruling).** `LANGS`
+(`types.ts`) is what the server stores and the model answers in — it is the forty-two PLUS `ar`,
+accepted since #3310 so an Arabic-speaking profile's coach answers in Arabic. `LANGS_READY`
+(`lang.ts`) is the smaller, honest claim — what the app can render ITSELF end to end — and it is
+what a picker offers; `ar` is not in it (its copy falls back to `en`, and RTL is #358). The two
+names differ because they mean different things: `PATCH /v1/profile`
 accepts any `LANGS` code, because a phone in a language the browser pages have no words in still
 gets its meal names in that language.
 
