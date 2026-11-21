@@ -15,6 +15,7 @@ import { logMail } from "../mail/log.ts";
 import { remember } from "./chat.ts";
 import { LANGS, LANGS_READY } from "@eait/shared";
 import { charge } from "./caps.ts";
+import { redeemReferral } from "./referral.ts";
 import {
   appendLines, applyCorrection, attachPhotos, cancelPendingMeal, chatHistory, confirmPendingMeal, day, drainJobs, editMeal, handleText,
   logNumbersMeal, logPhotoMeal, patchProfile, photoJob, profileView, queuePhoto, queueMealUpdate, removePhotoJob, reanalyzeMeal, redateMeal, startJobs, stepApplies, week, type EngineDeps,
@@ -406,7 +407,7 @@ describe("photo logging", () => {
     await entitle(userId);
     const d = makeDeps({ paidDailyPhotoCap: 2 });
     expect((await logPhotoMeal(d, userId, photo())).kind).toBe("logged");
-    expect((await handleText(d, userId, { text: "two eggs and toast" })).kind).not.toBe("identity-required");
+    expect((await handleText(d, userId, { text: "two eggs and toast" })).kind).toBe("proposed");
     expect((await logNumbersMeal(d, userId, { name: "an apple", kcal: 95, protein_g: 0, fat_g: 0, carbs_g: 25 })).kind).toBe("logged");
     // The entitlement buys the bigger daily photo cap, not no cap: the third photo is refused.
     expect((await logPhotoMeal(d, userId, photo())).kind).toBe("logged");
@@ -418,6 +419,16 @@ describe("photo logging", () => {
     await entitle(userId, -1000);
     expect(await logPhotoMeal(deps, userId, photo())).toEqual({ kind: "identity-required" });
     expect(await store.countUserAnalyses(userId)).toBe(0);
+  });
+
+  it("lets a REFERRAL week open the gate anonymously too — the week is the same live tier", async () => {
+    // `identityOwed` reads `entitlementFor`'s one answer, which covers the referral week beside
+    // the subscription: a friend who redeems a code before signing in gets the week they were
+    // given, at the paid tier the profile reports to them.
+    const referrer = await onboard();
+    const userId = await onboardAnonymous();
+    await redeemReferral(deps, userId, (await store.referralOf(referrer))!.code);
+    expect((await logPhotoMeal(deps, userId, photo())).kind).toBe("logged");
   });
 
   it("gives an entitled account the paid daily cap, photos only", async () => {

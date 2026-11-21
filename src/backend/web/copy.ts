@@ -125,7 +125,7 @@ export interface PageCopy {
   // the chat surface's refusal.
   /**
    * `identity-required`: the engine's answer to analysis on an account with no Apple or Google
-   * identity — the sign-up screen is the remedy, not an apology.
+   * identity and no live entitlement — the sign-up screen is the remedy, not an apology.
    */
   chatRefusalIdentity: string;
 

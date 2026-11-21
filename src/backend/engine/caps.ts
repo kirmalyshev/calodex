@@ -36,12 +36,14 @@ async function paywall(deps: EngineDeps, userId: string): Promise<Refusal | null
 }
 
 /**
- * Sign-in is still owed: the account is anonymous AND pays for nothing (ieat-app#3202). Purchase
- * can come before sign-up now — the 'Save your plan' sheet is skippable — so a payer who skipped
- * it is still anonymous but must not be refused what they bought (App Review 3.1.2(a)). Every
- * other cap and rate limit applies to them unchanged, and minting device accounts stays worthless:
- * an anonymous account with no live entitlement — a grant or an experiment arm included — owes
- * the identity exactly as before.
+ * Sign-in is still owed: the account is anonymous AND `entitlementFor` reports nothing live
+ * (ieat-app#3202). Purchase can come before sign-up now — the 'Save your plan' sheet is skippable —
+ * so a payer who skipped it is still anonymous but must not be refused what they bought (App
+ * Review 3.1.2(a)). "Live" is the one function's answer — subscription, lifetime or referral week,
+ * the same tier the profile reports — so a friend who redeemed a code anonymously gets the week
+ * they were given too. Every other cap and rate limit applies to them unchanged, and minting
+ * device accounts stays worthless: an anonymous account with no live entitlement — a grant or an
+ * experiment arm included — owes the identity exactly as before.
  */
 async function identityOwed(deps: EngineDeps, userId: string): Promise<boolean> {
   return (await isAnonymous(deps, userId)) && !(await entitlementFor(deps, userId)).active;
