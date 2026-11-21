@@ -1992,6 +1992,9 @@ describe("purchase before sign-up (ieat-app#3205)", () => {
     for (const path of ["/start", "/start/plan", "/start/offer", "/start/checkout", "/start/streak", "/start/country"]) {
       expect((await get(path, session)).headers.get("location"), path).toBe("/start/signup");
     }
+    // A POST is gated the same way — the rule is on the account, not the method.
+    expect((await post("/start/country", { answer: "de" }, session)).headers.get("location"))
+      .toBe("/start/signup");
     // `/start/chat` is the alias, answered before the session gate: on a host with the web
     // app it was never a /start page to begin with. On one without, the gate reaches it.
     expect((await get("/start/chat", session)).headers.get("location")).toBe("/#/chat");
@@ -2005,6 +2008,14 @@ describe("purchase before sign-up (ieat-app#3205)", () => {
     const { session, userId } = await atOffer(false);
     await paid(userId);
     expect((await get("/start/chat", session)).headers.get("location")).toBe("/start/signup");
+  });
+
+  it("leaves a SIGNED-IN paid account alone — the gate is anonymity's, not the purchase's", async () => {
+    const { session, userId } = await atOffer();
+    const signed = await signIn("paid-signed", "google", undefined, session);
+    await paid(userId);
+    expect((await get("/start/plan", signed)).status).toBe(200);
+    expect((await get("/start", signed)).headers.get("location")).toBe("/start/country");
   });
 
   it("lands the return's sign-in on the country question, on the account that paid", async () => {
