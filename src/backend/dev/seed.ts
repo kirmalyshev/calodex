@@ -854,7 +854,7 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 /** The arm: counted first, `prelim` removed, medical before diet — so completion lands on `diet`. */
 export const SEEDED_ORDER: OnboardingPlace[] = [
   "welcome", "goal", "counted", "barrier", "situation", "sex", "age", "height", "weight", "activity",
-  "baseline", "target", "pace", "medical", "diet", "summary", "signup",
+  "baseline", "target", "pace", "medical", "diet", "summary",
 ];
 /** The one language the flow switches to on the welcome; no other flow onboards in it. */
 export const SEEDED_ORDER_LANG: Lang = "it";

@@ -1,7 +1,8 @@
 // Onboarding: the order an experiment arm may ask the questions in, and the rules that keep it valid.
 //
 // The DEFAULT order is `ONBOARDING_PLACES`, fixed in code. An experiment arm may carry its own order of
-// the span from the welcome to the sign-up; the tail (the plans sheet, country, referral, Health, the streak goal) is
+// the span from the welcome to the plan; the tail (the plans sheet, the save-your-plan sign-in,
+// country, referral, Health, the streak goal — ieat-app#3203) is
 // routed separately on both surfaces and does not move. Every edge in `ORDER_AFTER` names why it holds:
 // a reader that quotes an earlier answer (a reply, an echo, a guard), or a stated rule. An order is
 // meant to be refused when it is SAVED; a client handed one it cannot validate walks the default
@@ -18,16 +19,16 @@ import { ONBOARDING_PLACES, type OnboardingPlace } from "./onboarding.ts";
  * validates against its own copy of the rules, so a client on the old rules must stop being enrolled in
  * an ordered arm rather than silently walking the default inside it. A test pins the rules to it.
  */
-export const ONBOARDING_ORDER_VERSION = 2;
+export const ONBOARDING_ORDER_VERSION = 3;
 
-/** The span an arm may reorder: the welcome to the sign-up, in the default order. */
-export const DEFAULT_ORDER: readonly OnboardingPlace[] = ONBOARDING_PLACES.slice(0, ONBOARDING_PLACES.indexOf("signup") + 1);
+/** The span an arm may reorder: the welcome to the plan, in the default order. */
+export const DEFAULT_ORDER: readonly OnboardingPlace[] = ONBOARDING_PLACES.slice(0, ONBOARDING_PLACES.indexOf("summary") + 1);
 
 /** The places an arm may leave out: the two beats, which write nothing. Every question stays. */
 export const REMOVABLE_PLACES: readonly OnboardingPlace[] = ["baseline", "prelim"];
 
 const OTHER_QUESTIONS = DEFAULT_ORDER.filter(
-  (p) => !["welcome", "diet", "medical", "summary", "signup", ...REMOVABLE_PLACES].includes(p),
+  (p) => !["welcome", "diet", "medical", "summary", ...REMOVABLE_PLACES].includes(p),
 );
 
 /**
@@ -63,7 +64,7 @@ export const ORDER_AFTER: Readonly<Partial<Record<OnboardingPlace, readonly Onbo
   situation: ["counted"],
   diet: [...OTHER_QUESTIONS, ...REMOVABLE_PLACES],
   medical: [...OTHER_QUESTIONS, ...REMOVABLE_PLACES],
-  summary: DEFAULT_ORDER.filter((p) => !["welcome", "summary", "signup"].includes(p)),
+  summary: DEFAULT_ORDER.filter((p) => !["welcome", "summary"].includes(p)),
 };
 
 /** Why an order is refused. Only `must-follow` names a second place. */
@@ -73,7 +74,7 @@ export type OrderRefusal =
    *   unknown    not a place in the span
    *   duplicate  listed twice
    *   missing    a question left out (only `REMOVABLE_PLACES` may be)
-   *   fixed      the welcome is not first, or the sign-up is not straight after the plan
+   *   fixed      the welcome is not first, or the plan is not last
    */
   | { place: string; rule: "not-a-list" | "unknown" | "duplicate" | "missing" | "fixed" }
   /** `place` sits before `after`, which it must follow. */
@@ -98,8 +99,9 @@ export function validateOnboardingOrder(order: unknown): OrderRefusal[] {
     if (!seen.has(p) && !REMOVABLE_PLACES.includes(p)) out.push({ place: p, rule: "missing" });
   }
   if (order[0] !== "welcome") out.push({ place: "welcome", rule: "fixed" });
-  // Phase 1 (#2788): the sign-up stays straight after the plan. Phase 2 lets it sit straight before.
-  if (order.at(-1) !== "signup" || order.at(-2) !== "summary") out.push({ place: "signup", rule: "fixed" });
+  // The plan ends the reorderable walk; past it the tail — plans sheet, sign-in, country — is
+  // routed, not ordered (ieat-app#3203). A v2 order, which named the sign-up, dies on "unknown" first.
+  if (order.at(-1) !== "summary") out.push({ place: "summary", rule: "fixed" });
   for (const place of DEFAULT_ORDER) {
     const at = order.indexOf(place);
     if (at === -1) continue;
@@ -121,7 +123,7 @@ export function orderFellBack(order: unknown): boolean {
 }
 
 /**
- * The progress dash for an order: its places between the welcome and the sign-up. `DASH_PLACES` is
+ * The progress dash for an order: its places between the welcome and the plan. `DASH_PLACES` is
  * this for the default order; an arm that drops a beat draws one segment fewer.
  */
 export function dashPlaces(order: readonly OnboardingPlace[]): OnboardingPlace[] {
