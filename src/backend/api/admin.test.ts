@@ -167,7 +167,7 @@ describe("experiments (ieat-app#2669)", () => {
     await admin("POST", `/admin/api/experiments/${experiment.id}/variants`, {});
     const arm = `/admin/api/experiments/${experiment.id}/variants/1`;
     const order = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
-      "pace", "counted", "barrier", "situation", "medical", "diet", "summary", "signup"];
+      "pace", "counted", "barrier", "situation", "medical", "diet", "summary"];
     const swapped = order.map((p) => (p === "target" ? "pace" : p === "pace" ? "target" : p));
     const refused = await admin("PUT", arm, { order: swapped });
     expect(refused.status).toBe(422);

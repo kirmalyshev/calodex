@@ -116,11 +116,13 @@ export type OnboardingScreenId = (typeof ONBOARDING_SCREENS)[number];
  * (the mid-journey plan: burn versus the number the answers produce) sit between the questions
  * that feed them. They read the profile and write nothing; their words are code in
  * `onboarding-chat-copy.ts`, never admin copy, because one of them carries a health number.
- * `signup` is the
- * account step between the plan and `country` — it belongs to the sign-in surface, and this list
- * only holds its place in the order. `paywall` is the plans sheet between them (ieat-app#3136):
- * recorded by the app when the sheet stands in the run's path, with its result as the answer —
- * without it the funnel's last screen after a decline reads "sign-up". `referral` is the optional friend's-link step after the
+ * `paywall` is the plans
+ * sheet straight after the plan (ieat-app#3136): recorded by the app when the sheet stands in the
+ * run's path, with its result as the answer — without it the funnel's last screen after a decline
+ * reads "plan". `signup` is the account step between the plans and `country` (ieat-app#3203):
+ * the purchase comes first, and a confirmed one offers the "Save your plan" sign-in in the same
+ * flow, skippable — it belongs to the sign-in surface, and this list only holds its place in the
+ * order. `referral` is the optional friend's-link step after the
  * country (#899) — it stores nothing on the profile; a code is applied by its own route, and the
  * READER of this place is the admin's funnel table, which prices the step's drop-off on the app and
  * on the web alike. `health` is the post-sign-up Apple Health offer; on a surface
@@ -140,13 +142,13 @@ export type OnboardingInterstitial = (typeof ONBOARDING_INTERSTITIALS)[number];
  *
  * The analytics vocabulary, and the row order of the admin's funnel table — so a drop between two
  * rows reads as a drop. Fixed in code: the questions are asked in an order the replies depend on.
- * An experiment arm may reorder the span from the welcome to the sign-up only within `ORDER_AFTER`
+ * An experiment arm may reorder the span from the welcome to the plan only within `ORDER_AFTER`
  * (`onboarding-order.ts`), which names why each edge holds — and that arm's funnel reads in the
  * arm's order, not this one.
  */
 export const ONBOARDING_PLACES = [
   "welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
-  "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup", "paywall", "country", "referral", "health", "streak",
+  "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "paywall", "signup", "country", "referral", "health", "streak",
 ] as const;
 export type OnboardingPlace = OnboardingScreenId | OnboardingInterstitial;
 

@@ -149,6 +149,14 @@ export interface Limits {
    */
   subscriptionRequired: boolean;
   /**
+   * Whether this account still owes a sign-in while it pays: anonymous — the `device` identity is
+   * the only one that can put somebody into it — and carrying a live entitlement. Purchase-before-
+   * sign-up (ieat-app#3203) lets the plan be bought first, so this is the flag the app offers
+   * "Save your diary" against, in the diary and in Settings. The entitlement, not any client SDK
+   * state, is what it is computed from — the server remains the source of truth for both halves.
+   */
+  identityOwed: boolean;
+  /**
    * How many days back the diary can be asked about, counting today.
    *
    * IT BOUNDS THE MARKS, NOT THE DAYS. The date picker draws a month at a time and marks the days

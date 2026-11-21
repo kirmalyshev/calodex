@@ -24,8 +24,8 @@ function moved(place: OnboardingPlace, before: OnboardingPlace, from: readonly O
 }
 
 describe("the default order", () => {
-  it("is ONBOARDING_PLACES from the welcome to the sign-up, and is valid", () => {
-    const end = ONBOARDING_PLACES.indexOf("signup");
+  it("is ONBOARDING_PLACES from the welcome to the plan, and is valid", () => {
+    const end = ONBOARDING_PLACES.indexOf("summary");
     expect([...DEFAULT_ORDER]).toEqual(ONBOARDING_PLACES.slice(0, end + 1));
     expect(validateOnboardingOrder(DEFAULT_ORDER)).toEqual([]);
   });
@@ -67,7 +67,7 @@ const EDGES: [OnboardingPlace, OnboardingPlace, string][] = [
 ];
 
 // The plan is the end of the questions: every place between the welcome and the plan comes first.
-const BEFORE_SUMMARY = DEFAULT_ORDER.filter((p) => !["welcome", "summary", "signup"].includes(p));
+const BEFORE_SUMMARY = DEFAULT_ORDER.filter((p) => !["welcome", "summary"].includes(p));
 
 // diet and medical are the LAST questions, in either order between them: `isAnswered` counts medical
 // answered only once onboarding is complete (and a Balanced diet likewise), so a question after them
@@ -136,7 +136,7 @@ describe("diet and medical", () => {
 });
 
 describe("the rules", () => {
-  it("are exactly the edges above, at ONBOARDING_ORDER_VERSION 2 — change either, bump the version", () => {
+  it("are exactly the edges above, at ONBOARDING_ORDER_VERSION 3 — change either, bump the version", () => {
     // A client validates against its OWN copy of these rules; one on the old copy must stop being
     // enrolled in an ordered arm, which only a version bump does (`onboarding-order.ts`).
     const expected: Partial<Record<OnboardingPlace, OnboardingPlace[]>> = {
@@ -146,7 +146,7 @@ describe("the rules", () => {
     const sorted = (g: Partial<Record<string, readonly string[]>>) =>
       Object.fromEntries(Object.entries(g).map(([k, v]) => [k, [...v!].sort()]));
     expect(sorted(ORDER_AFTER)).toEqual(sorted(expected));
-    expect(ONBOARDING_ORDER_VERSION).toBe(2);
+    expect(ONBOARDING_ORDER_VERSION).toBe(3);
   });
 });
 
@@ -186,7 +186,7 @@ describe("what is refused", () => {
   });
 
   it("a place twice", () => {
-    expect(validateOnboardingOrder([...DEFAULT_ORDER.slice(0, -1), "diet", "signup"])).toContainEqual({ place: "diet", rule: "duplicate" });
+    expect(validateOnboardingOrder([...DEFAULT_ORDER.slice(0, -1), "diet", "summary"])).toContainEqual({ place: "diet", rule: "duplicate" });
   });
 
   it("a question left out — only the two beats may go", () => {
@@ -198,12 +198,20 @@ describe("what is refused", () => {
     expect(validateOnboardingOrder(moved("goal", "welcome"))).toContainEqual({ place: "welcome", rule: "fixed" });
   });
 
-  it("the sign-up anywhere but straight after the plan (phase 2 moves it)", () => {
-    expect(validateOnboardingOrder(moved("signup", "summary"))).toContainEqual({ place: "signup", rule: "fixed" });
+  it("a tail place an arm may no longer name — a v2 order's sign-up is not in the span", () => {
+    // ieat-app#3203: the plans sheet and the save-your-plan sign-in are routed past the plan, not
+    // ordered. An order saved under v2, which ended on "signup", is refused rather than walked.
+    expect(validateOnboardingOrder([...DEFAULT_ORDER, "signup"])).toContainEqual({ place: "signup", rule: "unknown" });
+    expect(validateOnboardingOrder([...DEFAULT_ORDER, "paywall", "signup"])).toContainEqual({ place: "paywall", rule: "unknown" });
+    expect(orderFellBack([...DEFAULT_ORDER, "signup"])).toBe(true);
+  });
+
+  it("the plan anywhere but last", () => {
+    expect(validateOnboardingOrder(moved("summary", "diet"))).toContainEqual({ place: "summary", rule: "fixed" });
   });
 
   it("a question after the plan", () => {
-    expect(validateOnboardingOrder(moved("diet", "signup"))).toContainEqual({ place: "summary", rule: "must-follow", after: "diet" });
+    expect(validateOnboardingOrder(moved("summary", "diet"))).toContainEqual({ place: "summary", rule: "must-follow", after: "diet" });
   });
 });
 

@@ -30,7 +30,7 @@ import type { Store, StoreOptions } from "../store.ts";
 import type { EngineDeps } from "../engine/index.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
-import { chatHistory, day, handleText, linkTelegram, saveOnboardingContent } from "../engine/index.ts";
+import { chatHistory, day, handleText, isAnonymous, linkTelegram, saveOnboardingContent } from "../engine/index.ts";
 import { createRouter } from "../api/routes.ts";
 import { fakeAnalytics } from "../analytics/fake.ts";
 import { fakePush } from "../push/fake.ts";
@@ -821,7 +821,7 @@ describe("the questions", () => {
   // them unshown — the app's `nextPlace` reads the walk the answer produced, and so does this.
   it("shows the beat after questions the answer just removed", async () => {
     const order = ["welcome", "sex", "age", "height", "weight", "activity", "baseline", "goal",
-      "target", "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup"];
+      "target", "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary"];
     const arm = structuredClone(DEFAULT_ONBOARDING_CONTENT);
     arm.version = 4343;
     const id = crypto.randomUUID();
@@ -861,7 +861,7 @@ describe("the questions", () => {
 
   it("walks an experiment arm's order, without the beat it removed (ieat-app#2788)", async () => {
     const order = ["welcome", "goal", "counted", "barrier", "situation", "sex", "age", "height", "weight",
-      "activity", "baseline", "target", "pace", "diet", "medical", "summary", "signup"];
+      "activity", "baseline", "target", "pace", "diet", "medical", "summary"];
     const arm = structuredClone(DEFAULT_ONBOARDING_CONTENT);
     arm.version = 4242;
     arm.screens.find((x) => x.id === "sex")!.asks.sex!.lines = ["The arm asks the sex question"];
@@ -1677,7 +1677,7 @@ describe("the streak goal", () => {
     expect((await post("/start/streak", { answer: "9" }, session)).status).toBe(200);
     expect((await store.getProfile(user))!.streak_goal_days).toBeNull();
     const res = await post("/start/streak", { answer: "30" }, session);
-    expect(res.headers.get("location")).toBe("/start/signup");
+    expect(res.headers.get("location")).toBe("/start/offer");
     expect((await store.getProfile(user))!.streak_goal_days).toBe(30);
     // Reopened, it shows the pick rather than the default.
     expect(await (await get("/start/streak", session)).text()).toMatch(/value="30"[^>]*checked/);
@@ -1687,7 +1687,7 @@ describe("the streak goal", () => {
     const session = await planned();
     expect((await get("/start", session)).headers.get("location")).toBe("/start/streak");
     const res = await post("/start/streak", { answer: "14" }, session);
-    expect(res.headers.get("location")).toBe("/start/signup");
+    expect(res.headers.get("location")).toBe("/start/offer");
     expect((await get("/start", session)).headers.get("location")).toBe("/start/country");
   });
 
@@ -1904,16 +1904,16 @@ describe("the soft offer after the plan", () => {
     expect(html).toContain('href="https://eait.fit/privacy"');
   });
 
-  it("lets the offer go quietly — × is the web app's first meal", async () => {
+  it("lets the offer go quietly — × is the flow's own next place (ieat-app#3205)", async () => {
     const session = await toPlan(true);
     const html = await (await get("/start/offer", session)).text();
-    // The plan page's own way into the app: the root route, which renders the one-meal flow
-    // while nothing is logged.
+    // The close is `resumeTo`'s answer, not a hard-coded exit: this signed-in session is still
+    // mid-funnel with the streak goal unasked — so the next place is that question, not out.
     expect(html).toMatch(/aria-label="[^"]*"[^>]*>×<\/a>/);
-    expect(html).toContain('href="/"');
+    expect(html).toContain('href="/start/streak"');
   });
 
-  it("keeps the offer behind its own route — the plan's only ask is the sign-up (W3)", async () => {
+  it("keeps the offer behind its own route — the plan leads to it through the streak goal", async () => {
     const session = await toPlan();
     const html = await (await get("/start/plan", session)).text();
     expect(html).not.toContain('href="/start/offer"');
@@ -1928,13 +1928,113 @@ describe("the soft offer after the plan", () => {
     expect(early.status).toBe(303);
     expect(early.headers.get("location")).toBe("/start/q");
 
-    // No checkout configured is nothing to offer: straight to where × would have gone.
+    // No checkout configured is nothing to offer: straight to where × would have gone —
+    // `resumeTo`'s answer for this signed-in, still-onboarding session, the streak question.
     router({ ...CONFIG }, undefined, undefined, false);
     const session2 = await signIn();
     await answerAll(session2, ANSWERS);
     const noCheckout = await get("/start/offer", session2);
     expect(noCheckout.status).toBe(303);
-    expect(noCheckout.headers.get("location")).toBe("/start/chat");
+    expect(noCheckout.headers.get("location")).toBe("/start/streak");
+  });
+});
+
+describe("purchase before sign-up (ieat-app#3205)", () => {
+  /** The full walk on the session account — questions, plan, streak — standing at the offer. */
+  const atOffer = async (webApp = true) => {
+    router({ ...CONFIG, webPaywall: PAYWALL }, undefined, undefined, webApp);
+    const session = await answerAll(undefined, ANSWERS);
+    expect((await post("/start/streak", { answer: "14" }, session)).headers.get("location"))
+      .toBe("/start/offer");
+    return { session, userId: await webUser(session) };
+  };
+  const paid = (userId: string) => store.putEntitlement(userId, {
+    expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+    productId: "yearly", eventAt: new Date().toISOString(), trial: false,
+  });
+
+  it("walks an anonymous session from the plans to a checkout that names ITS account", async () => {
+    const { session, userId } = await atOffer();
+    const offer = await get("/start/offer", session);
+    expect(offer.status).toBe(200);
+    expect(await offer.text()).toContain('action="/start/checkout"');
+    // The account id is filled from the session, so the RevenueCat delivery lands on the
+    // account the questions already ran on — anonymous or not (start.ts, the checkout route).
+    expect((await get("/start/checkout", session)).headers.get("location"))
+      .toBe(`https://pay.rev.cat/eait/${userId}`);
+    // Still anonymous: every account credential the account ever had is this browser's cookie.
+    expect(await isAnonymous(deps, userId)).toBe(true);
+  });
+
+  it("points the offer's close at the sign-up for an anonymous session, not the product", async () => {
+    const { session } = await atOffer();
+    const html = await (await get("/start/offer", session)).text();
+    // A decline on the web has nowhere anonymous to land: the session is a cookie that dies
+    // with the browser, and the product refuses the first meal `identity-required`. Required
+    // or not, the sign-in is the only honest way forward.
+    expect(html).toContain('href="/start/signup"');
+    expect(html).not.toContain('href="/start/chat"');
+  });
+
+  it("sends an anonymous decline of an unconfigured offer to the sign-up too", async () => {
+    router({ ...CONFIG }, undefined, undefined, true);
+    const session = await answerAll(undefined, ANSWERS);
+    const res = await get("/start/offer", session);
+    expect(res.headers.get("location")).toBe("/start/signup");
+  });
+
+  it("requires the sign-in once an anonymous account has paid — every page past the questions", async () => {
+    const { session, userId } = await atOffer();
+    await paid(userId);
+    // The checkout return lands wherever RevenueCat's success redirect points — `/start`, the
+    // plan, the offer again. Each one sends a paid anonymous account to the sign-in, because
+    // nothing else on this surface can keep what was bought.
+    for (const path of ["/start", "/start/plan", "/start/offer", "/start/checkout", "/start/streak", "/start/country"]) {
+      expect((await get(path, session)).headers.get("location"), path).toBe("/start/signup");
+    }
+    // A POST is gated the same way — the rule is on the account, not the method.
+    expect((await post("/start/country", { answer: "de" }, session)).headers.get("location"))
+      .toBe("/start/signup");
+    // `/start/chat` is the alias, answered before the session gate: on a host with the web
+    // app it was never a /start page to begin with. On one without, the gate reaches it.
+    expect((await get("/start/chat", session)).headers.get("location")).toBe("/#/chat");
+    // And the screen it lands on is "Save your plan" — the heading the onboarding content
+    // reserves for the session that already has one.
+    const html = await (await get("/start/signup", session)).text();
+    expect(html).toContain(escape(DEFAULT_ONBOARDING_CONTENT.signup.heading));
+  });
+
+  it("gates even the chat for a paid anonymous account where there is no web app", async () => {
+    const { session, userId } = await atOffer(false);
+    await paid(userId);
+    expect((await get("/start/chat", session)).headers.get("location")).toBe("/start/signup");
+  });
+
+  it("leaves a SIGNED-IN paid account alone — the gate is anonymity's, not the purchase's", async () => {
+    const { session, userId } = await atOffer();
+    const signed = await signIn("paid-signed", "google", undefined, session);
+    await paid(userId);
+    expect((await get("/start/plan", signed)).status).toBe(200);
+    expect((await get("/start", signed)).headers.get("location")).toBe("/start/country");
+  });
+
+  it("lands the return's sign-in on the country question, on the account that paid", async () => {
+    const { session, userId } = await atOffer();
+    await paid(userId);
+    const signed = await signIn("paid-return", "google", undefined, session);
+    // The identity attaches to the session account — the answers and the purchase stay.
+    expect(await webUser(signed)).toBe(userId);
+    // Streak answered, country deferred: the order picks up exactly where the flow left off.
+    expect((await get("/start/country", signed)).status).toBe(200);
+  });
+
+  it("still asks for the sign-in when the paid account's plan has lapsed", async () => {
+    const { session, userId } = await atOffer();
+    await store.putEntitlement(userId, {
+      expiresAt: new Date(Date.now() - 86_400_000).toISOString(),
+      productId: "yearly", eventAt: new Date(Date.now() - 172_800_000).toISOString(), trial: false,
+    });
+    expect((await get("/start/plan", session)).headers.get("location")).toBe("/start/signup");
   });
 });
 

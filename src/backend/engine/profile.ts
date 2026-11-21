@@ -27,6 +27,7 @@ import { analyticsServerContext } from "./analytics.ts";
 import { isStaffAccount } from "./notify.ts";
 import { MAX_WINDOW_DAYS } from "./diary.ts";
 import { unpaidRefused } from "./caps.ts";
+import { isAnonymous } from "./identity.ts";
 import { legalUrls } from "../brand.ts";
 
 /**
@@ -44,6 +45,10 @@ async function limitsOf(deps: EngineDeps, userId: string, entitled: boolean): Pr
     dailyPhotoCap: dailyPhotoCap(deps.config),
     // The paywall's own answer (`checkCaps`), the admin's grant included — so the app needs no count.
     subscriptionRequired: !entitled && await unpaidRefused(deps, userId),
+    // Anonymous AND paying is the one combination that still owes a sign-in (ieat-app#3203): an
+    // unpaid anonymous account is refused before it ever meets the diary, so it owes nothing yet —
+    // the sign-in it has not made is the onboarding step it is still standing in front of.
+    identityOwed: entitled && await isAnonymous(deps, userId),
     // The SAME bound `/v1/diary/week` refuses with. It governs which days can be MARKED, not which
     // can be opened: `/v1/diary/day` answers for any date, and the picker offers every past one.
     diaryWindowDays: MAX_WINDOW_DAYS,

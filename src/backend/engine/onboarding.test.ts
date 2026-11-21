@@ -712,7 +712,7 @@ describe("experiments (ieat-app#2669)", () => {
     // diet before medical is the default; medical first is a valid arm that drops the prelim beat.
     const ARM_ORDER = [
       "welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target", "pace",
-      "counted", "barrier", "situation", "medical", "diet", "summary", "signup",
+      "counted", "barrier", "situation", "medical", "diet", "summary",
     ];
     const ordered = (order: string[] | null = ARM_ORDER) => experiment({
       variants: [
@@ -756,7 +756,7 @@ describe("experiments (ieat-app#2669)", () => {
 
     it("refuses to start an experiment whose stored order no longer validates", async () => {
       const { startOnboardingExperiment } = await import("./onboarding.ts");
-      const e = ordered(["welcome", "pace", "summary", "signup"]);
+      const e = ordered(["welcome", "pace", "summary"]);
       e.rules = { surfaces: ["app"] } as never;
       await store.putOnboardingExperiment(e as never);
       await store.setSwitch("onboarding.experiments", true, userId);
@@ -779,7 +779,7 @@ describe("experiments (ieat-app#2669)", () => {
       const e = ordered();
       await store.putOnboardingExperiment(e as never);
       const defaultOrder = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
-        "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup"];
+        "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary"];
       expect(await saveOnboardingVariantOrder(deps, e.id, 1, defaultOrder)).toEqual({ ok: true });
       expect((await store.listOnboardingExperiments()).find((x) => x.id === e.id)!.variants[1]!.order).toBeUndefined();
       // One beat short of the default is an order, and is kept.

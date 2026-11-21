@@ -12,6 +12,7 @@ import { SIGNUP_COPY, signupCopyFor } from "./signup-copy.ts";
 const KEYS = [
   "startCta", "haveAccountCta", "signUpHeading", "saveHeading", "signInMealHeading",
   "termsLabel", "termsLink", "privacyLink", "consentMarketing", "errorTerms",
+  "notNow", "saveDiary",
 ] as const;
 
 describe("SIGNUP_COPY", () => {
