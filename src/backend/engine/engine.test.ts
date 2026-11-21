@@ -15,9 +15,10 @@ import { logMail } from "../mail/log.ts";
 import { remember } from "./chat.ts";
 import { LANGS, LANGS_READY } from "@eait/shared";
 import { charge } from "./caps.ts";
+import { redeemReferral } from "./referral.ts";
 import {
   appendLines, applyCorrection, attachPhotos, cancelPendingMeal, chatHistory, confirmPendingMeal, day, drainJobs, editMeal, handleText,
-  logPhotoMeal, patchProfile, photoJob, profileView, queuePhoto, queueMealUpdate, removePhotoJob, reanalyzeMeal, redateMeal, startJobs, stepApplies, week, type EngineDeps,
+  logNumbersMeal, logPhotoMeal, patchProfile, photoJob, profileView, queuePhoto, queueMealUpdate, removePhotoJob, reanalyzeMeal, redateMeal, startJobs, stepApplies, week, type EngineDeps,
 } from "./index.ts";
 import { MAX_DAY_OFFSET } from "../llm/port.ts";
 
@@ -36,18 +37,22 @@ function makeDeps(over: Partial<Config> = {}, llm: LlmPorts = demoPorts()): Engi
   return { store, config: { ...CONFIG, ...over }, llm, push: fakePush(), mail: logMail() };
 }
 
-/** A fully onboarded user. Returns the id. */
-async function onboard(over: Record<string, unknown> = {}): Promise<string> {
+/** A fully onboarded ANONYMOUS account — a device session alone, sign-in still owed. */
+async function onboardAnonymous(over: Record<string, unknown> = {}): Promise<string> {
   const { userId } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
-  // A real account, the S8 kind: a device session alone is anonymous, and anonymous
-  // is refused analysis. The tests below are about everything AFTER sign-up.
-  await store.addIdentity(userId, "google", "g-" + userId.slice(0, 8));
   const out = await patchProfile(deps, userId, {
     goal: "lose", sex: "female", birth_year: 1990, height_cm: 165, weight_kg: 70,
     target_weight_kg: 65, activity: "some", pace: "steady", country: "de",
     restrictions: [], complete_onboarding: true, ...over,
   });
   if (!out || !out.ok) throw new Error(`onboarding failed: ${JSON.stringify(out)}`);
+  return userId;
+}
+
+/** A fully onboarded user carrying a real identity. Returns the id. */
+async function onboard(over: Record<string, unknown> = {}): Promise<string> {
+  const userId = await onboardAnonymous(over);
+  await store.addIdentity(userId, "google", "g-" + userId.slice(0, 8));
   return userId;
 }
 
@@ -378,18 +383,52 @@ describe("photo logging", () => {
     // attaches, and analysis before that is answered `identity-required` rather than charged.
     // Photo AND text: a sentence must not be the free way around the ask, which is why the gate
     // sits in `checkCaps` and not beside one of the two callers.
-    const { userId } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
-    const out = await patchProfile(deps, userId, {
-      goal: "lose", sex: "female", birth_year: 1990, height_cm: 165, weight_kg: 70,
-      target_weight_kg: 65, activity: "some", pace: "steady", country: "de",
-      restrictions: [], complete_onboarding: true,
-    });
-    if (!out || !out.ok) throw new Error("onboarding failed");
+    const userId = await onboardAnonymous();
     expect(await store.countUserAnalyses(userId)).toBe(0);
     expect(await logPhotoMeal(deps, userId, photo())).toEqual({ kind: "identity-required" });
     expect((await handleText(deps, userId, { text: "two eggs and toast" })).kind).toBe("identity-required");
     // Charged nothing — the refusal came first, so the free meal is still this account's to have.
     expect(await store.countUserAnalyses(userId)).toBe(0);
+  });
+
+  it("refuses a NON-PAYING anonymous account even on the admin's grant", async () => {
+    // The grant buys analyses, not an identity: minting device accounts must stay worthless,
+    // which is what the rule protects. T1's `own-meal` arm reads the same (#3165, not widened).
+    const userId = await onboardAnonymous();
+    await store.setFreeAnalyses(userId, 5);
+    expect(await logPhotoMeal(deps, userId, photo())).toEqual({ kind: "identity-required" });
+  });
+
+  it("lets a PAYING anonymous account analyse — purchase can come before sign-up (ieat-app#3202)", async () => {
+    // Order switched: questions → plans → payment → 'Save your plan', which can be skipped. A
+    // payer who skips it stays anonymous — and must not be refused what they just bought
+    // (App Review 3.1.2(a)). Photo and text alike, and the model-free logs (`checkFreeLog`).
+    const userId = await onboardAnonymous();
+    await entitle(userId);
+    const d = makeDeps({ paidDailyPhotoCap: 2 });
+    expect((await logPhotoMeal(d, userId, photo())).kind).toBe("logged");
+    expect((await handleText(d, userId, { text: "two eggs and toast" })).kind).toBe("proposed");
+    expect((await logNumbersMeal(d, userId, { name: "an apple", kcal: 95, protein_g: 0, fat_g: 0, carbs_g: 25 })).kind).toBe("logged");
+    // The entitlement buys the bigger daily photo cap, not no cap: the third photo is refused.
+    expect((await logPhotoMeal(d, userId, photo())).kind).toBe("logged");
+    expect(await logPhotoMeal(d, userId, photo())).toEqual({ kind: "cap-exceeded", scope: "user" });
+  });
+
+  it("refuses an anonymous account again once its subscription has LAPSED", async () => {
+    const userId = await onboardAnonymous();
+    await entitle(userId, -1000);
+    expect(await logPhotoMeal(deps, userId, photo())).toEqual({ kind: "identity-required" });
+    expect(await store.countUserAnalyses(userId)).toBe(0);
+  });
+
+  it("lets a REFERRAL week open the gate anonymously too — the week is the same live tier", async () => {
+    // `identityOwed` reads `entitlementFor`'s one answer, which covers the referral week beside
+    // the subscription: a friend who redeems a code before signing in gets the week they were
+    // given, at the paid tier the profile reports to them.
+    const referrer = await onboard();
+    const userId = await onboardAnonymous();
+    await redeemReferral(deps, userId, (await store.referralOf(referrer))!.code);
+    expect((await logPhotoMeal(deps, userId, photo())).kind).toBe("logged");
   });
 
   it("gives an entitled account the paid daily cap, photos only", async () => {
