@@ -35,7 +35,7 @@ import type { Frame } from "../shell.ts";
 import { outbox, type WebQueued } from "../outbox.ts";
 import { shrinkPhotos } from "../photo.ts";
 import {
-  ctaEl, gramMacsEl, kitEl, optionRowEl, photoHeroEl, verdictListEl,
+  ctaEl, fitHero, gramMacsEl, kitEl, optionRowEl, photoHeroEl, verdictListEl,
 } from "../kit.ts";
 
 /**
@@ -146,6 +146,7 @@ export function logScreen(frame: Frame): HTMLElement {
       callouts: callouts(items),
     });
     h.classList.toggle("reading", scan);
+    fitHero(h as HTMLElement, h.querySelector("img")!);
     return h;
   };
 

@@ -37,8 +37,10 @@ export const logCss = `
 .loggrid { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
 .loggrid.wide { grid-template-columns: 1fr 400px; }
 .logcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.log .hero { height: 600px; border-radius: var(--r-card); }
-.log .hero.reading { height: 560px; }
+/* #3297: the photo's own aspect-ratio is written in on load (kit.ts fitHero); 4/3 is only the
+   frame before it arrives, and the screen's max-height stays the cap. */
+.log .hero { aspect-ratio: 4 / 3; max-height: 600px; border-radius: var(--r-card); }
+.log .hero.reading { max-height: 560px; }
 .log .logcol.tall { height: 560px; }
 .log .logpush { flex: 1; }
 
@@ -65,7 +67,7 @@ export const logCss = `
 
 @media (max-width: 760px) {
   .loggrid, .loggrid.wide { grid-template-columns: 1fr; }
-  .log .hero, .log .hero.reading { height: 320px; }
+  .log .hero, .log .hero.reading { max-height: 320px; }
   .log .logcol.tall { height: auto; }
 }
 `;

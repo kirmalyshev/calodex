@@ -27,7 +27,7 @@ import type {
 } from "@eait/shared/contract";
 import { ApiError, Unauthenticated, api, apiBlob } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
-import { blobSrc, eaitIconEl, gramMacsEl, optionRowEl, verdictListEl } from "../kit.ts";
+import { blobSrc, eaitIconEl, fitHero, gramMacsEl, optionRowEl, verdictListEl } from "../kit.ts";
 import { failureOf, outbox } from "../outbox.ts";
 import { shrinkPhotos } from "../photo.ts";
 import { updateFor } from "../queue.ts";
@@ -469,6 +469,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
       const img = el("img", "") as HTMLImageElement;
       img.alt = "";
       img.src = await blobSrc(blob);
+      fitHero(hero, img, 4 / 3);
       hero.prepend(img);
     }).catch(() => { /* a photo that won't read draws the hero's own paper */ });
   };

@@ -29,7 +29,10 @@ export const mealCss = `
 .qs small{margin-left:auto;font-size:13px;color:var(--muted);font-weight:400}
 .mqueued{position:relative;overflow:hidden}
 .msplit{display:grid;grid-template-columns:1fr 1fr;min-height:0}
-.msplit .hero{min-height:320px}
+/* #3297: fitHero writes the photo's own aspect-ratio on load and the box sits at the column's
+   top rather than stretching to the sheet's height; 4/3 is the frame before the photo arrives. */
+.msplit .hero{align-self:start;aspect-ratio:4/3;max-height:70vh}
+.msplit .hero.mnoimg{align-self:stretch;aspect-ratio:auto;max-height:none}
 .msplit .mnoimg{display:flex;align-items:center;justify-content:center;background:var(--accent-tint)}
 .msplit .mnoimg .ico{width:44px;height:44px;background:var(--accent)}
 .msheet{padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -152,7 +155,7 @@ button.ingbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:760px){
   .mdetail>.wcol:first-child{display:none}
   .mdet{padding:0;background:transparent;box-shadow:none}
-  .mdet .hero{height:220px;min-height:0;border-radius:12px;overflow:hidden}
+  .mdet .hero{aspect-ratio:4/3;min-height:0;max-height:220px;border-radius:12px;overflow:hidden}
   .mdet .msheet{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);margin-top:12px}
 }
 `;
