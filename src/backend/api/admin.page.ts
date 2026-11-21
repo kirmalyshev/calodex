@@ -2421,12 +2421,16 @@ details.how p { margin-top: 8px; }
       funnelDims(f.dimensions);
       var kp = $("funnel-kpi");
       kp.textContent = "";
-      kpi(kp, "Started", String(f.sessions), "", "");
-      kpi(kp, "Finished", String(f.completed), "", "");
-      kpi(kp, "Completion", pct1(f.completed, f.sessions), "", "");
-      kpi(kp, "Converted", String(f.paid.converted), "", f.sessions ? pct1(f.paid.converted, f.sessions) + " of starters" : "");
+      // The target metric is payment (ieat-app#3326): paid / started leads, the funnel to it
+      // follows, and answering the questions is a secondary tile.
+      var atPaywall = 0;
+      f.rows.forEach(function (r) { if (r.place === "paywall") atPaywall = r.people; });
+      kpi(kp, "Paid / started", pct1(f.paid.converted, f.sessions), "", f.paid.converted + " paid of " + f.sessions + " started");
+      kpi(kp, "Reached paywall", pct1(atPaywall, f.sessions), "", atPaywall + " of " + f.sessions);
+      kpi(kp, "Paywall \u2192 paid", pct1(f.paid.converted, atPaywall), "", f.paid.converted + " of " + atPaywall);
+      kpi(kp, "Completion", pct1(f.completed, f.sessions), "", f.completed + " finished the questions");
       $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff" +
-        ($("funnel-testers").checked ? "" : " and known testers") + " excluded \u00b7 app content v" +
+        ($("funnel-testers").checked ? "" : " and known testers") + " excluded \u00b7 runs that started in the window \u00b7 app content v" +
         f.contentVersion + " \u00b7 counted by people who reached each step";
       var host = $("funnel-path");
       host.textContent = "";
@@ -2438,7 +2442,9 @@ details.how p { margin-top: 8px; }
         return;
       }
       var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.people }; });
-      steps.push({ name: "Answered the questions", id: "complete", n: f.completed, fin: true });
+      // The questions are answered BEFORE the paywall, so the step sits there (ieat-app#3326).
+      var atPay = steps.findIndex(function (s) { return s.id === "paywall"; });
+      steps.splice(atPay < 0 ? steps.length : atPay, 0, { name: "Answered the questions", id: "complete", n: f.completed, fin: true });
       // The funnel's last step (#812): of the starters, the runs whose account's own entitlement
       // record's earliest grant lands at or after the run's start — the server's record, never a
       // client event; a record older than that is a payment this run did not cause.
@@ -2647,7 +2653,8 @@ details.how p { margin-top: 8px; }
    * decline reads "Paywall · declined" rather than "Saw the sign-up screen". */
   function lastPlaceLabel(a) {
     if (!a.lastPlace) return null;
-    if (a.lastPlace === "paywall" && a.paywallResult) return "Paywall · " + a.paywallResult;
+    // A decline followed by a purchase reads as paid (ieat-app#3326): the entitlement outranks the last answer.
+    if (a.lastPlace === "paywall" && a.paywallResult) return "Paywall · " + (a.paid ? "paid" : a.paywallResult);
     return STEP_NAMES[a.lastPlace] || a.lastPlace;
   }
 

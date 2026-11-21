@@ -1114,3 +1114,24 @@ function contentWith(cta: string): OnboardingContent {
   c.welcome.cta = cta;
   return c;
 }
+
+// ieat-app#3326: the funnel counts a COHORT — runs that STARTED in the window — so no step can
+// exceed the first and a run begun before the window never "joins" mid-way.
+describe("the funnel cohort (ieat-app#3326)", () => {
+  it("leaves out a run whose first event is before the window", async () => {
+    let t = Date.parse("2026-11-01T10:00:00.000Z");
+    const s = memoryStore({ now: () => t });
+    const d: EngineDeps = { ...deps, store: s };
+    const u1 = await s.createUser("en");
+    const u2 = await s.createUser("en");
+    // u1 starts before the window and is still answering inside it; u2 starts inside it.
+    await recordOnboardingEvents(d, u1, [event({ sessionId: "old", place: "welcome" })], APP_REQUEST);
+    t = Date.parse("2026-11-10T10:00:00.000Z");
+    await recordOnboardingEvents(d, u1, [event({ sessionId: "old", place: "goal" })], APP_REQUEST);
+    await recordOnboardingEvents(d, u2, [event({ sessionId: "new", place: "welcome" })], APP_REQUEST);
+    const f = await s.onboardingFunnel({ from: new Date("2026-11-05T00:00:00.000Z"), to: null });
+    expect(f.sessions).toBe(1);
+    expect(f.rows.find((r) => r.place === "goal")).toBeUndefined();
+    expect(f.rows.find((r) => r.place === "welcome")!.people).toBe(1);
+  });
+});

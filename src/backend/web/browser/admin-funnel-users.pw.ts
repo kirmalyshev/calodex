@@ -25,6 +25,7 @@ const FUNNEL = {
   rows: [
     { place: "welcome", views: 3, people: 3, answers: 0, backs: 0, rejects: 0, medianMs: null },
     { place: "summary", views: 3, people: 3, answers: 0, backs: 0, rejects: 0, medianMs: null },
+    { place: "paywall", views: 2, people: 2, answers: 1, backs: 0, rejects: 0, medianMs: null },
   ],
 };
 
@@ -47,6 +48,12 @@ const ACCOUNTS = {
     userId: "55555555-4444-3333-2222-111111111111", lang: "en", country: "us",
     startedAt: "2026-11-05T07:00:00.000Z", lastPlace: "paywall", sessions: 1,
     completed: true, paywall: true, paywallResult: "declined", paid: null,
+  }, {
+    // ieat-app#3326: declined, then bought later — the last screen must not read as a decline.
+    userId: "44444444-3333-2222-1111-000000000000", lang: "en", country: "us",
+    startedAt: "2026-11-04T07:00:00.000Z", lastPlace: "paywall", sessions: 1,
+    completed: true, paywall: true, paywallResult: "declined",
+    paid: { kind: "monthly", productId: "monthly_499", msFromStart: 240000, live: true },
   }],
 };
 
@@ -116,6 +123,21 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await page.goto("/admin#funnel");
   await expect(page.locator("#app")).toBeVisible();
 
+  // ieat-app#3326: payment is the headline — paid / started first, completion a secondary tile.
+  const kpis = page.locator("#funnel-kpi > div");
+  await expect(kpis.nth(0)).toContainText("Paid / started");
+  await expect(kpis.nth(0)).toContainText("33.3%");
+  await expect(kpis.nth(0)).toContainText("1 paid of 3 started");
+  await expect(kpis.nth(1)).toContainText("Reached paywall");
+  await expect(kpis.nth(1)).toContainText("66.7%");
+  await expect(kpis.nth(2)).toContainText("Paywall → paid");
+  await expect(kpis.nth(2)).toContainText("50.0%");
+  await expect(kpis.nth(3)).toContainText("Completion");
+  // The steps run in the order the flow runs: the questions are answered BEFORE the paywall,
+  // and the paid row is last.
+  const names = await page.locator("#funnel-path .fp-nm").evaluateAll((els) => els.map((e) => e.childNodes[0]!.textContent));
+  expect(names).toEqual(["Saw the welcome screen", "Saw their plan", "Answered the questions", "Saw the plans sheet", "Converted to paid"]);
+
   // The aggregate's last step is the payment, off the server's own record.
   const path = page.locator("#funnel-path");
   await expect(path).toContainText("Converted to paid");
@@ -138,6 +160,9 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   // result — not as "left at sign-up".
   const declined = page.locator("#funnel-users .fa-row", { hasText: "55555555" });
   await expect(declined).toContainText("Paywall · declined");
+
+  await expect(page.locator("#funnel-users .fa-row", { hasText: "44444444" })).toContainText("Paywall · paid");
+  await expect(page.locator("#funnel-users .fa-row", { hasText: "44444444" })).not.toContainText("declined");
 
   // A record that lapsed is named, not read as still paying.
   await expect(page.locator("#funnel-users .fa-row", { hasText: "77777777" })).toContainText("trial ended");

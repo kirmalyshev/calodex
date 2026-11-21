@@ -1900,9 +1900,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     async onboardingFunnel(range, staffIds = [], includeTesters = false, filters: FunnelFilters = {}) {
       const lo = range.from?.getTime() ?? -Infinity;
       const hi = range.to?.getTime() ?? Infinity;
+      // A COHORT (ieat-app#3326): a run with any event before the window began earlier, and is out.
+      const before = new Set([...onboardingEvents.values()].filter((e) => e.receivedAt < lo).map((e) => `${e.userId}|${e.sessionId}`));
       const population = [...onboardingEvents.values()]
         .filter((e) => e.receivedAt >= lo && e.receivedAt <= hi && !staffSet.has(e.userId) && !staffIds.includes(e.userId)
-          && (includeTesters || !tester(e.userId)));
+          && !before.has(`${e.userId}|${e.sessionId}`) && (includeTesters || !tester(e.userId)));
       const valueOf = (e: StoredEvent, k: keyof FunnelFilters) =>
         k === "acq_source" ? effectiveAcqSource(acquisitions.get(e.userId)?.source ?? null, referredBy.has(e.userId))
           : k === "surface" ? e.context.surface ?? "app" : e.context[k];
