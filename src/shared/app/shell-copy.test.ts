@@ -3,12 +3,13 @@
 // keys exist, and the labels are the boards' words.
 
 import { describe, expect, it } from "bun:test";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { SHELL_COPY, shellCopyFor } from "./shell-copy.ts";
 
 describe("SHELL_COPY", () => {
   it("has every nav label in every language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = SHELL_COPY[lang];
       expect(copy, lang).toBeDefined();
       for (const key of ["navHome", "navProgress", "navChat", "navProfile", "logMeal"] as const) {

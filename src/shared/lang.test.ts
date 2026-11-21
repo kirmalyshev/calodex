@@ -40,13 +40,22 @@ describe("t", () => {
 
 describe("what the product claims to speak", () => {
   it("is the eight Kirill named, in the order the picker shows them", () => {
-    expect(LANGS).toEqual(["en", "fr", "de", "it", "es", "vi", "id", "ru", "pt-BR", "ja", "ko", "zh-Hans", "zh-Hant", "tr", "pl", "nl", "uk", "sv", "th", "hi", "cs", "ro", "el", "hu", "da", "fi", "no", "sk", "hr", "sl", "ca", "ms", "pt-PT", "bn", "gu", "kn", "ml", "mr", "or", "pa", "ta", "te"]);
+    expect(LANGS).toEqual(["en", "fr", "de", "it", "es", "vi", "id", "ru", "pt-BR", "ja", "ko", "zh-Hans", "zh-Hant", "tr", "pl", "nl", "uk", "sv", "th", "hi", "cs", "ro", "el", "hu", "da", "fi", "no", "sk", "hr", "sl", "ca", "ms", "pt-PT", "bn", "gu", "kn", "ml", "mr", "or", "pa", "ta", "te", "ar"]);
   });
 
   it("names only languages whose tables are populated", () => {
     expect(LANGS_READY.every((l) => (LANGS as readonly string[]).includes(l))).toBe(true);
     expect(LANGS_READY).toContain("en");
     expect(new Set(LANGS_READY).size).toBe(LANGS_READY.length);
+  });
+
+  it("stores and answers in Arabic without offering it in a picker (ieat-app#3310)", () => {
+    // `ar` is in `LANGS` so a phone in an Arabic locale stores it and the model answers in it —
+    // the coach's text is plain. The app cannot yet RENDER itself in Arabic (RTL waits on #358's
+    // ruling), so `LANGS_READY` must not claim it: a picker row that falls back to English on
+    // every screen looks like a bug.
+    expect(LANGS).toContain("ar");
+    expect(LANGS_READY).not.toContain("ar");
   });
 
   it("labels every supported language in ITSELF, so the row is readable to the person picking", () => {
@@ -144,7 +153,9 @@ describe("numbers and dates", () => {
     expect(dayLabel("en", "2026-08-24", "2026-08-27")).toBe("Mon 24 Aug");
     expect(dayLabel("en", "2026-08-24", "2026-08-27")).not.toContain("-");
     expect(dayLabel("de", "2026-08-24", "2026-08-27")).not.toBe("Mon 24 Aug");
-    for (const lang of LANGS) {
+    // `LANGS_READY`, not `LANGS`: a stored language the app has no words for (`ar`) reads the
+    // English word at the key — that fallback is the design, not a gap to fill here.
+    for (const lang of LANGS_READY) {
       if (lang === "en") continue;
       expect(dayLabel(lang, "2026-08-27", "2026-08-27")).not.toBe("today");
       expect(dayLabel(lang, "2026-08-24", "2026-08-27")).not.toContain("-");
@@ -292,6 +303,11 @@ describe("narrowLang", () => {
     expect(narrowLang("ru;q=1.0")).toBe("ru");
     expect(narrowLang("fr ;q=0.8")).toBe("fr");
     expect(narrowLang("de-DE;q=0.9")).toBe("de");
+  });
+
+  it("narrows an Arabic locale to `ar`, not to English (ieat-app#3310)", () => {
+    expect(narrowLang("ar-SA")).toBe("ar");
+    expect(narrowLang("ar")).toBe("ar");
   });
 
   it("still narrows everything it always did", () => {

@@ -8,7 +8,7 @@
 // argument parity; these are the things that are true of THIS surface in particular.
 
 import { describe, expect, it } from "bun:test";
-import { LANGS, lintCopy } from "@eait/shared";
+import { LANGS, LANGS_READY, lintCopy } from "@eait/shared";
 import { telegramCopyFor } from "./copy.ts";
 
 const FIGURES = { eaten: "1 100", plan: "1 900", protein: "82", proteinTarget: "120" };
@@ -36,15 +36,15 @@ describe("the bot's words in eight languages", () => {
     // a tool. That renders a complete, correct English sentence and passes every gate and every
     // other assertion in this file. This is the one that would fail.
     for (const field of ["stranger", "notYours", "logged", "failed"] as const) {
-      const said = LANGS.map((l) => telegramCopyFor(l)[field]);
-      expect(new Set(said).size, `${field} is not translated in all eight`).toBe(LANGS.length);
+      const said = LANGS_READY.map((l) => telegramCopyFor(l)[field]);
+      expect(new Set(said).size, `${field} is not translated in all eight`).toBe(LANGS_READY.length);
     }
     // `connectedTail` is a template now ({coach}): compared filled, so the name doesn't hide a
     // language that is the English.
-    const tails = LANGS.map((l) => telegramCopyFor(l).connectedTail({ coach: "Gabie" }));
-    expect(new Set(tails).size, "connectedTail is not translated in all eight").toBe(LANGS.length);
-    const refusals = LANGS.map((l) => telegramCopyFor(l).refusals["not-onboarded"]);
-    expect(new Set(refusals).size, "not-onboarded is not translated in all eight").toBe(LANGS.length);
+    const tails = LANGS_READY.map((l) => telegramCopyFor(l).connectedTail({ coach: "Gabie" }));
+    expect(new Set(tails).size, "connectedTail is not translated in all eight").toBe(LANGS_READY.length);
+    const refusals = LANGS_READY.map((l) => telegramCopyFor(l).refusals["not-onboarded"]);
+    expect(new Set(refusals).size, "not-onboarded is not translated in all eight").toBe(LANGS_READY.length);
   });
 
   it("fills both templates in every language, with nothing left over", () => {

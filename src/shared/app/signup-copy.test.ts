@@ -5,6 +5,7 @@
 // exist, the consent label keeps its two placeholders, and the English is the board's words.
 
 import { describe, expect, it } from "bun:test";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { SIGNUP_COPY, signupCopyFor } from "./signup-copy.ts";
 
@@ -15,7 +16,7 @@ const KEYS = [
 
 describe("SIGNUP_COPY", () => {
   it("has every key in every language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = SIGNUP_COPY[lang];
       expect(copy, lang).toBeDefined();
       for (const key of KEYS) {
@@ -27,7 +28,7 @@ describe("SIGNUP_COPY", () => {
   it("keeps the consent label's two placeholders in every language", () => {
     // `{terms}` and `{privacy}` hold the document names — a translation that drops one renders an
     // agreement that names half of what it means.
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = SIGNUP_COPY[lang];
       for (const ph of ["{terms}", "{privacy}"]) {
         expect(copy!.termsLabel, `${lang}.termsLabel`).toContain(ph);

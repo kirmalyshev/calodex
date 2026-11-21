@@ -3,6 +3,7 @@
 // table's own contract: the keys exist, and the claims gate reads every string it ships.
 
 import { describe, expect, it } from "bun:test";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { lintCopy } from "../claims.ts";
 import { ERROR_COPY, errorCopyFor, type ErrorCopy } from "./error-copy.ts";
@@ -17,7 +18,7 @@ const fields = (copy: ErrorCopy) => walk(copy, "", {});
 
 describe("ERROR_COPY", () => {
   it("has every key in every language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = ERROR_COPY[lang];
       expect(copy, lang).toBeDefined();
       for (const [k, v] of Object.entries(fields(copy!))) {
@@ -27,7 +28,7 @@ describe("ERROR_COPY", () => {
   });
 
   it("carries no claim the gate would refuse, in any of the eight", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const named: Record<string, string> = {};
       for (const [k, v] of Object.entries(fields(ERROR_COPY[lang]!))) named[`ERROR_COPY.${k}`] = v;
       expect(lintCopy(named).map((v) => `${v.field}: ${v.pattern} "${v.span}"`), lang).toEqual([]);

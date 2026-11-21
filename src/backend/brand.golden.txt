@@ -40,6 +40,7 @@ shared.averageCopyFor or 3798b4d9ce9bd713
 shared.averageCopyFor pa b9fa707165817e6e
 shared.averageCopyFor ta 3d62cb6e82aae1d3
 shared.averageCopyFor te 11b69bf4653835a6
+shared.averageCopyFor ar 31d1215e0ed8b6a7
 shared.bmiCopy en 0ab21fa48dddeed5
 shared.bmiCopy fr 1fcfed62b7b880db
 shared.bmiCopy de 4030f061d9344eec
@@ -82,6 +83,7 @@ shared.bmiCopy or 40a0f19c85cd3550
 shared.bmiCopy pa cb66a359b0500319
 shared.bmiCopy ta cc390360725627f3
 shared.bmiCopy te 0220e33151874072
+shared.bmiCopy ar 0ab21fa48dddeed5
 shared.chatCopyFor en bf21f1aa19921cc7
 shared.chatCopyFor fr e9e557f641500ae3
 shared.chatCopyFor de 9f38090cc98e5ff7
@@ -124,6 +126,7 @@ shared.chatCopyFor or 5ea498a5eef7411b
 shared.chatCopyFor pa 230045d9aabff273
 shared.chatCopyFor ta b950def720e8729b
 shared.chatCopyFor te dadafbc877859cea
+shared.chatCopyFor ar bf21f1aa19921cc7
 shared.chatScreenCopyFor en e14a0630c6cc2e60
 shared.chatScreenCopyFor fr 8802b9af64957816
 shared.chatScreenCopyFor de 9dee771233f78790
@@ -166,6 +169,7 @@ shared.chatScreenCopyFor or 8cdcd86f962d0b92
 shared.chatScreenCopyFor pa f38da0f90b57a233
 shared.chatScreenCopyFor ta ab3d923f8adbce06
 shared.chatScreenCopyFor te f6e7cb1c1e4a2df7
+shared.chatScreenCopyFor ar e14a0630c6cc2e60
 shared.errorCopyFor en c819e85594be538f
 shared.errorCopyFor fr 46bfaefdab396b2a
 shared.errorCopyFor de dd7e6dd86b7cc77e
@@ -208,6 +212,7 @@ shared.errorCopyFor or 96c395189dbe8090
 shared.errorCopyFor pa 6d3f0fab34344624
 shared.errorCopyFor ta 8477a2cb071e4ea3
 shared.errorCopyFor te bc4779d6bc92c6be
+shared.errorCopyFor ar c819e85594be538f
 shared.foodSearchCopyFor en 323d6faa49488dd6
 shared.foodSearchCopyFor fr 0e7e5bebf4dd0c59
 shared.foodSearchCopyFor de 675ecda0680f8959
@@ -250,6 +255,7 @@ shared.foodSearchCopyFor or 677b5191f785b6ed
 shared.foodSearchCopyFor pa 933f9a559da92539
 shared.foodSearchCopyFor ta 63ffbb69256e5dcb
 shared.foodSearchCopyFor te 69cf139399929814
+shared.foodSearchCopyFor ar 323d6faa49488dd6
 shared.goalCopyFor en be7ebdf5d2ef82a5
 shared.goalCopyFor fr 30d38f33a498e052
 shared.goalCopyFor de 73178bdde29d444b
@@ -292,6 +298,7 @@ shared.goalCopyFor or d6c513ee833ba9e9
 shared.goalCopyFor pa 5e312a085e8f3982
 shared.goalCopyFor ta 937d20426175c189
 shared.goalCopyFor te 7f0025dd553b4a34
+shared.goalCopyFor ar be7ebdf5d2ef82a5
 shared.healthScreenCopyFor en 47317a632b210434
 shared.healthScreenCopyFor fr 5dacc9c01bb6f700
 shared.healthScreenCopyFor de 3672129e5cf1338f
@@ -334,6 +341,7 @@ shared.healthScreenCopyFor or 728bae9154f391af
 shared.healthScreenCopyFor pa f7f5aa152852ac2e
 shared.healthScreenCopyFor ta 541b7f2bed18a191
 shared.healthScreenCopyFor te 6a32e0d8df00885c
+shared.healthScreenCopyFor ar 47317a632b210434
 shared.homeCopyFor en 0e2a1200495e9a8a
 shared.homeCopyFor fr 5d0fad45b2e2e602
 shared.homeCopyFor de b2190948a5bdfff7
@@ -376,6 +384,7 @@ shared.homeCopyFor or 0dcb019ca0388185
 shared.homeCopyFor pa 954ce07fc860120b
 shared.homeCopyFor ta 456d0852fbd02ae6
 shared.homeCopyFor te 064a2fc81058f76e
+shared.homeCopyFor ar 0e2a1200495e9a8a
 shared.logCopyFor en 93c126838327fd84
 shared.logCopyFor fr e197f2d33b89cd5a
 shared.logCopyFor de 77a38a4117fdb13f
@@ -418,6 +427,7 @@ shared.logCopyFor or b6f191db5186ea9e
 shared.logCopyFor pa 4cb3af920f992711
 shared.logCopyFor ta 99b87882bbadb55d
 shared.logCopyFor te 03fe4014de58af8e
+shared.logCopyFor ar 93c126838327fd84
 shared.logReplyCopyFor en cefba2e7e5dc6a18
 shared.logReplyCopyFor fr 28106d83d3cdbfa7
 shared.logReplyCopyFor de f5830c115a5b4f24
@@ -460,6 +470,7 @@ shared.logReplyCopyFor or 68018596c3bdbbe0
 shared.logReplyCopyFor pa 29c3eec6c3893806
 shared.logReplyCopyFor ta f26ea48f40bf4cae
 shared.logReplyCopyFor te 1f7cd770346a4346
+shared.logReplyCopyFor ar cefba2e7e5dc6a18
 shared.mealCopyFor en 3a711ae2a50ec5c2
 shared.mealCopyFor fr d0dbe957811e625c
 shared.mealCopyFor de 757355c54f665795
@@ -502,6 +513,7 @@ shared.mealCopyFor or 052228cfab45cfd3
 shared.mealCopyFor pa c90a4ffae8c9f10b
 shared.mealCopyFor ta c55de463333ba28d
 shared.mealCopyFor te 4b40a3e3b54ee48a
+shared.mealCopyFor ar 3a711ae2a50ec5c2
 shared.mealReminderCopyFor en 325ac0d862e60559
 shared.mealReminderCopyFor fr 73a3037507ce5e55
 shared.mealReminderCopyFor de 2619c101ed01b261
@@ -544,6 +556,7 @@ shared.mealReminderCopyFor or 56bd83b6105a88cb
 shared.mealReminderCopyFor pa 6ed9769cfe96e070
 shared.mealReminderCopyFor ta ddc2f05a3e5ad9fd
 shared.mealReminderCopyFor te 8e264be35650bf40
+shared.mealReminderCopyFor ar 325ac0d862e60559
 shared.microGoalsCopyFor en 4354995799319340
 shared.microGoalsCopyFor fr c2de441071aa2efa
 shared.microGoalsCopyFor de e36abf187cb1438c
@@ -586,6 +599,7 @@ shared.microGoalsCopyFor or 96234bf5e3808fb4
 shared.microGoalsCopyFor pa 51fcd1dc3f85917e
 shared.microGoalsCopyFor ta 8a9437134a94c47d
 shared.microGoalsCopyFor te b08329312da19152
+shared.microGoalsCopyFor ar cec0c4190dc8db74
 shared.milestonesCopyFor en 4fbf5fae3f9df37c
 shared.milestonesCopyFor fr ff3e4f347f265657
 shared.milestonesCopyFor de 14c6ae257064ee7b
@@ -628,6 +642,7 @@ shared.milestonesCopyFor or 579a06641969ae64
 shared.milestonesCopyFor pa 2bfa027a2e9489b0
 shared.milestonesCopyFor ta d5dead67c4868b1f
 shared.milestonesCopyFor te 92539342f40bf88e
+shared.milestonesCopyFor ar 4fbf5fae3f9df37c
 shared.notificationCopyFor en 92438d37ef6b1d3c
 shared.notificationCopyFor fr 239f43b4c7aaf95e
 shared.notificationCopyFor de 570d179a8883f386
@@ -670,6 +685,7 @@ shared.notificationCopyFor or e903b64581fc7009
 shared.notificationCopyFor pa ccbcc6687ecfb5bf
 shared.notificationCopyFor ta fa1fa26abb144172
 shared.notificationCopyFor te 1e16fbdf8bed2d18
+shared.notificationCopyFor ar 92438d37ef6b1d3c
 shared.numbersCopyFor en de4ca04ab54b5571
 shared.numbersCopyFor fr 93a522e7fe088933
 shared.numbersCopyFor de 28870f3c2e90a264
@@ -712,6 +728,7 @@ shared.numbersCopyFor or c64122108477895f
 shared.numbersCopyFor pa 4cbc48bc22ce9311
 shared.numbersCopyFor ta 2bdbe82b03a567f3
 shared.numbersCopyFor te 559e3c1380f9c314
+shared.numbersCopyFor ar de4ca04ab54b5571
 shared.onboardingContentFor en 5e4c68bd8616d304
 shared.onboardingContentFor fr 28963dd635849c51
 shared.onboardingContentFor de f9ca544a98ae3398
@@ -754,6 +771,7 @@ shared.onboardingContentFor or 352d1ff65447edcb
 shared.onboardingContentFor pa e797b044aff9cc00
 shared.onboardingContentFor ta be82fb3d1334e72a
 shared.onboardingContentFor te 589c6a00f234f7ec
+shared.onboardingContentFor ar 5e4c68bd8616d304
 shared.payCopyFor en af056d68a849668f
 shared.payCopyFor fr 125d98cbae81e1da
 shared.payCopyFor de 331917b62bc8ab29
@@ -796,6 +814,7 @@ shared.payCopyFor or 0de23d93afd20284
 shared.payCopyFor pa 4312ac008efe66de
 shared.payCopyFor ta 4a3fbf75cf919e09
 shared.payCopyFor te 80eba8940a0ab134
+shared.payCopyFor ar af056d68a849668f
 shared.planCopyFor en ab785d38e88efd2c
 shared.planCopyFor fr 97427518fa18c575
 shared.planCopyFor de f7d635d91afec743
@@ -838,6 +857,7 @@ shared.planCopyFor or ead999f3140057db
 shared.planCopyFor pa e1a51191a04ef751
 shared.planCopyFor ta 542f70018b5633a2
 shared.planCopyFor te c099de42463219fa
+shared.planCopyFor ar ab785d38e88efd2c
 shared.progressCopyFor en 982b82375bba7a1e
 shared.progressCopyFor fr a7c5980051c1d028
 shared.progressCopyFor de e4787b636437d44f
@@ -880,6 +900,7 @@ shared.progressCopyFor or 88e49f7815a98a1b
 shared.progressCopyFor pa cf0849c682a58e74
 shared.progressCopyFor ta 74b13a376b0ffe72
 shared.progressCopyFor te afd44455e8d6b811
+shared.progressCopyFor ar 982b82375bba7a1e
 shared.scoresAppCopy en 8ce35e360db616c4
 shared.scoresAppCopy fr 02634bbb70e709ce
 shared.scoresAppCopy de 3b678123af9ba2e1
@@ -922,6 +943,7 @@ shared.scoresAppCopy or f8eeaced6bf6739f
 shared.scoresAppCopy pa 1a52adc73ba7cae9
 shared.scoresAppCopy ta a79da9e25548e848
 shared.scoresAppCopy te 6e1851d2f7a26f5f
+shared.scoresAppCopy ar 8ce35e360db616c4
 shared.shellCopyFor en d6ea0a6cb4a656a9
 shared.shellCopyFor fr 361e99eb96e9d5af
 shared.shellCopyFor de db726736bc891a7f
@@ -964,6 +986,7 @@ shared.shellCopyFor or 41d0bfdfba1b77cd
 shared.shellCopyFor pa 56d7ae19dd4bff0c
 shared.shellCopyFor ta 608c3154536886fb
 shared.shellCopyFor te 0040b438cb91fdb4
+shared.shellCopyFor ar d6ea0a6cb4a656a9
 shared.signupCopyFor en e9c95b64641524a1
 shared.signupCopyFor fr 7a0d4e41475b9d7e
 shared.signupCopyFor de 22722ab5f5965053
@@ -1006,6 +1029,7 @@ shared.signupCopyFor or 09c4e363f9b24e7a
 shared.signupCopyFor pa 6e596163b8652159
 shared.signupCopyFor ta b60ae5b112499a22
 shared.signupCopyFor te 4d39e36c2c96dfa7
+shared.signupCopyFor ar e9c95b64641524a1
 shared.streamCopyFor en cdfb5bfd7767e60a
 shared.streamCopyFor fr 080bec6064aa5351
 shared.streamCopyFor de ef8d87229188e379
@@ -1048,6 +1072,7 @@ shared.streamCopyFor or 8bd847265999617f
 shared.streamCopyFor pa c72ba3525283e79a
 shared.streamCopyFor ta 0714a96af80ab790
 shared.streamCopyFor te 0cd1c00a2ea1a23c
+shared.streamCopyFor ar cdfb5bfd7767e60a
 shared.threadCopyFor en 7cb2c564429317f2
 shared.threadCopyFor fr c5cf217afe773692
 shared.threadCopyFor de 93e4a2c907bde4f4
@@ -1090,6 +1115,7 @@ shared.threadCopyFor or b2b55462ee402407
 shared.threadCopyFor pa 2351f85350bd99c2
 shared.threadCopyFor ta b19f004260e1816b
 shared.threadCopyFor te daee30da01feefd3
+shared.threadCopyFor ar 7cb2c564429317f2
 shared.updateCopyFor en 3eaefc2b644bff7d
 shared.updateCopyFor fr a008492ea25d279e
 shared.updateCopyFor de 4bf3b0d4fe4be4e3
@@ -1132,6 +1158,7 @@ shared.updateCopyFor or fbc2aaabe7faa38f
 shared.updateCopyFor pa f673b4b46de47592
 shared.updateCopyFor ta caae72ffa9210ce3
 shared.updateCopyFor te ce03cd4218e779ff
+shared.updateCopyFor ar 3eaefc2b644bff7d
 shared.usableContentFor en 8b1148af2f75a4d1
 shared.usableContentFor fr ee6b38c3df3f52d2
 shared.usableContentFor de ce10fdcf87914797
@@ -1174,6 +1201,7 @@ shared.usableContentFor or 54ad74a2c2928d99
 shared.usableContentFor pa 5ca343cbf10b2e8e
 shared.usableContentFor ta a2352f8b57ace509
 shared.usableContentFor te e01568cf317f5c27
+shared.usableContentFor ar 8b1148af2f75a4d1
 shared.weighHistoryCopyFor en b6cda41939c8bd27
 shared.weighHistoryCopyFor fr 13a66f4f317bde51
 shared.weighHistoryCopyFor de 05ba9162b7adeff9
@@ -1216,6 +1244,7 @@ shared.weighHistoryCopyFor or 3b99787eb0b8e6de
 shared.weighHistoryCopyFor pa ca9823f7d865b649
 shared.weighHistoryCopyFor ta dac850a947c3536b
 shared.weighHistoryCopyFor te de337e5724352d75
+shared.weighHistoryCopyFor ar 7a092f223f98ee6b
 shared.youCopyFor en 715eec1d2f01907d
 shared.youCopyFor fr 6f9fc988fc3a3bb2
 shared.youCopyFor de 2d793623197ab151
@@ -1258,6 +1287,7 @@ shared.youCopyFor or 61f7100e2bab3265
 shared.youCopyFor pa 3ccd4f6c604822df
 shared.youCopyFor ta d40111ffff4e14e4
 shared.youCopyFor te a6c8fa91adf54352
+shared.youCopyFor ar 715eec1d2f01907d
 mail.mailCopyFor en 959970eb0620594e
 mail.mailCopyFor fr e6106749ad8fc978
 mail.mailCopyFor de 25a810109e517d28
@@ -1300,6 +1330,7 @@ mail.mailCopyFor or 6d7d265b741db7ec
 mail.mailCopyFor pa 04935c2e8b5b9b52
 mail.mailCopyFor ta a9da54859a7311e5
 mail.mailCopyFor te 4df892fd5a39e0f9
+mail.mailCopyFor ar 959970eb0620594e
 web.appLinkCopyFor en ca13d11244f89e5b
 web.appLinkCopyFor fr a0c7c018c4a238d7
 web.appLinkCopyFor de 195052bc5eab1401
@@ -1342,6 +1373,7 @@ web.appLinkCopyFor or c4fbc988f89a1983
 web.appLinkCopyFor pa a691962d16ac372a
 web.appLinkCopyFor ta cd1fe1436c052ada
 web.appLinkCopyFor te 527e53bb73cef5cf
+web.appLinkCopyFor ar ca13d11244f89e5b
 web.pageCopyFor en da1e3b172d3e58a0
 web.pageCopyFor fr 0d8cbbd8310e8eb1
 web.pageCopyFor de 7119607944393f24
@@ -1384,6 +1416,7 @@ web.pageCopyFor or e6abd9c678afd627
 web.pageCopyFor pa d6961ab1496deab2
 web.pageCopyFor ta 33ada2cc290a447e
 web.pageCopyFor te 52d3714b65b88b60
+web.pageCopyFor ar da1e3b172d3e58a0
 telegram.telegramCopyFor en cb9e15710e0d8451
 telegram.telegramCopyFor fr 1a05d88da88724f4
 telegram.telegramCopyFor de 212bae62cca35a65
@@ -1426,6 +1459,7 @@ telegram.telegramCopyFor or 3167dbe2ade82732
 telegram.telegramCopyFor pa 1c0225dfc07d4140
 telegram.telegramCopyFor ta 337f6ef47fce2e48
 telegram.telegramCopyFor te d13488b49adbdb17
+telegram.telegramCopyFor ar cb9e15710e0d8451
 front.webCopyFor en 49f969fe869aa5ec
 front.webCopyFor fr f898fcae4bb8e0e3
 front.webCopyFor de 5dd9056974851a3e
@@ -1468,6 +1502,7 @@ front.webCopyFor or b2735a4f62e5f431
 front.webCopyFor pa be20d52a73ce56b9
 front.webCopyFor ta 3ddfc9bba6929361
 front.webCopyFor te 0493cfd724bbceee
+front.webCopyFor ar 49f969fe869aa5ec
 reminders.remindersWebCopyFor en bd60f6e6e53b3210
 reminders.remindersWebCopyFor fr a24034544911191a
 reminders.remindersWebCopyFor de 7e0336f0745da5cd
@@ -1510,6 +1545,7 @@ reminders.remindersWebCopyFor or 29359a855e0efcdd
 reminders.remindersWebCopyFor pa 4068afe56e82b384
 reminders.remindersWebCopyFor ta 79ee23e60b340278
 reminders.remindersWebCopyFor te 48432cd1a30c90aa
+reminders.remindersWebCopyFor ar 442f007d681d9700
 scores.scoresCopy en ef8c5fdf864e9fd5
 scores.scoresCopy fr 4a1077d7e45cf5bf
 scores.scoresCopy de d3d8d7f1c51c6635
@@ -1552,6 +1588,7 @@ scores.scoresCopy or 725858e5152ac6aa
 scores.scoresCopy pa a41d85fb4d4254e4
 scores.scoresCopy ta 5157d7f472bb2b48
 scores.scoresCopy te a547f94a3836b898
+scores.scoresCopy ar ef8c5fdf864e9fd5
 onboarding.onboardingContentFor en 5e4c68bd8616d304
 onboarding.onboardingContentFor fr 28963dd635849c51
 onboarding.onboardingContentFor de f9ca544a98ae3398
@@ -1594,6 +1631,7 @@ onboarding.onboardingContentFor or 352d1ff65447edcb
 onboarding.onboardingContentFor pa e797b044aff9cc00
 onboarding.onboardingContentFor ta be82fb3d1334e72a
 onboarding.onboardingContentFor te 589c6a00f234f7ec
+onboarding.onboardingContentFor ar 5e4c68bd8616d304
 onboarding.usableContentFor en 8b1148af2f75a4d1
 onboarding.usableContentFor fr ee6b38c3df3f52d2
 onboarding.usableContentFor de ce10fdcf87914797
@@ -1636,3 +1674,4 @@ onboarding.usableContentFor or 54ad74a2c2928d99
 onboarding.usableContentFor pa 5ca343cbf10b2e8e
 onboarding.usableContentFor ta a2352f8b57ace509
 onboarding.usableContentFor te e01568cf317f5c27
+onboarding.usableContentFor ar 8b1148af2f75a4d1

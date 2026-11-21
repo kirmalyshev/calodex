@@ -6,6 +6,7 @@
 // English is the boards' words verbatim.
 
 import { describe, expect, it } from "bun:test";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { MEAL_COPY, mealCopyFor } from "./meal-copy.ts";
 
@@ -31,7 +32,7 @@ const KEYS = [
 
 describe("MEAL_COPY", () => {
   it("has every key in every language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = MEAL_COPY[lang];
       expect(copy, lang).toBeDefined();
       for (const key of KEYS) {
@@ -65,7 +66,7 @@ describe("MEAL_COPY", () => {
       changeToHigh: ["{dim}"],
       changeToVeryHigh: ["{dim}"],
     };
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = MEAL_COPY[lang]!;
       for (const [key, phs] of Object.entries(placeholders)) {
         for (const ph of phs) {
@@ -76,7 +77,7 @@ describe("MEAL_COPY", () => {
   });
 
   it("never names the coach literally — {coach} fills her name", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       expect(MEAL_COPY[lang]!.coachLine, lang).not.toContain("Gabie");
     }
   });

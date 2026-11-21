@@ -632,7 +632,7 @@ export interface OnboardingContent {
  */
 export const COUNTRY_CODES = [
   "at", "au", "bd", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr", "hr",
-  "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "se", "si",
+  "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "sa", "se", "si",
   "sk", "th", "tr", "tw", "ua", "us", "vn", "other",
 ] as const;
 export type CountryCode = (typeof COUNTRY_CODES)[number];

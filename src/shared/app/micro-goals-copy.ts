@@ -356,6 +356,14 @@ export const MICRO_GOALS_COPY: Record<Lang, MicroGoalsCopy> = {
     kidneyNote: "ఈ విలువను మీ మూత్రపిండాల పరిమితి నిర్ణయిస్తుంది. లక్ష్యంతో దాన్ని పెంచడం కుదరదు.",
     foot: "హోమ్ రెండో పేజీలో కనిపిస్తాయి. వీటి నుండి ఎలాంటి అంచనా రాదు.",
   },
+  ar: {
+    title: "أهداف التغذية",
+    label: "المغذيات الدقيقة",
+    atLeast: "{v} على الأقل",
+    atMost: "{v} كحد أقصى",
+    kidneyNote: "قيد الكلى لديك هو ما يحدد هذا. لا يمكن لأي هدف أن يرفعه.",
+    foot: "تظهر في الصفحة الثانية من الرئيسية. لا يصدر عنها أي تقييم.",
+  },
 };
 
 export const microGoalsCopyFor = (lang: Lang): MicroGoalsCopy => branded(MICRO_GOALS_COPY[lang]);

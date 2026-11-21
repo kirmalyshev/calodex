@@ -70,6 +70,9 @@ const CATALOGS: Record<Lang, Messages> = {
   "pt-BR": ptBR, ja, ko, "zh-Hans": zhHans, "zh-Hant": zhHant, tr, pl, nl, uk, sv, th, hi, cs, ro, el, hu,
   da, fi, no, sk, hr, sl, ca, ms, "pt-PT": ptPT,
   bn, gu, kn, ml, mr, or, pa, ta, te,
+  // `ar` has no catalog — lingui compiles `LANGS_READY`, and its strings are the ones the app
+  // renders. English source IS its fallback, the same rule `t()` applies at the key (#3310).
+  ar: en,
 };
 
 const INSTANCES: Record<Lang, I18n> = Object.fromEntries(

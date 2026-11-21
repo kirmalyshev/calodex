@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { LANGS_READY } from "./lang.ts";
 import { LANGS } from "./types.ts";
 import { countText } from "./lang.ts";
 import { bmiRangeLabel, scoreFactorLabel, scoresCopy } from "./scores-copy.ts";
@@ -65,7 +66,7 @@ const BANNED: Record<string, RegExp> = {
 
 describe("BMI labels (#118)", () => {
   test("carry no category word, in any language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const copy = scoresCopy(lang);
       for (const range of BMI_BANDS.map((b) => b.id) as BmiRange[]) {
         expect(bmiRangeLabel(range, lang), `${lang}/${range}`).not.toMatch(BANNED[lang]!);

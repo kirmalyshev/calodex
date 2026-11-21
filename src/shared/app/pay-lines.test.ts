@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { LANGS_READY } from "../lang.ts";
 import { LANGS } from "../types.ts";
 import { PAY_COPY } from "./pay-copy.ts";
 import { yearlySaveLine } from "./pay-lines.ts";
@@ -14,7 +15,7 @@ describe("yearlySaveLine", () => {
     expect(yearlySaveLine(PAY_COPY.en, "en", "EUR", 4.99, 59.88)).toBeNull();
   });
   it("leaves no placeholder in any language", () => {
-    for (const lang of LANGS) {
+    for (const lang of LANGS_READY) {
       const line = yearlySaveLine(PAY_COPY[lang]!, lang, "EUR", 4.99, 39.99)!;
       expect(line, lang).not.toContain("{");
       expect(line, lang).toContain("33");

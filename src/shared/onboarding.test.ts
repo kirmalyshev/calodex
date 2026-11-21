@@ -942,7 +942,7 @@ describe("the suggested answer, offered first", () => {
   it("moves the suggestion to the front and keeps everything else in order", () => {
     expect(suggestionFirst(COUNTRY_CODES, "us")).toEqual([
       "us", "at", "au", "bd", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr",
-      "hr", "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "se",
+      "hr", "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "sa", "se",
       "si", "sk", "th", "tr", "tw", "ua", "vn", "other",
     ]);
     // On the list the reader actually sees, which is sorted by name and not by code.
@@ -982,6 +982,7 @@ describe("the countries this app curates", () => {
     uk: "ua", sv: "se", th: "th", hi: "in", cs: "cz", ro: "ro", el: "gr", hu: "hu",
     da: "dk", fi: "fi", no: "no", sk: "sk", hr: "hr", sl: "si", ca: "es", ms: "my", "pt-PT": "pt",
     bn: "bd", gu: "in", kn: "in", ml: "in", mr: "in", or: "in", pa: "in", ta: "in", te: "in",
+    ar: "sa",
   };
 
   it("offers a country to every language the app speaks", () => {
@@ -997,8 +998,10 @@ describe("the countries this app curates", () => {
     // and `es` are exempt on purpose — gb/us and es/mx are real splits, and a coin flip pinned
     // to the top is a wrong answer half the time, offered first. Tags that carry their own
     // market ("pt-PT", "zh-Hans") resolve it on the way through, so even they are covered.
+    // `ar` is the same shape as `en`: it is official in two dozen markets and no one of them
+    // dominates it, so pinning `sa` to the top would be the coin flip this test exists to refuse.
     for (const lang of LANGS) {
-      if (lang === "en" || lang === "es") continue;
+      if (lang === "en" || lang === "es" || lang === "ar") continue;
       const { country } = resolveCountry({ languages: [lang.toLowerCase()] });
       expect(country, `${lang} hints ${country}, but HOME names ${HOME[lang]}`).toBe(HOME[lang]);
     }

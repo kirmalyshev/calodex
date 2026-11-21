@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { LANGS } from "./types.ts";
-import { LANG_LABEL } from "./lang.ts";
+import { LANG_LABEL, LANGS_READY } from "./lang.ts";
 import { i18nFor } from "./i18n.ts";
 import {
   DEFAULT_NOTIFICATION_COPY, NOTIFICATION_COPY, NOTIFICATION_IDS, eveningPrescription,
@@ -84,7 +84,7 @@ describe("the evening prescription", () => {
     const on = { targets, totals: { kcal: 1990, protein_g: 140 }, meals: 3, goal: "maintain" as const };
     const en = eveningPrescription(on, "en");
     expect(en.length).toBeGreaterThan(0);
-    for (const lang of LANGS.filter((l) => l !== "en")) {
+    for (const lang of LANGS_READY.filter((l) => l !== "en")) {
       expect(eveningPrescription(on, lang), lang).not.toBe(en);
     }
   });

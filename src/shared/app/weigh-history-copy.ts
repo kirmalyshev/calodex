@@ -491,6 +491,17 @@ const MS: WeighHistoryCopy = {
   rowWeight: { metric: "{n} kg", imperial: "{n} lb" },
 };
 
+const AR: WeighHistoryCopy = {
+  changesTitle: "تغيّر الوزن",
+  change3: "3 أيام", change7: "7 أيام", change14: "14 يومًا", change30: "30 يومًا", change90: "90 يومًا", changeAll: "الكل",
+  historyTitle: "جميع قياسات الوزن",
+  sourceHealth: "من تطبيق صحة",
+  sourceYou: "أنت",
+  historyEmptyTitle: "لا قياسات وزن بعد",
+  historyEmptyNote: "تظهر قياسات الوزن من تطبيق صحة هنا أيضًا.",
+  rowWeight: { metric: "{n} kg", imperial: "{n} lb" },
+};
+
 export const WEIGH_HISTORY_COPY: Record<Lang, WeighHistoryCopy> = {
   "en": EN,
   "fr": FR,
@@ -534,5 +545,6 @@ export const WEIGH_HISTORY_COPY: Record<Lang, WeighHistoryCopy> = {
   "pa": PA,
   "ta": TA,
   "te": TE,
+  "ar": AR,
 };
 export const weighHistoryCopyFor = (lang: Lang): WeighHistoryCopy => t(lang)(WEIGH_HISTORY_COPY);
