@@ -161,6 +161,58 @@ describe("the coach turn", () => {
     expect(seen[0]!.input.context.focusMeal).toMatchObject({ kcal: 700 });
   });
 
+  it("resolves a confirmed proposal's line to the meal it became (#3309)", async () => {
+    const { llm, seen } = recordingCoach();
+    const d = makeDeps(llm);
+    const userId = await onboard();
+    const confirmed = meal(userId, { kcal: 640 });
+    // confirmPendingMeal stores the meal under the proposal's id, so the carrier
+    // line's pendingId outlives the pending itself.
+    await store.insertMeal(confirmed);
+    await store.appendChat(userId, [
+      { role: "user", kind: "text", text: "yes, log it", pendingId: confirmed.id },
+    ]);
+    await handleText(d, userId, { text: "should i eat this meal?" });
+    expect(seen[0]!.input.context.focusMeal).toMatchObject({ kcal: 640 });
+  });
+
+  it("skips a reference nothing resolves to and takes the older one (#3309)", async () => {
+    const { llm, seen } = recordingCoach();
+    const d = makeDeps(llm);
+    const userId = await onboard();
+    const earlier = meal(userId, { kcal: 300 });
+    const dead = {
+      id: crypto.randomUUID(), userId,
+      analysis: toAnalysis(meal(userId, { kcal: 900 })),
+      date: today(), expiresAt: Date.now() + 60_000,
+    };
+    await store.insertMeal(earlier);
+    await store.putPending(dead);
+    await store.dropPending(userId, dead.id);
+    await store.appendChat(userId, [
+      { role: "assistant", kind: "meal", mealId: earlier.id, event: "logged" },
+      { role: "user", kind: "text", text: "what about pasta instead", pendingId: dead.id },
+    ]);
+    await handleText(d, userId, { text: "should i eat this meal?" });
+    // The newest reference is a dropped offer — nothing to judge — so the card stands.
+    expect(seen[0]!.input.context.focusMeal).toMatchObject({ kcal: 300 });
+  });
+
+  it("resolves the referent off a photo line's mealId too (#3309)", async () => {
+    const { llm, seen } = recordingCoach();
+    const d = makeDeps(llm);
+    const userId = await onboard();
+    const snapped = meal(userId, { kcal: 816 });
+    await store.insertMeal(snapped);
+    // The reported thread came from a photo log: the user's photo line carries the id.
+    await store.appendChat(userId, [
+      { role: "user", kind: "photo", text: null, mealId: snapped.id },
+      { role: "assistant", kind: "text", text: "First one in. 816kcal.", speaker: "gabie" },
+    ]);
+    await handleText(d, userId, { text: "should i eat this meal?" });
+    expect(seen[0]!.input.context.focusMeal).toMatchObject({ kcal: 816 });
+  });
+
   it("replays the thread oldest first, cards as notes about the meal as it is now, without the message itself", async () => {
     const { llm, seen, routed } = recordingCoach();
     const d = makeDeps(llm);
