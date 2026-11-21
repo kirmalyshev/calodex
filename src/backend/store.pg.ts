@@ -4373,6 +4373,10 @@ export async function postgresStore(
         and (${eq(filters.arm) === null} or e.arm = ${eq(filters.arm)})
         and (${eq(filters.acq_source) === null}
              or exists (select 1 from users u where u.id = e.user_id and ${effectiveAcq} = ${eq(filters.acq_source)}))`;
+      // A COHORT (ieat-app#3326): a run with any event before the window began earlier, and is out.
+      const cohort = sql`
+        and (${lo === null} or not exists (select 1 from onboarding_events p
+              where p.user_id = e.user_id and p.session_id = e.session_id and p.received_at < ${lo}))`;
       // Staff accounts (admin-flagged) are not users; their runs stay out (#2783).
 
       const totals = await sql`
@@ -4382,7 +4386,8 @@ export async function postgresStore(
         where (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})
           and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
           and e.user_id <> all(${configStaff}::uuid[])
-          ${narrow}`;
+          ${narrow}
+          ${cohort}`;
 
       // `percentile_cont` over the answer rows only — a median that included view events would be
       // measuring nothing, since a view carries no elapsed time.
@@ -4401,6 +4406,7 @@ export async function postgresStore(
           and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
           and e.user_id <> all(${configStaff}::uuid[])
           ${narrow}
+          ${cohort}
         group by place`;
 
       // Conversion to paid (#812), the funnel's last step. The same population and window,
@@ -4421,6 +4427,7 @@ export async function postgresStore(
              and not u.staff and (${includeTesters} or not u.tester)
              and e.user_id <> all(${configStaff}::uuid[])
              ${narrow}
+             ${cohort}
            group by e.user_id, e.session_id, u.id
         ),
         conv as (
@@ -4596,6 +4603,8 @@ export async function postgresStore(
          where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
            and not u.staff and (${includeTesters} or not u.tester)
            and e.user_id <> all(${configStaff}::uuid[])
+           and (${lo === null} or not exists (select 1 from onboarding_events p
+                 where p.user_id = e.user_id and p.session_id = e.session_id and p.received_at < ${lo}))
          group by e.user_id, u.id
         having (${leftAt === undefined} or (
                  (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] = ${leftAt ?? ""}

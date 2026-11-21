@@ -398,7 +398,7 @@ test("clearing both date boxes selects All time on the spot", async ({ page }) =
   expect(errors).toEqual([]);
 });
 
-test("the funnel names a pre-window run only when the echo bounds one", async ({ page }) => {
+test("the funnel never blames a pre-window run for a join: it is a cohort (ieat-app#3326)", async ({ page }) => {
   const errors = watchConsole(page);
   const calls: Calls = {};
   await stubAdmin(page, calls);
@@ -421,13 +421,15 @@ test("the funnel names a pre-window run only when the echo bounds one", async ({
   await openAdmin(page, "funnel?all=1");
   const gap = page.locator(".fp-gap").nth(1);
   await expect(gap).toContainText("+2 joined here");
-  // Under All time there is no earlier window a run could have begun in — the bracket would lie.
+  // The funnel counts runs that STARTED in the window, so no run joins from before it: under
+  // All time, and under a bounded ask, the join is a step only some runs reach.
   await expect(gap).not.toContainText("before this window");
+  await expect(gap).toContainText("a step only some runs reach");
 
-  // The same rows under a bounded ask DO explain the join.
   await page.locator("#range-7d").click();
   await expect.poll(() => calls.funnel?.at(-1)?.get("from") ?? null).not.toBeNull();
-  await expect(page.locator(".fp-gap").nth(1)).toContainText("runs that began before this window");
+  await expect(page.locator(".fp-gap").nth(1)).toContainText("a step only some runs reach");
+  await expect(page.locator(".fp-gap").nth(1)).not.toContainText("before this window");
   expect(errors).toEqual([]);
 });
 
