@@ -802,12 +802,12 @@ describe("the interstitials", () => {
     expect(at("situation")).toBeLessThan(at("diet"));
     expect(at("diet")).toBeLessThan(at("medical"));
     expect(at("medical")).toBeLessThan(at("summary"));
-    // The account step lands between the plan and the country — the design's order, fixed here —
-    // and the plans sheet is the place between them (ieat-app#3136): a decline must read as the
-    // run's last screen, not as "left at sign-up".
-    expect(at("summary")).toBeLessThan(at("signup"));
-    expect(at("signup")).toBeLessThan(at("paywall"));
-    expect(at("paywall")).toBeLessThan(at("country"));
+    // The plans sheet lands straight after the plan, and the account step between it and the
+    // country — purchase first, then the skippable "Save your plan" ask (ieat-app#3203, Kirill,
+    // 21 Nov): a decline still reads as the run's last screen, not as "left at sign-up".
+    expect(at("summary")).toBeLessThan(at("paywall"));
+    expect(at("paywall")).toBeLessThan(at("signup"));
+    expect(at("signup")).toBeLessThan(at("country"));
     // The friend's-link step (#899) is the optional one after the country, before Apple Health.
     expect(at("country")).toBeLessThan(at("referral"));
     expect(at("referral")).toBeLessThan(at("health"));

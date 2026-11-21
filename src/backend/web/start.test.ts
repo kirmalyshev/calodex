@@ -821,7 +821,7 @@ describe("the questions", () => {
   // them unshown — the app's `nextPlace` reads the walk the answer produced, and so does this.
   it("shows the beat after questions the answer just removed", async () => {
     const order = ["welcome", "sex", "age", "height", "weight", "activity", "baseline", "goal",
-      "target", "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "signup"];
+      "target", "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary"];
     const arm = structuredClone(DEFAULT_ONBOARDING_CONTENT);
     arm.version = 4343;
     const id = crypto.randomUUID();
@@ -861,7 +861,7 @@ describe("the questions", () => {
 
   it("walks an experiment arm's order, without the beat it removed (ieat-app#2788)", async () => {
     const order = ["welcome", "goal", "counted", "barrier", "situation", "sex", "age", "height", "weight",
-      "activity", "baseline", "target", "pace", "diet", "medical", "summary", "signup"];
+      "activity", "baseline", "target", "pace", "diet", "medical", "summary"];
     const arm = structuredClone(DEFAULT_ONBOARDING_CONTENT);
     arm.version = 4242;
     arm.screens.find((x) => x.id === "sex")!.asks.sex!.lines = ["The arm asks the sex question"];

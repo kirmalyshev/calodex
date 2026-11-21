@@ -711,6 +711,33 @@ describe("the paywall", () => {
     expect(view.limits.subscriptionRequired).toBe(false);
     expect(view.limits.dailyPhotoCap).toBe(paid.config.paidDailyPhotoCap);
   });
+
+  // ieat-app#3203: purchase before sign-up. `identityOwed` is exactly the anonymous-paying
+  // account — the one whose plan is saved but whose sign-in is still owed — computed off the
+  // server's entitlement, so the app reads "offer Save your diary" rather than guessing.
+  it("flags identityOwed on an anonymous account only while its entitlement lives", async () => {
+    const { userId } = await store.upsertDeviceUser(crypto.randomUUID(), "en");
+    await patchProfile(deps, userId, {
+      goal: "lose", sex: "female", birth_year: 1990, height_cm: 165, weight_kg: 70,
+      target_weight_kg: 65, activity: "some", pace: "steady", country: "de",
+      restrictions: [], complete_onboarding: true,
+    });
+    // Anonymous and unpaid: nothing is owed — it cannot log a meal yet.
+    expect((await profileView(paid, userId))!.limits.identityOwed).toBe(false);
+    // The purchase lands first.
+    await entitle(userId);
+    expect((await profileView(paid, userId))!.limits.identityOwed).toBe(true);
+    // The sign-in follows: a linked identity discharges it.
+    await store.addIdentity(userId, "apple", "a-" + userId.slice(0, 8));
+    expect((await profileView(paid, userId))!.limits.identityOwed).toBe(false);
+  });
+
+  it("never flags identityOwed on a signed-in account, paying or not", async () => {
+    const userId = await unpaid();
+    expect((await profileView(paid, userId))!.limits.identityOwed).toBe(false);
+    await entitle(userId);
+    expect((await profileView(paid, userId))!.limits.identityOwed).toBe(false);
+  });
 });
 
 describe("profile free text", () => {

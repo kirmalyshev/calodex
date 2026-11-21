@@ -4095,7 +4095,7 @@ function contract(name: string, make: () => Promise<Store>) {
       it("keeps an arm's order, and counts each arm's places inside the arm's own window (ieat-app#2788)", async () => {
         const s = await open();
         const order = ["welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
-          "pace", "counted", "barrier", "situation", "medical", "diet", "summary", "signup"];
+          "pace", "counted", "barrier", "situation", "medical", "diet", "summary"];
         const e = exp({
           id: `places-${RUN}`,
           variants: [

@@ -45,6 +45,17 @@ export interface SignupCopy {
   consentMarketing: string;
   /** What a sign-up POST without the terms tick comes back to. */
   errorTerms: string;
+  /**
+   * The skippable answer to the post-purchase "Save your plan" ask (ieat-app#3203): declining it
+   * keeps the plan on the anonymous device account and continues the run. The phone only; the
+   * web's sign-up is not skippable — there is no run to continue without it.
+   */
+  notNow: string;
+  /**
+   * The same ask, later: the Settings and diary row's label while `limits.identityOwed` —
+   * the anonymous-paying account, still able to name an identity for its plan.
+   */
+  saveDiary: string;
 }
 
 export const SIGNUP_COPY: Localized<SignupCopy> = {
@@ -61,6 +72,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Privacy Policy",
     consentMarketing: "Send me tips and new features from {app_name}",
     errorTerms: "Agree to the Terms and Privacy Policy to continue.",
+    notNow: "Not now",
+    saveDiary: "Save your diary",
   },
 
 
@@ -77,6 +90,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Politique de confidentialité",
     consentMarketing: "Envoie-moi des conseils et les nouveautés {d_app_name}",
     errorTerms: "Accepte les Conditions et la Politique de confidentialité pour continuer.",
+    notNow: "Pas maintenant",
+    saveDiary: "Sauvegarde ton journal",
   },
 
 
@@ -93,6 +108,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Datenschutzerklärung",
     consentMarketing: "Schick mir Tipps und neue Funktionen von {app_name}",
     errorTerms: "Stimm den Nutzungsbedingungen und der Datenschutzerklärung zu, um weiterzumachen.",
+    notNow: "Jetzt nicht",
+    saveDiary: "Speichere dein Tagebuch",
   },
 
 
@@ -109,6 +126,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Informativa sulla privacy",
     consentMarketing: "Inviami consigli e novità da {app_name}",
     errorTerms: "Accetta i Termini e l'Informativa sulla privacy per continuare.",
+    notNow: "Non ora",
+    saveDiary: "Salva il tuo diario",
   },
 
 
@@ -125,6 +144,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Política de privacidad",
     consentMarketing: "Envíame consejos y novedades de {app_name}",
     errorTerms: "Acepta los Términos y la Política de privacidad para continuar.",
+    notNow: "Ahora no",
+    saveDiary: "Guarda tu diario",
   },
 
 
@@ -141,6 +162,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Chính sách quyền riêng tư",
     consentMarketing: "Gửi cho mình mẹo và tính năng mới từ {app_name}",
     errorTerms: "Đồng ý với Điều khoản và Chính sách quyền riêng tư để tiếp tục.",
+    notNow: "Chưa phải bây giờ",
+    saveDiary: "Lưu nhật ký của bạn",
   },
 
 
@@ -157,6 +180,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Kebijakan Privasi",
     consentMarketing: "Kirimi aku tips dan fitur baru dari {app_name}",
     errorTerms: "Setujui Ketentuan dan Kebijakan Privasi untuk melanjutkan.",
+    notNow: "Nanti dulu",
+    saveDiary: "Simpan harianmu",
   },
 
 
@@ -173,6 +198,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Политику конфиденциальности",
     consentMarketing: "Присылать мне советы и новинки {app_name}",
     errorTerms: "Чтобы продолжить, прими Условия и Политику конфиденциальности.",
+    notNow: "Не сейчас",
+    saveDiary: "Сохраните дневник",
   },
 
 
@@ -189,6 +216,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "గోప్యతా విధానం",
     consentMarketing: "{app_name} నుండి చిట్కాలు, కొత్త ఫీచర్‌లు నాకు పంపండి",
     errorTerms: "కొనసాగడానికి నిబంధనలు, గోప్యతా విధానానికి అంగీకరించండి.",
+    notNow: "ఇప్పుడు కాదు",
+    saveDiary: "మీ డైరీని సేవ్ చేయండి",
   },
 
 
@@ -205,6 +234,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "தனியுரிமைக் கொள்கை",
     consentMarketing: "{app_name}-இலிருந்து குறிப்புகளையும் புதிய அம்சங்களையும் எனக்கு அனுப்பவும்",
     errorTerms: "தொடர விதிமுறைகளையும் தனியுரிமைக் கொள்கையையும் ஏற்கவும்.",
+    notNow: "இப்போது வேண்டாம்",
+    saveDiary: "உங்கள் டைரியைச் சேமிக்கவும்",
   },
 
 
@@ -221,6 +252,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "ਪਰਦੇਦਾਰੀ ਨੀਤੀ",
     consentMarketing: "ਮੈਨੂੰ {app_name} ਤੋਂ ਸੁਝਾਅ ਅਤੇ ਨਵੇਂ ਫ਼ੀਚਰ ਭੇਜੋ",
     errorTerms: "ਜਾਰੀ ਰੱਖਣ ਲਈ ਸ਼ਰਤਾਂ ਅਤੇ ਪਰਦੇਦਾਰੀ ਨੀਤੀ ਨਾਲ ਸਹਿਮਤੀ ਦਿਓ।",
+    notNow: "ਹੁਣੇ ਨਹੀਂ",
+    saveDiary: "ਆਪਣੀ ਡਾਇਰੀ ਸੁਰੱਖਿਅਤ ਕਰੋ",
   },
 
 
@@ -237,6 +270,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "ଗୋପନୀୟତା ନୀତି",
     consentMarketing: "{app_name} ରୁ ମୋତେ ଟିପ୍ସ ଓ ନୂଆ ଫିଚର୍ ପଠାନ୍ତୁ",
     errorTerms: "ଜାରି ରଖିବାକୁ ସର୍ତ୍ତାବଳୀ ଓ ଗୋପନୀୟତା ନୀତିରେ ସହମତି ଦିଅନ୍ତୁ।",
+    notNow: "ଏବେ ନୁହେଁ",
+    saveDiary: "ଆପଣଙ୍କ ଡାଇରି ସଞ୍ଚୟ କରନ୍ତୁ",
   },
 
 
@@ -253,6 +288,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "गोपनीयता धोरण",
     consentMarketing: "{app_name} कडून टिप्स आणि नवीन फीचर्स मला पाठवा",
     errorTerms: "पुढे जाण्यासाठी अटी आणि गोपनीयता धोरणाशी सहमत व्हा.",
+    notNow: "आत्ता नको",
+    saveDiary: "तुमची डायरी जतन करा",
   },
 
 
@@ -269,6 +306,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "സ്വകാര്യതാ നയം",
     consentMarketing: "{app_name}-ൽ നിന്നുള്ള നുറുങ്ങുകളും പുതിയ ഫീച്ചറുകളും എനിക്ക് അയയ്ക്കൂ",
     errorTerms: "തുടരാൻ നിബന്ധനകളും സ്വകാര്യതാ നയവും അംഗീകരിക്കൂ.",
+    notNow: "ഇപ്പോൾ വേണ്ട",
+    saveDiary: "നിങ്ങളുടെ ഡയറി സംരക്ഷിക്കുക",
   },
 
 
@@ -285,6 +324,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "ಗೌಪ್ಯತಾ ನೀತಿ",
     consentMarketing: "{app_name} ನಿಂದ ಸಲಹೆಗಳು ಮತ್ತು ಹೊಸ ಫೀಚರ್‌ಗಳನ್ನು ನನಗೆ ಕಳುಹಿಸಿ",
     errorTerms: "ಮುಂದುವರಿಯಲು ನಿಯಮಗಳು ಮತ್ತು ಗೌಪ್ಯತಾ ನೀತಿಗೆ ಒಪ್ಪಿಗೆ ನೀಡಿ.",
+    notNow: "ಈಗ ಬೇಡ",
+    saveDiary: "ನಿಮ್ಮ ಡೈರಿ ಉಳಿಸಿ",
   },
 
 
@@ -301,6 +342,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "ગોપનીયતા નીતિ",
     consentMarketing: "મને {app_name} તરફથી ટિપ્સ અને નવાં ફીચર મોકલો",
     errorTerms: "ચાલુ રાખવા માટે શરતો અને ગોપનીયતા નીતિ સાથે સંમતિ આપો.",
+    notNow: "હમણાં નહીં",
+    saveDiary: "તમારી ડાયરી સાચવો",
   },
 
 
@@ -317,6 +360,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "গোপনীয়তা নীতি",
     consentMarketing: "{app_name} থেকে আমাকে টিপস ও নতুন ফিচারের খবর পাঠান",
     errorTerms: "চালিয়ে যেতে শর্তাবলি ও গোপনীয়তা নীতিতে সম্মতি দিন।",
+    notNow: "এখন নয়",
+    saveDiary: "আপনার ডায়েরি সংরক্ষণ করুন",
   },
 
 
@@ -333,6 +378,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Política de Privacidade",
     consentMarketing: "Quero receber dicas e novidades do {app_name}",
     errorTerms: "Aceita os Termos e a Política de Privacidade para continuar.",
+    notNow: "Agora não",
+    saveDiary: "Guarde o seu diário",
   },
 
 
@@ -349,6 +396,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Dasar Privasi",
     consentMarketing: "Hantarkan saya petua dan ciri baharu daripada {app_name}",
     errorTerms: "Setuju dengan Terma dan Dasar Privasi untuk teruskan.",
+    notNow: "Bukan sekarang",
+    saveDiary: "Simpan diari anda",
   },
 
 
@@ -365,6 +414,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Política de privadesa",
     consentMarketing: "Envia'm consells i novetats {d_app_name}",
     errorTerms: "Accepta les Condicions i la Política de privadesa per continuar.",
+    notNow: "Ara no",
+    saveDiary: "Desa el teu diari",
   },
 
 
@@ -381,6 +432,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "pravilnikom o zasebnosti",
     consentMarketing: "Pošiljaj mi nasvete in novosti od {app_name}",
     errorTerms: "Za nadaljevanje sprejmi pogoje uporabe in pravilnik o zasebnosti.",
+    notNow: "Ne zdaj",
+    saveDiary: "Shrani svoj dnevnik",
   },
 
 
@@ -397,6 +450,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Pravila privatnosti",
     consentMarketing: "Šalji mi savjete i nove značajke od {app_name}",
     errorTerms: "Za nastavak prihvati Uvjete korištenja i Pravila privatnosti.",
+    notNow: "Ne sada",
+    saveDiary: "Spremi svoj dnevnik",
   },
 
 
@@ -413,6 +468,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Zásady ochrany súkromia",
     consentMarketing: "Posielajte mi tipy a novinky od {app_name}",
     errorTerms: "Na pokračovanie prijmi Podmienky a Zásady ochrany súkromia.",
+    notNow: "Teraz nie",
+    saveDiary: "Ulož svoj denník",
   },
 
 
@@ -429,6 +486,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "personvernerklæringen",
     consentMarketing: "Send meg tips og nye funksjoner fra {app_name}",
     errorTerms: "Godta vilkårene og personvernerklæringen for å fortsette.",
+    notNow: "Ikke nå",
+    saveDiary: "Lagre dagboken din",
   },
 
 
@@ -445,6 +504,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Tietosuojakäytäntö",
     consentMarketing: "Lähetä minulle vinkkejä ja uutuuksia {app_name}-sovelluksesta",
     errorTerms: "Hyväksy käyttöehdot ja tietosuojakäytäntö jatkaaksesi.",
+    notNow: "Ei nyt",
+    saveDiary: "Tallenna päiväkirjasi",
   },
 
 
@@ -461,6 +522,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Privatlivspolitik",
     consentMarketing: "Send mig tips og nye funktioner fra {app_name}",
     errorTerms: "Accepter Vilkår og Privatlivspolitik for at fortsætte.",
+    notNow: "Ikke nu",
+    saveDiary: "Gem din dagbog",
   },
 
 
@@ -477,6 +540,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Adatvédelmi irányelveit",
     consentMarketing: "Kérek tippeket és újdonságokat {az} {app_name}-től",
     errorTerms: "A folytatáshoz fogadd el a Felhasználási feltételeket és az Adatvédelmi irányelveket.",
+    notNow: "Most nem",
+    saveDiary: "Mentsd el a naplódat",
   },
 
 
@@ -493,6 +558,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Πολιτική απορρήτου",
     consentMarketing: "Στείλε μου συμβουλές και νέες λειτουργίες από το {app_name}",
     errorTerms: "Αποδέξου τους Όρους χρήσης και την Πολιτική απορρήτου για να συνεχίσεις.",
+    notNow: "Όχι τώρα",
+    saveDiary: "Αποθήκευσε το ημερολόγιό σου",
   },
 
 
@@ -509,6 +576,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Politica de confidențialitate",
     consentMarketing: "Trimite-mi sfaturi și noutăți de la {app_name}",
     errorTerms: "Acceptă Termenii și Politica de confidențialitate ca să continui.",
+    notNow: "Nu acum",
+    saveDiary: "Salvează-ți jurnalul",
   },
 
 
@@ -525,6 +594,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Zásady ochrany osobních údajů",
     consentMarketing: "Chci dostávat tipy a novinky od {app_name}",
     errorTerms: "Pro pokračování odsouhlas Podmínky a Zásady ochrany osobních údajů.",
+    notNow: "Teď ne",
+    saveDiary: "Ulož svůj deník",
   },
 
 
@@ -541,6 +612,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "गोपनीयता नीति",
     consentMarketing: "मुझे {app_name} से सुझाव और नए फ़ीचर भेजें",
     errorTerms: "जारी रखने के लिए शर्तों और गोपनीयता नीति से सहमति दें।",
+    notNow: "अभी नहीं",
+    saveDiary: "अपनी डायरी सहेजें",
   },
 
 
@@ -557,6 +630,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "นโยบายความเป็นส่วนตัว",
     consentMarketing: "ส่งเคล็ดลับและฟีเจอร์ใหม่จาก {app_name} ให้ฉัน",
     errorTerms: "ยอมรับข้อกำหนดและนโยบายความเป็นส่วนตัวเพื่อดำเนินการต่อ",
+    notNow: "ยังไม่ใช่ตอนนี้",
+    saveDiary: "บันทึกไดอารี่ของคุณ",
   },
 
 
@@ -573,6 +648,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Integritetspolicy",
     consentMarketing: "Skicka mig tips och nya funktioner från {app_name}",
     errorTerms: "Godkänn villkoren och integritetspolicyn för att fortsätta.",
+    notNow: "Inte nu",
+    saveDiary: "Spara din dagbok",
   },
 
 
@@ -589,6 +666,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Політику конфіденційності",
     consentMarketing: "Надсилати мені поради та новинки {app_name}",
     errorTerms: "Щоб продовжити, прийми Умови та Політику конфіденційності.",
+    notNow: "Не зараз",
+    saveDiary: "Збережіть свій щоденник",
   },
 
 
@@ -605,6 +684,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Privacybeleid",
     consentMarketing: "Stuur me tips en nieuwe functies van {app_name}",
     errorTerms: "Ga akkoord met de Voorwaarden en het Privacybeleid om door te gaan.",
+    notNow: "Nu niet",
+    saveDiary: "Bewaar je dagboek",
   },
 
 
@@ -621,6 +702,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Polityka prywatności",
     consentMarketing: "Wysyłaj mi wskazówki i nowości od {app_name}",
     errorTerms: "Zaakceptuj Regulamin i Politykę prywatności, aby kontynuować.",
+    notNow: "Nie teraz",
+    saveDiary: "Zapisz swój dziennik",
   },
 
 
@@ -637,6 +720,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Gizlilik Politikası",
     consentMarketing: "Bana {app_name}'ten ipuçları ve yeni özellikler gönder",
     errorTerms: "Devam etmek için Koşullar'ı ve Gizlilik Politikası'nı kabul et.",
+    notNow: "Şimdi değil",
+    saveDiary: "Günlüğünü kaydet",
   },
 
 
@@ -653,7 +738,12 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "隱私權政策",
     consentMarketing: "寄給我 {app_name} 的小技巧和新功能",
     errorTerms: "請同意使用條款和隱私權政策以繼續。",
+    notNow: "暫不",
+    saveDiary: "儲存日記",
   },
+
+
+
 
 
   "zh-Hans": {
@@ -669,6 +759,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "隐私政策",
     consentMarketing: "向我发送 {app_name} 的小贴士和新功能",
     errorTerms: "同意条款和隐私政策后即可继续。",
+    notNow: "暂不",
+    saveDiary: "保存日记",
   },
 
 
@@ -685,6 +777,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "개인정보 처리방침",
     consentMarketing: "{app_name}의 팁과 새 기능 소식을 받을게요",
     errorTerms: "계속하려면 이용약관과 개인정보 처리방침에 동의해 주세요.",
+    notNow: "나중에",
+    saveDiary: "일기를 저장하세요",
   },
 
 
@@ -701,6 +795,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "プライバシーポリシー",
     consentMarketing: "{app_name}からヒントや新機能のお知らせを受け取る",
     errorTerms: "続けるには利用規約とプライバシーポリシーに同意してください。",
+    notNow: "あとで",
+    saveDiary: "日記を保存する",
   },
 
 
@@ -717,6 +813,8 @@ export const SIGNUP_COPY: Localized<SignupCopy> = {
     privacyLink: "Política de Privacidade",
     consentMarketing: "Quero receber dicas e novidades do {app_name}",
     errorTerms: "Aceite os Termos e a Política de Privacidade para continuar.",
+    notNow: "Agora não",
+    saveDiary: "Salve seu diário",
 
   },
 };
