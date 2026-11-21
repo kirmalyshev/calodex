@@ -42,7 +42,7 @@ import type {
   DayResponse, DaysResponse, ProfileResponse, ROUTES,
 } from "@eait/shared/contract";
 import { ApiError, Unauthenticated, api, signIn, signedIn } from "./api.ts";
-import { blobSrc, ctaEl, gramMacsEl, kitEl, verdictListEl } from "./kit.ts";
+import { blobSrc, ctaEl, fitHero, gramMacsEl, kitEl, verdictListEl } from "./kit.ts";
 import { fillCopy as fill, webCopyFor, type WebCopy } from "./copy.ts";
 import { failureOf, noAnswer, outbox, sendDeadlineMs, sendTurn, setModelCallTimeout, type WebQueued } from "./outbox.ts";
 import { routeBase } from "./route.ts";
@@ -529,7 +529,7 @@ export function keptLineEl(
     const hero = el("div", "hero");
     const img = el("img", "") as HTMLImageElement;
     img.alt = "";
-    void blobSrc(e.photos[0]!).then((src) => { img.src = src; });
+    void blobSrc(e.photos[0]!).then((src) => { img.src = src; fitHero(hero, img, 4 / 3); });
     hero.append(img);
     li.append(hero);
     if (e.text !== null) li.append(el("p", "cap", e.text));
