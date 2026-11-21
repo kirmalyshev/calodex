@@ -36,11 +36,23 @@ async function paywall(deps: EngineDeps, userId: string): Promise<Refusal | null
 }
 
 /**
+ * Sign-in is still owed: the account is anonymous AND pays for nothing (ieat-app#3202). Purchase
+ * can come before sign-up now — the 'Save your plan' sheet is skippable — so a payer who skipped
+ * it is still anonymous but must not be refused what they bought (App Review 3.1.2(a)). Every
+ * other cap and rate limit applies to them unchanged, and minting device accounts stays worthless:
+ * an anonymous account with no live entitlement — a grant or an experiment arm included — owes
+ * the identity exactly as before.
+ */
+async function identityOwed(deps: EngineDeps, userId: string): Promise<boolean> {
+  return (await isAnonymous(deps, userId)) && !(await entitlementFor(deps, userId)).active;
+}
+
+/**
  * The gate for a log that costs no model call (a catalog food): behind the paywall like a photo.
  * Same identity rule and the same refusal as `checkCaps`.
  */
 export async function checkFreeLog(deps: EngineDeps, userId: string): Promise<Refusal | null> {
-  if (await isAnonymous(deps, userId)) return { kind: "identity-required" };
+  if (await identityOwed(deps, userId)) return { kind: "identity-required" };
   const gate = await paywall(deps, userId);
   return gate === "entitled" ? null : gate;
 }
@@ -69,11 +81,11 @@ export async function checkCaps(
 ): Promise<Refusal | null> {
   const { store, config } = deps;
 
-  // No identity, no analysis (S8): sign-up comes before the first meal, so an account carrying no
-  // Apple or Google identity is refused here — ahead of every cap and therefore ahead of the
-  // charge. `charge` writes
+  // Sign-in is owed before the first analysis (S8) — ahead of every cap and therefore ahead of
+  // the charge — UNLESS the account already pays: an entitled anonymous account paid for this
+  // before it was ever asked who it is (ieat-app#3202). `charge` writes
   // `chargeAnalysis` below this, so a refusal returned now has spent nothing.
-  if (await isAnonymous(deps, userId)) return { kind: "identity-required" };
+  if (await identityOwed(deps, userId)) return { kind: "identity-required" };
   if (charged) return null;
 
   // Read from the store on every request rather than carried in the session, and that is the
