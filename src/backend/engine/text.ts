@@ -136,8 +136,9 @@ export async function textTurn(
   const week = await deps.store.totalsSince(userId, windowStart(today, CONTEXT_DAYS));
   const { targets } = explainTargets(profile);
   // Read ONCE for the turn: the router sees the tail, the coach the window. The message itself is
-  // not in it — `keep` writes it after the turn — so neither has to skip it.
-  const history = await recentLines(deps, userId);
+  // not in it — `keep` writes it after the turn — so neither has to skip it. `discussed` is the
+  // meal the thread last showed, for the coach's "this meal" when no pin names one (#3309).
+  const { lines: history, discussed: threadDiscussed } = await recentLines(deps, userId);
 
   // The turn's own clock, for the latency the admin page reads — the same record the photo turn
   // writes (#70): receipt-to-first-call in `queue` (the caps and the day's rows live in it),
@@ -254,7 +255,12 @@ export async function textTurn(
         // The router's own sentence is the FALLBACK, so a coach that fails degrades to the chat as
         // it was rather than to `analysis-failed` on a turn already charged.
         try {
-          const answered = await coachTurn(deps, userId, { text: input.text, profile, focus, todayRows, week, history, today, onCost, onCall });
+          // "This meal" is the pin when the client named one — a logged meal or the offer it
+          // points at — else the card or live offer the thread last showed (#3309).
+          const discussed = focus !== null || (focusPending !== null && focusPending.id === input.focusMealId)
+            ? focusAnalysis
+            : threadDiscussed;
+          const answered = await coachTurn(deps, userId, { text: input.text, profile, discussed, todayRows, week, history, today, onCost, onCall });
           answeredBy = deps.config.llmChatModel;
           return answered;
         } catch (e) {
