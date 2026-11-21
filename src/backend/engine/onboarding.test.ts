@@ -1133,5 +1133,8 @@ describe("the funnel cohort (ieat-app#3326)", () => {
     expect(f.sessions).toBe(1);
     expect(f.rows.find((r) => r.place === "goal")).toBeUndefined();
     expect(f.rows.find((r) => r.place === "welcome")!.people).toBe(1);
+    // The account list is the same cohort: the run begun before the window is not a row.
+    const list = await s.adminOnboardingFlow({ range: { from: new Date("2026-11-05T00:00:00.000Z"), to: null } });
+    expect(list.rows.map((r) => r.userId)).toEqual([u2]);
   });
 });

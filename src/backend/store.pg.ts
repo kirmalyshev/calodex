@@ -4603,6 +4603,8 @@ export async function postgresStore(
          where (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
            and not u.staff and (${includeTesters} or not u.tester)
            and e.user_id <> all(${configStaff}::uuid[])
+           and (${lo === null} or not exists (select 1 from onboarding_events p
+                 where p.user_id = e.user_id and p.session_id = e.session_id and p.received_at < ${lo}))
          group by e.user_id, u.id
         having (${leftAt === undefined} or (
                  (array_agg(e.place order by e.at desc, e.received_at desc, e.id desc))[1] = ${leftAt ?? ""}

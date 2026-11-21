@@ -54,6 +54,12 @@ const ACCOUNTS = {
     startedAt: "2026-11-04T07:00:00.000Z", lastPlace: "paywall", sessions: 1,
     completed: true, paywall: true, paywallResult: "declined",
     paid: { kind: "monthly", productId: "monthly_499", msFromStart: 240000, live: true },
+  }, {
+    // A grant older than the run is not a payment this run caused: the decline stands.
+    userId: "33333333-2222-1111-0000-999999999999", lang: "en", country: "us",
+    startedAt: "2026-11-03T07:00:00.000Z", lastPlace: "paywall", sessions: 1,
+    completed: true, paywall: true, paywallResult: "declined",
+    paid: { kind: "monthly", productId: "monthly_499", msFromStart: null, live: true },
   }],
 };
 
@@ -163,6 +169,8 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
 
   await expect(page.locator("#funnel-users .fa-row", { hasText: "44444444" })).toContainText("Paywall · paid");
   await expect(page.locator("#funnel-users .fa-row", { hasText: "44444444" })).not.toContainText("declined");
+
+  await expect(page.locator("#funnel-users .fa-row", { hasText: "33333333" })).toContainText("Paywall · declined");
 
   // A record that lapsed is named, not read as still paying.
   await expect(page.locator("#funnel-users .fa-row", { hasText: "77777777" })).toContainText("trial ended");

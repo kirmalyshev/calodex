@@ -2427,7 +2427,7 @@ details.how p { margin-top: 8px; }
       f.rows.forEach(function (r) { if (r.place === "paywall") atPaywall = r.people; });
       kpi(kp, "Paid / started", pct1(f.paid.converted, f.sessions), "", f.paid.converted + " paid of " + f.sessions + " started");
       kpi(kp, "Reached paywall", pct1(atPaywall, f.sessions), "", atPaywall + " of " + f.sessions);
-      kpi(kp, "Paywall \u2192 paid", pct1(f.paid.converted, atPaywall), "", f.paid.converted + " of " + atPaywall);
+      kpi(kp, "Paywall \u2192 paid", pct1(f.paid.converted, atPaywall), "", "all paid \u00f7 paywall viewers (web never views it)");
       kpi(kp, "Completion", pct1(f.completed, f.sessions), "", f.completed + " finished the questions");
       $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff" +
         ($("funnel-testers").checked ? "" : " and known testers") + " excluded \u00b7 runs that started in the window \u00b7 app content v" +
@@ -2483,17 +2483,15 @@ details.how p { margin-top: 8px; }
         var next = steps[i + 1];
         if (next) {
           var d = s.n - next.n;
-          // A run that began before the window shows up from its first step inside it, so the next
-          // step can hold MORE people than this one. That is not a drop, and "-5 left" reads as one.
+          // The funnel is a cohort, so a later step can hold MORE people only when it is a step some
+          // runs reach and others skip. That is not a drop, and "-5 left" reads as one.
           var g = el("div", "fp-gap" + (worst.indexOf(d) !== -1 && d > 0 ? " fp-big" : ""),
             d >= 0 ? "\u25bc " + d + " left" : "+" + (-d) + " joined here");
-          // The "before this window" reason only exists when there IS a before: under All time a
-          // negative gap is a step only some runs reach, and the claim would be a lie (#2779).
           if (d >= 0) g.appendChild(el("em", "", "(" + pct1(d, s.n) + " of " + s.n + ")"));
-          else if (f.range && f.range.from) g.appendChild(el("em", "", "(runs that began before this window)"));
+          else g.appendChild(el("em", "", "(a step only some runs reach)"));
           // A drop drills into the list below (#814): who has this screen as their last.
           // The "complete"/"paid" rows name outcomes, not screens — nothing to filter on.
-          if (!s.fin && d >= 0) {
+          if (!s.fin && d >= 0 && next.id !== "paid") {
             g.classList.add("fp-jump");
             g.setAttribute("role", "button");
             g.setAttribute("tabindex", "0");
@@ -2654,7 +2652,7 @@ details.how p { margin-top: 8px; }
   function lastPlaceLabel(a) {
     if (!a.lastPlace) return null;
     // A decline followed by a purchase reads as paid (ieat-app#3326): the entitlement outranks the last answer.
-    if (a.lastPlace === "paywall" && a.paywallResult) return "Paywall · " + (a.paid ? "paid" : a.paywallResult);
+    if (a.lastPlace === "paywall" && a.paywallResult) return "Paywall · " + (a.paid && a.paid.msFromStart != null ? "paid" : a.paywallResult);
     return STEP_NAMES[a.lastPlace] || a.lastPlace;
   }
 

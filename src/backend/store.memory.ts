@@ -1975,7 +1975,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       // The admin's list: the same population and window as `onboardingFunnel`, one row per
       // account, newest start first, keyset-paged on (started, user_id) like `adminListUsers`.
       const byUser = new Map<string, StoredEvent[]>();
+      // The same COHORT as the funnel (ieat-app#3326): a run with an event before the window is out.
+      const before = new Set([...onboardingEvents.values()].filter((e) => e.receivedAt < lo).map((e) => `${e.userId}|${e.sessionId}`));
       for (const e of onboardingEvents.values()) {
+        if (before.has(`${e.userId}|${e.sessionId}`)) continue;
         if (!inRange(e) || staffSet.has(e.userId) || staffIds.includes(e.userId) || (!includeTesters && tester(e.userId))) continue;
         const l = byUser.get(e.userId);
         if (l) l.push(e); else byUser.set(e.userId, [e]);
