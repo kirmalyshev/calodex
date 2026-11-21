@@ -5600,7 +5600,8 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
     it("counts a step as REACHED by whoever saw it or a later one, and pays only the paywall's viewers (ieat-app#3339)", async () => {
       const s = await open();
       const v = `reach-${RUN}`;
-      const at = new Date().toISOString();
+      // Long ago, so the runs this leaves behind sort behind every "newest first" list a later run reads.
+      const at = "2020-01-01T00:00:00.000Z";
       const ctx = { surface: "app", app_version: v, lang: "en", country: "DE" };
       const run = async (sid: string, places: string[]) => {
         const u = await s.createUser("en");

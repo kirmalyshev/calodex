@@ -4413,7 +4413,7 @@ export async function postgresStore(
       // the runs at or past it, so a run whose early screens were never recorded still counts at each one.
       const furthestRows = await sql`
         select at, count(*)::int as n
-        from (select max(array_position(${[...ONBOARDING_PLACES]}::text[], e.place)) as at
+        from (select max(array_position(${`{${ONBOARDING_PLACES.join(",")}}`}::text[], e.place)) as at
               from onboarding_events e
               where e.action = 'view'
                 and (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
