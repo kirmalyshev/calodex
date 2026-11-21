@@ -12,7 +12,7 @@ import { COACH_HEALTH_DAYS, COACH_MEALS_LIMIT, COACH_MEALS_WINDOW_DAYS } from ".
 import {
   COACH_TOOL_DEFS, CoachReplySchema, MealAnalysisSchema, SYSTEM, SYSTEM_COACH, SYSTEM_ROUTE,
   SYSTEM_TEXT_CORRECTION, SYSTEM_TEXT_MEAL, buildCoachContext, buildRouteText,
-  buildTextCorrectionText, buildUserText, languageLine,
+  buildTextCorrectionText, buildTextMealText, buildUserText, languageLine,
 } from "./prompt.ts";
 
 const ITEM_FIELDS = "Every item carries grams, kcal, protein_g, carbs_g, fat_g and kcal_per_100g.";
@@ -379,5 +379,39 @@ describe("the language line, which is the only thing steering the largest text s
     ]) {
       expect(built).toContain("Tiếng Việt (vi)");
     }
+  });
+
+  it("follows the language of the user's own message over the profile's (ieat-app#3310)", () => {
+    // Prod, 21 Nov: every message of a trial user's thread was Arabic and every reply came back
+    // English, because `lang: en` came from the phone's locale and pinned the line. The message's
+    // own language wins when it is clearly one; the profile stays the fallback it was named for.
+    const arabic = "ماذا تنصحني أن آكل على العشاء؟";
+    const en: Profile = { ...PROFILE, lang: "en" };
+    const targets = { kcal: 1800, protein_g: 120, carbs_g: 190, fat_g: 55 };
+    for (const built of [
+      buildRouteText({ text: arabic, profile: en, targets, todayMeals: [], week: [] }),
+      buildCoachContext(coachInput({ profile: en, targets }), arabic),
+      buildTextMealText({ text: arabic, profile: en, targets, todayMeals: [] }),
+      buildTextCorrectionText({ text: arabic, profile: en, targets, focusMeal: {} }),
+      buildUserText(en, targets, { caption: arabic }),
+    ]) {
+      expect(built).toContain("language of the user's message");
+      expect(built).toContain("English (en)");
+      expect(built).not.toContain("Reply in this language: English (en).");
+    }
+  });
+
+  it("an English message on a pt-BR profile is steered by the message, not the profile", () => {
+    const line = languageLine("pt-BR", "how many calories are in oven potatoes?");
+    expect(line).toContain("language of the user's message");
+    expect(line).toContain("Português (Brasil) (pt-BR)");
+  });
+
+  it("a turn with no words to go on still answers in the profile's language", () => {
+    for (const message of [undefined, "", "200", "🍕🍕🍕"]) {
+      expect(languageLine("fr", message)).toContain("Reply in this language: Français (fr)");
+    }
+    // And a code this binary does not know still falls back to English, never `undefined`.
+    expect(languageLine("zz", "ماذا آكل؟")).toContain("English (en)");
   });
 });

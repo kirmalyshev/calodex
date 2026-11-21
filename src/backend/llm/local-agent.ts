@@ -515,7 +515,7 @@ export function localAgentPorts(opts: Options): LlmPorts {
     const { coach: persona } = await prompts();
     const system = [
       persona,
-      buildCoachContext(input.context),
+      buildCoachContext(input.context, input.text),
       ...(defs.length > 0 ? [
         `To fetch more of the user's data, reply with ONLY a JSON object {"tool_calls":[{"name":"<name>","arguments":{…}}]} naming one or more of these tools:\n${JSON.stringify(defs.map((d) => d.function))}`,
       ] : []),
