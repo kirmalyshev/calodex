@@ -10,7 +10,7 @@ import {
   explainTargets, HEALTH_FIELDS, isCalendarDate, isCoachNutrient, localTime, projectGoal,
   projectionMonth, windowStart,
   type Answered, type CoachFocus, type DailyTotals, type DayTotals, type FoodTargets,
-  type MealRecord, type Profile,
+  type MealAnalysis, type MealRecord, type Profile,
 } from "@eait/shared";
 import type { ChatMessage } from "../store.ts";
 import type { CoachContext, CoachHistoryLine, CoachTools, OnCall, OnCost } from "../llm/port.ts";
@@ -25,7 +25,11 @@ export const ROUTER_RECENT_LINES = 6;
 export interface CoachTurnInput {
   text: string;
   profile: Profile;
-  focus: MealRecord | null;
+  /**
+   * The meal "this meal" resolves to: the client's pin when one was named, else the card or live
+   * offer the thread last showed (`recentLines`). Null when the thread discusses no meal.
+   */
+  discussed: MealAnalysis | null;
   todayRows: MealRecord[];
   week: DayTotals[];
   /** Oldest first — what `recentLines` returned for this turn. */
@@ -38,22 +42,45 @@ export interface CoachTurnInput {
   onCall?: OnCall | undefined;
 }
 
+export interface RecentThread {
+  lines: CoachHistoryLine[];
+  /**
+   * The meal the thread last showed — the newest logged card, or a live proposal's analysis — so
+   * "this meal" has a referent when the turn names none (#3309). Null when nothing resolves.
+   */
+  discussed: MealAnalysis | null;
+}
+
 /**
  * The thread's tail as the coach reads it: oldest first, at most `limit` lines, the newest
  * excluded when it is the message being answered (it is not stored yet — `keep` writes it after
  * the turn — so nothing here has to skip it). A card becomes a one-line note about the meal AS IT
  * IS NOW, the way `chatHistory` resolves it on read; a photo bubble is its caption.
  */
-export async function recentLines(deps: EngineDeps, userId: string, limit = COACH_HISTORY_LINES): Promise<CoachHistoryLine[]> {
+export async function recentLines(deps: EngineDeps, userId: string, limit = COACH_HISTORY_LINES): Promise<RecentThread> {
   const rows = (await deps.store.chatBefore(userId, null, limit)).reverse();
-  const ids = [...new Set(rows.flatMap((m) => (m.kind === "meal" && m.mealId ? [m.mealId] : [])))];
+  const ids = [...new Set(rows.flatMap((m) => (m.mealId ? [m.mealId] : [])))];
   const meals = new Map((ids.length > 0 ? await deps.store.getMeals(userId, ids) : []).map((m) => [m.id, m]));
   const out: CoachHistoryLine[] = [];
   for (const m of rows) {
     const text = noteFor(m, meals);
     if (text !== null) out.push({ role: m.role, text, ...(m.speaker ? { speaker: m.speaker } : {}) });
   }
-  return out;
+  // The newest reference wins, read back-to-front: a meal id a card, a photo or a change line
+  // carries, then a proposal's carrier line (`pendingId` — the offer's id, which a confirmed one
+  // becomes, so a dead offer falls through to the meal it logged or to nothing).
+  let discussed: MealAnalysis | null = null;
+  for (let i = rows.length - 1; i >= 0 && discussed === null; i--) {
+    const m = rows[i]!;
+    const card = m.mealId ? meals.get(m.mealId) : undefined;
+    if (card) { discussed = toAnalysis(card); break; }
+    if (m.pendingId) {
+      const live = await deps.store.getPending(userId, m.pendingId);
+      const settled = live === null ? await deps.store.getMeal(userId, m.pendingId) : null;
+      discussed = live !== null ? live.analysis : settled !== null ? toAnalysis(settled) : null;
+    }
+  }
+  return { lines: out, discussed };
 }
 
 function noteFor(m: ChatMessage, meals: Map<string, MealRecord>): string | null {
@@ -79,7 +106,7 @@ export async function coachTurn(deps: EngineDeps, userId: string, input: CoachTu
     profile: input.profile, targets, basis, today, localTime: localTime(zone),
     todayMeals: input.todayRows.map((m) => ({ items: m.items.map((i) => i.name), kcal: m.kcal, protein_g: m.protein_g })),
     week: input.week,
-    ...(input.focus ? { focusMeal: toAnalysis(input.focus) } : {}),
+    ...(input.discussed ? { focusMeal: input.discussed } : {}),
     projection: projected === null ? null
       : projected.beyondHorizon ? "in more than two years at this pace"
       : `around ${projectionMonth(new Date(), projected.weeks, input.profile.lang)}`,

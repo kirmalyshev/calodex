@@ -14,7 +14,7 @@ import { memoryStore } from "../store.memory.ts";
 import type { Store } from "../store.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
-import { COACH_HISTORY_LINES, chatHistory, coachTools, handleText, patchProfile, recentLines, type EngineDeps } from "./index.ts";
+import { COACH_HISTORY_LINES, chatHistory, coachTools, handleText, patchProfile, recentLines, toAnalysis, type EngineDeps } from "./index.ts";
 
 const CONFIG: Config = {
   ...configDefaults(), port: 0, databaseUrl: "memory://test",
@@ -102,6 +102,65 @@ describe("the coach turn", () => {
     expect(seen[0]!.input.text).toBe("is this ok?");
   });
 
+  it("hands the coach the meal the thread last discussed when the message names none (#3309)", async () => {
+    const { llm, seen } = recordingCoach();
+    const d = makeDeps(llm);
+    const userId = await onboard();
+    // The reported thread: a plate was just logged and "should i eat this meal?" was answered
+    // "I do not have that plate" — the coach had no referent for "this".
+    const earlier = meal(userId, { kcal: 300 });
+    const latest = meal(userId, { kcal: 816 });
+    await store.insertMeal(earlier);
+    await store.insertMeal(latest);
+    await handleText(d, userId, { text: "should i eat this meal?" });
+    // Nothing logged in the THREAD yet (insertMeal writes no card): there is no referent.
+    expect(seen[0]!.input.context.focusMeal).toBeUndefined();
+    await store.appendChat(userId, [
+      { role: "assistant", kind: "meal", mealId: earlier.id, event: "logged" },
+      { role: "assistant", kind: "text", text: "First one in. 300kcal." },
+      { role: "assistant", kind: "meal", mealId: latest.id, event: "logged" },
+      { role: "assistant", kind: "text", text: "816kcal." },
+      { role: "user", kind: "text", text: "what calories should i have for a day" },
+      { role: "assistant", kind: "text", text: "1858 a day, 1042 left.", speaker: "gabie" },
+    ]);
+    await handleText(d, userId, { text: "should i eat this meal?" });
+    // The newest card wins — the words point at the plate the thread just showed.
+    expect(seen[1]!.input.context.focusMeal).toMatchObject({ kcal: 816 });
+  });
+
+  it("lets a pinned focus beat the thread's newest card", async () => {
+    const { llm, seen } = recordingCoach();
+    const d = makeDeps(llm);
+    const userId = await onboard();
+    const pinned = meal(userId, { kcal: 300 });
+    const latest = meal(userId, { kcal: 816 });
+    await store.insertMeal(pinned);
+    await store.insertMeal(latest);
+    await store.appendChat(userId, [
+      { role: "assistant", kind: "meal", mealId: latest.id, event: "logged" },
+    ]);
+    await handleText(d, userId, { text: "should i eat this meal?", focusMealId: pinned.id });
+    expect(seen[0]!.input.context.focusMeal).toMatchObject({ kcal: 300 });
+  });
+
+  it("hands the coach the live proposal the thread last offered (#3309)", async () => {
+    const { llm, seen } = recordingCoach();
+    const d = makeDeps(llm);
+    const userId = await onboard();
+    const pending = {
+      id: crypto.randomUUID(), userId,
+      analysis: toAnalysis(meal(userId, { kcal: 700 })),
+      date: today(), expiresAt: Date.now() + 60_000,
+    };
+    await store.putPending(pending);
+    await store.appendChat(userId, [
+      { role: "user", kind: "text", text: "two eggs and toast", pendingId: pending.id },
+      { role: "assistant", kind: "text", text: "Log it?", speaker: "gabie" },
+    ]);
+    await handleText(d, userId, { text: "should i eat this meal?" });
+    expect(seen[0]!.input.context.focusMeal).toMatchObject({ kcal: 700 });
+  });
+
   it("replays the thread oldest first, cards as notes about the meal as it is now, without the message itself", async () => {
     const { llm, seen, routed } = recordingCoach();
     const d = makeDeps(llm);
@@ -135,7 +194,7 @@ describe("the coach turn", () => {
     const userId = await onboard();
     await store.appendChat(userId, Array.from({ length: COACH_HISTORY_LINES + 5 }, (_, i) =>
       ({ role: "user" as const, kind: "text" as const, text: `line ${i}` })));
-    const h = await recentLines(deps, userId);
+    const { lines: h } = await recentLines(deps, userId);
     expect(h).toHaveLength(COACH_HISTORY_LINES);
     expect(h[0]!.text).toBe("line 5");
     expect(h[h.length - 1]!.text).toBe(`line ${COACH_HISTORY_LINES + 4}`);
