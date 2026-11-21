@@ -353,12 +353,15 @@ const countryAnswered = (p: Profile): boolean =>
   p.country !== null && !(p.filled_fields ?? []).includes("country");
 
 /**
- * Whether this account has ever paid, told by the webhook's record rather than the entitlement's
- * state (ieat-app#3205). A record `getEntitlement` answers is "has bought something" — a lapse
- * clears the live grant but not the row, and a paid account that lapsed still needs the sign-in
- * it skipped: without it nothing this browser bought can follow it anywhere.
+ * Whether this account has ever checked out, told by the webhook's record rather than the
+ * entitlement's state (ieat-app#3205). A record `getEntitlement` answers is "has bought
+ * something" — a lapse clears the live grant but not the row, and a paid account that lapsed
+ * still needs the sign-in it skipped: without it nothing this browser bought can follow it
+ * anywhere. NOT `store.memory.ts`'s `hasPaid`: that one excludes a trial that never converted,
+ * for the caps' sake; this one counts it, because the trial still completed a receipt-less
+ * checkout the same way.
  */
-const hasPaid = async (ctx: StartContext, userId: string): Promise<boolean> =>
+const hasBought = async (ctx: StartContext, userId: string): Promise<boolean> =>
   (await ctx.store.getEntitlement(userId)) !== null;
 
 async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Promise<string> {
@@ -367,7 +370,7 @@ async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Pr
     // Purchase before sign-up (#3205): the anonymous session may buy at the offer, but a Web
     // Billing purchase carries no Apple receipt — nothing restores it on a phone, so once the
     // account has paid the sign-in is REQUIRED, not offered, and this is where it happens.
-    if (await hasPaid(ctx, userId)) return `${START_PREFIX}/signup`;
+    if (await hasBought(ctx, userId)) return `${START_PREFIX}/signup`;
     return `${START_PREFIX}/plan`;
   }
   // Still in the funnel, not an account that finished without a goal: that one goes to the product.
@@ -1498,7 +1501,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // past the questions routes back to the sign-up, which attaches Apple, Google or email to
   // THAT account — purchase, plan and answers together. The sign-up screen itself sits before
   // the session gate, so the rule can live in one place.
-  if (await isAnonymous(ctx.deps, userId) && await hasPaid(ctx, userId)) {
+  if (await isAnonymous(ctx.deps, userId) && await hasBought(ctx, userId)) {
     return seeOther(`${START_PREFIX}/signup`);
   }
 
@@ -1830,9 +1833,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // ── The soft offer (#42) — the plan's one ask, with a way past it. ──────────────────────────
   //
   // The × is not decoration: the welcome's promise is "nothing to pay until the plan and the
-  // first verdict", and the close is what keeps it — it goes to the web app's first-meal flow,
-  // the same app root the plan page already links to. With no checkout configured there is
-  // nothing to offer at all, so the route answers as if it were declined: straight there.
+  // first verdict", and the close is what keeps it — the flow's own next place, worked out
+  // below. With no checkout configured there is nothing to offer at all, so the route
+  // answers as if it were declined: straight there.
   // THE PAID LINKS, one per configured plan (#77). `?plan=` says which — `yearly` is the
   // preselected plan, so a bare link means it — and `exit` is the offer a decline leads to.
   // A plan the operator did not configure is a route that does not exist, the shape the purchase
