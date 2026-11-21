@@ -342,3 +342,25 @@ test("the funnel's dimension selects narrow the request and keep their choice (i
   await expect(page.locator("#funnel-dim-surface")).toHaveValue("web");
   expect(errors).toEqual([]);
 });
+
+// ieat-app#3326: payment is the target, so the gap into "Converted to paid" ranks as a worst drop
+// like any other — the biggest loss on the page is red, wherever it sits.
+test("the gap into paid is red when it is the biggest drop", async ({ page }) => {
+  const errors = watchConsole(page);
+  await stub(page);
+  const row = (place: string, people: number) =>
+    ({ place, views: people, people, answers: 0, backs: 0, rejects: 0, medianMs: null });
+  await page.route((u) => u.pathname === "/admin/api/funnel", (r) => r.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({
+      ...FUNNEL, sessions: 20, completed: 17,
+      paid: { ...FUNNEL.paid, converted: 1 },
+      rows: [row("welcome", 20), row("goal", 19), row("summary", 18), row("paywall", 17)],
+    }),
+  }));
+  await page.goto("/admin#funnel");
+  const gaps = page.locator("#funnel-path .fp-gap");
+  await expect(gaps.last()).toContainText("16 left");
+  await expect(gaps.last()).toHaveClass(/fp-big/);
+  expect(errors).toEqual([]);
+});
