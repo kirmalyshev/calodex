@@ -2450,12 +2450,12 @@ details.how p { margin-top: 8px; }
       // client event; a record older than that is a payment this run did not cause.
       steps.push({ name: "Converted to paid", id: "paid", n: f.paid.converted, fin: true });
       var first = steps[0].n;
-      // The gap into "paid" never ranks as a worst drop: not reaching it is not abandoning
-      // onboarding, and a red "17 left" there would crowd out the three drops that are.
+      // The gap into "paid" ranks like any other (ieat-app#3326): payment is the target metric, so
+      // the biggest loss on the page is red wherever it is. It only has no drill-down list below.
       var drops = [];
       steps.forEach(function (s, i) {
         var next = steps[i + 1];
-        if (next && next.id !== "paid") { var d = s.n - next.n; if (d > 0) drops.push(d); }
+        if (next) { var d = s.n - next.n; if (d > 0) drops.push(d); }
       });
       var worst = drops.slice().sort(function (a, b) { return b - a; }).slice(0, 3);
       var hd = el("div", "fp-st fp-hd");
