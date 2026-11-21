@@ -20,8 +20,8 @@ const USER = "11111111-2222-3333-4444-555555555555";
 const RANGE = { from: null, to: null, days: 30 };
 
 const FUNNEL = {
-  range: RANGE, contentVersion: 7, sessions: 3, completed: 2,
-  paid: { converted: 1, trial: 0, lifetime: 0, monthly: 1, yearly: 0, other: 0, medianMs: 7200000 },
+  range: RANGE, contentVersion: 7, sessions: 3, completed: 2, paywallSince: "2026-11-01T00:00:00.000Z",
+  paid: { converted: 1, viaPaywall: 1, trial: 0, lifetime: 0, monthly: 1, yearly: 0, other: 0, medianMs: 7200000 },
   rows: [
     { place: "welcome", views: 3, people: 3, answers: 0, backs: 0, rejects: 0, medianMs: null },
     { place: "summary", views: 3, people: 3, answers: 0, backs: 0, rejects: 0, medianMs: null },
@@ -123,6 +123,30 @@ function watchConsole(page: Page): string[] {
   return errors;
 }
 
+test("a purchase that never met the paywall cannot push the funnel past 100% (ieat-app#3339)", async ({ page }) => {
+  await stub(page);
+  const row = (place: string, people: number, reached: number) =>
+    ({ place, views: people, people, reached, answers: 0, backs: 0, rejects: 0, medianMs: null });
+  await page.route((u) => u.pathname === "/admin/api/funnel", (r) => r.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({
+      ...FUNNEL, sessions: 158, completed: 80,
+      // 10 paid, 8 of them saw the plans: the other two bought on the web.
+      paid: { ...FUNNEL.paid, converted: 10, viaPaywall: 8 },
+      rows: [row("welcome", 150, 158), row("target", 100, 120), row("paywall", 9, 9)],
+    }),
+  }));
+  await page.goto("/admin#funnel");
+  const kpis = page.locator("#funnel-kpi > div");
+  await expect(kpis.nth(2)).toContainText("88.9%");
+  await expect(page.locator("#funnel-path")).toContainText("2 paid without being shown the plans");
+  // No step is above the first, and no gap reads "joined here": the early screens that were never
+  // recorded for some runs are counted as passed.
+  const pcts = await page.locator("#funnel-path .fp-c1").allTextContents();
+  for (const p of pcts) if (p !== "% of first") expect(parseInt(p, 10)).toBeLessThanOrEqual(100);
+  await expect(page.locator("#funnel-path")).not.toContainText("joined here");
+});
+
 test("the funnel shows conversion to paid, the account rows, and an expanded journal", async ({ page }) => {
   const errors = watchConsole(page);
   await stub(page);
@@ -138,6 +162,9 @@ test("the funnel shows conversion to paid, the account rows, and an expanded jou
   await expect(kpis.nth(1)).toContainText("66.7%");
   await expect(kpis.nth(2)).toContainText("Paywall → paid");
   await expect(kpis.nth(2)).toContainText("50.0%");
+  await expect(kpis.nth(2)).toContainText("1 of 2 who saw the plans");
+  // ieat-app#3339: paywall views exist only since a date, and the tile says so under All time.
+  await expect(kpis.nth(1)).toContainText("paywall views recorded since 2026-11-01");
   await expect(kpis.nth(3)).toContainText("Completion");
   // The steps run in the order the flow runs: the questions are answered BEFORE the paywall,
   // and the paid row is last.

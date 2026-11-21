@@ -468,6 +468,7 @@ export async function onboardingFunnel(
       place,
       views: r?.views ?? 0,
       people: r?.people ?? 0,
+      reached: agg.reached[place] ?? 0,
       answers: r?.answers ?? 0,
       backs: r?.backs ?? 0,
       rejects: r?.rejects ?? 0,
@@ -481,6 +482,7 @@ export async function onboardingFunnel(
     paid: paidStep(agg.paid),
     range: adminWindowEcho(ask),
     contentVersion,
+    paywallSince: agg.paywallSince,
     rows,
     dimensions: agg.dimensions,
   };
@@ -501,7 +503,7 @@ export function productPlan(productId: string, lifetimeProductId: string | null)
 
 /** The aggregate's product counts classified into the funnel's paid step. */
 function paidStep(paid: FunnelAggregate["paid"]): OnboardingFunnel["paid"] {
-  const out = { converted: paid.converted, trial: paid.trial, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: paid.medianMs };
+  const out = { converted: paid.converted, viaPaywall: paid.viaPaywall, trial: paid.trial, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: paid.medianMs };
   for (const p of paid.products) {
     if (p.lifetime) { out.lifetime += p.n; continue; }
     out[productPlan(p.productId, null)] += p.n;

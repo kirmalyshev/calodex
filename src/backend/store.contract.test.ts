@@ -33,7 +33,7 @@
 
 import { afterAll, describe, expect, it } from "bun:test";
 import { SQL } from "bun";
-import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, ONBOARDING_CONTENT, emptyHealthDay, type ActivityLevel, type FoodRef, type MealRecord, type OffProduct } from "@eait/shared";
+import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, ONBOARDING_PLACES, ONBOARDING_CONTENT, emptyHealthDay, type ActivityLevel, type FoodRef, type MealRecord, type OffProduct } from "@eait/shared";
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { hashToken } from "./auth/tokens.ts";
 import { memoryStore } from "./store.memory.ts";
@@ -5595,6 +5595,48 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect(goal.people - (baseGoal?.people ?? 0)).toBe(3);
       expect(goal.views - (baseGoal?.views ?? 0)).toBe(3);
       expect((await s.onboardingFunnel({ from: range.to, to: range.from })).sessions).toBe(0);
+    });
+
+    it("counts a step as REACHED by whoever saw it or a later one, and pays only the paywall's viewers (ieat-app#3339)", async () => {
+      const s = await open();
+      const v = `reach-${RUN}`;
+      const at = new Date().toISOString();
+      const ctx = { surface: "app", app_version: v, lang: "en", country: "DE" };
+      const run = async (sid: string, places: string[]) => {
+        const u = await s.createUser("en");
+        await s.recordOnboardingEvents(u, places.map((place) => ({
+          id: crypto.randomUUID(), sessionId: `${sid}-${RUN}`, place, action: "view", contentVersion: 1, at,
+        })) as never, ctx as never);
+        return u;
+      };
+      // A saw welcome→goal→paywall and paid. B's welcome and goal were never recorded (an older build,
+      // a lost outbox): it only shows `target` — it must not be a step MORE people reached than the first.
+      // C paid on the web: never shown the paywall.
+      const a = await run("a", ["welcome", "goal", "paywall"]);
+      await run("b", ["target"]);
+      const c = await run("c", ["welcome", "goal"]);
+      const later = new Date(Date.parse(at) + 60_000).toISOString();
+      await s.putEntitlement(a, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: later });
+      await s.putEntitlement(c, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: later });
+
+      const f = await s.onboardingFunnel({ from: null, to: null }, [], false, { app_version: v });
+      const reached = (place: string) => f.reached[place] ?? 0;
+      expect(f.sessions).toBe(3);
+      expect(reached("welcome")).toBe(3);           // B saw `target`, which is past it
+      expect(reached("goal")).toBe(3);
+      expect(reached("target")).toBe(2);            // A's paywall is past it, B's own view
+      expect(reached("paywall")).toBe(1);
+      // Never more than the step before it, whatever was recorded.
+      const order = ONBOARDING_PLACES.map((place) => reached(place));
+      expect(order).toEqual([...order].sort((x, y) => y - x));
+      // The strict view count is untouched: the experiments and the tile read it.
+      expect(f.rows.find((r) => r.place === "welcome")?.people).toBe(2);
+      // Both A and C paid; only A saw the paywall, so only A is the paywall's payment.
+      expect(f.paid.converted).toBe(2);
+      expect(f.paid.viaPaywall).toBe(1);
+      expect(f.paid.viaPaywall).toBeLessThanOrEqual(f.rows.find((r) => r.place === "paywall")!.people);
+      // The tile's footnote: when a paywall view was first recorded at all.
+      expect(typeof f.paywallSince).toBe("string");
     });
 
     it("narrows the funnel by each context dimension, and lists every value the range holds (ieat-app#3196)", async () => {

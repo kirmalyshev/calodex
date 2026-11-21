@@ -20,7 +20,7 @@ import type {
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
-import { BARRIERS, COUNTED_BEFORE, FUNNEL_DIMENSIONS, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel, ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
+import { BARRIERS, COUNTED_BEFORE, FUNNEL_DIMENSIONS, ONBOARDING_PLACES, HEALTH_FIELDS, LANGS, isMealReminders, PRODUCT_SOURCES, PROVIDERS, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, SITUATIONS, STREAK_GOALS, STRUGGLES, dateMinus, emptyHealthDay, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn, parseApp, parseChannel, ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 import {
   DEFAULT_SESSION_TTL_MS, hashToken, newSessionToken, sessionRefreshAfterMs,
 } from "./auth/tokens.ts";
@@ -4409,6 +4409,23 @@ export async function postgresStore(
           ${cohort}
         group by place`;
 
+      // REACHED (ieat-app#3339): per run, the furthest screen it SAW in the default order; a step's count is
+      // the runs at or past it, so a run whose early screens were never recorded still counts at each one.
+      const furthestRows = await sql`
+        select at, count(*)::int as n
+        from (select max(array_position(${[...ONBOARDING_PLACES]}::text[], e.place)) as at
+              from onboarding_events e
+              where e.action = 'view'
+                and (${lo === null} or e.received_at >= ${lo}) and (${hi === null} or e.received_at <= ${hi})
+                and not exists (select 1 from users u where u.id = e.user_id and (u.staff or (not ${includeTesters} and u.tester)))
+                and e.user_id <> all(${configStaff}::uuid[])
+                ${narrow}
+                ${cohort}
+              group by e.user_id, e.session_id) r
+        where at is not null
+        group by at`;
+      const paywallFirst = await sql`select min(received_at) as at from onboarding_events where place = 'paywall' and action = 'view'`;
+
       // Conversion to paid (#812), the funnel's last step. The same population and window,
       // joined onto the account's own entitlement record — `users.entitlement_*`, the server's
       // rows only. A run converted when the earliest instant either grant clock holds came at
@@ -4419,6 +4436,7 @@ export async function postgresStore(
         with runs as (
           select e.user_id, e.session_id, min(e.at) as started,
                  least(u.entitlement_expires_event_at, u.entitlement_lifetime_event_at) as first_grant,
+                 bool_or(e.place = 'paywall' and e.action = 'view') as paywall,
                  u.entitlement_trial as trial,
                  u.entitlement_lifetime_product_id as lifetime,
                  coalesce(u.entitlement_lifetime_product_id, u.entitlement_product_id) as product
@@ -4431,14 +4449,14 @@ export async function postgresStore(
            group by e.user_id, e.session_id, u.id
         ),
         conv as (
-          select product, trial, lifetime,
+          select product, trial, lifetime, paywall,
                  extract(epoch from (first_grant - started)) * 1000 as delta_ms
             from runs
            where first_grant is not null and first_grant >= started
         )
         select (select percentile_cont(0.5) within group (order by delta_ms) from conv) as median_ms,
                coalesce(product, '') as product, trial, lifetime is not null as is_lifetime,
-               count(*)::int as n
+               count(*)::int as n, (count(*) filter (where paywall))::int as via
           from conv
          group by product, trial, is_lifetime`;
 
@@ -4472,6 +4490,7 @@ export async function postgresStore(
         completed: num(totals[0]?.completed),
         paid: {
           converted: paidRows.reduce((s: number, r: Record<string, unknown>) => s + num(r.n), 0),
+          viaPaywall: paidRows.reduce((s: number, r: Record<string, unknown>) => s + num(r.via), 0),
           trial: paidRows.reduce((s: number, r: Record<string, unknown>) => s + (r.trial === true && r.is_lifetime !== true ? num(r.n) : 0), 0),
           // The SQL groups on (product, trial, is_lifetime) so `trial` can be counted; the
           // answer carries (product, lifetime) — the same merge the memory store keys on.
@@ -4486,6 +4505,11 @@ export async function postgresStore(
           medianMs: paidRows[0]?.median_ms === null || paidRows[0]?.median_ms === undefined
             ? null : Math.round(Number(paidRows[0].median_ms)),
         },
+        reached: Object.fromEntries(ONBOARDING_PLACES.map((place, i) => [
+          place,
+          furthestRows.reduce((s: number, r: Record<string, unknown>) => s + (num(r.at) >= i + 1 ? num(r.n) : 0), 0),
+        ])),
+        paywallSince: paywallFirst[0]?.at ? new Date(paywallFirst[0].at as string | Date).toISOString() : null,
         rows: rows.map((r: Record<string, unknown>) => ({
           place: String(r.place),
           views: num(r.views),
