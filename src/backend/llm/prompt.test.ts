@@ -352,6 +352,15 @@ test("every curated country reaches the prompt as a word, not as a code", () => 
   }
 });
 
+test("the country line names the reply language, never the profile's — it cannot contradict the message's steering", () => {
+  // A captioned photo from a user whose caption language is not their profile's carries BOTH
+  // lines in one prompt: "reply in the language of the user's message" and the country rule.
+  // Naming the profile here would answer the same question twice with different answers.
+  const text = buildUserText({ ...PROFILE, country: "de", lang: "en" }, TARGETS, { caption: "ماذا في هذا الطبق؟" });
+  expect(text).toContain("write every name in the requested reply language");
+  expect(text).not.toContain("write every name in English");
+});
+
 describe("the language line, which is the only thing steering the largest text surface here", () => {
   it("names every language in itself, and keeps the code beside it", () => {
     // A bare two-letter code is unambiguous to a compiler and a guess to a model — and the guess is

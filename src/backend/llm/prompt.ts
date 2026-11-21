@@ -326,7 +326,7 @@ export function buildUserText(profile: Profile, targets: FoodTargets, opts: {
     lines.push(
       `The user shops and eats in: ${country}. Use this ONLY to judge which products, ` +
       `brands and portion conventions are likely on the plate. It is NOT a language instruction — ` +
-      `write every name in ${LANG_LABEL[narrowLang(profile.lang)]} regardless.`,
+      `write every name in the requested reply language regardless.`,
     );
   }
   if (opts.repertoire && opts.repertoire.length > 0) {
