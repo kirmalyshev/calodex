@@ -342,7 +342,8 @@ const failedCallback = (pathname: string): Response => seeOther(pathname);
 
 /**
  * WHERE A SESSION RESUMES — the flow's own order (S8): questions on the session account, then the
- * plan and its streak goal, then sign-up, then the one deferred question, then the product. A cookie from any point
+ * plan and its streak goal, then the offer and its checkout, then sign-up, then the one deferred
+ * question, then the product. A cookie from any point
  * in that lands wherever its account actually is, so closing a tab mid-walk is not a lost walk.
  *
  * The sign-in routes and the front door both call this; it is the single place the order lives.
@@ -351,9 +352,24 @@ const failedCallback = (pathname: string): Response => seeOther(pathname);
 const countryAnswered = (p: Profile): boolean =>
   p.country !== null && !(p.filled_fields ?? []).includes("country");
 
+/**
+ * Whether this account has ever paid, told by the webhook's record rather than the entitlement's
+ * state (ieat-app#3205). A record `getEntitlement` answers is "has bought something" — a lapse
+ * clears the live grant but not the row, and a paid account that lapsed still needs the sign-in
+ * it skipped: without it nothing this browser bought can follow it anywhere.
+ */
+const hasPaid = async (ctx: StartContext, userId: string): Promise<boolean> =>
+  (await ctx.store.getEntitlement(userId)) !== null;
+
 async function resumeTo(ctx: StartContext, userId: string, profile: Profile): Promise<string> {
   if (profile.onboarded_at === null) return `${START_PREFIX}/q`;
-  if (await isAnonymous(ctx.deps, userId)) return `${START_PREFIX}/plan`;
+  if (await isAnonymous(ctx.deps, userId)) {
+    // Purchase before sign-up (#3205): the anonymous session may buy at the offer, but a Web
+    // Billing purchase carries no Apple receipt — nothing restores it on a phone, so once the
+    // account has paid the sign-in is REQUIRED, not offered, and this is where it happens.
+    if (await hasPaid(ctx, userId)) return `${START_PREFIX}/signup`;
+    return `${START_PREFIX}/plan`;
+  }
   // Still in the funnel, not an account that finished without a goal: that one goes to the product.
   //
   // PAST THE FIRST MEAL IT IS NOT THE FUNNEL. The app asks country right after sign-up and the
@@ -417,7 +433,7 @@ async function trackSignIn(
  * experiment arm may move `baseline` and remove `prelim` (ieat-app#2788), and `promptsFor` applies
  * it; this only filters. The `welcome`, `summary`, `signup`, `country` and `streak` places are out:
  * the front door renders its own, the rest are the steps after this walk ends (the plan, the streak
- * goal, sign-up — W3).
+ * goal, the offer, sign-up — W3).
  */
 function walkFor(profile: Profile, content: OnboardingContent, order?: readonly string[]): ChatPrompt[] {
   const off = disabledScreens(content);
@@ -1474,6 +1490,18 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     });
   }
 
+  // ── Paid, still anonymous: the sign-in is required, not offered (ieat-app#3205) ───────────
+  //
+  // The checkout link already names the session's account, so an anonymous session may buy —
+  // but a RevenueCat Web Billing purchase has no store receipt to restore, and the session
+  // cookie is the only credential the account will ever have. Once it has paid, every page
+  // past the questions routes back to the sign-up, which attaches Apple, Google or email to
+  // THAT account — purchase, plan and answers together. The sign-up screen itself sits before
+  // the session gate, so the rule can live in one place.
+  if (await isAnonymous(ctx.deps, userId) && await hasPaid(ctx, userId)) {
+    return seeOther(`${START_PREFIX}/signup`);
+  }
+
   // ── The country, asked AFTER sign-up (S8) ─────────────────────────────────────────────────
   //
   // It tunes the analyzer's cuisine and nothing else, so it is the one answer that was willing to
@@ -1558,7 +1586,6 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // answers, passes the country or logs a meal (`resumeTo`); past that a null goal stays null, because the phone's ask
   // follows a first verdict only its own onboarding owes. Past the bar, so no dash.
   if (pathname === STREAK_PATH) {
-    const signup = `${START_PREFIX}/signup`;
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
     const content = await onboardingContentFor(ctx.deps, userId, webSignals(profile.lang, req));
     const prompt = promptById("streak_goal_days")!;
@@ -1573,7 +1600,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       const answer = answerFor(prompt, answers, profile, content, units);
       if (answer.kind !== "patch") return ask(pageCopyFor(profile.lang).answerRequired);
       await patchProfile(ctx.deps, userId, answer.patch);
-      return seeOther(signup);
+      // The offer is the next step — purchase before sign-up (#3205). For an anonymous session
+      // it is where the checkout happens; the sign-in it is followed by is the gate above.
+      return seeOther(`${START_PREFIX}/offer`);
     }
     return notFound();
   }
@@ -1827,7 +1856,15 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
 
   if (req.method === "GET" && pathname === `${START_PREFIX}/offer`) {
     if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
-    const closeTo = ctx.hasWebApp ? "/" : CHAT_PATH;
+    // Where × goes is the flow's own next place (#3205). For a signed-in session that is
+    // `resumeTo`'s answer — the country question mid-funnel, the product past it — exactly as
+    // the streak's handoff to the sign-up resolved it. For an anonymous one it is the sign-up
+    // itself: a decline has nowhere anonymous to land, because the session cookie dies with
+    // the browser and the product's first meal answers `identity-required` — the sign-in is
+    // required to use the app here in a way the phone's device account never is.
+    const closeTo = await isAnonymous(ctx.deps, userId)
+      ? `${START_PREFIX}/signup`
+      : await resumeTo(ctx, userId, profile);
     if (config.webPaywall.yearlyCheckoutUrl === "" && config.webPaywall.monthlyCheckoutUrl === "") {
       return seeOther(closeTo);
     }
