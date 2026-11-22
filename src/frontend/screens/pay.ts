@@ -1,25 +1,29 @@
-// The plans (#263): `#/pay` — the web's pay-plans board (W9), Monthly and Yearly only (#928).
+// The plans (#263): `#/pay` — the web's pay-plans board (W9), drawn as the iOS paywall sheet
+// (ieat-app#3359, boards W9/phone-paywall): the welcome-plate hero, the title, its three
+// benefits, Yearly and Monthly side by side, the billed amount as each card's figure.
 //
 // Everything sellable arrives in `ProfileResponse.paywall` (#77): the plans' checkout links with
-// this account's id already filled, the prices formatted in its language, and the footer's
-// Terms/Privacy hrefs. The screen computes no price and builds no link — a null plan is a plan
-// the host does not sell and never draws. A decline (the ×) swaps the plans for the exit offer
-// in place, once per account (web/pay-exit, #451); a host with no offer configured, or an
-// account that has already met it, closes to Home.
-//
-// The plan rows are `payPlansEl`'s — ONE composition with the first-meal offer, and the same
-// `payPlans` markup `/start`'s offer interpolates: the plan shown is the plan the click buys.
+// this account's id already filled, the prices formatted in its language, the yearly card's
+// per-month-plus-save line, and the footer's Terms/Privacy hrefs. The screen computes no price
+// and builds no link — a null plan is a plan the host does not sell and never draws. The trial
+// is on the yearly plan only, as on the phone: the trial words ride while yearly is picked and
+// monthly names its own renewal. A decline (the ×) swaps the plans for the exit offer in place,
+// once per account (web/pay-exit, #451); a host with no offer configured, or an account that has
+// already met it, closes to Home.
 
 import { fill } from "../../shared/lang.ts";
-import { paywallPercent } from "../../shared/paywall.ts";
+import { WELCOME_PLATES } from "../../shared/onboarding.ts";
+import { paywallPercent, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
+import { perYearCaption, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
-import { kitEl, payPlansEl } from "../kit.ts";
+import { kitEl } from "../kit.ts";
 import * as analytics from "../analytics.ts";
 
-/** The image the boards' hero draws — served by the backend off shared/assets/img, same origin. */
-const HERO_SRC = "/start/assets/img/salmon.webp";
+/** The web's welcome plate — the grain bowl `/start` opens with, served by the backend off
+    shared/assets/img on this origin. The alt names the plate's own figures (#2862/#2863). */
+const HERO_SRC = "/start/assets/img/hero.webp";
 
 /** The exit offer's once-per-account flag, keyed by the account id — a second account on this
     browser still gets its one show. Not the bearer: a flag authenticates nothing. A read that
@@ -31,6 +35,54 @@ const offerSeen = (uid: string): boolean => {
 const markOfferSeen = (uid: string): void => {
   try { localStorage.setItem(SEEN + uid, "1"); } catch { /* a storage that refuses shows it again */ }
 };
+
+interface PlanPick { value: "yearly" | "monthly"; plan: PaywallPlan }
+
+/** The sheet's plan pair (web/pay-plans' `.pwp2`): Yearly and Monthly side by side, each a real
+    radio so selection works as it does on `/start`'s markup — the plan picked is the plan the
+    CTA buys. `null` is "nothing to pick": the caller draws the host-sells-nothing offer. */
+function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string):
+    { group: HTMLElement; picked: () => PlanPick | null } | null {
+  const trial = w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
+  const card = (value: "yearly" | "monthly", name: string, price: string, caption: string,
+      extra: { trial?: string | null; save?: string | null }, checked: boolean): HTMLElement => {
+    const lab = el("label", "plan2");
+    const input = el("input", "") as HTMLInputElement;
+    input.type = "radio";
+    input.name = "plan";
+    input.value = value;
+    if (checked) input.checked = true;
+    const nr = el("div", "nr");
+    nr.append(el("i", "ck"), el("div", "nm", name));
+    lab.append(input, nr);
+    if (extra.trial != null) lab.append(el("div", "tr", extra.trial));
+    const pr = el("div", "pr");
+    pr.append(price, el("small", "", caption));
+    if (extra.save != null) pr.append(el("small", "save", extra.save));
+    lab.append(pr);
+    return lab;
+  };
+  const cards: PlanPick[] = [];
+  const group = el("div", "pwp2");
+  group.setAttribute("role", "radiogroup");
+  group.setAttribute("aria-label", label);
+  if (w.yearly !== null) {
+    cards.push({ value: "yearly", plan: w.yearly });
+    group.append(card("yearly", pay.planYearly, w.yearly.price, perYearCaption(pay),
+      { trial, save: w.yearly.perMonthSave }, true));
+  }
+  if (w.monthly !== null) {
+    cards.push({ value: "monthly", plan: w.monthly });
+    group.append(card("monthly", pay.planMonthly, w.monthly.price, pay.perMonthCaption,
+      {}, w.yearly === null));
+  }
+  if (cards.length === 0) return null;
+  const picked = (): PlanPick | null => {
+    const sel = group.querySelector<HTMLInputElement>("input[name=plan]:checked");
+    return cards.find((c) => c.value === sel?.value) ?? null;
+  };
+  return { group, picked };
+}
 
 export function payScreen(frame: Frame): HTMLElement {
   const box = el("section", "pay");
@@ -44,17 +96,20 @@ export function payScreen(frame: Frame): HTMLElement {
     location.hash = "#/";
     return box;
   }
-  const plans = w === undefined ? null : payPlansEl(w, COPY.offerPlans);
+  const plans = w === undefined ? null : planPair(w, pay, COPY.offerPlans);
   // `#/pay?blocked` is the spent free sample's link (`log.ts`); every other way in — the settings
   // row, a `subscription` push — is source `settings`.
   const blocked = location.hash.includes("?blocked");
   analytics.capture("paywall_opened", { blocked, source: blocked ? "blocked" : "settings" });
-  const sold = () => ({ plan: plans?.picked()?.value ?? "monthly", trial_shown: (w?.trialDays ?? 0) > 0, storefront: null });
+  const sold = () => {
+    const sel = plans?.picked() ?? null;
+    return { plan: sel?.value ?? "monthly", trial_shown: sel?.value === "yearly" && (w?.trialDays ?? 0) > 0, storefront: null };
+  };
 
   const hero = el("div", "hero");
   const img = el("img", "") as HTMLImageElement;
   img.src = HERO_SRC;
-  img.alt = pay.plansHeroAlt;
+  img.alt = welcomePlateAlt(WELCOME_PLATES["grain-bowl"], lang);
   hero.append(img);
 
   const pane = el("div", "pane");
@@ -65,6 +120,15 @@ export function payScreen(frame: Frame): HTMLElement {
 
   const col = el("div", "pcol");
   col.append(el("h1", "d d34", pay.plansTitle));
+  // The sheet's three benefits — the icons the phone draws beside the same lines.
+  const bl = el("ul", "bl");
+  for (const [icon, line] of
+    [["camera", pay.benefitPhoto], ["check", pay.benefitPlan], ["chat", pay.benefitChat]] as const) {
+    const li = el("li", "");
+    li.append(kitEl(ico(icon)), line);
+    bl.append(li);
+  }
+  col.append(bl);
 
   const go = el("a", "cta p") as HTMLAnchorElement;
   const note = el("p", "t12 m");
@@ -80,14 +144,12 @@ export function payScreen(frame: Frame): HTMLElement {
       const sel = plans.picked();
       if (sel === null) return;
       go.href = sel.plan.checkoutUrl;
-      // ieat-app#1591: the trial is on BOTH plans — the trial words ride whichever card is picked,
-      // and `{renewal}` names THAT plan's price and cadence off the same templates the rows carry.
-      if (w.trialDays > 0) {
-        go.textContent = fill(pay.startTrial, { days: String(w.trialDays) });
-        note.textContent = fill(pay.trialNote, {
-          renewal: fill(sel.value === "yearly" ? pay.pricePerYear : pay.pricePerMonth,
-            { price: sel.plan.price }),
-        });
+      // The trial is on yearly only: the trial CTA and `{renewal}` ride while yearly is picked
+      // (yearly's own `pricePerYear`), and monthly names its monthly renewal instead.
+      const days = sel.value === "yearly" ? w.trialDays : 0;
+      if (days > 0) {
+        go.textContent = fill(pay.startTrial, { days: String(days) });
+        note.textContent = fill(pay.trialNote, { renewal: fill(pay.pricePerYear, { price: sel.plan.price }) });
       } else {
         go.textContent = pay.continueCta;
         note.textContent = fill(

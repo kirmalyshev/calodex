@@ -15,6 +15,31 @@ export const payCss = `
 .pay .pcol .cta { margin-top: 10px; }
 .pay .pcol .t12 { text-align: center; margin: 0; }
 .pay .paylinks a { color: inherit; text-decoration: underline; }
+/* The sheet's three benefit rows — an accent icon beside each line (web/pay-plans, #3359). */
+.pay .bl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pay .bl li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.pay .bl svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+/* The plan pair, side by side as the sheet draws them — billed amount the figure, the trial and
+   the save line under it. Radii/padding follow the board's card, the check disc the kit's own. */
+.pay .pwp2 { display: flex; gap: 10px; }
+.pay .plan2 { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;
+  background: var(--surface); border-radius: var(--r-card); padding: 14px;
+  box-shadow: 0 0 0 1px var(--hair); cursor: pointer; position: relative; }
+.pay .plan2 input[type=radio] { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.pay .plan2:has(>input:checked) { box-shadow: 0 0 0 2px var(--ink); }
+.pay .plan2:focus-within { box-shadow: 0 0 0 2px var(--ink); }
+.pay .plan2 .nr { display: flex; align-items: center; gap: 8px; }
+.pay .plan2 .ck { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
+.pay .plan2:has(>input:checked) .ck { background: var(--accent); box-shadow: none; }
+.pay .plan2:has(>input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px;
+  width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.pay .plan2 .nm { font-size: 15px; font-weight: 600; }
+.pay .plan2 .tr { color: var(--accent); font-size: 13px; font-weight: 600; }
+.pay .plan2 .pr { display: flex; flex-direction: column; font-size: 20px; font-weight: 700;
+  letter-spacing: -.01em; }
+.pay .plan2 .pr small { font-size: 12px; font-weight: 500; color: var(--muted); }
+.pay .plan2 .pr .save { color: var(--accent); }
 .pay .plan:nth-child(2) { --d: .1s; }
 /* pay-exit (#451): the offer card the plans swap to on the first decline — the board's own
    measurements, radii included (16, not --r-card's 12). */
