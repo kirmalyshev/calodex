@@ -26,7 +26,7 @@ const VARS = [
   "EAIT__BACKEND__LLM_INPUT_PRICE_PER_MTOK", "EAIT__BACKEND__LLM_OUTPUT_PRICE_PER_MTOK",
   "EAIT__BACKEND__PENDING_TTL_MINUTES", "EAIT__BACKEND__MAX_UPLOAD_MB", "EAIT__BACKEND__MAX_PHOTOS_PER_MEAL", "EAIT__BACKEND__PORT", "EAIT__BACKEND__HOST", "EAIT__BACKEND__TZ_NAME",
   "EAIT__BACKEND__FREE_ANALYSES", "EAIT__BACKEND__PAYWALL", "EAIT__BACKEND__APPLE_AUDIENCES", "EAIT__BACKEND__GOOGLE_AUDIENCES",
-  "EAIT__BACKEND__SESSION_TTL_DAYS", "EAIT__BACKEND__AUTH_RATE_LIMIT_PER_HOUR", "EAIT__BACKEND__ANALYSIS_RATE_LIMIT_PER_DAY",
+  "EAIT__BACKEND__SESSION_TTL_DAYS", "EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS", "EAIT__BACKEND__AUTH_RATE_LIMIT_PER_HOUR", "EAIT__BACKEND__ANALYSIS_RATE_LIMIT_PER_DAY",
   "EAIT__BACKEND__LINES_RATE_LIMIT_PER_HOUR",
   "EAIT__BACKEND__ADMIN_TOKEN", "EAIT__BACKEND__ADMIN_BOOTSTRAP_USER_ID",
   "EAIT__BACKEND__PUBLIC_API_URL", "EAIT__BACKEND__PUBLIC_WEB_URL",
@@ -143,6 +143,17 @@ describe("loadConfig", () => {
     expect(() => loadConfig()).toThrow(/PRICE_PER_MTOK/);
     withRequired({ EAIT__BACKEND__LLM_INPUT_PRICE_PER_MTOK: "cheap", EAIT__BACKEND__LLM_OUTPUT_PRICE_PER_MTOK: "0.6" });
     expect(() => loadConfig()).toThrow(/PRICE_PER_MTOK/);
+  });
+
+  it("reads the abandoned-account idle window, where zero is a real value (#3357)", () => {
+    expect(configDefaults().abandonedAccountIdleDays).toBe(30);
+    withRequired({ EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS: "7" });
+    expect(loadConfig().abandonedAccountIdleDays).toBe(7);
+    // Zero disables the sweep outright — `int` admits it and `index.ts` guards on it.
+    withRequired({ EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS: "0" });
+    expect(loadConfig().abandonedAccountIdleDays).toBe(0);
+    withRequired({ EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS: "-1" });
+    expect(() => loadConfig()).toThrow(/ABANDONED_ACCOUNT_IDLE_DAYS/);
   });
 
   it("refuses a reasoning effort the provider would 400 on every charged call", () => {
