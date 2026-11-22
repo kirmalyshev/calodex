@@ -1279,6 +1279,10 @@ export function demoConfig(): Config {
     // one cannot draw "That one timed out" (`chat-expired`). `EAIT__BACKEND__PENDING_TTL_MINUTES=0`
     // makes every proposal die on arrival — `int` allows zero, which is the point here.
     pendingTtlMs: int("EAIT__BACKEND__PENDING_TTL_MINUTES", configDefaults().pendingTtlMs / 60_000) * 60 * 1000,
+    // The same override `loadConfig` honours, read the same way: a demo exercises the sweeps
+    // against the memory store, and "works in demo, untested in production" is the shape of every
+    // configuration bug that ships. `0` disables the sweep here exactly as it does there.
+    abandonedAccountIdleDays: int("EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS", configDefaults().abandonedAccountIdleDays),
     // Read from the environment here too, and validated by the same function: the admin is how
     // onboarding copy is edited, and "works in demo, untested in production" is the shape of
     // every configuration bug that ships.

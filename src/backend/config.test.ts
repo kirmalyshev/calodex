@@ -145,6 +145,17 @@ describe("loadConfig", () => {
     expect(() => loadConfig()).toThrow(/PRICE_PER_MTOK/);
   });
 
+  it("reads the abandoned-account idle window, where zero is a real value (#3357)", () => {
+    expect(configDefaults().abandonedAccountIdleDays).toBe(30);
+    withRequired({ EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS: "7" });
+    expect(loadConfig().abandonedAccountIdleDays).toBe(7);
+    // Zero disables the sweep outright — `int` admits it and `index.ts` guards on it.
+    withRequired({ EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS: "0" });
+    expect(loadConfig().abandonedAccountIdleDays).toBe(0);
+    withRequired({ EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS: "-1" });
+    expect(() => loadConfig()).toThrow(/ABANDONED_ACCOUNT_IDLE_DAYS/);
+  });
+
   it("refuses a reasoning effort the provider would 400 on every charged call", () => {
     withRequired({ EAIT__BACKEND__LLM_REASONING_EFFORT: "lo" });
     expect(() => loadConfig()).toThrow(/LLM_REASONING_EFFORT/);
