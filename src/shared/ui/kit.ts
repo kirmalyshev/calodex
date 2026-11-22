@@ -23,7 +23,7 @@ import {
 } from "./charts.ts";
 import type { IconName } from "./icons.ts";
 import { RADIUS, SHADOW } from "../design.ts";
-import { LANG_TAG, spellUnit, UNIT_KCAL, kcalNumbers, weekdayShort, wholeNumbers, type Lang } from "../lang.ts";
+import { LANG_TAG, latn, spellUnit, UNIT_KCAL, kcalNumbers, weekdayShort, wholeNumbers, type Lang } from "../lang.ts";
 
 /** Text or an attribute value, made inert. The one escaper both surfaces get. */
 export const esc = (text: string): string =>
@@ -113,10 +113,10 @@ export const weekStrip = (
     // A future day is not a control (it has no diary yet) — the boards draw it as a dimmed cell,
     // so it is a DISABLED button: inactive, never focusable, and exempt from the contrast rule (WCAG 1.4.3).
     if (day.when === "future" && !isNow)
-      return `<button type="button" class="${cls}" disabled aria-label="${esc(fullDate.format(noon))}">` +
+      return `<button type="button" class="${cls}" disabled aria-label="${esc(latn(fullDate.format(noon)))}">` +
         `${letter}<svg viewBox="${WEEK_RING.viewBox}" aria-hidden="true">${circles}</svg><b>${num}</b></button>`;
     return `<button type="button" class="${cls}" data-date="${esc(day.date)}" ` +
-      `aria-label="${esc(fullDate.format(noon))}">${letter}<svg viewBox="${WEEK_RING.viewBox}">${circles}</svg><b>${num}</b></button>`;
+      `aria-label="${esc(latn(fullDate.format(noon)))}">${letter}<svg viewBox="${WEEK_RING.viewBox}">${circles}</svg><b>${num}</b></button>`;
   });
   // The raised cell's flat tint is ONE element (`a0`…`a6` are the cells' left edges) so a client
   // that keeps the strip mounted can glide it to the tapped day instead of rebuilding.

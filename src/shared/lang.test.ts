@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { LANGS } from "./types.ts";
 import {
   LANGS_READY, LANG_LABEL, LANG_TAG, UNIT_KCAL, countText, dayLabel, dayMonthAt, genderedRussian,
-  localizedGaps, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters,
+  localizedGaps, latn, kcalNumbers, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters, wholeNumbers,
   acceptLang, acceptLanguageTags, narrowLang, spellUnit, t,
   type Localized,
 } from "./lang.ts";
@@ -90,6 +90,16 @@ describe("numbers and dates", () => {
     expect(numbers("en")(92.04)).toBe("92");
     expect(numbers("en")(92.35)).toBe("92.4");
     expect(numbers("de")(92.35)).toBe("92,4");
+  });
+
+  it("every figure is Latin — the `-u-nu-latn` tags' pick, folded back where an engine drops it", () => {
+    // Hermes on iOS drops `-u-nu-` and answers Arabic-Indic for `ar` anyway (ieat-app#3341);
+    // Node's ICU honours the tag, so `latn` itself is what this run can prove.
+    expect(latn("١٥٦٧")).toBe("1567");
+    expect(latn("۱۵۶۷")).toBe("1567");
+    expect(latn("٩:٤١")).toBe("9:41");
+    expect(kcalNumbers("ar")(1567)).toBe("1567");
+    expect(wholeNumbers("ar")(1567)).toMatch(/^1.567$/);
   });
 
   it("the BMI figure is one decimal ALWAYS — 25.0, never 25 (#174)", () => {
