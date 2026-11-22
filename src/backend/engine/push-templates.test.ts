@@ -130,6 +130,19 @@ describe("push templates", () => {
     expect(await campaignWords(deps, key, "en", "b", 2)).toEqual({ title: arm.title, body: arm.body });
   });
 
+  it("campaignWords runs the repair itself: a reviewed arm left untitled is never sent", async () => {
+    const key = "campaign:win-back" as CampaignTemplateKey;
+    const at = new Date().toISOString();
+    await store.seedPushTemplates([
+      { key, lang: "en", variant: "default", title: "Still around?", body: "A", status: "reviewed", reviewed_by: "x", reviewed_at: at, updated_at: at },
+      { key, lang: "en", variant: "b", title: "", body: "B", status: "reviewed", reviewed_by: "x", reviewed_at: at, updated_at: at },
+    ]);
+    // No listing first: a campaign tick between deploy and an admin read sends through this alone.
+    expect(await campaignWords(deps, key, "en", "b", 2, ["en"])).toBeNull();
+    const b = (await store.listPushTemplates()).find((r) => r.key === key && r.variant === "b")!;
+    expect(b.status).toBe("draft");
+  });
+
   it("demotes a reviewed campaign arm a broken save left untitled, and keeps a titled one", async () => {
     const key = "campaign:win-back" as CampaignTemplateKey;
     const at = new Date().toISOString();

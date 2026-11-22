@@ -176,6 +176,9 @@ export async function campaignWords(
   /** The languages the campaign's segment can reach; the copy owes no more than these. */
   langs: readonly Lang[] = LANGS,
 ): Promise<{ title: string; body: string } | null> {
+  // A sender never reads the rows unrepaired: between a deploy and the first admin listing, the
+  // #3381 demotion has run nowhere else, and a reviewed arm left untitled would send as-is.
+  await ensurePushTemplates(deps);
   const rows = (await deps.store.listPushTemplates()).filter((r) => r.key === key);
   if (pushKeyGaps(rows, key, variantCount, langs).length > 0) return null;
   // The gaps pass is over the segment's languages, so the row itself still proves reviewed:
