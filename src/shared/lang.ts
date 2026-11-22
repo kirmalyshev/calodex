@@ -511,6 +511,8 @@ export const DAY_WORDS: Localized<{ today: string; yesterday: string }> = {
   pa: { today: "ਅੱਜ", yesterday: "ਕੱਲ੍ਹ" },
   ta: { today: "இன்று", yesterday: "நேற்று" },
   te: { today: "ఈరోజు", yesterday: "నిన్న" },
+  bg: { today: "днес", yesterday: "вчера" },
+  sq: { today: "sot", yesterday: "dje" },
 };
 
 /**

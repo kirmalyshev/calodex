@@ -189,6 +189,14 @@ export const SCORES_COPY: Localized<ScoresCopy> = {
     ...scoresAppCopy("te"),
     ...bmiCopy("te"),
   },
+  bg: {
+    ...scoresAppCopy("bg"),
+    ...bmiCopy("bg"),
+  },
+  sq: {
+    ...scoresAppCopy("sq"),
+    ...bmiCopy("sq"),
+  },
 };
 
 export const scoresCopy = (lang: Lang): ScoresCopy => t(lang)(SCORES_COPY);

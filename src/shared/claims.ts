@@ -267,6 +267,13 @@ const RULES: readonly Rule[] = [
   { name: "weight-promise", re: /(?<![\p{L}\p{N}.,])\p{Nd}+\s*(?:kg|ਕਿਲੋ\S*)\s+(?:(?:ਭਾਰ|ਵਜ਼?ਨ)\s+)?(?:ਘਟਾ|ਘੱਟ\s+ਕਰ)\S*|(?<![\p{L}\p{M}])(?:ਭਾਰ|ਵਜ਼?ਨ)\s+(?:ਘਟਾਉਣਾ|ਘਟਾਉਣ|ਘਟਾਓਗੇ|ਘਟੇਗਾ|ਘੱਟ\s+ਕਰਨਾ|ਘੱਟ\s+ਕਰਨ)(?![\p{L}\p{M}])|ਵੇਟ\s*ਲ[ੌਾ]ਸ/gu },
   { name: "weight-promise", re: /(?<![\p{L}\p{N}.,])\p{Nd}+\s*(?:kg|கிலோ\S*)\s+(?:எடை\S*\s+)?(?:குறைக்|குறைப்|குறையு|இழக்|இழப்|கரைக்)\S*|(?<![\p{L}\p{M}])எடை(?:யை)?(?:க்)?\s*(?:குறைப்பது|குறைக்க|குறைப்பீர்கள்|குறைப்பு|குறையும்|இழப்பு|இழக்க)(?![\p{L}\p{M}])|வெயிட்\s*லாஸ்/gu },
   { name: "weight-promise", re: /(?<![\p{L}\p{N}.,])\p{Nd}+\s*(?:kg|కిలో\S*|కేజీ\S*)\s+(?:బరువు\s+)?(?:తగ్గ|కోల్పో)\S*|(?<![\p{L}\p{M}])బరువు\s+(?:తగ్గడం|తగ్గటం|తగ్గించడం|తగ్గించుకోవడం|తగ్గడానికి|తగ్గించడానికి|తగ్గింపు|కోల్పోవడం)(?![\p{L}\p{M}])|వెయిట్\s*లాస్/gu },
+  // Wave 5, on the same lines. Bulgarian: `отслабване` is the verbal noun its plan headline and
+  // goal labels ship, so the stem alone stays out — the number beside it is what promises, as
+  // Hindi's rule already argued. `минус 6кг` is Russian's construction in the same script.
+  { name: "weight-promise", re: /(?<!\p{L})(?:отслаб\p{L}*|свал\p{L}*)\s+(?:с\s+|на\s+)?\d+\s*(?:кг|килограма)|(?<!\p{L})минус\s*\d+\s*кг|(?<!\p{L})намал\p{L}*\s+тегл\p{L}*/giu },
+  // Albanian: `humb` is also "lose your keys", so it promises only beside a figure — `humb 6kg`
+  // is the plan headline's own shape. `humbje peshës` is the dedicated "weight loss" phrase.
+  { name: "weight-promise", re: /(?<!\p{L})humb\p{L}*\s+\d+\s*(?:kg|kilogram)|(?<!\p{L})humbje\s+pesh\p{L}*|(?<!\p{L})dobësoh\p{L}*/giu },
 
   // lowers-marker — the MARKER decides, never the verb.
   //

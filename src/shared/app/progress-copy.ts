@@ -391,6 +391,72 @@ const RU: ProgressCopy = {
   phone: { back: "Назад" },
 };
 
+const SQ: ProgressCopy = {
+  title: SHELL_COPY.sq!!.navProgress,
+  weightLabel: HEALTH_COPY.sq!!.labels.weight_kg!,
+  weightNow: { metric: "{n} kg", imperial: "{n}lb" },
+  ranges: { "90D": "90D", "6M": "6M", "1Y": "1V", all: "Të gjitha" },
+  goalLine: { metric: "{from} → {to} kg", imperial: "{from} → {to}lb" },
+  goalEstimate: "rreth {month} · vlerësim",
+  goalDown: { metric: "{n} kg më pak", imperial: "{n} lb më pak" },
+  goalUp: { metric: "{n} kg më shumë", imperial: "{n} lb më shumë" },
+  goalToGo: { metric: "edhe {n}", imperial: "edhe {n}" },
+  weekLabel: "Kjo javë",
+  weekPlan: "kcal në ditë · plan {plan}",
+  streakLabel: "Seri",
+  streakDays: { one: "{n} ditë", other: "{n} ditë" },
+  weightChartName: CHAT_COPY.sq!!.chart.weightTrend,
+  weightEmpty: "Regjistro një peshim për të parë trendin",
+  weightOneMore: "Regjistro edhe një peshim për të parë trendin",
+  weightNone: {
+    "90D": "Asnjë peshim në 90 ditët e fundit",
+    "6M": "Asnjë peshim në 6 muajt e fundit",
+    "1Y": "Asnjë peshim vitin e fundit",
+    all: "Asnjë peshim ende",
+  },
+  weightNowTail: { metric: "kg", imperial: "lb" },
+  weightLatestTail: { metric: "kg · {date}", imperial: "lb · {date}" },
+  bmiEmpty: "Regjistro një peshim për të parë IMT-në tënde",
+  bmiFrom: "Nga {w} dhe {h}",
+  bmiHelp: "Si llogaritet IMT-ja",
+  goalEstimateFar: "mbi dy vjet · vlerësim",
+  loadFailed: "Progresi yt s'u ngarkua dot.",
+  phone: { back: "Mbrapa" },
+};
+
+const BG: ProgressCopy = {
+  title: SHELL_COPY.bg!!.navProgress,
+  weightLabel: HEALTH_COPY.bg!!.labels.weight_kg!,
+  weightNow: { metric: "{n} кг", imperial: "{n}lb" },
+  ranges: { "90D": "90Д", "6M": "6М", "1Y": "1Г", all: "Всичко" },
+  goalLine: { metric: "{from} → {to} кг", imperial: "{from} → {to}lb" },
+  goalEstimate: "около {month} · прогноза",
+  goalDown: { metric: "{n} кг по-малко", imperial: "{n} lb по-малко" },
+  goalUp: { metric: "{n} кг повече", imperial: "{n} lb повече" },
+  goalToGo: { metric: "още {n}", imperial: "още {n}" },
+  weekLabel: "Тази седмица",
+  weekPlan: "ккал на ден · план {plan}",
+  streakLabel: "Серия",
+  streakDays: { one: "{n} ден", other: "{n} дни" },
+  weightChartName: CHAT_COPY.bg!!.chart.weightTrend,
+  weightEmpty: "Запиши претегляне, за да видиш тенденцията си",
+  weightOneMore: "Запиши още едно претегляне, за да видиш тенденцията си",
+  weightNone: {
+    "90D": "Няма претегляния през последните 90 дни",
+    "6M": "Няма претегляния през последните 6 месеца",
+    "1Y": "Няма претегляния през последната година",
+    all: "Още няма претегляния",
+  },
+  weightNowTail: { metric: "кг", imperial: "lb" },
+  weightLatestTail: { metric: "кг · {date}", imperial: "lb · {date}" },
+  bmiEmpty: "Запиши претегляне, за да видиш ИТМ-то си",
+  bmiFrom: "От {w} и {h}",
+  bmiHelp: "Как се изчислява ИТМ",
+  goalEstimateFar: "над две години · прогноза",
+  loadFailed: "Прогресът ти не можа да се зареди.",
+  phone: { back: "Назад" },
+};
+
 const TE: ProgressCopy = {
   title: SHELL_COPY.te!!.navProgress,
   weightLabel: HEALTH_COPY.te!!.labels.weight_kg!,
@@ -1514,7 +1580,7 @@ const PT_BR: ProgressCopy = {
 };
 
 export const PROGRESS_COPY: Localized<ProgressCopy> = {
-  en: EN, fr: FR, de: DE, it: IT, es: ES, vi: VI, id: ID, ru: RU, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR,
+  en: EN, fr: FR, de: DE, it: IT, es: ES, vi: VI, id: ID, ru: RU, sq: SQ, bg: BG, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR,
 };
 
 export const progressCopyFor = (lang: Lang): ProgressCopy => t(lang)(PROGRESS_COPY);

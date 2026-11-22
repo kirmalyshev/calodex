@@ -84,6 +84,22 @@ export const MICRO_GOALS_COPY: Record<Lang, MicroGoalsCopy> = {
     kidneyNote: "Это задаёт твоё ограничение по почкам. Цель не может его поднять.",
     foot: "Показывается на второй странице «Главной». Оценок по ним нет.",
   },
+  sq: {
+    title: "Qëllime ushqyese",
+    label: "Mikronutrientë",
+    atLeast: "të paktën {v}",
+    atMost: "deri në {v}",
+    kidneyNote: "Këtë e përcakton kufizimi yt për veshkat. Një qëllim nuk mund ta ngrejë.",
+    foot: "Shfaqet në faqen e dytë të Kreu. Nga këto nuk del vlerësim.",
+  },
+  bg: {
+    title: "Цели по храненето",
+    label: "Микронутриенти",
+    atLeast: "поне {v}",
+    atMost: "най-много {v}",
+    kidneyNote: "Това го задава ограничението ти за бъбреците. Целта не може да го вдигне.",
+    foot: "Показва се на втората страница на „Начало“. От тях не идва оценка.",
+  },
   "pt-BR": {
     title: "Metas nutricionais",
     label: "Micronutrientes",

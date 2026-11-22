@@ -845,6 +845,7 @@ const LANGUAGE_COUNTRY: Record<string, CountryCode | undefined> = {
   ja: "jp", ko: "kr", tr: "tr", cs: "cz", sk: "sk", sl: "si", ro: "ro", hu: "hu",
   el: "gr", th: "th", ms: "my", bn: "bd",
   hi: "in", gu: "in", kn: "in", ml: "in", mr: "in", or: "in", pa: "in", ta: "in", te: "in",
+  bg: "bg", sq: "al",
   hans: "cn", hant: "tw",
 };
 

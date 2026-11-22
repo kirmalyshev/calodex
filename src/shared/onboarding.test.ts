@@ -941,7 +941,7 @@ describe("resolving the country, and deciding whether to ask", () => {
 describe("the suggested answer, offered first", () => {
   it("moves the suggestion to the front and keeps everything else in order", () => {
     expect(suggestionFirst(COUNTRY_CODES, "us")).toEqual([
-      "us", "at", "au", "bd", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr",
+      "us", "al", "at", "au", "bd", "bg", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr",
       "hr", "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "sa", "se",
       "si", "sk", "th", "tr", "tw", "ua", "vn", "other",
     ]);
