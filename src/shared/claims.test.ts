@@ -78,6 +78,8 @@ const BANNED: Record<string, Partial<Record<(typeof LANGS)[number], string[]>>> 
     pa: ["ਨਤੀਜਿਆਂ ਦੀ ਗਾਰੰਟੀ।", "ਭਾਰ ਘਟਾਉਣ ਦੀ ਗਾਰੰਟੀ।"],
     ta: ["முடிவுகளுக்கு உத்தரவாதம்.", "எடை குறைப்புக்கு உத்தரவாதம் தருகிறோம்."],
     te: ["ఫలితాలకు హామీ.", "బరువు తగ్గడానికి గ్యారంటీ."],
+    bg: ["Гарантиран резултат.", "Гарантираме успех за месец.", "Гарантирано отслабване."],
+    sq: ["Rezultate të garantuara.", "Ne ju garantojmë sukses.", "Humbje peshe e garantuar."],
   },
   "weight-promise": {
     en: ["Lose weight fast.", "Lose 5kg this month."],
@@ -134,6 +136,8 @@ const BANNED: Record<string, Partial<Record<(typeof LANGS)[number], string[]>>> 
     pa: ["ਇੱਕ ਮਹੀਨੇ ਵਿੱਚ 5 ਕਿਲੋ ਭਾਰ ਘਟਾਓ।", "ਭਾਰ ਘਟਾਉਣਾ ਹੁਣ ਆਸਾਨ।", "ਵ\u0A5Bਨ ਘਟਾਉਣਾ ਹੁਣ ਆਸਾਨ।"],
     ta: ["ஒரு மாதத்தில் 5 கிலோ எடையைக் குறையுங்கள்.", "எடை குறைப்பது இப்போது எளிது.", "−5 கிலோ ஒரு மாதத்தில்!"],
     te: ["ఒక నెలలో 5 కిలోల బరువు తగ్గండి.", "బరువు తగ్గడం ఇప్పుడు సులభం."],
+    bg: ["Отслабни с 5кг за месец.", "Минус 10кг за месец.", "Намали теглото бързо."],
+    sq: ["Humb 5kg në një muaj.", "Humbje peshe e shpejtë.", "Dobësohu menjëherë."],
   },
   "lowers-marker": {
     en: ["Lowers cholesterol."],
@@ -184,6 +188,8 @@ const BANNED: Record<string, Partial<Record<(typeof LANGS)[number], string[]>>> 
     pa: ["ਕੋਲੈਸਟ੍ਰੋਲ ਘਟਾਉਂਦਾ ਹੈ।", "ਬਲੱਡ \u0A36ੂਗਰ ਘੱਟ ਕਰਦਾ ਹੈ।"],
     ta: ["கொலஸ்ட்ராலைக் குறைக்கிறது.", "இரத்த அழுத்தத்தைக் குறைக்கும்."],
     te: ["కొలెస్ట్రాల్‌ను తగ్గిస్తుంది.", "రక్తపోటును తగ్గిస్తుంది."],
+    bg: ["Понижава холестерина.", "Намалява кръвното налягане.", "Снижава кръвната захар."],
+    sq: ["Ul kolesterolin.", "Ul presionin e gjakut.", "Ul sheqerin në gjak."],
   },
   detox: {
     en: ["A detox week."],
@@ -228,6 +234,8 @@ const BANNED: Record<string, Partial<Record<(typeof LANGS)[number], string[]>>> 
     pa: ["ਇੱਕ ਹਫ਼ਤੇ ਦਾ ਡੀਟੌਕਸ।"],
     ta: ["ஒரு வாரம் டிடாக்ஸ்.", "ஒரு வாரத்தில் நச்சு நீக்கம்."],
     te: ["ఒక వారం డిటాక్స్.", "విష పదార్థాలను బయటకు పంపుతుంది."],
+    bg: ["Една седмица детокс.", "Почиства организма.", "Извежда токсините."],
+    sq: ["Një javë detoks.", "Pastron trupin nga toksinat.", "Nxjerr toksinat."],
   },
 };
 
