@@ -309,6 +309,9 @@ describe("profile", () => {
         checkoutUrl: `https://pay.rev.cat/y/${userId}`,
         price: "€39.99",
         pricePerMonth: "€3.33",
+        // ieat-app#3359 — the web sheet carries the same per-month-plus-save line the phone
+        // computes from StoreKit prices; the server derives it so the browser parses nothing.
+        perMonthSave: "€3.33/month · save 33%",
       });
       expect(view.paywall.monthly).toEqual({
         checkoutUrl: `https://pay.rev.cat/m/${userId}`,
