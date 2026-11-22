@@ -2428,13 +2428,15 @@ details.how p { margin-top: 8px; }
       kpi(kp, "Paid / started", pct1(f.paid.converted, f.sessions), "", f.paid.converted + " paid of " + f.sessions + " started");
       // Paywall views are only recorded since the date in paywallSince (ieat-app#3339): a window that opens before it
       // counts runs whose paywall was never logged, so the tile says so rather than read as a low rate.
+      // Paid-after-plans is counted per run and viewers per session string, so a reused string could tip it over.
+      var viaPlans = Math.min(f.paid.viaPaywall, atPaywall);
       var since = f.paywallSince ? f.paywallSince.slice(0, 10) : null;
       var before = f.range.from === null || f.range.from < f.paywallSince;
       var seenNote = since ? (before ? "paywall views recorded since " + since : "") : "no paywall view recorded yet";
       kpi(kp, "Reached paywall", pct1(atPaywall, f.sessions), "", [atPaywall + " of " + f.sessions].concat(seenNote ? [seenNote] : []));
       // Of the people who saw the plans, how many paid (never above 100%): a purchase that never met the
       // paywall (web) is in "Paid / started" and named in the path's footnote, not in this ratio.
-      kpi(kp, "Paywall \u2192 paid", pct1(f.paid.viaPaywall, atPaywall), "", f.paid.viaPaywall + " of " + atPaywall + " who saw the plans");
+      kpi(kp, "Paywall \u2192 paid", pct1(viaPlans, atPaywall), "", viaPlans + " of " + atPaywall + " who saw the plans");
       kpi(kp, "Completion", pct1(f.completed, f.sessions), "", f.completed + " finished the questions");
       $("funnel-scope").textContent = echoLabel(f.range) + " \u00b7 every account that started onboarding, staff" +
         ($("funnel-testers").checked ? "" : " and known testers") + " excluded \u00b7 runs that started in the window \u00b7 app content v" +
@@ -2465,7 +2467,7 @@ details.how p { margin-top: 8px; }
       // The path ENDS there: the screens after the plans (sign-up, country, referral, health) are reached by people who did
       // not pay too, so a row for them under the paid step would read as a join.
       if (atPlans >= 0) steps.length = atPlans + 1;
-      steps.push({ name: "Converted to paid", id: "paid", n: f.paid.viaPaywall, fin: true });
+      steps.push({ name: "Converted to paid", id: "paid", n: viaPlans, fin: true });
       var first = steps[0].n;
       // The gap into "paid" ranks like any other (ieat-app#3326): payment is the target metric, so
       // the biggest loss on the page is red wherever it is. It only has no drill-down list below.
@@ -2537,7 +2539,7 @@ details.how p { margin-top: 8px; }
         if (f.paid.yearly) bits.push(f.paid.yearly + " yearly");
         if (f.paid.lifetime) bits.push(f.paid.lifetime + " lifetime");
         if (f.paid.other) bits.push(f.paid.other + " other");
-        var unseen = f.paid.converted - f.paid.viaPaywall;
+        var unseen = f.paid.converted - viaPlans;
         if (unseen > 0) bits.push(unseen + " paid without being shown the plans (web), not in the path above");
         host.appendChild(el("p", "muted fp-pay", "Paid: " + bits.join(" · ")
           + (f.paid.medianMs !== null ? " · median " + dur(f.paid.medianMs) + " from onboarding start to the first recorded grant" : "")));
