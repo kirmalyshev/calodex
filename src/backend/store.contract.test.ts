@@ -5749,6 +5749,18 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       expect((await f("referral")).dimensions.acq_source).toEqual(expect.arrayContaining(["organic", "referral"]));
     });
 
+    it("staffLangs returns the staff accounts' profile languages, flag changes included", async () => {
+      const s = await open();
+      const en = await s.createUser("en");
+      const ru = await s.createUser("ru");
+      await s.createUser("de");
+      await s.setStaff(en, true);
+      await s.setStaff(ru, true);
+      expect((await s.staffLangs()).sort()).toEqual(["en", "ru"]);
+      await s.setStaff(ru, false);
+      expect(await s.staffLangs()).toEqual(["en"]);
+    });
+
     it("leaves a staff account's onboarding events out of the funnel (#2783)", async () => {
       const s = await open();
       const staff = await s.createUser("en");
@@ -6750,7 +6762,7 @@ if (PG_URL) {
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",
         "revokeToken", "runningOnboardingExperiment", "screenTemplate", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
-        "setSwitch", "spendEmailCode", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "templateAsset", "updateCampaign",
+        "setSwitch", "spendEmailCode", "staffLangs", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "templateAsset", "updateCampaign",
         "upsertDeviceUser", "userIdForIdentity", "userIdForToken",
       ]);
     });

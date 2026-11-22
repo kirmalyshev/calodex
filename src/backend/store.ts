@@ -1448,6 +1448,8 @@ export interface Store {
   isStaff(userId: string): Promise<boolean>;
   /** Set or clear the flag, idempotently. `false` means there is no such account. Admin surface only. */
   setStaff(userId: string, staff: boolean): Promise<boolean>;
+  /** The profile languages of accounts flagged staff — a `staffOnly` campaign's copy owes these, and no more. */
+  staffLangs(): Promise<string[]>;
 
   // ── Consent (S8) ───────────────────────────────────────────────────────────────────────────
   //

@@ -2073,6 +2073,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   setRole: 0,
   isStaff: 0,
   setStaff: 0,
+  staffLangs: "unscoped",
   // S8: the sign-up consent stamps — an account's own rows, like every other write here.
   recordConsent: 0,
   pushOffersOf: 0,
@@ -2602,6 +2603,11 @@ export async function postgresStore(
     async setStaff(userId, staff) {
       const rows = await sql`update users set staff = ${staff} where id = ${userId} returning id`;
       return rows.length > 0;
+    },
+
+    async staffLangs() {
+      const rows = await sql`select distinct lang from users where staff = true`;
+      return (rows as { lang: string }[]).map((r) => r.lang);
     },
 
     async recordConsent(userId, consent) {

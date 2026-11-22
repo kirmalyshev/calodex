@@ -36,7 +36,7 @@ beforeEach(() => {
 });
 
 let seq = 0;
-async function account(opts: { tz?: string; lang?: "en" | "de" | "fr"; consent?: boolean; free?: boolean; noToken?: boolean } = {}): Promise<string> {
+async function account(opts: { tz?: string; lang?: "en" | "de" | "fr" | "ru"; consent?: boolean; free?: boolean; noToken?: boolean } = {}): Promise<string> {
   const { userId } = await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), opts.lang ?? "en");
   await store.addIdentity(userId, "google", "g-" + userId.slice(0, 8));
   const out = await patchProfile(deps, userId, {
@@ -521,8 +521,8 @@ describe("test send", () => {
     expect(await store.campaignReport(c.id, { from: null, to: null })).toEqual({ sent: 0, accepted: 0, dead: 0, dry: 0, opened: 0, test: 1, held: 0, groups: [] });
   });
 
-  it("refuses when the template is incomplete, before taking the slot", async () => {
-    const me = await account();
+  it("refuses when the template is incomplete for the segment's languages, before taking the slot", async () => {
+    const me = await account({ lang: "de" });
     staff = [me];
     const c = await campaign({ segment: { staffOnly: true } }, "draft");
     await copy("campaign:win-back", "de");
@@ -708,5 +708,69 @@ describe("holdout", () => {
     expect(out.ok && out.wouldSend + out.heldOut).toBe(users.length);
     expect(out.ok && out.heldOut).toBe(held.length);
     expect(push.sent).toHaveLength(0);
+  });
+});
+
+describe("a campaign needs only the languages its segment can reach", () => {
+  const putCopy = async (key: string, lang: string, variants: number) => {
+    for (const variant of CAMPAIGN_VARIANTS.slice(0, variants)) {
+      await store.putPushTemplate({
+        key: key as PushTemplateRow["key"], lang: lang as PushTemplateRow["lang"], variant,
+        title: `t ${lang}`, body: `b ${lang}`,
+        status: "reviewed", reviewed_by: "t", reviewed_at: "2026-10-08T00:00:00.000Z", updated_at: "2026-10-08T00:00:00.000Z",
+      });
+    }
+  };
+
+  it("a staffOnly campaign activates and sends with copy only in the staff's languages", async () => {
+    const en = await account({ lang: "en" });
+    const ru = await account({ lang: "ru" });
+    staff.push(en);                      // config allowlist path
+    await store.setStaff(ru, true);      // users.staff flag path
+    for (const lang of ["en", "ru"]) await putCopy("campaign:staff-check", lang, 2);
+    const made = await createCampaign(deps, {
+      name: "Staff check", templateKey: "campaign:staff-check", segment: { staffOnly: true },
+      localSendTime: "18:30", rolloutPct: 100, promotional: false, variants: 2,
+    }, "a");
+    if (!made.ok) throw new Error("create");
+    expect((await setCampaignStatus(deps, made.row.id, "scheduled")).ok).toBe(true);
+    const res = await runCampaigns(deps, { now: BERLIN_1830 });
+    expect(res.sent).toBeGreaterThanOrEqual(1);
+    expect((await store.sendLogFor(en, 10)).some((s) => s.templateKey === "campaign:staff-check")).toBe(true);
+  });
+
+  it("a campaign with segment.langs needs only those languages", async () => {
+    await putCopy("campaign:en-only", "en", 1);
+    const made = await createCampaign(deps, {
+      name: "EN only", templateKey: "campaign:en-only", segment: { langs: ["en"] },
+      localSendTime: "18:30", rolloutPct: 100, promotional: false,
+    }, "a");
+    if (!made.ok) throw new Error("create");
+    expect((await setCampaignStatus(deps, made.row.id, "scheduled")).ok).toBe(true);
+  });
+
+  it("a test send never serves a draft row from outside the segment's languages", async () => {
+    const de = await account({ lang: "de" });
+    staff.push(de);
+    await putCopy("campaign:en-send", "en", 1);
+    // A draft in a language the segment does not reach — the gaps pass cannot see it.
+    await store.putPushTemplate({
+      key: "campaign:en-send" as PushTemplateRow["key"], lang: "de", variant: "default", title: "t", body: "b",
+      status: "draft", reviewed_by: null, reviewed_at: null, updated_at: "2026-10-08T00:00:00.000Z",
+    });
+    const made = await createCampaign(deps, {
+      name: "x", templateKey: "campaign:en-send", segment: { langs: ["en"] },
+      localSendTime: "18:30", rolloutPct: 100, promotional: false,
+    }, "a");
+    if (!made.ok) throw new Error("create");
+    expect(await testSendCampaign(deps, made.row.id, de, BERLIN_1830)).toEqual({ ok: false, reason: "template-incomplete" });
+  });
+
+  it("marks a live campaign blocked in the overview while its template is incomplete", async () => {
+    const c = await campaign({}, "scheduled");
+    const row = (await store.listPushTemplates()).find((r) => r.key === "campaign:win-back" && r.lang === "de" && r.variant === "default")!;
+    await store.putPushTemplate({ ...row, status: "draft", reviewed_by: null, reviewed_at: null });
+    const ov = await campaignOverview(deps);
+    expect(ov.campaigns.find((x) => x.id === c.id)!.blocked).toBe(true);
   });
 });

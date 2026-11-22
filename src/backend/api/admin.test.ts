@@ -1748,9 +1748,10 @@ describe("campaigns (ieat-app#1761)", () => {
 
   it("lists a key a campaign names with every language missing, and refuses a placeholder or a system key in campaign copy", async () => {
     await create();
-    const listed = await (await admin("GET", "/admin/api/campaigns")).json() as { copy: { key: string; gaps: string[] }[] };
+    const listed = await (await admin("GET", "/admin/api/campaigns")).json() as { copy: { key: string; gaps: string[]; sendable: boolean }[] };
     expect(listed.copy[0]).toMatchObject({ key: "campaign:win-back" });
-    expect(listed.copy[0]!.gaps).toHaveLength(LANGS.length);
+    expect(listed.copy[0]!.gaps).toEqual(["de/default"]);
+    expect(listed.copy[0]!.sendable).toBe(false);
     const ph = await admin("PUT", "/admin/api/push-templates", {
       template: { key: "campaign:win-back", lang: "en", variant: "default", title: "Hi", body: "You ate {eaten}." }, status: "draft",
     });

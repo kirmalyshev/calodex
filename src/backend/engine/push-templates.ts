@@ -173,9 +173,13 @@ export async function rotatedVariant(
  */
 export async function campaignWords(
   deps: EngineDeps, key: CampaignTemplateKey, lang: Lang, variant: string, variantCount: number,
+  /** The languages the campaign's segment can reach; the copy owes no more than these. */
+  langs: readonly Lang[] = LANGS,
 ): Promise<{ title: string; body: string } | null> {
   const rows = (await deps.store.listPushTemplates()).filter((r) => r.key === key);
-  if (pushKeyGaps(rows, key, variantCount).length > 0) return null;
-  const row = rows.find((r) => r.lang === lang && r.variant === variant);
+  if (pushKeyGaps(rows, key, variantCount, langs).length > 0) return null;
+  // The gaps pass is over the segment's languages, so the row itself still proves reviewed:
+  // a draft in a language outside the segment must never reach a lock screen.
+  const row = rows.find((r) => r.lang === lang && r.variant === variant && r.status === "reviewed");
   return row ? { title: row.title, body: row.body } : null;
 }
