@@ -2483,6 +2483,13 @@ export interface Store {
    * purchaser's account is what the next renewal re-attaches to, and the sweep would otherwise
    * erase it between billings.
    *
+   * So is ANY `onboarding_events` row (#3357): the answers of a dropped-out walk are kept forever,
+   * and they ride in that table beside the profile they patched. The test is any event, not only
+   * `answer` — a deleted account's events cascade with it, so exempting on `answer` alone would
+   * still thin old funnel windows of their sessions. What the sweep removes is what is left: the
+   * pure shell, a credential that never produced a funnel row — the install that died before its
+   * first flush, or the `/start` mint whose fire-and-forget write never landed.
+   *
    * UNSCOPED, like every sweep, and ONE statement: the conditions are evaluated inside the delete
    * rather than by a read taken first, so nothing can interleave between "does this account
    * qualify" and its row going — the strongest version of "one transaction per account", with

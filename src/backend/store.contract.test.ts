@@ -4843,7 +4843,9 @@ function pairingCodes(name: string, make: (opts: StoreOptions) => Promise<Store>
  * first onboarding answer and its cookie dies with the browser; an anonymous install abandoned at
  * the same place is the same class. After `before` milliseconds of nothing they are deleted — but
  * an account with an identity that can still reach it, one logged meal, or a session still in use
- * is none of the sweep's business.
+ * is none of the sweep's business. Neither is one that ever touched onboarding: #3357 keeps the
+ * answers of a dropped-out walk forever, and the events are where they ride — so what the sweep
+ * still removes is the pure shell, a credential that never produced a funnel row.
  *
  * Every test opens its OWN store, so a count can be exact: the sweeps above share one store per
  * suite and settle for `toBeGreaterThanOrEqual`, which is what a shared one would make this do.
@@ -4883,17 +4885,53 @@ function abandonedAccounts(name: string, make: (opts: StoreOptions) => Promise<S
       expect(await s.pruneAbandonedAccounts(clock - 30 * DAY)).toBe(0);
     });
 
-    it("deletes the account a browser abandoned, which never had a device at all", async () => {
+    it("deletes the account a browser abandoned before its first answer", async () => {
       clock = Date.parse("2026-08-01T12:00:00Z");
       const s = await open();
       // `createUser` is the `/start` path: no device id, no identity row, a session cookie that
-      // went away when the tab did.
+      // went away when the tab did. A real one is minted at the first answer, so a row with no
+      // funnel event is the shell a lost write leaves — still the sweep's business (#3357).
       const userId = await s.createUser("en");
 
       clock += 31 * DAY;
 
       expect(await s.pruneAbandonedAccounts(clock - 30 * DAY)).toBeGreaterThanOrEqual(1);
       expect(await s.getProfile(userId)).toBeNull();
+    });
+
+    it("keeps an abandoned account that answered onboarding, answers and all (#3357)", async () => {
+      clock = Date.parse("2026-08-01T12:00:00Z");
+      const s = await open();
+      // The class the issue is about: dropped out of onboarding, unreachable, 31 days idle — and
+      // kept, because the answer it gave is kept forever.
+      const { userId } = await s.upsertDeviceUser(device(), "en");
+      await s.recordOnboardingEvents(userId, [
+        { id: `keep-${RUN}`, sessionId: `keep-${RUN}`, place: "goal" as const, action: "answer" as const, contentVersion: 1, field: "goal", value: "lose", at: new Date(clock).toISOString() },
+      ]);
+
+      clock += 31 * DAY;
+
+      expect(await s.pruneAbandonedAccounts(clock - 30 * DAY)).toBe(0);
+      // Kept means the whole record: the profile the answers patched AND the funnel row itself.
+      expect(await s.getProfile(userId)).not.toBeNull();
+      const flow = await s.adminOnboardingFlow({ userId, range: { from: null, to: null } });
+      expect(flow.rows[0]?.events?.some((e) => e.action === "answer" && e.field === "goal")).toBe(true);
+    });
+
+    it("keeps an account that only ever saw a screen — a funnel row is part of the record", async () => {
+      clock = Date.parse("2026-08-01T12:00:00Z");
+      const s = await open();
+      // Any event, not only `answer`: the sweep decides on the row's existence, so the funnel's
+      // sessions are not thinned out from under old windows.
+      const { userId } = await s.upsertDeviceUser(device(), "en");
+      await s.recordOnboardingEvents(userId, [
+        { id: `view-${RUN}`, sessionId: `view-${RUN}`, place: "sex" as const, action: "view" as const, contentVersion: 1, at: new Date(clock).toISOString() },
+      ]);
+
+      clock += 31 * DAY;
+
+      expect(await s.pruneAbandonedAccounts(clock - 30 * DAY)).toBe(0);
+      expect(await s.getProfile(userId)).not.toBeNull();
     });
 
     it("keeps an account a sign-in can still reach", async () => {

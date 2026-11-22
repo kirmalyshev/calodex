@@ -241,12 +241,13 @@ const deps: EngineDeps = {
 // drift is a row that leaves a day later than it might have.
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
-// How long an account nobody can reach again is kept (#106): `/start` mints one at the first
-// onboarding answer and its cookie dies with the browser, so an abandoned walk leaves a row
-// holding body facts forever unless something sweeps it. A constant, not a setting — the
-// coordinator's call. An identity that can sign back in, one logged meal, or a session used
-// inside the window each keep the account; the store owns the precise test.
-const ABANDONED_ACCOUNT_IDLE_DAYS = 30;
+// How long an account nobody can reach again is kept (#106) — and since #3357, only when it is a
+// pure shell: an account carrying any onboarding event keeps its answers forever, so what the
+// sweep still removes is the credential that never produced a funnel row. A setting
+// (`EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS`) rather than a constant, because a window that can
+// differ between dev and prod is config — zero disables the sweep outright. An identity that can
+// sign back in, one logged meal, or a session used inside the window each keep the account too;
+// the store owns the precise test.
 const sweepHealthRetention = async () => {
   // Idle sessions and expired proposals ride the same pass now: they were a one-off sweep at
   // startup until the leader gate (#414) — under two replicas that would be two passes and two
@@ -277,13 +278,15 @@ const sweepHealthRetention = async () => {
     console.error(`[eait] job sweep failed: ${(e as Error)?.message ?? e}`);
   });
   // Counts only: the ids are nobody's business once the rows are gone.
-  await store.pruneAbandonedAccounts(Date.now() - ABANDONED_ACCOUNT_IDLE_DAYS * DAY_MS)
-    .then((gone) => {
-      if (gone > 0) console.log(`[eait] pruned ${gone} account(s) idle past ${ABANDONED_ACCOUNT_IDLE_DAYS} days`);
-    })
-    .catch((e: unknown) => {
-      console.error(`[eait] abandoned account sweep failed: ${(e as Error)?.message ?? e}`);
-    });
+  if (config.abandonedAccountIdleDays > 0) {
+    await store.pruneAbandonedAccounts(Date.now() - config.abandonedAccountIdleDays * DAY_MS)
+      .then((gone) => {
+        if (gone > 0) console.log(`[eait] pruned ${gone} account(s) idle past ${config.abandonedAccountIdleDays} days`);
+      })
+      .catch((e: unknown) => {
+        console.error(`[eait] abandoned account sweep failed: ${(e as Error)?.message ?? e}`);
+      });
+  }
 };
 
 // ── Catalog refresh ──────────────────────────────────────────────────────────────────────────

@@ -5900,6 +5900,10 @@ export async function postgresStore(
       // born with, the very class being swept, rather than a way back. `telegram` does disqualify
       // although `signsIn` answers false for it — somebody is listening on that transport.
       //
+      // `onboarding_events` is the last veto (#3357): one funnel row and the whole account — profile,
+      // events and the device that could still reach it — is kept forever. What remains deletable is
+      // the pure shell: a credential that never produced an event.
+      //
       // The `not exists` clauses are IN the delete, the same guarded-statement rule as
       // `pruneHealthDaysBefore`: nothing interleaves between qualifying and going.
       const rows = await sql`
@@ -5913,6 +5917,9 @@ export async function postgresStore(
           and not exists (
             select 1 from tokens t
             where t.user_id = u.id and t.last_used_at >= ${new Date(before)})
+          and not exists (
+            select 1 from onboarding_events e
+            where e.user_id = u.id)
         returning u.id`;
       return rows.length;
     },
