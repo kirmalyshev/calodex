@@ -2141,8 +2141,9 @@ details.how p { margin-top: 8px; }
     return function () { return api("POST", "/admin/api/campaigns/" + c.id + "/status", { status: to }); };
   }
 
-  var CHIP_TONE = { running: "g", scheduled: "", paused: "w", killed: "b", done: "n", draft: "n" };
+  var CHIP_TONE = { running: "g", scheduled: "", paused: "w", killed: "b", done: "n", draft: "n", blocked: "b" };
   function statusChip(status) { return el("span", ("chip " + (CHIP_TONE[status] || "n")).trim(), status); }
+  function campaignChip(c) { return statusChip(c.blocked ? "blocked" : c.status); }
 
   function renderList(v) {
     var host = $("camp-list");
@@ -2159,7 +2160,7 @@ details.how p { margin-top: 8px; }
       bar.appendChild(fill);
       b.appendChild(t);
       b.appendChild(bar);
-      b.appendChild(statusChip(c.status));
+      b.appendChild(campaignChip(c));
       b.addEventListener("click", function () {
         campSel = c.id;
         campNote = null;
@@ -2196,7 +2197,7 @@ details.how p { margin-top: 8px; }
     if (!c) return;
     var ph = el("div", "ph");
     ph.appendChild(el("b", null, c.name));
-    ph.appendChild(statusChip(c.status));
+    ph.appendChild(campaignChip(c));
     ph.appendChild(el("span", "grow"));
     var next = c.status === "draft" ? ["Schedule", "scheduled"] : c.status === "paused" ? ["Resume", "scheduled"] : c.status === "scheduled" || c.status === "running" ? ["Pause", "paused"] : null;
     if (next) {
