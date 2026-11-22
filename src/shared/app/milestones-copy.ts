@@ -11,7 +11,7 @@
 
 import { dateMinus } from "../dates.ts";
 import type { DaysResponse } from "../contract.ts";
-import { LANG_TAG, fill, numbers, t, type CountForms, type Localized } from "../lang.ts";
+import { LANG_TAG, fill, numbers, t, weekdayLong, type CountForms, type Localized } from "../lang.ts";
 import type { Lang } from "../types.ts";
 
 export interface StreakLine { lead: string; rest?: string }
@@ -2557,8 +2557,7 @@ export function streakCardLine(
 ): { lead?: string; rest?: string } | null {
   const n = numbers(lang);
   const tag = LANG_TAG[lang];
-  const weekday = (date: string): string =>
-    new Intl.DateTimeFormat(tag, { weekday: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+  const weekday = (date: string): string => weekdayLong(lang, date);
   const cap = (w: string): string => w.charAt(0).toLocaleUpperCase(tag) + w.slice(1);
   const line = (l: StreakLine, lead: Record<string, string>, rest: Record<string, string>) => ({
     lead: fill(l.lead, lead),

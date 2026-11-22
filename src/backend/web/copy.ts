@@ -2549,7 +2549,7 @@ const SL: PageCopy = {
   emailSend: "Pošlji kodo",
   emailBad: "To ni videti kot e-poštni naslov.",
   emailTooMany: "Preveč poskusov. Poskusi znova čez {min}.",
-  emailMinutes: { one: "{n} minuto", other: "{n} min" },
+  emailMinutes: { one: "{n} minuto", two: "{n} minuti", few: "{n} minute", other: "{n} min" },
   emailCodeHeading: "Preveri e-pošto",
   emailCodeLead: "Vnesi 6-mestno kodo, ki smo jo poslali na {email}. Velja 10 minut.",
   emailCodeLabel: "6-mestna koda",
