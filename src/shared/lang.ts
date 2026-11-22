@@ -226,6 +226,28 @@ export const LANG_TAG: Record<Lang, string> = {
 };
 
 /**
+ * HERMES DROPS `-u-nu`. Every Arabic and Indic tag above asks for Latin digits — the product's
+ * pick, "the app's figures are all written Western-Arabic" — and Node's ICU honours it, so no test
+ * run sees the engine that does not: Hermes on iOS answers Arabic-Indic anyway (ieat-app#3341).
+ * Every string a formatter emits is folded back to Latin here — a no-op where the tag was
+ * honoured, the pick where it was not.
+ */
+const INDIC_DIGITS = "٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹";
+export const latn = (s: string): string => s.replace(/[٠-٩۰-۹]/g, (d) => `${INDIC_DIGITS.indexOf(d) % 10}`);
+
+/** `Intl.NumberFormat` whose digits `latn` guarantees, for the engines that drop `-u-nu`. */
+const nf = (lang: Lang, opts: Intl.NumberFormatOptions): { format: (x: number) => string } => {
+  const f = new Intl.NumberFormat(LANG_TAG[lang], opts);
+  return { format: (x) => latn(f.format(x)) };
+};
+
+/** `Intl.DateTimeFormat` whose digits `latn` guarantees, for the engines that drop `-u-nu`. */
+const df = (lang: Lang, opts: Intl.DateTimeFormatOptions): { format: (d: Date) => string } => {
+  const f = new Intl.DateTimeFormat(LANG_TAG[lang], opts);
+  return { format: (d) => latn(f.format(d)) };
+};
+
+/**
  * Every figure in every sentence this product writes.
  *
  * ONE SHAPE, because the thread only ever writes one: a whole number, or one decimal place when
@@ -237,7 +259,7 @@ export const LANG_TAG: Record<Lang, string> = {
  */
 export const numbers = (lang: Lang) => {
   const whole = wholeNumbers(lang);
-  const tenth = new Intl.NumberFormat(LANG_TAG[lang], { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const tenth = nf(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return (x: number): string =>
     Math.round(x * 10) % 10 === 0 ? whole(x) : tenth.format(Math.round(x * 10) / 10);
 };
@@ -252,7 +274,7 @@ export const numbers = (lang: Lang) => {
  * and unifying them on the wrong one is how the protein figure grew a decimal point.
  */
 export const wholeNumbers = (lang: Lang) => {
-  const format = new Intl.NumberFormat(LANG_TAG[lang], { maximumFractionDigits: 0 });
+  const format = nf(lang, { maximumFractionDigits: 0 });
   return (x: number): string => format.format(Math.round(x));
 };
 
@@ -261,7 +283,7 @@ export const wholeNumbers = (lang: Lang) => {
  * One formatter for every kcal figure on every surface; grams and weights keep `wholeNumbers`/`numbers`.
  */
 export const kcalNumbers = (lang: Lang) => {
-  const format = new Intl.NumberFormat(LANG_TAG[lang], { maximumFractionDigits: 0, useGrouping: false });
+  const format = nf(lang, { maximumFractionDigits: 0, useGrouping: false });
   return (x: number): string => format.format(Math.round(x));
 };
 
@@ -271,7 +293,7 @@ export const kcalNumbers = (lang: Lang) => {
  * meaning lives in the decimal.
  */
 export const decimalNumbers = (lang: Lang) => {
-  const format = new Intl.NumberFormat(LANG_TAG[lang], { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const format = nf(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return (x: number): string => format.format(Math.round(x * 10) / 10);
 };
 
@@ -283,7 +305,7 @@ export const decimalNumbers = (lang: Lang) => {
  * pace of −0.3 rounds to −0 and reads "−0", exactly as `signDisplay: "always"` drew it.
  */
 export const signedWholeNumbers = (lang: Lang) => {
-  const format = new Intl.NumberFormat(LANG_TAG[lang], { maximumFractionDigits: 0 });
+  const format = nf(lang, { maximumFractionDigits: 0 });
   return (x: number): string => {
     const rounded = Math.round(x);
     return (rounded < 0 || Object.is(rounded, -0) ? "−" : "+") + format.format(Math.abs(rounded));
@@ -388,7 +410,7 @@ export const fill = (template: string, params: Record<string, string>): string =
  * and twelve names in a table is eighty-four names the day a second language lands.
  */
 export const monthYear = (lang: Lang, at: Date): string =>
-  new Intl.DateTimeFormat(LANG_TAG[lang], { month: "long", year: "numeric", timeZone: "UTC" }).format(at);
+  df(lang, { month: "long", year: "numeric", timeZone: "UTC" }).format(at);
 
 /**
  * A `YYYY-MM` as the picker's month title, in the reader's language: "August 2026",
@@ -400,14 +422,14 @@ export const monthLabel = (lang: Lang, month: string): string =>
 
 /** "24 Aug" in the reader's language — the day-of-month axes (trend charts, the weight chart). */
 export const dayMonth = (lang: Lang) =>
-  new Intl.DateTimeFormat(LANG_TAG[lang], { timeZone: "UTC", day: "numeric", month: "short" });
+  df(lang, { timeZone: "UTC", day: "numeric", month: "short" });
 
 /**
  * A `YYYY-MM-DD` day as "24 Aug", the year joining when it is not `today`'s: an "All" axis that
  * began "21 May" read as later than 1Y's "3 Oct" when it was a year earlier (ieat-app#1230).
  */
 export const dayMonthOn = (lang: Lang, date: string, today: string): string =>
-  new Intl.DateTimeFormat(LANG_TAG[lang], {
+  df(lang, {
     timeZone: "UTC", day: "numeric", month: "short", ...(date.slice(0, 4) === today.slice(0, 4) ? {} : { year: "numeric" }),
   }).format(new Date(`${date}T12:00:00Z`));
 
@@ -418,14 +440,14 @@ export const dayMonthOn = (lang: Lang, date: string, today: string): string =>
  */
 export const dayMonthAt = (lang: Lang, zone: string, at: Date): string => {
   const sameYear = localDate(zone, at).slice(0, 4) === localDate(zone).slice(0, 4);
-  return new Intl.DateTimeFormat(LANG_TAG[lang], {
+  return df(lang, {
     day: "numeric", month: "short", timeZone: zone, ...(sameYear ? {} : { year: "numeric" }),
   }).format(at);
 };
 
 /** "Sat 26 Sep" — a short weekday with the day, for "until {date}" style lines. Account's zone. */
 export const weekdayDayMonthAt = (lang: Lang, zone: string, at: Date): string =>
-  new Intl.DateTimeFormat(LANG_TAG[lang], {
+  df(lang, {
     weekday: "short", day: "numeric", month: "short", timeZone: zone,
   }).format(at);
 
@@ -498,14 +520,14 @@ export function dayLabel(lang: Lang, date: string, today: string): string {
   if (date === dateMinus(today, 1)) return words.yesterday;
   // Midday UTC, so the label cannot slip a day on either side of the date line while formatting a
   // value that carries no time at all.
-  return new Intl.DateTimeFormat(LANG_TAG[lang], {
+  return df(lang, {
     timeZone: "UTC", weekday: "short", day: "numeric", month: "short",
   }).format(new Date(`${date}T12:00:00Z`)).replace(",", "");
 }
 
 /** "9:41" — a clock time in the account's zone, for "expires at {time}" style lines. */
 export const timeAt = (lang: Lang, zone: string, at: Date): string =>
-  new Intl.DateTimeFormat(LANG_TAG[lang], { hour: "numeric", minute: "2-digit", timeZone: zone }).format(at);
+  df(lang, { hour: "numeric", minute: "2-digit", timeZone: zone }).format(at);
 
 /**
  * The seven single letters a week is captioned with — the Today strip and Progress's bars and
@@ -515,7 +537,7 @@ export const timeAt = (lang: Lang, zone: string, at: Date): string =>
  * reader's zone, as `dayLabel` does.
  */
 export const weekdayLetters = (lang: Lang): string[] => {
-  const fmt = new Intl.DateTimeFormat(LANG_TAG[lang], { weekday: "narrow", timeZone: "UTC" });
+  const fmt = df(lang, { weekday: "narrow", timeZone: "UTC" });
   // 2026-09-21 was a Monday, so `+ i` walks Monday → Sunday.
   return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2026, 8, 21 + i, 12))));
 };
@@ -526,7 +548,7 @@ export const weekdayLetters = (lang: Lang): string[] => {
  * CLDR's `short`, never a table, the UTC-noon anchor holding the day.
  */
 export const weekdayShort = (lang: Lang): string[] => {
-  const fmt = new Intl.DateTimeFormat(LANG_TAG[lang], { weekday: "short", timeZone: "UTC" });
+  const fmt = df(lang, { weekday: "short", timeZone: "UTC" });
   return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2026, 8, 21 + i, 12))));
 };
 

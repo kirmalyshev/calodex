@@ -1,6 +1,6 @@
 // The plan reveal's geometry and clock (#402): journey curve and date axis, waterfall, maintain balance.
 
-import { LANG_TAG, t } from "./lang.ts";
+import { LANG_TAG, latn, t } from "./lang.ts";
 import { PLAN_COPY } from "./app/plan-copy.ts";
 import type { TargetBasis } from "./targets.ts";
 import type { Lang } from "./types.ts";
@@ -78,7 +78,7 @@ const monthName = (lang: Lang, year: number, month: number, withYear: boolean): 
   if (!fmt) MONTH_FORMATS.set(key, (fmt = new Intl.DateTimeFormat(LANG_TAG[lang], {
     month: "short", ...(withYear ? { year: "numeric" } : {}), timeZone: "UTC",
   })));
-  return fmt.format(new Date(Date.UTC(year, month, 15)));
+  return latn(fmt.format(new Date(Date.UTC(year, month, 15))));
 };
 
 /** The date axis on a real time scale, its month names from `Intl`. */
