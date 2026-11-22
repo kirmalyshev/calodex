@@ -5953,6 +5953,15 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       const base = Date.parse("2044-01-01T00:00:00Z") + (parseInt(RUN, 16) % 2000) * 86_400_000;
       const day1 = new Date(base).toISOString().slice(0, 10);
       const day2 = new Date(base + 86_400_000).toISOString().slice(0, 10);
+      const day3 = new Date(base + 2 * 86_400_000).toISOString().slice(0, 10);
+      // Counts are global and 2000 keys collide across runs (a neighbouring run's day lands
+      // on ours, found when test_pg went red at the deploy-30 gate), so read what is already
+      // on the days and assert the DELTA this run adds.
+      const had = async (d: string) => (await s.adminMetrics({
+        from: new Date(d + "T00:00:00Z"), to: new Date(d + "T00:00:00Z"),
+        today: "2044-12-31", timezone: "UTC",
+      })).days.find((x) => x.date === d)?.analyses ?? 0;
+      const [had2, had3] = [await had(day2), await had(day3)];
       await s.recordAnalysis(u, day1, "photo");
       await s.recordAnalysis(u, day2, "photo");
       await s.recordAnalysis(u, day2, "text");
@@ -5963,7 +5972,7 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       });
       // `to` covers its WHOLE day — an instant inside a day still includes the day.
       expect(m.days.map((d) => d.date)).toEqual([day2]);
-      expect(m.days[0]!.analyses).toBe(2);
+      expect(m.days[0]!.analyses).toBe(had2 + 2);
 
       const span = await s.adminMetrics({
         from: new Date(day1 + "T23:00:00Z"), to: new Date(day2 + "T01:00:00Z"),
@@ -5980,14 +5989,13 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       // Same instants, a zone far from UTC (#2779 — metrics was only ever asked in UTC).
       // day1T23:30Z is already day2 12:30 in Auckland (UTC+13 in January), and day2T12:00Z is
       // Auckland's day3: the Auckland ask starts a day LATER and ends a day later than it reads.
-      const day3 = new Date(base + 2 * 86_400_000).toISOString().slice(0, 10);
       const nz = await s.adminMetrics({
         from: new Date(day1 + "T23:30:00Z"), to: new Date(day2 + "T12:00:00Z"),
         today: "2044-12-31", timezone: "Pacific/Auckland",
       });
       expect(nz.days.map((d) => d.date)).toEqual([day2, day3]);
-      expect(nz.days[0]!.analyses).toBe(2);
-      expect(nz.days[1]!.analyses).toBe(0);
+      expect(nz.days[0]!.analyses).toBe(had2 + 2);
+      expect(nz.days[1]!.analyses).toBe(had3);
     });
   });
 }
