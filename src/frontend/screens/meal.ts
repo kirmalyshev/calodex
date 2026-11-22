@@ -21,7 +21,7 @@
 
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
-import { LANG_TAG, UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
+import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import { mealEditParams, mealEditRequest, previewKcal, scaledItem } from "../../shared/meal-edit.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { ingredientSourceCard } from "../../shared/app/ingredient-source.ts";

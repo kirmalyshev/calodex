@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { LANGS } from "./types.ts";
 import {
   LANGS_READY, LANG_LABEL, LANG_TAG, UNIT_KCAL, countText, dayLabel, dayMonthAt, genderedRussian,
-  localizedGaps, latn, kcalNumbers, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters, weekdayShort, wholeNumbers,
+  localizedGaps, latn, kcalNumbers, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters, weekdayLong, weekdayShort, wholeNumbers,
   acceptLang, acceptLanguageTags, narrowLang, spellUnit, t,
   type Localized,
 } from "./lang.ts";
@@ -120,6 +120,10 @@ describe("numbers and dates", () => {
     // And the fallback IS CLDR's own forms — pinned so a hand-edit drifts loudly.
     expect(weekdayShort("sq")).toEqual(["hën", "mar", "mër", "enj", "pre", "sht", "die"]);
     expect(weekdayLetters("sq")).toEqual(["h", "m", "m", "e", "p", "sh", "d"]);
+    // 2026-09-21 was a Monday.
+    expect(weekdayLong("sq", "2026-09-21")).toBe("e hënë");
+    expect(weekdayLong("sq", "2026-09-27")).toBe("e diel");
+    expect(weekdayLong("en", "2026-09-21")).toBe("Monday");
   });
 
   it("names a month in the reader's language, from Intl and never from a table", () => {
