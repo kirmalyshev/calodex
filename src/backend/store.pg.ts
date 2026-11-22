@@ -2073,7 +2073,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   setRole: 0,
   isStaff: 0,
   setStaff: 0,
-  staffLangs: 0,
+  staffLangs: "unscoped",
   // S8: the sign-up consent stamps — an account's own rows, like every other write here.
   recordConsent: 0,
   pushOffersOf: 0,
