@@ -2451,7 +2451,7 @@ details.how p { margin-top: 8px; }
         return;
       }
       // A step counts the people who got to it or past it (ieat-app#3339), so no row can hold more than the one before.
-      var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.place === "paywall" || r.reached === undefined ? r.people : r.reached }; });
+      var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.reached === undefined ? r.people : r.reached }; });
       // The questions are answered BEFORE the paywall, so the step sits there (ieat-app#3326).
       var atPay = steps.findIndex(function (s) { return s.id === "paywall"; });
       // A run whose complete event was lost is still past the questions, and one that never saw the summary is not
@@ -2464,24 +2464,39 @@ details.how p { margin-top: 8px; }
       // client event; a record older than that is a payment this run did not cause.
       // Right after the plans: only the people who SAW them count here, so the step can never exceed the one before.
       var atPlans = steps.findIndex(function (s) { return s.id === "paywall"; });
-      // The path ENDS there: the screens after the plans (sign-up, country, referral, health) are reached by people who did
-      // not pay too, so a row for them under the paid step would read as a join.
-      if (atPlans >= 0) steps.length = atPlans + 1;
-      steps.push({ name: "Converted to paid", id: "paid", n: viaPlans, fin: true });
+      // Every flow place stays (sign-up included: that is where people leave). The paid row is an outcome off the plans:
+      // it is measured against the people who SAW them and draws no gap to the screens after it, which people who did not
+      // pay reach too.
+      steps.splice(atPlans < 0 ? steps.length : atPlans + 1, 0, { name: "Converted to paid", id: "paid", n: viaPlans, fin: true });
+      // What a step is measured against and what leaves it: the paid row and the gap into it use the plan VIEWERS.
+      var prevN = function (i) {
+        if (!i) return null;
+        var p = steps[i - 1];
+        if (steps[i].id === "paid") return atPaywall;
+        return p.id === "paid" ? steps[i - 2].n : p.n;
+      };
+      var leaving = function (i) {
+        var s = steps[i], next = steps[i + 1];
+        if (!next) return null;
+        if (next.id === "paid") return { d: atPaywall - next.n, of: atPaywall, from: s.id };
+        // Under the paid row the next gap is still the plan sheet: who saw it and went no further.
+        if (s.id === "paid") return { d: steps[i - 1].n - next.n, of: steps[i - 1].n, from: steps[i - 1].id };
+        return { d: s.n - next.n, of: s.n, from: s.id };
+      };
       var first = steps[0].n;
       // The gap into "paid" ranks like any other (ieat-app#3326): payment is the target metric, so
       // the biggest loss on the page is red wherever it is. It only has no drill-down list below.
       var drops = [];
       steps.forEach(function (s, i) {
-        var next = steps[i + 1];
-        if (next) { var d = s.n - next.n; if (d > 0) drops.push(d); }
+        var lv = leaving(i);
+        if (lv && lv.d > 0) drops.push(lv.d);
       });
       var worst = drops.slice().sort(function (a, b) { return b - a; }).slice(0, 3);
       var hd = el("div", "fp-st fp-hd");
       ["", "Step", "", "People", "% of first", "% of prev"].forEach(function (t, i) { hd.appendChild(el("span", i > 2 ? "fp-r" : "", t)); });
       host.appendChild(hd);
       steps.forEach(function (s, i) {
-        var prev = i ? steps[i - 1].n : null;
+        var prev = prevN(i);
         var pf = first ? Math.round((s.n / first) * 100) + "%" : "\u2014";
         var pp = prev ? Math.round((s.n / prev) * 100) + "%" : "\u2014";
         var row = el("div", "fp-st" + (s.fin ? " fp-fin" : ""));
@@ -2500,22 +2515,23 @@ details.how p { margin-top: 8px; }
         row.appendChild(el("span", "fp-pc", pf + " of first" + (prev ? " \u00b7 " + pp + " of previous" : "")));
         host.appendChild(row);
         var next = steps[i + 1];
-        if (next) {
-          var d = s.n - next.n;
+        var lv2 = leaving(i);
+        if (lv2) {
+          var d = lv2.d;
           // The funnel is a cohort, so a later step can hold MORE people only when it is a step some
           // runs reach and others skip. That is not a drop, and "-5 left" reads as one.
           var g = el("div", "fp-gap" + (worst.indexOf(d) !== -1 && d > 0 ? " fp-big" : ""),
             d >= 0 ? "\u25bc " + d + " left" : "+" + (-d) + " joined here");
-          if (d >= 0) g.appendChild(el("em", "", "(" + pct1(d, s.n) + " of " + s.n + ")"));
+          if (d >= 0) g.appendChild(el("em", "", "(" + pct1(d, lv2.of) + " of " + lv2.of + ")"));
           else g.appendChild(el("em", "", "(a step only some runs reach)"));
           // A drop drills into the list below (#814): who has this screen as their last.
           // The "complete"/"paid" rows name outcomes, not screens — nothing to filter on.
-          if (!s.fin && d >= 0 && next.id !== "paid") {
+          if ((!s.fin || s.id === "paid") && d >= 0 && next.id !== "paid") {
             g.classList.add("fp-jump");
             g.setAttribute("role", "button");
             g.setAttribute("tabindex", "0");
             var jump = function () {
-              funnelPage.leftAt = s.id;
+              funnelPage.leftAt = lv2.from;
               loadFunnelUsers();
               $("funnel-users").scrollIntoView({ block: "start" });
             };
