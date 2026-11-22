@@ -4,7 +4,7 @@
  */
 import {
   LANGS, NOTIFICATION_IDS, PUSH_TEMPLATE_VARIANTS, copyFromPushRows, pickVariant, pushClaimErrors,
-  pushKeyGaps, pushRowsFromCopy, validatePushTemplate,
+  pushKeyGaps, pushRowsFromCopy, validatePushTemplate, variantCarriesTitle,
   type CampaignTemplateKey, type Lang, type NotificationCopy, type NotificationId, type PushTemplateRow, type PushTemplateText,
 } from "@eait/shared";
 import type { Store } from "../store.ts";
@@ -40,10 +40,10 @@ export async function ensurePushTemplates(deps: EngineDeps): Promise<void> {
     }
   }
   await deps.store.seedPushTemplates(rows);
-  // Rows seeded before the empty variant lost its title (61d2a13) still carry one the sender never
-  // reads. Strip it, keeping status and review fields as they are.
+  // Rows seeded before the non-default variants lost their titles (61d2a13) still carry one the
+  // sender never reads. Strip it, keeping status and review fields as they are.
   for (const r of await deps.store.listPushTemplates()) {
-    if (r.variant === "empty" && r.title !== "") await deps.store.putPushTemplate({ ...r, title: "" });
+    if (!variantCarriesTitle(r.key, r.variant) && r.title !== "") await deps.store.putPushTemplate({ ...r, title: "" });
   }
   seeded.add(deps.store);
 }
@@ -81,13 +81,14 @@ export async function savePushTemplate(
   const checked = validatePushTemplate(input as Record<string, unknown>);
   if (!checked.ok) return checked;
   const t = input as PushTemplateText;
+  const titled = variantCarriesTitle(t.key, t.variant);
   if (status === "reviewed") {
-    const claims = pushClaimErrors(t.variant === "default" ? t.title : "", t.body);
+    const claims = pushClaimErrors(titled ? t.title : "", t.body);
     if (claims.length > 0) return { ok: false, errors: claims };
   }
   const now = new Date().toISOString();
   const row: PushTemplateRow = {
-    key: t.key, lang: t.lang, variant: t.variant, title: t.variant === "default" ? t.title : "", body: t.body, status,
+    key: t.key, lang: t.lang, variant: t.variant, title: titled ? t.title : "", body: t.body, status,
     reviewed_by: status === "reviewed" ? actor : null,
     reviewed_at: status === "reviewed" ? now : null,
     updated_at: now,

@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "bun:test";
-import { LANGS, NOTIFICATION_IDS, copyFromPushRows, notificationCopyFor } from "@eait/shared";
+import {
+  LANGS, NOTIFICATION_IDS, copyFromPushRows, notificationCopyFor,
+  type CampaignTemplateKey,
+} from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { fakePush } from "../push/fake.ts";
@@ -9,7 +12,7 @@ import type { Store } from "../store.ts";
 import { patchProfile, type EngineDeps } from "./index.ts";
 import { dailyNotification } from "./notify.ts";
 import {
-  listPushTemplates, reviewPushTemplate, rotatedVariant, savePushTemplate, sendLogUses, sendableCopy,
+  campaignWords, listPushTemplates, reviewPushTemplate, rotatedVariant, savePushTemplate, sendLogUses, sendableCopy,
 } from "./push-templates.ts";
 
 const CONFIG: Config = {
@@ -103,6 +106,28 @@ describe("push templates", () => {
   it("no health value in push text", async () => {
     const out = await savePushTemplate(deps, { ...nudge("en"), body: "You are at 1800 kcal" }, "reviewed", "kirill");
     expect(out.ok).toBe(false);
+  });
+
+  it("a campaign arm keeps its title through save — claims-checked, stored and sent", async () => {
+    const key = "campaign:win-back" as CampaignTemplateKey;
+    const arm = { key, lang: "en", variant: "b", title: "Pick up where you left off", body: "One photo is a day." };
+    const out = await savePushTemplate(deps, arm, "reviewed", "kirill");
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.row.title).toBe(arm.title);
+    // The claims gate reads the arm's own title: a claim there is refused, not shipped silently.
+    expect((await savePushTemplate(deps, { ...arm, title: "Guaranteed results" }, "reviewed", "kirill")).ok).toBe(false);
+    // The running campaign's other rows, so the key is sendable; then the b arm's words go out.
+    const at = new Date().toISOString();
+    for (const lang of LANGS) {
+      for (const variant of ["default", "b"]) {
+        if (lang === "en" && variant === "b") continue;
+        await store.putPushTemplate({
+          key, lang, variant, title: `Hi ${lang} ${variant}`, body: `Body ${lang}`,
+          status: "reviewed", reviewed_by: "t", reviewed_at: at, updated_at: at,
+        });
+      }
+    }
+    expect(await campaignWords(deps, key, "en", "b", 2)).toEqual({ title: arm.title, body: arm.body });
   });
 
   it("plural rules are checked on save, per language", async () => {

@@ -45,6 +45,16 @@ export function variantsOf(key: PushTemplateKey): readonly string[] {
   return isCampaignTemplateKey(key) ? CAMPAIGN_VARIANTS : PUSH_TEMPLATE_VARIANTS[key as NotificationId];
 }
 
+/**
+ * Whether a variant has a title of its own. Only a system key's `default` does — the other
+ * variants are sent under it. A campaign variant is a whole message (an A/B arm), so every one
+ * carries its own title. One definition: the validator, the save path and the store repair all
+ * read it (ieat-app#3381).
+ */
+export function variantCarriesTitle(key: PushTemplateKey, variant: string): boolean {
+  return variant === "default" || isCampaignTemplateKey(key);
+}
+
 export interface PushTemplateRow {
   key: PushTemplateKey;
   lang: Lang;
@@ -171,10 +181,9 @@ export function validatePushTemplate(input: PushTemplateText | Record<string, un
     return { ok: false, errors: [`${key} has no variant "${String(variant)}"`] };
   }
   const fields: [string, unknown, string, number][] = [];
-  // Only the default variant has a title; the others are sent under it.
-  // A campaign variant is a whole message (an A/B arm), so every one of them has its own title.
-  if (variant === "default" || isCampaignTemplateKey(key)) fields.push(["title", title, `${key}.title`, MAX_NOTIFICATION_TITLE]);
-  else if (title !== undefined && title !== "") errors.push(`${variant} has no title of its own`);
+  if (variantCarriesTitle(key as PushTemplateKey, variant as string)) {
+    fields.push(["title", title, `${key}.title`, MAX_NOTIFICATION_TITLE]);
+  } else if (title !== undefined && title !== "") errors.push(`${variant} has no title of its own`);
   fields.push(["body", body, `${key}.${bodyField(variant)}`, MAX_NOTIFICATION_BODY]);
   for (const [name, value, declaredAt, max] of fields) {
     if (typeof value !== "string" || value.trim() === "") { errors.push(`${name} is required`); continue; }
