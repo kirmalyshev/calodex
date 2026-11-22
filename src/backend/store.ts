@@ -623,6 +623,8 @@ export interface FunnelAggregate {
   paid: {
     /** Runs in the window whose account went on to hold an entitlement record — counted per RUN, so an account that onboarded twice converts twice. */
     converted: number;
+    /** Of `converted`: runs that viewed the paywall (ieat-app#3339). */
+    viaPaywall: number;
     /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. An OVERLAY — a trialing monthly run counts here AND in `products`. */
     trial: number;
     /** The products the converted hold — `lifetime_product_id`, else `product_id`, per run. Sums to `converted`. */
@@ -648,6 +650,13 @@ export interface FunnelAggregate {
     /** Median time on screen before an answer, in ms. Null when nothing was answered. */
     medianMs: number | null;
   }[];
+  /**
+   * Per place in `ONBOARDING_PLACES`, EVERY place whether or not anyone saw it: the distinct runs that saw
+   * it or any later one (ieat-app#3339). A screen nobody saw still has people who went past it.
+   */
+  reached: Record<string, number>;
+  /** The earliest paywall view ever recorded (ISO), over every window and filter; null when none. */
+  paywallSince: string | null;
   /** Every value in the window over the same population, NOT narrowed by the filters. */
   dimensions: FunnelDimensions;
 }

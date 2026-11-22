@@ -178,7 +178,7 @@ async function stubAdmin(page: import("@playwright/test").Page, over: Record<str
   })));
   await page.route("**/admin/api/funnel**", (r) => r.fulfill(json({
     range: since(30), contentVersion: 1, sessions: 0, completed: 0,
-    paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
+    paid: { converted: 0, viaPaywall: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
     rows: [],
   })));
   await page.route("**/admin/api/users**", (r) => r.fulfill(json({

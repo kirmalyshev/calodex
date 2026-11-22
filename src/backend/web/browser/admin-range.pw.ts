@@ -79,7 +79,7 @@ const BODIES: Record<string, unknown> = {
   }] },
   "funnel": {
     range: RANGE, contentVersion: 1, sessions: 0, completed: 0,
-    paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
+    paid: { converted: 0, viaPaywall: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
     rows: [],
   },
   // The funnel view's per-account list — it asks with the same range the aggregate asked with.
@@ -413,7 +413,7 @@ test("the funnel never blames a pre-window run for a join: it is a cohort (ieat-
     return r.fulfill({ status: 200, contentType: "application/json",
       body: JSON.stringify({
         range: echoOf("funnel", q), contentVersion: 1, sessions: 4, completed: 1,
-        paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
+        paid: { converted: 0, viaPaywall: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
         rows: [row("welcome", 5, 3), row("goal", 9, 2), row("sex", 4, 4)],
       }) });
   });
@@ -446,7 +446,7 @@ test("the funnel counts people, not showings, and a negative gap is not a drop",
       status: 200, contentType: "application/json",
       body: JSON.stringify({
         range: RANGE, contentVersion: 1, sessions: 4, completed: 1,
-        paid: { converted: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
+        paid: { converted: 0, viaPaywall: 0, trial: 0, lifetime: 0, monthly: 0, yearly: 0, other: 0, medianMs: null },
         rows: [row("welcome", 5, 3), row("goal", 9, 2), row("sex", 4, 4)],
       }),
     });

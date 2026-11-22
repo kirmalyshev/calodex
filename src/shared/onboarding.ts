@@ -2290,8 +2290,15 @@ export interface FunnelRow {
   place: OnboardingPlace;
   /** Every showing of the screen, revisits included. */
   views: number;
-  /** Distinct onboarding runs that saw the screen: the funnel's step count. */
+  /** Distinct onboarding runs that saw the screen. */
   people: number;
+  /**
+   * Distinct runs that saw this screen OR ANY LATER ONE in the default order (ieat-app#3339) — what the
+   * path's step counts. A run whose early screens were never recorded (an older build, a lost outbox)
+   * is still at every step it went past, so a step never holds more people than the one before it.
+   * The main funnel's rows carry it; an experiment arm's table (its own order) does not.
+   */
+  reached?: number;
   answers: number;
   backs: number;
   rejects: number;
@@ -2315,6 +2322,8 @@ export interface OnboardingFunnel {
     converted: number;
     /** Of `converted`: the CURRENT period is a free trial and no lifetime unlock is held. An OVERLAY — a trialing monthly run counts here AND in `monthly`, so the plan columns plus `trial` sum past `converted`. */
     trial: number;
+    /** Of `converted`: the runs that were shown the paywall — the numerator of "paywall → paid", which web purchases (never shown it) cannot inflate. */
+    viaPaywall: number;
     /** Of `converted`: a lifetime unlock is held. */
     lifetime: number;
     /** Of `converted`, not lifetime: the subscription product's id names "month" / "year|annual" / neither. */
@@ -2332,6 +2341,8 @@ export interface OnboardingFunnel {
   /** The window this was read over (ieat-app#2776) — instants for the range control, `days` for `?days=N`. */
   range: AdminWindowEcho;
   contentVersion: number;
+  /** When a paywall view was first recorded at all (ISO), or null: a window older than this has no paywall numbers to read (ieat-app#3339). */
+  paywallSince: string | null;
   rows: FunnelRow[];
   /** Every value each dimension holds in the window, sorted, whatever filters narrowed the counts (ieat-app#3196). */
   dimensions: FunnelDimensions;

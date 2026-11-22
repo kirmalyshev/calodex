@@ -5,7 +5,7 @@
 // resolves to null" is proving something about the engine rather than about a mock's mood.
 
 import type { AppId, DistributionChannel, MealReminders, ScreenTemplateDraft } from "@eait/shared";
-import { FOOD_SOURCE_IDS, FUNNEL_DIMENSIONS, effectiveAcqSource, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
+import { FOOD_SOURCE_IDS, FUNNEL_DIMENSIONS, ONBOARDING_PLACES, effectiveAcqSource, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import type {
   DayTotals, FoodRef, HealthDay, Lang, MealRecord, NotificationCopySet, OffProduct,
   FunnelDimensions, FunnelFilters, OnboardingContentSet, OnboardingEvent,
@@ -66,9 +66,11 @@ export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string)
   const byPlace = new Map<string, { views: number; people: Set<string>; answers: number; backs: number; rejects: number; ms: number[] }>();
   const sessions = new Set<string>();
   const completed = new Set<string>();
+  // The furthest screen (index in the default order) each session SAW, and who saw the paywall (ieat-app#3339).
+  const furthest = new Map<string, number>();
   // `(user_id, session_id)` — the pair Postgres groups by, so two accounts reusing one session
   // string are two runs here exactly as they are there.
-  const runs = new Map<string, { userId: string; started: number }>();
+  const runs = new Map<string, { userId: string; started: number; paywall: boolean }>();
 
   for (const e of events) {
     sessions.add(e.sessionId);
@@ -76,9 +78,14 @@ export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string)
     const key = `${e.userId}|${e.sessionId}`;
     const t = Date.parse(e.at);
     const r = runs.get(key);
-    if (r === undefined || t < r.started) runs.set(key, { userId: e.userId, started: r === undefined ? t : Math.min(r.started, t) });
+    if (r === undefined || t < r.started) runs.set(key, { userId: e.userId, started: r === undefined ? t : Math.min(r.started, t), paywall: r?.paywall ?? false });
+    if (e.action === "view" && e.place === "paywall") runs.get(key)!.paywall = true;
     const row = byPlace.get(e.place) ?? { views: 0, people: new Set<string>(), answers: 0, backs: 0, rejects: 0, ms: [] };
-    if (e.action === "view") { row.views++; row.people.add(e.sessionId); }
+    if (e.action === "view") {
+      row.views++; row.people.add(e.sessionId);
+      const at = (ONBOARDING_PLACES as readonly string[]).indexOf(e.place);
+      if (at > (furthest.get(key) ?? -1)) furthest.set(key, at);
+    }
     if (e.action === "answer") {
       row.answers++;
       if (typeof e.ms === "number") row.ms.push(e.ms);
@@ -88,7 +95,7 @@ export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string)
     byPlace.set(e.place, row);
   }
 
-  let converted = 0, trial = 0;
+  let converted = 0, trial = 0, viaPaywall = 0;
   const deltas: number[] = [];
   // Keyed `lifetime|product` — the same id answering both grant kinds is two rows, as SQL's
   // `group by product, trial, is_lifetime` makes it.
@@ -99,6 +106,7 @@ export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string)
     const gt = Date.parse(g.firstGrantAt);
     if (!(gt >= run.started)) continue;
     converted++;
+    if (run.paywall) viaPaywall++;
     if (g.trial && !g.lifetime) trial++;
     const key = `${g.lifetime}|${g.productId}`;
     const p = products.get(key);
@@ -111,15 +119,19 @@ export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string)
     completed: completed.size,
     paid: {
       converted,
+      viaPaywall,
       trial,
       products: [...products.values()]
         .sort((a, b) => b.n - a.n || a.productId.localeCompare(b.productId)),
       medianMs: median(deltas),
     },
     rows: [...byPlace.entries()].map(([place, r]) => ({
-      place, views: r.views, people: r.people.size, answers: r.answers, backs: r.backs, rejects: r.rejects,
+      place, views: r.views, people: r.people.size,
+      answers: r.answers, backs: r.backs, rejects: r.rejects,
       medianMs: median(r.ms),
     })),
+    reached: Object.fromEntries(ONBOARDING_PLACES.map((place, i) => [place, [...furthest.values()].filter((at) => at >= i).length])),
+    paywallSince: null,
   };
 }
 
@@ -1921,7 +1933,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         ...Object.fromEntries(FUNNEL_DIMENSIONS.map((k) => [k, sorted(population.map((e) => valueOf(e, k)))])),
         arm: [...arms.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, v]) => v),
       } as FunnelDimensions;
-      return { ...aggregateFunnel(narrowed, funnelGrant), dimensions };
+      const paywallAts = [...onboardingEvents.values()].filter((e) => e.place === "paywall" && e.action === "view").map((e) => e.receivedAt);
+      const paywallSince = paywallAts.length ? new Date(Math.min(...paywallAts)).toISOString() : null;
+      return { ...aggregateFunnel(narrowed, funnelGrant), paywallSince, dimensions };
     },
 
     async adminOnboardingFlow(query) {
