@@ -295,7 +295,7 @@ msgstr "Запиши"
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.logged"
-msgstr "Записано."
+msgstr "Отбелязано."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
