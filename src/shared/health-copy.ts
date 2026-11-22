@@ -10,7 +10,7 @@
 // ENGLISH IS NOT REPEATED HERE. It is derived from `HEALTH_FIELDS` and `HEALTH_GROUPS`, which
 // already carry it, so there is exactly one English spelling of "Lean mass" in this repo.
 
-import { langIntlLocales, latn, spellUnit, t, type CountForms, type Localized } from "./lang.ts";
+import { LANG_TAG, latn, spellUnit, t, type CountForms, type Localized } from "./lang.ts";
 import { HEALTH_FIELDS, HEALTH_GROUPS, type HealthFieldSpec } from "./health.ts";
 import type { Lang, Pace } from "./types.ts";
 import type { TrendPeriod } from "./trend.ts";
@@ -1120,7 +1120,7 @@ export function formatHealthValue(
     const whole = Math.round(value);
     return `${Math.floor(whole / 60)}${hm.h} ${whole % 60}${hm.m}`;
   }
-  const n = latn(new Intl.NumberFormat(langIntlLocales(lang), {
+  const n = latn(new Intl.NumberFormat(LANG_TAG[lang], {
     minimumFractionDigits: spec.decimals, maximumFractionDigits: spec.decimals,
   }).format(value));
   return `${n}${spec.unit ? `${spellUnit(lang, spec.unit)}` : ""}`;

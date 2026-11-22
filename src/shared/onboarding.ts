@@ -35,7 +35,7 @@ import { BRAND_TOKENS, branded } from "./brand.ts";
 import { COUNTRY_NAMES } from "./country-names.generated.ts";
 import type { AdminWindowEcho } from "./dates.ts";
 import type { Barrier, Goal, Lang, Profile } from "./types.ts";
-import { genderedRussian, langIntlLocales, type CountForms } from "./lang.ts";
+import { genderedRussian, LANG_TAG, type CountForms } from "./lang.ts";
 import { ACTIVITY_LEVELS, BARRIERS, COUNTED_BEFORE, PACES, SEXES, SITUATIONS, STREAK_GOALS } from "./types.ts";
 import { DIETS, MEDICAL_TAGS } from "./targets.ts";
 import { lintCopy } from "./claims.ts";
@@ -714,7 +714,7 @@ export const optionLabelIsData = (id: OnboardingScreenId, value: string): boolea
   id === "country" && value !== "other";
 
 export function countryOptions(lang: Lang): CountryCode[] {
-  const compare = new Intl.Collator(langIntlLocales(lang)).compare;
+  const compare = new Intl.Collator(LANG_TAG[lang]).compare;
   return [
     ...COUNTRY_CODES.filter((c) => c !== "other")
       .sort((a, b) => compare(countryLabel(a, lang), countryLabel(b, lang))),

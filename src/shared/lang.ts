@@ -232,22 +232,29 @@ export const LANG_TAG: Record<Lang, string> = {
 };
 
 /**
- * Alternate tags Intl's own negotiation chain cannot reach. `sq-AL` falls back `sq-AL → sq →
- * default`; a slim ICU (Chromium's non-full build, which headless runs ship) carries Albanian
- * only as `sq-XK`, so the chain resolves to the engine default and the week strip reads MON…SUN
- * inside an Albanian app (ieat-app#3371).
+ * Weekday names for a language a runtime ICU may not carry AT ALL. A slim ICU (Chromium's
+ * non-full build, which headless runs ship) CLAIMS `sq-XK` yet formats root English — no tag
+ * reaches Albanian because the data is absent, and the sq week strip read MON…SUN inside an
+ * Albanian app (ieat-app#3371). CLDR's own forms, copied verbatim (checked against full ICU:
+ * short hën mar mër enj pre sht die, narrow h m m e p sh d) — gated by `intlDataMissing` so an
+ * engine that has the data still formats it, and this is a floor rather than a second table.
  */
-const LANG_TAG_FALLBACKS: Partial<Record<Lang, string[]>> = {
-  sq: ["sq-XK"],
+const WEEKDAY_SHORT_FALLBACK: Partial<Record<Lang, string[]>> = {
+  sq: ["hën", "mar", "mër", "enj", "pre", "sht", "die"],
+};
+const WEEKDAY_NARROW_FALLBACK: Partial<Record<Lang, string[]>> = {
+  sq: ["h", "m", "m", "e", "p", "sh", "d"],
 };
 
 /**
- * The locale list every `Intl` constructor here negotiates: the tag, then the alternates a slim
- * runtime needs. A constructor takes the list and picks the best supported entry, so a full ICU
- * resolves `sq-AL` exactly as before and a slim one reaches `sq-XK` rather than English.
+ * True when the engine holds NO locale data for the language. A claimed regional variant is not
+ * proof — `supportedLocalesOf` answers `sq-XK` on an ICU whose sq data is English root — but
+ * the BARE base tag it refuses is the tell that nothing is there to format with.
  */
-export const langIntlLocales = (lang: Lang): string[] =>
-  [LANG_TAG[lang], ...(LANG_TAG_FALLBACKS[lang] ?? [])];
+const intlDataMissing = (lang: Lang): boolean => {
+  const base = LANG_TAG[lang].replace(/-.*/, "");
+  return Intl.DateTimeFormat.supportedLocalesOf([base]).length === 0;
+};
 
 /**
  * HERMES DROPS `-u-nu`. Every Arabic and Indic tag above asks for Latin digits — the product's
@@ -261,13 +268,13 @@ export const latn = (s: string): string => s.replace(/[٠-٩۰-۹]/g, (d) => `${
 
 /** `Intl.NumberFormat` whose digits `latn` guarantees, for the engines that drop `-u-nu`. */
 const nf = (lang: Lang, opts: Intl.NumberFormatOptions): { format: (x: number) => string } => {
-  const f = new Intl.NumberFormat(langIntlLocales(lang), opts);
+  const f = new Intl.NumberFormat(LANG_TAG[lang], opts);
   return { format: (x) => latn(f.format(x)) };
 };
 
 /** `Intl.DateTimeFormat` whose digits `latn` guarantees, for the engines that drop `-u-nu`. */
 const df = (lang: Lang, opts: Intl.DateTimeFormatOptions): { format: (d: Date) => string } => {
-  const f = new Intl.DateTimeFormat(langIntlLocales(lang), opts);
+  const f = new Intl.DateTimeFormat(LANG_TAG[lang], opts);
   return { format: (d) => latn(f.format(d)) };
 };
 
@@ -566,6 +573,8 @@ export const timeAt = (lang: Lang, zone: string, at: Date): string =>
  * reader's zone, as `dayLabel` does.
  */
 export const weekdayLetters = (lang: Lang): string[] => {
+  const fallback = WEEKDAY_NARROW_FALLBACK[lang];
+  if (fallback && intlDataMissing(lang)) return [...fallback];
   const fmt = df(lang, { weekday: "narrow", timeZone: "UTC" });
   // 2026-09-21 was a Monday, so `+ i` walks Monday → Sunday.
   return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2026, 8, 21 + i, 12))));
@@ -577,6 +586,8 @@ export const weekdayLetters = (lang: Lang): string[] => {
  * CLDR's `short`, never a table, the UTC-noon anchor holding the day.
  */
 export const weekdayShort = (lang: Lang): string[] => {
+  const fallback = WEEKDAY_SHORT_FALLBACK[lang];
+  if (fallback && intlDataMissing(lang)) return [...fallback];
   const fmt = df(lang, { weekday: "short", timeZone: "UTC" });
   return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2026, 8, 21 + i, 12))));
 };
@@ -735,7 +746,7 @@ const PLURAL_CATEGORY: Record<Lang, (n: number) => Intl.LDMLPluralRule> = {
  * like `t`.
  */
 export const countText = (lang: Lang) => {
-  const rules = typeof Intl.PluralRules === "function" ? new Intl.PluralRules(langIntlLocales(lang)) : null;
+  const rules = typeof Intl.PluralRules === "function" ? new Intl.PluralRules(LANG_TAG[lang]) : null;
   const category = rules === null ? PLURAL_CATEGORY[lang] : (n: number) => rules.select(n);
   const whole = wholeNumbers(lang);
   return (forms: CountForms, n: number): string =>
@@ -751,7 +762,7 @@ export const countText = (lang: Lang) => {
  */
 export const listConjunction = (lang: Lang, parts: readonly string[]): string =>
   typeof Intl.ListFormat === "function"
-    ? new Intl.ListFormat(langIntlLocales(lang), { style: "long", type: "conjunction" }).format(parts)
+    ? new Intl.ListFormat(LANG_TAG[lang], { style: "long", type: "conjunction" }).format(parts)
     : parts.join(", ");
 
 /**

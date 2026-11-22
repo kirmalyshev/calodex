@@ -18,7 +18,7 @@ import {
   explainTargets, verdictsFromTargets, visibleVerdicts,
 } from "@eait/shared";
 import {
-  FOOD_LOG_DEFAULT_GRAMS, FOOD_LOG_MAX_GRAMS, LANG_TAG, langIntlLocales, type NumbersLogRequest, PHOTO_MODEL_CALLS, UNIT_KCAL, VERDICT_DIMENSIONS, dateMinus, healthScore, localDate, localTime,
+  FOOD_LOG_DEFAULT_GRAMS, FOOD_LOG_MAX_GRAMS, LANG_TAG, type NumbersLogRequest, PHOTO_MODEL_CALLS, UNIT_KCAL, VERDICT_DIMENSIONS, dateMinus, healthScore, localDate, localTime,
   mealCopyFor, mealIsGuessed, spellUnit, streamCopyFor, verdictHeadline, verdictInlineText,
   kcalNumbers, verdictLabels, verdictNoun, wholeNumbers, windowStart,
 } from "@eait/shared";
@@ -748,7 +748,7 @@ export function changeLine(
     kcalBefore: kcalNumbers(lang)(before.kcal), kcalAfter: kcalNumbers(lang)(after.kcal), kcal: UNIT_KCAL[lang],
   });
   if (moved.length > 0) {
-    const items = new Intl.ListFormat(langIntlLocales(lang), { type: "conjunction" }).format(
+    const items = new Intl.ListFormat(LANG_TAG[lang], { type: "conjunction" }).format(
       moved.map(({ item, gramsBefore }) => fill(copy.changeItem, {
         item: item.name, before: n(gramsBefore), after: n(item.grams), unit: spellUnit(lang, "g"),
       })));

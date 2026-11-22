@@ -23,7 +23,7 @@ import {
 } from "./charts.ts";
 import type { IconName } from "./icons.ts";
 import { RADIUS, SHADOW } from "../design.ts";
-import { langIntlLocales, latn, spellUnit, UNIT_KCAL, kcalNumbers, weekdayShort, wholeNumbers, type Lang } from "../lang.ts";
+import { LANG_TAG, latn, spellUnit, UNIT_KCAL, kcalNumbers, weekdayShort, wholeNumbers, type Lang } from "../lang.ts";
 
 /** Text or an attribute value, made inert. The one escaper both surfaces get. */
 export const esc = (text: string): string =>
@@ -93,7 +93,7 @@ export const weekStrip = (
   now?: string,
 ): string => {
   const letters = weekdayShort(lang);
-  const fullDate = new Intl.DateTimeFormat(langIntlLocales(lang), { dateStyle: "full", timeZone: "UTC" });
+  const fullDate = new Intl.DateTimeFormat(LANG_TAG[lang], { dateStyle: "full", timeZone: "UTC" });
   const cells = days.map((day) => {
     const noon = new Date(`${day.date}T12:00:00Z`);
     const ring = dayRing(day, day.targetKcal);

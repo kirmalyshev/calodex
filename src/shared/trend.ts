@@ -14,7 +14,7 @@
 import { dateMinus, monthOf, monthShift, weekStart, windowStart } from "./dates.ts";
 import type { HealthDay, HealthMetric } from "./health.ts";
 import { HEALTH_COPY } from "./health-copy.ts";
-import { dayMonth, langIntlLocales, t } from "./lang.ts";
+import { dayMonth, LANG_TAG, t } from "./lang.ts";
 import type { DayTotals, Lang } from "./types.ts";
 
 /** The four x-axes, as ids. The words for them are per language — see `trendPeriods`. */
@@ -66,12 +66,12 @@ export { dayMonth };
  *
  * `en-US`, NOT `en-GB`, for English only: the British short form of September is "Sept", one letter
  * wider than every other month, and it is the one label on an axis of twelve that would then wrap.
- * `langIntlLocales.en` is `en-GB` because this product is metric and in Berlin, so the exception is spelled
+ * `LANG_TAG.en` is `en-GB` because this product is metric and in Berlin, so the exception is spelled
  * out here rather than fixed there — the date format and the unit system are different questions,
  * and `targets.ts` is the reason that distinction is kept sharp.
  */
 const monthShort = (lang: Lang) =>
-  new Intl.DateTimeFormat(lang === "en" ? "en-US" : langIntlLocales(lang), { timeZone: "UTC", month: "short" });
+  new Intl.DateTimeFormat(lang === "en" ? "en-US" : LANG_TAG[lang], { timeZone: "UTC", month: "short" });
 
 /**
  * The buckets a period draws, OLDEST FIRST — chart order, left to right. The last bucket always
