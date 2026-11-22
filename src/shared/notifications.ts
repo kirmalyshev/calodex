@@ -342,6 +342,76 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
       body: "Запиши сегодняшнюю еду — хватит одного фото.",
     },
   },
+  sq: {
+  "trial-end": {
+    title: "Prova mbaron nesër",
+    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
+    // where it was, so somebody who has already stopped it still gets this message, and telling
+    // them a subscription is about to start would be false rather than merely redundant.
+    body: "Nesër mbaron prova e falas. Nëse vazhdon, asgjë për të bërë; nëse jo — Cilësimet › Abonimet.",
+  },
+  evening: {
+    title: "Sot përballë planit",
+    body: "{eaten} nga {plan}kcal të tua sot. {tomorrow}",
+    emptyBody: "Sot asgjë e regjistruar — {plan}kcal e tua janë ende plani. {tomorrow}",
+  },
+  // The free account's line (#730): no figures, because the figures read the day against the plan
+  // and that reading is what a subscription buys.
+  "onboarding-start": {
+    title: "Plani yt është thuajse gati",
+    body: "Edhe pak prekje dhe plani yt është gati.",
+    alternates: { v2: "Vazhdo nga e le — zgjat vetëm një minutë.", v3: "Plani yt pret edhe pak përgjigje.", v4: "Mbaro pyetjet e fundit dhe plani yt është i yti." },
+  },
+  "onboarding-photo": {
+    title: "Vakti yt i parë",
+    body: "Bëj një foto vaktit tënd të radhës — kaq mjafton për të filluar.",
+    alternates: { v2: "Një foto mjafton për t'u nisur.", v3: "Plani yt është caktuar. Regjistro vaktin e parë kur të vijë radha.", v4: "Herës tjetër që ha, provo një foto — pjesën tjetër e bëjmë ne." },
+  },
+  "streak-risk": {
+    title: "Mos e ndërpres serinë",
+    body: "Ke disa ditë radhazi që regjistron. Një foto sot e vazhdon serinë.",
+    alternates: { v2: "Një foto e shpejtë dhe sot numërohet gjithashtu.", v3: "Ende asgjë e regjistruar sot? Një vakt dhe seria vazhdon.", v4: "Seria jote është ende gjallë — shtoje sot me një foto." },
+  },
+  nudge: {
+    title: "Vaktet e sotme",
+    body: "Regjistro çfarë hëngre sot — një foto mjafton.",
+  },
+},
+  bg: {
+  "trial-end": {
+    title: "Пробният период изтича утре",
+    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
+    // where it was, so somebody who has already stopped it still gets this message, and telling
+    // them a subscription is about to start would be false rather than merely redundant.
+    body: "Утре изтича безплатният пробен период. Ако оставаш — нищо за правене; ако не — Настройки › Абонаменти.",
+  },
+  evening: {
+    title: "Днес спрямо плана",
+    body: "{eaten} от твоите {plan}ккал днес. {tomorrow}",
+    emptyBody: "Днес нищо не е записано — планът си остава {plan}ккал. {tomorrow}",
+  },
+  // The free account's line (#730): no figures, because the figures read the day against the plan
+  // and that reading is what a subscription buys.
+  "onboarding-start": {
+    title: "Остава малко до плана ти",
+    body: "Няколко докосвания — и планът е пред теб.",
+    alternates: { v2: "Продължи оттам, където спря — отнема минута.", v3: "Планът ти чака още няколко отговора.", v4: "Довърши последните въпроси и планът е твой." },
+  },
+  "onboarding-photo": {
+    title: "Първият ти оброк",
+    body: "Снимай следващия си оброк — това е всичко нужно за старт.",
+    alternates: { v2: "Една снимка стига за начало.", v3: "Планът е нагласен. Запиши първия си оброк, когато ти е удобно.", v4: "Следващия път, когато ядеш, пробвай със снимка — останалото е наше." },
+  },
+  "streak-risk": {
+    title: "Не прекъсвай серията",
+    body: "Записваш вече няколко дни поред. Една снимка днес продължава серията.",
+    alternates: { v2: "Една бърза снимка — и днес се брои.", v3: "Още нищо записано днес? Един оброк и серията продължава.", v4: "Серията ти още е жива — добави днешния ден със снимка." },
+  },
+  nudge: {
+    title: "Днешните оброци",
+    body: "Запиши какво яде днес — една снимка стига.",
+  },
+},
   te: {
   "trial-end": {
     title: "ట్రయల్ రేపటితో ముగుస్తుంది",
@@ -1593,6 +1663,8 @@ export const LOG_REPLY_COPY: Localized<LogReplyCopy> = {
   vi: { button: "Ghi một bữa ăn", submit: "Ghi", placeholder: "Bạn đã ăn gì?" },
   id: { button: "Catat makanan", submit: "Catat", placeholder: "Kamu makan apa?" },
   ru: { button: "Записать еду", submit: "Записать", placeholder: "Что было на тарелке?" },
+  sq: { button: "Regjistro një vakt", submit: "Regjistro", placeholder: "Çfarë hëngre?" },
+  bg: { button: "Запиши оброк", submit: "Запиши", placeholder: "Какво изяде?" },
   te: { button: "భోజనం నమోదు చేయండి", submit: "నమోదు చేయండి", placeholder: "మీరు ఏమి తిన్నారు?" },
   ta: { button: "உணவைப் பதிவுசெய்", submit: "பதிவுசெய்", placeholder: "என்ன சாப்பிட்டீர்கள்?" },
   pa: { button: "ਖਾਣਾ ਦਰਜ ਕਰੋ", submit: "ਦਰਜ ਕਰੋ", placeholder: "ਤੁਸੀਂ ਕੀ ਖਾਧਾ?" },
@@ -1884,6 +1956,22 @@ export const EVENING_PRESCRIPTIONS: Localized<Record<
     gainUnder: "{under}ккал не хватило до плана — горсть орехов завтра это покроет.",
     under: "{under} ниже плана. Съесть завтра всю цифру — это и есть план, а не срыв.",
     onPlan: "По плану. Завтра — так же.",
+  },
+  sq: {
+    noMeals: "Një foto nesër dhe dita numërohet prapë.",
+    over: "{over} tepër sot — nesër fillon prapë me {plan}.",
+    protein: "Proteinës i munguan {gap} g — vezë ose skyr në mëngjes e mbyllin.",
+    gainUnder: "{under}kcal nën planin — një grusht arra nesër e mbyll.",
+    under: "{under} nën planin — të ngrënit e gjithë numrin nesër është plani, jo shkelje.",
+    onPlan: "Në plan. Njësoj edhe nesër.",
+  },
+  bg: {
+    noMeals: "Една снимка утре — и денят отново се брои.",
+    over: "{over} в повече днес — утре пак започва от {plan}.",
+    protein: "На протеина му липсваха {gap} г — яйца или скир на закуска го покриват.",
+    gainUnder: "{under}ккал под плана — шепа ядки утре ги покрива.",
+    under: "{under} под плана — утре да стигнеш цялото число е планът, не пропуск.",
+    onPlan: "В плана. Утре — същото.",
   },
   te: {
     noMeals: "రేపు ఒక ఫోటో, ఆ రోజు మళ్ళీ లెక్కలోకి వస్తుంది.",

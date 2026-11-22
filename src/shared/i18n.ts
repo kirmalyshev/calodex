@@ -64,6 +64,8 @@ import { messages as or } from "./locales/or/messages.ts";
 import { messages as pa } from "./locales/pa/messages.ts";
 import { messages as ta } from "./locales/ta/messages.ts";
 import { messages as te } from "./locales/te/messages.ts";
+import { messages as bg } from "./locales/bg/messages.ts";
+import { messages as sq } from "./locales/sq/messages.ts";
 
 const CATALOGS: Record<Lang, Messages> = {
   en, fr, de, it, es, vi, id, ru,
@@ -73,6 +75,7 @@ const CATALOGS: Record<Lang, Messages> = {
   // `ar` has no catalog — lingui compiles `LANGS_READY`, and its strings are the ones the app
   // renders. English source IS its fallback, the same rule `t()` applies at the key (#3310).
   ar: en,
+  bg, sq,
 };
 
 const INSTANCES: Record<Lang, I18n> = Object.fromEntries(

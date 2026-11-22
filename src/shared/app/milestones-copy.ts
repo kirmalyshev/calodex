@@ -521,6 +521,118 @@ const RU: MilestonesCopy = {
   },
 };
 
+const SQ: MilestonesCopy = {
+  title: "Arritje",
+  back: "Mbrapa",
+  dayStreak: "Seri ditësh",
+  badgesEarned: "Distinktivë të fituar",
+  longestDays: { one: "{n} ditë", other: "{n} ditë" },
+  longestLabel: "seria më e gjatë",
+  badgesOf: "{n}/{total} distinktivë",
+  earned: "i fituar",
+  locked: "i bllokuar",
+  streak: {
+    dayStreak: { other: "ditë seri" },
+    dayStreakHeld: { other: "ditë seri, e mbajtur" },
+    days: { one: "ditë", other: "ditë" },
+    longest: "Më e gjata",
+    floor: "minimumi",
+    logToday: "Regjistro diçka sot që të bëhen {n}.",
+    logToStart: "Regjistro diçka sot për ta nisur serinë.",
+    bentMissed: {
+      lead: "{day} u humb; {next} e mbajti serinë.",
+      rest: "Një ditë e humbur e përkul serinë, dy rresht e mbarojnë. Dita e përkulur s'shton gjë, prandaj seria mbetet në {n}.",
+    },
+    bentFloor: {
+      lead: "{day} qëndroi nën {floor}, minimumi yt.",
+      rest: "Një ditë nën minimum nuk llogaritet as për serinë as për distinktiv, prandaj e përkuli serinë si ditë e humbur. {next} e mbajti.",
+    },
+    bentYesterday: {
+      lead: "Dje u humb; regjistro diçka sot për ta mbajtur serinë.",
+      rest: "Një ditë e humbur e përkul serinë, dy rresht e mbarojnë.",
+    },
+    bentFloorYesterday: { lead: "Dje qëndroi nën {floor}kcal — minimumi yt; regjistro diçka sot për ta mbajtur serinë." },
+    bentYesterdayHeld: { lead: "Dje u humb; sot seria u mbajt." },
+    bentFloorYesterdayHeld: { lead: "Dje qëndroi nën {floor}kcal — minimumi yt; sot seria u mbajt." },
+    ended: {
+      lead: "Seria mbaroi në {n},",
+      rest: "pas dy ditësh rresht pa regjistrim. {n} ditët e tua numërohen ende për distinktivët. Regjistro diçka sot për të filluar nga e para.",
+    },
+  },
+  unlock: {
+    heading: "Urime! Çmim i ri",
+    otherAwards: "Çmime të tjera",
+    share: "Ndaje distinktivin",
+    viewAll: "Shiko të gjithë distinktivët",
+    notEnjoying: "Nuk të pëlqejnë festimet e distinktivëve?",
+    close: "Mbyll",
+  },
+  settings: {
+    celebrations: "Festime distinktivësh",
+    celebrationsSub: "Një ekran kur zhbllokon një distinktiv.",
+    streakOnHome: "Seria në faqen kryesore",
+    streakOnHomeSub: "Flaka dhe numri pranë emrit.",
+    note: "Të dyja janë ndezur si parazgjedhje. Pa festime, distinktivët numërohen gjithësesi te Arritje; asgjë s'shfaqet. „Nuk të pëlqejnë festimet e distinktivëve?“ hap këtë faqe.",
+    saveFailed: "S'u ruajt dot. Provo sërish.",
+  },
+};
+
+const BG: MilestonesCopy = {
+  title: "Постижения",
+  back: "Назад",
+  dayStreak: "Дни поред",
+  badgesEarned: "Спечелени значки",
+  longestDays: { one: "{n} ден", other: "{n} дни" },
+  longestLabel: "най-дълга серия",
+  badgesOf: "{n}/{total} значки",
+  earned: "спечелена",
+  locked: "заключена",
+  streak: {
+    dayStreak: { other: "дни поред" },
+    dayStreakHeld: { other: "дни поред, серията се държи" },
+    days: { one: "ден", other: "дни" },
+    longest: "Най-дълга",
+    floor: "минимум",
+    logToday: "Запиши нещо днес, за да стане {n}.",
+    logToStart: "Запиши нещо днес, за да започне серията ти.",
+    bentMissed: {
+      lead: "{day} бе пропуснат; {next} я удържа.",
+      rest: "Един пропуснат ден огъва серията, два поредни я прекратяват. Огънатият ден не добавя нищо, затова тя си остава на {n}.",
+    },
+    bentFloor: {
+      lead: "{day} остана под {floor} — твоят минимум.",
+      rest: "Ден под минимума не се брои нито към серията, нито към значка, затова той огъна серията като пропуснат ден. {next} я удържа.",
+    },
+    bentYesterday: {
+      lead: "Вчера имаше пропуск; запиши нещо днес, за да удържиш серията.",
+      rest: "Един пропуснат ден огъва серията, два поредни я прекратяват.",
+    },
+    bentFloorYesterday: { lead: "Вчера остана под {floor}ккал — твоят минимум; запиши нещо днес, за да удържиш серията." },
+    bentYesterdayHeld: { lead: "Вчера имаше пропуск; днес серията се удържа." },
+    bentFloorYesterdayHeld: { lead: "Вчера остана под {floor}ккал — твоят минимум; днес серията се удържа." },
+    ended: {
+      lead: "Серията приключи на {n},",
+      rest: "след два поредни дни без запис. Твоите {n} дни пак се броят към значките. Запиши нещо днес, за да започнеш наново.",
+    },
+  },
+  unlock: {
+    heading: "Поздравления! Нова награда",
+    otherAwards: "Други награди",
+    share: "Сподели значката си",
+    viewAll: "Виж всички значки",
+    notEnjoying: "Не ти харесват празнуванията за значки?",
+    close: "Затвори",
+  },
+  settings: {
+    celebrations: "Празнувания за значки",
+    celebrationsSub: "Екран, когато отключиш значка.",
+    streakOnHome: "Серия на началния екран",
+    streakOnHomeSub: "Пламъкът и числото до логото.",
+    note: "И двете са включени по подразбиране. Без празнувания значките пак се броят в Постижения; нищо не изскача. „Не ти харесват празнуванията за значки?“ отваря тази страница.",
+    saveFailed: "Не можа да се запази. Опитай пак.",
+  },
+};
+
 const TE: MilestonesCopy = {
   title: "మైలురాళ్ళు",
   back: "వెనుకకు",
@@ -2426,7 +2538,7 @@ const PT_BR: MilestonesCopy = {
 };
 
 export const MILESTONES_COPY: Localized<MilestonesCopy> = {
-  en: EN, fr: FR, de: DE, it: IT, es: ES, vi: VI, id: ID, ru: RU, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR,
+  en: EN, fr: FR, de: DE, it: IT, es: ES, vi: VI, id: ID, ru: RU, sq: SQ, bg: BG, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR,
 };
 
 export const milestonesCopyFor = (lang: Lang): MilestonesCopy => t(lang)(MILESTONES_COPY);

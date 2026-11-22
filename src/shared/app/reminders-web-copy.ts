@@ -28,6 +28,8 @@ export const REMINDERS_WEB_COPY: Record<Lang, RemindersWebCopy> = {
   vi: { note: "Lời nhắc sẽ được gửi đến iPhone của bạn và trình duyệt này.", prompt: "Nhận các lời nhắc này trên trình duyệt này", button: "Bật thông báo" },
   id: { note: "Pengingat masuk ke iPhone-mu dan browser ini.", prompt: "Terima pengingat ini di browser ini", button: "Aktifkan notifikasi" },
   ru: { note: "Напоминания приходят на твой iPhone и в этот браузер.", prompt: "Получать эти напоминания в браузере", button: "Включить уведомления" },
+  sq: { note: "Kujtuesit mbërrijnë në iPhone-in tënd dhe në këtë shfletues.", prompt: "Merri këto kujtues në këtë shfletues", button: "Ndiz njoftimet" },
+  bg: { note: "Напомнянията пристигат на твоя iPhone и в този браузър.", prompt: "Получавай тези напомняния в този браузър", button: "Включи известията" },
   "pt-BR": { note: "Os lembretes chegam ao seu iPhone e a este navegador.", prompt: "Receber estes lembretes neste navegador", button: "Ativar notificações" },
   ja: { note: "リマインダーはiPhoneとこのブラウザに届きます。", prompt: "このブラウザでリマインダーを受け取る", button: "通知をオンにする" },
   ko: { note: "리마인더가 iPhone과 이 브라우저로 와요.", prompt: "이 브라우저에서도 리마인더 받기", button: "알림 켜기" },

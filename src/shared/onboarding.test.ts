@@ -941,7 +941,7 @@ describe("resolving the country, and deciding whether to ask", () => {
 describe("the suggested answer, offered first", () => {
   it("moves the suggestion to the front and keeps everything else in order", () => {
     expect(suggestionFirst(COUNTRY_CODES, "us")).toEqual([
-      "us", "at", "au", "bd", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr",
+      "us", "al", "at", "au", "bd", "bg", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr",
       "hr", "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "sa", "se",
       "si", "sk", "th", "tr", "tw", "ua", "vn", "other",
     ]);
@@ -982,7 +982,7 @@ describe("the countries this app curates", () => {
     uk: "ua", sv: "se", th: "th", hi: "in", cs: "cz", ro: "ro", el: "gr", hu: "hu",
     da: "dk", fi: "fi", no: "no", sk: "sk", hr: "hr", sl: "si", ca: "es", ms: "my", "pt-PT": "pt",
     bn: "bd", gu: "in", kn: "in", ml: "in", mr: "in", or: "in", pa: "in", ta: "in", te: "in",
-    ar: "sa",
+    ar: "sa", bg: "bg", sq: "al",
   };
 
   it("offers a country to every language the app speaks", () => {

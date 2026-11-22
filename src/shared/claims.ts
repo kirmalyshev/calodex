@@ -133,7 +133,7 @@ const RULES: readonly Rule[] = [
   { name: "guarantee", re: /(?<!\p{L})(?:výsled\p{L}*|úsp[eě]ch\p{L}*|úbyt\p{L}*\s+(?:váhy|hmotnosti)|kg)(?:\s+\S+){0,2}\s+(?<!není\s|nejsou\s|nie\s(?:je|sú)\s)(?:garant|zaruč|záruk)\p{L}*|(?<!\p{L}|není\s|nejsou\s|nie\s(?:je|sú)\s)(?:garant|zaruč|záruk)\p{L}*(?:\s+\S+){0,2}\s+(?:výsled\p{L}*|úsp[eě]ch\p{L}*|úbyt\p{L}*|zhubn\p{L}*|schudn\p{L}*|kg)/giu },
   // `nije`/`nisu`/`niso` too: Croatian and Slovenian write `garantirani` as well, and their
   // denial must not trip a Romanian rule.
-  { name: "guarantee", re: /(?<!\p{L})(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s)garant\p{L}*|(?<!\p{L}|nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s)garant\p{L}*(?:\s+\S+){0,2}\s+(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)/giu },
+  { name: "guarantee", re: /(?<!\p{L})(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s|nuk\s)garant\p{L}*|(?<!\p{L}|nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s|nuk\s)garant\p{L}*(?:\s+\S+){0,2}\s+(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)/giu },
   { name: "guarantee", re: /(?<!\p{L})(?:αποτελ[εέ]σμ\p{L}*|απ[ωώ]λει\p{L}*\s+β[αά]ρους|επιτυχ\p{L}*|κιλ\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!δεν\s(?:είναι\s)?)εγγυ\p{L}*|(?<!\p{L}|δεν\s(?:είναι\s)?)εγγυ\p{L}*(?:\s+\S+){0,2}\s+(?:αποτελ[εέ]σμ\p{L}*|απ[ωώ]λει\p{L}*\s+β[αά]ρους|επιτυχ\p{L}*|κιλ\p{L}*|kg)/giu },
   { name: "guarantee", re: /(?<!\p{L})(?:eredmény\p{L}*|fogyás\p{L}*|siker\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!nem\s)garant\p{L}*|(?<!\p{L}|nem\s)garant\p{L}*(?:\s+\S+){0,2}\s+(?:eredmény\p{L}*|fogyás\p{L}*|siker\p{L}*|kg)|(?<!\p{L})(?:eredmény|siker|fogyás)garanci\p{L}*/giu },
   // Thai has no spaces and `ผล` also opens ผลิตภัณฑ์ (product — the warranty a store page writes)
@@ -170,6 +170,14 @@ const RULES: readonly Rule[] = [
   { name: "guarantee", re: /(?:ਨਤੀਜ\S*|ਸਫਲਤਾ\S*|ਭਾਰ(?!ਤ)\S*|ਵਜ਼?ਨ\S*|\p{Nd}+\s*(?:kg|ਕਿਲੋ))(?:\s+\S+){0,2}\s+ਗਾ?ਰੰਟੀ(?!\S*(?:\s+\S+){0,2}\s+ਨਹੀਂ)|ਗਾ?ਰੰਟੀ(?!\S*(?:\s+\S+){0,2}\s+ਨਹੀਂ)\S*(?:\s+\S+){0,2}\s+(?:ਨਤੀਜ|ਸਫਲਤਾ|ਭਾਰ(?!ਤ)|ਵਜ਼?ਨ|\p{Nd}+\s*(?:kg|ਕਿਲੋ))/gu },
   { name: "guarantee", re: /(?:முடிவு\S*|பலன\S*|வெற்றி\S*|எடை\S*|\p{Nd}+\s*(?:kg|கிலோ))(?:\s+\S+){0,2}\s+(?:உத்தரவாத|(?:கே|கியா)ரண்டி)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:(?:இ|ி)ல்லை|மாட்ட))|(?:உத்தரவாத|(?:கே|கியா)ரண்டி)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:(?:இ|ி)ல்லை|மாட்ட))\S*(?:\s+\S+){0,2}\s+(?:முடிவு|பலன|வெற்றி|எடை|\p{Nd}+\s*(?:kg|கிலோ))/gu },
   { name: "guarantee", re: /(?:ఫలిత\S*|విజయ\S*|బరువు\S*|\p{Nd}+\s*(?:kg|కిలో|కేజీ))(?:\s+\S+){0,2}\s+(?:హామీ|గ్యార(?:ె)?ంటీ)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:లేదు|లేము|లేను|కాదు|ఇవ్వము|ఇవ్వం)(?![\p{L}\p{M}]))|(?:హామీ|గ్యార(?:ె)?ంటీ)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:లేదు|లేము|లేను|కాదు|ఇవ్వము|ఇవ్వం)(?![\p{L}\p{M}]))\S*(?:\s+\S+){0,2}\s+(?:ఫలిత|విజయ|బరువు|\p{Nd}+\s*(?:kg|కిలో|కేజీ))/gu },
+
+  // Wave 5. Bulgarian `гарант` covers verb and participle alike (`гаранция`, the warranty
+  // noun, is spelled with a ц and correctly reads as no claim at all); outcome-bound like
+  // every guarantee here, the denial `не` up to two words before it. Albanian `garant` the
+  // same, denied by `nuk` or `pa` (`nu`/`ni*` are Romanian's and Croatian's, read here so
+  // their denials pass under this rule too).
+  { name: "guarantee", re: /(?<!\p{L})(?:резултат\p{L}*|успех\p{L}*|отслабван\p{L}*|свалян\p{L}*|кг)(?:\s+\S+){0,2}\s+(?<!не\s(?:\S+\s){0,2})гарант\p{L}*|(?<!\p{L}|не\s(?:\S+\s){0,2})гарант\p{L}*(?:\s+\S+){0,2}\s+(?:резултат\p{L}*|успех\p{L}*|отслабван\p{L}*|свалян\p{L}*|кг)/giu },
+  { name: "guarantee", re: /(?<!\p{L})(?:rezultat\p{L}*|sukses\p{L}*|humbje\p{L}*\s+pesh\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!(?:nuk|nu|pa|ni\p{L}*)\s(?:\S+\s){0,2})garant\p{L}*|(?<!\p{L}|(?:nuk|nu|pa|ni\p{L}*)\s(?:\S+\s){0,2})garant\p{L}*(?:\s+\S+){0,2}\s+(?:rezultat\p{L}*|sukses\p{L}*|humbje|kg)/giu },
 
   // weight-promise — the stems, and DELIBERATELY NOT the progressive.
   //
@@ -267,6 +275,13 @@ const RULES: readonly Rule[] = [
   { name: "weight-promise", re: /(?<![\p{L}\p{N}.,])\p{Nd}+\s*(?:kg|ਕਿਲੋ\S*)\s+(?:(?:ਭਾਰ|ਵਜ਼?ਨ)\s+)?(?:ਘਟਾ|ਘੱਟ\s+ਕਰ)\S*|(?<![\p{L}\p{M}])(?:ਭਾਰ|ਵਜ਼?ਨ)\s+(?:ਘਟਾਉਣਾ|ਘਟਾਉਣ|ਘਟਾਓਗੇ|ਘਟੇਗਾ|ਘੱਟ\s+ਕਰਨਾ|ਘੱਟ\s+ਕਰਨ)(?![\p{L}\p{M}])|ਵੇਟ\s*ਲ[ੌਾ]ਸ/gu },
   { name: "weight-promise", re: /(?<![\p{L}\p{N}.,])\p{Nd}+\s*(?:kg|கிலோ\S*)\s+(?:எடை\S*\s+)?(?:குறைக்|குறைப்|குறையு|இழக்|இழப்|கரைக்)\S*|(?<![\p{L}\p{M}])எடை(?:யை)?(?:க்)?\s*(?:குறைப்பது|குறைக்க|குறைப்பீர்கள்|குறைப்பு|குறையும்|இழப்பு|இழக்க)(?![\p{L}\p{M}])|வெயிட்\s*லாஸ்/gu },
   { name: "weight-promise", re: /(?<![\p{L}\p{N}.,])\p{Nd}+\s*(?:kg|కిలో\S*|కేజీ\S*)\s+(?:బరువు\s+)?(?:తగ్గ|కోల్పో)\S*|(?<![\p{L}\p{M}])బరువు\s+(?:తగ్గడం|తగ్గటం|తగ్గించడం|తగ్గించుకోవడం|తగ్గడానికి|తగ్గించడానికి|తగ్గింపు|కోల్పోవడం)(?![\p{L}\p{M}])|వెయిట్\s*లాస్/gu },
+  // Wave 5, on the same lines. Bulgarian: `отслабване` is the verbal noun its plan headline and
+  // goal labels ship, so the stem alone stays out — the number beside it is what promises, as
+  // Hindi's rule already argued. `минус 6кг` is Russian's construction in the same script.
+  { name: "weight-promise", re: /(?<!\p{L})(?:отслаб\p{L}*|свал\p{L}*)\s+(?:с\s+|на\s+)?\d+\s*(?:кг|килограма)|(?<!\p{L})минус\s*\d+\s*кг|(?<!\p{L})намал\p{L}*\s+тегл\p{L}*/giu },
+  // Albanian: `humb` is also "lose your keys", so it promises only beside a figure — `humb 6kg`
+  // is the plan headline's own shape. `humbje peshës` is the dedicated "weight loss" phrase.
+  { name: "weight-promise", re: /(?<!\p{L})humb\p{L}*\s+\d+\s*(?:kg|kilogram)|(?<!\p{L})humbje\s+pesh\p{L}*|(?<!\p{L})dobësoh\p{L}*/giu },
 
   // lowers-marker — the MARKER decides, never the verb.
   //
@@ -323,6 +338,11 @@ const RULES: readonly Rule[] = [
   { name: "lowers-marker", re: /(?:ਕੋਲ[ੈੇ]ਸਟ੍?ਰੋਲ|ਬਲੱਡ\s+(?:ਸ਼[ੂੁ]ਗਰ|ਪ੍ਰੈਸ਼ਰ)|ਖ਼?ੂਨ\s+(?:ਵਿੱਚ\s+)?(?:ਸ਼[ੂੁ]ਗਰ|ਸ਼ੱਕਰ)|ਖ਼?ੂਨ\s+ਦਾ\s+ਦਬਾਅ)\S*(?:\s+\S+){0,2}\s+(?:ਘਟਾ|ਘੱਟ\s+ਕਰ)\S*/gu },
   { name: "lowers-marker", re: /(?:கொலஸ்ட்ர[ாோ]|இ?ரத்த\s*(?:சர்க்கரை|அழுத்த|குளுக்கோஸ்)|ப்ளட்\s+சுகர்)\S*(?:\s+\S+){0,2}\s+(?:குறைக்|குறைப்)\S*/gu },
   { name: "lowers-marker", re: /(?:కొలెస్ట్రా|రక్తపోటు|బ్లడ్\s+(?:షుగర్|ప్రెషర్)|రక్త(?:ంలో|ంలోని|పు)\s+చక్కెర)\S*(?:\s+\S+){0,2}\s+తగ్గి(?:ంచ|స)\S*/gu },
+  // Wave 5. Bulgarian verbs lead (`понижи/намали`), the marker follows: `холестерин`,
+  // `кръвно налягане`, `кръвна захар` — `захар` alone is the food, as `сахар` is. Albanian `ul`
+  // and `zbrit` the same, beside `kolesterol`, `presionin e gjakut` or `sheqerin në gjak`.
+  { name: "lowers-marker", re: /(?<!\p{L})(?:пони[жз]\p{L}*|сни[жз]\p{L}*|намал\p{L}*)\s+(?:холестерин\p{L}*|кръвн\p{L}*\s+(?:налягане|захар|глюкоза)|(?:захар|глюкоза)\s+в\s+кръвта)|(?<!\p{L})(?:холестерин\p{L}*|кръвн\p{L}*\s+наляган\p{L}*)(?:\s+\S+){0,2}\s+(?:пони[жз]\p{L}*|сни[жз]\p{L}*|намал\p{L}*)/giu },
+  { name: "lowers-marker", re: /(?<!\p{L})(?:ul|zbrit|redukto)\p{L}*\s+(?:kolesterol\p{L}*|presion\p{L}*\s+e\s+gjak\p{L}*|sheqer\p{L}*\s+në\s+gjak)|(?<!\p{L})(?:kolesterol\p{L}*|presion\p{L}*\s+e\s+gjak\p{L}*)(?:\s+\S+){0,2}\s+(?:ul|zbrit|redukto)\p{L}*/giu },
 
   // detox — the Latin word is the one a Romance marketer does not need.
   { name: "detox", re: /\bd[ée]tox\w*/gi },
@@ -371,6 +391,10 @@ const RULES: readonly Rule[] = [
   { name: "detox", re: /ਡ[ਿੀ]ਟ[ੌੋ]ਕਸ|(?:ਜ਼ਹਿਰੀਲੇ\s+ਪਦਾਰਥ|ਟੌਕਸਿਨ)\S*(?:\s+\S+)?\s+ਬਾਹਰ\s+ਕੱਢ/gu },
   { name: "detox", re: /ட[ிீ]டா?க்ஸ|நச்சு(?:க்க?ள(?:ை)?)?\s*நீக்க|நச்சு\S*\s+வெளியேற்ற/gu },
   { name: "detox", re: /డ[ిీ]టా?క్స|నిర్విషీకరణ|(?:విష\s*పదార్థా|టాక్సిన)\S*(?:\s+\S+)?\s+(?:బయటకు\s+)?(?:పంప|తొలగి)/gu },
+  // Wave 5. `детокс`/`detoks` read the loanword already; the native form is "cleanse the
+  // organism / flush the toxins" like Ukrainian's and Croatian's.
+  { name: "detox", re: /(?<!\p{L})(?:детокс\p{L}*|(?:почист|изчист)\p{L}*\s+организм\p{L}*|(?:извежд|изчист|изважд)\p{L}*\s+токсин\p{L}*)/giu },
+  { name: "detox", re: /(?<!\p{L})(?:detoks\p{L}*|pastr\p{L}*\s+(?:trupin|organizmin)|(?:larg|nxjerr|zhduk)\p{L}*\s+toksin\p{L}*)/giu },
 
   // ── WHAT IS STILL ENGLISH-ONLY, and why ─────────────────────────────────────────────────────
   //

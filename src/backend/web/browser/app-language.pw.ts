@@ -4,6 +4,7 @@
 // runs against the application's origin, everything else against `/start`. `language.pw.ts`
 // covers the `/start` picker, which is a different implementation on a different surface.
 
+import { LANGS_READY } from "@eait/shared";
 import { expect, test } from "./fixtures.ts";
 
 // THE WEB APPLICATION's picker, driven the way a person drives it.
@@ -23,7 +24,7 @@ test("the web app's own picker writes the account and comes back translated", as
   await expect(row).toBeVisible();
 
   await row.click();
-  await expect(page.locator(".panel .pickrow")).toHaveCount(42);
+  await expect(page.locator(".panel .pickrow")).toHaveCount(LANGS_READY.length);
   await page.locator(".panel .pickrow", { hasText: "Русский" }).click();
   // The reload is the mechanism, so wait for the page to actually come back rather than for a
   // repaint that a re-render would also produce.

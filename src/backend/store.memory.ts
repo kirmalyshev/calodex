@@ -2949,6 +2949,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         if (identities.some((i) => i.userId === userId && i.provider !== "device")) continue;
         if ([...meals.values()].some((m) => m.user_id === userId)) continue;
         if ([...tokens.values()].some((t) => t.userId === userId && t.lastUsedAt >= before)) continue;
+        // Any funnel row at all disqualifies — #3357, the port has the argument.
+        if ([...onboardingEvents.values()].some((e) => e.userId === userId)) continue;
         gone.push(userId);
       }
       for (const userId of gone) eraseUser(userId);

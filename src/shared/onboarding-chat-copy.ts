@@ -907,6 +907,196 @@ const RU: ChatCopy = {
   },
 };
 
+const SQ: ChatCopy = {
+  idlePlaceholder:  "Mesazh për Calodex…",
+  continueLabel: "Vazhdo",
+  saveKept: "Nuk u ruajt dot. Përgjigja jote është ende këtu. Vazhdo e dërgon sërish.",
+  underAgeCard:  {
+    title: "{app_name} është për {age} e më lart",
+    body: "Mënyra si ky aplikacion vendos qëllimet kalorike s’është menduar për një trup që ende rritet.",
+  },
+  underAge:  {
+    ask: "Më vjen keq — duhet të ndalem këtu. Nëse na solli këtu një shtypje e gabuar, më dërgo thjesht moshën tënde të vërtetë.",
+    confirm: "Kjo është mosha ime e vërtetë",
+    placeholder: "Mosha jote",
+    stopped: [
+      "Atëherë këtu ndalemi. Po fshij gjithçka më the.",
+      "Kthehu në {age} — do të jem këtu.",
+    ],
+    endedPlaceholder: "{app_name} është për {age} e më lart",
+  },
+  belowHealthy:  {
+    title: "Nuk mund ta vendos këtë si qëllim",
+    body: "Pesha më e ulët e shëndetshme për gjatësinë tënde është rreth {kg}kg. Nuk vendosim qëllim nën të. Nëse po punon me një mjek për diçka tjetër, ndiqe atë, jo këtë aplikacion.",
+  },
+  switched:  {
+    lose: "U ndërrua — humbja e peshës pra. Ku do të doje të arrish, në kg? Më shpejt këtu s’është më mirë — thjesht mbajtja është më e vështirë.",
+  },
+  capNoteTail:  " Kjo është rreth {kg}kg në javë.",
+  goalEdit:  {
+    cleared: "Pesha jote e qëllimit s’i përshtatej më asaj qëllimi, ndaj u pastrua — vendos një të re.",
+    worthSetting: "U regjistrua. Por pesha e qëllimit s’i përshtatet më qëllimit tënd — ia vlen të vendosësh një të re.",
+  },
+  target: {
+    // "55 · lowest we set" under the range's floor, "74 · now" beside today, "− 6kg" the
+    // answer's distance from it.
+    lowest: "{weight} · më e ulëta që vendosim",
+    now: "{weight} · tani",
+    nowLowest: "{weight} · tani · më e ulëta që vendosim",
+    deltaDown: "− {weight}",
+    deltaUp: "+ {weight}",
+  },
+  pace: {
+    rate: "{rate} në javë",
+    rateSuffix: "në javë",
+    result: "{target} rreth {month} · {kcal}kcal në ditë",
+    capMarker: "kufizuar te limiti i sigurt",
+    floorMarker: "kurrë nën {floor} · çdo ritëm mbërrin këtu",
+    echo: "Nga {from} në {to}.",
+  },
+  units: { years: "vjet", yearsCount: { one: "{n} vit", other: "{n} vjet" } },
+  baseline: {
+    title: "Nga ku nis",
+    bmi: "ITM",
+    what: "Indeksi i masës trupore",
+    bands: { under: "nën 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 e më lart" },
+  },
+  prelim: {
+    title: "Plani yt",
+    burn: "Ti djeg",
+    gap: "{delta} ritmi yt",
+    eat: "Ti ha",
+    perDay: "kcal në ditë",
+    keepTitle: "Djeg rreth {burn}kcal",
+  },
+  ageWhy: "Metabolizmi yt ndryshon me moshën — kështu që e marrim parasysh",
+  echo: {
+    rest: "Në pushim: {rest}kcal në ditë",
+    days: "Ditët e tua djegin {burn}kcal",
+  },
+  chart: {
+    byEait: "me {app_name}",
+    weightTrend: "Trendi i peshës",
+    without: "Pa",
+    now: "Tani",
+    later: "Më vonë",
+    twoWays: "Pesha me kohën, vizatuar në dy mënyra: me plan dhe pa",
+    estimatedProgress: "Përparimi i parashikuar",
+    estimate: "Vlerësim",
+    target: "Qëllimi {weight}",
+        monthEstimate: "{month} · vlerësim",
+    estimateAria: "Pesha e parashikuar: {from} tani, {to} rreth {month}",
+  },
+  plan: {
+    goalLose: "Qëllimi: humb {delta} deri {month}",
+    goalGain: "Qëllimi: shto {delta} deri {month}",
+    goalMaintain: "Qëllimi: ruaje peshën time",
+    rest: "Trupi yt në pushim djeg", activity: "Me aktivitetin tënd, rreth", pace: "Për ritmin tënd, e rregullojmë", floor: "Pragu që s’e kalojmë", protein: "Proteina për të synuar",
+  },
+  targetSuggestion:  {
+    down: "Sugjeroj {weight} — rreth {pct}% poshtë, një qëllim i parë i mirë",
+    up: "Sugjeroj {weight} — rreth {pct}% lart, një qëllim i parë i mirë",
+  },
+  stepper:  { continue: "Vazhdo", less: "Më pak", more: "Më shumë" },
+  offerHeadline:  "{kg}kg deri në {month}",
+  planGoal: { metric: "Qëllimi: humb {n}kg deri {month}", imperial: "Qëllimi: humb {n} funt deri {month}" },
+};
+
+const BG: ChatCopy = {
+  idlePlaceholder:  "Съобщение до Calodex…",
+  continueLabel: "Продължи",
+  saveKept: "Не успя да се запази. Отговорът ти е още тук. „Продължи“ ще го изпрати пак.",
+  underAgeCard:  {
+    title: "{app_name} е за {age} и повече години",
+    body: "Начинът, по който това приложение задава калорични цели, не е предназначен за тяло, което още расте.",
+  },
+  underAge:  {
+    ask: "Съжалявам — тук трябва да спра. Ако дотук ни докара печатна грешка, просто ми изпрати истинската си възраст.",
+    confirm: "Това е истинската ми възраст",
+    placeholder: "Твоята възраст",
+    stopped: [
+      "Тогава тук спираме. Изтривам всичко, което ми каза.",
+      "Върни се на {age} — ще съм тук.",
+    ],
+    endedPlaceholder: "{app_name} е за {age} и повече години",
+  },
+  belowHealthy:  {
+    title: "Не мога да задам това като цел",
+    body: "Най-ниското здравословно тегло за твоя ръст е около {kg}кг. Няма да задаваме цел под него. Ако работиш с лекар върху нещо различно, следвай него, а не това приложение.",
+  },
+  switched:  {
+    lose: "Смених — значи отслабване. Къде искаш да стигнеш, в кг? По-бързо тук не е по-добре — просто е по-трудно да се задържи.",
+  },
+  capNoteTail:  " Това е около {kg}кг на седмица.",
+  goalEdit:  {
+    cleared: "Целевото ти тегло вече не отговаряше на тази цел, затова е изчистено — задай ново.",
+    worthSetting: "Записах. Обаче целевото ти тегло вече не пасва на целта — струва си да зададеш ново.",
+  },
+  target: {
+    // "55 · lowest we set" under the range's floor, "74 · now" beside today, "− 6kg" the
+    // answer's distance from it.
+    lowest: "{weight} · най-ниското, което задаваме",
+    now: "{weight} · сега",
+    nowLowest: "{weight} · сега · най-ниското, което задаваме",
+    deltaDown: "− {weight}",
+    deltaUp: "+ {weight}",
+  },
+  pace: {
+    rate: "{rate} на седмица",
+    rateSuffix: "на седмица",
+    result: "{target} · около {month} · {kcal}ккал на ден",
+    capMarker: "ограничено до безопасния лимит",
+    floorMarker: "никога под {floor} · всяко темпо стига тук",
+    echo: "От {from} до {to}.",
+  },
+  units: { years: "години", yearsCount: { one: "{n} година", other: "{n} години" } },
+  baseline: {
+    title: "Откъде тръгваш",
+    bmi: "ИТМ",
+    what: "Индекс на телесната маса",
+    bands: { under: "под 18.5", healthy: "18.5–24.9", over: "25–29.9", obese: "30 и повече" },
+  },
+  prelim: {
+    title: "Твоят план",
+    burn: "Ти изгаряш",
+    gap: "{delta} твоето темпо",
+    eat: "Ти ядеш",
+    perDay: "ккал на ден",
+    keepTitle: "Изгаряш около {burn}ккал",
+  },
+  ageWhy: "Обмяната на веществата се мени с възрастта — затова я отчитаме",
+  echo: {
+    rest: "В покой: {rest}ккал на ден",
+    days: "Дните ти изгарят {burn}ккал",
+  },
+  chart: {
+    byEait: "с {app_name}",
+    weightTrend: "Динамика на теглото",
+    without: "Без",
+    now: "Сега",
+    later: "По-късно",
+    twoWays: "Теглото във времето, начертано по два начина: с план и без",
+    estimatedProgress: "Очакван напредък",
+    estimate: "Оценка",
+    target: "Цел {weight}",
+        monthEstimate: "{month} · оценка",
+    estimateAria: "Очаквано тегло: {from} сега, {to} — около {month}",
+  },
+  plan: {
+    goalLose: "Цел: отслабване с {delta} до {month}",
+    goalGain: "Цел: наддаване с {delta} до {month}",
+    goalMaintain: "Цел: поддържане на теглото ми",
+    rest: "Тялото ти в покой изгаря", activity: "С твоята активност — около", pace: "Към твоето темпо коригираме", floor: "Прагът, който няма да прекрачим", protein: "Протеин — ориентир",
+  },
+  targetSuggestion:  {
+    down: "Предлагам {weight} — около {pct}% надолу, добра първа цел",
+    up: "Предлагам {weight} — около {pct}% нагоре, добра първа цел",
+  },
+  stepper:  { continue: "Продължи", less: "По-малко", more: "Повече" },
+  offerHeadline:  "Стигни {kg}кг до {month}",
+  planGoal: { metric: "Цел: отслабване с {n}кг до {month}", imperial: "Цел: отслабване с {n} паунда до {month}" },
+};
+
 const TE: ChatCopy = {
   idlePlaceholder:  "Calodexకు మెసేజ్ పంపండి…",
   continueLabel: "కొనసాగించండి",
@@ -4137,7 +4327,7 @@ const PT_BR: ChatCopy = {
   planGoal: { metric: "Meta: perder {n} kg até {month}", imperial: "Meta: perder {n} lb até {month}" },
 };
 
-export const CHAT_COPY: Localized<ChatCopy> = { en: EN, fr: FR, de: DE, it: IT, es: ES, vi: VI, id: ID, ru: RU, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR };
+export const CHAT_COPY: Localized<ChatCopy> = { en: EN, fr: FR, de: DE, it: IT, es: ES, vi: VI, id: ID, ru: RU, sq: SQ, bg: BG, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR };
 
 /** What Calodex says back, in one language. English for one nobody has written yet. */
 export const chatCopyFor = (lang: Lang): ChatCopy => t(lang)(CHAT_COPY);

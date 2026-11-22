@@ -205,6 +205,28 @@ const HR: WeighHistoryCopy = {
   rowWeight: { metric: "{n} kg", imperial: "{n} lb" },
 };
 
+const BG: WeighHistoryCopy = {
+  changesTitle: "Промяна в теглото",
+  change3: "3 дни", change7: "7 дни", change14: "14 дни", change30: "30 дни", change90: "90 дни", changeAll: "Всички",
+  historyTitle: "Всички претегляния",
+  sourceHealth: "От Apple Health",
+  sourceYou: "Ти",
+  historyEmptyTitle: "Все още няма претегляния",
+  historyEmptyNote: "Претеглянията от Apple Health също се показват тук.",
+  rowWeight: { metric: "{n} kg", imperial: "{n} lb" },
+};
+
+const SQ: WeighHistoryCopy = {
+  changesTitle: "Ndryshimi i peshës",
+  change3: "3 ditë", change7: "7 ditë", change14: "14 ditë", change30: "30 ditë", change90: "90 ditë", changeAll: "Të gjitha",
+  historyTitle: "Të gjitha peshimet",
+  sourceHealth: "Nga Apple Health",
+  sourceYou: "Ti",
+  historyEmptyTitle: "Ende asnjë peshim",
+  historyEmptyNote: "Peshimet e Apple Health shfaqen edhe këtu.",
+  rowWeight: { metric: "{n} kg", imperial: "{n} lb" },
+};
+
 const HU: WeighHistoryCopy = {
   changesTitle: "Súlyváltozás",
   change3: "3 nap", change7: "7 nap", change14: "14 nap", change30: "30 nap", change90: "90 nap", changeAll: "Kezdettől",
@@ -546,5 +568,7 @@ export const WEIGH_HISTORY_COPY: Record<Lang, WeighHistoryCopy> = {
   "ta": TA,
   "te": TE,
   "ar": AR,
+  "bg": BG,
+  "sq": SQ,
 };
 export const weighHistoryCopyFor = (lang: Lang): WeighHistoryCopy => t(lang)(WEIGH_HISTORY_COPY);

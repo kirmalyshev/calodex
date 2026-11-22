@@ -1916,6 +1916,814 @@ const RU: OnboardingContent = {
   },
 };
 
+const SQ: OnboardingContent = {
+  // Bumped whenever a word below changes, which is what makes the funnel readable: events carry the
+  // contentVersion they were recorded against, so "did the new copy help" is a question the data
+  // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
+  // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
+  // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
+  //
+  // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
+  // "4", and the version is the join key between a funnel row and the words that produced it —
+  // two different flows sharing one number is exactly the meaningless average the counter exists
+  // to prevent. v6 asks for an age rather than a year of birth — and predates the first shipped
+  // binary, so the REVERSE dead end (age-worded copy on a binary whose parser wanted a year) has
+  // no installed base; reword this question again after launch only behind a client-version gate,
+  // because `usableContent` checks structure, not meaning, in that direction. v7 is three
+  // questions shorter — why now, the hardest moment and eating out are gone, so a v6 funnel has
+  // rows a v7 one cannot, and reading the two under one number would compare a fourteen-place
+  // flow with an eleven-place one. The words did not change; the FLOW they are counted against
+  // did, and that is the same join the number exists for. v8 rewrites the welcome's second and
+  // third lines: the verdict is named before the questions, and the billing sentence is the
+  // landing's. v9 (issue #95) replaces the welcome's opening claim: "No email, no name." became
+  // "No account needed to start.", because sign-in now asks Apple and Google for the address and
+  // the old sentence was a privacy promise the product had stopped keeping. It is the most
+  // consequential copy change this file has had, so a funnel row tagged v8 and one tagged v9 were
+  // answering under different promises — which is exactly what this number exists to keep apart.
+  // The claim cannot come back: `retired-no-email` in `claims.ts` refuses it on the admin write,
+  // and `usableWelcome` refuses a stored revision that still carries it on the read. v10 (#609)
+  // adds one clause to the weight question: the iPhone app keeps that number current from Apple
+  // Health, and a newer one moves the target on every surface, the browser included. v11 grows
+  // the country question from four options to fifteen: it offered Germany, the UK, the US and
+  // "Somewhere else" while the product shipped in eight languages, so a Vietnamese, Indonesian,
+  // Italian, Spanish or Russian reader had exactly one true answer and it was the sentinel. The
+  // labels left this file with it — a country's name is CLDR's, not an admin's. Bumped because a
+  // funnel row for a four-chip screen and one for a fifteen-chip screen are not the same screen.
+  // v12 is the v5 redesign's copy (issue #42): the age question asks "How old are you?" plainly,
+  // and the activity options answer in plain frequencies — "A little each week" — rather than
+  // effort labels. v13 (#50) drops 'No account needed to start.': the web asks for a sign-in
+  // before the first question, and one content tree cannot say it on the phone only.
+  // v14 is targets v2 (#81): the activity question's five levels became three — few/some/many —
+  // and the sex question gained "other". A stored v13 revision carries neither, so the validator
+  // retires it and every language falls back to this.
+  //
+  // v15 IS ONBOARDING V2 (#82): the conversation becomes Cal AI-shaped plain screens, one question
+  // each — twelve screens where seven used to be, the struggles eight became five stored picks,
+  // the restrictions screen split into `diet` (seven single-choice) and `medical` (multi-select,
+  // "None of these" a drawn row), and the sign-up beat lands between the plan and the country.
+  // A stored v14 revision names screens and asks this shape cannot satisfy, so it falls back whole.
+  // v16 (#1078): the activity question's three bands became four — 0 / 1–2 / 3–4 / 5+ — and `few`
+  // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
+  // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
+  // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
+  // v18 (eait#719, the Oct 2026 polish): the `struggles` screen is replaced by `counted`,
+  // `barrier` and `situation`; a stored v17 revision has no asks for them, so `usableContent`
+  // retires it and every language falls back to this. Same bump for the welcome line, "Height",
+  // "Your weight" and "Where do you eat?" — different words under the same number is the average
+  // the counter exists to prevent. v19 (eait#726): the age headline is "Your age?" — same
+  // question, new words, same reason to bump. v20 (ieat-app#2756): the welcome drops its
+  // headline — `lines` may be empty, and the button is "Get started". v24 (ieat-app#2757): `ui`
+  // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
+  // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
+  // revision may never reuse a number that was already issued. v29 (ieat-app#3176): the plan
+  // line and the baseline title drop their "Here is …" lead-in in every language — new words,
+  // new number.
+  version: 29,
+  welcome: {
+    lines: [],
+    cta: "Fillo",
+    signin: "Kam tashmë një llogari",
+  },
+  screens: [
+    {
+      id: "goal",
+      asks: {
+        goal: { lines: ["Çfarë synon?"] },
+      },
+      options: {
+        lose: { label: "Të humbasësh peshë" },
+        maintain: { label: "Të ruash peshën" },
+        gain: { label: "Të sosh peshë" },
+      },
+    },
+    {
+      id: "sex",
+      asks: {
+        sex: { lines: ["Gjinia jote?"] },
+      },
+      options: {
+        male: { label: "Mashkull" },
+        female: { label: "Femër" },
+        other: { label: "Tjetër" },
+      },
+    },
+    {
+      id: "age",
+      asks: {
+        // Asked as an AGE and stored as a year — `checkNumber` in `onboarding-chat.ts` converts.
+        birth_year: {
+          lines: ["Sa vjeç je?"],
+          placeholder: "Mosha jote",
+        },
+      },
+    },
+    {
+      id: "height",
+      asks: {
+        height_cm: {
+          lines: ["Gjatësia"],
+          placeholder: "Gjatësia në cm",
+        },
+      },
+    },
+    {
+      id: "weight",
+      asks: {
+        weight_kg: {
+          lines: ["Pesha jote"],
+          placeholder: "Pesha në kg",
+        },
+      },
+    },
+    {
+      id: "activity",
+      asks: {
+        activity: {
+          lines: ["Sa aktive janë ditët e tua?"],
+        },
+      },
+      options: {
+        // Targets v2/#1078: four levels id'd by their icons — the range is the label, the line
+        // beneath is the hint.
+        none: { label: "0", hint: "Pa stërvitje" },
+        few: { label: "1–2", hint: "Stërvitje herë pas here" },
+        some: { label: "3–4", hint: "Disa stërvitje në javë" },
+        many: { label: "5+", hint: "Stërvitje pothuajse çdo ditë" },
+      },
+    },
+    {
+      id: "target",
+      asks: {
+        target_weight_kg: {
+          lines: ["Në çfarë peshe synon të arrish?"],
+          placeholder: "Pesha e synuar në kg",
+        },
+      },
+    },
+    {
+      id: "pace",
+      asks: {
+        pace: { lines: ["Sa shpejt?"] },
+      },
+      options: {
+        easy: { label: "I ngadaltë" },
+        steady: { label: "I qëndrueshëm" },
+        push: { label: "I shpejtë" },
+      },
+    },
+    {
+      id: "counted",
+      asks: {
+        counted_before: { lines: ["Ke numëruar kalori më parë?"] },
+      },
+      options: {
+        never: { label: "Kurrë" },
+        stopped: { label: "E provova, e lashë" },
+        onoff: { label: "Herë-herë" },
+        now: { label: "Numëroj tani" },
+      },
+    },
+    {
+      id: "barrier",
+      asks: {
+        barriers: {
+          lines: ["Çfarë të ndali?", "Zgjidh gjithçka që të shkon"],
+          variants: {
+            onoff: ["Çfarë të pengonte?", "Zgjidh gjithçka që të shkon"],
+            now: ["Çfarë do ta doje më të lehtë?", "Zgjidh gjithçka që të shkon"],
+          },
+        },
+      },
+      options: {
+        too_long: { label: "Zgjatej shumë kohë" },
+        forgot: { label: "E harroja" },
+        invisible: { label: "Nuk shihej që po funksiononte" },
+        no_idea: { label: "S'dija çfarë të haja" },
+        stressful: { label: "Ishte stresuese" },
+        nobody: { label: "Nuk kisha kë të pyesja" },
+        creeping: { label: "Pesha vazhdonte të kthehej" },
+        not_enough: { label: "S'mundesha të haja sa duhet" },
+      },
+    },
+    {
+      id: "situation",
+      asks: {
+        situations: {
+          lines: ["Kur është më e vështirë regjistrimi?"],
+          variants: {
+            never: ["Kur mendon se regjistrimi do të jetë më i vështiri?"],
+          },
+        },
+      },
+      options: {
+        workdays: { label: "Ditë pune të ngarkuara" },
+        eating_out: { label: "Ngrënia jashtë" },
+        cooking: { label: "Gatim për të tjerët" },
+        snacks: { label: "Meze dhe pije" },
+        evenings: { label: "Mbrëmje dhe fundjavë" },
+      },
+    },
+    {
+      id: "diet",
+      asks: {
+        diet: { lines: ["Ndjek një regjim ushqimor?"] },
+      },
+      options: {
+        balanced: { label: "E balancuar" },
+        wholefood: { label: "Ushqime të papëpunuara" },
+        mediterranean: { label: "Mesdhetare" },
+        flexitarian: { label: "Fleksitariake" },
+        pescatarian: { label: "Pesketariake" },
+        vegetarian: { label: "Vegjetariake" },
+        vegan: { label: "Vegane" },
+      },
+    },
+    {
+      id: "medical",
+      asks: {
+        medical: { lines: ["Kufizime mjekësore?"] },
+      },
+      options: {
+        kidneys: { label: "Sëmundje veshkash" },
+        ldl: { label: "Kolesterol i lartë" },
+        lowsugar: { label: "Rrezik diabeti" },
+        none: { label: "Asnjë nga këto" },
+      },
+    },
+    {
+      id: "country",
+      asks: {
+        country: { lines: ["Ku ha?"], placeholder: "Kërko" },
+      },
+      // ON, AND ASKED OF ALMOST NOBODY. `enabled` is the admin's switch — "this question may be
+      // asked at all" — and it is no longer what decides who meets it. `resolveCountry` does, on
+      // both surfaces: a device or a browser that reports a curated region answers the question and
+      // it is never put, and only the users whose region we have not tuned for are asked. That is
+      // roughly the cost of the old off-switch for almost everyone, and an answer for the people
+      // the guess was failing.
+      //
+      // IT WAS OFF, AND THAT SHIPPED `country = other` TO PROD. An account in Germany was analysed
+      // against a country called "other" because the phone reported a region outside the three and
+      // nothing asked (#359, #365). Settings could always correct it; nobody knew to.
+      //
+      // Still the one group that may be switched off at all, because it is the one whose field
+      // never reaches `explainTargets`. An admin who switches it off gets the old behaviour back.
+      enabled: true,
+      options: {
+        other: { label: "Diku tjetër" },
+      },
+    },
+    {
+      id: "streak",
+      asks: {
+        streak_goal_days: { lines: ["Zgjidh një seri ditësh si synim"] },
+      },
+      options: {
+        "7": { label: "7 ditë" },
+        "14": { label: "14 ditë" },
+        "30": { label: "30 ditë" },
+        "50": { label: "50 ditë" },
+      },
+    },
+  ],
+  building: {
+    lines: ["Po ndërtoj planin tënd personal"],
+    title: "Plani yt ditor",
+    rows: { calories: "Kalori", protein: "Proteinë", carbs: "Karbohidratet", fat: "Yndyrnat", diet: "Regjimi ushqimor" },
+    limitCap: { ldl: "yndyrë e ngopur ≤ {n}g", kidneys: "natrium ≤ {n}mg" },
+    cta: "Ma trego planin",
+    floorTitle: "U ndalëm te {floor}kcal",
+    floorBody: "Llogaritja donte të zbriste më poshtë. Pa mbikëqyrje mjekësore nuk vendosim synime nën këtë nivel, ndaj jotja qëndron këtu. Kjo do të shkruhet edhe në ditarin tënd.",
+  },
+  summary: {
+    lines: ["Plani yt"],
+    kcalLabel: "kcal në ditë",
+    floorMarker: "kufizuar për siguri · kurrë nën {floor}",
+    macros: {
+      protein: "Proteinë",
+      carbs: "Karbohidratet",
+      fat: "Yndyrnat",
+      satfat: "Yndyrë e ngopur · e kërkove ti",
+    },
+    capNote: "Ky ritëm kërkon një ndryshim ditor më të madh se sa është e sigurt ta mbash, ndaj jotja është versioni i sigurt: {share}% e asaj që trupi yt djeg në një ditë.",
+    // R0 of the retention plan: onboarding ends with ONE unambiguous instruction, and the thing
+    // being asked for is the first photo. "Start logging" points at a diary, which is an empty list
+    // and a second decision.
+    cta: "Fotografo vaktin tënd të parë",
+  },
+  ui: {
+    continueLabel: "Vazhdo",
+    saveKept: "S'u ruajt dot. Përgjigja jote është ende këtu. «Vazhdo» e dërgon sërish.",
+    idlePlaceholder: "Mesazh për Calodex…",
+    optionContinues: "Zgjedh dhe vazhdon",
+    stepper: { continue: "Vazhdo", less: "Më pak", more: "Më shumë" },
+    units: { years: "vjet", yearsCount: { one: "{n} vit", other: "{n} vjet" } },
+  },
+  beats: {
+    ageWhy: "Metabolizmi yt ndryshon me moshën, ndaj e marrim parasysh",
+    echo: { rest: "Në pushim: {rest}kcal në ditë", days: "" },
+    baseline: { title: "Pikënisja jote", bmi: "IMT", what: "Indeksi i masës trupore" },
+    prelim: {
+      title: "Plani yt", burn: "Djeg", gap: "{delta} ritmi yt",
+      eat: "Ha", perDay: "kcal në ditë", keepTitle: "Djeg rreth {burn}kcal",
+    },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · më e ulëta që vendosim",
+      now: "{weight} · tani",
+      nowLowest: "{weight} · tani · më e ulëta që vendosim",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: {
+      down: "Të sugjeroj {weight}, rreth {pct}% poshtë — synim i mirë i parë",
+      up: "Të sugjeroj {weight}, rreth {pct}% lart — synim i mirë i parë",
+    },
+  },
+  pace: {
+    rate: "{rate} në javë",
+    rateSuffix: "në javë",
+    result: "{target} rreth {month}",
+    heading: { lose: "Sa shpejt do të humbasësh peshë", gain: "Sa shpejt do të sosh peshë" },
+    echo: "Nga {from} në {to}.",
+  },
+  plan: {
+    weightTitle: "Pesha jote",
+    everyDay: "Çdo ditë",
+    infoTitle: "Të dhënat e tua",
+    basedOn: "Bazuar në përgjigjet e tua",
+    changeAnytime: "Mund ta ndryshosh këtë kurdo",
+    goal: {
+      lose: "Synim: −{kg} deri në {month}",
+      gain: "Synim: +{kg} deri në {month}",
+      maintain: "Synim: të qëndrosh rreth {kg}",
+      maintainRange: "Diapazoni: {range}",
+    },
+    info: {
+      startWeight: "Pesha fillestare", goalWeight: "Pesha e synuar", activity: "Aktiviteti",
+      target: "Synimi", targetLose: "−{kg} deri në {month}", targetGain: "+{kg} deri në {month}",
+    },
+    satFat: { label: "Yndyrë e ngopur", asked: "Yndyrë e ngopur · e kërkove ti", perDay: "≤ {g} në ditë" },
+    first: {
+      title: "Hapi yt i parë",
+      step: "Fotografo vaktin tënd të ardhshëm. {app_name} e krahason me {kcal}kcal.",
+    },
+    loader: { goal: "Synimi yt", lose: "−{kg} deri në {month}", gain: "+{kg} deri në {month}" },
+    chart: { estimateAria: "Pesha e parashikuar: {from} tani, {to} rreth {month}" },
+  },
+  signup: { heading: "Ruaje planin tënd", line: "Kështu plani dhe abonimi yt të ndjekin edhe në një telefon të ri, dhe vaktet ruhen." },
+  referral: {
+    ask: "Të ka dërguar një shok një link?",
+    field: "Linku i ftesës së një shoku",
+    unknown: "Kjo lidhje s'i përkon asnjëri. Kontrolloje, ose anashkalo.",
+    own: "Kjo është lidhja jote. Këtu shkon lidhja e një shoku.",
+    already: "Kjo llogari u bashkua tashmë me lidhjen e një shoku.",
+    paid: "Lidhjet e ftesës janë për anëtarë të rinj, dhe kjo llogari e ka blerë tashmë {app_name}.",
+    tryAgain: "Provo sërish",
+    skip: "Anashkalo",
+  },
+  health: { title: "Sinkronizo me Apple Health", body: "Pesha dhe aktiviteti vijnë brenda. Vaktet e tua shkojnë te Health." },
+  liveActivity: { titles: ["Pyetje", "Plani yt", "Pothuajse gati"], go: "Vazhdo" },
+  firstMeal: {
+    ask: "Një vakt nga unë. Foto, apo më rrëfe?",
+    react: "S'ka problem. Më provo më parë",
+    photo: "Bëj një foto",
+    tell: "Më trego çfarë hëngre",
+    keepGoing: "Vazhdo",
+    correct: "Ndreqe vaktin",
+    afterAsk: "Ky ishte i pari. E do kështu për çdo vakt?",
+  },
+  refusals: {
+    invalid: {
+      age: "Kjo s'ngjan moshë — provo diçka si 34.",
+      height_cm: "Në centimetra — diçka si 175.",
+      weight_kg: "Në kilogramë — afërsisht mjafton.",
+      target_weight_kg: "Një numër në kg — si 70.",
+    },
+    ambiguousAge: {
+      line: "Dua të sigurohem që e lexova mirë — nëse ke në mendje vitin {year}, dërgo të katërt shifrat.",
+      confirm: "Jam {age} vjeç",
+    },
+    direction: {
+      gain: "Peshon {weight}kg dhe ke kërkuar shtim deri në {target} — nga këtu ky s'është shtim. Nëse synimi ndryshoi, mund ta ndërrojmë; përndryshe më jep një numër mbi {weight}.",
+      lose: "Peshon {weight}kg dhe ke kërkuar humbje deri në {target} — nga këtu kjo s'është humbje. Nëse synimi ndryshoi, mund ta ndërrojmë; përndryshe më jep një numër nën {weight}.",
+      switchToLose: "Kalo në humbje peshe",
+      switchToGain: "Kalo në shtim peshe",
+      above: "Një numër mbi {weight}…",
+      below: "Një numër nën {weight}…",
+    },
+    switched: {
+      gain: "U ndërrua — shtim peshe pra. Ku do të doje të arrije, në kg?",
+    },
+  },
+};
+
+const BG: OnboardingContent = {
+  // Bumped whenever a word below changes, which is what makes the funnel readable: events carry the
+  // contentVersion they were recorded against, so "did the new copy help" is a question the data
+  // can answer instead of a matter of opinion. v4 cut "No card … nothing to cancel later" from the
+  // welcome — the hard paywall sells a subscription behind a seven-day trial, and a trial takes a
+  // card, so the line became false the day that shipped. v5 IS THE CHAT FLOW: the copy is Calodex's
+  // side of a conversation now, so the screens carry `asks` and nothing that described a screen.
+  //
+  // FIVE, NOT FOUR, AND THE MERGE IS WHY. Both this branch and the paywall's copy fix landed on
+  // "4", and the version is the join key between a funnel row and the words that produced it —
+  // two different flows sharing one number is exactly the meaningless average the counter exists
+  // to prevent. v6 asks for an age rather than a year of birth — and predates the first shipped
+  // binary, so the REVERSE dead end (age-worded copy on a binary whose parser wanted a year) has
+  // no installed base; reword this question again after launch only behind a client-version gate,
+  // because `usableContent` checks structure, not meaning, in that direction. v7 is three
+  // questions shorter — why now, the hardest moment and eating out are gone, so a v6 funnel has
+  // rows a v7 one cannot, and reading the two under one number would compare a fourteen-place
+  // flow with an eleven-place one. The words did not change; the FLOW they are counted against
+  // did, and that is the same join the number exists for. v8 rewrites the welcome's second and
+  // third lines: the verdict is named before the questions, and the billing sentence is the
+  // landing's. v9 (issue #95) replaces the welcome's opening claim: "No email, no name." became
+  // "No account needed to start.", because sign-in now asks Apple and Google for the address and
+  // the old sentence was a privacy promise the product had stopped keeping. It is the most
+  // consequential copy change this file has had, so a funnel row tagged v8 and one tagged v9 were
+  // answering under different promises — which is exactly what this number exists to keep apart.
+  // The claim cannot come back: `retired-no-email` in `claims.ts` refuses it on the admin write,
+  // and `usableWelcome` refuses a stored revision that still carries it on the read. v10 (#609)
+  // adds one clause to the weight question: the iPhone app keeps that number current from Apple
+  // Health, and a newer one moves the target on every surface, the browser included. v11 grows
+  // the country question from four options to fifteen: it offered Germany, the UK, the US and
+  // "Somewhere else" while the product shipped in eight languages, so a Vietnamese, Indonesian,
+  // Italian, Spanish or Russian reader had exactly one true answer and it was the sentinel. The
+  // labels left this file with it — a country's name is CLDR's, not an admin's. Bumped because a
+  // funnel row for a four-chip screen and one for a fifteen-chip screen are not the same screen.
+  // v12 is the v5 redesign's copy (issue #42): the age question asks "How old are you?" plainly,
+  // and the activity options answer in plain frequencies — "A little each week" — rather than
+  // effort labels. v13 (#50) drops 'No account needed to start.': the web asks for a sign-in
+  // before the first question, and one content tree cannot say it on the phone only.
+  // v14 is targets v2 (#81): the activity question's five levels became three — few/some/many —
+  // and the sex question gained "other". A stored v13 revision carries neither, so the validator
+  // retires it and every language falls back to this.
+  //
+  // v15 IS ONBOARDING V2 (#82): the conversation becomes Cal AI-shaped plain screens, one question
+  // each — twelve screens where seven used to be, the struggles eight became five stored picks,
+  // the restrictions screen split into `diet` (seven single-choice) and `medical` (multi-select,
+  // "None of these" a drawn row), and the sign-up beat lands between the plan and the country.
+  // A stored v14 revision names screens and asks this shape cannot satisfy, so it falls back whole.
+  // v16 (#1078): the activity question's three bands became four — 0 / 1–2 / 3–4 / 5+ — and `few`
+  // moved from "0–2" to "1–2". A stored v15 labels the new `few` "0–2" and has no `none` at all,
+  // so `usableContent` retires it and every language falls back to this. v17 (ieat-app#2050)
+  // rewrites the welcome as a title and a subtitle — "A plan built around you" — over the photo.
+  // v18 (eait#719, the Oct 2026 polish): the `struggles` screen is replaced by `counted`,
+  // `barrier` and `situation`; a stored v17 revision has no asks for them, so `usableContent`
+  // retires it and every language falls back to this. Same bump for the welcome line, "Height",
+  // "Your weight" and "Where do you eat?" — different words under the same number is the average
+  // the counter exists to prevent. v19 (eait#726): the age headline is "Your age?" — same
+  // question, new words, same reason to bump. v20 (ieat-app#2756): the welcome drops its
+  // headline — `lines` may be empty, and the button is "Get started". v24 (ieat-app#2757): `ui`
+  // and `beats` join — the words around the questions move out of `onboarding-chat-copy`. 21–23
+  // are skipped: stored saves and experiment arms took them on the shared counter, and a compiled
+  // revision may never reuse a number that was already issued. v29 (ieat-app#3176): the plan
+  // line and the baseline title drop their "Here is …" lead-in in every language — new words,
+  // new number.
+  version: 29,
+  welcome: {
+    lines: [],
+    cta: "Започни",
+    signin: "Вече имам акаунт",
+  },
+  screens: [
+    {
+      id: "goal",
+      asks: {
+        goal: { lines: ["Каква е целта ти?"] },
+      },
+      options: {
+        lose: { label: "Отслабване" },
+        maintain: { label: "Поддържане на теглото" },
+        gain: { label: "Качване на тегло" },
+      },
+    },
+    {
+      id: "sex",
+      asks: {
+        sex: { lines: ["Какъв е полът ти?"] },
+      },
+      options: {
+        male: { label: "Мъжки" },
+        female: { label: "Женски" },
+        other: { label: "Друг" },
+      },
+    },
+    {
+      id: "age",
+      asks: {
+        // Asked as an AGE and stored as a year — `checkNumber` in `onboarding-chat.ts` converts.
+        birth_year: {
+          lines: ["На колко години си?"],
+          placeholder: "Възрастта ти",
+        },
+      },
+    },
+    {
+      id: "height",
+      asks: {
+        height_cm: {
+          lines: ["Ръст"],
+          placeholder: "Ръст в см",
+        },
+      },
+    },
+    {
+      id: "weight",
+      asks: {
+        weight_kg: {
+          lines: ["Теглото ти"],
+          placeholder: "Тегло в кг",
+        },
+      },
+    },
+    {
+      id: "activity",
+      asks: {
+        activity: {
+          lines: ["Колко активни са дните ти?"],
+        },
+      },
+      options: {
+        // Targets v2/#1078: four levels id'd by their icons — the range is the label, the line
+        // beneath is the hint.
+        none: { label: "0", hint: "Без тренировки" },
+        few: { label: "1–2", hint: "Тренировки от време на време" },
+        some: { label: "3–4", hint: "Няколко тренировки седмично" },
+        many: { label: "5+", hint: "Почти всеки ден" },
+      },
+    },
+    {
+      id: "target",
+      asks: {
+        target_weight_kg: {
+          lines: ["Към какво тегло се целиш?"],
+          placeholder: "Целево тегло в кг",
+        },
+      },
+    },
+    {
+      id: "pace",
+      asks: {
+        pace: { lines: ["С какво темпо?"] },
+      },
+      options: {
+        easy: { label: "Спокойно" },
+        steady: { label: "Равномерно" },
+        push: { label: "Бързо" },
+      },
+    },
+    {
+      id: "counted",
+      asks: {
+        counted_before: { lines: ["Случвало ли ти се е да броиш калории?"] },
+      },
+      options: {
+        never: { label: "Никога" },
+        stopped: { label: "Опитвах и спрях" },
+        onoff: { label: "Периодично" },
+        now: { label: "Броя в момента" },
+      },
+    },
+    {
+      id: "barrier",
+      asks: {
+        barriers: {
+          lines: ["Какво те спря?", "Избери всичко, което подхожда"],
+          variants: {
+            onoff: ["Какво ти пречеше?", "Избери всичко, което подхожда"],
+            now: ["Какво искаш да стане по-лесно?", "Избери всичко, което подхожда"],
+          },
+        },
+      },
+      options: {
+        too_long: { label: "Отнемаше твърде много време" },
+        forgot: { label: "Забравях" },
+        invisible: { label: "Не виждах резултат" },
+        no_idea: { label: "Не знаех какво да ям" },
+        stressful: { label: "Беше стресиращо" },
+        nobody: { label: "Нямаше кого да питам" },
+        creeping: { label: "Теглото постоянно се връщаше" },
+        not_enough: { label: "Трудно ми беше да изям достатъчно" },
+      },
+    },
+    {
+      id: "situation",
+      asks: {
+        situations: {
+          lines: ["Кога ти е най-трудно да записваш?"],
+          variants: {
+            never: ["Кога според теб ще е най-трудно да записваш?"],
+          },
+        },
+      },
+      options: {
+        workdays: { label: "Натоварени работни дни" },
+        eating_out: { label: "Хранене навън" },
+        cooking: { label: "Готвене за други" },
+        snacks: { label: "Прехапвания и напитки" },
+        evenings: { label: "Вечери и уикенди" },
+      },
+    },
+    {
+      id: "diet",
+      asks: {
+        diet: { lines: ["Спазваш ли определен режим на хранене?"] },
+      },
+      options: {
+        balanced: { label: "Балансирано" },
+        wholefood: { label: "Непреработени храни" },
+        mediterranean: { label: "Средиземноморска" },
+        flexitarian: { label: "Флекситарианска" },
+        pescatarian: { label: "Пескетарианска" },
+        vegetarian: { label: "Вегетарианска" },
+        vegan: { label: "Веганска" },
+      },
+    },
+    {
+      id: "medical",
+      asks: {
+        medical: { lines: ["Имаш ли медицински ограничения?"] },
+      },
+      options: {
+        kidneys: { label: "Бъбречно заболяване" },
+        ldl: { label: "Висок холестерол" },
+        lowsugar: { label: "Риск от диабет" },
+        none: { label: "Нищо от тези" },
+      },
+    },
+    {
+      id: "country",
+      asks: {
+        country: { lines: ["Къде ядеш?"], placeholder: "Търси" },
+      },
+      // ON, AND ASKED OF ALMOST NOBODY. `enabled` is the admin's switch — "this question may be
+      // asked at all" — and it is no longer what decides who meets it. `resolveCountry` does, on
+      // both surfaces: a device or a browser that reports a curated region answers the question and
+      // it is never put, and only the users whose region we have not tuned for are asked. That is
+      // roughly the cost of the old off-switch for almost everyone, and an answer for the people
+      // the guess was failing.
+      //
+      // IT WAS OFF, AND THAT SHIPPED `country = other` TO PROD. An account in Germany was analysed
+      // against a country called "other" because the phone reported a region outside the three and
+      // nothing asked (#359, #365). Settings could always correct it; nobody knew to.
+      //
+      // Still the one group that may be switched off at all, because it is the one whose field
+      // never reaches `explainTargets`. An admin who switches it off gets the old behaviour back.
+      enabled: true,
+      options: {
+        other: { label: "Някъде другаде" },
+      },
+    },
+    {
+      id: "streak",
+      asks: {
+        streak_goal_days: { lines: ["Избери серия, към която да се стремиш"] },
+      },
+      options: {
+        "7": { label: "7 дни" },
+        "14": { label: "14 дни" },
+        "30": { label: "30 дни" },
+        "50": { label: "50 дни" },
+      },
+    },
+  ],
+  building: {
+    lines: ["Съставям личния ти план"],
+    title: "Планът ти за деня",
+    rows: { calories: "Калории", protein: "Протеин", carbs: "Въглехидрати", fat: "Мазнини", diet: "Хранителен режим" },
+    limitCap: { ldl: "наситени мазнини ≤ {n}г", kidneys: "натрий ≤ {n}мг" },
+    cta: "Покажи ми плана",
+    floorTitle: "Спряхме на {floor}ккал",
+    floorBody: "Сметката искаше да слезе по-ниско. Без медицинско наблюдение не задаваме цели под тази граница, затова твоята е тук. Това ще пише и в дневника ти.",
+  },
+  summary: {
+    lines: ["Твоят план"],
+    kcalLabel: "ккал на ден",
+    floorMarker: "ограничено за безопасност · никога под {floor}",
+    macros: {
+      protein: "Протеин",
+      carbs: "Въглехидрати",
+      fat: "Мазнини",
+      satfat: "Наситени мазнини · по твое искане",
+    },
+    capNote: "Това темпо изисква по-голяма дневна промяна, отколкото е безопасно да се поддържа, затова твоят вариант е безопасният: {share}% от това, което тялото ти изразходва за ден.",
+    // R0 of the retention plan: onboarding ends with ONE unambiguous instruction, and the thing
+    // being asked for is the first photo. "Start logging" points at a diary, which is an empty list
+    // and a second decision.
+    cta: "Снимай първия си оброк",
+  },
+  ui: {
+    continueLabel: "Напред",
+    saveKept: "Не успях да го запазя. Отговорът ти е още тук. „Напред“ ще го изпрати отново.",
+    idlePlaceholder: "Съобщение до Calodex…",
+    optionContinues: "Избира и продължава",
+    stepper: { continue: "Напред", less: "По-малко", more: "Повече" },
+    units: { years: "години", yearsCount: { one: "{n} година", other: "{n} години" } },
+  },
+  beats: {
+    ageWhy: "Обмяната на веществата се променя с възрастта, затова я отчитаме",
+    echo: { rest: "В покой: {rest}ккал на ден", days: "" },
+    baseline: { title: "Твоята отправна точка", bmi: "ИТМ", what: "Индекс на телесна маса" },
+    prelim: {
+      title: "Твоят план", burn: "Изгаряш", gap: "{delta} твоето темпо",
+      eat: "Приемаш", perDay: "ккал на ден", keepTitle: "Изгаряш около {burn}ккал",
+    },
+  },
+  target: {
+    markers: {
+      lowest: "{weight} · минимумът, който задаваме",
+      now: "{weight} · сега",
+      nowLowest: "{weight} · сега · минимумът, който задаваме",
+      deltaDown: "− {weight}",
+      deltaUp: "+ {weight}",
+    },
+    suggestion: {
+      down: "Предлагам {weight} — около {pct}% надолу, добра първа цел",
+      up: "Предлагам {weight} — около {pct}% нагоре, добра първа цел",
+    },
+  },
+  pace: {
+    rate: "{rate} на седмица",
+    rateSuffix: "на седмица",
+    result: "{target} към {month}",
+    heading: { lose: "Колко бързо искаш да отслабваш", gain: "Колко бързо искаш да качваш тегло" },
+    echo: "От {from} до {to}.",
+  },
+  plan: {
+    weightTitle: "Теглото ти",
+    everyDay: "Всеки ден",
+    infoTitle: "Твоите данни",
+    basedOn: "Въз основа на отговорите ти",
+    changeAnytime: "Можеш да го промениш по всяко време",
+    goal: {
+      lose: "Цел: −{kg} до {month}",
+      gain: "Цел: +{kg} до {month}",
+      maintain: "Цел: да се задържи около {kg}",
+      maintainRange: "Диапазон: {range}",
+    },
+    info: {
+      startWeight: "Начално тегло", goalWeight: "Целево тегло", activity: "Активност",
+      target: "Цел", targetLose: "−{kg} до {month}", targetGain: "+{kg} до {month}",
+    },
+    satFat: { label: "Наситени мазнини", asked: "Наситени мазнини · по твое искане", perDay: "≤ {g} на ден" },
+    first: {
+      title: "Първата ти стъпка",
+      step: "Снимай следващия си оброк. {app_name} ще го свери с {kcal}ккал.",
+    },
+    loader: { goal: "Целта ти", lose: "−{kg} до {month}", gain: "+{kg} до {month}" },
+    chart: { estimateAria: "Очаквано тегло: {from} сега, {to} към {month}" },
+  },
+  signup: { heading: "Запази плана си", line: "Така планът и абонаментът ти ще те следват и на нов телефон, а оброците ще се запазят." },
+  referral: {
+    ask: "Приятел изпрати ли ти линк?",
+    field: "Линк за покана от приятел",
+    unknown: "Този линк не съвпада с никого. Провери го или пропусни.",
+    own: "Това е твой собствен линк. Тук се слага линк от приятел.",
+    already: "Този акаунт вече се присъедини с линк от приятел.",
+    paid: "Линковете за покана са за нови потребители, а този акаунт вече е закупил {app_name}.",
+    tryAgain: "Опитай пак",
+    skip: "Пропусни",
+  },
+  health: { title: "Синхронизиране с Apple Health", body: "Теглото и активността влизат. Оброците ти отиват в Health." },
+  liveActivity: { titles: ["Въпроси", "Твоят план", "Почти готово"], go: "Напред" },
+  firstMeal: {
+    ask: "Един оброк от мен. Снимка или просто ми разкажи?",
+    react: "Няма проблем. Първо ме изпробвай",
+    photo: "Направи снимка",
+    tell: "Разкажи ми какво яде",
+    keepGoing: "Продължавай",
+    correct: "Коригирай оброка",
+    afterAsk: "Това беше единият. Искаш ли така за всеки оброк?",
+  },
+  refusals: {
+    invalid: {
+      age: "Това не прилича на възраст — опитай нещо като 34.",
+      height_cm: "В сантиметри — нещо като 175.",
+      weight_kg: "В килограми — приблизително е достатъчно.",
+      target_weight_kg: "Число в кг — например 70.",
+    },
+    ambiguousAge: {
+      line: "Искам да проверя дали разбрах правилно — ако имаш предвид {year} година, изпрати всичките четири цифри.",
+      confirm: "На {age} съм",
+    },
+    direction: {
+      gain: "Сега тежиш {weight}кг и искаш качване до {target} — оттук това не е качване. Ако целта се е променила, можем да я сменим; иначе ми дай число над {weight}.",
+      lose: "Сега тежиш {weight}кг и искаш сваляне до {target} — оттук това не е сваляне. Ако целта се е променила, можем да я сменим; иначе ми дай число под {weight}.",
+      switchToLose: "Смени на отслабване",
+      switchToGain: "Смени на качване",
+      above: "Число над {weight}…",
+      below: "Число под {weight}…",
+    },
+    switched: {
+      gain: "Сменено — значи качваме. Към какво тегло искаш да стигнеш, в кг?",
+    },
+  },
+};
+
 const TE: OnboardingContent = {
   // Bumped whenever a word below changes, which is what makes the funnel readable: events carry the
   // contentVersion they were recorded against, so "did the new copy help" is a question the data
@@ -14810,7 +15618,7 @@ export const ONBOARDING_CONTENT: Localized<OnboardingContent> = {
   es: ES,
   vi: VI,
   id: ID,
-  ru: RU, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR,
+  ru: RU, sq: SQ, bg: BG, te: TE, ta: TA, pa: PA, or: OR, mr: MR, ml: ML, kn: KN, gu: GU, bn: BN, "pt-PT": PT_PT, ms: MS, ca: CA, sl: SL, hr: HR, sk: SK, no: NO, fi: FI, da: DA, hu: HU, el: EL, ro: RO, cs: CS, hi: HI, th: TH, sv: SV, uk: UK, nl: NL, pl: PL, tr: TR, "zh-Hant": ZH_HANT, "zh-Hans": ZH_HANS, ko: KO, ja: JA, "pt-BR": PT_BR,
 };
 
 /**

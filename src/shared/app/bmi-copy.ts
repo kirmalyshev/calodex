@@ -83,6 +83,20 @@ export const BMI_COPY: Localized<BmiCopy> = {
     bmiBetween: "{low}–{high}",
     bmiAbove: "{n} и выше",
   },
+  sq: {
+    bmi: "IMT",
+    bmiExplainer: "Pesha në kg e pjesëtuar me gjatësinë në metra, në katror.",
+    bmiBelow: "nën {n}",
+    bmiBetween: "{low}–{high}",
+    bmiAbove: "{n} e lart",
+  },
+  bg: {
+    bmi: "ИТМ",
+    bmiExplainer: "Теглото в кг, разделено на ръста в метри на квадрат.",
+    bmiBelow: "под {n}",
+    bmiBetween: "{low}–{high}",
+    bmiAbove: "{n} и нагоре",
+  },
   te: {
     bmi: "BMI",
     bmiExplainer: "kgలో బరువును, మీటర్లలో ఎత్తు వర్గంతో భాగించగా వచ్చేది.",

@@ -50,6 +50,7 @@ describe("what the health screen calls things", () => {
     "fr.distance_km",
     "ja.vo2max", "ko.vo2max", "pl.vo2max", "nl.vo2max",   // the same internationalism again
     "da.distance_km",   // Danish writes Distance too
+    "bg.hrv_ms", "bg.vo2max", "sq.hrv_ms", "sq.vo2max",   // internationalisms, as in de/fr/ja
   ]);
 
   it("does not let a new metric ship English in all eight and call it translated", () => {

@@ -267,6 +267,14 @@ export interface Config {
   sessionTtlDays: number;
 
   /**
+   * Days of nothing after which the abandoned-account sweep deletes a users row — provided it is a
+   * pure shell (#3357): an account carrying any `onboarding_events` row is kept FOREVER, whatever
+   * this number is, because a dropped-out walk's answers live there. What the window still bounds
+   * is the credential that never produced a funnel row. Zero disables the sweep outright.
+   */
+  abandonedAccountIdleDays: number;
+
+  /**
    * Requests per hour, per address, on the routes that mint a session.
    *
    * `POST /v1/auth/device` creates an account for anybody with a 32-character string, so without
@@ -740,6 +748,7 @@ export function configDefaults(): Config {
     maxUploadBytes: 20 * 1024 * 1024,
     maxPhotosPerMeal: 4,
     sessionTtlDays: DEFAULT_SESSION_TTL_MS / (24 * 60 * 60 * 1000),
+    abandonedAccountIdleDays: 30,
     authRateLimitPerHour: 20,
     analysisRateLimitPerDay: 60,
     healthSyncRateLimitPerHour: 120,
@@ -1036,6 +1045,7 @@ export function loadConfig(): Config {
     maxUploadBytes: int("EAIT__BACKEND__MAX_UPLOAD_MB", d.maxUploadBytes / (1024 * 1024)) * 1024 * 1024,
     maxPhotosPerMeal,
     sessionTtlDays,
+    abandonedAccountIdleDays: int("EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS", d.abandonedAccountIdleDays),
     authRateLimitPerHour: int("EAIT__BACKEND__AUTH_RATE_LIMIT_PER_HOUR", d.authRateLimitPerHour),
     analysisRateLimitPerDay: int("EAIT__BACKEND__ANALYSIS_RATE_LIMIT_PER_DAY", d.analysisRateLimitPerDay),
     healthSyncRateLimitPerHour: int("EAIT__BACKEND__HEALTH_SYNC_RATE_LIMIT_PER_HOUR", d.healthSyncRateLimitPerHour),
@@ -1269,6 +1279,10 @@ export function demoConfig(): Config {
     // one cannot draw "That one timed out" (`chat-expired`). `EAIT__BACKEND__PENDING_TTL_MINUTES=0`
     // makes every proposal die on arrival — `int` allows zero, which is the point here.
     pendingTtlMs: int("EAIT__BACKEND__PENDING_TTL_MINUTES", configDefaults().pendingTtlMs / 60_000) * 60 * 1000,
+    // The same override `loadConfig` honours, read the same way: a demo exercises the sweeps
+    // against the memory store, and "works in demo, untested in production" is the shape of every
+    // configuration bug that ships. `0` disables the sweep here exactly as it does there.
+    abandonedAccountIdleDays: int("EAIT__BACKEND__ABANDONED_ACCOUNT_IDLE_DAYS", configDefaults().abandonedAccountIdleDays),
     // Read from the environment here too, and validated by the same function: the admin is how
     // onboarding copy is edited, and "works in demo, untested in production" is the shape of
     // every configuration bug that ships.
