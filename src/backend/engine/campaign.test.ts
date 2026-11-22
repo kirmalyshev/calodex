@@ -749,6 +749,23 @@ describe("a campaign needs only the languages its segment can reach", () => {
     expect((await setCampaignStatus(deps, made.row.id, "scheduled")).ok).toBe(true);
   });
 
+  it("a test send never serves a draft row from outside the segment's languages", async () => {
+    const de = await account({ lang: "de" });
+    staff.push(de);
+    await putCopy("campaign:en-send", "en", 1);
+    // A draft in a language the segment does not reach — the gaps pass cannot see it.
+    await store.putPushTemplate({
+      key: "campaign:en-send" as PushTemplateRow["key"], lang: "de", variant: "default", title: "t", body: "b",
+      status: "draft", reviewed_by: null, reviewed_at: null, updated_at: "2026-10-08T00:00:00.000Z",
+    });
+    const made = await createCampaign(deps, {
+      name: "x", templateKey: "campaign:en-send", segment: { langs: ["en"] },
+      localSendTime: "18:30", rolloutPct: 100, promotional: false,
+    }, "a");
+    if (!made.ok) throw new Error("create");
+    expect(await testSendCampaign(deps, made.row.id, de, BERLIN_1830)).toEqual({ ok: false, reason: "template-incomplete" });
+  });
+
   it("marks a live campaign blocked in the overview while its template is incomplete", async () => {
     const c = await campaign({}, "scheduled");
     const row = (await store.listPushTemplates()).find((r) => r.key === "campaign:win-back" && r.lang === "de" && r.variant === "default")!;

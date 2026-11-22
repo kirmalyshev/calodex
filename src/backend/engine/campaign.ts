@@ -146,7 +146,12 @@ export async function setCampaignsKilled(deps: EngineDeps, killed: boolean): Pro
 export interface CampaignCopy {
   key: CampaignTemplateKey;
   rows: PushTemplateRow[];
+  /** Missing or draft rows among the languages the key's campaigns can reach. */
   gaps: string[];
+  /** The languages the key's campaigns can reach (every language for a key nobody runs). */
+  langs: Lang[];
+  /** Complete for a composer's send, which can reach any account: every language, default variant. */
+  sendable: boolean;
 }
 
 export interface CampaignOverview {
@@ -165,22 +170,25 @@ export async function campaignOverview(
   const templates = (await deps.store.listPushTemplates()).filter((r) => isCampaignTemplateKey(r.key));
   // Keys a campaign names but nobody has written yet are listed too, with every language missing.
   const keys = [...new Set([...templates.map((r) => r.key), ...rows.map((c) => c.templateKey)])] as CampaignTemplateKey[];
+  // Each campaign's reachable languages, resolved once for both the copy list and the blocked flag.
+  const segLangs = new Map(await Promise.all(rows.map(async (c) => [c.id, await segmentLangs(deps, c.segment)] as const)));
   return {
     killed: await deps.store.campaignsKilled(),
-    copy: await Promise.all(keys.sort().map(async (key) => {
+    copy: keys.sort().map((key) => {
       const own = templates.filter((r) => r.key === key);
       const users = rows.filter((c) => c.templateKey === key);
       // The variants and languages a key must carry are the most any campaign using it can reach.
       const needed = Math.max(1, ...users.map((c) => c.variants));
       const langs = users.length === 0
         ? [...LANGS]
-        : [...new Set((await Promise.all(users.map((c) => segmentLangs(deps, c.segment)))).flat())];
-      return { key, rows: own, gaps: pushKeyGaps(own, key, needed, langs) };
-    })),
+        : [...new Set(users.flatMap((c) => segLangs.get(c.id)!))];
+      return { key, rows: own, gaps: pushKeyGaps(own, key, needed, langs), langs, sendable: pushKeyGaps(own, key, 1).length === 0 };
+    }),
     campaigns: await Promise.all(rows.map(async (c) => {
       const report = await deps.store.campaignReport(c.id, ask);
       const live = c.status === "scheduled" || c.status === "running";
-      const blocked = live && (await activationProblems(deps, c)).length > 0;
+      const gaps = pushKeyGaps(templates.filter((r) => r.key === c.templateKey), c.templateKey, c.variants, segLangs.get(c.id)!);
+      const blocked = live && (c.promotional || gaps.length > 0);
       return { ...c, report, effect: effectOf(report.groups), blocked };
     })),
     range: adminWindowEcho(ask),
