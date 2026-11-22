@@ -3209,7 +3209,8 @@ details.how p { margin-top: 8px; }
     var card = document.createElement("div");
     card.className = "pb";
     var at = draft.key + "." + (draft.variant === "empty" ? "emptyBody" : "body");
-    // Only the default variant has a title: the others are sent under it.
+    // Only a system key's default variant has a title: the others are sent under it. Campaign
+    // arms never reach this pane — their copy is the campaign form's, which always shows one.
     if (draft.variant === "default") {
       field(card, "Title" + holes2(draft.key + ".title"), draft.title, function (v) { draft.title = v; });
     }
