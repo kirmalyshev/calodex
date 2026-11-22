@@ -2449,16 +2449,23 @@ details.how p { margin-top: 8px; }
         return;
       }
       // A step counts the people who got to it or past it (ieat-app#3339), so no row can hold more than the one before.
-      var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.reached === undefined ? r.people : r.reached }; });
+      var steps = f.rows.map(function (r) { return { name: STEP_NAMES[r.place] || r.place, id: r.place, n: r.place === "paywall" || r.reached === undefined ? r.people : r.reached }; });
       // The questions are answered BEFORE the paywall, so the step sits there (ieat-app#3326).
       var atPay = steps.findIndex(function (s) { return s.id === "paywall"; });
-      steps.splice(atPay < 0 ? steps.length : atPay, 0, { name: "Answered the questions", id: "complete", n: f.completed, fin: true });
+      // A run whose complete event was lost is still past the questions, and one that never saw the summary is not
+      // above it: the step sits between its neighbours so a lost event cannot make a join.
+      var after = atPay < 0 ? 0 : steps[atPay].n;
+      var before = atPay < 1 ? f.sessions : steps[atPay - 1].n;
+      steps.splice(atPay < 0 ? steps.length : atPay, 0, { name: "Answered the questions", id: "complete", n: Math.min(before, Math.max(f.completed, after)), fin: true });
       // The funnel's last step (#812): of the starters, the runs whose account's own entitlement
       // record's earliest grant lands at or after the run's start — the server's record, never a
       // client event; a record older than that is a payment this run did not cause.
       // Right after the plans: only the people who SAW them count here, so the step can never exceed the one before.
       var atPlans = steps.findIndex(function (s) { return s.id === "paywall"; });
-      steps.splice(atPlans < 0 ? steps.length : atPlans + 1, 0, { name: "Converted to paid", id: "paid", n: f.paid.viaPaywall, fin: true });
+      // The path ENDS there: the screens after the plans (sign-up, country, referral, health) are reached by people who did
+      // not pay too, so a row for them under the paid step would read as a join.
+      if (atPlans >= 0) steps.length = atPlans + 1;
+      steps.push({ name: "Converted to paid", id: "paid", n: f.paid.viaPaywall, fin: true });
       var first = steps[0].n;
       // The gap into "paid" ranks like any other (ieat-app#3326): payment is the target metric, so
       // the biggest loss on the page is red wherever it is. It only has no drill-down list below.

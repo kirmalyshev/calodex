@@ -130,10 +130,11 @@ test("a purchase that never met the paywall cannot push the funnel past 100% (ie
   await page.route((u) => u.pathname === "/admin/api/funnel", (r) => r.fulfill({
     status: 200, contentType: "application/json",
     body: JSON.stringify({
-      ...FUNNEL, sessions: 158, completed: 80,
+      ...FUNNEL, sessions: 158, completed: 5,
       // 10 paid, 8 of them saw the plans: the other two bought on the web.
       paid: { ...FUNNEL.paid, converted: 10, viaPaywall: 8 },
-      rows: [row("welcome", 150, 158), row("target", 100, 120), row("paywall", 9, 9)],
+      // `complete` 5 is below the 9 who reached the plans (lost events), and signup is reached by 100 who never paid.
+      rows: [row("welcome", 150, 158), row("target", 100, 120), row("summary", 90, 100), row("paywall", 9, 100), row("signup", 5, 100)],
     }),
   }));
   await page.goto("/admin#funnel");
@@ -145,6 +146,10 @@ test("a purchase that never met the paywall cannot push the funnel past 100% (ie
   const pcts = await page.locator("#funnel-path .fp-c1").allTextContents();
   for (const p of pcts) if (p !== "% of first") expect(parseInt(p, 10)).toBeLessThanOrEqual(100);
   await expect(page.locator("#funnel-path")).not.toContainText("joined here");
+  // The path ends at the payment: nothing after it can read as a join.
+  const names = await page.locator("#funnel-path .fp-nm").evaluateAll((els) => els.map((e) => e.childNodes[0]!.textContent));
+  expect(names.at(-1)).toBe("Converted to paid");
+  expect(names).not.toContain("Saw the sign-up screen");
 });
 
 test("the funnel shows conversion to paid, the account rows, and an expanded journal", async ({ page }) => {

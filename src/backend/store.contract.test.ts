@@ -5616,22 +5616,27 @@ function adminRanges(name: string, make: (opts: StoreOptions) => Promise<Store>)
       const a = await run("a", ["welcome", "goal", "paywall"]);
       await run("b", ["target"]);
       const c = await run("c", ["welcome", "goal"]);
+      // Two accounts that reuse one session string are two runs (Postgres groups by the pair).
+      const x1 = await run("shared", ["welcome"]);
+      const x2 = await s.createUser("en");
+      await s.recordOnboardingEvents(x2, [{ id: crypto.randomUUID(), sessionId: `shared-${RUN}`, place: "goal", action: "view", contentVersion: 1, at }] as never, ctx as never);
+      void x1;
       const later = new Date(Date.parse(at) + 60_000).toISOString();
       await s.putEntitlement(a, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: later });
       await s.putEntitlement(c, { expiresAt: "2099-01-01T00:00:00.000Z", productId: "monthly", eventAt: later });
 
       const f = await s.onboardingFunnel({ from: null, to: null }, [], false, { app_version: v });
       const reached = (place: string) => f.reached[place] ?? 0;
-      expect(f.sessions).toBe(3);
-      expect(reached("welcome")).toBe(3);           // B saw `target`, which is past it
-      expect(reached("goal")).toBe(3);
+      expect(f.sessions).toBe(4);                   // the shared string is one session id, two runs
+      expect(reached("welcome")).toBe(5);           // A, B (saw `target`, past it), C, and both shared-string runs
+      expect(reached("goal")).toBe(4);              // x2's own view; x1 never got that far
       expect(reached("target")).toBe(2);            // A's paywall is past it, B's own view
       expect(reached("paywall")).toBe(1);
       // Never more than the step before it, whatever was recorded.
       const order = ONBOARDING_PLACES.map((place) => reached(place));
       expect(order).toEqual([...order].sort((x, y) => y - x));
       // The strict view count is untouched: the experiments and the tile read it.
-      expect(f.rows.find((r) => r.place === "welcome")?.people).toBe(2);
+      expect(f.rows.find((r) => r.place === "welcome")?.people).toBe(3);
       // Both A and C paid; only A saw the paywall, so only A is the paywall's payment.
       expect(f.paid.converted).toBe(2);
       expect(f.paid.viaPaywall).toBe(1);

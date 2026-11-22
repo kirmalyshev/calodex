@@ -84,7 +84,7 @@ export function aggregateFunnel(events: StoredEvent[], grantOf: (userId: string)
     if (e.action === "view") {
       row.views++; row.people.add(e.sessionId);
       const at = (ONBOARDING_PLACES as readonly string[]).indexOf(e.place);
-      if (at > (furthest.get(e.sessionId) ?? -1)) furthest.set(e.sessionId, at);
+      if (at > (furthest.get(key) ?? -1)) furthest.set(key, at);
     }
     if (e.action === "answer") {
       row.answers++;
