@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { LANGS } from "./types.ts";
 import {
   LANGS_READY, LANG_LABEL, LANG_TAG, UNIT_KCAL, countText, dayLabel, dayMonthAt, genderedRussian,
-  localizedGaps, latn, kcalNumbers, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters, wholeNumbers,
+  localizedGaps, latn, kcalNumbers, langIntlLocales, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters, weekdayShort, wholeNumbers,
   acceptLang, acceptLanguageTags, narrowLang, spellUnit, t,
   type Localized,
 } from "./lang.ts";
@@ -106,6 +106,19 @@ describe("numbers and dates", () => {
     expect(decimalNumbers("en")(25.02)).toBe("25.0");
     expect(decimalNumbers("de")(25.02)).toBe("25,0");
     expect(decimalNumbers("ru")(30.46)).toBe("30,5");
+  });
+
+  it("every wave-5 tag negotiates to its own language's data, never to the default (ieat-app#3371)", () => {
+    // The sq week strip rendered English under a slim ICU (Chromium's non-full build carries
+    // Albanian only as `sq-XK`, which the sq-AL → sq → default chain never reaches). The
+    // resolved-locale check is what fails on such an engine; the strip check proves the data.
+    expect(langIntlLocales("sq")).toContain("sq-XK");
+    const englishStrip = weekdayShort("en");
+    for (const lang of ["bg", "hr", "sq", "sl"] as const) {
+      const resolved = new Intl.DateTimeFormat(langIntlLocales(lang)).resolvedOptions().locale;
+      expect(resolved.split("-")[0]).toBe(lang);
+      expect(weekdayShort(lang)).not.toEqual(englishStrip);
+    }
   });
 
   it("names a month in the reader's language, from Intl and never from a table", () => {

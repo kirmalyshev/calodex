@@ -20,7 +20,7 @@ import { homeCopyFor } from "../../shared/app/home-copy.ts";
 import { isMeal, outcomeUnknown } from "../../shared/results.ts";
 import { dayBudget, type DayBudget } from "../../shared/budget.ts";
 import { dateMinus, localDate, weekStart } from "../../shared/dates.ts";
-import { LANG_TAG, UNIT_KCAL, kcalNumbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
+import { langIntlLocales, UNIT_KCAL, kcalNumbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import { ico as icoMarkup, tagx, type HeroCallout } from "../../shared/ui/kit.ts";
 import type { MealItem, MealLogged, MealUpdated } from "@eait/shared";
 import type {
@@ -87,7 +87,7 @@ export function logScreen(frame: Frame): HTMLElement {
 
   /** The time a stamp or label names, in the account's own timezone — "13:05". */
   const atTime = (when: Date): string =>
-    new Intl.DateTimeFormat(LANG_TAG[lang], {
+    new Intl.DateTimeFormat(langIntlLocales(lang), {
       timeZone: me.timezone, hour: "2-digit", minute: "2-digit", hour12: false,
     }).format(when);
 

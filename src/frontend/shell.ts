@@ -30,7 +30,7 @@ import { brandSvg } from "../shared/ui/icons.ts";
 import { ico } from "../shared/ui/kit.ts";
 import { joinsQueue } from "../shared/outbox.ts";
 import { keptState, outcomeUnknown } from "../shared/results.ts";
-import { LANG_TAG, UNIT_KCAL, kcalNumbers, narrowLang, wholeNumbers } from "../shared/lang.ts";
+import { langIntlLocales, UNIT_KCAL, kcalNumbers, narrowLang, wholeNumbers } from "../shared/lang.ts";
 import { DIARY_RANGE_MAX_DAYS } from "../shared/contract.ts";
 import { localDate, windowStart } from "../shared/dates.ts";
 import { mealNames } from "../shared/meal-names.ts";
@@ -561,14 +561,14 @@ export function keptLineEl(
 
 /** A line's "13:05" — the hour and minute, in the reader's own calendar. */
 export const timeFmt = (d: Date): string =>
-  new Intl.DateTimeFormat(LANG_TAG[lang], { hour: "2-digit", minute: "2-digit" }).format(d);
+  new Intl.DateTimeFormat(langIntlLocales(lang), { hour: "2-digit", minute: "2-digit" }).format(d);
 
 /**
  * The boards' one date form for a `YYYY-MM-DD` — "Thursday 24 September", in the surface's
  * language. Midday UTC keeps a date-only value on its own day at either side of the date line.
  */
 export const dayText = (d: string): string =>
-  new Intl.DateTimeFormat(LANG_TAG[lang], {
+  new Intl.DateTimeFormat(langIntlLocales(lang), {
     timeZone: "UTC", weekday: "long", day: "numeric", month: "long",
   }).format(new Date(`${d}T12:00:00Z`));
 

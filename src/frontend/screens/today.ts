@@ -12,7 +12,7 @@
 import { dateMinus, isCalendarDate } from "../../shared/dates.ts";
 import { dayBudget, kcalCardState, macroLeft } from "../../shared/budget.ts";
 import { trialReminder } from "../../shared/entitlement.ts";
-import { LANG_TAG, kcalNumbers, wholeNumbers } from "../../shared/lang.ts";
+import { langIntlLocales, kcalNumbers, wholeNumbers } from "../../shared/lang.ts";
 import { goalLine } from "./goal.ts";
 import { badgeUnlocked } from "./milestones.ts";
 import { homeCopyFor, macroTip, streakChip, type MacroTipKind } from "../../shared/app/home-copy.ts";
@@ -80,7 +80,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
 
   // The boards' date format, "Thursday 24 September", for the proposal's day; the row's time is the account's timezone — the server's figures are already zoned.
   const dateText = dayText;
-  const timeFmt = new Intl.DateTimeFormat(LANG_TAG[lang], {
+  const timeFmt = new Intl.DateTimeFormat(langIntlLocales(lang), {
     timeZone: me.timezone, hour: "2-digit", minute: "2-digit", hour12: false,
   });
   const mealTime = (iso: string): string => timeFmt.format(new Date(iso));

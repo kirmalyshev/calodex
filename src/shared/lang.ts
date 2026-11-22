@@ -232,6 +232,24 @@ export const LANG_TAG: Record<Lang, string> = {
 };
 
 /**
+ * Alternate tags Intl's own negotiation chain cannot reach. `sq-AL` falls back `sq-AL → sq →
+ * default`; a slim ICU (Chromium's non-full build, which headless runs ship) carries Albanian
+ * only as `sq-XK`, so the chain resolves to the engine default and the week strip reads MON…SUN
+ * inside an Albanian app (ieat-app#3371).
+ */
+const LANG_TAG_FALLBACKS: Partial<Record<Lang, string[]>> = {
+  sq: ["sq-XK"],
+};
+
+/**
+ * The locale list every `Intl` constructor here negotiates: the tag, then the alternates a slim
+ * runtime needs. A constructor takes the list and picks the best supported entry, so a full ICU
+ * resolves `sq-AL` exactly as before and a slim one reaches `sq-XK` rather than English.
+ */
+export const langIntlLocales = (lang: Lang): string[] =>
+  [LANG_TAG[lang], ...(LANG_TAG_FALLBACKS[lang] ?? [])];
+
+/**
  * HERMES DROPS `-u-nu`. Every Arabic and Indic tag above asks for Latin digits — the product's
  * pick, "the app's figures are all written Western-Arabic" — and Node's ICU honours it, so no test
  * run sees the engine that does not: Hermes on iOS answers Arabic-Indic anyway (ieat-app#3341).
@@ -243,13 +261,13 @@ export const latn = (s: string): string => s.replace(/[٠-٩۰-۹]/g, (d) => `${
 
 /** `Intl.NumberFormat` whose digits `latn` guarantees, for the engines that drop `-u-nu`. */
 const nf = (lang: Lang, opts: Intl.NumberFormatOptions): { format: (x: number) => string } => {
-  const f = new Intl.NumberFormat(LANG_TAG[lang], opts);
+  const f = new Intl.NumberFormat(langIntlLocales(lang), opts);
   return { format: (x) => latn(f.format(x)) };
 };
 
 /** `Intl.DateTimeFormat` whose digits `latn` guarantees, for the engines that drop `-u-nu`. */
 const df = (lang: Lang, opts: Intl.DateTimeFormatOptions): { format: (d: Date) => string } => {
-  const f = new Intl.DateTimeFormat(LANG_TAG[lang], opts);
+  const f = new Intl.DateTimeFormat(langIntlLocales(lang), opts);
   return { format: (d) => latn(f.format(d)) };
 };
 
@@ -717,7 +735,7 @@ const PLURAL_CATEGORY: Record<Lang, (n: number) => Intl.LDMLPluralRule> = {
  * like `t`.
  */
 export const countText = (lang: Lang) => {
-  const rules = typeof Intl.PluralRules === "function" ? new Intl.PluralRules(LANG_TAG[lang]) : null;
+  const rules = typeof Intl.PluralRules === "function" ? new Intl.PluralRules(langIntlLocales(lang)) : null;
   const category = rules === null ? PLURAL_CATEGORY[lang] : (n: number) => rules.select(n);
   const whole = wholeNumbers(lang);
   return (forms: CountForms, n: number): string =>
@@ -733,7 +751,7 @@ export const countText = (lang: Lang) => {
  */
 export const listConjunction = (lang: Lang, parts: readonly string[]): string =>
   typeof Intl.ListFormat === "function"
-    ? new Intl.ListFormat(LANG_TAG[lang], { style: "long", type: "conjunction" }).format(parts)
+    ? new Intl.ListFormat(langIntlLocales(lang), { style: "long", type: "conjunction" }).format(parts)
     : parts.join(", ");
 
 /**

@@ -18,7 +18,7 @@ import { foodSearchSheet } from "./food-search.ts";
 import { numbersSheet } from "./numbers.ts";
 import { numbersCopyFor } from "../../shared/app/numbers-copy.ts";
 import { STARTER_ICONS, chatScreenCopyFor, coachRowIcon, starterRows } from "../../shared/app/chat-copy.ts";
-import { countText, spellUnit, wholeNumbers, kcalNumbers, UNIT_KCAL, LANG_TAG } from "../../shared/lang.ts";
+import { countText, spellUnit, wholeNumbers, kcalNumbers, UNIT_KCAL, langIntlLocales } from "../../shared/lang.ts";
 import type { IconName } from "../../shared/ui/icons.ts";
 import type { CoachFocus, MealRecord } from "@eait/shared";
 import type {
@@ -292,7 +292,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
       say.append(sayBlock((col) => {
         // Her weakest guess, named as the board names it: the two biggest reads. The join word
         // is CLDR's own conjunction for the language, not a literal.
-        const items = new Intl.ListFormat(LANG_TAG[lang], { type: "conjunction" }).format(
+        const items = new Intl.ListFormat(langIntlLocales(lang), { type: "conjunction" }).format(
           [...focusMeal.items].sort((a, b) => b.grams - a.grams).slice(0, 2)
             .map((i) => i.typed ? i.name : fill(mealCopyFor(lang).itemAmount, {
               amount: `${wholeNumbers(lang)(i.grams)}${spellUnit(lang, "g")}`, item: i.name,
@@ -562,7 +562,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
   let attached: File[] = [];
   const typeLabel = (f: File): string => (f.type.split("/")[1] ?? "file").toUpperCase().replace("JPEG", "JPG");
   const sizeLabel = (n: number): string => {
-    const nf = new Intl.NumberFormat(LANG_TAG[lang], { maximumFractionDigits: 1 });
+    const nf = new Intl.NumberFormat(langIntlLocales(lang), { maximumFractionDigits: 1 });
     return n >= 1024 * 1024 ? `${nf.format(n / 1024 / 1024)} MB` : `${nf.format(Math.max(1, Math.round(n / 1024)))} KB`;
   };
   /** The composer as the mode says: the chips, the send's colour, and its NAME for what this press sends. */

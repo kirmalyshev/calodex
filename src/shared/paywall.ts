@@ -6,7 +6,7 @@
 // the browser calculates nothing. The phone prices the same screens from StoreKit and calls
 // `offerMath` itself, which is why the math takes numbers rather than display strings.
 
-import { LANG_TAG, latn } from "./lang.ts";
+import { langIntlLocales, latn } from "./lang.ts";
 import type { Lang } from "./types.ts";
 
 /**
@@ -82,7 +82,7 @@ export function paywallPrice(amount: number, currency: string, lang: Lang): stri
   // (a TypeError in render, a process abort in Release), and its narrowSymbol answers "MYR",
   // "A$" or "AU$" where ICU answers "$" or "RM" - so the pattern takes every spelling.
   const whole = currency === "RUB" ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {};
-  const text = latn(new Intl.NumberFormat(LANG_TAG[lang], { style: "currency", currency, currencyDisplay: "narrowSymbol", ...whole }).format(amount));
+  const text = latn(new Intl.NumberFormat(langIntlLocales(lang), { style: "currency", currency, currencyDisplay: "narrowSymbol", ...whole }).format(amount));
   return swapCurrencySign(text, currency);
 }
 
@@ -105,7 +105,7 @@ const CURRENCY_SWAP: Record<string, [RegExp, string]> = {
  * English " %" in — an English card read "40 % off" (#451 review).
  */
 export function paywallPercent(percentOff: number, lang: Lang): string {
-  return latn(new Intl.NumberFormat(LANG_TAG[lang], { style: "percent", maximumFractionDigits: 0 })
+  return latn(new Intl.NumberFormat(langIntlLocales(lang), { style: "percent", maximumFractionDigits: 0 })
     .format(percentOff / 100));
 }
 

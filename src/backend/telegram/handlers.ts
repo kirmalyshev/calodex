@@ -11,7 +11,7 @@
 // file resolved, which is why a stale or crafted tap can only ever find "expired".
 
 import {
-  LANG_TAG, MAX_USER_LINE, UNIT_KCAL, localDate, localTime, narrowLang, renderableVerdicts, scriptedLine,
+  langIntlLocales, MAX_USER_LINE, UNIT_KCAL, localDate, localTime, narrowLang, renderableVerdicts, scriptedLine,
   kcalNumbers, threadCopyFor, verdictPillLabel, wholeNumbers,
   type Lang, type MealAnalysis, type Refusal,
 } from "@eait/shared";
@@ -219,7 +219,7 @@ export function telegramHandlers(deps: EngineDeps) {
           const lead = r.date === localDate(config.timezone)
             ? copy.proposalLead
             : copy.proposalLeadDated({
-              date: new Intl.DateTimeFormat(LANG_TAG[lang], { timeZone: "UTC", day: "numeric", month: "long" })
+              date: new Intl.DateTimeFormat(langIntlLocales(lang), { timeZone: "UTC", day: "numeric", month: "long" })
                 .format(new Date(`${r.date}T00:00:00Z`)),
             });
           return chat.send(`${lead}\n${card(r.analysis, lang)}`, [
