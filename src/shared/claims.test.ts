@@ -404,6 +404,14 @@ const FINE = [
   "കഴിക്കുന്നത് എഴുതിവയ്ക്കുന്നവർക്ക് ഇരട്ടി ഭാരം കുറയുന്നു",
   "తాము తినేదాన్ని రాసుకునేవారు రెట్టింపు బరువు తగ్గుతారు",
   "6kg কম?", "6kg ઓછું?", "6kg ಕಡಿಮೆ?", "6kg കുറവ്?", "6kg कमी?", "6kg କମ୍?", "6kg ਘੱਟ?", "6kg குறைவா?", "6kg తక్కువా?",
+  // Wave 5: the honest denial (one and two auxiliaries between negation and stem), the
+  // warranty noun, a marker verb on the food rather than the blood.
+  "Нищо тук не е гарантирано — това са прогнози.", "Резултатите не са гарантирани.",
+  "Резултатите не са били гарантирани.", "Законна гаранция: две години.",
+  "Отслабваш с 0,5 кг седмично.", "Намали захарта в закуската.",
+  "Asgjë këtu nuk është garantuar — këto janë vlerësime.", "Rezultatet nuk garantohen.",
+  "Rezultatet nuk janë të garantuara.", "Garancia ligjore: dy vjet.",
+  "Po humb 0,5 kg në javë.", "Ul sheqerin në mëngjes.",
 ];
 
 describe("the claims gate reads all eight languages", () => {

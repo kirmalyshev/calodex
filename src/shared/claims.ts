@@ -133,7 +133,7 @@ const RULES: readonly Rule[] = [
   { name: "guarantee", re: /(?<!\p{L})(?:výsled\p{L}*|úsp[eě]ch\p{L}*|úbyt\p{L}*\s+(?:váhy|hmotnosti)|kg)(?:\s+\S+){0,2}\s+(?<!není\s|nejsou\s|nie\s(?:je|sú)\s)(?:garant|zaruč|záruk)\p{L}*|(?<!\p{L}|není\s|nejsou\s|nie\s(?:je|sú)\s)(?:garant|zaruč|záruk)\p{L}*(?:\s+\S+){0,2}\s+(?:výsled\p{L}*|úsp[eě]ch\p{L}*|úbyt\p{L}*|zhubn\p{L}*|schudn\p{L}*|kg)/giu },
   // `nije`/`nisu`/`niso` too: Croatian and Slovenian write `garantirani` as well, and their
   // denial must not trip a Romanian rule.
-  { name: "guarantee", re: /(?<!\p{L})(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s)garant\p{L}*|(?<!\p{L}|nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s)garant\p{L}*(?:\s+\S+){0,2}\s+(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)/giu },
+  { name: "guarantee", re: /(?<!\p{L})(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s|nuk\s)garant\p{L}*|(?<!\p{L}|nu\s(?:sunt\s|este\s|e\s)?|ni(?:je|su|so)?\s|nuk\s)garant\p{L}*(?:\s+\S+){0,2}\s+(?:rezultat\p{L}*|slăbire\p{L}*|pierder\p{L}*\s+în\s+greutate|succes\p{L}*|kg)/giu },
   { name: "guarantee", re: /(?<!\p{L})(?:αποτελ[εέ]σμ\p{L}*|απ[ωώ]λει\p{L}*\s+β[αά]ρους|επιτυχ\p{L}*|κιλ\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!δεν\s(?:είναι\s)?)εγγυ\p{L}*|(?<!\p{L}|δεν\s(?:είναι\s)?)εγγυ\p{L}*(?:\s+\S+){0,2}\s+(?:αποτελ[εέ]σμ\p{L}*|απ[ωώ]λει\p{L}*\s+β[αά]ρους|επιτυχ\p{L}*|κιλ\p{L}*|kg)/giu },
   { name: "guarantee", re: /(?<!\p{L})(?:eredmény\p{L}*|fogyás\p{L}*|siker\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!nem\s)garant\p{L}*|(?<!\p{L}|nem\s)garant\p{L}*(?:\s+\S+){0,2}\s+(?:eredmény\p{L}*|fogyás\p{L}*|siker\p{L}*|kg)|(?<!\p{L})(?:eredmény|siker|fogyás)garanci\p{L}*/giu },
   // Thai has no spaces and `ผล` also opens ผลิตภัณฑ์ (product — the warranty a store page writes)
@@ -171,12 +171,13 @@ const RULES: readonly Rule[] = [
   { name: "guarantee", re: /(?:முடிவு\S*|பலன\S*|வெற்றி\S*|எடை\S*|\p{Nd}+\s*(?:kg|கிலோ))(?:\s+\S+){0,2}\s+(?:உத்தரவாத|(?:கே|கியா)ரண்டி)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:(?:இ|ி)ல்லை|மாட்ட))|(?:உத்தரவாத|(?:கே|கியா)ரண்டி)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:(?:இ|ி)ல்லை|மாட்ட))\S*(?:\s+\S+){0,2}\s+(?:முடிவு|பலன|வெற்றி|எடை|\p{Nd}+\s*(?:kg|கிலோ))/gu },
   { name: "guarantee", re: /(?:ఫలిత\S*|విజయ\S*|బరువు\S*|\p{Nd}+\s*(?:kg|కిలో|కేజీ))(?:\s+\S+){0,2}\s+(?:హామీ|గ్యార(?:ె)?ంటీ)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:లేదు|లేము|లేను|కాదు|ఇవ్వము|ఇవ్వం)(?![\p{L}\p{M}]))|(?:హామీ|గ్యార(?:ె)?ంటీ)(?!\S*(?:\s+\S+){0,2}\s*\S*(?:లేదు|లేము|లేను|కాదు|ఇవ్వము|ఇవ్వం)(?![\p{L}\p{M}]))\S*(?:\s+\S+){0,2}\s+(?:ఫలిత|విజయ|బరువు|\p{Nd}+\s*(?:kg|కిలో|కేజీ))/gu },
 
-  // Wave 5. Bulgarian `гаранти` is the one stem (verb, participle and noun `гаранция` alike),
-  // outcome-bound like every guarantee here; the denial is `не` up to one word before it.
-  // Albanian `garant` the same, denied by `nuk` or `pa` (`nu`/`ni` are Romanian's and Serbian's,
-  // read here so their denials pass under this rule too).
-  { name: "guarantee", re: /(?<!\p{L})(?:резултат\p{L}*|успех\p{L}*|отслабван\p{L}*|свалян\p{L}*|кг)(?:\s+\S+){0,2}\s+(?<!не\s(?:\S+\s)?)гарант\p{L}*|(?<!\p{L}|не\s)гарант\p{L}*(?:\s+\S+){0,2}\s+(?:резултат\p{L}*|успех\p{L}*|отслабван\p{L}*|свалян\p{L}*|кг)/giu },
-  { name: "guarantee", re: /(?<!\p{L})(?:rezultat\p{L}*|sukses\p{L}*|humbje\p{L}*\s+pesh\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!(?:nuk|nu|pa|ni\p{L}*)\s(?:\S+\s)?)garant\p{L}*|(?<!\p{L}|(?:nuk|nu|pa|ni\p{L}*)\s(?:\S+\s)?)garant\p{L}*(?:\s+\S+){0,2}\s+(?:rezultat\p{L}*|sukses\p{L}*|humbje|kg)/giu },
+  // Wave 5. Bulgarian `гарант` covers verb and participle alike (`гаранция`, the warranty
+  // noun, is spelled with a ц and correctly reads as no claim at all); outcome-bound like
+  // every guarantee here, the denial `не` up to two words before it. Albanian `garant` the
+  // same, denied by `nuk` or `pa` (`nu`/`ni*` are Romanian's and Croatian's, read here so
+  // their denials pass under this rule too).
+  { name: "guarantee", re: /(?<!\p{L})(?:резултат\p{L}*|успех\p{L}*|отслабван\p{L}*|свалян\p{L}*|кг)(?:\s+\S+){0,2}\s+(?<!не\s(?:\S+\s){0,2})гарант\p{L}*|(?<!\p{L}|не\s(?:\S+\s){0,2})гарант\p{L}*(?:\s+\S+){0,2}\s+(?:резултат\p{L}*|успех\p{L}*|отслабван\p{L}*|свалян\p{L}*|кг)/giu },
+  { name: "guarantee", re: /(?<!\p{L})(?:rezultat\p{L}*|sukses\p{L}*|humbje\p{L}*\s+pesh\p{L}*|kg)(?:\s+\S+){0,2}\s+(?<!(?:nuk|nu|pa|ni\p{L}*)\s(?:\S+\s){0,2})garant\p{L}*|(?<!\p{L}|(?:nuk|nu|pa|ni\p{L}*)\s(?:\S+\s){0,2})garant\p{L}*(?:\s+\S+){0,2}\s+(?:rezultat\p{L}*|sukses\p{L}*|humbje|kg)/giu },
 
   // weight-promise — the stems, and DELIBERATELY NOT the progressive.
   //
