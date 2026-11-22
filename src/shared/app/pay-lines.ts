@@ -2,7 +2,9 @@
 // card's per-month saving, computed from the two StoreKit prices, and the trial promise, which
 // rides only while the yearly plan with a trial is the one picked.
 
-import { fill } from "../lang.ts";
+import { fill, spellUnit } from "../lang.ts";
+import type { WelcomePlate } from "../onboarding.ts";
+import { chatScreenCopyFor } from "./chat-copy.ts";
 import { offerMath, paywallPercent, paywallPrice } from "../paywall.ts";
 import type { Lang } from "../types.ts";
 import type { PayCopy } from "./pay-copy.ts";
@@ -22,3 +24,24 @@ export function yearlySaveLine(
     percent: nb(paywallPercent(m.percentOff, lang)),
   });
 }
+
+/**
+ * The plans hero's alt text (ieat-app#3359): the plate's own figures in the chat labels' words —
+ * "Protein 8 g, Carbs 50 g, Fat 12 g, 345 kcal" — the unit after each number, the calorie count
+ * last. The phone's `usePlansHero` and the web sheet say the same thing for the same plate.
+ */
+export function welcomePlateAlt(plate: WelcomePlate, lang: Lang): string {
+  const labels = chatScreenCopyFor(lang).macroLabels;
+  const g = spellUnit(lang, "g");
+  return [
+    `${labels.protein} ${plate.proteinG} ${g}`, `${labels.carbs} ${plate.carbsG} ${g}`,
+    `${labels.fat} ${plate.fatG} ${g}`, `${plate.kcal} ${spellUnit(lang, "kcal")}`,
+  ].join(", ");
+}
+
+/**
+ * "a year" beside the yearly figure: `pricePerYear` without its price, so no new copy key — every
+ * language's template keeps `{price}` at one end ("{price} a year", "{price} par an").
+ */
+export const perYearCaption = (pay: Pick<PayCopy, "pricePerYear">): string =>
+  pay.pricePerYear.replace("{price}", "").trim();

@@ -381,6 +381,41 @@ export const WELCOME_IMAGE_KEYS = ["french-toast", "grain-bowl"] as const;
 export type WelcomeImageKey = (typeof WELCOME_IMAGE_KEYS)[number];
 
 /**
+ * The welcome plates — the figures a hero's chips draw as fact, and the alt text a paywall hero
+ * reads aloud (ieat-app#2863). They are nutrient values shown to a stranger: every entry names
+ * where the numbers came from, never "looks about right". In shared so the web paywall describes
+ * the same plate the phone does (ieat-app#3359).
+ */
+export interface WelcomePlate {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+/** The hero shown when `welcome.image` is absent or names a key this build does not carry. */
+export const DEFAULT_WELCOME_IMAGE: WelcomeImageKey = "french-toast";
+
+export const WELCOME_PLATES: Record<WelcomeImageKey, WelcomePlate> = {
+  "french-toast": {
+    // The App Store frame-1 plate (#2668).
+    kcal: 365, proteinG: 10, carbsG: 53, fatG: 13,
+  },
+  "grain-bowl": {
+    // The analyzer's own read of the bowl photo (`stored-reads.json` "grainbowl", summed):
+    // quinoa 120 g, broccoli, pepper, cucumber, carrot, tomato, celery, 10 g olive oil.
+    kcal: 345, proteinG: 8, carbsG: 50, fatG: 12,
+  },
+};
+
+/** The key a content block's `image` resolves to — absent and unknown both land on the default. */
+export function welcomeImageKey(key: string | undefined): WelcomeImageKey {
+  return key !== undefined && Object.hasOwn(WELCOME_PLATES, key)
+    ? key as WelcomeImageKey
+    : DEFAULT_WELCOME_IMAGE;
+}
+
+/**
  * The arithmetic being done, as a card in the conversation.
  *
  * The incumbent's equivalent is a progress animation over nothing. This one prints the arithmetic
