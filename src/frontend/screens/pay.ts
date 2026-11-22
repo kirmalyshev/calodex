@@ -15,7 +15,7 @@ import { fill } from "../../shared/lang.ts";
 import { WELCOME_PLATES } from "../../shared/onboarding.ts";
 import { paywallPercent, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
-import { perYearCaption, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
+import { welcomePlateAlt } from "../../shared/app/pay-lines.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl } from "../kit.ts";
@@ -44,7 +44,7 @@ interface PlanPick { value: "yearly" | "monthly"; plan: PaywallPlan }
 function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string):
     { group: HTMLElement; picked: () => PlanPick | null } | null {
   const trial = w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
-  const card = (value: "yearly" | "monthly", name: string, price: string, caption: string,
+  const card = (value: "yearly" | "monthly", name: string, price: string,
       extra: { trial?: string | null; save?: string | null }, checked: boolean): HTMLElement => {
     const lab = el("label", "plan2");
     const input = el("input", "") as HTMLInputElement;
@@ -57,7 +57,10 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
     lab.append(input, nr);
     if (extra.trial != null) lab.append(el("div", "tr", extra.trial));
     const pr = el("div", "pr");
-    pr.append(price, el("small", "", caption));
+    pr.append(price);
+    // No period caption ("a year"/"a month") — the card's own name already says it (#3359,
+    // Kirill on the Yearly card). The per-month + save line stays, and the note under the CTA
+    // carries the full-period wording the billing copy owes.
     if (extra.save != null) pr.append(el("small", "save", extra.save));
     lab.append(pr);
     return lab;
@@ -68,13 +71,12 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
   group.setAttribute("aria-label", label);
   if (w.yearly !== null) {
     cards.push({ value: "yearly", plan: w.yearly });
-    group.append(card("yearly", pay.planYearly, w.yearly.price, perYearCaption(pay),
+    group.append(card("yearly", pay.planYearly, w.yearly.price,
       { trial, save: w.yearly.perMonthSave }, true));
   }
   if (w.monthly !== null) {
     cards.push({ value: "monthly", plan: w.monthly });
-    group.append(card("monthly", pay.planMonthly, w.monthly.price, pay.perMonthCaption,
-      {}, w.yearly === null));
+    group.append(card("monthly", pay.planMonthly, w.monthly.price, {}, w.yearly === null));
   }
   if (cards.length === 0) return null;
   const picked = (): PlanPick | null => {

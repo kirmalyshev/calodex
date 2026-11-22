@@ -66,12 +66,13 @@ test("draws the sheet: hero, benefits, the plan pair, trial wording", async ({ p
   await expect(yearly.locator(".nm")).toHaveText("Yearly");
   await expect(yearly.locator(".tr")).toHaveText("3 days free");
   await expect(yearly.locator(".pr")).toContainText("€39.99");
-  await expect(yearly.locator(".pr")).toContainText("a year");
+  // No "a year"/"a month" caption — the card's own name already says the period (#3359, Kirill).
+  await expect(yearly.locator(".pr small")).toHaveCount(1);
   await expect(yearly.locator(".pr .save")).toHaveText("€3.33/month · save 33%");
   await expect(monthly.locator(".nm")).toHaveText("Monthly");
   await expect(monthly.locator(".tr")).toHaveCount(0);
   await expect(monthly.locator(".pr")).toContainText("€4.99");
-  await expect(monthly.locator(".pr")).toContainText("a month");
+  await expect(monthly.locator(".pr small")).toHaveCount(0);
 
   // Yearly picked: the CTA promises the trial, the note names its renewal price and cadence,
   // and the link carries this account's id — which the route filled for it.
