@@ -150,6 +150,10 @@ test("a purchase that never met the paywall cannot push the funnel past 100% (ie
   const names = await page.locator("#funnel-path .fp-nm").evaluateAll((els) => els.map((e) => e.childNodes[0]!.textContent));
   expect(names).toEqual(expect.arrayContaining(["Saw their plan", "Saw the plans sheet", "Converted to paid", "Saw the sign-up screen"]));
   await expect(page.locator("#funnel-path .fp-pay")).toContainText("10 monthly");
+  // From the plans on, a gap is a number, not a click into a list of runs that never completed.
+  const gaps = await page.locator("#funnel-path .fp-gap").evaluateAll((els) => els.map((e) => e.classList.contains("fp-jump")));
+  expect(gaps.at(-1)).toBe(false);
+  expect(gaps[0]).toBe(true);
 });
 
 test("the funnel shows conversion to paid, the account rows, and an expanded journal", async ({ page }) => {

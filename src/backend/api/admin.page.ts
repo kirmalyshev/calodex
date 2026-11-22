@@ -2526,7 +2526,9 @@ details.how p { margin-top: 8px; }
           else g.appendChild(el("em", "", "(a step only some runs reach)"));
           // A drop drills into the list below (#814): who has this screen as their last.
           // The "complete"/"paid" rows name outcomes, not screens — nothing to filter on.
-          if ((!s.fin || s.id === "paid") && d >= 0 && next.id !== "paid") {
+          // The list below holds runs that never completed; from the plans on, nearly everyone has, so those gaps are not drill-downs.
+          var pastPlans = ["paywall", "signup", "country", "referral", "health", "streak"].indexOf(lv2.from) !== -1;
+          if ((!s.fin || s.id === "paid") && d >= 0 && next.id !== "paid" && !pastPlans) {
             g.classList.add("fp-jump");
             g.setAttribute("role", "button");
             g.setAttribute("tabindex", "0");
