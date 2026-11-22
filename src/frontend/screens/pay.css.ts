@@ -1,5 +1,5 @@
-// The pay screen's own styles (#263) — the pay-plans board's .split frame, inside `wmain`.
-// The plan rows themselves are the kit's (`payCss`, in kitCss() — one copy with `/start`).
+// The pay screen's own styles (#263, #3359) — the pay-plans board's .split frame, inside `wmain`.
+// The sells-nothing fallback still draws the kit's plan rows (`payPlansEl`).
 
 export const payCss = `
 /* The board widens the main like the log's grid does. */
@@ -18,7 +18,7 @@ export const payCss = `
 /* The sheet's three benefit rows — an accent icon beside each line (web/pay-plans, #3359). */
 .pay .bl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .pay .bl li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
-.pay .bl svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+.pay .bl .ico { width: 18px; height: 18px; flex: none; color: var(--accent); }
 /* The plan pair, side by side as the sheet draws them — billed amount the figure, the trial and
    the save line under it. Radii/padding follow the board's card, the check disc the kit's own. */
 .pay .pwp2 { display: flex; gap: 10px; }
