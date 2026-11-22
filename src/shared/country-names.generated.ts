@@ -3,9 +3,11 @@ import type { Lang } from "./types.ts";
 
 export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
   "en": {
+    "al": "Albania",
     "at": "Austria",
     "au": "Australia",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brazil",
     "ca": "Canada",
     "ch": "Switzerland",
@@ -45,9 +47,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "fr": {
+    "al": "Albanie",
     "at": "Autriche",
     "au": "Australie",
     "bd": "Bangladesh",
+    "bg": "Bulgarie",
     "br": "Brésil",
     "ca": "Canada",
     "ch": "Suisse",
@@ -87,9 +91,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Viêt Nam"
   },
   "de": {
+    "al": "Albanien",
     "at": "Österreich",
     "au": "Australien",
     "bd": "Bangladesch",
+    "bg": "Bulgarien",
     "br": "Brasilien",
     "ca": "Kanada",
     "ch": "Schweiz",
@@ -129,9 +135,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "it": {
+    "al": "Albania",
     "at": "Austria",
     "au": "Australia",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brasile",
     "ca": "Canada",
     "ch": "Svizzera",
@@ -171,9 +179,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "es": {
+    "al": "Albania",
     "at": "Austria",
     "au": "Australia",
     "bd": "Bangladés",
+    "bg": "Bulgaria",
     "br": "Brasil",
     "ca": "Canadá",
     "ch": "Suiza",
@@ -213,9 +223,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "vi": {
+    "al": "Albania",
     "at": "Áo",
     "au": "Úc",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brazil",
     "ca": "Canada",
     "ch": "Thụy Sĩ",
@@ -255,9 +267,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Việt Nam"
   },
   "id": {
+    "al": "Albania",
     "at": "Austria",
     "au": "Australia",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brasil",
     "ca": "Kanada",
     "ch": "Swiss",
@@ -297,9 +311,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "ru": {
+    "al": "Албания",
     "at": "Австрия",
     "au": "Австралия",
     "bd": "Бангладеш",
+    "bg": "Болгария",
     "br": "Бразилия",
     "ca": "Канада",
     "ch": "Швейцария",
@@ -339,9 +355,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Вьетнам"
   },
   "pt-BR": {
+    "al": "Albânia",
     "at": "Áustria",
     "au": "Austrália",
     "bd": "Bangladesh",
+    "bg": "Bulgária",
     "br": "Brasil",
     "ca": "Canadá",
     "ch": "Suíça",
@@ -381,9 +399,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnã"
   },
   "ja": {
+    "al": "アルバニア",
     "at": "オーストリア",
     "au": "オーストラリア",
     "bd": "バングラデシュ",
+    "bg": "ブルガリア",
     "br": "ブラジル",
     "ca": "カナダ",
     "ch": "スイス",
@@ -423,9 +443,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "ベトナム"
   },
   "ko": {
+    "al": "알바니아",
     "at": "오스트리아",
     "au": "오스트레일리아",
     "bd": "방글라데시",
+    "bg": "불가리아",
     "br": "브라질",
     "ca": "캐나다",
     "ch": "스위스",
@@ -465,9 +487,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "베트남"
   },
   "zh-Hans": {
+    "al": "阿尔巴尼亚",
     "at": "奥地利",
     "au": "澳大利亚",
     "bd": "孟加拉国",
+    "bg": "保加利亚",
     "br": "巴西",
     "ca": "加拿大",
     "ch": "瑞士",
@@ -507,9 +531,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "越南"
   },
   "zh-Hant": {
+    "al": "阿爾巴尼亞",
     "at": "奧地利",
     "au": "澳洲",
     "bd": "孟加拉",
+    "bg": "保加利亞",
     "br": "巴西",
     "ca": "加拿大",
     "ch": "瑞士",
@@ -549,9 +575,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "越南"
   },
   "tr": {
+    "al": "Arnavutluk",
     "at": "Avusturya",
     "au": "Avustralya",
     "bd": "Bangladeş",
+    "bg": "Bulgaristan",
     "br": "Brezilya",
     "ca": "Kanada",
     "ch": "İsviçre",
@@ -591,9 +619,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "pl": {
+    "al": "Albania",
     "at": "Austria",
     "au": "Australia",
     "bd": "Bangladesz",
+    "bg": "Bułgaria",
     "br": "Brazylia",
     "ca": "Kanada",
     "ch": "Szwajcaria",
@@ -633,9 +663,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Wietnam"
   },
   "nl": {
+    "al": "Albanië",
     "at": "Oostenrijk",
     "au": "Australië",
     "bd": "Bangladesh",
+    "bg": "Bulgarije",
     "br": "Brazilië",
     "ca": "Canada",
     "ch": "Zwitserland",
@@ -675,9 +707,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "uk": {
+    "al": "Албанія",
     "at": "Австрія",
     "au": "Австралія",
     "bd": "Бангладеш",
+    "bg": "Болгарія",
     "br": "Бразилія",
     "ca": "Канада",
     "ch": "Швейцарія",
@@ -717,9 +751,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Вʼєтнам"
   },
   "sv": {
+    "al": "Albanien",
     "at": "Österrike",
     "au": "Australien",
     "bd": "Bangladesh",
+    "bg": "Bulgarien",
     "br": "Brasilien",
     "ca": "Kanada",
     "ch": "Schweiz",
@@ -759,9 +795,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "th": {
+    "al": "แอลเบเนีย",
     "at": "ออสเตรีย",
     "au": "ออสเตรเลีย",
     "bd": "บังกลาเทศ",
+    "bg": "บัลแกเรีย",
     "br": "บราซิล",
     "ca": "แคนาดา",
     "ch": "สวิตเซอร์แลนด์",
@@ -801,9 +839,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "เวียดนาม"
   },
   "hi": {
+    "al": "अल्बानिया",
     "at": "ऑस्ट्रिया",
     "au": "ऑस्ट्रेलिया",
     "bd": "बांग्लादेश",
+    "bg": "बुल्गारिया",
     "br": "ब्राज़ील",
     "ca": "कनाडा",
     "ch": "स्विट्ज़रलैंड",
@@ -843,9 +883,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "वियतनाम"
   },
   "cs": {
+    "al": "Albánie",
     "at": "Rakousko",
     "au": "Austrálie",
     "bd": "Bangladéš",
+    "bg": "Bulharsko",
     "br": "Brazílie",
     "ca": "Kanada",
     "ch": "Švýcarsko",
@@ -885,9 +927,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "ro": {
+    "al": "Albania",
     "at": "Austria",
     "au": "Australia",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brazilia",
     "ca": "Canada",
     "ch": "Elveția",
@@ -927,9 +971,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "el": {
+    "al": "Αλβανία",
     "at": "Αυστρία",
     "au": "Αυστραλία",
     "bd": "Μπανγκλαντές",
+    "bg": "Βουλγαρία",
     "br": "Βραζιλία",
     "ca": "Καναδάς",
     "ch": "Ελβετία",
@@ -969,9 +1015,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Βιετνάμ"
   },
   "hu": {
+    "al": "Albánia",
     "at": "Ausztria",
     "au": "Ausztrália",
     "bd": "Banglades",
+    "bg": "Bulgária",
     "br": "Brazília",
     "ca": "Kanada",
     "ch": "Svájc",
@@ -1011,9 +1059,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnám"
   },
   "da": {
+    "al": "Albanien",
     "at": "Østrig",
     "au": "Australien",
     "bd": "Bangladesh",
+    "bg": "Bulgarien",
     "br": "Brasilien",
     "ca": "Canada",
     "ch": "Schweiz",
@@ -1053,9 +1103,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "fi": {
+    "al": "Albania",
     "at": "Itävalta",
     "au": "Australia",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brasilia",
     "ca": "Kanada",
     "ch": "Sveitsi",
@@ -1095,9 +1147,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "no": {
+    "al": "Albania",
     "at": "Østerrike",
     "au": "Australia",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brasil",
     "ca": "Canada",
     "ch": "Sveits",
@@ -1137,9 +1191,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "sk": {
+    "al": "Albánsko",
     "at": "Rakúsko",
     "au": "Austrália",
     "bd": "Bangladéš",
+    "bg": "Bulharsko",
     "br": "Brazília",
     "ca": "Kanada",
     "ch": "Švajčiarsko",
@@ -1179,9 +1235,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "hr": {
+    "al": "Albanija",
     "at": "Austrija",
     "au": "Australija",
     "bd": "Bangladeš",
+    "bg": "Bugarska",
     "br": "Brazil",
     "ca": "Kanada",
     "ch": "Švicarska",
@@ -1221,9 +1279,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vijetnam"
   },
   "sl": {
+    "al": "Albanija",
     "at": "Avstrija",
     "au": "Avstralija",
     "bd": "Bangladeš",
+    "bg": "Bolgarija",
     "br": "Brazilija",
     "ca": "Kanada",
     "ch": "Švica",
@@ -1263,9 +1323,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "ca": {
+    "al": "Albània",
     "at": "Àustria",
     "au": "Austràlia",
     "bd": "Bangladesh",
+    "bg": "Bulgària",
     "br": "Brasil",
     "ca": "Canadà",
     "ch": "Suïssa",
@@ -1305,9 +1367,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "ms": {
+    "al": "Albania",
     "at": "Austria",
     "au": "Australia",
     "bd": "Bangladesh",
+    "bg": "Bulgaria",
     "br": "Brazil",
     "ca": "Kanada",
     "ch": "Switzerland",
@@ -1347,9 +1411,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietnam"
   },
   "pt-PT": {
+    "al": "Albânia",
     "at": "Áustria",
     "au": "Austrália",
     "bd": "Bangladeche",
+    "bg": "Bulgária",
     "br": "Brasil",
     "ca": "Canadá",
     "ch": "Suíça",
@@ -1389,9 +1455,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "Vietname"
   },
   "bn": {
+    "al": "আলবেনিয়া",
     "at": "অস্ট্রিয়া",
     "au": "অস্ট্রেলিয়া",
     "bd": "বাংলাদেশ",
+    "bg": "বুলগেরিয়া",
     "br": "ব্রাজিল",
     "ca": "কানাডা",
     "ch": "সুইজারল্যান্ড",
@@ -1431,9 +1499,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "ভিয়েতনাম"
   },
   "gu": {
+    "al": "અલ્બેનિયા",
     "at": "ઑસ્ટ્રિયા",
     "au": "ઑસ્ટ્રેલિયા",
     "bd": "બાંગ્લાદેશ",
+    "bg": "બલ્ગેરિયા",
     "br": "બ્રાઝિલ",
     "ca": "કેનેડા",
     "ch": "સ્વિટ્ઝર્લૅન્ડ",
@@ -1473,9 +1543,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "વિયેતનામ"
   },
   "kn": {
+    "al": "ಅಲ್ಬೇನಿಯಾ",
     "at": "ಆಸ್ಟ್ರಿಯಾ",
     "au": "ಆಸ್ಟ್ರೇಲಿಯಾ",
     "bd": "ಬಾಂಗ್ಲಾದೇಶ",
+    "bg": "ಬಲ್ಗೇರಿಯಾ",
     "br": "ಬ್ರೆಜಿಲ್",
     "ca": "ಕೆನಡಾ",
     "ch": "ಸ್ವಿಟ್ಜರ್ಲ್ಯಾಂಡ್",
@@ -1515,9 +1587,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "ವಿಯೆಟ್ನಾಮ್"
   },
   "ml": {
+    "al": "അൽബേനിയ",
     "at": "ഓസ്ട്രിയ",
     "au": "ഓസ്‌ട്രേലിയ",
     "bd": "ബംഗ്ലാദേശ്",
+    "bg": "ബൾഗേറിയ",
     "br": "ബ്രസീൽ",
     "ca": "കാനഡ",
     "ch": "സ്വിറ്റ്സർലാൻഡ്",
@@ -1557,9 +1631,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "വിയറ്റ്നാം"
   },
   "mr": {
+    "al": "अल्बानिया",
     "at": "ऑस्ट्रिया",
     "au": "ऑस्ट्रेलिया",
     "bd": "बांगलादेश",
+    "bg": "बल्गेरिया",
     "br": "ब्राझिल",
     "ca": "कॅनडा",
     "ch": "स्वित्झर्लंड",
@@ -1599,9 +1675,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "व्हिएतनाम"
   },
   "or": {
+    "al": "ଆଲବାନିଆ",
     "at": "ଅଷ୍ଟ୍ରିଆ",
     "au": "ଅଷ୍ଟ୍ରେଲିଆ",
     "bd": "ବାଂଲାଦେଶ",
+    "bg": "ବୁଲଗେରିଆ",
     "br": "ବ୍ରାଜିଲ୍",
     "ca": "କାନାଡା",
     "ch": "ସ୍ୱିଜରଲ୍ୟାଣ୍ଡ",
@@ -1641,9 +1719,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "ଭିଏତନାମ୍"
   },
   "pa": {
+    "al": "ਅਲਬਾਨੀਆ",
     "at": "ਆਸਟਰੀਆ",
     "au": "ਆਸਟ੍ਰੇਲੀਆ",
     "bd": "ਬੰਗਲਾਦੇਸ਼",
+    "bg": "ਬੁਲਗਾਰੀਆ",
     "br": "ਬ੍ਰਾਜ਼ੀਲ",
     "ca": "ਕੈਨੇਡਾ",
     "ch": "ਸਵਿਟਜ਼ਰਲੈਂਡ",
@@ -1683,9 +1763,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "ਵੀਅਤਨਾਮ"
   },
   "ta": {
+    "al": "அல்பேனியா",
     "at": "ஆஸ்திரியா",
     "au": "ஆஸ்திரேலியா",
     "bd": "பங்களாதேஷ்",
+    "bg": "பல்கேரியா",
     "br": "பிரேசில்",
     "ca": "கனடா",
     "ch": "ஸ்விட்சர்லாந்து",
@@ -1725,9 +1807,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "வியட்நாம்"
   },
   "te": {
+    "al": "అల్బేనియా",
     "at": "ఆస్ట్రియా",
     "au": "ఆస్ట్రేలియా",
     "bd": "బంగ్లాదేశ్",
+    "bg": "బల్గేరియా",
     "br": "బ్రెజిల్",
     "ca": "కెనడా",
     "ch": "స్విట్జర్లాండ్",
@@ -1767,9 +1851,11 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "vn": "వియత్నాం"
   },
   "ar": {
+    "al": "ألبانيا",
     "at": "النمسا",
     "au": "أستراليا",
     "bd": "بنغلاديش",
+    "bg": "بلغاريا",
     "br": "البرازيل",
     "ca": "كندا",
     "ch": "سويسرا",
@@ -1807,5 +1893,93 @@ export const COUNTRY_NAMES: Record<Lang, Record<string, string>> = {
     "ua": "أوكرانيا",
     "us": "الولايات المتحدة",
     "vn": "فيتنام"
+  },
+  "bg": {
+    "al": "Албания",
+    "at": "Австрия",
+    "au": "Австралия",
+    "bd": "Бангладеш",
+    "bg": "България",
+    "br": "Бразилия",
+    "ca": "Канада",
+    "ch": "Швейцария",
+    "cn": "Китай",
+    "cz": "Чехия",
+    "de": "Германия",
+    "dk": "Дания",
+    "es": "Испания",
+    "fi": "Финландия",
+    "fr": "Франция",
+    "gb": "Обединеното кралство",
+    "gr": "Гърция",
+    "hr": "Хърватия",
+    "hu": "Унгария",
+    "id": "Индонезия",
+    "in": "Индия",
+    "it": "Италия",
+    "jp": "Япония",
+    "kr": "Южна Корея",
+    "mx": "Мексико",
+    "my": "Малайзия",
+    "nl": "Нидерландия",
+    "no": "Норвегия",
+    "pl": "Полша",
+    "pt": "Португалия",
+    "ro": "Румъния",
+    "ru": "Русия",
+    "sa": "Саудитска Арабия",
+    "se": "Швеция",
+    "si": "Словения",
+    "sk": "Словакия",
+    "th": "Тайланд",
+    "tr": "Турция",
+    "tw": "Тайван",
+    "ua": "Украйна",
+    "us": "Съединени щати",
+    "vn": "Виетнам"
+  },
+  "sq": {
+    "al": "Shqipëri",
+    "at": "Austri",
+    "au": "Australi",
+    "bd": "Bangladesh",
+    "bg": "Bullgari",
+    "br": "Brazil",
+    "ca": "Kanada",
+    "ch": "Zvicër",
+    "cn": "Kinë",
+    "cz": "Çeki",
+    "de": "Gjermani",
+    "dk": "Danimarkë",
+    "es": "Spanjë",
+    "fi": "Finlandë",
+    "fr": "Francë",
+    "gb": "Mbretëria e Bashkuar",
+    "gr": "Greqi",
+    "hr": "Kroaci",
+    "hu": "Hungari",
+    "id": "Indonezi",
+    "in": "Indi",
+    "it": "Itali",
+    "jp": "Japoni",
+    "kr": "Kore e Jugut",
+    "mx": "Meksikë",
+    "my": "Malajzi",
+    "nl": "Holandë",
+    "no": "Norvegji",
+    "pl": "Poloni",
+    "pt": "Portugali",
+    "ro": "Rumani",
+    "ru": "Rusi",
+    "sa": "Arabi Saudite",
+    "se": "Suedi",
+    "si": "Slloveni",
+    "sk": "Sllovaki",
+    "th": "Tajlandë",
+    "tr": "Turqi",
+    "tw": "Tajvan",
+    "ua": "Ukrainë",
+    "us": "SHBA",
+    "vn": "Vietnam"
   }
 };

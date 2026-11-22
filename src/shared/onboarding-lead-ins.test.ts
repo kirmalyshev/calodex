@@ -50,6 +50,8 @@ const OPENERS: Record<Lang, RegExp> = {
   ta: /^இதோ/u,
   te: /^ఇదే/u,
   ar: /^(هذا|هذه|إليك)/u,
+  bg: /^(ето|това (е|са))(?![\p{L}\p{M}])/iu,
+  sq: /^(ja|këtu (është|janë)|kjo është|ky është)(?![\p{L}\p{M}])/iu,
 };
 
 describe("a title names the thing, it does not present it", () => {

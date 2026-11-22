@@ -3,6 +3,7 @@
 // never by screenshots.
 
 import type { DayResponse } from "@eait/shared/contract";
+import { LANGS_READY } from "@eait/shared";
 import { expect, logMeal, sessionToken, test } from "./fixtures.ts";
 
 test("the chat asks its one question, and the photo input lives behind a labelled button", async ({ inWebApp: page }) => {
@@ -69,11 +70,11 @@ test("Home · Progress · Chat · Profile hold ONE row at 390px, and the account
   await page.goto("/#/you/settings");
   await expect(page.getByRole("heading", { name: "Settings" })).toHaveCount(1);
   // The language picker is a scrim panel now (#474): the row names the held language, opening it
-  // lists all eight, and the pick is the same PATCH /v1/profile the select always wrote.
+  // lists every LANGS_READY entry, and the pick is the same PATCH /v1/profile the select wrote.
   const langRow = page.getByRole("button", { name: /^Language: English$/ });
   await expect(langRow).toBeVisible();
   await langRow.click();
-  await expect(page.locator(".panel .pickrow")).toHaveCount(42);
+  await expect(page.locator(".panel .pickrow")).toHaveCount(LANGS_READY.length);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 });

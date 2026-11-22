@@ -143,6 +143,34 @@ export const UPDATE_COPY: Localized<UpdateCopy> = {
     waiting: "Ждём соединения. Отправится само.",
     discard: "Отменить", ok: "OK", push: "{names}: обновлено · {kcal} (было {was})",
   },
+  sq: {
+    steps: {
+      ingredients: ["Duke ruajtur ndryshimin · 1 nga 2", "Duke rillogaritur lëndët ushqyese · 2 nga 2"],
+      note: ["Duke lexuar shënimin tënd · 1 nga 3", "Duke përshtatur vaktin · 2 nga 3", "Duke rillogaritur lëndët ushqyese · 3 nga 3"],
+      reread: ["Duke rilexuar foton · 1 nga 3", "Duke vlerësuar porcionet · 2 nga 3", "Duke llogaritur lëndët ushqyese · 3 nga 3"],
+    },
+    failedTitle: "Ndryshimi s'u aplikua dot", failedBody: "Vakti yt është siç ishte.", failedNote: "Shënimi yt është këtu: ndryshoje, ose dërgoje sërish.", reasons: { timeout: "Zgjati shumë, ndaj e ndala. Asgjë s'u regjistrua.", error: "Diçka shkoi keq nga ana ime. Asgjë s'u regjistrua.", "worker-lost": "Ia humba gjurmën këtij teksa e përpunoja. Asgjë s'u regjistrua.", expired: "Për këtë s'me zuri radha. Asgjë s'u regjistrua." },
+    restore: "Rikthe tekstin tim", editStructured: "Ndrysho sipas përbërësve",
+    refusedTitle: "Ndryshimi s'u bë dot",
+    refusedOtherMeal: "Shënimi kërkonte të regjistrohej një vakt tjetër. Ndreqe këtë, ose regjistroje tjetrin veçmas.",
+    mealUpdating: "Ky vakt po përditësohet", deleteStops: "Fshirja ndalon përditësimin dhe e fshin vaktin.",
+    waiting: "Në pritje të lidhjes. Dërgohet vetë.",
+    discard: "Hidhe poshtë", ok: "OK", push: "{names} u përditësua · {kcal} (ishte {was})",
+  },
+  bg: {
+    steps: {
+      ingredients: ["Запазване на промяната · 1 от 2", "Пресмятане на хранителните стойности · 2 от 2"],
+      note: ["Четене на бележката · 1 от 3", "Коригиране на оброка · 2 от 3", "Пресмятане на хранителните стойности · 3 от 3"],
+      reread: ["Повторно четене на снимката · 1 от 3", "Оценяване на порциите · 2 от 3", "Пресмятане на хранителните стойности · 3 от 3"],
+    },
+    failedTitle: "Не можах да приложа промяната", failedBody: "Оброкът е както преди.", failedNote: "Бележката ти е тук: редактирай я или я изпрати отново.", reasons: { timeout: "Отне твърде много време и спрях. Нищо не е записано.", error: "От моя страна нещо се обърка. Нищо не е записано.", "worker-lost": "Изгубих нишката на този запис по време на обработка. Нищо не е записано.", expired: "До този запис така и не стигнах. Нищо не е записано." },
+    restore: "Върни моя текст", editStructured: "Редактирай по съставки",
+    refusedTitle: "Не можах да направя тази промяна",
+    refusedOtherMeal: "Бележката иска да се запише друг оброк. Коригирай този или запиши другия отделно.",
+    mealUpdating: "Този оброк се обновява", deleteStops: "Изтриването спира обновяването и изтрива оброка.",
+    waiting: "Чака връзка. Ще се изпрати само.",
+    discard: "Отхвърли", ok: "OK", push: "{names}: обновено · {kcal} (беше {was})",
+  },
   te: {
     steps: {
       ingredients: ["మీ మార్పు సేవ్ అవుతోంది · 2లో 1", "పోషకాలను మళ్ళీ లెక్కిస్తోంది · 2లో 2"],

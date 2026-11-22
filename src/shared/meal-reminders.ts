@@ -176,6 +176,8 @@ export const MEAL_REMINDER_COPY: Localized<MealReminderCopy> = {
   it: { breakfast: "Colazione", lunch: "Pranzo", dinner: "Cena", body: "Basta una foto per registrarlo." },
   es: { breakfast: "Desayuno", lunch: "Almuerzo", dinner: "Cena", body: "Una foto basta para registrarlo." },
   ru: { breakfast: "Завтрак", lunch: "Обед", dinner: "Ужин", body: "Чтобы записать, хватит одного фото." },
+  sq: { breakfast: "Mëngjes", lunch: "Drekë", dinner: "Darkë", body: "Një foto mjafton për ta regjistruar." },
+  bg: { breakfast: "Закуска", lunch: "Обяд", dinner: "Вечеря", body: "За запис стига една снимка." },
   te: { breakfast: "అల్పాహారం", lunch: "మధ్యాహ్న భోజనం", dinner: "రాత్రి భోజనం", body: "దీన్ని నమోదు చేయడానికి ఒక ఫోటో చాలు." },
   ta: { breakfast: "காலை உணவு", lunch: "மதிய உணவு", dinner: "இரவு உணவு", body: "இதைப் பதிவுசெய்ய ஒரு புகைப்படம் போதும்." },
   pa: { breakfast: "ਨਾਸ਼ਤਾ", lunch: "ਦੁਪਹਿਰ ਦਾ ਖਾਣਾ", dinner: "ਰਾਤ ਦਾ ਖਾਣਾ", body: "ਇਸ ਨੂੰ ਦਰਜ ਕਰਨ ਲਈ ਇੱਕ ਫ਼ੋਟੋ ਕਾਫ਼ੀ ਹੈ।" },

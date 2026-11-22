@@ -60,6 +60,16 @@ export const MAIL_COPY: Localized<MailCopy> = {
     text: "Твой код для входа в {app_name}: {code}.\n\nОн действует 10 минут.\n\nЕсли письмо пришло по ошибке, просто удали его.",
     html: "<p>Твой код для входа в {app_name}:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>Он действует 10 минут.</p><p>Если письмо пришло по ошибке, просто удали его.</p>",
   },
+  sq: {
+    subject: "{code} është kodi yt i hyrjes në {app_name}",
+    text: "Kodi yt i hyrjes në {app_name} është {code}.\n\nVlen 10 minuta.\n\nNëse nuk ke kërkuar këtë e-mail, injoroje.",
+    html: "<p>Kodi yt i hyrjes në {app_name}:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>Vlen 10 minuta.</p><p>Nëse nuk ke kërkuar këtë e-mail, injoroje.</p>",
+  },
+  bg: {
+    subject: "{code} е твоят код за вход в {app_name}",
+    text: "Твоят код за вход в {app_name} е {code}.\n\nВалиден е 10 минути.\n\nАко имейлът е дошъл по погрешка, просто го игнорирай.",
+    html: "<p>Твоят код за вход в {app_name}:</p><p style=\"font-size:32px;font-weight:700;letter-spacing:6px\">{code}</p><p>Валиден е 10 минути.</p><p>Ако имейлът е дошъл по погрешка, просто го игнорирай.</p>",
+  },
   te: {
     subject: "{code} మీ {app_name} సైన్-ఇన్ కోడ్",
     text: "మీ {app_name} సైన్-ఇన్ కోడ్: {code}.\n\nఇది 10 నిమిషాల పాటు పనిచేస్తుంది.\n\nమీరు ఈ ఈమెయిల్‌ను అడగకపోతే, దీన్ని పట్టించుకోకండి.",

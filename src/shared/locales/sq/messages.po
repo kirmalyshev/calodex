@@ -1,0 +1,613 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-11-22 14:58+0100\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: sq\n"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.2"
+#~ msgstr "A po marr mjaftueshëm proteinë?"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.0"
+#~ msgstr "Si po shkon java ime?"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.1"
+#~ msgstr "Çfarë të ha sonte?"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.correction"
+#~ msgstr "Përditësuar — {kcal}kcal. {day}"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.satfat"
+#~ msgstr "Yndyrnat e ngopura dalin të larta te ky. E vlerësua vetëm sepse e kerkove."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.sodium"
+#~ msgstr "Natriumi del i lartë te ky. E vlerësua vetëm sepse e kerkove."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.running.left"
+#~ msgstr "{left} nga {plan} e jotja mbeten sot, {protein} nga {proteinTarget} g proteinë."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmetic.gainLeft"
+#~ msgstr "{left} nga {plan} e jotja mbeten për plotësuar sot dhe {protein} nga {proteinTarget} g proteinë. Vazhdo kështu."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmeticAlone.gainLeft"
+#~ msgstr "{left} nga {plan} e jotja mbeten për plotësuar sot dhe {protein} nga {proteinTarget} g proteinë. Vazhdo kështu."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.running.over"
+#~ msgstr "{over} mbi {plan} tënden sot, {protein} nga {proteinTarget} g proteinë."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmetic.gainOver"
+#~ msgstr "{over} mbi {plan} tënden sot dhe {protein} nga {proteinTarget} g proteinë. Te plani për shtim, ta kalosh është pikërisht ideja; nesër fillon një numër i ri."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmeticAlone.gainOver"
+#~ msgstr "{over} mbi {plan} tënden sot dhe {protein} nga {proteinTarget} g proteinë. Te plani për shtim, ta kalosh është pikërisht ideja; nesër fillon një numër i ri."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.lowLeftOther"
+#~ msgstr "Edhe përafërsisht, numërohet: rreth {left} nga {plan} e jotja mbeten sot."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.lowLeftGain"
+#~ msgstr "Edhe përafërsisht, numërohet: rreth {left} nga {plan} e jotja mbeten për plotësuar sot."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.lowOverGain"
+#~ msgstr "Edhe përafërsisht, numërohet: rreth {over} mbi {plan} tënden sot."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.lowOverOther"
+#~ msgstr "Edhe përafërsisht, numërohet: rreth {over} mbi {plan} tënden sot. Nesër fillon një numër i ri."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmetic.otherLeft"
+#~ msgstr "kështu mbeten {left} nga {plan} e jotja për pjesën tjetër të ditës dhe {protein} nga {proteinTarget} g proteinë."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmeticAlone.otherLeft"
+#~ msgstr "Kështu mbeten {left} nga {plan} e jotja për pjesën tjetër të ditës dhe {protein} nga {proteinTarget} g proteinë."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmetic.otherOver"
+#~ msgstr "kështu del {over} mbi {plan} tënden për sot dhe {protein} nga {proteinTarget} g proteinë. Nesër fillon një numër i ri."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.firstVerdict.arithmeticAlone.otherOver"
+#~ msgstr "Kështu del {over} mbi {plan} tënden për sot dhe {protein} nga {proteinTarget} g proteinë. Nesër fillon një numër i ri."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+#~ msgid "thread.coachStarters.busy"
+#~ msgstr "Thjesht do të them çfarë hëngër"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.noted"
+msgstr "“{note}” — e shënova, hyn në llogari."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.push.title"
+msgstr "{names} · {kcal}kcal"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.warn"
+msgstr "{noun} — lartë"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.inline.warn"
+msgstr "{noun} — lartë"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.good"
+msgstr "{noun} — brenda planit"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.bad"
+msgstr "{noun} — shumë lartë"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.inline.bad"
+msgstr "{noun} — shumë lartë"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.capLine.high"
+msgstr "Niveli i {nutrient} është i lartë për një vakt: {eaten} nga {target}{unit} yt."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.capLine.veryHigh"
+msgstr "Niveli i {nutrient} është shumë i lartë për një vakt: {eaten} nga {target}{unit} yt."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHigh"
+msgstr "Një pjesë e madhe e ditës tënde në një vakt."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coachStarters.support"
+msgstr "A po marr mjaftueshëm proteinë?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.not-onboarded"
+msgstr "Përgjigju së pari pyetjeve të planit në ueb."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coach.name"
+msgstr "Calodex"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.noun.inline.weight"
+msgstr "kaloritë"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.noun.weight"
+msgstr "Kaloritë"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesOnPlan"
+msgstr "Kaloritë brenda planit."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.macro.carbs"
+msgstr "Karbohidratet"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.steps.3"
+msgstr "Duke e kontrolluar me planin tënd"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.connectedLead"
+msgstr "U lidh me llogarinë {app_name} të hapur me"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.unreadable-label"
+msgstr "Etiketa s'u lexua dot."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.push.left"
+msgstr "U llogarit. Mbeten {left}kcal sot."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.push.over"
+msgstr "U llogarit. {over}kcal mbi planin e sotëm."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.queue.3"
+msgstr "Duke numëruar lëndët ushqyese · 4 nga 4"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.dropped"
+msgstr "E hoqa."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.cap-global"
+msgstr "Kufiri i sotshëm u shterua nga të gjithë. Nesër fillon një numër i ri."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.macro.fat"
+msgstr "Yndyrnat"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.queue.1"
+msgstr "Duke gjetur ushqimin · 2 nga 4"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.firstIn"
+msgstr "I pari i ditës. {kcal}kcal."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.capLine.easyTail"
+msgstr "Shko lehtër me të për pjesën tjetër të ditës."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.onboarding-done"
+msgstr "Mirë — regjistrimi u krye dhe dita e parë filloi. Edhe një gjë para se të shkosh — dhe është hera e vetme që pyet."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.already-in"
+msgstr "Mirë. Jam këtu në Chat kurdo — një foto apo një fjali, të dyja regjistrojnë vakt."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.lowConfidence"
+msgstr "Përgjigje e sinqertë: pjatën s'e lexova mirë. Merre {kcal} si vlerësim të përafërt dhe kontrollo gramet para se t'i besosh totalit. Herën tjetër një kënd i dytë ndihmon."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coachStarters.consistency"
+msgstr "Si po shkon java ime?"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.fixHint"
+msgstr "Nëse diçka s'shkon, thuaje — „gjysma e orizit“, „pa avokado“ — ose trokit kartën dhe ndrysho gramet."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.referral-paid"
+msgstr "Lidhjet e ftesës janë për anëtarë të rinj, dhe kjo llogari e ka blerë tashmë {app_name}."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.logIt"
+msgstr "Regjistroje"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.logged"
+msgstr "U regjistrua."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.subscription-required"
+msgstr "Regjistrimi i vakteve kërkon abonim. Nis provën falas në ueb për të vazhduar."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.proposalLead"
+msgstr "Po e regjistroj — duket mirë?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.proposalLeadDated"
+msgstr "Po e regjistroj për {date} — duket mirë?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.meal"
+msgstr "Vakt"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesVeryHigh"
+msgstr "Më shumë se gjysma e ditës tënde në një vakt."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.moved"
+msgstr "U zhvendos."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.steps.1"
+msgstr "Duke emëruar çfarë ka në të"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.camera-denied"
+msgstr "S'ka kamerë, s'ka problem. Zgjidh një foto nga galeria ose thjesht trego çfarë kishte në pjatë — të dyja japin makrot."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.camera-closed"
+msgstr "S'ka nxitim. Plani është në ditarin tënd — fotografo vaktin e ardhshëm kur të vijë. Ky është i gjithë zakon; nëse s'ka ndodhur, do ta them një herë nesër."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.notThis"
+msgstr "Jo kjo"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.notYours"
+msgstr "S'është llogaria jote? Hyr në tënden në ueb dhe shtyp Lidh Telegram aty — ky Telegram kalon tek ajo."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.todayEmpty"
+msgstr "Asgjë e regjistruar ende sot."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.onPlan"
+msgstr "Brenda planit."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.notify-primer"
+msgstr "Edhe një gjë për të cilën iOS do të pyesë: njoftimet. Një në ditë e kurrë më shumë — rreshti i 20:30, plus një kujtesë ditën para mbarimit të provës nëse ke një të tillë. Asgjë tjetër, kurrë."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.camera-primer"
+msgstr "Së pari një gjë: iOS do të kërkojë kamerën. E përdor vetëm për pjatën — foton e ruajm bashkë me vaktin që ta shohësh në ditar, dhe fshihet bashkë me llogarinë tënde."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.macro.protein"
+msgstr "Proteinë"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.steps.0"
+msgstr "Duke lexuar pjatën"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.reading"
+msgstr "Duke lexuar pjatën…"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.restored"
+msgstr "U rikthye — hyrja u krye. Një foto apo një fjali, të dyja regjistrojnë vakt."
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.noun.inline.ldl"
+msgstr "yndyrna e ngopur"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.noun.ldl"
+msgstr "Yndyrna e ngopur"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.connectedTail"
+msgstr "Dërgo një foto vakti, trego çfarë kishte në pjatë, ose bej {coach} një pyetje."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.signIn"
+msgstr "Hyr"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.noun.inline.kidneys"
+msgstr "natrium"
+
+#. js-lingui-explicit-id
+#: src/shared/verdicts.ts
+msgid "verdict.noun.kidneys"
+msgstr "Natrium"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.failed"
+msgstr "Diçka shkoi keq, por mund të ketë kaluar gjithësesi. Kontrollo /today para se ta dërgosh sërish."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.fix-prompt"
+msgstr "Thuaj çfarë s'konvenon — „gjysma e orizit“, „pa avokado“, „ishte 500“ funksionojnë të gjitha. Ose hap kartën dhe ndrysho gramet vetë."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.code-dead"
+msgstr "Ai kod ka skaduar. Kërko një të ri në ueb ose në aplikacion."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.code-wrong"
+msgstr "Ai kod s'është i saktë. Kontrollo emailin më të ri nga {app_name}."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.analysis-failed"
+msgstr "Ajo s'u kthye. Provo sërish."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.not-food"
+msgstr "Kjo s'ngjante me ushqim."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.unsupported-image"
+msgstr "Ai skedar s'është foto që mund të lexohet. JPEG, PNG ose WebP."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.referral-unknown"
+msgstr "Ajo lidhje ftese s'i përket askujt. Kontrolloje ose anashkaloje."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.codeInvalid"
+msgstr "Ajo lidhje ka skaduar. Hap planin tënd në ueb dhe shtyp Lidh Telegram sërish."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.meal-changed"
+msgstr "Ai vakt sapo ndryshoi. Shiko sërish, pastaj thuaje përsëri."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.tooLong"
+msgstr "Ai mesazh është shumë i gjatë për t'u dërguar."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.expired"
+msgstr "Ajo s'mbahet më. Thuaje sërish."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.alreadyLogged"
+msgstr "Ajo qe regjistruar tashmë."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.downloadFailed"
+msgstr "Ajo foto s'erdhi nga Telegram. Dërgoje sërish."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.no-photo"
+msgstr "Ajo foto s'erdhi. Dërgoje sërish."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.tooLarge"
+msgstr "Ajo foto është shumë e madhe për t'u dërguar."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.cap-user"
+msgstr "Kjo ishte e fundit për sot — kufiri yt ditor zerozohet në mesnatë."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.cap-address"
+msgstr "Ky është kufiri për tani. Provo më vonë."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.referral-own"
+msgstr "Kjo është lidhja jote e ftesës. Këtu shkon lidhja e një miku."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.viaApp"
+msgstr "aplikacioni"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.targetGone"
+msgstr "Këtu s'ka vakt të hapur për ndryshim. Trego çfarë kishte në pjatë dhe regjistroje sërish."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.referral-already"
+msgstr "Kjo llogari u bashkua tashmë me lidhjen e një miku."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.identity-required"
+msgstr "Kjo llogari s'është e hapur ende — hyr me Apple ose Google në ueb, pastaj dërgoje sërish."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.stranger"
+msgstr "Ky është {app_name} i ri. Vaktet dhe fotot e tua ruhen në llogarinë tënde {app_name}: hyr në ueb dhe shtyp Lidh Telegram te plani yt."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.todayHead"
+msgstr "Sot: {eaten} nga {plan}kcal, {protein} nga {proteinTarget} g proteinë"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.tooManyTries"
+msgstr "Shumë përpjekje nga ky Telegram. Prit pak, pastaj shtype lidhjen sërish."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.trial-started"
+msgstr "Prova nisi — {price} kur të mbarojë, nëse s'e ndal. Do të të kujtoj ditën para mbarimit, kurrë ditën pas."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.typed"
+msgstr "E shkruar, jo e fotografuar — pra porcionet janë hamendje e imja. Merre {kcal} si të përafërt; nëse i njeh gramet, thuaje dhe do ta rregulloj."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.updated"
+msgstr "U përditësua."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.queue.0"
+msgstr "Duke ngarkuar foton · 1 nga 4"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.steps.2"
+msgstr "Duke peshuar porcionet"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.queue.2"
+msgstr "Duke peshuar porcionet · 3 nga 4"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "stream.weighing"
+msgstr "Duke peshuar porcionet…"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coachStarters.ideas"
+msgstr "Çfarë të ha sonte?"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coachStarters.habits"
+msgstr "Me çfarë më të lehtë ta zëvendësoj darkën?"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.coachStarters.eatmore"
+msgstr "Si të ha më shumë lehtë sot?"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
+msgid "thread.scripted.trial-day-one"
+msgstr "Dita jote e parë filloi. Në 20:30 merr një rresht — dita ndaj planit dhe një gjë konkrete për nesër. Asgjë para asaj."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.onTheWeb"
+msgstr "Profili dhe cilësimet e tua janë në ueb."
