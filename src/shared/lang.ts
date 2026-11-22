@@ -113,6 +113,8 @@ export const LANG_LABEL: Record<Lang, string> = {
   ta: "தமிழ்",
   te: "తెలుగు",
   ar: "العربية",
+  bg: "Български",
+  sq: "Shqip",
 };
 
 /**
@@ -164,6 +166,8 @@ export const LANG_FLAG: Record<Lang, string> = {
   ta: "🇮🇳",
   te: "🇮🇳",
   ar: "🇸🇦",
+  bg: "🇧🇬",
+  sq: "🇦🇱",
 };
 
 /**
@@ -223,6 +227,8 @@ export const LANG_TAG: Record<Lang, string> = {
   // Latin digits, the same pick the Indic scripts above made: the app's figures are all written
   // Western-Arabic, and RTL's own pass is #358's.
   ar: "ar-EG-u-nu-latn",
+  bg: "bg-BG",
+  sq: "sq-AL",
 };
 
 /**
@@ -356,6 +362,7 @@ export const UNIT_KCAL: Record<Lang, string> = {
   da: "kcal", fi: "kcal", no: "kcal", sk: "kcal", hr: "kcal", sl: "kcal", ca: "kcal", ms: "kcal", "pt-PT": "kcal",
   bn: "kcal", gu: "kcal", kn: "kcal", ml: "kcal", mr: "kcal", or: "kcal", pa: "kcal", ta: "kcal", te: "kcal",
   ar: "kcal",
+  bg: "ккал", sq: "kcal",
 };
 
 /**
@@ -375,6 +382,8 @@ const UNIT_SPELLING: Partial<Record<Lang, Record<string, string>>> = {
         kcal: "ккал", "ml/kg/min": "мл/кг/мин" },
   uk: { kg: "кг", cm: "см", km: "км", g: "г", mg: "мг", min: "хв", ms: "мс", bpm: "уд/хв",
         kcal: "ккал", "ml/kg/min": "мл/кг/хв" },
+  bg: { kg: "кг", cm: "см", km: "км", g: "г", mg: "мг", min: "мин", ms: "мс", bpm: "уд/мин",
+        kcal: "ккал", "ml/kg/min": "мл/кг/мин" },
   // Only the two that are WORDS rather than symbols. `kg`, `cm`, `km`, `ms`, `%` and
   // `ml/kg/min` are the same in both, and de/fr/it/es need nothing at all.
   // `bpm` is the one unit here that is not an SI symbol but an abbreviated PHRASE, so it is
@@ -693,6 +702,9 @@ const PLURAL_CATEGORY: Record<Lang, (n: number) => Intl.LDMLPluralRule> = {
     if (i100 >= 11 && i100 <= 99) return "many";
     return "other";
   },
+  // CLDR: Bulgarian and Albanian are one / other — `1 ден`/`1 ditë`, everything else plural.
+  bg: oneIfOne,
+  sq: oneIfOne,
 };
 
 /**

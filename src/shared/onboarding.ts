@@ -633,9 +633,9 @@ export interface OnboardingContent {
  * and the NAMES come from CLDR, baked at build time (`countryLabel`), rather than from copy.
  */
 export const COUNTRY_CODES = [
-  "at", "au", "bd", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr", "hr",
-  "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "sa", "se", "si",
-  "sk", "th", "tr", "tw", "ua", "us", "vn", "other",
+  "al", "at", "au", "bd", "bg", "br", "ca", "ch", "cn", "cz", "de", "dk", "es", "fi", "fr", "gb", "gr",
+  "hr", "hu", "id", "in", "it", "jp", "kr", "mx", "my", "nl", "no", "pl", "pt", "ro", "ru", "sa", "se",
+  "si", "sk", "th", "tr", "tw", "ua", "us", "vn", "other",
 ] as const;
 export type CountryCode = (typeof COUNTRY_CODES)[number];
 

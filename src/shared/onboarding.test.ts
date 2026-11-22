@@ -982,7 +982,7 @@ describe("the countries this app curates", () => {
     uk: "ua", sv: "se", th: "th", hi: "in", cs: "cz", ro: "ro", el: "gr", hu: "hu",
     da: "dk", fi: "fi", no: "no", sk: "sk", hr: "hr", sl: "si", ca: "es", ms: "my", "pt-PT": "pt",
     bn: "bd", gu: "in", kn: "in", ml: "in", mr: "in", or: "in", pa: "in", ta: "in", te: "in",
-    ar: "sa",
+    ar: "sa", bg: "bg", sq: "al",
   };
 
   it("offers a country to every language the app speaks", () => {
