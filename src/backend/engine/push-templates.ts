@@ -43,7 +43,14 @@ export async function ensurePushTemplates(deps: EngineDeps): Promise<void> {
   // Rows seeded before the non-default variants lost their titles (61d2a13) still carry one the
   // sender never reads. Strip it, keeping status and review fields as they are.
   for (const r of await deps.store.listPushTemplates()) {
-    if (!variantCarriesTitle(r.key, r.variant) && r.title !== "") await deps.store.putPushTemplate({ ...r, title: "" });
+    if (!variantCarriesTitle(r.key, r.variant)) {
+      if (r.title !== "") await deps.store.putPushTemplate({ ...r, title: "" });
+    // The mirror damage (#3381): rows a broken save left reviewed with no title send untitled
+    // copy while every gap check reports complete. Demote them — the key then blocks and says
+    // so — until a save writes the title through the gate.
+    } else if (r.status === "reviewed" && r.title.trim() === "") {
+      await deps.store.putPushTemplate({ ...r, status: "draft", reviewed_by: null, reviewed_at: null });
+    }
   }
   seeded.add(deps.store);
 }

@@ -130,6 +130,23 @@ describe("push templates", () => {
     expect(await campaignWords(deps, key, "en", "b", 2)).toEqual({ title: arm.title, body: arm.body });
   });
 
+  it("demotes a reviewed campaign arm a broken save left untitled, and keeps a titled one", async () => {
+    const key = "campaign:win-back" as CampaignTemplateKey;
+    const at = new Date().toISOString();
+    await store.seedPushTemplates([
+      { key, lang: "en", variant: "b", title: "", body: "B", status: "reviewed", reviewed_by: "x", reviewed_at: at, updated_at: at },
+      { key, lang: "en", variant: "c", title: "Kept", body: "C", status: "reviewed", reviewed_by: "x", reviewed_at: at, updated_at: at },
+    ]);
+    await listPushTemplates(deps);
+    const rows = await store.listPushTemplates();
+    const stripped = rows.find((r) => r.key === key && r.variant === "b")!;
+    expect(stripped.status).toBe("draft");
+    expect(stripped.reviewed_by).toBeNull();
+    const titled = rows.find((r) => r.key === key && r.variant === "c")!;
+    expect(titled.status).toBe("reviewed");
+    expect(titled.title).toBe("Kept");
+  });
+
   it("plural rules are checked on save, per language", async () => {
     const withPlural = (lang: "en" | "ru", cats: string) => ({
       ...nudge(lang), body: `Log {days, plural, ${cats}}`,
