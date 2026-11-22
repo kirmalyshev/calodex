@@ -1,8 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { LANGS_READY } from "../lang.ts";
 import { LANGS } from "../types.ts";
+import { WELCOME_PLATES } from "../onboarding.ts";
 import { PAY_COPY } from "./pay-copy.ts";
-import { yearlySaveLine } from "./pay-lines.ts";
+import { welcomePlateAlt, yearlySaveLine } from "./pay-lines.ts";
 
 describe("yearlySaveLine", () => {
   it("is computed from the two prices, per storefront currency", () => {
@@ -22,3 +23,15 @@ describe("yearlySaveLine", () => {
     }
   });
 });
+
+// ieat-app#3359 — the paywall hero's alt, the plate's own figures spoken for the image; the web
+// sheet reads the same string the phone's `usePlansHero` builds.
+describe("welcomePlateAlt", () => {
+  it("reads the plate's macros in the chat labels' words", () => {
+    expect(welcomePlateAlt(WELCOME_PLATES["grain-bowl"], "en"))
+      .toBe("Protein 8 g, Carbs 50 g, Fat 12 g, 345 kcal");
+    expect(welcomePlateAlt(WELCOME_PLATES["french-toast"], "ru"))
+      .toContain("365");
+  });
+});
+

@@ -23,6 +23,12 @@ export interface PaywallPlan {
 /** The yearly plan's second figure: what a year of it costs per month. */
 export interface YearlyPlan extends PaywallPlan {
   pricePerMonth: string;
+  /**
+   * "€3.33/month · save 33%" — the per-month figure plus what a year saves against paying
+   * monthly for a year. The server derives it (ieat-app#3359) because the browser holds only
+   * formatted strings; `null` when monthly is not configured or the saving is under one percent.
+   */
+  perMonthSave: string | null;
 }
 
 /**
