@@ -137,8 +137,8 @@ async function stubAdmin(page: import("@playwright/test").Page, over: Record<str
       return r.fulfill(json({
         killed: campaignKilled, campaigns: campaignRows,
         copy: [
-          { key: "campaign:staff-check", rows: [], gaps: LANGS.map((l) => `${l}/default`) },
-          { key: "campaign:win-back", gaps: [], rows: LANGS.map((lang) => ({
+          { key: "campaign:staff-check", rows: [], gaps: LANGS.map((l) => `${l}/default`), langs: LANGS, sendable: false },
+          { key: "campaign:win-back", gaps: [], langs: LANGS, sendable: true, rows: LANGS.map((lang) => ({
             key: "campaign:win-back", lang, variant: "default", title: `Hi ${lang}`, body: `Body ${lang}`, status: "reviewed",
             reviewed_by: "a", reviewed_at: "2026-10-08T00:00:00.000Z", updated_at: "2026-10-08T00:00:00.000Z",
           })) },
