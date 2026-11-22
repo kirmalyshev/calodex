@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { LANGS, type Lang } from "./types.ts";
 import { NOTIFICATION_IDS, notificationCopyFor } from "./notifications.ts";
 import {
-  PUSH_TEMPLATE_VARIANTS, isCampaignTemplateKey, pickVariant, pluralCategories, pushClaimErrors, pushKeyGaps,
+  CAMPAIGN_VARIANTS, PUSH_TEMPLATE_VARIANTS, isCampaignTemplateKey, pickVariant, pluralCategories, pushClaimErrors, pushKeyGaps,
   pushRowsFromCopy, copyFromPushRows, validatePushTemplate, validatePushText,
   type PushTemplateRow,
 } from "./push-templates.ts";
@@ -205,6 +205,15 @@ describe("campaign template keys", () => {
     expect(pushKeyGaps(mk(["default"]), "campaign:win-back", 2)[0]).toBe("en/b");
     expect(pushKeyGaps(mk(["default", "b"]), "campaign:win-back", 2)).toEqual([]);
     expect(pushKeyGaps(mk(["default", "b"]), "campaign:win-back", 3)).toHaveLength(LANGS.length);
+  });
+  test("a campaign needs only the languages its segment can reach", () => {
+    const few = (["en", "ru"] as Lang[]).flatMap((lang) => CAMPAIGN_VARIANTS.slice(0, 2).map((variant) => ({
+      ...row("campaign:win-back", lang, { variant }), status: "reviewed", reviewed_by: "a", reviewed_at: "x", updated_at: "x",
+    }))) as never;
+    // Against the whole matrix it is incomplete; against the segment's languages it is complete.
+    expect(pushKeyGaps(few, "campaign:win-back", 2)).toHaveLength((LANGS.length - 2) * 2);
+    expect(pushKeyGaps(few, "campaign:win-back", 2, ["en", "ru"])).toEqual([]);
+    expect(pushKeyGaps(few, "campaign:win-back", 2, ["en", "de"])).toEqual(["de/default", "de/b"]);
   });
   test("complete only when all eight languages are reviewed", () => {
     const reviewed = LANGS.map((lang) => ({ ...row("campaign:win-back", lang), status: "reviewed", reviewed_by: "a", reviewed_at: "x", updated_at: "x" }));

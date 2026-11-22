@@ -224,17 +224,20 @@ export function pushClaimErrors(title: string, body: string): string[] {
 
 /**
  * What stops `key` from being sent: one `lang/variant` per row that is absent or still a draft.
- * Empty means complete.
+ * Empty means complete. A campaign needs only the languages its segment can reach (`langs`):
+ * a staff test does not owe forty-five translations.
  */
 export function pushKeyGaps(
   rows: readonly PushTemplateRow[], key: PushTemplateKey,
   /** A campaign in use needs only its first `n` variants; the others are free to stay unwritten. */
   variantCount?: number,
+  /** The languages the copy must cover. Defaults to every language the product answers in. */
+  langs: readonly Lang[] = LANGS,
 ): string[] {
   const gaps: string[] = [];
   const all = variantsOf(key);
   const needed = all.slice(0, variantCount ?? (isCampaignTemplateKey(key) ? 1 : all.length));
-  for (const lang of LANGS) {
+  for (const lang of langs) {
     for (const variant of needed) {
       const row = rows.find((r) => r.key === key && r.lang === lang && r.variant === variant);
       if (row?.status !== "reviewed") gaps.push(`${lang}/${variant}`);

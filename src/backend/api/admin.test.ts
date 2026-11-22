@@ -1750,7 +1750,7 @@ describe("campaigns (ieat-app#1761)", () => {
     await create();
     const listed = await (await admin("GET", "/admin/api/campaigns")).json() as { copy: { key: string; gaps: string[] }[] };
     expect(listed.copy[0]).toMatchObject({ key: "campaign:win-back" });
-    expect(listed.copy[0]!.gaps).toHaveLength(LANGS.length);
+    expect(listed.copy[0]!.gaps).toEqual(["de/default"]);
     const ph = await admin("PUT", "/admin/api/push-templates", {
       template: { key: "campaign:win-back", lang: "en", variant: "default", title: "Hi", body: "You ate {eaten}." }, status: "draft",
     });

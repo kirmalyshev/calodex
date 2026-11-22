@@ -165,9 +165,11 @@ export async function rotatedVariant(
  */
 export async function campaignWords(
   deps: EngineDeps, key: CampaignTemplateKey, lang: Lang, variant: string, variantCount: number,
+  /** The languages the campaign's segment can reach; the copy owes no more than these. */
+  langs: readonly Lang[] = LANGS,
 ): Promise<{ title: string; body: string } | null> {
   const rows = (await deps.store.listPushTemplates()).filter((r) => r.key === key);
-  if (pushKeyGaps(rows, key, variantCount).length > 0) return null;
+  if (pushKeyGaps(rows, key, variantCount, langs).length > 0) return null;
   const row = rows.find((r) => r.lang === lang && r.variant === variant);
   return row ? { title: row.title, body: row.body } : null;
 }

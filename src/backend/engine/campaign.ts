@@ -23,9 +23,9 @@
 // set in the store instead.
 
 import {
-  CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, effectOf, entitlementLive, habitOf, inHoldout, inRollout, isCampaignTemplateKey, localDate, matchesSegment, variantOf,
+  CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, LANGS, effectOf, entitlementLive, habitOf, inHoldout, inRollout, isCampaignTemplateKey, localDate, matchesSegment, variantOf,
   pushKeyGaps, validateCampaignInput,
-  type CampaignInput, type CampaignStatus, type CampaignTemplateKey, type Lang, type PushKind, type PushTemplateRow, type SegmentFacts,
+  type CampaignInput, type CampaignStatus, type CampaignTemplateKey, type Lang, type PushKind, type PushTemplateRow, type Segment, type SegmentFacts,
 } from "@eait/shared";
 import type { AdminRange, CampaignReport, CampaignRow } from "../store.ts";
 import type { AdminWindowEcho } from "@eait/shared";
@@ -48,20 +48,37 @@ const TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
 };
 void CAMPAIGN_STATUSES;
 
+/**
+ * The languages a segment can reach: its own `langs`, the staff list's languages for `staffOnly`
+ * (config ids plus the `users.staff` flag), or every language the product answers in.
+ */
+async function segmentLangs(deps: EngineDeps, segment: Segment | undefined): Promise<Lang[]> {
+  if (segment?.langs?.length) return segment.langs;
+  if (segment?.staffOnly) {
+    const langs = new Set<Lang>((await deps.store.staffLangs()) as Lang[]);
+    for (const id of deps.config.campaignStaffIds) {
+      const p = await deps.store.getProfile(id);
+      if (p?.lang) langs.add(p.lang as Lang);
+    }
+    return [...langs];
+  }
+  return [...LANGS];
+}
+
 /** What stops `key` from being sent: one `lang/variant` per row that is absent or still a draft. */
-async function templateGaps(deps: EngineDeps, key: CampaignTemplateKey, variants: number): Promise<string[]> {
-  return pushKeyGaps((await deps.store.listPushTemplates()).filter((r) => r.key === key), key, variants);
+async function templateGaps(deps: EngineDeps, key: CampaignTemplateKey, variants: number, langs: readonly Lang[]): Promise<string[]> {
+  return pushKeyGaps((await deps.store.listPushTemplates()).filter((r) => r.key === key), key, variants, langs);
 }
 
 /** What stops a campaign from being live: the one rule set, read by activation AND by every later edit. */
 async function activationProblems(
-  deps: EngineDeps, c: { promotional: boolean; templateKey: CampaignTemplateKey; variants: number },
+  deps: EngineDeps, c: { promotional: boolean; templateKey: CampaignTemplateKey; variants: number; segment?: Segment },
 ): Promise<string[]> {
   const problems: string[] = [];
   if (c.promotional) {
     problems.push("a promotional campaign cannot be live yet: the in-app tips-and-offers consent toggle has not shipped");
   }
-  const gaps = await templateGaps(deps, c.templateKey, c.variants);
+  const gaps = await templateGaps(deps, c.templateKey, c.variants, await segmentLangs(deps, c.segment));
   if (gaps.length > 0) problems.push(`template ${c.templateKey} is not complete: ${gaps.join(", ")}`);
   return problems;
 }
@@ -135,7 +152,7 @@ export interface CampaignCopy {
 export interface CampaignOverview {
   killed: boolean;
   copy: CampaignCopy[];
-  campaigns: (CampaignRow & { report: CampaignReport; effect: ReturnType<typeof effectOf> })[];
+  campaigns: (CampaignRow & { report: CampaignReport; effect: ReturnType<typeof effectOf>; blocked: boolean })[];
   /** The window the reports were read over (ieat-app#2776). */
   range: AdminWindowEcho;
 }
@@ -150,15 +167,21 @@ export async function campaignOverview(
   const keys = [...new Set([...templates.map((r) => r.key), ...rows.map((c) => c.templateKey)])] as CampaignTemplateKey[];
   return {
     killed: await deps.store.campaignsKilled(),
-    copy: keys.sort().map((key) => {
+    copy: await Promise.all(keys.sort().map(async (key) => {
       const own = templates.filter((r) => r.key === key);
-      // The variants a key must carry are the most any campaign using it runs.
-      const needed = Math.max(1, ...rows.filter((c) => c.templateKey === key).map((c) => c.variants));
-      return { key, rows: own, gaps: pushKeyGaps(own, key, needed) };
-    }),
+      const users = rows.filter((c) => c.templateKey === key);
+      // The variants and languages a key must carry are the most any campaign using it can reach.
+      const needed = Math.max(1, ...users.map((c) => c.variants));
+      const langs = users.length === 0
+        ? [...LANGS]
+        : [...new Set((await Promise.all(users.map((c) => segmentLangs(deps, c.segment)))).flat())];
+      return { key, rows: own, gaps: pushKeyGaps(own, key, needed, langs) };
+    })),
     campaigns: await Promise.all(rows.map(async (c) => {
       const report = await deps.store.campaignReport(c.id, ask);
-      return { ...c, report, effect: effectOf(report.groups) };
+      const live = c.status === "scheduled" || c.status === "running";
+      const blocked = live && (await activationProblems(deps, c)).length > 0;
+      return { ...c, report, effect: effectOf(report.groups), blocked };
     })),
     range: adminWindowEcho(ask),
   };
@@ -214,6 +237,8 @@ export async function runCampaigns(deps: EngineDeps, opts: { now?: number } = {}
 
   for (const listed of live) {
     out.campaigns++;
+    // Computed once per pass: the copy owes only the languages this segment can reach.
+    const langs = await segmentLangs(deps, listed.segment);
     for (const { userId, timezone } of audience) {
       try {
         // The cheap filters first; the kill switches are re-read only for an account that is due, so
@@ -232,7 +257,7 @@ export async function runCampaigns(deps: EngineDeps, opts: { now?: number } = {}
         const facts = await factsFor(deps, userId, date, now);
         if (!facts || !reaches(c, userId, facts)) continue;
         const variant = CAMPAIGN_VARIANTS[variantOf(userId, c.id, c.variants)]!;
-        const words = await campaignWords(deps, c.templateKey, facts.lang, variant, c.variants);
+        const words = await campaignWords(deps, c.templateKey, facts.lang, variant, c.variants, langs);
         if (!words) continue; // an incomplete template is not sent, and does not spend the day
         const devices = await pushDevices(deps, userId);
         if (devices.length === 0) continue;
@@ -291,7 +316,7 @@ export async function dryRunCampaign(deps: EngineDeps, id: string, opts: { now?:
   const now = opts.now ?? Date.now();
   const c = await deps.store.getCampaign(id);
   if (!c) return { ok: false, reason: "no-such-campaign" };
-  if ((await templateGaps(deps, c.templateKey, c.variants)).length > 0) return { ok: false, reason: "template-incomplete" };
+  if ((await templateGaps(deps, c.templateKey, c.variants, await segmentLangs(deps, c.segment))).length > 0) return { ok: false, reason: "template-incomplete" };
   let wouldSend = 0;
   let heldOut = 0;
   for (const { userId, timezone } of await deps.store.pushAudience()) {
@@ -334,7 +359,8 @@ export async function testSendCampaign(
   if (devices.length === 0 || !profile) return { ok: false, reason: "no-device" };
   // Before the claim: a refused template must not spend the account's bound.
   const variant = CAMPAIGN_VARIANTS[variantOf(userId, c.id, c.variants)]!;
-  const words = await campaignWords(deps, c.templateKey, profile.lang as Lang, variant, c.variants);
+  const langs = await segmentLangs(deps, c.segment);
+  const words = await campaignWords(deps, c.templateKey, profile.lang as Lang, variant, c.variants, langs);
   if (!words) return { ok: false, reason: "template-incomplete" };
   const zone = zoneOf(deps, await deps.store.timezoneOf(userId));
   const claim = await claimSend(deps, userId, localDate(zone, new Date(now)), "campaign", c.id);

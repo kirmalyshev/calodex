@@ -700,6 +700,15 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return true;
     },
 
+    async staffLangs() {
+      const out = new Set<string>();
+      for (const id of staffSet) {
+        const p = users.get(id);
+        if (p?.lang) out.add(p.lang);
+      }
+      return [...out];
+    },
+
     async hasAdmin() {
       for (const [id, role] of roles) if (role === "admin" && users.has(id)) return true;
       return false;
