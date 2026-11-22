@@ -26,7 +26,7 @@ test("a blocked campaign wears a blocked chip in the list and in the detail", as
   await page.route("**/admin/api/**", (r) => r.fulfill(json({})));
   await page.route("**/admin/api/campaigns**", (r) => r.fulfill(json({
     killed: false, range: { from: null, to: null, days: 30 },
-    copy: [{ key: "campaign:win-back", rows: [], gaps: ["de/default"] }],
+    copy: [{ key: "campaign:win-back", rows: [], gaps: ["de/default"], langs: ["de"], sendable: false }],
     campaigns: [CAMPAIGN],
     options: { langs: ["en"], variants: ["default"], statuses: ["draft"], entitlement: [], streakBands: [], sinceLog: [], staffCount: 0 },
   })));
