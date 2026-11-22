@@ -232,6 +232,42 @@ export const LANG_TAG: Record<Lang, string> = {
 };
 
 /**
+ * Weekday names for a language a runtime ICU may not carry AT ALL. A slim ICU (Chromium's
+ * non-full build, which headless runs ship) CLAIMS `sq-XK` yet formats root English — no tag
+ * reaches Albanian because the data is absent, and the sq week strip read MON…SUN inside an
+ * Albanian app (ieat-app#3371). CLDR's own forms, copied verbatim (checked against full ICU:
+ * short hën mar mër enj pre sht die, narrow h m m e p sh d, long e hënë…e diel) — gated by
+ * `intlDataMissing` so an engine that has the data still formats it, and this is a floor rather
+ * than a second table.
+ * Only the PURE-weekday surfaces are floored — the strip letters and the streak card's weekday.
+ * Compound formats (`dayLabel`, `weekdayDayMonthAt`, `monthYear`) are knowingly not: on an engine
+ * missing the language their month names are absent too, so splicing a weekday token into an
+ * otherwise-English date would fix nothing.
+ */
+const WEEKDAY_SHORT_FALLBACK: Partial<Record<Lang, string[]>> = {
+  sq: ["hën", "mar", "mër", "enj", "pre", "sht", "die"],
+};
+const WEEKDAY_NARROW_FALLBACK: Partial<Record<Lang, string[]>> = {
+  sq: ["h", "m", "m", "e", "p", "sh", "d"],
+};
+const WEEKDAY_LONG_FALLBACK: Partial<Record<Lang, string[]>> = {
+  sq: ["e hënë", "e martë", "e mërkurë", "e enjte", "e premte", "e shtunë", "e diel"],
+};
+
+/**
+ * True when the engine holds NO locale data for the language. A claimed regional variant is not
+ * proof — `supportedLocalesOf` answers `sq-XK` on an ICU whose sq data is English root — but
+ * the BARE base tag it refuses is the tell that nothing is there to format with. `lookup`, not
+ * the default `best fit`: an engine may best-fit `sq` to its dataless `sq-XK` entry and answer
+ * `["sq"]`, which would gate the floor off on exactly the build that needs it — lookup never
+ * climbs to a more specific tag.
+ */
+const intlDataMissing = (lang: Lang): boolean => {
+  const base = LANG_TAG[lang].replace(/-.*/, "");
+  return Intl.DateTimeFormat.supportedLocalesOf([base], { localeMatcher: "lookup" }).length === 0;
+};
+
+/**
  * HERMES DROPS `-u-nu`. Every Arabic and Indic tag above asks for Latin digits — the product's
  * pick, "the app's figures are all written Western-Arabic" — and Node's ICU honours it, so no test
  * run sees the engine that does not: Hermes on iOS answers Arabic-Indic anyway (ieat-app#3341).
@@ -548,6 +584,8 @@ export const timeAt = (lang: Lang, zone: string, at: Date): string =>
  * reader's zone, as `dayLabel` does.
  */
 export const weekdayLetters = (lang: Lang): string[] => {
+  const fallback = WEEKDAY_NARROW_FALLBACK[lang];
+  if (fallback && intlDataMissing(lang)) return [...fallback];
   const fmt = df(lang, { weekday: "narrow", timeZone: "UTC" });
   // 2026-09-21 was a Monday, so `+ i` walks Monday → Sunday.
   return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2026, 8, 21 + i, 12))));
@@ -559,8 +597,18 @@ export const weekdayLetters = (lang: Lang): string[] => {
  * CLDR's `short`, never a table, the UTC-noon anchor holding the day.
  */
 export const weekdayShort = (lang: Lang): string[] => {
+  const fallback = WEEKDAY_SHORT_FALLBACK[lang];
+  if (fallback && intlDataMissing(lang)) return [...fallback];
   const fmt = df(lang, { weekday: "short", timeZone: "UTC" });
   return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2026, 8, 21 + i, 12))));
+};
+
+/** The long weekday name of a `YYYY-MM-DD` — the streak card's sentence slots. Same gated floor. */
+export const weekdayLong = (lang: Lang, date: string): string => {
+  const at = new Date(`${date}T12:00:00Z`);
+  const fallback = WEEKDAY_LONG_FALLBACK[lang];
+  if (fallback && intlDataMissing(lang)) return fallback[(at.getUTCDay() + 6) % 7] ?? "";
+  return df(lang, { weekday: "long", timeZone: "UTC" }).format(at);
 };
 
 /**

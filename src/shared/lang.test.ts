@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { LANGS } from "./types.ts";
 import {
   LANGS_READY, LANG_LABEL, LANG_TAG, UNIT_KCAL, countText, dayLabel, dayMonthAt, genderedRussian,
-  localizedGaps, latn, kcalNumbers, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters, wholeNumbers,
+  localizedGaps, latn, kcalNumbers, monthLabel, monthYear, numbers, decimalNumbers, signedWholeNumbers, timeAt, weekdayLetters, weekdayLong, weekdayShort, wholeNumbers,
   acceptLang, acceptLanguageTags, narrowLang, spellUnit, t,
   type Localized,
 } from "./lang.ts";
@@ -106,6 +106,24 @@ describe("numbers and dates", () => {
     expect(decimalNumbers("en")(25.02)).toBe("25.0");
     expect(decimalNumbers("de")(25.02)).toBe("25,0");
     expect(decimalNumbers("ru")(30.46)).toBe("30,5");
+  });
+
+  it("the week strip is the language's own on every ICU that can render it (ieat-app#3371)", () => {
+    // A slim ICU CLAIMS sq-XK yet formats English root data — no tag reaches Albanian because
+    // none exists, so the strip carries CLDR's own sq names behind the data-missing gate.
+    // bg/hr/sl prove the check is not sq-specific.
+    const englishStrip = weekdayShort("en");
+    for (const lang of ["bg", "hr", "sq", "sl"] as const) {
+      expect(weekdayShort(lang)).not.toEqual(englishStrip);
+      expect(weekdayLetters(lang)).not.toEqual(weekdayLetters("en"));
+    }
+    // And the fallback IS CLDR's own forms — pinned so a hand-edit drifts loudly.
+    expect(weekdayShort("sq")).toEqual(["hën", "mar", "mër", "enj", "pre", "sht", "die"]);
+    expect(weekdayLetters("sq")).toEqual(["h", "m", "m", "e", "p", "sh", "d"]);
+    // 2026-09-21 was a Monday.
+    expect(weekdayLong("sq", "2026-09-21")).toBe("e hënë");
+    expect(weekdayLong("sq", "2026-09-27")).toBe("e diel");
+    expect(weekdayLong("en", "2026-09-21")).toBe("Monday");
   });
 
   it("names a month in the reader's language, from Intl and never from a table", () => {

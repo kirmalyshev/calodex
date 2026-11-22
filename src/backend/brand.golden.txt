@@ -1467,7 +1467,7 @@ web.pageCopyFor fi ad0c6bcbd85d31be
 web.pageCopyFor no 90b3610e8ee4c438
 web.pageCopyFor sk 80320a4732e02a0f
 web.pageCopyFor hr cd196c04d455a762
-web.pageCopyFor sl 65422fd89963965b
+web.pageCopyFor sl cd6aceede1bcd88e
 web.pageCopyFor ca b2311dae6c4332f7
 web.pageCopyFor ms b9a8d107994e0a70
 web.pageCopyFor pt-PT 562fb25845e5cf0a
