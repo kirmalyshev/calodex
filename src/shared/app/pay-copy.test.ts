@@ -14,7 +14,7 @@ import { PAY_COPY, payCopyFor } from "./pay-copy.ts";
 const KEYS = [
   "plansTitle", "plansHeroAlt",
   "planYearly", "planMonthly", "trialBadge", "pricePerYear", "pricePerMonth",
-  "yearlySub", "monthlySub", "perMonthCaption", "perMonthSave", "benefitPhoto", "benefitPlan", "benefitChat",
+  "yearlySub", "monthlySub", "perMonthSave", "benefitPhoto", "benefitPlan", "benefitChat",
   "startTrial", "trialNote", "trialNotePhone",
   "giftTitle", "giftAlt", "giftNote", "giftOpen",
   "offerTitle", "offerAlt", "offerOff", "offerPrice", "offerPerMonth",
@@ -102,7 +102,6 @@ describe("PAY_COPY", () => {
     expect(en.benefitPlan).toBe("Every meal checked against your plan");
     expect(en.benefitChat).toBe("Ask Calodex about your day");
     expect(en.yearlySub).toBe("{trial}, {price} a year");
-    expect(en.perMonthCaption).toBe("a month");
     expect(en.monthlySub).toBe("{trial}, {price} a month");
     expect(en.startTrial).toBe("Try {days} days free");
     expect(en.trialNote).toBe("Then {renewal} after the trial. Renews automatically until cancelled. Cancel any time in Profile › Subscription.");

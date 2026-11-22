@@ -39,9 +39,4 @@ export function welcomePlateAlt(plate: WelcomePlate, lang: Lang): string {
   ].join(", ");
 }
 
-/**
- * "a year" beside the yearly figure: `pricePerYear` without its price, so no new copy key — every
- * language's template keeps `{price}` at one end ("{price} a year", "{price} par an").
- */
-export const perYearCaption = (pay: Pick<PayCopy, "pricePerYear">): string =>
-  pay.pricePerYear.replace("{price}", "").trim();
+

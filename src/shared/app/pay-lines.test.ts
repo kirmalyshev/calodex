@@ -3,7 +3,7 @@ import { LANGS_READY } from "../lang.ts";
 import { LANGS } from "../types.ts";
 import { WELCOME_PLATES } from "../onboarding.ts";
 import { PAY_COPY } from "./pay-copy.ts";
-import { perYearCaption, welcomePlateAlt, yearlySaveLine } from "./pay-lines.ts";
+import { welcomePlateAlt, yearlySaveLine } from "./pay-lines.ts";
 
 describe("yearlySaveLine", () => {
   it("is computed from the two prices, per storefront currency", () => {
@@ -35,11 +35,3 @@ describe("welcomePlateAlt", () => {
   });
 });
 
-describe("perYearCaption", () => {
-  it("is the yearly card's 'a year' caption, stripped of its price", () => {
-    expect(perYearCaption(PAY_COPY.en)).toBe("a year");
-    for (const lang of LANGS_READY) {
-      expect(perYearCaption(PAY_COPY[lang]!), lang).not.toContain("{");
-    }
-  });
-});
