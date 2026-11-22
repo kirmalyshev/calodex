@@ -207,9 +207,10 @@ export function mealRowEl(
 /**
  * The plans, parsed (#263): `payPlans`'s markup off the profile's `WebPaywall` — every price and
  * every checkout link already formatted and filled by the server — plus `picked()`, the checked
- * row's plan. The two offer surfaces (#/pay, the first-meal offer) share this ONE composition so
- * they can never disagree; `/start`'s offer interpolates the same markup server-side, where the
- * checked radio submits as `?plan=`. Returns null where the host sells nothing.
+ * row's plan. The first-meal offer and `#/pay`'s host-sells-nothing fallback draw it;
+ * `/start`'s offer interpolates the same markup server-side, where the checked radio submits
+ * as `?plan=`. (`#/pay`'s own sheet draws its side-by-side pair itself — web/pay-plans.)
+ * Returns null where the host sells nothing.
  */
 export function payPlansEl(w: WebPaywall, label: string): {
   group: HTMLElement;

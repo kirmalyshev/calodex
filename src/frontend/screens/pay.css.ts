@@ -40,7 +40,6 @@ export const payCss = `
   letter-spacing: -.01em; }
 .pay .plan2 .pr small { font-size: 12px; font-weight: 500; color: var(--muted); }
 .pay .plan2 .pr .save { color: var(--accent); }
-.pay .plan:nth-child(2) { --d: .1s; }
 /* pay-exit (#451): the offer card the plans swap to on the first decline — the board's own
    measurements, radii included (16, not --r-card's 12). */
 .pay .pcol h1.d28 { margin: 0 0 6px; }
