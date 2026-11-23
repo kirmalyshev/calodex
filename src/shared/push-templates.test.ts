@@ -234,8 +234,9 @@ describe("seed copy speaks the push voice", () => {
     expect(loud).toEqual([]);
   });
 
+  // The nudge goes at the evening hour (engine/notify.ts), so its title names no meal of the day.
   test("the Russian nudge is the line prod sends, not the cut one", () => {
     const nudge = seeds.find((t) => t.lang === "ru" && t.key === "nudge" && t.variant === "default");
-    expect(nudge).toMatchObject({ title: "Как там обед?", body: "Что сегодня было из еды? Покажи, я посчитаю." });
+    expect(nudge).toMatchObject({ title: "Как день?", body: "Что сегодня было из еды? Покажи, я посчитаю." });
   });
 });

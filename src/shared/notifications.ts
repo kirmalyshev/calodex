@@ -91,9 +91,9 @@ export const MAX_NOTIFICATION_BODY = 240;
 export const DEFAULT_NOTIFICATION_COPY: NotificationCopy = {
   "trial-end": {
     title: "Trial ends tomorrow",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
+    // A CANCELLATION leaves the expiry where it was, so somebody who has already stopped it
+    // still gets this message, and every language's words must stay true for them: name the way
+    // out, never announce that a subscription is about to start.
     body: "Want out? Settings › Subscriptions. Otherwise it renews on its own.",
   },
   evening: {
@@ -338,16 +338,13 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
       alternates: { v2: "Ты заходишь почти каждый день, это радует. Что сегодня ешь?", v3: "Закрутило сегодня? Добавь, что помнишь.", v4: "Сфоткай, что будешь есть, а я посчитаю." },
     },
     nudge: {
-      title: "Как там обед?",
+      title: "Как день?",
       body: "Что сегодня было из еды? Покажи, я посчитаю.",
     },
   },
   sq: {
   "trial-end": {
     title: "Prova mbaron nesër",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Do ta ndërpresësh? Cilësimet › Abonimet. Përndryshe rinovohet vetë.",
   },
   evening: {
@@ -380,9 +377,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   bg: {
   "trial-end": {
     title: "Триалът свършва утре",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Искаш да спреш? Настройки › Абонаменти. Иначе се подновява автоматично.",
   },
   evening: {
@@ -415,9 +409,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   te: {
   "trial-end": {
     title: "ట్రయల్ రేపటితో ముగుస్తుంది",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "క్యాన్సిల్ చేయాలనుకుంటున్నారా? సెట్టింగ్‌లు › సబ్‌స్క్రిప్షన్‌లు లోకి వెళ్లండి. లేదంటే ఆటోమేటిక్‌గా రెన్యూ అవుతుంది.",
   },
   evening: {
@@ -450,9 +441,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   ta: {
   "trial-end": {
     title: "டிரையல் நாளை முடிகிறது",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "நிறுத்த வேண்டுமா? அமைப்புகள் › சந்தாக்கள் செல்லவும். இல்லையென்றால் தானாகவே புதுப்பிக்கப்படும்.",
   },
   evening: {
@@ -485,9 +473,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   pa: {
   "trial-end": {
     title: "ਟ੍ਰਾਇਲ ਕੱਲ੍ਹ ਖ਼ਤਮ",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "ਕੈਂਸਲ ਕਰਨਾ ਹੈ? ਸੈਟਿੰਗਾਂ › ਸਬਸਕ੍ਰਿਪਸ਼ਨਾਂ ਵਿੱਚ ਜਾਓ। ਨਹੀਂ ਤਾਂ ਇਹ ਆਪਣੇ ਆਪ ਰੀਨਿਊ ਹੋ ਜਾਵੇਗਾ।",
   },
   evening: {
@@ -520,9 +505,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   or: {
   "trial-end": {
     title: "ଟ୍ରାଏଲ୍ କାଲି ଶେଷ ହେବ",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "ବନ୍ଦ କରିବାକୁ ଚାହାନ୍ତି? ସେଟିଂସ୍ › ସବସ୍କ୍ରିପସନ୍ ରେ ଯାଆନ୍ତୁ। ନଚେତ୍ ଏହା ଆପେ ଆପେ ରିନ୍ୟୁ ହୋଇଯିବ।",
   },
   evening: {
@@ -555,9 +537,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   mr: {
   "trial-end": {
     title: "ट्रायल उद्या संपते",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "रद्द करायचे आहे? सेटिंग्ज › सबस्क्रिप्शन्स. नाहीतर ते आपोआप रिन्यू होईल.",
   },
   evening: {
@@ -590,9 +569,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   ml: {
   "trial-end": {
     title: "ട്രയൽ നാളെ തീരും",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "റദ്ദാക്കണോ? ക്രമീകരണം › സബ്സ്ക്രിപ്ഷനുകൾ എന്നതിൽ പോകുക. അല്ലെങ്കിൽ തനിയെ റിന്യൂ ആകും.",
   },
   evening: {
@@ -625,9 +601,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   kn: {
   "trial-end": {
     title: "ಟ್ರಯಲ್ ನಾಳೆ ಮುಗಿಯುತ್ತೆ",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "ಕ್ಯಾನ್ಸಲ್ ಮಾಡಬೇಕೆ? ಸೆಟ್ಟಿಂಗ್‌ಗಳು › ಚಂದಾದಾರಿಕೆಗಳು ಗೆ ಹೋಗಿ. ಇಲ್ಲದಿದ್ದರೆ ತಾನಾಗಿಯೇ ರಿನ್ಯೂ ಆಗುತ್ತದೆ.",
   },
   evening: {
@@ -660,9 +633,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   gu: {
   "trial-end": {
     title: "ટ્રાયલ કાલે પૂરું થાય છે",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "બંધ કરવું છે? સેટિંગ્સ › સબ્સ્ક્રિપ્શન્સ માં જાઓ. નહીં તો તે આપમેળે રિન્યૂ થશે.",
   },
   evening: {
@@ -695,9 +665,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   bn: {
   "trial-end": {
     title: "কাল ট্রায়াল শেষ",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "বন্ধ করতে চাইলে: সেটিংস › সাবস্ক্রিপশন। নইলে নিজে থেকেই রিনিউ হয়ে যাবে।",
   },
   evening: {
@@ -730,9 +697,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   "pt-PT": {
   "trial-end": {
     title: "O teste acaba amanhã",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Queres cancelar? Definições › Subscrições. Se não, renova automaticamente.",
   },
   evening: {
@@ -765,9 +729,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   ms: {
   "trial-end": {
     title: "Percubaan tamat esok",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Nak batalkan? Pergi ke Seting › Langganan. Jika tidak, ia akan diperbaharui secara automatik.",
   },
   evening: {
@@ -800,9 +761,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   ca: {
   "trial-end": {
     title: "La prova acaba demà",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Vols cancel·lar? Configuració › Subscripcions. Si no, es renova sol.",
   },
   evening: {
@@ -835,9 +793,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   sl: {
   "trial-end": {
     title: "Trial se izteče jutri",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Želiš preklicati? Nastavitve › Naročnine. Sicer se podaljša samodejno.",
   },
   evening: {
@@ -870,9 +825,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   hr: {
   "trial-end": {
     title: "Trial istječe sutra",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Želiš odustati? Postavke › Pretplate. Inače se pretplata sama obnavlja.",
   },
   evening: {
@@ -905,9 +857,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   sk: {
   "trial-end": {
     title: "Trial končí zajtra",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Chceš skončiť? Nastavenia › Predplatné. Inak sa obnoví samo.",
   },
   evening: {
@@ -940,9 +889,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   no: {
   "trial-end": {
     title: "Trialen slutter i morgen",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Vil du avslutte? Gå til Innstillinger › Abonnementer. Ellers fornyes det automatisk.",
   },
   evening: {
@@ -975,9 +921,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   fi: {
   "trial-end": {
     title: "Kokeilu päättyy huomenna",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Haluatko lopettaa? Asetukset › Tilaukset. Muuten se uusiutuu automaattisesti.",
   },
   evening: {
@@ -1010,9 +953,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   da: {
   "trial-end": {
     title: "Prøven slutter i morgen",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Vil du stoppe? Indstillinger › Abonnementer. Ellers fornyes det automatisk.",
   },
   evening: {
@@ -1045,9 +985,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   hu: {
   "trial-end": {
     title: "Holnap lejár a próba",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Lemondanád? Beállítások › Előfizetések. Különben automatikusan megújul.",
   },
   evening: {
@@ -1080,9 +1017,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   el: {
   "trial-end": {
     title: "Η δοκιμή λήγει αύριο",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Θες να σταματήσεις; Ρυθμίσεις › Συνδρομές. Αλλιώς ανανεώνεται αυτόματα.",
   },
   evening: {
@@ -1115,9 +1049,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   ro: {
   "trial-end": {
     title: "Proba se termină mâine",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Vrei să anulezi? Configurări › Abonamente. Altfel, se reînnoiește automat.",
   },
   evening: {
@@ -1150,9 +1081,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   cs: {
   "trial-end": {
     title: "Trial zítra končí",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Chceš ho zrušit? Nastavení › Předplatná. Jinak se obnoví sám.",
   },
   evening: {
@@ -1185,9 +1113,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   hi: {
   "trial-end": {
     title: "ट्रायल कल खत्म",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "कैंसिल करना है? सेटिंग्ज़ › सब्सक्रिप्शन पर जाएं। वरना यह अपने-आप रिन्यू हो जाएगा।",
   },
   evening: {
@@ -1220,9 +1145,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   th: {
   "trial-end": {
     title: "ทดลองใช้หมดพรุ่งนี้",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "ไม่อยากต่ออายุ? ไปที่ การตั้งค่า › การสมัครรับ ถ้าไม่ยกเลิกจะต่ออายุเอง",
   },
   evening: {
@@ -1255,9 +1177,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   sv: {
   "trial-end": {
     title: "Trialen slutar i morgon",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Vill du avsluta? Gå till Inställningar › Prenumerationer. Annars förnyas det automatiskt.",
   },
   evening: {
@@ -1290,9 +1209,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   uk: {
   "trial-end": {
     title: "Тріал закінчується завтра",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Хочеш скасувати? Параметри › Підписки. Інакше підписка продовжиться автоматично.",
   },
   evening: {
@@ -1325,9 +1241,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   nl: {
   "trial-end": {
     title: "Proef stopt morgen",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Wil je stoppen? Instellingen › Abonnementen. Anders wordt het vanzelf verlengd.",
   },
   evening: {
@@ -1360,9 +1273,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   pl: {
   "trial-end": {
     title: "Trial kończy się jutro",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Chcesz zrezygnować? Ustawienia › Subskrypcje. Inaczej odnowi się automatycznie.",
   },
   evening: {
@@ -1395,9 +1305,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   tr: {
   "trial-end": {
     title: "Deneme yarın bitiyor",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "İptal etmek istersen: Ayarlar › Abonelikler. Yoksa kendiliğinden yenilenir.",
   },
   evening: {
@@ -1430,9 +1337,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   "zh-Hant": {
   "trial-end": {
     title: "試用明天到期",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "想取消的話到「設定 › 訂閱項目」即可，不然會自動續訂。",
   },
   evening: {
@@ -1465,9 +1369,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   "zh-Hans": {
   "trial-end": {
     title: "试用明天到期",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "不想续了？在 设置 › 订阅 里取消就行。不取消会自动续订。",
   },
   evening: {
@@ -1500,9 +1401,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   ko: {
   "trial-end": {
     title: "체험 내일 끝나요",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "그만두려면 설정 › 구독에서 취소하세요. 안 하면 자동으로 갱신돼요.",
   },
   evening: {
@@ -1535,9 +1433,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   ja: {
   "trial-end": {
     title: "トライアルは明日まで",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "やめるなら 設定 › サブスクリプション から。そのままなら自動で更新されます。",
   },
   evening: {
@@ -1570,9 +1465,6 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   "pt-BR": {
   "trial-end": {
     title: "O teste acaba amanhã",
-    // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
-    // where it was, so somebody who has already stopped it still gets this message, and telling
-    // them a subscription is about to start would be false rather than merely redundant.
     body: "Quer cancelar? Vá em Ajustes › Assinaturas. Se não, ela renova sozinha.",
   },
   evening: {

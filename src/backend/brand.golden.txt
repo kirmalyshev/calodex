@@ -680,7 +680,7 @@ shared.notificationCopyFor it c198593b349df656
 shared.notificationCopyFor es 1a204e196d1fbe32
 shared.notificationCopyFor vi f2c1f9e69390b7cd
 shared.notificationCopyFor id 58bb941aab2c2b5a
-shared.notificationCopyFor ru 86f61847ef4dbb24
+shared.notificationCopyFor ru 867c67805548a507
 shared.notificationCopyFor pt-BR ada8aee06f6ed95f
 shared.notificationCopyFor ja f1f91e0540f26a23
 shared.notificationCopyFor ko 14d7ce3d83acbf55
