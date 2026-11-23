@@ -6822,6 +6822,9 @@ if (PG_URL) {
         // #812: the per-account onboarding flow — the admin's own cross-account read, like the
         // funnel above it; staff exclusion is the method's job, the route names the account.
         "adminOnboardingFlow",
+        // ieat-app#3421: admin_values belongs to no account — a global setting like the switches
+        // beside it; the writer is the resolved admin's id, never a scope.
+        "adminValue", "adminValueHistory",
         "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
         "countOnboardedSince", "createCampaign", "createUser", "expireJobs", "foodById",
         "forgetJobs", "forgetTurnOutcomes", "getCampaign", "getNotificationCopy", "getOnboardingContent",
@@ -6849,8 +6852,8 @@ if (PG_URL) {
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",
-        "revokeToken", "runningOnboardingExperiment", "screenTemplate", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
-        "setSwitch", "spendEmailCode", "staffLangs", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "templateAsset", "updateCampaign",
+        "revokeToken", "runningOnboardingExperiment", "screenTemplate", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt",
+        "setAdminValue", "setCampaignsKilled", "setSwitch", "spendEmailCode", "staffLangs", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "templateAsset", "updateCampaign",
         "upsertDeviceUser", "userIdForIdentity", "userIdForToken",
       ]);
     });
