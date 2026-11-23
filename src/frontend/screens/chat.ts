@@ -29,7 +29,7 @@ import { ApiError, Unauthenticated, api, apiBlob } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { blobSrc, eaitIconEl, fitHero, gramMacsEl, optionRowEl, verdictListEl } from "../kit.ts";
 import { failureOf, outbox } from "../outbox.ts";
-import { shrinkPhotos } from "../photo.ts";
+import { appliedCompression, shrinkPhotos } from "../photo.ts";
 import { updateFor } from "../queue.ts";
 import {
   COPY, MESSAGES, dayPickerButton, PENDING, Said, UNKNOWN, clear, composerRow, el, flush,
@@ -619,13 +619,14 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     turn(async () => {
       liveAnswer = null;
       // What goes up is the resized frame — the byte cap weighs it, not what was picked.
-      const compress = photoCompression();
-      const shrunk = await shrinkPhotos(files, compress);
+      const quality = photoCompression();
+      const shrunk = await shrinkPhotos(files, quality);
+      const compress = appliedCompression(files, shrunk, quality);
       if (me !== null && shrunk.reduce((n, f) => n + f.size, 0) > me.limits.maxUploadBytes) throw new Said(COPY.photoTooLarge);
       // Several files are ANGLES OF ONE MEAL, `photo` fields like the app's.
       const form = new FormData();
       for (const f of shrunk) form.append("photo", f);
-      form.append("compression", String(compress));
+      if (compress !== undefined) form.append("compression", String(compress));
       if (files.length > 0 && focusMeal !== null) {
         // ANGLES ON THE FOCUSED MEAL, not a new turn: the sheet's upload posts to the meal's own
         // collection — the words in the box stay for the correction turn that reads them.

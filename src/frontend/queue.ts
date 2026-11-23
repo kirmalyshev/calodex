@@ -12,7 +12,7 @@ import { ApiError, api, apiBlob, apiStream, signedIn } from "./api.ts";
 import { fillCopy as fill } from "./copy.ts";
 import { blobSrc } from "./kit.ts";
 import { el, lang, names, redrawScreen, refusalWords, photoCompression } from "./shell.ts";
-import { shrinkPhotos } from "./photo.ts";
+import { appliedCompression, shrinkPhotos } from "./photo.ts";
 import * as analytics from "./analytics.ts";
 
 type State = "reading" | "waiting" | "question" | "refused" | "failed";
@@ -40,8 +40,8 @@ type FlyAt = FlyFrom & { at: number }
 interface Job {
   id: string;
   photos: File[];
-  /** The JPEG quality `photos` were encoded at (ieat-app#3421), sent on the form so the meal records it. */
-  compress: number;
+  /** The JPEG quality `photos` were encoded at (ieat-app#3421), sent on the form so the meal records it. `undefined` when anything went up untouched — claimed only for bytes it was applied to. */
+  compress: number | undefined;
   thumb: string;
   capturedAt: string;
   step: 1 | 2 | 3 | 4;
@@ -80,9 +80,12 @@ const dataUrl = (file: File): Promise<string> => new Promise((resolve, reject) =
 /** Photos (angles of one meal) join the queue; `from` is where the image flies in from, omitted = the row just arrives. */
 export async function enqueue(files: File[], from?: FlyFrom): Promise<void> {
   // The coefficient the bytes are encoded at, kept on the job: the form reports what WAS APPLIED,
-  // whatever the admin has set by the time the send lands.
-  const compress = photoCompression();
-  const photos = await shrinkPhotos(files.filter((f) => f.type.startsWith("image/")), compress);
+  // whatever the admin has set by the time the send lands — and nothing when a pick went up
+  // untouched (`appliedCompression`).
+  const quality = photoCompression();
+  const images = files.filter((f) => f.type.startsWith("image/"));
+  const photos = await shrinkPhotos(images, quality);
+  const compress = appliedCompression(images, photos, quality);
   if (photos.length === 0) return;
   const job: Job = {
     id: crypto.randomUUID(), photos, compress, thumb: await dataUrl(photos[0]!), capturedAt: new Date().toISOString(),
@@ -106,7 +109,7 @@ const drop = (job: Job) => {
 /** A change to a logged meal joins the queue (#1347); its row stays where the meal is. */
 export function enqueueUpdate(meal: MealRecord, body: MealUpdateBody, grams?: { index: number; value: string }): void {
   const job: Job = {
-    id: crypto.randomUUID(), photos: [], compress: photoCompression(), thumb: "", capturedAt: new Date().toISOString(),
+    id: crypto.randomUUID(), photos: [], compress: undefined, thumb: "", capturedAt: new Date().toISOString(),
     step: 1, line: null, items: [], state: "reading", words: null, mealId: null, kcal: null, flyFrom: null,
     update: { kind: body.kind, mealId: meal.id, steps: MEAL_UPDATE_STEPS[body.kind], body, name: names(meal.items), kcal: meal.kcal, ...(grams ? { grams } : {}) },
   };
@@ -134,7 +137,7 @@ export async function restoreJobs(): Promise<void> {
     if (e.state.kind !== "running" || jobs.some((j) => j.id === e.jobId)) return [];
     const s = e.state;
     return [{
-      id: e.jobId, photos: [], compress: photoCompression(), thumb: "", capturedAt: e.createdAt,
+      id: e.jobId, photos: [], compress: undefined, thumb: "", capturedAt: e.createdAt,
       step: s.step, line: s.line, items: s.items, state: "reading", words: null, mealId: null, kcal: null, flyFrom: null,
       update: s.update ? { ...s.update, body: null, name: "", kcal: 0 } : null,
     }];
@@ -212,7 +215,7 @@ export const updateWords = (job: Job): { title: string; line: string; pct: numbe
 async function run(job: Job): Promise<void> {
   const form = new FormData();
   for (const p of job.photos) form.append("photo", p);
-  if (job.photos.length > 0) form.append("compression", String(job.compress));
+  if (job.compress !== undefined) form.append("compression", String(job.compress));
   form.append("clientId", job.id);
   form.append("capturedAt", job.capturedAt);
   try {

@@ -60,3 +60,14 @@ export async function shrinkPhoto(file: File, quality: number): Promise<File> {
 export function shrinkPhotos(files: File[], quality: number): Promise<File[]> {
   return Promise.all(files.map((f) => shrinkPhoto(f, quality)));
 }
+
+/**
+ * The `compression` value a send of `shrunk` may report: `quality` when EVERY file was re-encoded
+ * at it, `undefined` when anything went up untouched — a pick already inside `UPLOAD_EDGE`, or one
+ * the browser could not decode (ieat-app#3421). Claiming the coefficient for bytes it was never
+ * applied to would mislabel the meal's provenance, the whole point of the field; `undefined`
+ * leaves it null, which is the truth.
+ */
+export function appliedCompression(files: readonly File[], shrunk: readonly File[], quality: number): number | undefined {
+  return shrunk.every((s, i) => s !== files[i]) ? quality : undefined;
+}
