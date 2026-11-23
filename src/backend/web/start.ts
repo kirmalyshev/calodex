@@ -801,13 +801,12 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     const lang = profile?.lang ?? browserLang(req);
     const PAGE_COPY = pageCopyFor(lang);
     return html(signUp({
-      // The board's two providers and no third button: both flows are plain redirects every
-      // browser completes, and the page only renders when at least one of them can, so email
-      // was never the only route here. The `/start/email` flow stays for whoever reaches it.
+      // The board's third pill posts to the email kickoff like the providers' do — and is
+      // drawn only where that flow exists: an instance sending no mail 404s every email path.
       providers: offered.map((p) => ({
         id: p as "apple" | "google", action: `${START_PREFIX}/auth/${p}`, label: providerLabel(p, lang),
       })),
-      emailHref: `${START_PREFIX}/email`,
+      emailAction: emailSignInEnabled(ctx.deps.config) ? `${START_PREFIX}/email` : null,
       error: url.searchParams.get("error") === "terms" ? signupCopyFor(lang).errorTerms
         : url.searchParams.has("error") ? PAGE_COPY.errorSignIn
         : null,

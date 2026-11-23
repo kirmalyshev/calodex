@@ -8,9 +8,8 @@ import { escape, shell } from "./shell.ts";
 /**
  * The sign-up screen (S8, board `cz-19-signup.html`): attach Apple or Google to the session
  * account, or present one that already has an account, which is the same mechanism in the
- * other direction. The email code flow (#569) stays live at `/start/email` — the board draws
- * no button for it, and both OAuth flows are plain redirects any browser completes, so no
- * browser is stranded without it.
+ * other direction. The email code flow (#569) is the board's third pill; where the instance
+ * sends no mail the pill is not drawn, as its routes are 404 there.
  *
  * The pieces (19, ieat-app#2050): the heading — "Save your progress" when the person comes from
  * their plan, the product's promise when they come to sign in — no picture, the provider
@@ -27,8 +26,8 @@ import { escape, shell } from "./shell.ts";
 export interface SignUpView {
   /** `id` picks the provider's mark; `action` is the kickoff POST's formaction. */
   providers: readonly { id: "apple" | "google"; action: string; label: string }[];
-  /** The email code flow's page — the third provider pill is a link: it needs an address first. */
-  emailHref: string | null;
+  /** The email kickoff's formaction — a POST like the providers', minting the consent cookie. */
+  emailAction: string | null;
   error: string | null;
   /** The published terms, or null where the operator published none. */
   termsHref: string | null;
@@ -53,10 +52,11 @@ export function signUp(v: SignUpView): string {
     .replace("{terms}", docLink(v.termsHref, SIGNUP_COPY.termsLink))
     .replace("{privacy}", docLink(v.privacyHref, SIGNUP_COPY.privacyLink));
   const mark = (id: "apple" | "google") => brandSvg(id === "apple" ? "apple" : "google-signin");
-  // The third provider the board draws (#569): the email code flow is a page, not a one-tap
-  // kickoff — the address comes first — so the pill is a link where the others are submits.
-  const email = v.emailHref === null ? ""
-    : `  <a class="cta s" href="${escape(v.emailHref)}"><i class="ico i-mail" aria-hidden="true"></i>${escape(SIGNUP_COPY.continueEmail)}</a>\n`;
+  // The third provider the board draws (#569): its kickoff is a POST for the same reason the
+  // OAuth ones are — the consent rides the form — and the address comes AFTER it, on the page
+  // the POST lands on. A link here reached only the GET, which answers 303 back (ieat-app#3417).
+  const email = v.emailAction === null ? ""
+    : `  <button class="cta s" type="submit" formaction="${escape(v.emailAction)}"><i class="ico i-mail" aria-hidden="true"></i>${escape(SIGNUP_COPY.continueEmail)}</button>\n`;
   return shell(v.signup ? v.signup.heading : SIGNUP_COPY.signUpHeading, `${wtop()}
 <div class="wmain one"><div class="wcol">
 <div class="sup">
