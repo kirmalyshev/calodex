@@ -120,7 +120,7 @@ msgstr "„{note}” — megjegyeztem, benne van a számokban."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, a mai nap körülbelül {share}-a. Egy könnyebb következő étkezés kiegyenlíti."
+msgstr "{kcal}kcal, a mai keret körülbelül {share}-a. Egy kicsit könnyebb következő étkezéssel simán kiegyenlítődik."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

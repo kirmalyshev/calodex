@@ -120,7 +120,7 @@ msgstr "«{note}» — враховано, цифри перераховано."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}ккал, близько {share} від дня. Легший наступний прийом їжі все вирівняє."
+msgstr "{kcal}ккал — близько {share} денної норми. Наступний прийом їжі можна зробити трохи легшим, і все чудово вирівняється."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

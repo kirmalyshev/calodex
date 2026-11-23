@@ -120,7 +120,7 @@ msgstr "“{note}” — 알겠어요, 숫자에 반영했어요."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, 오늘의 약 {share}예요. 다음 식사를 가볍게 하면 균형이 맞아요."
+msgstr "{kcal}kcal, 오늘 목표의 약 {share}예요. 다음 식사를 조금 가볍게 챙기면 충분히 균형을 맞출 수 있어요."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

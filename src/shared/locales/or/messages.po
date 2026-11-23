@@ -120,7 +120,7 @@ msgstr "“{note}” — ନୋଟ୍ କଲି, ଏହା ସଂଖ୍ୟାର
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, ଆଜିର ପ୍ରାୟ {share}। ପରବର୍ତ୍ତୀ ଖାଦ୍ୟ ହାଲୁକା ହେଲେ ସନ୍ତୁଳନ ହୋଇଯିବ।"
+msgstr "{kcal}kcal, ଆଜିର ଲକ୍ଷ୍ୟର ପ୍ରାୟ {share}। ପରବର୍ତ୍ତୀ ଖାଦ୍ୟ ଟିକେ ହାଲୁକା ରଖିଲେ ସବୁ ସହଜରେ ସନ୍ତୁଳିତ ହୋଇଯିବ।"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

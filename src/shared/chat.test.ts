@@ -201,6 +201,16 @@ describe("the first verdict's headline", () => {
     }
   });
 
+  it("avoids mechanical translation calques in non-English first meal headlines (ieat-app#3400)", () => {
+    // #3400: native phrasing sweep across 43 non-English languages to remove robotic calques
+    expect(threadCopyFor("ru").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("от дня");
+    expect(threadCopyFor("cs").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("dnešního dne");
+    expect(threadCopyFor("hr").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("današnjeg dana");
+    expect(threadCopyFor("nl").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("maakt het weer goed");
+    expect(threadCopyFor("bg").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("следващ прием");
+    expect(threadCopyFor("da").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("af i dag");
+  });
+
   it("keeps the later-meal headline for the same warn", () => {
     expect(verdictHeadline({ weight: "warn" }, "en")).toBe("A big share of your day in one meal.");
   });

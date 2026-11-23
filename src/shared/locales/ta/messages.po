@@ -120,7 +120,7 @@ msgstr "“{note}” — குறித்துக்கொண்டேன்,
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, இன்றைய தினத்தின் சுமார் {share}. அடுத்த உணவை இலகுவாக்கினால் சமநிலை ஆகிவிடும்."
+msgstr "{kcal}kcal, இன்றைய இலக்கில் சுமார் {share}. அடுத்த வேளை உணவை சற்று லேசாக எடுத்துக்கொண்டால் எளிதில் சரியாகிவிடும்."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

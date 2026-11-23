@@ -120,7 +120,7 @@ msgstr "“{note}” — genoteerd, het zit in de cijfers."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, ongeveer {share} van vandaag. Een lichtere volgende maaltijd maakt het weer goed."
+msgstr "{kcal}kcal, ongeveer {share} van je dag. Een wat lichtere volgende maaltijd brengt het weer mooi in balans."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

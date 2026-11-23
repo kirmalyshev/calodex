@@ -120,7 +120,7 @@ msgstr "»{note}« — noteret, det er med i tallene."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, omkring {share} af i dag. Et lettere næste måltid jævner det ud."
+msgstr "{kcal}kcal, omkring {share} af dagens mål. Et lidt lettere næste måltid udligner det fint."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

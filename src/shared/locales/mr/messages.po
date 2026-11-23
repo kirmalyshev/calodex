@@ -120,7 +120,7 @@ msgstr "“{note}” — नोंद घेतली, हे आकड्या
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, आजच्या सुमारे {share}. पुढचे जेवण हलके घेतल्यास संतुलन साधले जाईल."
+msgstr "{kcal}kcal, आजच्या लक्ष्याच्या सुमारे {share}. पुढचे जेवण थोडे हलके ठेवले की सहज समतोल साधता येईल."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

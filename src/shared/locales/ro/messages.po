@@ -120,7 +120,7 @@ msgstr "„{note}” — notat, e inclus în cifre."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, aproximativ {share} din ziua de azi. O masă următoare mai ușoară echilibrează."
+msgstr "{kcal}kcal, în jur de {share} din planul pe azi. O masă următoare ceva mai ușoară va echilibra totul frumos."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
