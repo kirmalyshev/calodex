@@ -544,11 +544,17 @@ export type AdminRecognitionListRow = Omit<AdminRecognitionRow, "meal"> & {
 };
 export type AdminRecognition = AdminRecognitionRow & { raw: string | null; items: MealItem[] };
 
-/** The admin's recognitions filter (ieat-app#3422); `from`/`to` bound `created_at`. */
+/**
+ * The admin's recognitions filter (ieat-app#3422); `from`/`to` bound `created_at`. `compressionMin`/
+ * `compressionMax` bound the meal's `photo_compression` (ieat-app#3421) — a read that logged no
+ * meal, or a meal that predates the column, carries no coefficient and never matches them.
+ */
 export interface RecognitionFilter {
   from?: Date;
   to?: Date;
   model?: string;
+  compressionMin?: number;
+  compressionMax?: number;
   limit?: number;
 }
 
@@ -583,6 +589,23 @@ export const SWITCH_KEYS = [
   "paywall.exit-offer.ios", "paywall.exit-offer.web",
 ] as const;
 export type SwitchKey = (typeof SWITCH_KEYS)[number];
+
+/**
+ * The admin's numeric knobs — the counterpart of SWITCH_KEYS, in `admin_values` because a
+ * coefficient is not a switch. `photo.compression` (ieat-app#3421) is the JPEG quality every
+ * client encodes a sent photo at; the profile sends the newest row's value, the compiled
+ * `PHOTO_COMPRESSION_DEFAULT` when no row exists.
+ */
+export const VALUE_KEYS = ["photo.compression"] as const;
+export type AdminValueKey = (typeof VALUE_KEYS)[number];
+
+/** One set of one admin value: the append-only row, `set_at` an ISO string on both stores. */
+export interface AdminValueSet {
+  key: AdminValueKey;
+  value: number;
+  set_by: string;
+  set_at: string;
+}
 
 /** One flip of one switch: the append-only row, `set_at` an ISO string on both stores. */
 export interface SwitchFlip {
@@ -1939,6 +1962,12 @@ export interface Store {
   setSwitch(key: SwitchKey, enabled: boolean, adminId: string): Promise<void>;
   /** The newest `limit` flips across every key, newest first. */
   switchHistory(limit: number): Promise<SwitchFlip[]>;
+  /** The newest value of an admin value, or null when nobody has ever set it (the caller applies the default). */
+  adminValue(key: AdminValueKey): Promise<number | null>;
+  /** Append a set. `adminId` is the resolved admin, never a request body's. */
+  setAdminValue(key: AdminValueKey, value: number, adminId: string): Promise<void>;
+  /** The newest `limit` sets across every key, newest first. */
+  adminValueHistory(limit: number): Promise<AdminValueSet[]>;
   /**
    * Append funnel events, ignoring ids already stored. Returns how many were new.
    *
@@ -2168,8 +2197,12 @@ export interface Store {
    * position, while appending is by definition not idempotent — calling it twice adds twice, which
    * is what a second photo of one plate means. Making `putPhotos` offset by the current count would
    * have given the log path the append behaviour too, silently.
+   *
+   * `compression` (ieat-app#3421) is the coefficient the appended angles were sent with; the row's
+   * `photo_compression` moves to it — the LAST send's is what the stored bytes carry. Omitted,
+   * the column is left alone (a re-analysis attaching stored bytes sent nothing new).
    */
-  appendPhotos(userId: string, mealId: string, photos: { mime: string; bytes: Uint8Array }[]): Promise<number>;
+  appendPhotos(userId: string, mealId: string, photos: { mime: string; bytes: Uint8Array }[], compression?: number): Promise<number>;
   /** Scoped: another user's meal id is an empty list. Position ascending. */
   getPhotos(userId: string, mealId: string): Promise<StoredPhoto[]>;
   /** Scoped: null for another user's meal, and for a position that does not exist. */

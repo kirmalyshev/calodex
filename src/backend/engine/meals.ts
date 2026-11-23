@@ -53,6 +53,12 @@ export interface LogPhotoInput {
   receivedAt?: number;
   /** A queued job's run: its charge and its meal are written under `owner`'s lease, and `lost()` ends it when the lease is gone. */
   job?: JobCharge;
+  /**
+   * The JPEG quality the client compressed the sent photos to (ieat-app#3421), read off the
+   * upload's `compression` field — what WAS APPLIED to the stored bytes, not what the admin asks
+   * for now. The meal records it; absent, the column stays null.
+   */
+  compression?: number;
 }
 
 /** Sum a day's meals. The single place totals are produced, so two views cannot disagree. */
@@ -351,6 +357,8 @@ export async function logPhotoTurn(
     // named explicitly rather than left to the spread, which would carry the analyzer's raw one
     // past every condition `mayAsk` just applied.
     question,
+    // The coefficient the photos were sent with (ieat-app#3421); null on a send that carried none.
+    photo_compression: input.compression ?? null,
   };
   let stored = true;
   if (job) {
@@ -860,6 +868,8 @@ export async function attachPhotos(
   userId: string,
   mealId: string,
   images: Uint8Array[],
+  /** The coefficient the angles were sent with (ieat-app#3421); the row's `photo_compression` moves to it. */
+  compression?: number,
 ): Promise<
   | { kind: "attached"; mealId: string; photos: number }
   | { kind: "too-many"; limit: number }
@@ -878,7 +888,7 @@ export async function attachPhotos(
   const held = existing.photos ?? 0;
   if (held + images.length > limit) return { kind: "too-many", limit };
 
-  const photos = await deps.store.appendPhotos(userId, mealId, typed.map((p) => ({ mime: p.mime!, bytes: p.bytes })));
+  const photos = await deps.store.appendPhotos(userId, mealId, typed.map((p) => ({ mime: p.mime!, bytes: p.bytes })), compression);
   // 0 means the meal stopped being the caller's between the read above and the write — deleted, in
   // practice. Answered as the delete race it is, not as a successful attach of nothing.
   if (photos === 0) return { kind: "target-gone", on: "correction" };
@@ -928,6 +938,8 @@ export async function rewriteMeal(
   caption: string | undefined, added: () => Promise<Uint8Array[]>, onEvent: ((event: PhotoEvent) => void) | undefined,
   onCounting?: () => void,
   job?: JobCharge,
+  /** The coefficient `added`'s angles were sent with (ieat-app#3421); recorded when any are stored. */
+  compression?: number,
 ): Promise<MealUpdated | TargetGone | Refusal> {
   const today = localDate(deps.config.timezone);
   // Captured here rather than trusted from `read.images`: the stored count can be stale (another
@@ -965,7 +977,7 @@ export async function rewriteMeal(
   // Stored AFTER the numbers that describe them, never for a refused turn. A store failure is a
   // log line, as `putPhotos` is in `logPhotoMeal`.
   if (addedBytes.length > 0) {
-    await deps.store.appendPhotos(userId, existing.id, addedBytes.map((b) => ({ mime: imageMime(b)!, bytes: b })))
+    await deps.store.appendPhotos(userId, existing.id, addedBytes.map((b) => ({ mime: imageMime(b)!, bytes: b })), compression)
       .catch((e: unknown) => console.error(`[eait] photos not appended: ${(e as Error)?.message ?? e}`));
   }
   const totals = sumTotals(await deps.store.mealsForDate(userId, updated.date));

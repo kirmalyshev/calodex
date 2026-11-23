@@ -204,6 +204,26 @@ async function stubAdmin(page: import("@playwright/test").Page, over: Record<str
     }
     return r.fulfill(json(switchView()));
   });
+  // The one numeric value (ieat-app#3421): the same stub-with-memory as the switches beside it.
+  const valueCalls = (over.valueCalls ?? []) as { path: string; body: unknown }[];
+  let setValue: { key: string; value: number; setBy: string; setAt: string; setByEmail: string | null } | null = null;
+  const valueView = () => ({
+    values: [{
+      key: "photo.compression", value: setValue?.value ?? 0.8,
+      setBy: setValue?.setBy ?? null, setAt: setValue?.setAt ?? null, setByEmail: setValue?.setByEmail ?? null,
+    }],
+    recent: setValue ? [setValue] : [],
+  });
+  await page.route("**/admin/api/values**", (r) => {
+    const req = r.request();
+    if (req.method() === "PUT") {
+      const path = new URL(req.url()).pathname;
+      const body = req.postDataJSON() as { value: number };
+      valueCalls.push({ path, body });
+      setValue = { key: decodeURIComponent(path.split("/").pop()!), value: body.value, setBy: "admin-1", setAt: "2026-10-10T11:00:00.000Z", setByEmail: null };
+    }
+    return r.fulfill(json(valueView()));
+  });
   await page.route("**/admin/api/prompts/*/revisions", (r) => r.fulfill(json({
     key: "route",
     revisions: [

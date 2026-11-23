@@ -18,10 +18,10 @@ import { timingSafeEqual } from "./auth/timingsafe.ts";
 import { buildFoodIndex } from "./food-index.ts";
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { type ChatMessage,
-  ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, ADMIN_USER_PAGE_MAX,
+  ADMIN_METRICS_MAX_DAYS, SWITCH_KEYS, VALUE_KEYS, ADMIN_USER_PAGE_MAX,
   PORTION_PRIOR_ROWS, blankProfile, isTester, planTransfer, portionPriorsFrom, type AdminUserRow, type FunnelAggregate,
   type MealPatch, type MilestoneRow, type Role,
-  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type ExperimentSurfaceCounts, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type ExperimentSurfaceCounts, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip, type AdminValueSet,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
   type RecognitionWrite, type AdminRecognition, type AdminRecognitionListRow,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
@@ -489,6 +489,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
    * other path untested.
    */
   const switchRows: SwitchFlip[] = [];
+  const valueRows: AdminValueSet[] = [];
   const promptRevisionRows: PromptRevision[] = PROMPT_KEYS.map((key) => ({
     key, version: 1, text: PROMPT_DEFAULTS[key], source: "shipped" as const,
     updated_at: new Date(now()).toISOString(),
@@ -1870,6 +1871,20 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return switchRows.slice().reverse().slice(0, limit).map(clone);
     },
 
+    async adminValue(key) {
+      return valueRows.findLast((r) => r.key === key)?.value ?? null;
+    },
+
+    async setAdminValue(key, value, adminId) {
+      // Postgres's check constraint, said again: the two stores refuse the same keys.
+      if (!(VALUE_KEYS as readonly string[]).includes(key)) throw new Error(`unknown admin value: ${key}`);
+      valueRows.push({ key, value, set_by: adminId, set_at: new Date(now()).toISOString() });
+    },
+
+    async adminValueHistory(limit) {
+      return valueRows.slice().reverse().slice(0, limit).map(clone);
+    },
+
     async putNotificationCopy(lang, copy) {
       // Merged and migrated, for `putOnboardingContent`'s reasons.
       notificationCopy = clone({ ...legacyLanguageMap(notificationCopy), [lang]: copy }) as typeof notificationCopy;
@@ -2297,7 +2312,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (meals.has(record.id)) return false;
       // `?? null` so a meal nobody was asked a question about reads back the same shape it does out
       // of Postgres, where an unwritten jsonb column is null and never an absent key.
-      meals.set(record.id, clone({ ...record, question: record.question ?? null }));
+      meals.set(record.id, clone({ ...record, question: record.question ?? null, photo_compression: record.photo_compression ?? null }));
       mealLoggedAt.set(record.id, new Date().toISOString());
       return true;
     },
@@ -2365,7 +2380,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       photos.set(mealId, list);
       meals.set(mealId, { ...m, photos: list.length });
     },
-    async appendPhotos(userId, mealId, input) {
+    async appendPhotos(userId, mealId, input, compression) {
       const m = meals.get(mealId);
       if (!m || m.user_id !== userId) return 0;
       const list = photos.get(mealId) ?? [];
@@ -2375,7 +2390,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       }
       list.sort((a, b) => a.position - b.position);
       photos.set(mealId, list);
-      meals.set(mealId, { ...m, photos: list.length });
+      meals.set(mealId, {
+        ...m, photos: list.length,
+        // The appended angles were compressed to it — the row's value is the LAST send's.
+        ...(compression === undefined ? {} : { photo_compression: compression }),
+      });
       return list.length;
     },
 
@@ -2795,10 +2814,16 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async adminRecognitions(filter) {
       return recognitions
-        .filter((r) => (filter.from === undefined || r.createdAt >= filter.from.getTime())
-          && (filter.to === undefined || r.createdAt <= filter.to.getTime())
-          // A free-text match, like the `position(...) > 0` in Postgres: a piece of the served id.
-          && (filter.model === undefined || (r.model ?? "").includes(filter.model)))
+        .filter((r) => {
+          // The meal's photo_compression: no meal means no coefficient, like the join's null.
+          const comp = r.mealId === null ? null : meals.get(r.mealId)?.photo_compression ?? null;
+          return (filter.from === undefined || r.createdAt >= filter.from.getTime())
+            && (filter.to === undefined || r.createdAt <= filter.to.getTime())
+            // A free-text match, like the `position(...) > 0` in Postgres: a piece of the served id.
+            && (filter.model === undefined || (r.model ?? "").includes(filter.model))
+            && (filter.compressionMin === undefined || (comp !== null && comp >= filter.compressionMin))
+            && (filter.compressionMax === undefined || (comp !== null && comp <= filter.compressionMax));
+        })
         .sort((a, b) => b.createdAt - a.createdAt || Number(b.id) - Number(a.id))
         .slice(0, Math.max(1, Math.min(1000, Math.floor(filter.limit ?? 200))))
         .map((r) => recognitionRow(r, meals, false));
@@ -2925,7 +2950,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const j = jobs.get(`${userId}\n${clientId}`);
       if (!j || j.leaseOwner !== owner || j.state !== "running" || j.mealId !== null || meals.has(meal.id)) return false;
       j.mealId = meal.id; j.updatedAt = now();
-      meals.set(meal.id, clone({ ...meal, question: meal.question ?? null }));
+      meals.set(meal.id, clone({ ...meal, question: meal.question ?? null, photo_compression: meal.photo_compression ?? null }));
       const list = j.photos.map((p, position) => ({ userId, position, mime: p.mime, bytes: p.bytes }));
       j.photos = [];
       if (list.length > 0) photos.set(meal.id, list);

@@ -435,6 +435,13 @@ export interface MealRecord extends MealAnalysis {
   question?: MealQuestion | null;
   /** How many photos are stored for it. Absent on rows from before photos existed, and in fixtures — read as 0. */
   photos?: number;
+  /**
+   * The JPEG quality the photos were compressed to before they were sent (ieat-app#3421), the
+   * admin's `photo.compression` at send time. Null on a meal sent before the coefficient existed,
+   * on a photo-less meal, and on a send that carried none — it records WHAT WAS APPLIED, never
+   * what the admin currently asks for.
+   */
+  photo_compression?: number | null;
   /** The phone break taken after this meal (ieat-app#2129): how long, and whether it was held to the end. Null until one is recorded; absent on bare rows. */
   focus?: MealFocus | null;
   /** Set when the meal was read off a nutrition label (ieat-app#2087); null on every other meal. */

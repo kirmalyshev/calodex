@@ -21,6 +21,7 @@ import type { EngineDeps } from "./deps.ts";
 import { emailSignInEnabled } from "../mail/choose.ts";
 import { evaluateMilestones } from "./milestones.ts";
 import { switchOn } from "./switches.ts";
+import { adminValueOf } from "./values.ts";
 import { dailyPhotoCap, entitlementFor } from "./entitlement.ts";
 import { referralView } from "./referral.ts";
 import { analyticsServerContext } from "./analytics.ts";
@@ -59,6 +60,9 @@ async function limitsOf(deps: EngineDeps, userId: string, entitled: boolean): Pr
     modelCallTimeoutMs: deps.config.llmTimeoutMs,
     // The same predicate the email routes 404 on, so the button and the route cannot disagree.
     emailSignIn: emailSignInEnabled(deps.config),
+    // The admin's knob (ieat-app#3421), read per profile so a set lands on the next fetch —
+    // an OTA-free answer on every client that sends a photo.
+    photoCompression: await adminValueOf(deps, "photo.compression"),
   };
 }
 

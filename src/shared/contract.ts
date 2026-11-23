@@ -192,12 +192,30 @@ export interface Limits {
    * because whether a key is configured is a fact about the environment, not the build.
    */
   emailSignIn: boolean;
+  /**
+   * The JPEG quality every client encodes a photo at before sending it (ieat-app#3421), from
+   * `PHOTO_COMPRESSION_MIN` through `PHOTO_COMPRESSION_MAX` — ONE coefficient, set by the admin and
+   * held by the server, read by every client that sends a photo. Sent rather than compiled in
+   * because that is the whole feature: the admin changes it once and the phones and the browser
+   * follow on their next profile fetch, with no binary and no deploy between them.
+   */
+  photoCompression: number;
 }
 
 /** Fallback only — see `Limits`. Total upload size, above which a large POST is a DoS. */
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 /** Fallback only — see `Limits`. Several angles of ONE plate, one analysis, one billed call. */
 export const MAX_PHOTOS_PER_MEAL = 4;
+/**
+ * The default for `Limits.photoCompression`: the quality every client encoded at before the
+ * coefficient existed, so the admin's untouched setting compresses exactly as much as it always
+ * did (ieat-app#3421).
+ */
+export const PHOTO_COMPRESSION_DEFAULT = 0.8;
+/** The widest the admin may open the coefficient: lossless JPEG. */
+export const PHOTO_COMPRESSION_MAX = 1;
+/** The smallest the admin may set the coefficient: below this a photo degrades past what the model can read. */
+export const PHOTO_COMPRESSION_MIN = 0.1;
 /**
  * How far back this product looks, in days: five years.
  *

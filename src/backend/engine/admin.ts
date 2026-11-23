@@ -155,7 +155,7 @@ export function adminWindowEcho(
  * meal stands as now — items, matched foods, final kcal, and `corrected` for any edit after.
  * Unscoped like every admin read here; the role is the authority, and a route still names one
  * row at a time by id. The compression-coefficient filter joins the sibling's column
- * (`meals.photo_compression`, ieat-app#3421) when that lands; the port's filter has its seat.
+ * (`meals.photo_compression`, ieat-app#3421): a read with no meal carries no coefficient.
  */
 export async function adminRecognitions(
   deps: EngineDeps, filter: RecognitionFilter,

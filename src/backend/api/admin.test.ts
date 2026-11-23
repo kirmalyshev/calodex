@@ -1943,6 +1943,56 @@ describe("the grounding switches", () => {
   });
 });
 
+// The admin's numeric knobs (ieat-app#3421): `photo.compression` is the JPEG quality every client
+// is told to encode at, sent on the profile like every other limit — the same role rule as
+// everything behind /admin, and the row is written under the admin the request resolved to.
+describe("the admin values", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  it("GET answers the default for a value nobody has set, and no history", async () => {
+    const res = await admin("GET", "/admin/api/values");
+    expect(res.status).toBe(200);
+    const body = await res.json() as { values: { key: string; value: number; setBy: string | null; setAt: string | null; setByEmail: string | null }[]; recent: unknown[] };
+    expect(body.values).toEqual([
+      { key: "photo.compression", value: 0.8, setBy: null, setAt: null, setByEmail: null },
+    ]);
+    expect(body.recent).toEqual([]);
+  });
+
+  it("PUT appends a row under the resolved admin and the profile then sends it", async () => {
+    const adminId = (await store.userIdForToken(adminBearer))!;
+    const res = await admin("PUT", "/admin/api/values/photo.compression", { value: 0.5, set_by: "someone-else", setBy: "x" });
+    expect(res.status).toBe(200);
+    expect(await store.adminValue("photo.compression")).toBe(0.5);
+    const [row] = await store.adminValueHistory(5);
+    expect(row).toMatchObject({ key: "photo.compression", value: 0.5, set_by: adminId });
+    const body = await res.json() as { values: { key: string; value: number; setBy: string }[] };
+    expect(body.values.find((v) => v.key === "photo.compression")).toMatchObject({ value: 0.5, setBy: adminId });
+    // The client learns it on the next profile fetch — the same channel every limit travels by.
+    const profile = await (await admin("GET", ROUTES.profile, undefined, adminBearer)).json() as { limits: { photoCompression: number } };
+    expect(profile.limits.photoCompression).toBe(0.5);
+  });
+
+  it("PUT 422s an unknown key, a non-number and an out-of-range value, and writes nothing", async () => {
+    expect((await admin("PUT", "/admin/api/values/photo.nope", { value: 0.5 })).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", { value: "0.5" })).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", { value: 0 })).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", { value: 0.09 })).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", { value: 1.1 })).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", {})).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", { value: 1 })).status).toBe(200);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", { value: 0.1 })).status).toBe(200);
+    expect((await store.adminValueHistory(10)).length).toBe(2);
+  });
+
+  it("answers a non-admin 404 on both verbs and writes nothing", async () => {
+    const plain = await session();
+    expect((await admin("GET", "/admin/api/values", undefined, plain)).status).toBe(404);
+    expect((await admin("PUT", "/admin/api/values/photo.compression", { value: 0.5 }, plain)).status).toBe(404);
+    expect(await store.adminValueHistory(5)).toEqual([]);
+  });
+});
+
 // #899: refer a friend, counted — the Operate view after Campaigns. Counts only: no account in it.
 describe("the referrals view", () => {
   beforeEach(async () => { await mountWithAdmin(); });
@@ -2168,6 +2218,27 @@ describe("the recognitions review", () => {
     expect(recognitions.map((r) => r.model)).toEqual(["old/model"]);
     const windowed = await admin("GET", "/admin/api/recognitions?from=2030-01-01T00:00:00.000Z");
     expect((await windowed.json() as { recognitions: unknown[] }).recognitions).toEqual([]);
+  });
+
+  it("filters by the meal's compression coefficient (ieat-app#3421's column)", async () => {
+    const a = await user();
+    const analysisId = await seed(a);
+    const mealId = crypto.randomUUID();
+    await store.insertMeal({
+      id: mealId, user_id: a, ts: "2026-08-01T12:00:00.000Z", date: "2026-08-01",
+      isFood: true, items: [], kcal: 260, protein_g: 5, carbs_g: 56, fat_g: 1, satfat_g: 0.2,
+      fiber_g: 1, sugar_g: 0.1, sodium_mg: 5, verdicts: {}, confidence: "high", notes: "",
+      corrected: false, model: null, photo_compression: 0.5,
+    } as never);
+    await store.attachRecognitionMeal(a, analysisId, mealId);
+    // A read with no meal carries no coefficient: either bound leaves it out.
+    await seed(a, "other/model");
+
+    const over = await admin("GET", "/admin/api/recognitions?cmin=0.8");
+    expect((await over.json() as { recognitions: unknown[] }).recognitions).toEqual([]);
+    const under = await admin("GET", "/admin/api/recognitions?cmax=0.8");
+    const { recognitions } = await under.json() as { recognitions: { model: string | null }[] };
+    expect(recognitions.map((r) => r.model)).toEqual(["qwen/qwen3-vl-235b"]);
   });
 
   it("answers 404 for an unknown row and for every write", async () => {
