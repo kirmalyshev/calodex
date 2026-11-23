@@ -25,7 +25,7 @@ export interface Queued<Photo> {
   /** The angles of one meal — a file URI on the phone, a Blob in the browser. Empty for text. */
   photos: Photo[];
   /** The JPEG quality `photos` were encoded at (ieat-app#3421): sent on the form so the meal records WHAT WAS APPLIED to the kept bytes, not what the admin asks for whenever the send lands. */
-  compress?: number;
+  compress?: number | undefined;
   /** When the photo was taken or the words typed: the meal is dated by it, not by the send. */
   capturedAt: string;
   /** The meal a queued correction was about, as it was when typed. */
