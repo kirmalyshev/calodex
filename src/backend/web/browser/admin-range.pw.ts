@@ -101,6 +101,8 @@ const BODIES: Record<string, unknown> = {
   "content": { langs: ["en"], labels: {}, meta: { screens: [] }, content: { screens: {} } },
   "prompts": { prompts: [] },
   "switches": { switches: [], recent: [] },
+  // ieat-app#3421: the food view's second card — the one numeric admin value, unset.
+  "values": { values: [{ key: "photo.compression", value: 0.8, setBy: null, setAt: null, setByEmail: null }], recent: [] },
 };
 
 const VIEW_API: Record<string, string> = {
