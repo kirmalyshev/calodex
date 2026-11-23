@@ -185,8 +185,34 @@ describe("the first verdict's headline", () => {
         for (const line of lines) expect(line).not.toContain(onPlan);
       }
     }
-    expect(said({ weight: "warn" })[0]).toBe("A big share of your day in one meal.");
     expect(said({ weight: "bad" })[0]).toBe("More than half your day in one meal.");
+  });
+
+  // ieat-app#3400: the account's FIRST meal was met with a warning and she never logged a second.
+  it("does not scold a first meal that is over its share: a figure and an action, in every language", () => {
+    const first = said({ weight: "warn" })[0]!;
+    expect(first).not.toBe(threadCopyFor("en").firstVerdict.headline.caloriesHigh);
+    expect(first).toBe("584kcal, about 36% of today. A lighter next meal evens it out.");
+    for (const lang of LANGS) {
+      const line = said({ weight: "warn" }, lang)[0]!;
+      expect(line, lang).not.toBe(threadCopyFor(lang).firstVerdict.headline.caloriesHigh);
+      expect(line, lang).toContain("584");
+      expect(line, lang).toContain("36");
+    }
+  });
+
+  it("avoids mechanical translation calques in non-English first meal headlines (ieat-app#3400)", () => {
+    // #3400: native phrasing sweep across 43 non-English languages to remove robotic calques
+    expect(threadCopyFor("ru").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("от дня");
+    expect(threadCopyFor("cs").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("dnešního dne");
+    expect(threadCopyFor("hr").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("današnjeg dana");
+    expect(threadCopyFor("nl").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("maakt het weer goed");
+    expect(threadCopyFor("bg").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("следващ прием");
+    expect(threadCopyFor("da").firstVerdict.headline.caloriesHighFirst({ kcal: "584", share: "36%" })).not.toContain("af i dag");
+  });
+
+  it("keeps the later-meal headline for the same warn", () => {
+    expect(verdictHeadline({ weight: "warn" }, "en")).toBe("A big share of your day in one meal.");
   });
 
   it("says calories are on plan, and no more, when a declared marker ran high", () => {
@@ -204,7 +230,8 @@ describe("verdictHeadline", () => {
   it("is the first verdict's own first line, so a re-rendered card says what the thread said", () => {
     const targets = { kcal: 1643, protein_g: 109, fat_g: 55, carbs_g: 205 };
     const meal = { kcal: 584, protein_g: 37, satfat_g: 6, sodium_mg: 600, confidence: "high" };
-    for (const verdicts of [{ weight: "good" }, { weight: "warn" }, { weight: "bad" }, { weight: "good", ldl: "bad" }] as const) {
+    // `warn` is the one exception: the first meal's own line is softened (ieat-app#3400), asserted above.
+    for (const verdicts of [{ weight: "good" }, { weight: "bad" }, { weight: "good", ldl: "bad" }] as const) {
       for (const lang of LANGS) {
         const lines = firstVerdictLines({ goal: "lose", targets, meal, eatenToday: { kcal: 584, protein_g: 37, satfat_g: 0, sodium_mg: 0 }, via: "photo", verdicts }, lang);
         expect(lines[0]).toBe(verdictHeadline(verdicts, lang)!);

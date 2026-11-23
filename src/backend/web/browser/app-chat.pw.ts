@@ -158,6 +158,31 @@ test("the protein question draws the day's bar from the server, a week question 
   await expect(page.locator(".thread .mb")).toHaveCount(0);
 });
 
+test("'should I eat this?' right after a photo names the logged dish, never 'send the photo' (#3309)", async ({ inWebApp: page }) => {
+  // The reported thread: a paid user photographed a plate, asked four minutes later "Should i
+  // eat this meal?", and was told "I do not have that plate" — the coach had no referent for
+  // "this". The card or offer the thread last showed is now handed over as the referent.
+  test.skip(REAL_MODEL, "a synthetic fixture is not food to a real analyzer");
+  await logMeal(page);
+  const day = await page.request.get("/api/v1/diary/day", {
+    headers: { authorization: `Bearer ${await sessionToken(page)}` },
+  });
+  const dishes = ((await day.json()) as DayResponse).meals[0]!.items.map((i) => i.name);
+  expect(dishes.length).toBeGreaterThan(0);
+  // Re-open the chat the way a returning account arrives: the open draw may have read the
+  // thread before the photo landed, and the pic line is the thread saying it has the meal.
+  await page.reload();
+  await expect(page.locator(".thread li.me.pic")).toHaveCount(1);
+  await page.getByPlaceholder("Tell me what you ate, or ask").fill("should I eat this?");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  const answer = page.locator(".thread li.them", { hasText: "Demo answer" }).last();
+  await expect(answer).toBeVisible();
+  // A dish from the card is named — "this" resolved — and none of the refusal phrases return.
+  const names = new RegExp(dishes.map((d) => d.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"));
+  await expect(answer).toContainText(names);
+  await expect(answer).not.toContainText(/do not have|send (me |the )?(a |the )?photo/i);
+});
+
 test("a file that is not a JPEG, PNG or WebP is refused in words, out loud", async ({ inWebApp: page }) => {
   // What an iPhone's library hands a browser. `accept=` on the input transcodes nothing.
   await page.locator('input[type="file"]').setInputFiles({

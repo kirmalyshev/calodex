@@ -119,6 +119,11 @@ msgstr "”{note}” – huomioitu, se on luvuissa."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, noin {share} päivän tavoitteesta. Vähän kevyempi seuraava ateria tasoittaa tilanteen mukavasti."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -300,7 +305,7 @@ msgstr "Kirjattu."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Aterioiden kirjaaminen vaatii tilauksen. Aloita ilmainen kokeilujakso verkossa jatkaaksesi."
+msgstr "Aterioiden kirjaaminen vaatii tilauksen. Aloita ilmainen kokeilu verkossa jatkaaksesi."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +370,7 @@ msgstr "Suunnitelman mukaan."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Vielä yksi asia, jota iOS kohta kysyy: ilmoitukset. Yksi päivässä eikä koskaan enempää – klo 20.30 tuleva katsaus sekä muistutus kokeilujakson päättymistä edeltävänä päivänä, jos sinulla on sellainen. Ei koskaan mitään muuta."
+msgstr "Vielä yksi asia, jota iOS kohta kysyy: ilmoitukset. Yksi päivässä eikä koskaan enempää – klo 20.30 tuleva katsaus sekä muistutus kokeilun päättymistä edeltävänä päivänä, jos sinulla on sellainen. Ei koskaan mitään muuta."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +560,7 @@ msgstr "Liian monta yritystä tästä Telegramista. Odota hetki ja paina linkki�
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Kokeilujakso on alkanut – sen päätyttyä {price}, ellet lopeta sitä. Muistutan sinua päättymistä edeltävänä päivänä, en koskaan sen jälkeen."
+msgstr "Kokeilu on alkanut – sen päätyttyä {price}, ellet lopeta sitä. Muistutan sinua päättymistä edeltävänä päivänä, en koskaan sen jälkeen."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

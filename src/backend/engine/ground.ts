@@ -76,6 +76,9 @@ const REWRITES: [RegExp, string][] = [
   // — there the brand IS the query.
   [/\bcheese\s+burgers?\b/gi, "cheeseburger"], [/\bburgers?\b(?!\s+king)/gi, "hamburger"],
   [/\btoasts?\b/gi, "toasted bread"],
+  // #903: a bare oil is a plain vegetable oil; as "oil" alone it ties every "Oil, <x>" row and the
+  // shortest name ("Oil, oat") wins.
+  [/^\s*(?:cooking\s+)?oil\s*$/gi, "vegetable oil"],
   // The plate calls it "french fries"; the catalog calls it "potatoes, french fried". The rewrite
   // keeps "fried" as the wanted preparation and lets "potato" name the food (#615 review).
   [/\bfrench fries\b/gi, "french fried potatoes"], [/\bfries\b/gi, "french fried potatoes"],
@@ -110,15 +113,16 @@ const dropModifiers = (name: string): string | null => {
 const wantedStates = (q: string[]): string[] => q.flatMap((t) => COOKED_AS[t] ?? (STATES.has(t) ? [t] : []));
 
 /** The words a row must carry: the query without stop words, preparation words and leading modifiers. */
-export const lookupWords = (nameEn: string): string[] => {
+const lookupTokens = (nameEn: string): string[] => {
   const n = rewrite(nameEn);
   if (isSushi(n)) return ["sushi"];
   const q = words(n);
   const stripped = q.filter((w) => !STOP.has(w) && !COOKED_AS[w] && !STATES.has(w));
   let i = 0;
   while (i < stripped.length - 1 && MODIFIERS.has(stripped[i]!)) i++;
-  return stripped.slice(i).map(singular);
+  return stripped.slice(i);
 };
+export const lookupWords = (nameEn: string): string[] => lookupTokens(nameEn).map(singular);
 
 /**
  * How well a row answers a recognised name; higher is better. Name only (#615): the head noun
@@ -142,8 +146,8 @@ const SPECIES = new Set([
   "trout", "sardine", "herring", "mackerel", "shrimp", "prawn", "crab", "lobster", "squid", "octopus",
 ]);
 /**
- * The species a bare food word means: "a steak" is a beef steak until the name says otherwise —
- * a "Pork steak" row is a DIFFERENT head food for it, not a shorter-named win (#637). Joins the
+ * The default a bare food word stands for: "a steak" is a beef steak
+ * until the name says otherwise — a "Pork steak" row is a DIFFERENT head food for it, not a shorter-named win (#637). Joins the
  * query's match set, so a row naming the implied species neither gains an extra nor loses its
  * head. Keys and values are normed stems.
  */
@@ -155,6 +159,8 @@ interface QueryContext {
   /** qAll as an array: iterated once per candidate's flags. */
   qArr: string[];
   wantState: Set<string>; servesCooked: boolean;
+  /** Head noun after `lookupWords` rewrites and stripping (last word, normed); may not be in `qAll` when a rewrite changed it. */
+  qHead: string | undefined;
 }
 const queryContext = (nameEn: string): QueryContext => {
   const q = words(nameEn);
@@ -164,15 +170,45 @@ const queryContext = (nameEn: string): QueryContext => {
     for (const t of qSet) { const s = IMPLIED_SPECIES[t]; if (s) qAll.add(s); }
   return {
     qAll, qArr: [...qAll],
+    qHead: ((w) => (w === undefined ? undefined : norm(w)))(lookupTokens(nameEn).at(-1)),
     wantState: new Set(wantedStates(q)),
     // The set holds plurals and words `singular` mangles ("couscous" -> "couscou"): test both forms.
     servesCooked: q.some((t) => SERVES_COOKED.has(t) || SERVES_COOKED.has(singular(t))),
   };
 };
 
+/**
+ * Whether `head` (a normed stem) marks the row as ANOTHER food: it sits in a "with ..." segment, or
+ * in the first segment of a row that opens with a staple of its own ("Semolina dumplings") while
+ * the query's noun is no staple. "Basmati rice, cooked" for "rice" and "Whole milk" for "milk" are
+ * the food itself, and "Plain cake, lemon cake" names it again in a later segment.
+ */
+/** A segment that qualifies the food rather than names it: "with ...", "no ...", or a USDA "; ..." clause. */
+/**
+ * Nouns for a DISH, where a staple in front names a different dish ("Semolina dumplings", "Potato
+ * pancake", "Potato salad") — unlike a snack or product, where it only names the kind ("Potato
+ * crisps", "Wheat bread", "Corn tortilla"). Normed stems.
+ */
+const DISH_NOUNS = new Set(["dumpling", "pancake", "salad", "pudding", "fritter", "croquette"].map(norm));
+const QUALIFIER = /^\s*(?:;|(?:with|without|no)\b)/i;
+const namesAsModifier = (name: string, head: string, query: readonly string[]): boolean => {
+  let afterSemi = false;
+  const segs = name.split(/,|(?=;)/).map((seg, i) => {
+    afterSemi ||= seg.trimStart().startsWith(";");
+    return { seg, hit: words(seg).some((w) => norm(w) === head), i, qual: afterSemi || QUALIFIER.test(seg) };
+  });
+  const staple = (w: string | undefined) => w !== undefined && !SPECIES.has(w) && (SERVES_COOKED.has(w) || SERVES_COOKED.has(singular(w)));
+  const first = words(segs[0]!.seg)[0];
+  const holdsAll = (x: { seg: string }) => query.every((q) => words(x.seg).some((w) => norm(w) === q));
+  const modifier = (x: { seg: string; hit: boolean; i: number; qual: boolean }) =>
+    x.hit && (x.i === 0 ? DISH_NOUNS.has(head) && staple(first) && first !== undefined && !query.includes(norm(first)) && !staple(head) : x.qual);
+  // A later segment that carries EVERY query word names the food again ("Plain cake, lemon cake").
+  return segs.some(modifier) && !segs.some((x) => x.i > 0 && !x.qual && holdsAll(x));
+};
+
 interface Scored { s: number; sHard: number; extras: number; headOk: boolean }
 function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored): void {
-  const { qAll, qArr, wantState, servesCooked } = ctx;
+  const { qAll, qArr, wantState, servesCooked, qHead } = ctx;
   // Matched stems per class, from ONE lookup per query stem (the row's tokens never re-enter the
   // loop — scoring the whole intersection stays under a millisecond, #637).
   let mOther = 0, mFiller = 0, mProduct = 0, mComposite = 0, mPortion = 0, mCap = 0;
@@ -196,6 +232,14 @@ function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored
   // natural-order one (`food-index.ts`). "Sugar-apples" is a sweetsop, not sugar — a hyphenated
   // head whose far half the name never said is a head the name never said.
   const headOk = a.headParts ? a.headParts.every((p) => qAll.has(norm(p))) : qAll.has(a.headStem!);
+  // #903: "dumpling" is not "Semolina dumplings", "sauce" is not "Ham, ...; no sauce": a row that is
+  // led by a staple of its own while the query's noun is none, or that names the noun only in a
+  // "with" / "without" / "no" qualifier, is another food. USDA's inverted "Nuts, almond butter" and
+  // "Basmati rice, cooked" name the food itself and are untouched. This runs whether or not the
+  // head matched: "Semolina dumplings raw" is natural order, and its head IS "dumplings".
+  if (qHead !== undefined && a.flags.has(qHead) && namesAsModifier(f.name_en ?? f.name, qHead, qArr)) {
+    out.s = out.sHard = -Infinity; out.extras = 0; out.headOk = false; return;
+  }
   if (!headOk) s -= 3;
 
   s -= 4 * (a.nComposites - mComposite);

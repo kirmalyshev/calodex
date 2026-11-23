@@ -49,7 +49,7 @@ import { readFileSync } from "node:fs";
  * licences ride beside them in `img/LICENSES.md` — the same rows `product/design/pro/img`
  * carries, which is where the squares were cropped from. One key per file in `img/`: the set is
  * the landing's licensed pool, so the screenshot capture picks from it too. Loaded lazily so the
- * module stays cheap to import (the test and the seeder are its only callers).
+ * module stays cheap to import (the test, the seeder and ieat-app's eval-coach are its callers).
  */
 const BOARD_PHOTO_FILES = {
   grainbowl: "grainbowl-sq.webp",
@@ -61,9 +61,10 @@ const BOARD_PHOTO_FILES = {
   shortcake: "shortcake-sq.webp",
   cake: "cake-sq.webp",
 } as const;
-type BoardPhoto = keyof typeof BOARD_PHOTO_FILES;
+export type BoardPhoto = keyof typeof BOARD_PHOTO_FILES;
 
-const boardPhoto = (key: BoardPhoto): Uint8Array =>
+/** The licensed image behind a key — real food, so a turn that photographs one reads as a plate. */
+export const boardPhoto = (key: BoardPhoto): Uint8Array =>
   new Uint8Array(readFileSync(join(import.meta.dir, "img", BOARD_PHOTO_FILES[key])));
 
 export function seedDeviceId(key: string): string {

@@ -119,6 +119,11 @@ msgstr "“{note}” — নোট করেছি, হিসাবে ধরা
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, আজকের বরাদ্দের প্রায় {share}। পরের বেলার খাবারটা একটু হালকা রাখলেই ব্যালান্স হয়ে যাবে।"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 

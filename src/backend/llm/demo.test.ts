@@ -175,6 +175,36 @@ test("the canned coach answers a plain question from the context alone", async (
   expect(out.reply).toContain(String(COACH.context.targets.kcal));
 });
 
+const PLATE = {
+  isFood: true, confidence: "high", kcal: 816, protein_g: 40, carbs_g: 60, fat_g: 30,
+  satfat_g: 9, fiber_g: 6, sugar_g: 10, sodium_mg: 400,
+  items: [{ name: "Baked salmon", grams: 200 }, { name: "Roast potatoes", grams: 150 }],
+  verdicts: {}, healthScore: null,
+} as unknown as NonNullable<CoachContext["focusMeal"]>;
+
+// "This meal" is the card the thread last showed, resolved by the engine into `focusMeal`
+// (#3309). The canned coach names it like a real one would — "I do not have that plate" was the
+// regression this case exists to keep dead — in each of the languages the eval asks it in.
+test.each([
+  "should i eat this meal?",
+  "Стоит ли есть это?",
+  "Haruskah saya makan ini?",
+])("the canned coach names the plate the thread just showed: %s", async (text) => {
+  const context = { ...COACH.context, focusMeal: PLATE };
+  const out = await demoPorts().coach({ ...COACH, text, context }, {});
+  expect(out.reply).toContain("Baked salmon");
+  // Judged against the day, not just named: the kcal left today is in the answer.
+  expect(out.reply).toContain(String(Math.max(0, COACH.context.targets.kcal)));
+  expect(out.reply).not.toMatch(/do not have|send (me |the )?(a |the )?photo/i);
+});
+
+test("a question that is not about the shown plate still gets the generic answer", async () => {
+  const context = { ...COACH.context, focusMeal: PLATE };
+  const out = await demoPorts().coach({ ...COACH, text: "is pizza ok tonight?", context }, {});
+  expect(out.reply).not.toContain("Baked salmon");
+  expect(out.reply).toContain("Demo answer.");
+});
+
 test("analyzePhoto feeds the same JSON to onDelta that it returns, in more than one chunk", async () => {
   const input = { images: [new Uint8Array([1, 2, 3])], profile: PROFILE, targets: explainTargets(PROFILE).targets };
   const chunks: string[] = [];

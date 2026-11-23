@@ -119,6 +119,11 @@ msgstr "«{note}» — anotat, ja és als números."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, al voltant del {share} d'avui. Un àpat següent una mica més lleuger ho compensa fàcilment."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 

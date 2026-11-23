@@ -119,6 +119,11 @@ msgstr "”{note}” — noterat, det är med i siffrorna."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ungefär {share} av dagens mål. En lite lättare nästa måltid jämnar ut det fint."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -300,7 +305,7 @@ msgstr "Loggat."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Du behöver en prenumeration för att logga måltider. Starta din gratis provperiod på webben för att fortsätta."
+msgstr "Du behöver en prenumeration för att logga måltider. Starta din gratis trial på webben för att fortsätta."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +370,7 @@ msgstr "Enligt planen."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "En sak till som iOS snart frågar om: notiser. En om dagen och aldrig fler — kvällsmeddelandet 20:30, plus en påminnelse dagen innan din provperiod slutar om du har en. Inget annat, någonsin."
+msgstr "En sak till som iOS snart frågar om: notiser. En om dagen och aldrig fler — kvällsmeddelandet 20:30, plus en påminnelse dagen innan din trial slutar om du har en. Inget annat, någonsin."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +560,7 @@ msgstr "För många försök från det här Telegram-kontot. Vänta en stund och
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Provperioden är igång — {price} när den slutar, om du inte avslutar den. Jag påminner dig dagen innan den slutar, aldrig dagen efter."
+msgstr "Trialen är igång — {price} när den slutar, om du inte avslutar den. Jag påminner dig dagen innan den slutar, aldrig dagen efter."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

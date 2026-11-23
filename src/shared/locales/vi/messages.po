@@ -125,6 +125,11 @@ msgstr "“{note}” — đã ghi nhận, nó nằm trong các con số rồi."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, khoảng {share} mục tiêu hôm nay. Bữa sau ăn nhẹ lại một chút là cân bằng ngay thôi."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 

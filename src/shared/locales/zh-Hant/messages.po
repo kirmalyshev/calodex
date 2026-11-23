@@ -119,6 +119,11 @@ msgstr "「{note}」——記下了，已算進數字裡。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}大卡，約佔今天預算的{share}。下一餐吃得清淡一點，就能輕鬆平衡回來。"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}大卡"
 

@@ -357,7 +357,7 @@ test("the push grid lists every key x language, edits a cell, and shows the gate
 
   await grid.locator("tr").filter({ hasText: "nudge" }).locator("button.cell").nth(0).click();
   const edit = page.locator("#push-edit");
-  await expect(edit.locator("textarea")).toHaveValue(/Log what you ate today/);
+  await expect(edit.locator("textarea")).toHaveValue(DEFAULT_NOTIFICATION_COPY.nudge.body);
   await edit.locator("textarea").fill("Guaranteed weight loss");
   await edit.getByRole("button", { name: "Save as reviewed" }).click();
   await expect(page.locator("#push-errors")).toBeVisible();

@@ -260,7 +260,7 @@ export async function serveOnboarding(
   const version = served.content.version;
   // Not awaited: the answer does not wait on its own bookkeeping. The log names no account and
   // carries no driver message (one can quote the user id): the error's name and code only.
-  void (async () => deps.store.recordOnboardingServed(userId, { contentVersion: version, lang: signals.lang, surface: signals.surface, screens }))()
+  void (async () => deps.store.recordOnboardingServed(userId, { contentVersion: version, lang: signals.lang, surface: signals.surface, screens, experiment: served.experiment ?? null }))()
     .catch((err: unknown) => {
       const e = err as { name?: unknown; code?: unknown } | null;
       console.error(`[eait] onboarding serving not recorded (content v${version}, ${signals.surface}): ${String(e?.name ?? "Error")} ${String(e?.code ?? "")}`.trimEnd());
@@ -387,6 +387,9 @@ export async function recordOnboardingEvents(
     // discarded rather than the event being rejected — losing one column beats losing the funnel.
     const value = field && isReportableField(field) ? str(e.value, 120) : "";
     const template = str(e.template, 72);
+    // Client-reported like `template` (ieat-app#3401): the offering the device had drawn, a label
+    // only — bounded, and only carried when non-empty.
+    const paywallOffering = str(e.paywallOffering, 72);
 
     clean.push({
       id,
@@ -399,16 +402,18 @@ export async function recordOnboardingEvents(
       ...(field ? { field } : {}),
       ...(value ? { value } : {}),
       ...(TEMPLATE_REF.test(template) ? { template } : {}),
+      ...(paywallOffering ? { paywallOffering } : {}),
     });
   }
 
   if (clean.length === 0) return 0;
   // The context is the SERVER's to stamp (ieat-app#3196): the request's headers, the account's row
-  // and its held arm. Of the body, only `template` is read; every other context-shaped key is not.
+  // and its held arm. Of the body, only `template` and `paywallOffering` are read; every other
+  // context-shaped key is not.
   const context = await onboardingEventContext(deps, userId, request).catch((e: unknown) => {
     const err = e as { name?: string; code?: string } | null;
     console.error(`[eait] onboarding: event context read failed: ${err?.name ?? "error"} ${err?.code ?? "-"}`);
-    return { ...request, lang: null, country: null, experiment_id: null, arm: null, template: null };
+    return { ...request, lang: null, country: null, experiment_id: null, arm: null, template: null, paywall_offering: null };
   });
   return deps.store.recordOnboardingEvents(userId, clean, context);
 }

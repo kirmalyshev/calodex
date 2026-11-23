@@ -1300,7 +1300,7 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.putPushToken(withToken, `ExponentPushToken[${RUN}-sweep-b]`, "ios");
       const rows = await s.pushAudience();
       expect(rows.filter((r) => r.userId === withToken)).toEqual([
-        { userId: withToken, timezone: null, createdAt: expect.any(String), onboardedAt: null },
+        { userId: withToken, timezone: null, createdAt: expect.any(String), onboardedAt: null, deviceAt: expect.any(String) },
       ]);
       expect(rows.map((r) => r.userId)).not.toContain(without);
       await s.setTimezone(withToken, "Asia/Tokyo");
@@ -3269,17 +3269,19 @@ function contract(name: string, make: () => Promise<Store>) {
       const ev = (id: string, ms: number) => ({ id: `${id}-${RUN}`, sessionId: `ctx-${RUN}`, place: "goal" as const, action: "view" as const, contentVersion: 1, at: new Date(Date.parse(at) + ms).toISOString() });
       const context = {
         surface: "app" as const, brand: "eait" as const, app_version: "1.4.2", build: "187", ota_update_id: "u-1",
-        channel: "testflight" as const, lang: "de" as const, country: "de", experiment_id: "exp-1", arm: "42", template: "hero@3",
+        channel: "testflight" as const, lang: "de" as const, country: "de", experiment_id: "exp-1", arm: "42",
+        template: "hero@3", paywall_offering: null,
       };
       await s.recordOnboardingEvents(u, [ev("stamped", 0)], context);
-      await s.recordOnboardingEvents(u, [{ ...ev("own", 500), template: "plate@2" }], context);
+      // The offering is the row's own too (ieat-app#3401): the device reports what it drew.
+      await s.recordOnboardingEvents(u, [{ ...ev("own", 500), template: "plate@2", paywallOffering: "exit_offer" }], context);
       await s.recordOnboardingEvents(u, [ev("bare", 1000)]);
       const [row] = (await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } })).rows;
       expect(row!.events!.map((e) => e.context)).toEqual([
         context,
-        { ...context, template: "plate@2" },
+        { ...context, template: "plate@2", paywall_offering: "exit_offer" },
         { surface: null, brand: null, app_version: null, build: null, ota_update_id: null, channel: null,
-          lang: null, country: null, experiment_id: null, arm: null, template: null },
+          lang: null, country: null, experiment_id: null, arm: null, template: null, paywall_offering: null },
       ]);
     });
 
@@ -4255,6 +4257,25 @@ function contract(name: string, make: () => Promise<Store>) {
           [43, "de", "app", {}],
           [42, "de", "app", { baseline: { template: "day", version: 3 } }],
         ]);
+      });
+
+      // ieat-app#3401 — the served experiment is part of what "the same serving" means: a repeat
+      // moves the latest row's clock, a changed one is a serving of its own, and a live-flow
+      // serving (no experiment) reads back its nulls rather than matching the experiment row.
+      it("carries the served experiment, and a changed one is a new row", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "de")).userId;
+        await s.recordOnboardingServed(u, served({ experiment: { id: "exp1", arm: "42" } }));
+        const [row] = await s.onboardingServed(u);
+        expect([row!.experimentId, row!.arm]).toEqual(["exp1", "42"]);
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served({ experiment: { id: "exp1", arm: "42" } }));
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served({ experiment: { id: "exp1", arm: "43" } }));
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served());
+        const rows = await s.onboardingServed(u);
+        expect(rows.map((r) => r.arm)).toEqual(["42", "43", null]);
       });
 
       it("is the account's own: another account reads none of it, and erasure takes it", async () => {

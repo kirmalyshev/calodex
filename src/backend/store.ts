@@ -94,6 +94,13 @@ export interface PushAudienceRow {
    */
   createdAt: string;
   onboardedAt: string | null;
+  /**
+   * When the account's earliest device registered (ISO) — the moment it joined the audience at
+   * all. The tick reads it beside `onboardedAt`: a catch-up window exists for a tick that was
+   * late, and an account that became reachable (or finished onboarding) only after today's line
+   * was never due (ieat-app#3399).
+   */
+  deviceAt: string;
 }
 
 /** A message about to be sent to ONE device. `id` is the `sendId` the push `data` carries. */
@@ -869,11 +876,21 @@ export interface OnboardingServed {
   lang: Lang;
   surface: OnboardingSurface;
   screens: Partial<Record<TemplateSlot, TemplateRef>>;
+  /**
+   * The experiment and arm this serving was (ieat-app#3401), as `GET /v1/onboarding` answered it —
+   * stored so later events name the same assignment rather than re-deriving one from whatever
+   * experiment happens to still be running. Null when the live flow was served.
+   */
+  experiment?: { id: string; arm: string } | null;
 }
-export interface OnboardingServedRecord extends OnboardingServed {
+export interface OnboardingServedRecord extends Omit<OnboardingServed, "experiment"> {
   /** First served, ISO. */
   servedAt: string;
   lastServedAt: string;
+  /** The served experiment's id, or null on a live-flow serving. */
+  experimentId: string | null;
+  /** The served arm's label — the variant's content version as text — or null. */
+  arm: string | null;
 }
 
 /** One arm's numbers in an experiment's funnel, grouped by the assigned variant. */
