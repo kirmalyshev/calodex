@@ -92,8 +92,8 @@ export const DEFAULT_NOTIFICATION_COPY: NotificationCopy = {
   "trial-end": {
     title: "Trial ends tomorrow",
     // A CANCELLATION leaves the expiry where it was, so somebody who has already stopped it
-    // still gets this message, and every language's words must stay true for them: name the way
-    // out, never announce that a subscription is about to start.
+    // still gets this message, and every language's words must stay true for them: never announce
+    // that a subscription is about to start.
     body: "Want out? Settings › Subscriptions. Otherwise it renews on its own.",
   },
   evening: {
