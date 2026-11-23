@@ -514,6 +514,11 @@ msgstr "આજ માટે આ તમારું છેલ્લું હત�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "આ મારી બાજુની ખામી છે. કંઈ ગણાયું નથી — થોડી વાર પછી ફરી પ્રયાસ કરો."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "અત્યાર માટે આટલી જ મર્યાદા છે. પછીથી ફરી પ્રયાસ કરો."
 

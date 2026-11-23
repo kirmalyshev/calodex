@@ -514,6 +514,11 @@ msgstr "To je bila tvoja posljednja za danas — dnevna kvota se vraća u ponoć
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Pogreška je na mojoj strani. Ništa nije prebrojeno — pokušaj ponovno malo kasnije."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Zasad je to granica. Pokušaj kasnije."
 

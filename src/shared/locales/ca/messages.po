@@ -514,6 +514,11 @@ msgstr "Aquest era l'últim d'avui — la quota diària es reinicia a mitjanit."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "L'error és meu. No s'ha comptat res — torna-ho a provar d'aquí una estona."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "De moment, aquest és el límit. Torna-ho a provar més tard."
 

@@ -514,6 +514,11 @@ msgstr "ഇന്നത്തെ അവസാനത്തേത് അതായ�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "ഇത് എന്റെ വശത്തുള്ള തകരാറാണ്. ഒന്നും എണ്ണിയില്ല — കുറച്ചു കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "ഇപ്പോഴത്തേക്കുള്ള പരിധി ഇതാണ്. പിന്നീട് വീണ്ടും ശ്രമിക്കൂ."
 

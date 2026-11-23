@@ -122,6 +122,7 @@ const chatNotice = (copy: PageCopy): Record<string, string> => ({
   "cap-user": copy.chatRefusalDay,
   "subscription-required": copy.chatRefusalSubscription,
   "analysis-failed": copy.chatRefusalFailed,
+  "provider-down": copy.chatRefusalDown,
   "not-food": copy.chatRefusalNotFood,
   "no-focus-correction": copy.chatNoFocusCorrection,
   "no-focus-redate": copy.chatNoFocusRedate,

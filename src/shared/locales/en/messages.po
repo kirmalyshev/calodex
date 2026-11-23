@@ -520,6 +520,11 @@ msgstr "That was your last one today — your daily allowance resets at midnight
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "That's on my side. Nothing was counted — try again in a bit."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "That's the limit for now. Try again later."
 

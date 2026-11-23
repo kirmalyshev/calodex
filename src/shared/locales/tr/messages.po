@@ -514,6 +514,11 @@ msgstr "Bugünkü son hakkın buydu — günlük hakkın gece yarısı sıfırla
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Sorun benden kaynaklı. Hiçbir şey sayılmadı — biraz sonra tekrar dene."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Şimdilik sınır bu. Daha sonra tekrar dene."
 

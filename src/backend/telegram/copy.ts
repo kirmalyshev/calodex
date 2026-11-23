@@ -107,6 +107,8 @@ const COPY = (i18n: I18n): TelegramCopy => ({
     "cap-address": i18n._("tg.refusal.cap-address", undefined, { message: "That's the limit for now. Try again later." }),
     "subscription-required": i18n._("tg.refusal.subscription-required", undefined, { message: "Logging meals needs a subscription. Start your free trial on the web to carry on." }),
     "analysis-failed": i18n._("tg.refusal.analysis-failed", undefined, { message: "That did not come back. Try it again." }),
+    // #3435 — the provider's account refused (out of credit, a dead key): OUR side, honestly said.
+    "provider-down": i18n._("tg.refusal.provider-down", undefined, { message: "That's on my side. Nothing was counted — try again in a bit." }),
     "unreadable-label": i18n._("tg.refusal.unreadable-label", undefined, { message: "Couldn't read that label." }),
     "unsupported-image": i18n._("tg.refusal.unsupported-image", undefined, { message: "That file is not a photo this can read. JPEG, PNG or WebP." }),
     "no-photo": i18n._("tg.refusal.no-photo", undefined, { message: "That photo did not come through. Send it again." }),

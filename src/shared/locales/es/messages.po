@@ -520,6 +520,11 @@ msgstr "Esa fue la última de hoy — tu cupo diario se reinicia a medianoche."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "El fallo es mío. No se contó nada — inténtalo de nuevo en un rato."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Ese es el límite por ahora. Inténtalo más tarde."
 

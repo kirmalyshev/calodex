@@ -514,6 +514,11 @@ msgstr "আজকের জন্য এটাই ছিল শেষটা — 
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "সমস্যাটা আমার পক্ষ থেকে। কিছুই গোনা হয়নি — একটু পরে আবার চেষ্টা করুন।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "আপাতত এটাই সীমা। পরে আবার চেষ্টা করুন।"
 

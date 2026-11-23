@@ -514,6 +514,11 @@ msgstr "Itu yang terakhir untuk hari ini — kuota harian anda ditetapkan semula
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Ini kesalahan pihak saya. Tiada yang dikira — cuba lagi sebentar nanti."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Had sudah dicapai buat masa ini. Cuba lagi nanti."
 

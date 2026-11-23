@@ -520,6 +520,11 @@ msgstr "C'était le dernier pour aujourd'hui — ton quota quotidien se réiniti
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "C'est de mon côté. Rien n'a été compté — réessaie dans un moment."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "C'est la limite pour l'instant. Réessaie plus tard."
 

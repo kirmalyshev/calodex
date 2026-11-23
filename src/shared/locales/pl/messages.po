@@ -514,6 +514,11 @@ msgstr "To było twoje ostatnie na dziś — dzienny limit odnawia się o półn
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "To usterka po mojej stronie. Nic nie zostało policzone — spróbuj ponownie za chwilę."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Na razie to limit. Spróbuj później."
 

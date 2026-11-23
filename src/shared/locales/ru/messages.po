@@ -520,6 +520,11 @@ msgstr "Это был последний анализ на сегодня — д
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Это на моей стороне. Ничего не посчитано — попробуй ещё раз чуть позже."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Пока это предел. Попробуй позже."
 

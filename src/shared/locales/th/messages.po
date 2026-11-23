@@ -514,6 +514,11 @@ msgstr "นั่นคือครั้งสุดท้ายของวั
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "เป็นปัญหาฝั่งฉันเอง ยังไม่มีอะไรถูกนับ — ลองอีกครั้งในครู่เดียว"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "ถึงขีดจำกัดแล้วตอนนี้ ลองใหม่ภายหลัง"
 

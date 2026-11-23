@@ -514,6 +514,11 @@ msgstr "Това бе последното ти за днес — дневния
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Проблемът е от мен. Нищо не беше преброено — опитай отново след малко."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Това е лимитът засега. Опитай пак по-късно."
 

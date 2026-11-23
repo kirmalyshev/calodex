@@ -514,6 +514,11 @@ msgstr "Це був останній аналіз на сьогодні — де
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Проблема на моєму боці. Нічого не зараховано — спробуй ще раз трохи пізніше."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Поки що ліміт вичерпано. Спробуй пізніше."
 

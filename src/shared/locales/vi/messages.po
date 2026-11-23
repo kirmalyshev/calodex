@@ -520,6 +520,11 @@ msgstr "Đó là lần cuối trong hôm nay — hạn mức mỗi ngày của b
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Lỗi ở phía tôi. Chưa tính gì cả — thử lại sau một lát nhé."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Tạm thời đó là giới hạn. Thử lại sau nhé."
 

@@ -514,6 +514,11 @@ msgstr "今日の分はこれで最後です。1日の利用枠は午前0時に�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "原因はこちら側です。何も計算されませんでした — 少ししてからもう一度お試しください。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "今はここまでです。しばらくしてからもう一度お試しください。"
 

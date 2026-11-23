@@ -514,6 +514,11 @@ msgstr "Se oli tämän päivän viimeinen – päiväkiintiösi nollautuu keskiy
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Vika on minun puolellani. Mitään ei laskettu — yritä hetken päästä uudelleen."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Raja on toistaiseksi täynnä. Yritä myöhemmin uudelleen."
 

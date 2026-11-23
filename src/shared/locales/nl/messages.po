@@ -514,6 +514,11 @@ msgstr "Dat was je laatste van vandaag — je dagtegoed wordt om middernacht ger
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Dit ligt aan mij. Er is niets geteld — probeer het straks opnieuw."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Dat is voorlopig de limiet. Probeer het later opnieuw."
 

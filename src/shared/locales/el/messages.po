@@ -514,6 +514,11 @@ msgstr "Αυτή ήταν η τελευταία σου για σήμερα — �
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Το σφάλμα είναι δικό μου. Τίποτα δεν μετρήθηκε — δοκίμασε ξανά σε λίγο."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Αυτό είναι το όριο για τώρα. Δοκίμασε ξανά αργότερα."
 

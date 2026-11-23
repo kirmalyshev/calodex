@@ -514,6 +514,11 @@ msgstr "இன்றைக்கு அதுதான் கடைசி — �
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "இது என் பக்கத் தவறு. எதுவும் கணக்கிடப்படவில்லை — சிறிது நேரம் கழித்து மீண்டும் முயற்சிக்கவும்."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "இப்போதைக்கு வரம்பு இதுதான். பிறகு மீண்டும் முயலுங்கள்."
 

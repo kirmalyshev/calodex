@@ -514,6 +514,11 @@ msgstr "Ez volt a mai utolsó — a napi kereted éjfélkor újraindul."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "A hiba miattam van. Semmi nem lett megszámolva — próbáld újra egy kicsit később."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Egyelőre elérted a korlátot. Próbáld újra később."
 

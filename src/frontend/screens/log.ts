@@ -466,7 +466,7 @@ export function logScreen(frame: Frame): HTMLElement {
     } catch (err) {
       const kind = err instanceof ApiError ? String(err.body?.error ?? "") : "";
       if (kind === "not-food") { drawRefused(); return; }
-      if (kind === "analysis-failed" || outcomeUnknown(kind)) {
+      if (kind === "analysis-failed" || kind === "provider-down" || outcomeUnknown(kind)) {
         // "Nothing was logged. Your photo is kept." — kept HELD, so the drain does not quietly
         // send it again and Chat's card offers "Send it again" on it (states-failed is W7's). A
         // resend mints a new client id (`outbox.resend`) — replaying the id would answer the
