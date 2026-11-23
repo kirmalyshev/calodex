@@ -329,3 +329,21 @@ describe("matcher A3b: rewrites, sushi, modifier-drop (#567)", () => {
     expect(miss.grounded).toBe(0);
   });
 });
+
+describe("a generic word never grounds to a different food (#903)", () => {
+  const pick = (name_en: string, rows: FoodRef[]) => pickFood(name_en, rows)?.name_en ?? null;
+
+  test("cooking oil is a plain oil, not oat oil", () => {
+    const rows = [ref("Oil, oat", 884), ref("Oil, vegetable", 884)];
+    expect(pick("cooking oil", rows)).toBe("Oil, vegetable");
+    expect(pick("oil", rows)).toBe("Oil, vegetable");
+  });
+  test("a row that only carries the query's noun as a modifier of another food is no match", () => {
+    expect(pick("dumpling", [ref("Semolina dumplings, raw", 120)])).toBeNull();
+    expect(pick("dark sauce", [ref("Ham, potatoes and vegetables, with sauce", 90)])).toBeNull();
+  });
+  test("the right row still beats no match", () => {
+    expect(pick("dumpling", [ref("Semolina dumplings, raw", 120), ref("Dumpling, pork, steamed", 200)])).toBe("Dumpling, pork, steamed");
+    expect(pick("chicken soup", [ref("Soup, chicken noodle", 40)])).toBe("Soup, chicken noodle");
+  });
+});

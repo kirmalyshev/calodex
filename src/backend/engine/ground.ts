@@ -24,7 +24,7 @@ import type { SwitchKey } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
 import {
-  analyzeFoodRow, norm, singular, words, STATES, SUBSTITUTE,
+  analyzeFoodRow, norm, singular, words, FILLER, STATES, SUBSTITUTE,
   CLS_OTHER, CLS_FILLER, CLS_PRODUCT, CLS_COMPOSITE, CLS_PORTION, CLS_CAP,
   type RowAnalysis,
 } from "../food-index.ts";
@@ -147,7 +147,7 @@ const SPECIES = new Set([
  * query's match set, so a row naming the implied species neither gains an extra nor loses its
  * head. Keys and values are normed stems.
  */
-const IMPLIED_SPECIES: Record<string, string> = { steak: "beef" };
+const IMPLIED_SPECIES: Record<string, string> = { steak: "beef", oil: norm("vegetable") };
 
 interface QueryContext {
   /** Every query word, normed, plus the implied species — the match set for extra/head/brand. */
@@ -155,6 +155,8 @@ interface QueryContext {
   /** qAll as an array: iterated once per candidate's flags. */
   qArr: string[];
   wantState: Set<string>; servesCooked: boolean;
+  /** The query's head noun (its last content word, normed): the food the name says it is. */
+  qHead: string | undefined;
 }
 const queryContext = (nameEn: string): QueryContext => {
   const q = words(nameEn);
@@ -164,6 +166,7 @@ const queryContext = (nameEn: string): QueryContext => {
     for (const t of qSet) { const s = IMPLIED_SPECIES[t]; if (s) qAll.add(s); }
   return {
     qAll, qArr: [...qAll],
+    qHead: lookupWords(nameEn).map(norm).at(-1),
     wantState: new Set(wantedStates(q)),
     // The set holds plurals and words `singular` mangles ("couscous" -> "couscou"): test both forms.
     servesCooked: q.some((t) => SERVES_COOKED.has(t) || SERVES_COOKED.has(singular(t))),
@@ -172,7 +175,7 @@ const queryContext = (nameEn: string): QueryContext => {
 
 interface Scored { s: number; sHard: number; extras: number; headOk: boolean }
 function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored): void {
-  const { qAll, qArr, wantState, servesCooked } = ctx;
+  const { qAll, qArr, wantState, servesCooked, qHead } = ctx;
   // Matched stems per class, from ONE lookup per query stem (the row's tokens never re-enter the
   // loop — scoring the whole intersection stays under a millisecond, #637).
   let mOther = 0, mFiller = 0, mProduct = 0, mComposite = 0, mPortion = 0, mCap = 0;
@@ -196,7 +199,12 @@ function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored
   // natural-order one (`food-index.ts`). "Sugar-apples" is a sweetsop, not sugar — a hyphenated
   // head whose far half the name never said is a head the name never said.
   const headOk = a.headParts ? a.headParts.every((p) => qAll.has(norm(p))) : qAll.has(a.headStem!);
-  if (!headOk) s -= 3;
+  if (!headOk) {
+    // #903: "dumpling" is not "Semolina dumplings", "sauce" is not "Ham, potatoes ..., with sauce":
+    // a row that names the query's head only as a modifier of another food is a different food.
+    if (qHead !== undefined && a.flags.has(qHead) && !FILLER.has(a.words[0]!)) { out.s = out.sHard = -Infinity; out.extras = 0; out.headOk = false; return; }
+    s -= 3;
+  }
 
   s -= 4 * (a.nComposites - mComposite);
   s -= 4 * (a.nPortions - mPortion);
