@@ -183,14 +183,15 @@ const queryContext = (nameEn: string): QueryContext => {
  * the query's noun is no staple. "Basmati rice, cooked" for "rice" and "Whole milk" for "milk" are
  * the food itself, and "Plain cake, lemon cake" names it again in a later segment.
  */
-const QUALIFIER = /^\s*(?:with|without|no)\b/i;
-const namesAsModifier = (name: string, head: string, query: readonly string[], headOk: boolean): boolean => {
-  const segs = name.split(/[,;]/).map((seg, i) => ({ seg, hit: words(seg).some((w) => norm(w) === head), i }));
+/** A segment that qualifies the food rather than names it: "with ...", "no ...", or a USDA "; ..." clause. */
+const QUALIFIER = /^\s*(?:;|(?:with|without|no)\b)/i;
+const namesAsModifier = (name: string, head: string, query: readonly string[]): boolean => {
+  const segs = name.split(/,|(?=;)/).map((seg, i) => ({ seg, hit: words(seg).some((w) => norm(w) === head), i }));
   const staple = (w: string | undefined) => w !== undefined && !SPECIES.has(w) && (SERVES_COOKED.has(w) || SERVES_COOKED.has(singular(w)));
   const first = words(segs[0]!.seg)[0];
   const holdsAll = (x: { seg: string }) => query.every((q) => words(x.seg).some((w) => norm(w) === q));
   const modifier = (x: { seg: string; hit: boolean; i: number }) =>
-    x.hit && (x.i === 0 ? staple(first) && first !== undefined && !query.includes(norm(first)) && !staple(head) : QUALIFIER.test(x.seg) || (!headOk && !holdsAll(x)));
+    x.hit && (x.i === 0 ? staple(first) && first !== undefined && !query.includes(norm(first)) && !staple(head) : QUALIFIER.test(x.seg));
   // A later segment that carries EVERY query word names the food again ("Plain cake, lemon cake").
   return segs.some(modifier) && !segs.some((x) => x.i > 0 && !QUALIFIER.test(x.seg) && holdsAll(x));
 };
@@ -226,7 +227,7 @@ function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored
   // "with" / "without" / "no" qualifier, is another food. USDA's inverted "Nuts, almond butter" and
   // "Basmati rice, cooked" name the food itself and are untouched. This runs whether or not the
   // head matched: "Semolina dumplings raw" is natural order, and its head IS "dumplings".
-  if (qHead !== undefined && a.flags.has(qHead) && namesAsModifier(f.name_en ?? f.name, qHead, qArr, headOk)) {
+  if (qHead !== undefined && a.flags.has(qHead) && namesAsModifier(f.name_en ?? f.name, qHead, qArr)) {
     out.s = out.sHard = -Infinity; out.extras = 0; out.headOk = false; return;
   }
   if (!headOk) s -= 3;
