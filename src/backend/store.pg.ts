@@ -1187,7 +1187,10 @@ alter table onboarding_events
   add column if not exists country       text,
   add column if not exists experiment_id text,
   add column if not exists arm           text,
-  add column if not exists template      text;
+  add column if not exists template      text,
+-- The offering the paywall drew when the step happened (ieat-app#3401): client-reported like
+-- template, because only the device knows what RevenueCat handed it. Null on rows from before.
+  add column if not exists paywall_offering text;
 create index if not exists onboarding_events_received_idx on onboarding_events(received_at);
 create index if not exists onboarding_events_session_idx on onboarding_events(session_id);
 create index if not exists onboarding_events_user_idx on onboarding_events(user_id);
@@ -1247,6 +1250,11 @@ create table if not exists onboarding_served (
   last_served_at  timestamptz not null default now(),
   id              bigint generated always as identity primary key
 );
+-- The experiment and arm that serving WAS (ieat-app#3401), as the GET answered it — stored so later
+-- events name the same assignment instead of re-deriving one from a possibly-finished experiment.
+alter table onboarding_served
+  add column if not exists experiment_id text,
+  add column if not exists arm           text;
 create index if not exists onboarding_served_user_idx on onboarding_served(user_id, served_at);
 
 -- Onboarding screen templates (ieat-app#3167): global content like onboarding_content, so no
@@ -4085,23 +4093,26 @@ export async function postgresStore(
       // twice — a duplicate dated serving, which the journal's match reads the same; accepted.
       await sql`
         with latest as (
-          select id, content_version, lang, surface, screens from onboarding_served
+          select id, content_version, lang, surface, screens, experiment_id, arm from onboarding_served
           where user_id = ${userId} order by served_at desc, id desc limit 1
         ), moved as (
           update onboarding_served s set last_served_at = ${at}
           from latest l
           where s.id = l.id and l.content_version = ${served.contentVersion} and l.lang = ${served.lang}
             and l.surface = ${served.surface} and l.screens = ${served.screens}::jsonb
+            and l.experiment_id is not distinct from ${served.experiment?.id ?? null}
+            and l.arm is not distinct from ${served.experiment?.arm ?? null}
           returning s.id
         )
-        insert into onboarding_served (user_id, content_version, lang, surface, screens, served_at, last_served_at)
-        select ${userId}::uuid, ${served.contentVersion}::int, ${served.lang}, ${served.surface}, ${served.screens}::jsonb, ${at}::timestamptz, ${at}::timestamptz
+        insert into onboarding_served (user_id, content_version, lang, surface, screens, experiment_id, arm, served_at, last_served_at)
+        select ${userId}::uuid, ${served.contentVersion}::int, ${served.lang}, ${served.surface}, ${served.screens}::jsonb,
+               ${served.experiment?.id ?? null}, ${served.experiment?.arm ?? null}, ${at}::timestamptz, ${at}::timestamptz
         where not exists (select 1 from moved)`;
     },
 
     async onboardingServed(userId) {
       const rows = await sql`
-        select content_version, lang, surface, screens, served_at, last_served_at
+        select content_version, lang, surface, screens, served_at, last_served_at, experiment_id, arm
         from onboarding_served where user_id = ${userId}
         order by served_at, id`;
       return rows.map((r: Record<string, unknown>) => ({
@@ -4111,6 +4122,8 @@ export async function postgresStore(
         screens: json<OnboardingServedRecord["screens"]>(r.screens, {}),
         servedAt: (r.served_at as Date).toISOString(),
         lastServedAt: (r.last_served_at as Date).toISOString(),
+        experimentId: (r.experiment_id as string | null) ?? null,
+        arm: (r.arm as string | null) ?? null,
       }));
     },
 
@@ -4302,11 +4315,13 @@ export async function postgresStore(
         const rows = await sql`
           insert into onboarding_events
             (id, user_id, session_id, place, action, content_version, ms, field, value, at, received_at,
-             surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template)
+             surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template,
+             paywall_offering)
           values (${e.id}, ${userId}, ${e.sessionId}, ${e.place}, ${e.action}, ${e.contentVersion},
                   ${e.ms ?? null}, ${e.field ?? null}, ${e.value ?? null}, ${e.at}, ${new Date(now())},
                   ${c.surface}, ${c.brand}, ${c.app_version}, ${c.build}, ${c.ota_update_id}, ${c.channel},
-                  ${c.lang}, ${c.country}, ${c.experiment_id}, ${c.arm}, ${e.template ?? c.template})
+                  ${c.lang}, ${c.country}, ${c.experiment_id}, ${c.arm}, ${e.template ?? c.template},
+                  ${e.paywallOffering ?? c.paywall_offering})
           on conflict (id) do nothing
           returning id`;
         if (rows.length > 0) added++;
@@ -4586,7 +4601,8 @@ export async function postgresStore(
         if (summary.length === 0) return { rows: [], nextCursor: null };
         const events = await sql`
           select session_id, place, action, content_version, ms, field, value, at,
-                 surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template
+                 surface, brand, app_version, build, ota_update_id, channel, lang, country, experiment_id, arm, template,
+                 paywall_offering
             from onboarding_events
            where user_id = ${userId}
              and (${lo === null} or received_at >= ${lo}) and (${hi === null} or received_at <= ${hi})

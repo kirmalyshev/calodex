@@ -3269,17 +3269,19 @@ function contract(name: string, make: () => Promise<Store>) {
       const ev = (id: string, ms: number) => ({ id: `${id}-${RUN}`, sessionId: `ctx-${RUN}`, place: "goal" as const, action: "view" as const, contentVersion: 1, at: new Date(Date.parse(at) + ms).toISOString() });
       const context = {
         surface: "app" as const, brand: "eait" as const, app_version: "1.4.2", build: "187", ota_update_id: "u-1",
-        channel: "testflight" as const, lang: "de" as const, country: "de", experiment_id: "exp-1", arm: "42", template: "hero@3",
+        channel: "testflight" as const, lang: "de" as const, country: "de", experiment_id: "exp-1", arm: "42",
+        template: "hero@3", paywall_offering: null,
       };
       await s.recordOnboardingEvents(u, [ev("stamped", 0)], context);
-      await s.recordOnboardingEvents(u, [{ ...ev("own", 500), template: "plate@2" }], context);
+      // The offering is the row's own too (ieat-app#3401): the device reports what it drew.
+      await s.recordOnboardingEvents(u, [{ ...ev("own", 500), template: "plate@2", paywallOffering: "exit_offer" }], context);
       await s.recordOnboardingEvents(u, [ev("bare", 1000)]);
       const [row] = (await s.adminOnboardingFlow({ userId: u, range: { from: null, to: null } })).rows;
       expect(row!.events!.map((e) => e.context)).toEqual([
         context,
-        { ...context, template: "plate@2" },
+        { ...context, template: "plate@2", paywall_offering: "exit_offer" },
         { surface: null, brand: null, app_version: null, build: null, ota_update_id: null, channel: null,
-          lang: null, country: null, experiment_id: null, arm: null, template: null },
+          lang: null, country: null, experiment_id: null, arm: null, template: null, paywall_offering: null },
       ]);
     });
 

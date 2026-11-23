@@ -24,7 +24,7 @@ import { type ChatMessage,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type ExperimentSurfaceCounts, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
-  type Acquisition, type RevenueCatEventRow, type OnboardingServedRecord,
+  type Acquisition, type RevenueCatEventRow, type OnboardingServed, type OnboardingServedRecord,
 } from "./store.ts";
 
 /** A stored funnel event: what the client sent, plus who and when we received it. */
@@ -421,9 +421,10 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const canonical = (v: unknown): string => JSON.stringify(v, (_k, x: unknown) =>
     x && typeof x === "object" && !Array.isArray(x)
       ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x);
-  const sameServing = (a: OnboardingServedRecord, b: Omit<OnboardingServedRecord, "servedAt" | "lastServedAt">) =>
+  const sameServing = (a: OnboardingServedRecord, b: OnboardingServed) =>
     a.contentVersion === b.contentVersion && a.lang === b.lang && a.surface === b.surface
-    && canonical(a.screens) === canonical(b.screens);
+    && canonical(a.screens) === canonical(b.screens)
+    && a.experimentId === (b.experiment?.id ?? null) && a.arm === (b.experiment?.arm ?? null);
   // `${userId}\n${date}` -> the day. One row per user per date, exactly as in Postgres, so the
   // upsert semantics the tests assert are the semantics production has.
   const healthDays = new Map<string, HealthDay & { userId: string }>();
@@ -1907,7 +1908,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         // Keyed on the CLIENT's id, so a retried batch overwrites nothing and adds nothing. The
         // Postgres implementation gets the same behaviour from a primary key.
         if (onboardingEvents.has(e.id)) continue;
-        onboardingEvents.set(e.id, { ...clone(e), userId, receivedAt: now(), context: { ...NO_EVENT_CONTEXT, ...context, template: e.template ?? context?.template ?? null } });
+        onboardingEvents.set(e.id, { ...clone(e), userId, receivedAt: now(), context: { ...NO_EVENT_CONTEXT, ...context, template: e.template ?? context?.template ?? null, paywall_offering: e.paywallOffering ?? context?.paywall_offering ?? null } });
         added++;
       }
       return added;
@@ -2155,7 +2156,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const latest = onboardingServedRows.filter((r) => r.userId === userId)
         .reduce<(typeof onboardingServedRows)[number] | undefined>((m, r) => (!m || r.servedAt >= m.servedAt ? r : m), undefined);
       if (latest && sameServing(latest, served)) latest.lastServedAt = at;
-      else onboardingServedRows.push({ ...clone(served), userId, servedAt: at, lastServedAt: at });
+      else onboardingServedRows.push({
+        contentVersion: served.contentVersion, lang: served.lang, surface: served.surface,
+        screens: clone(served.screens), userId, servedAt: at, lastServedAt: at,
+        experimentId: served.experiment?.id ?? null, arm: served.experiment?.arm ?? null,
+      });
     },
 
     async onboardingServed(userId) {

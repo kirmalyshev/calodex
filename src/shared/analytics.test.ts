@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
-  ANALYTICS_CLIENT_KEYS, ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, ANALYTICS_SURFACES,
-  ONBOARDING_EVENT_CONTEXT_KEYS, parseClientTag,
+  ANALYTICS_CLIENT_KEYS, ANALYTICS_CONTEXT_KEYS, ANALYTICS_EVENT_OVERRIDES, ANALYTICS_EVENTS, ANALYTICS_SERVER_KEYS, ANALYTICS_SURFACES,
+  ONBOARDING_EVENT_CONTEXT_KEYS, assignmentProps, parseClientTag,
 } from "./index.ts";
 
 const snake = /^[a-z][a-z0-9_]*$/;
@@ -39,6 +39,32 @@ describe("the event catalog", () => {
     for (const e of Object.values(ANALYTICS_EVENTS)) {
       for (const p of e.props) expect(ANALYTICS_CONTEXT_KEYS as readonly string[]).not.toContain(p);
     }
+  });
+
+  it("every paywall_* and onboarding_* event stamps the arm and the shown offering itself (ieat-app#3401)", () => {
+    const names = Object.keys(ANALYTICS_EVENTS).filter((n) => n.startsWith("paywall_") || n.startsWith("onboarding_"));
+    expect(names.length).toBeGreaterThan(0);
+    for (const n of names) {
+      for (const k of ["experiment_id", "arm", "paywall_offering"] as const) {
+        const overrides: readonly string[] | undefined = ANALYTICS_EVENT_OVERRIDES[n as keyof typeof ANALYTICS_EVENT_OVERRIDES];
+        expect(overrides, `${n} must stamp ${k}`).toContain(k);
+      }
+    }
+    // The overrides are the ONLY context keys an event may set itself, and every override is a
+    // context key on an event the catalog lists.
+    for (const [n, keys] of Object.entries(ANALYTICS_EVENT_OVERRIDES)) {
+      expect(ANALYTICS_EVENTS, `${n} is no catalog event`).toHaveProperty(n);
+      for (const k of keys!) expect(ANALYTICS_CONTEXT_KEYS, `${n}.${k} is no context key`).toContain(k);
+    }
+  });
+
+  it("assignmentProps emits the three keys — the assignment's values, the shown offering, present-null when unknown", () => {
+    expect(assignmentProps({ experiment_id: "exp1", arm: "42" }, "default"))
+      .toEqual({ experiment_id: "exp1", arm: "42", paywall_offering: "default" });
+    expect(assignmentProps(null, "exit_offer"))
+      .toEqual({ experiment_id: null, arm: null, paywall_offering: "exit_offer" });
+    expect(assignmentProps(undefined, null))
+      .toEqual({ experiment_id: null, arm: null, paywall_offering: null });
   });
 
   it("carries the onboarding step on both surfaces", () => {
