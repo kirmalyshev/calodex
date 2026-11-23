@@ -361,6 +361,10 @@ describe("a generic word never grounds to a different food (#903)", () => {
     expect(pick("berry", [ref("Semolina berries, raw", 349)])).toBeNull();
     expect(pick("berries", [ref("Semolina berries, raw", 349)])).toBeNull();
   });
+  test("the real catalog rows from the MY takeaway (#903) are no match", () => {
+    expect(pick("dumpling", [ref("Semolina dumplings raw", 120)])).toBeNull();
+    expect(pick("dark sauce", [ref("Ham, potatoes, and vegetables excluding carrots, broccoli, and dark-green leafy; no sauce", 90)])).toBeNull();
+  });
   test("the right row still beats no match", () => {
     expect(pick("dumpling", [ref("Semolina dumplings, raw", 120), ref("Dumpling, pork, steamed", 200)])).toBe("Dumpling, pork, steamed");
     expect(pick("chicken soup", [ref("Soup, chicken noodle", 40)])).toBe("Soup, chicken noodle");
