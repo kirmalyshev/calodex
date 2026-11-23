@@ -2120,3 +2120,69 @@ describe("arm screens body rules (#3167, review round 1)", () => {
     expect(raced.status).toBe(409);
   });
 });
+
+// ieat-app#3422: the recognizer review — what the model answered, beside the photo and the meal
+// it made. The reads are unscoped ON PURPOSE (the role is the authority, like every admin read
+// here); the gate tests say the role is still the only way in, and the shape tests say the list
+// stays light — the raw answer belongs to the detail.
+describe("the recognitions review", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  const user = async () => (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+
+  const seed = async (userId: string, model = "qwen/qwen3-vl-235b", kcal = 260) => {
+    const analysisId = await store.recordAnalysis(userId, "2026-08-01", "photo");
+    await store.recordRecognition(userId, {
+      analysisId, model, promptKey: "analysis", promptVersion: 2,
+      raw: `{"isFood":true,"items":[{"name":"Rice","grams":200}]}`,
+      items: [{ name: "Rice", grams: 200, name_en: "rice" }], kcal,
+    });
+    return analysisId;
+  };
+
+  it("lists recognitions across accounts and reads one's raw answer back", async () => {
+    const a = await user(); const b = await user();
+    await seed(a); await seed(b, "other/model", 400);
+    const { recognitions } = await (await admin("GET", "/admin/api/recognitions")).json() as {
+      recognitions: { id: string; userId: string; model: string | null; promptKey: string; promptVersion: number | null }[];
+    };
+    expect(recognitions.length).toBe(2);
+    expect(recognitions.map((r) => r.userId).sort()).toEqual([a, b].sort());
+    // The list stays light: content is the detail's.
+    expect("raw" in recognitions[0]!).toBe(false);
+
+    const one = await admin("GET", `/admin/api/recognitions/${recognitions[0]!.id}`);
+    expect(one.status).toBe(200);
+    const detail = await one.json() as { raw: string | null; items: unknown[]; meal: unknown };
+    expect(detail.raw).toContain("Rice");
+    expect(detail.items).toEqual([{ name: "Rice", grams: 200, name_en: "rice" }]);
+    expect(detail.meal).toBeNull(); // nothing logged yet — the meal link is written at land
+  });
+
+  it("filters by model and bounds the window", async () => {
+    const a = await user();
+    await seed(a, "old/model"); await seed(a, "new/model");
+    const { recognitions } = await (await admin("GET", "/admin/api/recognitions?model=old/model")).json() as {
+      recognitions: { model: string | null }[];
+    };
+    expect(recognitions.map((r) => r.model)).toEqual(["old/model"]);
+    const windowed = await admin("GET", "/admin/api/recognitions?from=2030-01-01T00:00:00.000Z");
+    expect((await windowed.json() as { recognitions: unknown[] }).recognitions).toEqual([]);
+  });
+
+  it("answers 404 for an unknown row and for every write", async () => {
+    expect((await admin("GET", "/admin/api/recognitions/999999")).status).toBe(404);
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
+      expect((await admin(method, "/admin/api/recognitions", {})).status).toBe(404);
+      expect((await admin(method, "/admin/api/recognitions/1", {})).status).toBe(404);
+    }
+  });
+
+  it("hides behind the same role: ordinary 404, anonymous 401", async () => {
+    const res = await handle(new Request(url("/admin/api/recognitions"), {
+      headers: { authorization: `Bearer ${await session()}` },
+    }));
+    expect(res.status).toBe(404);
+    expect((await admin("GET", "/admin/api/recognitions/1", undefined, "")).status).toBe(401);
+  });
+});

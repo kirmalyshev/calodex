@@ -512,6 +512,7 @@ details.how p { margin-top: 8px; }
 #prompt-history summary { padding: 10px 16px; cursor: pointer; display: flex; flex-direction: column; }
 #prompt-history summary small { font-size: 12px; color: var(--muted); }
 #prompt-history pre { margin: 0; padding: 0 16px 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+#rec-detail pre { margin: 0; padding: 0 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
 @media (max-width: 760px) {
   .pcol { flex-direction: column; align-items: stretch; }
   #prompt-history { flex: 0 0 auto; width: auto; }
@@ -550,6 +551,7 @@ details.how p { margin-top: 8px; }
     <a href="#campaigns" data-nav="campaigns">Campaigns</a>
     <a href="#referrals" data-nav="referrals">Referrals</a>
     <a href="#accounts" data-nav="accounts">Accounts</a>
+    <a href="#recognitions" data-nav="recognitions">Recognition</a>
     <h6>Content</h6>
     <a href="#onboarding" data-nav="onboarding">Onboarding copy</a>
     <a href="#templates" data-nav="templates">Push templates<b id="templates-badge" class="hidden"></b></a>
@@ -568,6 +570,7 @@ details.how p { margin-top: 8px; }
         <option value="campaigns">Campaigns</option>
         <option value="referrals">Referrals</option>
         <option value="accounts">Accounts</option>
+        <option value="recognitions">Recognition</option>
       </optgroup>
       <optgroup label="Content">
         <option value="onboarding">Onboarding copy</option>
@@ -1067,6 +1070,35 @@ details.how p { margin-top: 8px; }
     </div>
     <p class="muted">A flip applies to the next read — an analysis, a profile fetch. Nothing already logged changes.</p>
   </div></div>
+</section>
+
+<!-- The recognizer review (ieat-app#3422): the list on the left, the row's photo, raw answer and
+     the meal it made on the right. Date comes from the shared range control; model is a free-text
+     match. The compression filter arrives with meals.photo_compression (ieat-app#3421). -->
+<section class="view hidden" id="view-recognitions">
+  <div id="state-recognitions"></div>
+  <div class="vbody hidden" id="body-recognitions">
+    <div class="split" id="rec-split">
+      <div class="acol">
+        <div class="card flush">
+          <div class="sbar">
+            <input type="text" id="rec-model" placeholder="model — e.g. qwen/qwen3-vl" autocomplete="off" spellcheck="false" aria-label="Filter by model">
+            <button id="rec-apply">Apply</button>
+          </div>
+          <div class="scrollx"><table id="rec-list">
+            <thead>
+              <tr><th>When</th><th>Account</th><th>Model</th><th>Prompt</th><th class="r">kcal</th><th>Meal</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table></div>
+          <div class="astate hidden" id="rec-empty"><b>No recognitions in this window.</b><span>Widen the range or clear the model filter.</span></div>
+        </div>
+      </div>
+      <div class="acol pane hidden" id="rec-pane">
+        <div id="rec-detail"></div>
+      </div>
+    </div>
+  </div>
 </section>
 
     </div>
@@ -1643,7 +1675,7 @@ details.how p { margin-top: 8px; }
   // an empty box is "everything on that side" — and both empty is All time. It is ONE range for
   // every panel that has one, and it lives in the hash so a link reproduces exactly what the
   // admin was looking at. Content and system views never show it.
-  var RANGED = { numbers: 1, pushes: 1, funnel: 1, experiments: 1, campaigns: 1, referrals: 1, accounts: 1 };
+  var RANGED = { numbers: 1, pushes: 1, funnel: 1, experiments: 1, campaigns: 1, referrals: 1, accounts: 1, recognitions: 1 };
   var range = { from: null, to: null };
   var rangeSet = false;   // the admin or a link named a window — until then the hash stays clean
   var rangePreset = null; // the preset button that set the window ("range-7d"…), null once a box is typed
@@ -4573,7 +4605,8 @@ details.how p { margin-top: 8px; }
     // from that answer instead of asking twice.
     templates: { title: "Push templates", load: function () { return (push ? Promise.resolve(renderPush()) : loadPush()).then(loadCopy); } },
     prompts: { title: "System prompts", load: loadPrompts },
-    food: { title: "Food database", load: loadSwitches }
+    food: { title: "Food database", load: loadSwitches },
+    recognitions: { title: "Recognition", load: loadRecognitions }
   };
 
   // view id -> "loading" | "ready". Absent: never opened, failed, or stale and due a read.
@@ -4643,8 +4676,187 @@ details.how p { margin-top: 8px; }
     paintBox($("state-" + id), $("body-" + id), kind, err, VIEWS[id].title.toLowerCase(), function () { run(id); }, false, VIEWS[id].kpis);
   }
 
+  // ── What the model said (ieat-app#3422) ──────────────────────────────────────────────────
+  //
+  // The list is the recognitions in the window; a row opens the review — the photo next to the
+  // model's own answer, the items the parse kept, and the meal as it stands now, including any
+  // edit the user made after. The photo goes through the scoped per-meal route on the account the
+  // row names, and the object URLs are revoked when the pane or the account is released.
+
+  var recSel = null;
+  var recUrls = [];
+
+  function releaseRecPhotos() {
+    recUrls.forEach(function (u) { URL.revokeObjectURL(u); });
+    recUrls = [];
+  }
+
+  function recPhotoBytes(userId, mealId, n) {
+    return fetch("/admin/api/users/" + userId + "/meals/" + mealId + "/photos/" + n, {
+      headers: { authorization: "Bearer " + token }
+    }).then(function (res) { return res.ok ? res.blob() : null; });
+  }
+
+  function loadRecognitions() {
+    var path = "/admin/api/recognitions" + rangeQuery();
+    var model = $("rec-model").value.trim();
+    if (model) path += (path.indexOf("?") === -1 ? "?" : "&") + "model=" + encodeURIComponent(model);
+    return api("GET", path).then(function (view) {
+      var rows = view.recognitions || [];
+      var body = $("rec-list").querySelector("tbody");
+      body.textContent = "";
+      rows.forEach(function (r) {
+        var tr = document.createElement("tr");
+        var cells = [
+          dmon(r.createdAt) + " " + r.createdAt.slice(11, 16),
+          r.userId ? r.userId.slice(0, 8) : "—",
+          r.model || "—",
+          r.promptKey + (r.promptVersion == null ? "" : " v" + r.promptVersion),
+          r.kcal == null ? "—" : String(Math.round(r.kcal)),
+          r.meal ? (r.meal.corrected ? "edited" : "logged") : "refused"
+        ];
+        cells.forEach(function (text, i) {
+          var td = document.createElement("td");
+          td.textContent = text;
+          if (i === 4) td.className = "r";
+          tr.appendChild(td);
+        });
+        if (recSel === r.id) tr.className = "on";
+        tr.addEventListener("click", function () {
+          recSel = r.id;
+          Array.prototype.forEach.call(body.querySelectorAll("tr"), function (x) { x.classList.remove("on"); });
+          tr.className = "on";
+          showRecognition(r.id);
+        });
+        body.appendChild(tr);
+      });
+      $("rec-empty").classList.toggle("hidden", rows.length > 0);
+    });
+  }
+
+  function recKv(parent, label, value) {
+    var d = document.createElement("div");
+    d.className = "kv";
+    var b = document.createElement("span");
+    b.textContent = label;
+    var s = document.createElement("span");
+    s.textContent = value == null ? "—" : String(value);
+    d.appendChild(b); d.appendChild(s);
+    parent.appendChild(d);
+  }
+
+  function showRecognition(id) {
+    releaseRecPhotos();
+    var pane = $("rec-pane");
+    var box = $("rec-detail");
+    box.textContent = "";
+    pane.classList.remove("hidden");
+    var split = $("rec-split");
+    if (split) split.classList.add("open");
+    api("GET", "/admin/api/recognitions/" + id).then(function (r) {
+      if (recSel !== r.id) return;
+      box.textContent = "";
+      var card = document.createElement("div");
+      card.className = "card";
+      var h = document.createElement("h4");
+      h.textContent = r.promptKey + (r.promptVersion == null ? "" : " v" + r.promptVersion)
+        + " · " + (r.model || "no model recorded");
+      card.appendChild(h);
+      var meta = document.createElement("div");
+      recKv(meta, "Account", r.userId);
+      recKv(meta, "Analysis", r.analysisId);
+      recKv(meta, "Meal", r.mealId);
+      recKv(meta, "Read at", r.createdAt);
+      card.appendChild(meta);
+      box.appendChild(card);
+
+      var rawCard = document.createElement("div");
+      rawCard.className = "card";
+      var rh = document.createElement("h4");
+      rh.textContent = "The model's own answer";
+      rawCard.appendChild(rh);
+      var pre = document.createElement("pre");
+      pre.className = "raw";
+      var pretty = r.raw || "";
+      try { pretty = JSON.stringify(JSON.parse(pretty), null, 2); } catch (_) {}
+      pre.textContent = pretty || "The port could not hand the text over.";
+      rawCard.appendChild(pre);
+      box.appendChild(rawCard);
+
+      var parsed = document.createElement("div");
+      parsed.className = "card";
+      var ph = document.createElement("h4");
+      ph.textContent = "What the parse kept — " + (r.kcal == null ? "—" : Math.round(r.kcal)) + " kcal";
+      parsed.appendChild(ph);
+      (r.items || []).forEach(function (i) {
+        var p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = i.name + " — " + i.grams + " g, " + Math.round(i.kcal) + " kcal";
+        parsed.appendChild(p);
+      });
+      box.appendChild(parsed);
+
+      if (r.meal) {
+        var meal = document.createElement("div");
+        meal.className = "card";
+        var mh = document.createElement("h4");
+        mh.textContent = "What stands now — " + Math.round(r.meal.kcal) + " kcal"
+          + (r.meal.corrected ? " (edited by the user)" : "");
+        meal.appendChild(mh);
+        var md = document.createElement("p");
+        md.className = "muted";
+        md.textContent = "Logged on " + r.meal.date + (r.mealId ? "" : " — the meal has since been deleted");
+        meal.appendChild(md);
+        (r.meal.items || []).forEach(function (i) {
+          var p = document.createElement("p");
+          p.className = "muted";
+          p.textContent = i.name + " — " + i.grams + " g, " + Math.round(i.kcal) + " kcal";
+          meal.appendChild(p);
+        });
+        box.appendChild(meal);
+      } else {
+        var none = document.createElement("div");
+        none.className = "card";
+        var np = document.createElement("p");
+        np.className = "muted";
+        np.textContent = "This read logged no meal — refused, or removed after.";
+        none.appendChild(np);
+        box.appendChild(none);
+      }
+
+      var count = r.meal ? r.meal.photos || 0 : 0;
+      if (count && r.mealId && r.userId) {
+        var shots = document.createElement("div");
+        shots.className = "card";
+        var sh = document.createElement("h4");
+        sh.textContent = "What they photographed";
+        shots.appendChild(sh);
+        box.appendChild(shots);
+        for (var n = 0; n < count; n++) {
+          (function (position) {
+            recPhotoBytes(r.userId, r.mealId, position).then(function (blob) {
+              if (!blob) return;
+              var url = URL.createObjectURL(blob);
+              recUrls.push(url);
+              var img = document.createElement("img");
+              img.className = "shot";
+              img.alt = "Photograph " + (position + 1) + " of the meal this answer produced";
+              img.src = url;
+              shots.appendChild(img);
+            });
+          })(n);
+        }
+      }
+    }, function () {});
+  }
+
   // view id -> the rangeQS() it last loaded with: a ranged view opened under another window reads again.
   var loadedRange = {};
+
+  $("rec-apply").addEventListener("click", function () { delete state.recognitions; run("recognitions"); });
+  $("rec-model").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { delete state.recognitions; run("recognitions"); }
+  });
 
   function run(id) {
     loadedRange[id] = rangeQS();
