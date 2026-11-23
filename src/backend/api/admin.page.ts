@@ -1094,9 +1094,9 @@ details.how p { margin-top: 8px; }
           <div class="astate hidden" id="rec-empty"><b>No recognitions in this window.</b><span>Widen the range or clear the model filter.</span></div>
         </div>
       </div>
-      <div class="acol pane hidden" id="rec-pane">
-        <div id="rec-detail"></div>
-      </div>
+      <aside class="apane hidden" id="rec-pane" aria-label="Recognition">
+        <div class="pb" id="rec-detail"></div>
+      </aside>
     </div>
   </div>
 </section>
