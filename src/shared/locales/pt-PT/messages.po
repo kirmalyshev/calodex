@@ -300,7 +300,7 @@ msgstr "Registado."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Para registar refeições, é preciso uma subscrição. Começa a tua avaliação gratuita na web para continuar."
+msgstr "Para registar refeições, é preciso uma subscrição. Começa o teu teste grátis na web para continuar."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +365,7 @@ msgstr "Dentro do plano."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Mais uma coisa sobre a qual o iOS vai perguntar: notificações. Uma por dia e nunca mais do que isso — a mensagem das 20:30, mais um lembrete na véspera do fim da tua avaliação gratuita, se estiveres numa. Mais nada, nunca."
+msgstr "Mais uma coisa sobre a qual o iOS vai perguntar: notificações. Uma por dia e nunca mais do que isso — a mensagem das 20:30, mais um lembrete na véspera do fim do teu teste grátis, se estiveres num. Mais nada, nunca."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +555,7 @@ msgstr "Demasiadas tentativas a partir deste Telegram. Espera um pouco e toca na
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Avaliação gratuita ativada — {price} quando terminar, a não ser que a interrompas. Aviso-te na véspera do fim, nunca no dia seguinte."
+msgstr "Teste grátis ativado — {price} quando terminar, a não ser que o interrompas. Aviso-te na véspera do fim, nunca no dia seguinte."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

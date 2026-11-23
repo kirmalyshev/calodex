@@ -1091,7 +1091,7 @@ const BG: PageCopy = {
   chatNoFocusRedate:
     "Тук няма отворен оброк за местене на друг ден. Отвори го в приложението, за да смениш деня.",
   chatNotOnboarded: "Първо отговори на въпросите за плана.",
-  chatRefusalSubscription: "За запис на оброци трябва абонамент. Започни безплатния пробен период, за да продължиш.",
+  chatRefusalSubscription: "За запис на оброци трябва абонамент. Започни безплатния триал, за да продължиш.",
   chatRefusalFailed: "Отговор не дойде. Опитай отново.",
   chatRefusalNotFood: "Това не приличаше на храна.",
   chatRefusalImage: "Този файл не е снимка, която можем да прочетем. JPEG, PNG или WebP.",
@@ -2171,7 +2171,7 @@ const PT_PT: PageCopy = {
   chatNoFocusRedate:
     "Não há nenhuma refeição aberta aqui para mudar de dia. Abre-a na app para alterar o dia.",
   chatNotOnboarded: "Responde primeiro às perguntas do plano.",
-  chatRefusalSubscription: "Para registar refeições, é preciso uma subscrição. Começa a tua avaliação gratuita para continuar.",
+  chatRefusalSubscription: "Para registar refeições, é preciso uma subscrição. Começa o teu teste grátis para continuar.",
   chatRefusalFailed: "Não veio resposta. Tenta novamente.",
   chatRefusalNotFood: "Isso não parecia comida.",
   chatRefusalImage: "Esse ficheiro não é uma foto que se consiga ler aqui. JPEG, PNG ou WebP.",
@@ -2212,7 +2212,7 @@ const PT_PT: PageCopy = {
   offerWhenAfter: "Dia {n}",
   offerBilled: "A cobrança começa · cancela quando quiseres",
     offerClose: "Fechar",
-  titleOffer: "Começa a tua avaliação gratuita",
+  titleOffer: "Começa o teu teste grátis",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Idioma",
   languageSave: "Guardar",
@@ -2495,7 +2495,7 @@ const SL: PageCopy = {
   chatNoFocusRedate:
     "Tu ni odprtega obroka za premik na drug dan. Odpri ga v aplikaciji, da mu spremeniš dan.",
   chatNotOnboarded: "Najprej odgovori na vprašanja za načrt.",
-  chatRefusalSubscription: "Za beleženje obrokov potrebuješ naročnino. Za nadaljevanje začni brezplačno preizkusno obdobje.",
+  chatRefusalSubscription: "Za beleženje obrokov potrebuješ naročnino. Za nadaljevanje začni brezplačni trial.",
   chatRefusalFailed: "Odgovor ni prispel. Poskusi znova.",
   chatRefusalNotFood: "To ni bilo videti kot hrana.",
   chatRefusalImage: "Te datoteke ni mogoče prebrati kot fotografijo. JPEG, PNG ali WebP.",
@@ -2536,7 +2536,7 @@ const SL: PageCopy = {
   offerWhenAfter: "Dan {n}",
   offerBilled: "Obračun se začne · prekliči kadar koli",
     offerClose: "Zapri",
-  titleOffer: "Začni brezplačno preizkusno obdobje",
+  titleOffer: "Začni brezplačni trial",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Jezik",
   languageSave: "Shrani",
@@ -2603,7 +2603,7 @@ const HR: PageCopy = {
   chatNoFocusRedate:
     "Ovdje nije otvoren obrok koji bi se mogao premjestiti na drugi dan. Otvori ga u aplikaciji da mu promijeniš dan.",
   chatNotOnboarded: "Prvo odgovori na pitanja za plan.",
-  chatRefusalSubscription: "Za bilježenje obroka potrebna je pretplata. Pokreni besplatno probno razdoblje za nastavak.",
+  chatRefusalSubscription: "Za bilježenje obroka potrebna je pretplata. Pokreni besplatni trial za nastavak.",
   chatRefusalFailed: "Odgovor nije stigao. Pokušaj ponovno.",
   chatRefusalNotFood: "To ne izgleda kao hrana.",
   chatRefusalImage: "Ta datoteka nije fotografija koju možemo pročitati. JPEG, PNG ili WebP.",
@@ -2644,7 +2644,7 @@ const HR: PageCopy = {
   offerWhenAfter: "Dan {n}",
   offerBilled: "Naplata počinje · otkaži bilo kada",
     offerClose: "Zatvori",
-  titleOffer: "Pokreni besplatno probno razdoblje",
+  titleOffer: "Pokreni besplatni trial",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Jezik",
   languageSave: "Spremi",
@@ -2711,7 +2711,7 @@ const SK: PageCopy = {
   chatNoFocusRedate:
     "Nie je tu otvorené žiadne jedlo na presun na iný deň. Otvor ho v aplikácii a zmeň mu deň.",
   chatNotOnboarded: "Najprv odpovedz na otázky k plánu.",
-  chatRefusalSubscription: "Na zapisovanie jedál potrebuješ predplatné. Na pokračovanie začni skúšobné obdobie zadarmo.",
+  chatRefusalSubscription: "Na zapisovanie jedál potrebuješ predplatné. Na pokračovanie začni trial zadarmo.",
   chatRefusalFailed: "Odpoveď neprišla. Skús to znova.",
   chatRefusalNotFood: "Toto nevyzeralo ako jedlo.",
   chatRefusalImage: "Tento súbor nie je fotka, ktorú viem prečítať. JPEG, PNG alebo WebP.",
@@ -2752,7 +2752,7 @@ const SK: PageCopy = {
   offerWhenAfter: "Deň {n}",
   offerBilled: "Začína platba · zrušiť môžeš kedykoľvek",
     offerClose: "Zavrieť",
-  titleOffer: "Začni skúšobné obdobie zadarmo",
+  titleOffer: "Začni trial zadarmo",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Jazyk",
   languageSave: "Uložiť",
@@ -2819,7 +2819,7 @@ const NO: PageCopy = {
   chatNoFocusRedate:
     "Det er ikke noe åpent måltid her å flytte til en annen dag. Åpne det i appen for å endre dagen.",
   chatNotOnboarded: "Svar på planspørsmålene først.",
-  chatRefusalSubscription: "Du trenger et abonnement for å logge måltider. Start den gratis prøveperioden for å fortsette.",
+  chatRefusalSubscription: "Du trenger et abonnement for å logge måltider. Start den gratis trialen for å fortsette.",
   chatRefusalFailed: "Det kom ikke noe svar. Prøv igjen.",
   chatRefusalNotFood: "Det så ikke ut som mat.",
   chatRefusalImage: "Den filen er ikke et bilde som kan leses. JPEG, PNG eller WebP.",
@@ -2860,7 +2860,7 @@ const NO: PageCopy = {
   offerWhenAfter: "Dag {n}",
   offerBilled: "Betalingen starter · si opp når som helst",
     offerClose: "Lukk",
-  titleOffer: "Start den gratis prøveperioden",
+  titleOffer: "Start den gratis trialen",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Språk",
   languageSave: "Lagre",
@@ -2927,7 +2927,7 @@ const FI: PageCopy = {
   chatNoFocusRedate:
     "Täällä ei ole avointa ateriaa siirrettäväksi toiselle päivälle. Avaa se sovelluksessa vaihtaaksesi päivän.",
   chatNotOnboarded: "Vastaa ensin suunnitelmakysymyksiin.",
-  chatRefusalSubscription: "Aterioiden kirjaaminen vaatii tilauksen. Aloita ilmainen kokeilujakso jatkaaksesi.",
+  chatRefusalSubscription: "Aterioiden kirjaaminen vaatii tilauksen. Aloita ilmainen kokeilu jatkaaksesi.",
   chatRefusalFailed: "Vastausta ei tullut. Yritä uudelleen.",
   chatRefusalNotFood: "Tuo ei näyttänyt ruoalta.",
   chatRefusalImage: "Tätä tiedostoa ei voi lukea kuvana. JPEG, PNG tai WebP.",
@@ -2968,7 +2968,7 @@ const FI: PageCopy = {
   offerWhenAfter: "Päivä {n}",
   offerBilled: "Laskutus alkaa · peru milloin vain",
     offerClose: "Sulje",
-  titleOffer: "Aloita ilmainen kokeilujakso",
+  titleOffer: "Aloita ilmainen kokeilu",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Kieli",
   languageSave: "Tallenna",
@@ -3035,7 +3035,7 @@ const DA: PageCopy = {
   chatNoFocusRedate:
     "Der er intet åbent måltid her at flytte til en anden dag. Åbn det i appen for at ændre dagen.",
   chatNotOnboarded: "Besvar spørgsmålene til planen først.",
-  chatRefusalSubscription: "Du skal have et abonnement for at registrere måltider. Start din gratis prøveperiode for at fortsætte.",
+  chatRefusalSubscription: "Du skal have et abonnement for at registrere måltider. Start din gratis trial for at fortsætte.",
   chatRefusalFailed: "Der kom ikke noget svar. Prøv igen.",
   chatRefusalNotFood: "Det lignede ikke mad.",
   chatRefusalImage: "Den fil er ikke et foto, der kan læses her. JPEG, PNG eller WebP.",
@@ -3076,7 +3076,7 @@ const DA: PageCopy = {
   offerWhenAfter: "Dag {n}",
   offerBilled: "Opkrævningen starter · annuller når som helst",
     offerClose: "Luk",
-  titleOffer: "Start din gratis prøveperiode",
+  titleOffer: "Start din gratis trial",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Sprog",
   languageSave: "Gem",
@@ -3143,7 +3143,7 @@ const HU: PageCopy = {
   chatNoFocusRedate:
     "Itt nincs megnyitott étkezés, amit másik napra lehetne tenni. Nyisd meg az appban a nap módosításához.",
   chatNotOnboarded: "Előbb válaszolj a tervhez tartozó kérdésekre.",
-  chatRefusalSubscription: "Az étkezések rögzítéséhez előfizetés kell. Indítsd el az ingyenes próbaidőszakot a folytatáshoz.",
+  chatRefusalSubscription: "Az étkezések rögzítéséhez előfizetés kell. Indítsd el az ingyenes triált a folytatáshoz.",
   chatRefusalFailed: "Ez nem jött vissza. Próbáld újra.",
   chatRefusalNotFood: "Ez nem tűnt ételnek.",
   chatRefusalImage: "Ezt a fájlt nem tudjuk fotóként beolvasni. JPEG, PNG vagy WebP kell.",
@@ -3184,7 +3184,7 @@ const HU: PageCopy = {
   offerWhenAfter: "{n}. nap",
   offerBilled: "Indul a számlázás · bármikor lemondhatod",
     offerClose: "Bezárás",
-  titleOffer: "Indítsd el az ingyenes próbaidőszakot",
+  titleOffer: "Indítsd el az ingyenes triált",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Nyelv",
   languageSave: "Mentés",
@@ -3359,7 +3359,7 @@ const RO: PageCopy = {
   chatNoFocusRedate:
     "Nu e nicio masă deschisă aici de mutat în altă zi. Deschide-o în aplicație ca să-i schimbi ziua.",
   chatNotOnboarded: "Răspunde mai întâi la întrebările pentru plan.",
-  chatRefusalSubscription: "Pentru a înregistra mesele ai nevoie de un abonament. Începe perioada de probă gratuită ca să continui.",
+  chatRefusalSubscription: "Pentru a înregistra mesele ai nevoie de un abonament. Începe proba gratuită ca să continui.",
   chatRefusalFailed: "Nu a venit niciun răspuns. Încearcă din nou.",
   chatRefusalNotFood: "Nu părea a fi mâncare.",
   chatRefusalImage: "Fișierul nu e o fotografie pe care o pot citi. JPEG, PNG sau WebP.",
@@ -3400,7 +3400,7 @@ const RO: PageCopy = {
   offerWhenAfter: "Ziua {n}",
   offerBilled: "Începe facturarea · anulezi oricând",
     offerClose: "Închide",
-  titleOffer: "Începe perioada de probă gratuită",
+  titleOffer: "Începe proba gratuită",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Limbă",
   languageSave: "Salvează",
@@ -3467,7 +3467,7 @@ const CS: PageCopy = {
   chatNoFocusRedate:
     "Není tu otevřené žádné jídlo k přesunu na jiný den. Otevři ho v aplikaci a změň mu den.",
   chatNotOnboarded: "Nejdřív odpověz na otázky k plánu.",
-  chatRefusalSubscription: "Na zapisování jídel potřebuješ předplatné. Pro pokračování začni zkušební období zdarma.",
+  chatRefusalSubscription: "Na zapisování jídel potřebuješ předplatné. Pro pokračování začni trial zdarma.",
   chatRefusalFailed: "Odpověď nepřišla. Zkus to znovu.",
   chatRefusalNotFood: "Tohle nevypadalo jako jídlo.",
   chatRefusalImage: "Tento soubor není fotka, kterou umím přečíst. JPEG, PNG nebo WebP.",
@@ -3508,7 +3508,7 @@ const CS: PageCopy = {
   offerWhenAfter: "Den {n}",
   offerBilled: "Začíná platba · zrušit můžeš kdykoli",
     offerClose: "Zavřít",
-  titleOffer: "Začni zkušební období zdarma",
+  titleOffer: "Začni trial zdarma",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Jazyk",
   languageSave: "Uložit",
@@ -3791,7 +3791,7 @@ const SV: PageCopy = {
   chatNoFocusRedate:
     "Det finns ingen öppen måltid här att flytta till en annan dag. Öppna den i appen för att byta dag.",
   chatNotOnboarded: "Svara på planfrågorna först.",
-  chatRefusalSubscription: "Du behöver en prenumeration för att logga måltider. Starta din gratis provperiod för att fortsätta.",
+  chatRefusalSubscription: "Du behöver en prenumeration för att logga måltider. Starta din gratis trial för att fortsätta.",
   chatRefusalFailed: "Det kom inget svar. Försök igen.",
   chatRefusalNotFood: "Det där såg inte ut som mat.",
   chatRefusalImage: "Filen är inte ett foto som kan läsas här. JPEG, PNG eller WebP.",
@@ -3832,7 +3832,7 @@ const SV: PageCopy = {
   offerWhenAfter: "Dag {n}",
   offerBilled: "Debiteringen börjar · avsluta när du vill",
     offerClose: "Stäng",
-  titleOffer: "Starta din gratis provperiod",
+  titleOffer: "Starta din gratis trial",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Språk",
   languageSave: "Spara",
@@ -3899,7 +3899,7 @@ const UK: PageCopy = {
   chatNoFocusRedate:
     "Тут немає відкритого прийому їжі, який можна перенести на інший день. Відкрий його в програмі, щоб змінити день.",
   chatNotOnboarded: "Спершу дай відповіді на запитання для плану.",
-  chatRefusalSubscription: "Щоб записувати їжу, потрібна підписка. Почни безкоштовний пробний період, щоб продовжити.",
+  chatRefusalSubscription: "Щоб записувати їжу, потрібна підписка. Почни безкоштовний тріал, щоб продовжити.",
   chatRefusalFailed: "Відповідь не надійшла. Спробуй ще раз.",
   chatRefusalNotFood: "Це не схоже на їжу.",
   chatRefusalImage: "Цей файл — не фото, яке можна прочитати. Потрібен JPEG, PNG або WebP.",
@@ -3935,12 +3935,12 @@ const UK: PageCopy = {
   offerPerkPlan: "Твій план змінюється разом із твоєю вагою",
   offerPerkSpud: "Calodex — щойно спитаєш",
   offerWhenToday: "Сьогодні",
-    offerWhenEnding: "До кінця пробного періоду",
+    offerWhenEnding: "До кінця тріалу",
   offerReminder: "Ми нагадаємо",
   offerWhenAfter: "День {n}",
   offerBilled: "Початок оплати · скасування будь-коли",
     offerClose: "Закрити",
-  titleOffer: "Почни безкоштовний пробний період",
+  titleOffer: "Почни безкоштовний тріал",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Мова",
   languageSave: "Зберегти",
@@ -4007,7 +4007,7 @@ const NL: PageCopy = {
   chatNoFocusRedate:
     "Er staat hier geen maaltijd open om naar een andere dag te verplaatsen. Open hem in de app om de dag te wijzigen.",
   chatNotOnboarded: "Beantwoord eerst de planvragen.",
-  chatRefusalSubscription: "Voor het loggen van maaltijden heb je een abonnement nodig. Start je gratis proefperiode om door te gaan.",
+  chatRefusalSubscription: "Voor het loggen van maaltijden heb je een abonnement nodig. Start je gratis trial om door te gaan.",
   chatRefusalFailed: "Daar kwam niets op terug. Probeer het opnieuw.",
   chatRefusalNotFood: "Dat leek geen eten.",
   chatRefusalImage: "Dat bestand is geen foto die dit kan lezen. JPEG, PNG of WebP.",
@@ -4048,7 +4048,7 @@ const NL: PageCopy = {
   offerWhenAfter: "Dag {n}",
   offerBilled: "Betaling start · altijd opzegbaar",
     offerClose: "Sluit",
-  titleOffer: "Start je gratis proefperiode",
+  titleOffer: "Start je gratis trial",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Taal",
   languageSave: "Bewaar",
@@ -4115,7 +4115,7 @@ const PL: PageCopy = {
   chatNoFocusRedate:
     "Nie ma tu otwartego posiłku do przeniesienia na inny dzień. Otwórz go w aplikacji, aby zmienić dzień.",
   chatNotOnboarded: "Najpierw odpowiedz na pytania do planu.",
-  chatRefusalSubscription: "Zapisywanie posiłków wymaga subskrypcji. Rozpocznij darmowy okres próbny, aby kontynuować.",
+  chatRefusalSubscription: "Zapisywanie posiłków wymaga subskrypcji. Rozpocznij darmowy trial, aby kontynuować.",
   chatRefusalFailed: "Odpowiedź nie dotarła. Spróbuj ponownie.",
   chatRefusalNotFood: "To nie wyglądało na jedzenie.",
   chatRefusalImage: "Tego pliku nie da się odczytać jako zdjęcia. JPEG, PNG lub WebP.",
@@ -4156,7 +4156,7 @@ const PL: PageCopy = {
   offerWhenAfter: "Dzień {n}",
   offerBilled: "Start płatności · anulujesz w każdej chwili",
     offerClose: "Zamknij",
-  titleOffer: "Rozpocznij darmowy okres próbny",
+  titleOffer: "Rozpocznij darmowy trial",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Język",
   languageSave: "Zapisz",

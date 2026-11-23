@@ -300,7 +300,7 @@ msgstr "Zapísané."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Na zapisovanie jedál potrebuješ predplatné. Ak chceš pokračovať, začni skúšobné obdobie zadarmo na webe."
+msgstr "Na zapisovanie jedál potrebuješ predplatné. Ak chceš pokračovať, začni trial zadarmo na webe."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +365,7 @@ msgstr "Podľa plánu."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Ešte jedna vec, na ktorú sa iOS hneď spýta: hlásenia. Jedno denne a nikdy viac — správa o 20:30, plus pripomienka deň pred koncom skúšobného obdobia, ak ho máš. Nič iné, nikdy."
+msgstr "Ešte jedna vec, na ktorú sa iOS hneď spýta: hlásenia. Jedno denne a nikdy viac — správa o 20:30, plus pripomienka deň pred koncom trialu, ak ho máš. Nič iné, nikdy."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +555,7 @@ msgstr "Príliš veľa pokusov z tohto Telegramu. Chvíľu počkaj a potom znova
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Skúšobné obdobie beží — po jeho skončení {price}, ak ho nezrušíš. Pripomeniem ti to deň pred koncom, nikdy nie deň po ňom."
+msgstr "Trial beží — po jeho skončení {price}, ak ho nezrušíš. Pripomeniem ti to deň pred koncom, nikdy nie deň po ňom."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

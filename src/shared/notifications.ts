@@ -379,11 +379,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   bg: {
   "trial-end": {
-    title: "Пробният период изтича утре",
+    title: "Триалът изтича утре",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Утре изтича безплатният пробен период. Ако оставаш — нищо за правене; ако не — Настройки › Абонаменти.",
+    body: "Утре изтича безплатният триал. Ако оставаш — нищо за правене; ако не — Настройки › Абонаменти.",
   },
   evening: {
     title: "Днес спрямо плана",
@@ -729,11 +729,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   "pt-PT": {
   "trial-end": {
-    title: "A avaliação gratuita termina amanhã",
+    title: "O teste grátis termina amanhã",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "A tua avaliação gratuita termina amanhã. Se fores continuar, não precisas de fazer nada; se não, Definições › Subscrições.",
+    body: "O teu teste grátis termina amanhã. Se fores continuar, não precisas de fazer nada; se não, Definições › Subscrições.",
   },
   evening: {
     title: "Hoje face ao plano",
@@ -834,11 +834,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   sl: {
   "trial-end": {
-    title: "Preizkusno obdobje se konča jutri",
+    title: "Trial se konča jutri",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Jutri se tvoje brezplačno preizkusno obdobje konča. Če ostaneš, ti ni treba storiti ničesar; če ne, Nastavitve › Naročnine.",
+    body: "Jutri se tvoj brezplačni trial konča. Če ostaneš, ti ni treba storiti ničesar; če ne, Nastavitve › Naročnine.",
   },
   evening: {
     title: "Današnji dan v primerjavi z načrtom",
@@ -869,11 +869,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   hr: {
   "trial-end": {
-    title: "Probno razdoblje završava sutra",
+    title: "Trial završava sutra",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Sutra ti završava besplatno probno razdoblje. Ako ostaješ, ne trebaš ništa učiniti; ako ne, Postavke › Pretplate.",
+    body: "Sutra ti završava besplatni trial. Ako ostaješ, ne trebaš ništa učiniti; ako ne, Postavke › Pretplate.",
   },
   evening: {
     title: "Današnji dan u odnosu na plan",
@@ -904,11 +904,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   sk: {
   "trial-end": {
-    title: "Skúšobné obdobie zajtra končí",
+    title: "Trial zajtra končí",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Zajtra ti končí skúšobné obdobie zadarmo. Ak zostávaš, netreba nič robiť; ak nie, Nastavenia › Predplatné.",
+    body: "Zajtra ti končí trial zadarmo. Ak zostávaš, netreba nič robiť; ak nie, Nastavenia › Predplatné.",
   },
   evening: {
     title: "Dnešok v porovnaní s plánom",
@@ -939,11 +939,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   no: {
   "trial-end": {
-    title: "Prøveperioden slutter i morgen",
+    title: "Trialen slutter i morgen",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "I morgen slutter den gratis prøveperioden din. Hvis du blir, trenger du ikke gjøre noe; hvis ikke, Innstillinger › Abonnementer.",
+    body: "I morgen slutter den gratis trialen din. Hvis du blir, trenger du ikke gjøre noe; hvis ikke, Innstillinger › Abonnementer.",
   },
   evening: {
     title: "I dag mot planen",
@@ -974,11 +974,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   fi: {
   "trial-end": {
-    title: "Kokeilujakso päättyy huomenna",
+    title: "Kokeilu päättyy huomenna",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Ilmainen kokeilujaksosi päättyy huomenna. Jos jatkat, mitään ei tarvitse tehdä; jos et, Asetukset › Tilaukset.",
+    body: "Ilmainen kokeilusi päättyy huomenna. Jos jatkat, mitään ei tarvitse tehdä; jos et, Asetukset › Tilaukset.",
   },
   evening: {
     title: "Päivä suhteessa suunnitelmaan",
@@ -1009,11 +1009,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   da: {
   "trial-end": {
-    title: "Prøveperioden slutter i morgen",
+    title: "Trialen slutter i morgen",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "I morgen slutter din gratis prøveperiode. Hvis du bliver, skal du ikke gøre noget; hvis ikke: Indstillinger › Abonnementer.",
+    body: "I morgen slutter din gratis trial. Hvis du bliver, skal du ikke gøre noget; hvis ikke: Indstillinger › Abonnementer.",
   },
   evening: {
     title: "I dag i forhold til planen",
@@ -1044,11 +1044,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   hu: {
   "trial-end": {
-    title: "Holnap lejár a próbaidőszak",
+    title: "Holnap lejár a trial",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Holnap lejár az ingyenes próbaidőszakod. Ha maradsz, nincs teendőd; ha nem: Beállítások › Előfizetések.",
+    body: "Holnap lejár az ingyenes trialod. Ha maradsz, nincs teendőd; ha nem: Beállítások › Előfizetések.",
   },
   evening: {
     title: "A mai nap a tervhez képest",
@@ -1114,7 +1114,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   ro: {
   "trial-end": {
-    title: "Perioada de probă se încheie mâine",
+    title: "Proba se încheie mâine",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
@@ -1149,11 +1149,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   cs: {
   "trial-end": {
-    title: "Zkušební období zítra končí",
+    title: "Trial zítra končí",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Zítra ti končí zkušební období zdarma. Pokud zůstáváš, nic nedělej; pokud ne, Nastavení › Předplatná.",
+    body: "Zítra ti končí trial zdarma. Pokud zůstáváš, nic nedělej; pokud ne, Nastavení › Předplatná.",
   },
   evening: {
     title: "Dnešek v porovnání s plánem",
@@ -1254,11 +1254,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   sv: {
   "trial-end": {
-    title: "Provperioden slutar i morgon",
+    title: "Trialen slutar i morgon",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "I morgon slutar din gratis provperiod. Stannar du behöver du inte göra något; annars Inställningar › Prenumerationer.",
+    body: "I morgon slutar din gratis trial. Stannar du behöver du inte göra något; annars Inställningar › Prenumerationer.",
   },
   evening: {
     title: "Dagen jämfört med planen",
@@ -1289,11 +1289,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   uk: {
   "trial-end": {
-    title: "Пробний період закінчується завтра",
+    title: "Тріал закінчується завтра",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Завтра закінчується твій безкоштовний пробний період. Залишаєшся — нічого робити не треба; якщо ні: Параметри › Підписки.",
+    body: "Завтра закінчується твій безкоштовний тріал. Залишаєшся — нічого робити не треба; якщо ні: Параметри › Підписки.",
   },
   evening: {
     title: "День у порівнянні з планом",
@@ -1324,11 +1324,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   nl: {
   "trial-end": {
-    title: "De proefperiode eindigt morgen",
+    title: "De trial eindigt morgen",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Morgen eindigt je gratis proefperiode. Blijf je, dan hoef je niets te doen; zo niet: Instellingen › Abonnementen.",
+    body: "Morgen eindigt je gratis trial. Blijf je, dan hoef je niets te doen; zo niet: Instellingen › Abonnementen.",
   },
   evening: {
     title: "Vandaag vergeleken met het plan",
@@ -1359,11 +1359,11 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   pl: {
   "trial-end": {
-    title: "Okres próbny kończy się jutro",
+    title: "Trial kończy się jutro",
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Jutro kończy się twój darmowy okres próbny. Jeśli zostajesz, nic nie musisz robić; jeśli nie — Ustawienia › Subskrypcje.",
+    body: "Jutro kończy się twój darmowy trial. Jeśli zostajesz, nic nie musisz robić; jeśli nie — Ustawienia › Subskrypcje.",
   },
   evening: {
     title: "Dzisiejszy dzień na tle planu",

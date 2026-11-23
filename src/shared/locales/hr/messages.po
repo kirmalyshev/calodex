@@ -300,7 +300,7 @@ msgstr "Zabilježeno."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Za bilježenje obroka potrebna je pretplata. Pokreni besplatno probno razdoblje na webu da nastaviš."
+msgstr "Za bilježenje obroka potrebna je pretplata. Pokreni besplatni trial na webu da nastaviš."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +365,7 @@ msgstr "U planu."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Još nešto što će iOS uskoro pitati: obavijesti. Jedna dnevno i nikad više — sažetak u 20:30, plus podsjetnik dan prije kraja probnog razdoblja ako ga koristiš. Ništa drugo, nikad."
+msgstr "Još nešto što će iOS uskoro pitati: obavijesti. Jedna dnevno i nikad više — sažetak u 20:30, plus podsjetnik dan prije kraja triala ako ga koristiš. Ništa drugo, nikad."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +555,7 @@ msgstr "Previše pokušaja s ovog Telegrama. Pričekaj malo, pa ponovno pritisni
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Probno razdoblje je počelo — {price} kad završi, osim ako ga otkažeš. Podsjetit ću te dan prije kraja, nikad dan poslije."
+msgstr "Trial je počeo — {price} kad završi, osim ako ga otkažeš. Podsjetit ću te dan prije kraja, nikad dan poslije."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

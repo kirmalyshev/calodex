@@ -300,7 +300,7 @@ msgstr "Отбелязано."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Записът на оброци изисква абонамент. Започни безплатния пробен период в уеб, за да продължиш."
+msgstr "Записът на оброци изисква абонамент. Започни безплатния триал в уеб, за да продължиш."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +365,7 @@ msgstr "В плана."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Още нещо, за което iOS ще пита: известия. Едно на ден и никога повече — редът в 20:30 плюс напомняне ден преди края на пробния период, ако ползваш такъв. Нищо друго, никога."
+msgstr "Още нещо, за което iOS ще пита: известия. Едно на ден и никога повече — редът в 20:30 плюс напомняне ден преди края на триала, ако ползваш такъв. Нищо друго, никога."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +555,7 @@ msgstr "Твърде много опити от този Telegram. Изчака�
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Пробният период тръгна — {price}, когато изтече, освен ако не го спреш. Ще напомня ден преди края му, никога след това."
+msgstr "Триалът тръгна — {price}, когато изтече, освен ако не го спреш. Ще напомня ден преди края му, никога след това."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

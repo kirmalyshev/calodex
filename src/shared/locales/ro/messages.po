@@ -300,7 +300,7 @@ msgstr "Înregistrat."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Pentru a înregistra mesele ai nevoie de un abonament. Începe perioada de probă gratuită pe web ca să continui."
+msgstr "Pentru a înregistra mesele ai nevoie de un abonament. Începe proba gratuită pe web ca să continui."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +365,7 @@ msgstr "Conform planului."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Încă un lucru despre care te va întreba iOS: notificările. Una pe zi și niciodată mai multe — mesajul de la 20:30, plus un memento cu o zi înainte să se încheie perioada de probă, dacă ești în ea. Nimic altceva, niciodată."
+msgstr "Încă un lucru despre care te va întreba iOS: notificările. Una pe zi și niciodată mai multe — mesajul de la 20:30, plus un memento cu o zi înainte să se încheie proba, dacă ești în ea. Nimic altceva, niciodată."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +555,7 @@ msgstr "Prea multe încercări de pe acest Telegram. Așteaptă puțin, apoi apa
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Perioada de probă a început — {price} când se încheie, dacă nu o oprești. Îți amintesc cu o zi înainte să se încheie, niciodată a doua zi după."
+msgstr "Proba a început — {price} când se încheie, dacă nu o oprești. Îți amintesc cu o zi înainte să se încheie, niciodată a doua zi după."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

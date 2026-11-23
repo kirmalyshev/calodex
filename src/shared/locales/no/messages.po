@@ -300,7 +300,7 @@ msgstr "Logget."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Du trenger et abonnement for å logge måltider. Start den gratis prøveperioden på nettet for å fortsette."
+msgstr "Du trenger et abonnement for å logge måltider. Start den gratis trialen på nettet for å fortsette."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -365,7 +365,7 @@ msgstr "Innenfor planen."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Én ting til som iOS snart spør om: varslinger. Én om dagen og aldri flere — kveldsmeldingen kl. 20:30, pluss en påminnelse dagen før prøveperioden slutter hvis du har en. Ingenting annet, noensinne."
+msgstr "Én ting til som iOS snart spør om: varslinger. Én om dagen og aldri flere — kveldsmeldingen kl. 20:30, pluss en påminnelse dagen før trialen slutter hvis du har en. Ingenting annet, noensinne."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -555,7 +555,7 @@ msgstr "For mange forsøk fra denne Telegram-kontoen. Vent litt, og trykk på le
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Prøveperioden er i gang — {price} når den slutter, med mindre du sier den opp. Jeg minner deg på det dagen før den slutter, aldri dagen etter."
+msgstr "Trialen er i gang — {price} når den slutter, med mindre du sier den opp. Jeg minner deg på det dagen før den slutter, aldri dagen etter."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
