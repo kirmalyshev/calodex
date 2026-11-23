@@ -4781,8 +4781,9 @@ details.how p { margin-top: 8px; }
     var model = $("rec-model").value.trim();
     if (model) path += (path.indexOf("?") === -1 ? "?" : "&") + "model=" + encodeURIComponent(model);
     var cmin = $("rec-cmin").value.trim(), cmax = $("rec-cmax").value.trim();
-    if (cmin !== "") path += "&cmin=" + encodeURIComponent(cmin);
-    if (cmax !== "") path += "&cmax=" + encodeURIComponent(cmax);
+    var sep = function () { return path.indexOf("?") === -1 ? "?" : "&"; };
+    if (cmin !== "") path += sep() + "cmin=" + encodeURIComponent(cmin);
+    if (cmax !== "") path += sep() + "cmax=" + encodeURIComponent(cmax);
     return api("GET", path).then(function (view) {
       var rows = view.recognitions || [];
       var body = $("rec-list").querySelector("tbody");

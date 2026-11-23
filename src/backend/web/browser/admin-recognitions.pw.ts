@@ -99,6 +99,14 @@ test("the model box sends the filter, and a row opens the review", async ({ page
   await page.click("#rec-apply");
   await expect.poll(() => asked.some((u) => u.includes("model=qwen"))).toBe(true);
 
+  // Compression alone, no model and no window picked: the first parameter must open a real "?",
+  // not land "&cmin=" in the pathname — that answered 404.
+  await page.fill("#rec-model", "");
+  await page.fill("#rec-cmin", "0.5");
+  await page.fill("#rec-cmax", "0.9");
+  await page.click("#rec-apply");
+  await expect.poll(() => asked.some((u) => u.includes("recognitions?cmin=0.5&cmax=0.9"))).toBe(true);
+
   await page.locator("#rec-list tbody tr").first().click();
   const pane = page.locator("#rec-detail");
   await expect(pane).toContainText("The model's own answer");
