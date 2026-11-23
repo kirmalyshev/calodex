@@ -18,7 +18,7 @@ import type {
   OnboardingContent, OnboardingContentSet,
   OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
-import type { ArmScreens, FunnelDimensions, FunnelFilters, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
+import type { ArmScreens, FunnelDimensions, FunnelFilters, MealItem, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
 import { ONBOARDING_EVENT_CONTEXT_KEYS } from "@eait/shared";
 
@@ -493,6 +493,55 @@ export interface LlmCall {
 }
 
 export type StoredLlmCall = LlmCall & { id: string; createdAt: number };
+
+/**
+ * The recognizer's own answer, kept per analysis (ieat-app#3422).
+ *
+ * `llm_calls` is metrics and never content; this row IS the content — the model's output before
+ * schema parsing and catalog matching, with the prompt key and revision it answered and the model
+ * that served them. `items`/`kcal` are the PREPARED analysis (post-matching, pre-edit) so the
+ * admin's review can sit "what the plate looked like" beside "what the model said" without
+ * re-parsing the raw text. `raw` is null only on a port that cannot hand the text over.
+ * `analysisId` links the charge the turn was billed to; `mealId` is written when the meal lands
+ * (`attachRecognitionMeal`) and stays null on a read that logged none.
+ */
+export interface RecognitionWrite {
+  analysisId: string;
+  model: string | null;
+  promptKey: string;
+  promptVersion: number | null;
+  raw: string | null;
+  items: MealItem[];
+  kcal: number;
+}
+
+/** The admin's review row — the recognition plus the meal it made, as the meal stands NOW. */
+export interface AdminRecognitionRow {
+  id: string;
+  userId: string;
+  /** Null after `undoAnalysis` — the link drops, the row stays, like `llm_calls`. */
+  analysisId: string | null;
+  mealId: string | null;
+  model: string | null;
+  promptKey: string;
+  promptVersion: number | null;
+  kcal: number | null;
+  createdAt: string;
+  /** Current state, post-edit: `corrected` and `items` are "any user edit afterwards". */
+  meal: { date: string; kcal: number; corrected: boolean; items: MealItem[]; photos: number } | null;
+}
+
+/** The list read carries no content; the detail read adds the raw answer and the parsed items. */
+export type AdminRecognitionListRow = Omit<AdminRecognitionRow, never>;
+export type AdminRecognition = AdminRecognitionRow & { raw: string | null; items: MealItem[] };
+
+/** The admin's recognitions filter (ieat-app#3422); `from`/`to` bound `created_at`. */
+export interface RecognitionFilter {
+  from?: Date;
+  to?: Date;
+  model?: string;
+  limit?: number;
+}
 
 /**
  * One measurement of how this person's portions differ from the model's first read.
@@ -2345,6 +2394,28 @@ export interface Store {
    * scope may own, cost and all (#537).
    */
   undoAnalysis(userId: string, analysisId: string): Promise<boolean>;
+
+  // ── The recognizer's raw answer (ieat-app#3422) ────────────────────────────────────────────
+
+  /**
+   * Store what the model actually said, per analysis. Written once the analyzer resolved — a read
+   * the gates then refuse (`not-food`, `unreadable-label`, an empty estimate) is a row too: the
+   * review exists precisely to see where the model was wrong. Scoped `user_id = ?` like every
+   * write; false when the account or the analysis is not theirs.
+   */
+  recordRecognition(userId: string, rec: RecognitionWrite): Promise<boolean>;
+  /**
+   * Point a recognition at the meal its turn logged, once that meal exists. Scoped on BOTH ids —
+   * the row and the meal must be this account's — so holding somebody's analysis id links nothing.
+   */
+  attachRecognitionMeal(userId: string, analysisId: string, mealId: string): Promise<boolean>;
+  /**
+   * THE ADMIN'S REVIEW LIST (ieat-app#3422), newest first, bounded by `limit` (default 200).
+   * Unscoped like every admin read; carries no raw text and no items — that is the detail read.
+   */
+  adminRecognitions(filter: RecognitionFilter): Promise<AdminRecognitionListRow[]>;
+  /** One recognition with its raw answer and prepared items, plus the meal as it stands now. */
+  adminRecognition(id: string): Promise<AdminRecognition | null>;
 
   // ── Turns (#708) ───────────────────────────────────────────────────────────────────────────
   //
