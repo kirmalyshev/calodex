@@ -23,6 +23,7 @@ import { type ChatMessage,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type ExperimentSurfaceCounts, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip, type AdminValueSet,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
+  type RecognitionWrite, type AdminRecognition, type AdminRecognitionListRow,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
   type Acquisition, type RevenueCatEventRow, type OnboardingServed, type OnboardingServedRecord,
 } from "./store.ts";
@@ -399,6 +400,32 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   // `llm_calls`, in `RLS_TABLES`, with `analysis_id` set null when the analysis is refunded.
   const llmCalls: (LlmCall & { id: string; userId: string; createdAt: number })[] = [];
   let llmCallSeq = 0;
+  // `recognitions` (ieat-app#3422): the model's own answer per analysis — the content `llm_calls`
+  // refuses on purpose. `analysisId` goes null on refund like the calls'; `mealId` is written by
+  // `attachRecognitionMeal` once the turn's meal exists.
+  const recognitions: (Omit<RecognitionWrite, "analysisId"> & {
+    id: string; userId: string; analysisId: string | null; mealId: string | null; createdAt: number;
+  })[] = [];
+  let recognitionSeq = 0;
+
+  // The admin's row, joined to the meal it made — the meal as it stands NOW, edits included.
+  // `items` rides the detail read only: the list stays light, like the join in Postgres.
+  const recognitionRow = (
+    r: (typeof recognitions)[number], mealsMap: Map<string, MealRecord>, withItems: boolean,
+  ): AdminRecognitionListRow => {
+    const m = r.mealId === null ? undefined : mealsMap.get(r.mealId);
+    return {
+      id: r.id, userId: r.userId, analysisId: r.analysisId, mealId: r.mealId,
+      model: r.model, promptKey: r.promptKey, promptVersion: r.promptVersion,
+      kcal: r.kcal, createdAt: new Date(r.createdAt).toISOString(),
+      meal: m === undefined ? null : {
+        date: m.date, kcal: m.kcal, corrected: m.corrected,
+        ...(withItems ? { items: clone(m.items) } : {}),
+        photos: m.photos ?? 0,
+      },
+    };
+  };
+
   // `${userId}\n${clientId}` -> the claim. The key IS the uniqueness the Postgres primary key gives.
   const turns = new Map<string, { userId: string; clientId: string; outcome: object | null; claimedAt: number }>();
   const jobs = new Map<string, JobRecord & { photos: { mime: string; bytes: Uint8Array }[]; group?: string }>();
@@ -566,6 +593,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     }
     for (let i = llmCalls.length - 1; i >= 0; i--) {
       if (llmCalls[i]!.userId === userId) llmCalls.splice(i, 1);
+    }
+    for (let i = recognitions.length - 1; i >= 0; i--) {
+      if (recognitions[i]!.userId === userId) recognitions.splice(i, 1);
     }
     for (const [k, t] of turns) if (t.userId === userId) turns.delete(k);
     for (const [k, j] of jobs) if (j.userId === userId) jobs.delete(k);
@@ -1087,6 +1117,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       }
       for (const a of analyses) if (a.userId === fromUserId) a.userId = intoUserId;
       for (const c of llmCalls) if (c.userId === fromUserId) c.userId = intoUserId;
+      for (const r of recognitions) if (r.userId === fromUserId) r.userId = intoUserId;
       // A turn the anonymous session sent is replayed by the same phone under the real account.
       // One id claimed on both sides keeps the survivor's.
       for (const [k, t] of turns) {
@@ -2303,6 +2334,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (!m || m.user_id !== userId) return false;
       meals.delete(mealId);
       photos.delete(mealId);
+      // `on delete set null` on recognitions.meal_id — the read stays, the link goes.
+      for (const r of recognitions) if (r.mealId === mealId) r.mealId = null;
       return true;
     },
 
@@ -2752,7 +2785,53 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       analyses.splice(i, 1);
       // `on delete set null` in Postgres: the call happened whether or not it stayed billed.
       for (const c of llmCalls) if (c.analysisId === analysisId) c.analysisId = null;
+      for (const r of recognitions) if (r.analysisId === analysisId) r.analysisId = null;
       return true;
+    },
+
+    async recordRecognition(userId, rec) {
+      if (!users.has(userId)) return false;
+      // A recognition belongs to a charge this account was billed, or it is not written — the same
+      // scope the `where exists` clause gives the Postgres insert.
+      if (!analyses.some((a) => a.id === rec.analysisId && a.userId === userId)) return false;
+      // ONE ROW PER ANALYSIS: a retried job re-reads under the charge it kept, and its second
+      // answer replaces the first — the newest resolved read is the one the meal was made from.
+      const existing = recognitions.find((x) => x.analysisId === rec.analysisId);
+      if (existing) Object.assign(existing, { ...rec, createdAt: now() });
+      else recognitions.push({ id: String(++recognitionSeq), userId, ...rec, mealId: null, createdAt: now() });
+      return true;
+    },
+
+    async attachRecognitionMeal(userId, analysisId, mealId) {
+      const r = recognitions.find((x) => x.userId === userId && x.analysisId === analysisId);
+      const m = meals.get(mealId);
+      // Scoped on both ends, as the update's `exists` is in Postgres: another account's analysis
+      // id or meal id links nothing.
+      if (!r || !m || m.user_id !== userId) return false;
+      r.mealId = mealId;
+      return true;
+    },
+
+    async adminRecognitions(filter) {
+      return recognitions
+        .filter((r) => {
+          // The meal's photo_compression: no meal means no coefficient, like the join's null.
+          const comp = r.mealId === null ? null : meals.get(r.mealId)?.photo_compression ?? null;
+          return (filter.from === undefined || r.createdAt >= filter.from.getTime())
+            && (filter.to === undefined || r.createdAt <= filter.to.getTime())
+            // A free-text match, like the `position(...) > 0` in Postgres: a piece of the served id.
+            && (filter.model === undefined || (r.model ?? "").includes(filter.model))
+            && (filter.compressionMin === undefined || (comp !== null && comp >= filter.compressionMin))
+            && (filter.compressionMax === undefined || (comp !== null && comp <= filter.compressionMax));
+        })
+        .sort((a, b) => b.createdAt - a.createdAt || Number(b.id) - Number(a.id))
+        .slice(0, Math.max(1, Math.min(1000, Math.floor(filter.limit ?? 200))))
+        .map((r) => recognitionRow(r, meals, false));
+    },
+
+    async adminRecognition(id) {
+      const r = recognitions.find((x) => x.id === id);
+      return r === undefined ? null : { ...recognitionRow(r, meals, true), raw: r.raw, items: clone(r.items) } as AdminRecognition;
     },
 
     async claimTurn(userId, clientId) {

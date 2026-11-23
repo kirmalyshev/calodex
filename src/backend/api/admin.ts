@@ -46,6 +46,7 @@ import {
 } from "@eait/shared";
 import {
   adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
+  adminRecognitions, adminRecognition,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
   onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder, setOnboardingExperiment,
   startOnboardingExperiment, stopOnboardingExperiment,
@@ -674,6 +675,34 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
         "content-security-policy": "default-src 'none'; sandbox",
         "x-content-type-options": "nosniff",
       },
+    });
+  }
+
+  // ── WHAT THE MODEL SAID (ieat-app#3422) ───────────────────────────────────────────────────
+  //
+  // The review "where was the model wrong" reads: each recognition's photo and raw answer beside
+  // the meal it made, as the meal stands now. UNSCOPED like every admin read — the role is the
+  // authority here, and the list answers across accounts because that is what a model review asks.
+  // The photo still goes through the scoped per-meal route below, on the account the row names.
+  const recs = pathname.match(/^\/admin\/api\/recognitions(?:\/(\d{1,12}))?$/);
+  if (recs && req.method === "GET") {
+    if (recs[1] !== undefined) {
+      const view = await adminRecognition(deps, recs[1]);
+      return view ? json(view) : notFound();
+    }
+    const ask = rangeParam(url, null);
+    const model = url.searchParams.get("model");
+    // The meal's photo_compression (ieat-app#3421), bounded from either side; a NaN is no bound.
+    const cmin = Number(url.searchParams.get("cmin")), cmax = Number(url.searchParams.get("cmax"));
+    return json({
+      recognitions: await adminRecognitions(deps, {
+        ...("days" in ask
+          ? { from: new Date(Date.now() - ask.days * 86_400_000), to: new Date() }
+          : { ...(ask.from ? { from: ask.from } : {}), ...(ask.to ? { to: ask.to } : {}) }),
+        ...(model ? { model } : {}),
+        ...(Number.isFinite(cmin) && url.searchParams.has("cmin") ? { compressionMin: cmin } : {}),
+        ...(Number.isFinite(cmax) && url.searchParams.has("cmax") ? { compressionMax: cmax } : {}),
+      }),
     });
   }
 

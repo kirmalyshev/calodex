@@ -35,6 +35,7 @@ import { type ChatMessage,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey, type AdminValueKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto, type Acquisition, type RevenueCatEventRow,
+  type AdminRecognition, type AdminRecognitionListRow,
 } from "./store.ts";
 
 /**
@@ -103,6 +104,7 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   saved_meals: "user_id",
   analyses: "user_id",
   llm_calls: "user_id",
+  recognitions: "user_id",
   onboarding_events: "user_id",
   onboarding_assignments: "user_id",
   onboarding_served: "user_id",
@@ -1063,6 +1065,35 @@ create index if not exists llm_calls_analysis_idx on llm_calls(analysis_id);
 create index if not exists llm_calls_created_idx on llm_calls(created_at);
 create index if not exists llm_calls_user_idx on llm_calls(user_id, id);
 
+-- The recognizer's own answer, per analysis (ieat-app#3422): llm_calls is metrics and never
+-- content; this row IS the content. raw is the model's output before schema parsing and catalog
+-- matching; items/kcal are the PREPARED analysis (post-matching, pre-edit) so the review view
+-- never re-parses. The links follow the calls' rules: analysis_id is set null on a refund rather
+-- than losing the row, and meal_id is written by attachRecognitionMeal when the turn's meal
+-- lands — null on a read the gates refused (not-food, an unreadable label, an empty estimate),
+-- which is exactly the answer a review of "where was the model wrong" is after.
+create table if not exists recognitions (
+  id             bigserial primary key,
+  user_id        uuid not null references users(id) on delete cascade,
+  analysis_id    bigint references analyses(id) on delete set null,
+  meal_id        uuid references meals(id) on delete set null,
+  model          text,
+  prompt_key     text not null,
+  prompt_version integer,
+  raw            text,
+  items          jsonb not null default '[]',
+  kcal           double precision,
+  created_at     timestamptz not null default now()
+);
+-- ONE ROW PER ANALYSIS: a queued-job retry re-reads under the charge it kept, and its second
+-- answer replaces the first — the newest resolved read is the one the meal was made from. A plain
+-- index under this name shipped first; replacing it LOOSENS nothing the previous build needed.
+drop index if exists recognitions_analysis_idx;
+create unique index if not exists recognitions_analysis_idx on recognitions(analysis_id);
+create index if not exists recognitions_meal_idx on recognitions(meal_id);
+create index if not exists recognitions_created_idx on recognitions(created_at);
+create index if not exists recognitions_model_idx on recognitions(model);
+
 -- A billed turn, claimed by the client's id for it before anything runs (#708). The primary key IS
 -- the idempotency: a phone that lost an answer re-sends the id, and the second insert does nothing.
 -- outcome is what the turn answered, kept for a replay and nulled after a day by
@@ -1628,6 +1659,29 @@ drop table if exists subscribers;
 type UserRow = Record<string, unknown>;
 type MealRow = Record<string, unknown>;
 
+/** The meal a recognition made, as it stands NOW — `items` is the DETAIL read's; the list stays light (ieat-app#3422). */
+const recognitionMeal = (r: Record<string, unknown>, items: boolean) =>
+  r.meal_id === null ? null : {
+    date: String(r.meal_date),
+    kcal: Number(r.meal_kcal),
+    corrected: r.meal_corrected === true,
+    ...(items ? { items: json<MealItem[]>(r.meal_items, []) } : {}),
+    photos: num(r.meal_photos),
+  };
+
+const toRecognition = (r: Record<string, unknown>): AdminRecognitionListRow => ({
+  id: String(r.id),
+  userId: String(r.user_id),
+  analysisId: r.analysis_id === null ? null : String(r.analysis_id),
+  mealId: (r.meal_id ?? null) as string | null,
+  model: (r.model ?? null) as string | null,
+  promptKey: String(r.prompt_key),
+  promptVersion: r.prompt_version === null ? null : num(r.prompt_version),
+  kcal: r.kcal === null ? null : Number(r.kcal),
+  createdAt: new Date(r.created_at as string).toISOString(),
+  meal: recognitionMeal(r, false),
+});
+
 /** One `llm_prompts` row. `updated_at` is an ISO string on both stores, so the two can be compared. */
 const toPromptRevision = (r: Record<string, unknown>): PromptRevision => ({
   key: String(r.key),
@@ -2192,6 +2246,12 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   recordTiming: 0,
   analysisCosts: 0,
   undoAnalysis: 0,
+  // The recognizer's answer (ieat-app#3422): a user's own rows for the write and the attach; the
+  // list and the detail are the admin's review read, unscoped like every admin surface read.
+  recordRecognition: 0,
+  attachRecognitionMeal: 0,
+  adminRecognitions: "unscoped",
+  adminRecognition: "unscoped",
   putHealthDays: 0,
   healthDaysSince: 0,
   putWeight: 0,
@@ -3167,6 +3227,8 @@ export async function postgresStore(
         // The calls the anonymous session's turns made belong to the account they became — the
         // rows measure real provider calls either way, and the metrics keep their owner.
         await tx`update llm_calls set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        // The recognizer's answers move with them — they are the account's own history too.
+        await tx`update recognitions set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         // A turn the anonymous session sent is replayed by the same phone under the real account. One
         // id claimed on both sides keeps the survivor's; the other goes with the anonymous row.
         await tx`
@@ -5633,6 +5695,69 @@ export async function postgresStore(
       const rows = await sql`
         delete from analyses where id = ${analysisId} and user_id = ${userId} returning id`;
       return rows.length > 0;
+    },
+
+    async recordRecognition(userId, rec) {
+      // Scoped like `recordLlmCall` — and the analysis must be THEIRS: the foreign key proves an
+      // id exists, not whose it is, so the exists clause is what answers that. One row per
+      // analysis: a retried job re-reads under the charge it kept, and its second answer
+      // replaces the first — the newest resolved read is the one the meal was made from.
+      const rows = await sql`
+        insert into recognitions (user_id, analysis_id, model, prompt_key, prompt_version, raw, items, kcal)
+        select ${userId}, ${rec.analysisId}, ${rec.model}, ${rec.promptKey}, ${rec.promptVersion},
+               ${rec.raw}, ${rec.items}, ${rec.kcal}
+         where exists (select 1 from analyses where id = ${rec.analysisId} and user_id = ${userId})
+        on conflict (analysis_id) do update set
+          model = excluded.model, prompt_key = excluded.prompt_key, prompt_version = excluded.prompt_version,
+          raw = excluded.raw, items = excluded.items, kcal = excluded.kcal, created_at = now()
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async attachRecognitionMeal(userId, analysisId, mealId) {
+      // Both ids scoped to the account: holding somebody's analysis id links nothing.
+      const rows = await sql`
+        update recognitions set meal_id = ${mealId}
+         where user_id = ${userId} and analysis_id = ${analysisId}
+           and exists (select 1 from meals where id = ${mealId} and user_id = ${userId})
+        returning id`;
+      return rows.length > 0;
+    },
+
+    async adminRecognitions(filter) {
+      // THE ADMIN'S REVIEW LIST (ieat-app#3422): unscoped like every admin read, and carrying no
+      // `raw` — the text stays on the detail read, which is the one place it is looked at.
+      const rows = await sql`
+        select r.id, r.user_id, r.analysis_id, r.meal_id, r.model, r.prompt_key, r.prompt_version,
+               r.kcal, r.created_at,
+               m.date as meal_date, m.kcal as meal_kcal, m.corrected as meal_corrected,
+               m.photos as meal_photos
+          from recognitions r left join meals m on m.id = r.meal_id
+         where (${filter.from ?? null}::timestamptz is null or r.created_at >= ${filter.from ?? null})
+           and (${filter.to ?? null}::timestamptz is null or r.created_at <= ${filter.to ?? null})
+           -- A free-text match: the admin types a piece of the served id ("qwen"), never the whole.
+           and (${filter.model ?? null}::text is null or position(${filter.model ?? null} in r.model) > 0)
+           -- The meal's photo_compression (ieat-app#3421): no meal means no coefficient, and a
+           -- null compared to a bound is null — the refused reads simply never match.
+           and (${filter.compressionMin ?? null}::float8 is null or m.photo_compression >= ${filter.compressionMin ?? null})
+           and (${filter.compressionMax ?? null}::float8 is null or m.photo_compression <= ${filter.compressionMax ?? null})
+         order by r.created_at desc, r.id desc
+         limit ${Math.max(1, Math.min(1000, Math.floor(filter.limit ?? 200)))}`;
+      return (rows as Record<string, unknown>[]).map(toRecognition);
+    },
+
+    async adminRecognition(id) {
+      const rows = await sql`
+        select r.id, r.user_id, r.analysis_id, r.meal_id, r.model, r.prompt_key, r.prompt_version,
+               r.kcal, r.created_at, r.raw, r.items,
+               m.date as meal_date, m.kcal as meal_kcal, m.corrected as meal_corrected,
+               m.items as meal_items, m.photos as meal_photos
+          from recognitions r left join meals m on m.id = r.meal_id
+         where r.id = ${id}`;
+      const r = rows[0] as Record<string, unknown> | undefined;
+      if (!r) return null;
+      return { ...toRecognition(r), raw: (r.raw ?? null) as string | null, items: json<MealItem[]>(r.items, []),
+        meal: recognitionMeal(r, true) as AdminRecognition["meal"] };
     },
 
     async claimTurn(userId, clientId) {
