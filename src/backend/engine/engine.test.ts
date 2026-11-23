@@ -77,6 +77,10 @@ beforeEach(() => {
   deps = makeDeps();
 });
 
+/** The first verdict's headline: a fixed sentence, or (ieat-app#3400) the first meal's own figure-and-action line. */
+const isHeadline = (line: string): boolean =>
+  Object.values(threadCopyFor("en").firstVerdict.headline).includes(line) || /^[\d,]+kcal, about \d+% of today\. /.test(line);
+
 describe("onboarding", () => {
   it("refuses every engine call until onboarding completes", async () => {
     const { userId } = await store.upsertDeviceUser("d".repeat(40), "en");
@@ -1596,8 +1600,7 @@ describe("the thread", () => {
     // Every assistant line the engine wrote is Gabie's (S9, overseer): the answer, the card, the
     // pills' headline first, then the typed caveat — she signs all of it.
     expect(t[2]).toMatchObject({ kind: "text", speaker: "gabie" });
-    const headlines = Object.values(threadCopyFor("en").firstVerdict.headline);
-    expect(headlines.includes(text(t[4]!)!)).toBe(true);
+    expect(isHeadline(text(t[4]!)!)).toBe(true);
     expect(text(t[5]!)).toContain("Typed, not photographed");
     for (const e of t.slice(2)) expect(e).toMatchObject({ speaker: "gabie" });
   });
@@ -1752,7 +1755,7 @@ describe("the thread", () => {
     const t = await thread(userId);
     expect(t.map((e) => [e.role, e.kind])).toEqual([["user", "photo"], ["assistant", "meal"], ["assistant", "text"], ["assistant", "text"], ["assistant", "text"]]);
     // #49: the pills' headline first; the meal's own number once, and no day's arithmetic (#1066).
-    expect(Object.values(threadCopyFor("en").firstVerdict.headline).includes(text(t[2]!)!)).toBe(true);
+    expect(isHeadline(text(t[2]!)!)).toBe(true);
     expect(text(t[3]!)).toMatch(/^First one in\. [\d,]+kcal\.$/);
     expect(text(t[4]!)).toContain("If anything's off");
     // The VERDICT is never said again — and nothing else is said under the second card either:
@@ -1852,7 +1855,7 @@ describe("the thread", () => {
     await logPhotoMeal(makeDeps({}, sure), userId, photo());
     const spoken = (await thread(userId)).filter((e) => e.kind === "text" && e.role === "assistant");
     // #49: the pills' headline leads the verdict; the meal's number once.
-    expect(Object.values(threadCopyFor("en").firstVerdict.headline).includes(text(spoken[0]!)!)).toBe(true);
+    expect(isHeadline(text(spoken[0]!)!)).toBe(true);
     expect(text(spoken[1]!)).toMatch(/^First one in\./);
     await logPhotoMeal(makeDeps({}, sure), userId, photo());
     // No new line: the card carries the numbers, and the verdict is not said twice (#1066).
@@ -1890,7 +1893,7 @@ describe("the thread", () => {
     await logPhotoMeal(makeDeps({}, sure), userId, photo());
     const spoken = (await thread(userId)).filter((e) => e.role === "assistant" && e.kind === "text");
     // #49: the greeting still leads with the pills' headline, then the arithmetic.
-    expect(Object.values(threadCopyFor("en").firstVerdict.headline).includes(text(spoken[0]!)!)).toBe(true);
+    expect(isHeadline(text(spoken[0]!)!)).toBe(true);
     expect(text(spoken[1]!)).toMatch(/^First one in\./);
   });
 
