@@ -349,7 +349,7 @@ describe("a generic word never grounds to a different food (#903)", () => {
     expect(pick("almond butter", [ref("Nuts, almond butter, plain", 614)])).toBe("Nuts, almond butter, plain");
   });
   test("a modifier that is no staple leaves the row the food itself", () => {
-    for (const [q, row] of [["rice", "Basmati rice, cooked"], ["milk", "Whole milk, pasteurised"], ["yogurt", "Greek yogurt, plain"],
+    for (const [q, row] of [["crisps", "Potato crisps"], ["bread", "Wheat bread, toasted"], ["tortilla", "Corn tortilla, ready to eat"], ["rice", "Basmati rice, cooked"], ["milk", "Whole milk, pasteurised"], ["yogurt", "Greek yogurt, plain"],
       ["potatoes", "Boiled potatoes, peeled"], ["chicken", "Roast chicken, meat only"]] as const)
       expect(pick(q, [ref(row, 100)])).toBe(row);
   });
@@ -358,8 +358,9 @@ describe("a generic word never grounds to a different food (#903)", () => {
   });
   test("the noun heading a later segment, or a plural, is judged like the singular", () => {
     expect(pick("lemon cake", [ref("Plain cake, lemon cake", 350)])).toBe("Plain cake, lemon cake");
-    expect(pick("berry", [ref("Semolina berries, raw", 349)])).toBeNull();
-    expect(pick("berries", [ref("Semolina berries, raw", 349)])).toBeNull();
+    expect(pick("dumpling", [ref("Semolina dumplings, raw", 120)])).toBeNull();
+    expect(pick("dumplings", [ref("Semolina dumplings, raw", 120)])).toBeNull();
+    expect(pick("pancakes", [ref("Potato pancake", 180)])).toBeNull();
   });
   test("the real catalog rows from the MY takeaway (#903) are no match", () => {
     expect(pick("dumpling", [ref("Semolina dumplings raw", 120)])).toBeNull();
