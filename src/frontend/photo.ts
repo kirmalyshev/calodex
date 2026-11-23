@@ -23,12 +23,14 @@ export function fitWithin(
 }
 
 /**
- * One picked file as it should go up: at most `UPLOAD_EDGE` on the long edge, JPEG. A file already
+ * One picked file as it should go up: at most `UPLOAD_EDGE` on the long edge, JPEG at `quality` —
+ * the server's `Limits.photoCompression` (ieat-app#3421), read by the caller so the value sent on
+ * the form and the value the bytes were encoded at can never disagree. A file already
  * small enough is returned untouched, and anything the browser cannot decode — or canvas refuses —
  * is too: the upload proceeds with the original bytes and the server's `imageMime` sniff answers
  * for it, exactly as before this step existed.
  */
-export async function shrinkPhoto(file: File): Promise<File> {
+export async function shrinkPhoto(file: File, quality: number): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
     try {
@@ -43,7 +45,7 @@ export async function shrinkPhoto(file: File): Promise<File> {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
       ctx.drawImage(bitmap, 0, 0, width, height);
-      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.8));
+      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", quality));
       if (blob === null) return file;
       return new File([blob], file.name.replace(/\.[^.]*$/, "") + ".jpg", { type: "image/jpeg" });
     } finally {
@@ -55,6 +57,6 @@ export async function shrinkPhoto(file: File): Promise<File> {
 }
 
 /** Every picked file, resized in parallel — several files are angles of one meal. */
-export function shrinkPhotos(files: File[]): Promise<File[]> {
-  return Promise.all(files.map(shrinkPhoto));
+export function shrinkPhotos(files: File[], quality: number): Promise<File[]> {
+  return Promise.all(files.map((f) => shrinkPhoto(f, quality)));
 }

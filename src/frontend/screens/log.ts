@@ -178,7 +178,7 @@ export function logScreen(frame: Frame): HTMLElement {
     }
     const mine = ++pickSeq;
     // Resized BEFORE the byte check: the cap weighs what goes up, not what was picked.
-    const shrunk = await shrinkPhotos(files);
+    const shrunk = await shrinkPhotos(files, me.limits.photoCompression);
     if (mine !== pickSeq) return;
     if (shrunk.reduce((sum, f) => sum + f.size, 0) > me.limits.maxUploadBytes) {
       tell(COPY.photoTooLarge);
@@ -445,7 +445,7 @@ export function logScreen(frame: Frame): HTMLElement {
     const entry: WebQueued = {
       id: crypto.randomUUID(), userId: me.profile.user_id, kind: "photo",
       text: note.value.trim() === "" ? null : note.value.trim(),
-      photos: [...picked], capturedAt: captured.toISOString(),
+      photos: [...picked], compress: me.limits.photoCompression, capturedAt: captured.toISOString(),
       // "Analyse it as a meal photo" after an unreadable label: same file, label reading off.
       ...(plate ? { plate: true } : {}),
     };

@@ -34,7 +34,7 @@ import { updateFor } from "../queue.ts";
 import {
   COPY, MESSAGES, dayPickerButton, PENDING, Said, UNKNOWN, clear, composerRow, el, flush,
   failBadge, heldProposal, kept, keptLineEl, keptNotice, lang, lastThreadEntries, findMeal, mealLine, outstandingTurn,
-  MEAL_PHOTOS, proposalCard, profile, refusalWords, sendOrKeep, setHeldProposal, setLastThread,
+  MEAL_PHOTOS, proposalCard, profile, refusalWords, sendOrKeep, setHeldProposal, setLastThread, photoCompression,
   setRedraw, smallCta, takeCarried, takeTurn, timeFmt, names, type Frame,
 } from "../shell.ts";
 import { attachMic } from "../voice.ts";
@@ -619,11 +619,13 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     turn(async () => {
       liveAnswer = null;
       // What goes up is the resized frame — the byte cap weighs it, not what was picked.
-      const shrunk = await shrinkPhotos(files);
+      const compress = photoCompression();
+      const shrunk = await shrinkPhotos(files, compress);
       if (me !== null && shrunk.reduce((n, f) => n + f.size, 0) > me.limits.maxUploadBytes) throw new Said(COPY.photoTooLarge);
       // Several files are ANGLES OF ONE MEAL, `photo` fields like the app's.
       const form = new FormData();
       for (const f of shrunk) form.append("photo", f);
+      form.append("compression", String(compress));
       if (files.length > 0 && focusMeal !== null) {
         // ANGLES ON THE FOCUSED MEAL, not a new turn: the sheet's upload posts to the meal's own
         // collection — the words in the box stay for the correction turn that reads them.
@@ -638,7 +640,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
         words.value = ""; arm();
         try {
           const saved = await sendHers({
-            id: crypto.randomUUID(), userId: uid ?? "", kind: "photo", text: text === "" ? null : text, photos: shrunk,
+            id: crypto.randomUUID(), userId: uid ?? "", kind: "photo", text: text === "" ? null : text, photos: shrunk, compress,
             capturedAt: new Date().toISOString(),
           });
           attached = [];
