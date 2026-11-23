@@ -1300,7 +1300,7 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.putPushToken(withToken, `ExponentPushToken[${RUN}-sweep-b]`, "ios");
       const rows = await s.pushAudience();
       expect(rows.filter((r) => r.userId === withToken)).toEqual([
-        { userId: withToken, timezone: null, createdAt: expect.any(String), onboardedAt: null },
+        { userId: withToken, timezone: null, createdAt: expect.any(String), onboardedAt: null, deviceAt: expect.any(String) },
       ]);
       expect(rows.map((r) => r.userId)).not.toContain(without);
       await s.setTimezone(withToken, "Asia/Tokyo");

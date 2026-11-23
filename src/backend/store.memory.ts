@@ -388,7 +388,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const pushTemplateId = (r: Pick<PushTemplateRow, "key" | "lang" | "variant">) => `${r.key}/${r.lang}/${r.variant}`;
   // Keyed by the TOKEN, exactly as Postgres is: a token is an installation, so registering it under
   // a second account moves it rather than adding a row.
-  const pushTokens = new Map<string, { userId: string; platform: PushPlatform; app: AppId }>();
+  const pushTokens = new Map<string, { userId: string; platform: PushPlatform; app: AppId; createdAt: number }>();
   const analyses: {
     id: string; userId: string; date: string; scope: "photo" | "text"; costUsd: number | null; unpricedCalls: number;
     /** Settled-turn timings, written by `recordTiming`; undefined until one lands. */
@@ -1526,7 +1526,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     },
 
     async putPushToken(userId, token, platform, app = "eait") {
-      pushTokens.set(token, { userId, platform, app });
+      // A re-put MOVES the token (see store.pg.ts): the original registration instant stays.
+      pushTokens.set(token, { userId, platform, app, createdAt: pushTokens.get(token)?.createdAt ?? now() });
     },
 
     async dropPushToken(userId, token) {
@@ -1551,6 +1552,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
           userId, timezone: timezones.get(userId) ?? null,
           createdAt: new Date(createdAt.get(userId) ?? 0).toISOString(),
           onboardedAt: users.get(userId)?.onboarded_at ?? null,
+          deviceAt: new Date(Math.min(
+            ...[...pushTokens.values()].filter((r) => r.userId === userId).map((r) => r.createdAt),
+          )).toISOString(),
         }));
     },
 

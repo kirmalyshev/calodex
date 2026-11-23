@@ -5101,12 +5101,16 @@ export async function postgresStore(
 
     async pushAudience() {
       const rows = await sql`
-        select u.id, u.timezone, u.created_at, u.onboarded_at from users u
+        select u.id, u.timezone, u.created_at, u.onboarded_at,
+          (select min(t.created_at) from push_tokens t where t.user_id = u.id) as device_at
+        from users u
         where u.push_off_at is null and exists (select 1 from push_tokens t where t.user_id = u.id)`;
       return (rows as Record<string, unknown>[]).map((r) => ({
         userId: r.id as string, timezone: (r.timezone as string | null) ?? null,
         createdAt: new Date(r.created_at as string | Date).toISOString(),
         onboardedAt: r.onboarded_at ? new Date(r.onboarded_at as string | Date).toISOString() : null,
+        // The `exists` above is what makes `min` non-null.
+        deviceAt: new Date(r.device_at as string | Date).toISOString(),
       }));
     },
 
