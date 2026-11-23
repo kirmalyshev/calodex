@@ -324,6 +324,42 @@ describe("photo logging", () => {
     expect(res.date).toBe(localDate("Europe/Berlin"));
   });
 
+  // ieat-app#3422. The model's own answer is kept per analysis, and the row gets its meal link
+  // once the meal exists. The demo port hands over the same JSON it returns — a fake may be
+  // poorer than the real thing, never different in a way a test can see.
+  it("keeps the model's raw answer, linked to the meal it made", async () => {
+    const userId = await onboard();
+    const res = await logPhotoMeal(deps, userId, photo());
+    if (!isMeal(res)) throw new Error("expected a meal");
+    const rows = await store.adminRecognitions({});
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.mealId).toBe(res.mealId);
+    expect(rows[0]!.promptKey).toBe("analysis");
+    const detail = await store.adminRecognition(rows[0]!.id);
+    // The raw text is the model's own output; the items are the PREPARED ones — what the parse
+    // and grounding kept, so the review sits the two beside each other.
+    expect(JSON.parse(detail!.raw!)).toMatchObject({ isFood: true });
+    expect(detail!.items.length).toBeGreaterThan(0);
+    expect(detail!.meal?.date).toBe(res.date);
+  });
+
+  it("keeps a refused read's answer too — the review is for where the model was wrong", async () => {
+    const llm: LlmPorts = {
+      ...demoPorts(),
+      analyzePhoto: async (input) => {
+        const answer = { isFood: false, items: [], kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+        input.onRaw?.({ text: JSON.stringify(answer), modelServed: "fake/model", promptKey: "analysis", promptVersion: null });
+        return { ...answer, satfat_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0, confidence: "high", notes: "a cat" } as AnalyzedMeal;
+      },
+    };
+    const userId = await onboard();
+    expect((await logPhotoMeal(makeDeps({}, llm), userId, photo())).kind).toBe("not-food");
+    const rows = await store.adminRecognitions({});
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.mealId).toBeNull();
+    expect(rows[0]!.model).toBe("fake/model");
+  });
+
   it("returns not-food without writing anything", async () => {
     const llm: LlmPorts = {
       ...demoPorts(),
