@@ -1481,7 +1481,7 @@ web.pageCopyFor pa d6961ab1496deab2
 web.pageCopyFor ta 33ada2cc290a447e
 web.pageCopyFor te 52d3714b65b88b60
 web.pageCopyFor ar da1e3b172d3e58a0
-web.pageCopyFor bg a98b6100ffee6a6b
+web.pageCopyFor bg bccb2f49766882af
 web.pageCopyFor sq 2a0031d797add9dd
 telegram.telegramCopyFor en cb9e15710e0d8451
 telegram.telegramCopyFor fr 1a05d88da88724f4

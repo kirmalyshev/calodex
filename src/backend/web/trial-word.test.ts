@@ -43,7 +43,7 @@ describe("Russian trial word (#3393)", () => {
 // uses the short word. The key is the language; the value matches the OLD word in any inflection.
 const OLD_TRIAL_WORD: Record<string, RegExp> = {
   uk: /пробн/i,
-  bg: /проб(ен|ни|на|но)/i,
+  bg: /проб(ен|ни|на|но)|безплатния си период/i,
   hr: /probn/i,
   sl: /preizkusn/i,
   sk: /skúšobn/i,

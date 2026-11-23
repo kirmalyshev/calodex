@@ -1132,7 +1132,7 @@ const BG: PageCopy = {
   offerWhenAfter: "Ден {n}",
   offerBilled: "Плащането започва · отмени по всяко време",
     offerClose: "Затвори",
-  titleOffer: "Започни безплатния си период",
+  titleOffer: "Започни безплатния си триал",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Език",
   languageSave: "Запази",
