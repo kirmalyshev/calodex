@@ -163,6 +163,7 @@ test("the coach prompt answers a pre-meal question as intent, and names logged m
     "already inside \"Left today\"",
     "never subtract it a second time",
     "Never say the plate is still to come",
+    "Never offer to un-log it, hold it, or check first",
     "by its dish and its time",
   ]) expect(SYSTEM_COACH).toContain(rule);
 });
