@@ -8,7 +8,7 @@
 import type { Refusal } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import type { SpendLimit } from "../store.ts";
-import { GatewayRefusal, type OnCall, type OnCost } from "../llm/port.ts";
+import { CREDIT_CLASS, GatewayRefusal, type OnCall, type OnCost } from "../llm/port.ts";
 import { alertProviderCredit } from "./alert.ts";
 import { dailyPhotoCap, entitlementFor, firstVerdictAllowance, freeAnalysesFor } from "./entitlement.ts";
 import { isAnonymous } from "./identity.ts";
@@ -235,4 +235,21 @@ export async function refundGatewayRefusal(
     console.error(`[eait] refund failed: ${(x as Error)?.message ?? x}`);
     return false;
   });
+}
+
+/**
+ * The user-facing shape of a refused call (#3435), one rule for every charge site: a refunded
+ * credit-class answer (401/402 — the account or the key, not the user's photo) is OUR side and
+ * reads `provider-down`; another refunded gateway refusal (429/503) generated nothing either and
+ * is retryable analysis-failed; everything else — unrefunded, or not a gateway answer at all — is
+ * the plain failure.
+ */
+export function refusedOutcome(
+  e: unknown,
+  refunded: boolean,
+): { kind: "provider-down" } | { kind: "analysis-failed"; retryable?: true } {
+  if (refunded && e instanceof GatewayRefusal && CREDIT_CLASS.has(e.status)) return { kind: "provider-down" };
+  return refunded && e instanceof GatewayRefusal && (e.status === 429 || e.status === 503)
+    ? { kind: "analysis-failed", retryable: true }
+    : { kind: "analysis-failed" };
 }

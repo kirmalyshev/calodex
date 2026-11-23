@@ -313,7 +313,7 @@ function remove(job: Job): void {
 }
 
 function retry(job: Job): void {
-  Object.assign(job, { id: crypto.randomUUID(), step: 1, line: null, items: [], state: "reading", words: null });
+  Object.assign(job, { id: crypto.randomUUID(), step: 1, line: null, items: [], state: "reading", words: null, down: false });
   changed();
   void run(job);
 }

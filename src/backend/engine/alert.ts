@@ -13,11 +13,15 @@
 // "still down" without mailing the operator once per user's photo.
 
 import { CREDIT_CLASS, type LlmCallMetric } from "../llm/port.ts";
+import type { MailPort } from "../mail/port.ts";
 import type { EngineDeps } from "./deps.ts";
 
 /** One mail per window — a burst of failed turns is one incident, not one mail per turn. */
-const ALERT_EVERY_MS = 30 * 60_000;
-let lastAlertAt = 0;
+export const ALERT_EVERY_MS = 30 * 60_000;
+// Keyed on the mail port rather than a bare global: the process holds one port, so prod still
+// mails once per window, while two EngineDeps in a test file each get their own window instead of
+// one test silently consuming the alert a later test came to count.
+const lastAlertAt = new WeakMap<MailPort, number>();
 
 /** The wire statuses that mean the account/key, read off the metric's `http_<n>` shape. */
 const isCreditClass = (status: string): boolean =>
@@ -25,23 +29,27 @@ const isCreditClass = (status: string): boolean =>
 
 /**
  * Called on every provider-call metric, where the row is written (caps.ts `onCall`). Alerts when
- * the call ended credit-class. Never throws: alerting must not break the turn it rode in on.
+ * the call ended credit-class. Never throws — not even on a mail port that throws synchronously:
+ * alerting must not break the turn it rode in on.
  */
-export function alertProviderCredit(deps: EngineDeps, metric: LlmCallMetric): void {
+export function alertProviderCredit(deps: EngineDeps, metric: LlmCallMetric, now: number = Date.now()): void {
   if (!isCreditClass(metric.status)) return;
   const body = metric.errorBody ?? "(the provider sent no body)";
   console.error(`[eait] ALERT provider ${metric.status} on ${metric.call} (${metric.modelRequested}): ${body}`);
-  const now = Date.now();
-  if (now - lastAlertAt < ALERT_EVERY_MS) return;
-  lastAlertAt = now;
+  if (now - (lastAlertAt.get(deps.mail) ?? 0) < ALERT_EVERY_MS) return;
   const to = deps.config.alertEmail.trim();
   if (to === "") return;
+  lastAlertAt.set(deps.mail, now);
   const subject = `eait: provider answered ${metric.status}`;
   const text = [
     `A ${metric.call} call to ${metric.modelRequested} answered ${metric.status}.`,
     `The provider's body: ${body}`,
     `Check the provider's balance and key — every analysis fails this way until it is fixed.`,
   ].join("\n");
-  void deps.mail.sendAlert(to, subject, text)
-    .catch((e: unknown) => console.error(`[eait] alert mail failed: ${(e as Error)?.message ?? e}`));
+  try {
+    void deps.mail.sendAlert(to, subject, text)
+      .catch((e: unknown) => console.error(`[eait] alert mail failed: ${(e as Error)?.message ?? e}`));
+  } catch (e) {
+    console.error(`[eait] alert mail failed: ${(e as Error)?.message ?? e}`);
+  }
 }

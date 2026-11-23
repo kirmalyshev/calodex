@@ -5658,7 +5658,7 @@ export async function postgresStore(
         generationId: r.generation_id === null ? null : String(r.generation_id),
         images: num(r.images),
         imageBytes: num(r.image_bytes),
-        errorBody: r.error_body === null || r.error_body === undefined ? null : String(r.error_body),
+        errorBody: r.error_body === null ? null : String(r.error_body),
         createdAt: (r.created_at as Date).getTime(),
       }));
     },

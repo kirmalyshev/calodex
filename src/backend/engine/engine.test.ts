@@ -15,6 +15,7 @@ import { logMail } from "../mail/log.ts";
 import { remember } from "./chat.ts";
 import { LANGS, LANGS_READY } from "@eait/shared";
 import { charge } from "./caps.ts";
+import { ALERT_EVERY_MS, alertProviderCredit } from "./alert.ts";
 import { redeemReferral } from "./referral.ts";
 import {
   appendLines, applyCorrection, attachPhotos, cancelPendingMeal, chatHistory, confirmPendingMeal, day, drainJobs, editMeal, handleText,
@@ -2589,6 +2590,106 @@ describe("what each analysis cost", () => {
     expect(await logPhotoMeal(refused, userId, photo())).toEqual({ kind: "analysis-failed" });
     await new Promise((r) => setTimeout(r, 0));
     expect(mails).toEqual([]);
+  });
+
+  // The credit-class alert fires on the METRIC, so a 402 on a billed call (the schema retry, the
+  // router's second call — anything after a completion that was charged) still reaches the
+  // operator, while the turn keeps its charge and its plain failure: only an unbilled GatewayRefusal
+  // earns provider-down.
+  it("a 402 on a billed call still alerts, and the turn stays charged", async () => {
+    const mails: string[] = [];
+    const mail = {
+      sendSignInCode: async () => {},
+      sendAlert: async (to: string) => { mails.push(to); },
+    };
+    const refused: EngineDeps = {
+      ...makeDeps({ alertEmail: "ops@example.com" }, {
+        ...demoPorts(),
+        analyzePhoto: async (i) => {
+          i.onCall?.(metric("meal_analysis"));
+          i.onCall?.({ ...metric("meal_analysis"), status: "http_402", attempt: 1, errorBody: '{"error":{"message":"Insufficient credits"}}' });
+          throw new Error("llm http 402: insufficient credits");
+        },
+      }),
+      mail,
+    };
+    const userId = await onboard();
+    expect(await logPhotoMeal(refused, userId, photo())).toEqual({ kind: "analysis-failed" });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(await store.countUserAnalyses(userId)).toBe(1);
+    expect(mails.length).toBe(1);
+  });
+
+  // "Never throws" is the whole contract: a mail port that dies — synchronously or on the wire —
+  // must not take the turn it rode in on down with it.
+  it("a mail port that throws cannot break the turn the alert rode in on", async () => {
+    for (const sendAlert of [
+      () => { throw new Error("smtp down"); },
+      async () => { throw new Error("smtp down"); },
+    ]) {
+      const mail = { sendSignInCode: async () => {}, sendAlert };
+      const refused: EngineDeps = {
+        ...makeDeps({ alertEmail: "ops@example.com" }, {
+          ...demoPorts(),
+          analyzePhoto: async (i) => {
+            i.onCall?.({ ...metric("meal_analysis"), status: "http_402", errorBody: "{}" });
+            throw new GatewayRefusal(402, "llm http 402");
+          },
+        }),
+        mail: mail as EngineDeps["mail"],
+      };
+      const userId = await onboard();
+      expect(await logPhotoMeal(refused, userId, photo())).toEqual({ kind: "provider-down" });
+    }
+  });
+
+  // No alert address configured: the feature degrades to the (unthrottled) log line, not silence —
+  // the metric row and the honest state are unaffected.
+  it("an unset alert address logs every credit-class call and mails nobody", async () => {
+    const mails: string[] = [];
+    const errs: string[] = [];
+    const spy = spyOn(console, "error").mockImplementation((...a: unknown[]) => { errs.push(a.map(String).join(" ")); });
+    try {
+      const mail = {
+        sendSignInCode: async () => {},
+        sendAlert: async (to: string) => { mails.push(to); },
+      };
+      const refused: EngineDeps = {
+        ...makeDeps({}, {
+          ...demoPorts(),
+          analyzePhoto: async (i) => {
+            i.onCall?.({ ...metric("meal_analysis"), status: "http_402", errorBody: "{}" });
+            throw new GatewayRefusal(402, "llm http 402");
+          },
+        }),
+        mail,
+      };
+      const userId = await onboard();
+      expect(await logPhotoMeal(refused, userId, photo())).toEqual({ kind: "provider-down" });
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mails).toEqual([]);
+      expect(errs.some((l) => l.includes("ALERT provider http_402"))).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  // One mail per window, keyed on the mail port: a burst is one incident, and the "still down"
+  // re-alert waits the window out.
+  it("the alert mails once per window, then again when the provider stays down", async () => {
+    const mails: string[] = [];
+    const mail = {
+      sendSignInCode: async () => {},
+      sendAlert: async (to: string) => { mails.push(to); },
+    };
+    const d: EngineDeps = { ...makeDeps({ alertEmail: "ops@example.com" }), mail };
+    const m = { ...metric("meal_analysis"), status: "http_402", errorBody: "{}" };
+    const t = Date.now();
+    alertProviderCredit(d, m, t);
+    alertProviderCredit(d, m, t + 60_000);
+    alertProviderCredit(d, m, t + ALERT_EVERY_MS + 1);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mails.length).toBe(2);
   });
 
   it("names a question turn's calls by what they were — the route, then the coach", async () => {

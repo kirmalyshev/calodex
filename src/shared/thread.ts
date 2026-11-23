@@ -443,14 +443,16 @@ export function moodFor(entry: ThreadEntry): MascotMood {
   if (entry.role === "error") return "care";
   if (entry.role === "card") return "cheer";
   if (entry.role === "assistant") {
-    // Listed individually, with no default, for the reason `entryBody`'s switch has none: a new
-    // result kind should be a compile error here rather than a face somebody picked by accident.
+    // Listed individually for the reason `entryBody`'s switch has none: a new result kind is a
+    // compile error here rather than a face somebody picked by accident.
     switch (entry.result.kind) {
       case "logged": case "updated": case "redated": return "cheer";
       case "proposed": return "think";
       case "answered": return "idle";
-      case "expired": case "target-gone": case "not-onboarded": case "not-food":
-      case "cap-exceeded": case "subscription-required": case "analysis-failed": case "provider-down": return "care";
+      case "expired": case "target-gone": case "not-onboarded": case "identity-required": case "not-food":
+      case "cap-exceeded": case "subscription-required": case "analysis-failed": case "provider-down":
+      case "unsupported-image": case "unreadable-label": case "no-photo": case "meal-changed": return "care";
+      default: { const k: never = entry.result; return k; }
     }
   }
   return "idle";

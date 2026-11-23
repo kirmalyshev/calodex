@@ -729,6 +729,28 @@ describe("streaming", () => {
     await expect(streamPorts(impl).analyzePhoto(PHOTO_INPUT, () => {})).rejects.toThrow(/truncated/);
     expect(bodies).toHaveLength(1);
   });
+
+  // #3435: a provider can fail AFTER the stream opened — an `error` chunk where content should be.
+  // That failure has no HTTP status line, but the row still keeps the provider's own words.
+  test("a mid-stream provider error lands on the call's row, scrubbed", async () => {
+    const impl = (async () => {
+      const lines = [
+        `data: ${JSON.stringify({ choices: [{ delta: { content: "{\"isFood\":t" } }] })}\n\n`,
+        `data: ${JSON.stringify({ error: { message: "provider died mid-stream, auth was Bearer sk-or-v1-secretsecret", code: 500 } })}\n\n`,
+        "data: [DONE]\n\n",
+      ];
+      const body = new ReadableStream<Uint8Array>({
+        start(ctrl) { for (const l of lines) ctrl.enqueue(new TextEncoder().encode(l)); ctrl.close(); },
+      });
+      return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+    }) as unknown as typeof fetch;
+    const seen: import("./port.ts").LlmCallMetric[] = [];
+    const onCall = (m: import("./port.ts").LlmCallMetric) => { seen.push(m); };
+    await streamPorts(impl).analyzePhoto({ ...PHOTO_INPUT, onCall }, () => {}).then(() => null, () => null);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((m) => m.errorBody?.includes("provider died mid-stream"))).toBe(true);
+    expect(seen.every((m) => !m.errorBody?.includes("sk-or-v1-secretsecret"))).toBe(true);
+  });
 });
 
 describe("reasoning effort", () => {
