@@ -2000,7 +2000,7 @@ function contract(name: string, make: () => Promise<Store>) {
 
       const all = (await s.adminRecognitions({})).filter((r) => r.userId === a);
       expect(all.map((r) => r.model)).toEqual(["new/model", "old/model"]);
-      expect((await s.adminRecognitions({ model: "old/model" })).map((r) => r.model)).toEqual(["old/model"]);
+      expect((await s.adminRecognitions({ model: "old/model" })).filter((r) => r.userId === a).map((r) => r.model)).toEqual(["old/model"]);
       const later = await s.adminRecognitions({ from: new Date(Date.now() + 86_400_000) });
       expect(later.filter((r) => r.userId === a)).toEqual([]);
     });
@@ -6853,6 +6853,9 @@ if (PG_URL) {
         // #812: the per-account onboarding flow — the admin's own cross-account read, like the
         // funnel above it; staff exclusion is the method's job, the route names the account.
         "adminOnboardingFlow",
+        // ieat-app#3422: the recognizer review — a cross-account read like every admin read above;
+        // the role is the authority, and the list stays content-free so it cannot be a dump.
+        "adminRecognition", "adminRecognitions",
         "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
         "countOnboardedSince", "createCampaign", "createUser", "expireJobs", "foodById",
         "forgetJobs", "forgetTurnOutcomes", "getCampaign", "getNotificationCopy", "getOnboardingContent",
