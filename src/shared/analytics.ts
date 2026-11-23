@@ -64,12 +64,47 @@ export function effectiveAcqSource(acquired: string | null, referred: boolean): 
 
 export type AnalyticsServerContext = Pick<AnalyticsContext, (typeof ANALYTICS_SERVER_KEYS)[number]>;
 
-/** The context columns on `onboarding_events`, stamped by the server at record time. */
+/** The context columns on `onboarding_events`, stamped by the server at record time. `paywall_offering`
+ * is the one the server cannot know — like `template` it arrives on the row itself, client-reported. */
 export const ONBOARDING_EVENT_CONTEXT_KEYS = [
   "surface", "brand", "app_version", "build", "ota_update_id", "channel",
-  "lang", "country", "experiment_id", "arm", "template",
+  "lang", "country", "experiment_id", "arm", "template", "paywall_offering",
 ] as const;
 export type OnboardingEventContext = Pick<AnalyticsContext, (typeof ONBOARDING_EVENT_CONTEXT_KEYS)[number]>;
+
+/**
+ * Context keys an event stamps ITSELF at emit time, overriding the super property with the value
+ * true of that one event (ieat-app#3401): every `paywall_*` and `onboarding_*` event carries the
+ * served experiment's `experiment_id` and `arm` and the `paywall_offering` actually shown, because
+ * a super property registered once cannot say which offering a later sheet drew. `onboarding_step`
+ * also stamps the copy and template on screen. A key not listed here may never appear in an event's
+ * own props — `surface` on the focus events once replaced "app" with "home".
+ */
+export const ANALYTICS_EVENT_OVERRIDES = {
+  onboarding_step: ["content_version", "experiment_id", "arm", "template", "paywall_offering"],
+  onboarding_plan_completed: ["experiment_id", "arm", "paywall_offering"],
+  paywall_opened: ["experiment_id", "arm", "paywall_offering"],
+  paywall_plan_selected: ["experiment_id", "arm", "paywall_offering"],
+  paywall_purchase_started: ["experiment_id", "arm", "paywall_offering"],
+  paywall_offer_step: ["experiment_id", "arm", "paywall_offering"],
+  paywall_dismissed: ["experiment_id", "arm", "paywall_offering"],
+} as const satisfies Partial<Record<AnalyticsEventName, readonly AnalyticsContextKey[]>>;
+
+/**
+ * The three props every `paywall_*`/`onboarding_*` event stamps (ieat-app#3401): the arm the server
+ * assigned — read off what it served, never re-picked by the client — and the offering the paywall
+ * drew. Present and null when unknown, so a null never reads as an old build.
+ */
+export function assignmentProps(
+  assignment: { experiment_id: string; arm: string } | null | undefined,
+  offering: string | null,
+): { experiment_id: string | null; arm: string | null; paywall_offering: string | null } {
+  return {
+    experiment_id: assignment?.experiment_id ?? null,
+    arm: assignment?.arm ?? null,
+    paywall_offering: offering,
+  };
+}
 
 export interface AnalyticsEventSpec {
   /** Where a client emits the event. */
