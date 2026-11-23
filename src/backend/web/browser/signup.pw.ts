@@ -55,6 +55,19 @@ test("answers before an account, the plan before the sign-up, and the first meal
   await expect(page.locator("div.card")).toContainText("kcal");
 });
 
+// ieat-app#3417: the email pill was a link to the POST-only kickoff, so a click reloaded the
+// sign-up page and the flow was unreachable. It is a submit of `form id="signup"` now — the
+// association no `toContain` can prove — so a real engine clicks it and must land on the
+// address page the consent cookie it minted lets render.
+test("the email pill is a real submit: the click reaches the code flow (ieat-app#3417)", async ({ page }) => {
+  await page.goto("/start/signup");
+  await page.getByRole("button", { name: /Continue with email/i }).click();
+  await expect(page).toHaveURL(/\/start\/email\/address/);
+  await page.getByRole("textbox").fill(`pw-3417-${Date.now()}@example.com`);
+  await page.getByRole("button", { name: "Send code" }).click();
+  await expect(page).toHaveURL(/\/start\/email\/code/);
+});
+
 // The walk's numbers are spoken in the units on screen — en-GB pins metric (98 kg,
 // not 98 lb), so the answers below are metric numbers and the floors hold.
 test.use({ locale: "en-GB" });

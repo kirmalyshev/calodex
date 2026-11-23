@@ -446,10 +446,44 @@ describe("the sign-up screen", () => {
     // drawn but never ticked: marketing consent is a choice, not a default.
     expect(html).not.toContain('type="checkbox" name="terms"');
     expect(html.match(/name="marketing"[^>]*checked/g) ?? []).toHaveLength(0);
-    // No pairing card and no email button: the board's two providers fill the page's one
-    // decision (the email code flow still answers at /start/email for whoever reaches it).
+    // No pairing card: the board's two providers fill the page's one decision, and the email
+    // pill is the third submit of the same form, never an href — a link to the POST-only
+    // kickoff was a pill that reloaded this page (ieat-app#3417).
     expect(html).not.toContain('action="/start/pair"');
-    expect(html).not.toContain('action="/start/email"');
+    expect(html).not.toContain('href="/start/email"');
+  });
+
+  it("posts the email pill to the kickoff, carrying the same consent as the providers", async () => {
+    // The control is a submit of the signup form (ieat-app#3417): `formaction` names
+    // /start/email and the hidden `terms` rides with it exactly as it does for Apple and
+    // Google. A GET on that path is a 303 back here — only the POST is a kickoff.
+    const html = await (await get("/start/signup")).text();
+    expect(html).toContain('type="submit" formaction="/start/email"');
+    const res = await post("/start/email", { terms: "yes", marketing: "yes" });
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe("/start/email/address");
+    // `eait_emailc` is minted here and nowhere else — the consent record the address page
+    // demands, "m" because the marketing box rode the same submit.
+    const cookies = res.headers.getSetCookie().join(";");
+    expect(cookies).toContain("eait_emailc=m");
+    // Terms alone mints "t" — the marketing flag is what the box adds, nothing more.
+    const plain = await post("/start/email", { terms: "yes" });
+    expect(plain.headers.getSetCookie().join(";")).toContain("eait_emailc=t");
+  });
+
+  it("keeps the email kickoff a POST: a GET or a consent-less submit starts nothing", async () => {
+    expect((await get("/start/email")).headers.get("location")).toBe("/start/signup");
+    const res = await post("/start/email", {});
+    expect(res.headers.get("location")).toBe("/start/signup?error=terms");
+    expect(res.headers.getSetCookie()).toEqual([]);
+  });
+
+  it("draws no email pill where the instance sends no mail", async () => {
+    router({ ...CONFIG, mailProvider: "off" });
+    const html = await (await get("/start/signup")).text();
+    expect(html).not.toContain("Continue with email");
+    // And the routes stay absent with it — a hand-built POST meets the same 404 the page hid.
+    expect((await post("/start/email", { terms: "yes" })).status).toBe(404);
   });
 
   it("offers only what is configured", async () => {
@@ -457,8 +491,8 @@ describe("the sign-up screen", () => {
     const html = await (await get("/start/signup")).text();
     expect(html).toContain("Continue with Apple");
     expect(html).not.toContain("Continue with Google");
-    // The email pill is not a provider — it links the always-on /start/email code flow (#2565).
-    expect(html).toContain("Continue with email");
+    // The email pill is not a provider — it submits the /start/email code flow (#2565).
+    expect(html).toContain('formaction="/start/email"');
   });
 });
 
