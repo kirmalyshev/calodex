@@ -348,13 +348,18 @@ describe("a generic word never grounds to a different food (#903)", () => {
     expect(pick("hamburger", [ref("Fast foods, hamburger, plain", 297)])).toBe("Fast foods, hamburger, plain");
     expect(pick("almond butter", [ref("Nuts, almond butter, plain", 614)])).toBe("Nuts, almond butter, plain");
   });
+  test("a modifier that is no staple leaves the row the food itself", () => {
+    for (const [q, row] of [["rice", "Basmati rice, cooked"], ["milk", "Whole milk, pasteurised"], ["yogurt", "Greek yogurt, plain"],
+      ["potatoes", "Boiled potatoes, peeled"], ["chicken", "Roast chicken, meat only"]] as const)
+      expect(pick(q, [ref(row, 100)])).toBe(row);
+  });
   test("a named oil is left alone", () => {
     expect(pick("olive oil", [ref("Oil, vegetable", 884), ref("Oil, olive", 884)])).toBe("Oil, olive");
   });
   test("the noun heading a later segment, or a plural, is judged like the singular", () => {
     expect(pick("lemon cake", [ref("Plain cake, lemon cake", 350)])).toBe("Plain cake, lemon cake");
-    expect(pick("berry", [ref("Goji berries, raw", 349)])).toBeNull();
-    expect(pick("berries", [ref("Goji berries, raw", 349)])).toBeNull();
+    expect(pick("berry", [ref("Semolina berries, raw", 349)])).toBeNull();
+    expect(pick("berries", [ref("Semolina berries, raw", 349)])).toBeNull();
   });
   test("the right row still beats no match", () => {
     expect(pick("dumpling", [ref("Semolina dumplings, raw", 120), ref("Dumpling, pork, steamed", 200)])).toBe("Dumpling, pork, steamed");

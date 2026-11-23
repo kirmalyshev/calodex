@@ -177,11 +177,19 @@ const queryContext = (nameEn: string): QueryContext => {
   };
 };
 
-/** Whether `head` (a normed stem) sits in the name's first comma segment or in a "with ..." segment. */
+/**
+ * Whether `head` (a normed stem) marks the row as ANOTHER food: it sits in a "with ..." segment, or
+ * in the first segment of a row that opens with a staple of its own ("Semolina dumplings") while
+ * the query's noun is no staple. "Basmati rice, cooked" for "rice" and "Whole milk" for "milk" are
+ * the food itself, and "Plain cake, lemon cake" names it again in a later segment.
+ */
 const namesAsModifier = (name: string, head: string): boolean => {
-  const segs = name.split(",").map((seg, i) => ({ seg, hit: words(seg).some((w) => norm(w) === head), mod: i === 0 || /^\s*with\b/i.test(seg) }));
-  // "Plain cake, lemon cake": the noun also heads a later segment, so the row says it IS that food.
-  return segs.some((x) => x.mod && x.hit) && !segs.some((x) => !x.mod && x.hit);
+  const segs = name.split(",").map((seg, i) => ({ seg, hit: words(seg).some((w) => norm(w) === head), i }));
+  const staple = (w: string | undefined) => w !== undefined && !SPECIES.has(w) && (SERVES_COOKED.has(w) || SERVES_COOKED.has(singular(w)));
+  const first = words(segs[0]!.seg)[0];
+  const modifier = (x: { seg: string; hit: boolean; i: number }) =>
+    x.hit && (x.i === 0 ? staple(first) && first !== undefined && norm(first) !== head && !staple(head) : /^\s*with\b/i.test(x.seg));
+  return segs.some(modifier) && !segs.some((x) => x.i > 0 && x.hit && !/^\s*with\b/i.test(x.seg));
 };
 
 interface Scored { s: number; sHard: number; extras: number; headOk: boolean }
