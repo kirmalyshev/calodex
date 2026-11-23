@@ -71,6 +71,9 @@ const NOW = Date.parse("2026-08-20T18:30:00Z");
 /** An entitlement that is live but is not a trial ending near `DAY`. */
 const PAID_UNTIL = "2027-01-01T00:00:00.000Z";
 
+// The empty-day line up to its first placeholder: the words change with the copy, the variant does not.
+const EMPTY_DAY = DEFAULT_NOTIFICATION_COPY.evening.emptyBody!.split("{")[0]!.trim();
+
 describe("the 20:30 line", () => {
   it("says what was eaten against the plan, and one thing for tomorrow", async () => {
     const userId = await onboard();
@@ -90,7 +93,7 @@ describe("the 20:30 line", () => {
     const userId = await onboard();
     await entitle(userId, PAID_UNTIL);
     const out = (await dailyNotification(deps, userId, DAY, NOW))!;
-    expect(out.body).toContain("Nothing logged");
+    expect(out.body).toContain(EMPTY_DAY);
     expect(out.body).not.toContain("{");
   });
 
@@ -110,7 +113,7 @@ describe("the 20:30 line", () => {
     await entitle(mine, PAID_UNTIL);
     await logMeal(theirs, DAY, 1234, 60);
     const out = (await dailyNotification(deps, mine, DAY, NOW))!;
-    expect(out.body).toContain("Nothing logged");
+    expect(out.body).toContain(EMPTY_DAY);
   });
 
   it("renders the copy the admin saved, not the compiled-in default", async () => {
@@ -235,7 +238,7 @@ describe("copy stored before the code that reads it", () => {
     expect(copy["trial-end"]).toEqual(DEFAULT_NOTIFICATION_COPY["trial-end"]);
 
     const out = await dailyNotification(deps, userId, DAY, NOW);
-    expect(out?.body).toContain("Nothing logged");
+    expect(out?.body).toContain(EMPTY_DAY);
   });
 });
 

@@ -222,3 +222,28 @@ describe("campaign template keys", () => {
     expect(pushKeyGaps(missing as never, "campaign:win-back")).toEqual(["ru/default"]);
   });
 });
+
+// ieat-app#3394: the seeds are what a fresh install or a new instance sends, so they carry the
+// push voice prod carries — no em-dash asides, no exclamation, and none of the translated lines
+// Kirill cut («Запиши сегодняшнюю еду» was the shipped Russian nudge).
+describe("seed copy speaks the push voice", () => {
+  const seeds = LANGS.flatMap((lang) => pushRowsFromCopy(lang, notificationCopyFor(lang)));
+
+  test("no seed carries an em dash or an exclamation mark", () => {
+    const loud = seeds.filter((t) => /[—!！]/.test(t.title + t.body)).map((t) => `${t.lang} ${t.key}/${t.variant}`);
+    expect(loud).toEqual([]);
+  });
+
+  // calodex is public and a self-hosted install sends these seeds as they are: the trial-end line
+  // names the way out in every language. Prod may hold a personal line; the seed never overwrites it.
+  test("every trial-end seed names the Settings path to cancel", () => {
+    const noPath = seeds.filter((t) => t.key === "trial-end" && !t.body.includes("›")).map((t) => t.lang);
+    expect(noPath).toEqual([]);
+  });
+
+  // The nudge goes at the evening hour (engine/notify.ts), so its title names no meal of the day.
+  test("the Russian nudge is the line prod sends, not the cut one", () => {
+    const nudge = seeds.find((t) => t.lang === "ru" && t.key === "nudge" && t.variant === "default");
+    expect(nudge).toMatchObject({ title: "Как день?", body: "Что сегодня было из еды? Покажи, я посчитаю." });
+  });
+});
