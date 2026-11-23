@@ -16,7 +16,7 @@ import type { EngineDeps } from "./deps.ts";
 import type { ChatAppend, ChatIntent, PendingMeal } from "../store.ts";
 import { normalizePromptText } from "../llm/prompt.ts";
 import { itemScanner } from "../llm/partial.ts";
-import { clampDayOffset, emptyEstimate, type AnalyzedMeal } from "../llm/port.ts";
+import { CREDIT_CLASS, GatewayRefusal, clampDayOffset, emptyEstimate, type AnalyzedMeal } from "../llm/port.ts";
 import { prepareAnalysis } from "./analysis.ts";
 import { groundWhenOn } from "./ground.ts";
 import { charge, checkCaps, refundGatewayRefusal, type JobCharge } from "./caps.ts";
@@ -207,6 +207,8 @@ export async function textTurn(
     const refunded = fresh && await refundGatewayRefusal(deps, userId, analysisId, e);
     console.error(`[eait] text routing failed: ${(e as Error).message}${refunded ? " (analysis refunded)" : ""}`);
     reportTiming();
+    // Same rule as the photo path (ieat-app#3435): a refunded credit-class refusal is our side.
+    if (refunded && e instanceof GatewayRefusal && CREDIT_CLASS.has(e.status)) return { kind: "provider-down" };
     return { kind: "analysis-failed" };
   }
 

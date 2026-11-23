@@ -652,7 +652,7 @@ describe("the paywall", () => {
       routeText: async () => { throw new GatewayRefusal(503, "llm http 503: no provider"); },
     });
     const userId = await onboard();
-    expect((await logPhotoMeal(refused, userId, photo())).kind).toBe("analysis-failed");
+    expect((await logPhotoMeal(refused, userId, photo())).kind).toBe("provider-down");
     expect((await handleText(refused, userId, { text: "two eggs on toast" })).kind).toBe("analysis-failed");
     expect(await store.countUserAnalyses(userId)).toBe(0);
   });
@@ -662,7 +662,7 @@ describe("the paywall", () => {
     const failing = (e: Error) => makeDeps({}, { ...demoPorts(), analyzePhoto: async () => { throw e; } });
     expect(await logPhotoMeal(failing(new GatewayRefusal(429, "llm http 429")), userId, photo())).toEqual({ kind: "analysis-failed", retryable: true });
     expect(await logPhotoMeal(failing(new GatewayRefusal(503, "llm http 503")), userId, photo())).toEqual({ kind: "analysis-failed", retryable: true });
-    expect(await logPhotoMeal(failing(new GatewayRefusal(402, "llm http 402")), userId, photo())).toEqual({ kind: "analysis-failed" });
+    expect(await logPhotoMeal(failing(new GatewayRefusal(402, "llm http 402")), userId, photo())).toEqual({ kind: "provider-down" });
     expect(await logPhotoMeal(failing(new Error("llm timeout after 60000 ms")), userId, photo())).toEqual({ kind: "analysis-failed" });
   });
 
@@ -2345,7 +2345,7 @@ describe("re-analysis", () => {
     const userId = await onboard();
     const logged = await logPhotoMeal(deps, userId, photo(8)) as MealLogged;
     const refused: LlmPorts = { ...demoPorts(), analyzePhoto: async () => { throw new GatewayRefusal(402, "llm http 402: out of credits"); } };
-    expect((await reanalyzeMeal(makeDeps({}, refused), userId, logged.mealId)).kind).toBe("analysis-failed");
+    expect((await reanalyzeMeal(makeDeps({}, refused), userId, logged.mealId)).kind).toBe("provider-down");
     // Refunded: only the photo's own charge is left.
     expect(await store.countUserAnalyses(userId)).toBe(1);
   });
@@ -2455,7 +2455,7 @@ describe("what each analysis cost", () => {
     promptTokens: 1, completionTokens: 1, reasoningTokens: 0, costUsd: 0.1,
     msFirstByte: 1, msFirstItem: null, msTotal: 2,
     status: "ok", attempt: 0, fallbackUsed: false, generationId: "gen-x",
-    images: 1, imageBytes: 10,
+    images: 1, imageBytes: 10, errorBody: null,
   });
 
   it("writes the calls a photo turn made on the analysis it charged", async () => {
@@ -2477,6 +2477,65 @@ describe("what each analysis cost", () => {
     expect(calls.every((c) => c.kind === "photo" && c.status === "ok")).toBe(true);
     expect(calls.filter((c) => c.generationId === "gen-x").length).toBe(2);
     expect(calls.every((c) => typeof c.analysisId === "string")).toBe(true);
+  });
+
+  // #3435: a credit-class answer (401/402 — the account or the key, not a model that ran) writes
+  // its provider body on the call's row, mails the operator once, and reads as `provider-down` —
+  // our side, retriable in a bit — rather than a bare analysis-failed.
+  it("a provider 402 stores its body, alerts the operator once, and answers provider-down", async () => {
+    const mails: { to: string; subject: string; text: string }[] = [];
+    const mail = {
+      sendSignInCode: async () => {},
+      sendAlert: async (to: string, subject: string, text: string) => { mails.push({ to, subject, text }); },
+    };
+    const failed402 = (call: string): LlmCallMetric => ({
+      ...metric(call), status: "http_402",
+      errorBody: '{"error":{"message":"Insufficient credits","code":402}}',
+    });
+    const refused: EngineDeps = {
+      ...makeDeps({ alertEmail: "ops@example.com" }, {
+        ...demoPorts(),
+        analyzePhoto: async (i) => { i.onCall?.(failed402("meal_analysis")); throw new GatewayRefusal(402, "llm http 402: insufficient credits"); },
+        routeText: async (i) => { i.onCall?.(failed402("route")); throw new GatewayRefusal(402, "llm http 402: insufficient credits"); },
+      }),
+      mail,
+    };
+    const userId = await onboard();
+    expect(await logPhotoMeal(refused, userId, photo())).toEqual({ kind: "provider-down" });
+    expect(await handleText(refused, userId, { text: "two eggs on toast" })).toEqual({ kind: "provider-down" });
+    await new Promise((r) => setTimeout(r, 0));
+    // The charge came back (402 generated nothing), and BOTH calls' rows keep what the provider said.
+    expect(await store.countUserAnalyses(userId)).toBe(0);
+    const calls = await store.llmCalls(userId);
+    expect(calls.map((c) => c.status)).toEqual(["http_402", "http_402"]);
+    expect(calls.every((c) => c.errorBody?.includes("Insufficient credits"))).toBe(true);
+    // One alert for the burst, not one per call — a down provider fails every turn until it is fixed.
+    expect(mails.length).toBe(1);
+    expect(mails[0]).toMatchObject({ to: "ops@example.com" });
+    expect(mails[0]!.subject + mails[0]!.text).toContain("402");
+    expect(mails[0]!.subject + mails[0]!.text).toContain("Insufficient credits");
+  });
+
+  it("a non-credit provider failure mails nobody", async () => {
+    const mails: string[] = [];
+    const mail = {
+      sendSignInCode: async () => {},
+      sendAlert: async (to: string) => { mails.push(to); },
+    };
+    const refused: EngineDeps = {
+      ...makeDeps({ alertEmail: "ops@example.com" }, {
+        ...demoPorts(),
+        analyzePhoto: async (i) => {
+          i.onCall?.({ ...metric("meal_analysis"), status: "http_500", errorBody: '{"error":"upstream"}' });
+          throw new GatewayRefusal(500, "llm http 500");
+        },
+      }),
+      mail,
+    };
+    const userId = await onboard();
+    expect(await logPhotoMeal(refused, userId, photo())).toEqual({ kind: "analysis-failed" });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mails).toEqual([]);
   });
 
   it("names a question turn's calls by what they were — the route, then the coach", async () => {

@@ -450,7 +450,7 @@ export function moodFor(entry: ThreadEntry): MascotMood {
       case "proposed": return "think";
       case "answered": return "idle";
       case "expired": case "target-gone": case "not-onboarded": case "not-food":
-      case "cap-exceeded": case "subscription-required": case "analysis-failed": return "care";
+      case "cap-exceeded": case "subscription-required": case "analysis-failed": case "provider-down": return "care";
     }
   }
   return "idle";
@@ -524,10 +524,10 @@ export type ChatRow =
 /** Results that are about her send, so her bubble carries them; `answered` and `not-food` stay Calodex's. */
 const ABSORBED_RESULTS: ReadonlySet<string> = new Set([
   "logged", "updated", "redated", "proposed", "expired", "target-gone",
-  "not-onboarded", "identity-required", "cap-exceeded", "subscription-required", "analysis-failed",
+  "not-onboarded", "identity-required", "cap-exceeded", "subscription-required", "analysis-failed", "provider-down",
 ]);
 const REFUSED_RESULTS: ReadonlySet<string> = new Set([
-  "target-gone", "not-onboarded", "identity-required", "cap-exceeded", "subscription-required", "analysis-failed",
+  "target-gone", "not-onboarded", "identity-required", "cap-exceeded", "subscription-required", "analysis-failed", "provider-down",
 ]);
 
 export const isDropped = (e: ThreadEntry | null | undefined): boolean =>
@@ -551,7 +551,7 @@ function sendState(entry: UserEntry, outcome: ThreadEntry | null, now: number | 
   if (outcome.role === "error") {
     if (outcome.kind === "offline") return "pending";
     if (outcome.kind === "unanswered") return "failed";
-    if (outcome.kind === "analysis-failed" || outcome.kind === "subscription-required") return "refused";
+    if (outcome.kind === "analysis-failed" || outcome.kind === "provider-down" || outcome.kind === "subscription-required") return "refused";
     return "ok";
   }
   if (outcome.role === "assistant") {

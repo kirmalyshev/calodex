@@ -991,6 +991,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1730,6 +1740,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1856,6 +1876,16 @@
           },
           "502": {
             "description": "Upstream failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
             "content": {
               "application/json": {
                 "schema": {
@@ -2327,6 +2357,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2486,6 +2526,16 @@
           },
           "502": {
             "description": "Upstream failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
             "content": {
               "application/json": {
                 "schema": {
@@ -2761,6 +2811,16 @@
           },
           "502": {
             "description": "Upstream failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
             "content": {
               "application/json": {
                 "schema": {
@@ -3118,6 +3178,16 @@
           },
           "502": {
             "description": "Upstream failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
             "content": {
               "application/json": {
                 "schema": {
@@ -11200,6 +11270,19 @@
               "retryable": {
                 "type": "boolean",
                 "const": true
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "provider-down"
               }
             },
             "required": [

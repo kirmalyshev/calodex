@@ -33,7 +33,7 @@ import { RAW_STATE, words } from "../food-index.ts";
 import { charge, checkCaps, checkFreeLog, refundGatewayRefusal, type JobCharge } from "./caps.ts";
 import { afterCorrection, afterLog, firstVerdict, remember } from "./chat.ts";
 import { scriptedLine } from "@eait/shared";
-import { GatewayRefusal, clampDayOffset, emptyEstimate, imageMime, type AnalyzedMeal } from "../llm/port.ts";
+import { CREDIT_CLASS, GatewayRefusal, clampDayOffset, emptyEstimate, imageMime, type AnalyzedMeal } from "../llm/port.ts";
 import { itemScanner } from "../llm/partial.ts";
 import { eatenAt, once } from "./turns.ts";
 import { isAnonymous } from "./identity.ts";
@@ -219,6 +219,9 @@ export async function analyzePhotos(
     // Logged, never returned: the message can carry the prompt, and the prompt carries the user's
     // medical free text.
     console.error(`[eait] photo analysis failed: ${(e as Error).message}${refunded ? " (analysis refunded)" : ""}`);
+    // A credit-class answer is the OPERATOR's account, not her photo (ieat-app#3435): it earns the
+    // honest "our side, try again in a bit" state, not the generic failure that blamed nothing.
+    if (refunded && e instanceof GatewayRefusal && CREDIT_CLASS.has(e.status)) return { kind: "provider-down" };
     return refunded && e instanceof GatewayRefusal && (e.status === 429 || e.status === 503)
       ? { kind: "analysis-failed", retryable: true }
       : { kind: "analysis-failed" };
