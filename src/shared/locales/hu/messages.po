@@ -305,7 +305,7 @@ msgstr "Rögzítve."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Az étkezések rögzítéséhez előfizetés kell. A folytatáshoz indítsd el az ingyenes próbaidőszakot a weben."
+msgstr "Az étkezések rögzítéséhez előfizetés kell. A folytatáshoz indítsd el az ingyenes trialt a weben."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -370,7 +370,7 @@ msgstr "A terv szerint."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Még egy dolog, amiről az iOS mindjárt kérdezni fog: értesítések. Naponta egy, soha több — a 20:30-as összegzés, plusz egy emlékeztető a próbaidőszak vége előtti napon, ha épp abban vagy. Semmi más, soha."
+msgstr "Még egy dolog, amiről az iOS mindjárt kérdezni fog: értesítések. Naponta egy, soha több — a 20:30-as összegzés, plusz egy emlékeztető a trial vége előtti napon, ha épp abban vagy. Semmi más, soha."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -560,7 +560,7 @@ msgstr "Túl sok próbálkozás erről a Telegramról. Várj egy kicsit, aztán 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Elindult a próbaidőszak — a végén {price}, hacsak le nem mondod. A lejárat előtti napon emlékeztetlek, soha nem utána."
+msgstr "Elindult a trial — a végén {price}, hacsak le nem mondod. A lejárat előtti napon emlékeztetlek, soha nem utána."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
