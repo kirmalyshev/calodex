@@ -31,7 +31,7 @@ import { ico } from "../shared/ui/kit.ts";
 import { joinsQueue } from "../shared/outbox.ts";
 import { keptState, outcomeUnknown } from "../shared/results.ts";
 import { LANG_TAG, UNIT_KCAL, kcalNumbers, narrowLang, wholeNumbers } from "../shared/lang.ts";
-import { DIARY_RANGE_MAX_DAYS } from "../shared/contract.ts";
+import { DIARY_RANGE_MAX_DAYS, PHOTO_COMPRESSION_DEFAULT } from "../shared/contract.ts";
 import { localDate, windowStart } from "../shared/dates.ts";
 import { mealNames } from "../shared/meal-names.ts";
 import type { Lang } from "../shared/types.ts";
@@ -140,6 +140,13 @@ export async function patchProfile(body: Record<string, unknown>): Promise<Profi
 
 /** Forget the profile — the sign-out in `youScreen` calls it before re-rendering. */
 export const forgetProfile = (): void => { profileCache = null; };
+
+/**
+ * The JPEG quality a photo leaves at (ieat-app#3421): the running server's `Limits.photoCompression`
+ * once a profile has landed, the shared default before — the same fallback rule as
+ * `setModelCallTimeout`. What `enqueue` encodes at, and what its form field then reports.
+ */
+export const photoCompression = (): number => profileCache?.limits.photoCompression ?? PHOTO_COMPRESSION_DEFAULT;
 
 /**
  * The navigation row, in the boards' order (Register P, `web/today.html`): Home · Progress · Chat ·

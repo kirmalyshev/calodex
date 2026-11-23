@@ -2961,6 +2961,27 @@ describe("a settled-unknown photo job names its meal (ieat-app#2674)", () => {
   });
 });
 
+// The send's coefficient rides the job's stored request, so a meal landing minutes after the
+// send still records what its bytes were encoded at — not whatever the admin sets by then.
+describe("the queued send's compression (ieat-app#3421)", () => {
+  it("lands on the meal the job writes", async () => {
+    const userId = await onboard();
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queuePhoto(deps, userId, { ...photo(1), clientId, compression: 0.3 });
+    const until = Date.now() + 10_000;
+    for (;;) {
+      const j = await photoJob(deps, userId, clientId);
+      if (!j || j.kind === "settled") break;
+      if (Date.now() > until) throw new Error("job never settled");
+      await new Promise((r) => setTimeout(r, 15));
+    }
+    const meals = await store.mealsForDate(userId, localDate(deps.config.timezone));
+    expect(meals).toHaveLength(1);
+    expect(meals[0]!.photo_compression).toBe(0.3);
+  });
+});
+
 // A remove can reach the server before the job exists (the upload is still streaming): it is remembered, and the enqueue that follows logs nothing (ieat-app#2684).
 describe("a remove that arrives before its job (ieat-app#2684)", () => {
   it("tombstones the id: the later enqueue never logs a meal", async () => {

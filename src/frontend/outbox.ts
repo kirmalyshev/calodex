@@ -56,6 +56,7 @@ export async function sendTurn(entry: WebQueued, onLine?: (line: unknown) => voi
     for (const f of entry.photos) form.append("photo", f);
     if (entry.text) form.append("caption", entry.text);
     if (entry.plate) form.append("label", "0");
+    if (entry.compress !== undefined) form.append("compression", String(entry.compress));
     form.append("clientId", entry.id);
     form.append("capturedAt", entry.capturedAt);
     const r = await apiStream<PhotoLast>(PHOTO, { method: "POST", body: form, signal: signal ?? null, headers: { [IDEMPOTENCY]: entry.id } }, onLine);

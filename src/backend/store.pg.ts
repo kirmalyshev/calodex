@@ -33,7 +33,7 @@ import { type ChatMessage,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
   type OnboardingServedRecord, type OnboardingSurface,
   type MealPatch,
-  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey,
+  type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey, type AdminValueKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto, type Acquisition, type RevenueCatEventRow,
 } from "./store.ts";
 
@@ -914,6 +914,9 @@ create table if not exists meal_photos (
 );
 create index if not exists meal_photos_user_meal_idx on meal_photos(user_id, meal_id);
 alter table meals add column if not exists photos integer not null default 0;
+-- The JPEG quality the photos were sent with (ieat-app#3421). NULLABLE: a meal sent before the
+-- coefficient existed has no value, which is exactly what the row must say.
+alter table meals add column if not exists photo_compression double precision;
 
 create table if not exists pendings (
   id         uuid primary key,
@@ -1441,6 +1444,22 @@ alter table admin_switches add constraint admin_switches_key_check
   check (key in ('grounding.photo', 'grounding.text', 'prompt.photo-lean', 'onboarding.experiments',
     'paywall.exit-offer.ios', 'paywall.exit-offer.web'));
 
+-- THE ADMIN VALUES (ieat-app#3421): the numeric counterpart of admin_switches — a coefficient is
+-- not a switch, and a boolean row cannot hold one. Append-only and GLOBAL for the same reasons:
+-- the current value is the newest row per key, every earlier row the audit trail. The key list is
+-- written out by hand and compared with VALUE_KEYS by values.schema.test.ts. A key with no row
+-- reads its compiled default (PHOTO_COMPRESSION_DEFAULT for photo.compression).
+create table if not exists admin_values (
+  id      bigserial primary key,
+  key     text not null,
+  value   double precision not null,
+  set_by  uuid not null,
+  set_at  timestamptz not null default now()
+);
+alter table admin_values drop constraint if exists admin_values_key_check;
+alter table admin_values add constraint admin_values_key_check
+  check (key in ('photo.compression'));
+
 -- Daily health aggregates read off the user's phone. NEVER raw samples: this product uses a handful
 -- of numbers per day, and a per-second heart rate series would be a large pile of special-category
 -- data whose only property is risk.
@@ -1795,6 +1814,7 @@ function toMeal(r: MealRow, restrictions: readonly string[]): MealRecord {
     model: (r.model ?? null) as string | null,
     question: json<MealQuestion | null>(r.question, null),
     photos: num(r.photos),
+    photo_compression: (r.photo_compression === null || r.photo_compression === undefined ? null : num(r.photo_compression)),
     focus: json<MealFocus | null>(r.focus, null),
     label: json<MealLabel | null>(r.label, null),
   };
@@ -2024,6 +2044,9 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   switchEnabled: "unscoped",
   setSwitch: "unscoped",
   switchHistory: "unscoped",
+  adminValue: "unscoped",
+  setAdminValue: "unscoped",
+  adminValueHistory: "unscoped",
   getNotificationCopy: "unscoped",
   putNotificationCopy: "unscoped",
   listPushTemplates: "unscoped",
@@ -3829,6 +3852,24 @@ export async function postgresStore(
       await sql`insert into admin_switches (key, enabled, set_by) values (${key}, ${enabled}, ${adminId})`;
     },
 
+    async adminValue(key) {
+      const rows = await sql`select value from admin_values where key = ${key} order by id desc limit 1`;
+      return rows.length > 0 ? num(rows[0].value) : null;
+    },
+
+    async setAdminValue(key, value, adminId) {
+      await sql`insert into admin_values (key, value, set_by) values (${key}, ${value}, ${adminId})`;
+    },
+
+    async adminValueHistory(limit) {
+      const rows = await sql`
+        select key, value, set_by, set_at from admin_values order by id desc limit ${limit}`;
+      return rows.map((r: Record<string, unknown>) => ({
+        key: r.key as AdminValueKey, value: num(r.value),
+        set_by: String(r.set_by), set_at: new Date(r.set_at as string).toISOString(),
+      }));
+    },
+
     async switchHistory(limit) {
       const rows = await sql`
         select key, enabled, set_by, set_at from admin_switches order by id desc limit ${limit}`;
@@ -4672,12 +4713,13 @@ export async function postgresStore(
       const rows = await sql`
         insert into meals (id, user_id, ts, date, is_food, items, kcal, protein_g, carbs_g, fat_g,
                            satfat_g, fiber_g, sugar_g, sodium_mg, verdicts, confidence, notes,
-                           corrected, model, question, label)
+                           corrected, model, question, label, photo_compression)
         values (${m.id}, ${m.user_id}, ${m.ts}, ${m.date}, ${m.isFood},
                 ${m.items}, ${m.kcal}, ${m.protein_g}, ${m.carbs_g}, ${m.fat_g},
                 ${m.satfat_g}, ${m.fiber_g}, ${m.sugar_g}, ${m.sodium_mg},
                 ${m.verdicts}, ${m.confidence}, ${m.notes}, ${m.corrected},
-                ${m.model}, ${m.question ?? null}, ${m.label ?? null})
+                ${m.model}, ${m.question ?? null}, ${m.label ?? null},
+                ${m.photo_compression ?? null})
         on conflict (id) do nothing returning id`;
       return rows.length > 0;
     },
@@ -4756,7 +4798,7 @@ export async function postgresStore(
           where id = ${mealId} and user_id = ${userId}`;
       });
     },
-    async appendPhotos(userId, mealId, input) {
+    async appendPhotos(userId, mealId, input, compression) {
       // A CLIENT-SUPPLIED ID, so the same guard `getMeal` and `updateMeal` carry: absent, not a
       // type error at the column. Without it Postgres raises 22P02 on anything that is not a UUID
       // and the route answers 500 to what is really "no such meal".
@@ -4773,6 +4815,12 @@ export async function postgresStore(
           await tx`
             insert into meal_photos (id, meal_id, user_id, position, mime, bytes)
             values (${crypto.randomUUID()}, ${mealId}, ${userId}, ${next++}, ${p.mime}, ${Buffer.from(p.bytes)})`;
+        }
+        if (compression !== undefined) {
+          // The appended angles were compressed to it — the row's value is the LAST send's.
+          await tx`
+            update meals set photo_compression = ${compression}
+            where id = ${mealId} and user_id = ${userId}`;
         }
         const counted = await tx`
           update meals set photos = (select count(*) from meal_photos where meal_id = ${mealId})

@@ -10,6 +10,8 @@ export interface EditLineInput {
   text: string;
   /** Angles to ADD; the stored photos stay. Thunks, so nothing is read until the caps have passed. */
   images: (() => Promise<Uint8Array>)[];
+  /** The coefficient the added angles were sent with (ieat-app#3421). */
+  compression?: number;
 }
 
 const GONE: TargetGone = { kind: "target-gone", on: "correction" };
@@ -95,7 +97,8 @@ export async function editLine(
 
   const text = input.text.trim();
   const out = await rewriteMeal(deps, userId, existing, profile, text || undefined,
-    () => Promise.all(input.images.map((read) => read())), onEvent);
+    () => Promise.all(input.images.map((read) => read())), onEvent,
+    undefined, undefined, input.compression);
   if (out.kind !== "updated") return out;
   // LAST. The numbers describe the photos and these words now; a line that changed before a
   // refused turn would describe an analysis that never happened.

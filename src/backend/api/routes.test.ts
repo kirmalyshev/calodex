@@ -409,6 +409,35 @@ describe("photo", () => {
     expect(dayView.meals).toHaveLength(1); // one meal, not three
   });
 
+  it("records the compression the photo was sent with on the meal, and nothing when none was sent", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const sent = new FormData();
+    sent.append("photo", new File([jpegBytes(1)], "a.jpg", { type: "image/jpeg" }));
+    sent.append("compression", "0.35");
+    const res = await handle(new Request(url(ROUTES.photo), {
+      method: "POST", headers: { authorization: `Bearer ${token}`, "content-length": DECLARED_LENGTH }, body: sent,
+    }));
+    expect(res.status).toBe(200);
+    const logged = await res.json() as { mealId: string };
+    expect((await store.getMeal(userId, logged.mealId))!.photo_compression).toBe(0.35);
+
+    const plain = await (await handle(photoRequest(token))).json() as { mealId: string };
+    expect((await store.getMeal(userId, plain.mealId))!.photo_compression ?? null).toBeNull();
+
+    // Out of range or not a number is a field the comparison cannot group by — recorded as none,
+    // not as a refusal: the photo still logs.
+    const bad = new FormData();
+    bad.append("photo", new File([jpegBytes(2)], "b.jpg", { type: "image/jpeg" }));
+    bad.append("compression", "5");
+    const badRes = await handle(new Request(url(ROUTES.photo), {
+      method: "POST", headers: { authorization: `Bearer ${token}`, "content-length": DECLARED_LENGTH }, body: bad,
+    }));
+    expect(badRes.status).toBe(200);
+    const badLogged = await badRes.json() as { mealId: string };
+    expect((await store.getMeal(userId, badLogged.mealId))!.photo_compression ?? null).toBeNull();
+  });
+
   it("attaches another angle to a logged meal, and charges nothing for it (#304)", async () => {
     const token = await session();
     const logged = await (await handle(photoRequest(token))).json() as { mealId: string };
