@@ -2034,6 +2034,11 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.insertMeal(m);
       expect(await s.attachRecognitionMeal(a, analysisId, m.id)).toBe(true);
       expect((await s.adminRecognition(mine[0]!.id))?.mealId).toBe(m.id);
+      // `on delete set null`: the meal going away drops the link, never the read.
+      await s.deleteMeal(a, m.id);
+      const after = await s.adminRecognition(mine[0]!.id);
+      expect(after?.mealId).toBeNull();
+      expect(after?.meal).toBeNull();
     });
 
     it("moves the rows on merge, drops the analysis link — not the row — on refund, erases with the account", async () => {

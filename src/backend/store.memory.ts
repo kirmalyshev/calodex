@@ -2319,6 +2319,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (!m || m.user_id !== userId) return false;
       meals.delete(mealId);
       photos.delete(mealId);
+      // `on delete set null` on recognitions.meal_id — the read stays, the link goes.
+      for (const r of recognitions) if (r.mealId === mealId) r.mealId = null;
       return true;
     },
 
