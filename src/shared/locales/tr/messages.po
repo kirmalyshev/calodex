@@ -119,6 +119,11 @@ msgstr "“{note}” — not ettim, sayılara işlendi."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, bugünün yaklaşık {share} kadarı. Bir sonraki öğünü daha hafif tutmak dengeler."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "{nutrient} tek öğün için çok yüksek: {target}{unit} hakkının {ea
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "Günlük hakkının büyük bir kısmı tek öğünde."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, bugünün yaklaşık {share} kadarı. Bir sonraki öğünü daha hafif tutmak dengeler."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

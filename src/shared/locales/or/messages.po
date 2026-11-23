@@ -119,6 +119,11 @@ msgstr "“{note}” — ନୋଟ୍ କଲି, ଏହା ସଂଖ୍ୟାର
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ଆଜିର ପ୍ରାୟ {share}। ପରବର୍ତ୍ତୀ ଖାଦ୍ୟ ହାଲୁକା ହେଲେ ସନ୍ତୁଳନ ହୋଇଯିବ।"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "ଗୋଟିଏ ଭୋଜନ ପାଇଁ {nutrient} ବହୁତ ଅଧ
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "ଗୋଟିଏ ଭୋଜନରେ ଆପଣଙ୍କ ଦିନର ବଡ଼ ଅଂଶ।"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, ଆଜିର ପ୍ରାୟ {share}। ପରବର୍ତ୍ତୀ ଖାଦ୍ୟ ହାଲୁକା ହେଲେ ସନ୍ତୁଳନ ହୋଇଯିବ।"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

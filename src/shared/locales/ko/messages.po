@@ -119,6 +119,11 @@ msgstr "“{note}” — 알겠어요, 숫자에 반영했어요."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, 오늘의 약 {share}예요. 다음 식사를 가볍게 하면 균형이 맞아요."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "{nutrient}: 한 끼로는 아주 많아요 — 목표 {target}{unit} 중
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "한 끼에 하루의 큰 몫을 먹었어요."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, 오늘의 약 {share}예요. 다음 식사를 가볍게 하면 균형이 맞아요."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

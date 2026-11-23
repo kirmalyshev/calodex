@@ -119,6 +119,11 @@ msgstr "“{note}”——记下了，已计入数据。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}千卡，约占今天的{share}。下一餐清淡些就能平衡。"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}千卡"
 
@@ -161,11 +166,6 @@ msgstr "{nutrient}对一餐来说很高：{eaten} / 你的{target}{unit}。"
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "一餐就占了你一天的一大部分。"
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}千卡，约占今天的{share}。下一餐清淡些就能平衡。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -125,6 +125,11 @@ msgstr "“{note}” — noted, it's in the numbers."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, about {share} of today. A lighter next meal evens it out."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -167,11 +172,6 @@ msgstr "{nutrient} is very high for one meal: {eaten} of your {target}{unit}."
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "A big share of your day in one meal."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, about {share} of today. A lighter next meal evens it out."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

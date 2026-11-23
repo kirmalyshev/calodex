@@ -119,6 +119,11 @@ msgstr "”{note}” — noterat, det är med i siffrorna."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ungefär {share} av i dag. En lättare nästa måltid jämnar ut det."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "{nutrient} ligger mycket högt för en måltid: {eaten} av dina {target}
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "En stor del av din dag i en måltid."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, ungefär {share} av i dag. En lättare nästa måltid jämnar ut det."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

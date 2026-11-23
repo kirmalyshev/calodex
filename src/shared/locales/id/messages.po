@@ -125,6 +125,11 @@ msgstr "“{note}” — dicatat, sudah masuk ke angkanya."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, sekitar {share} dari hari ini. Makan berikutnya yang lebih ringan akan menyeimbangkannya."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -167,11 +172,6 @@ msgstr "{nutrient} sangat tinggi untuk satu kali makan: {eaten} dari {target}{un
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "Sebagian besar jatah harimu ada di satu kali makan."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, sekitar {share} dari hari ini. Makan berikutnya yang lebih ringan akan menyeimbangkannya."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

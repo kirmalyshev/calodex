@@ -119,6 +119,11 @@ msgstr "“{note}” — नोंद घेतली, हे आकड्या
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, आजच्या सुमारे {share}. पुढचे जेवण हलके घेतल्यास संतुलन साधले जाईल."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "एका जेवणासाठी {nutrient} खूप जास्�
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "एकाच जेवणात दिवसाचा मोठा वाटा."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, आजच्या सुमारे {share}. पुढचे जेवण हलके घेतल्यास संतुलन साधले जाईल."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

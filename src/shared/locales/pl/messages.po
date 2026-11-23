@@ -119,6 +119,11 @@ msgstr "„{note}” — zanotowane, jest już w liczbach."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, około {share} dzisiejszego dnia. Lżejszy następny posiłek to wyrówna."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "{nutrient}: bardzo dużo jak na jeden posiłek — {eaten} z twoich {tar
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "Duża część twojego dnia w jednym posiłku."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, około {share} dzisiejszego dnia. Lżejszy następny posiłek to wyrówna."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

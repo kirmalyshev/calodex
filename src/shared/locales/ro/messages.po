@@ -119,6 +119,11 @@ msgstr "„{note}” — notat, e inclus în cifre."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, aproximativ {share} din ziua de azi. O masă următoare mai ușoară echilibrează."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "{nutrient}: nivel foarte ridicat pentru o singură masă — {eaten} din
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "O mare parte din ziua ta într-o singură masă."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, aproximativ {share} din ziua de azi. O masă următoare mai ușoară echilibrează."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

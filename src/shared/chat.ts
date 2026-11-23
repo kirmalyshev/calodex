@@ -292,6 +292,8 @@ export interface FirstVerdictInput {
  * very high or high, then calories on plan with a declared marker high (that marker's own line
  * follows), then on plan. The server speaks it first in `firstVerdictLines`; a client that
  * re-renders a card after an edit says it again from the verdicts the server just returned.
+ * EXCEPT `warn` on the account's first meal: `firstVerdictLines` says `caloriesHighFirst` there
+ * (ieat-app#3400), so a client that draws this on the first meal's card must not show the scold.
  */
 export function verdictHeadline(verdicts: MealVerdicts, lang: Lang): string | null {
   const h = threadCopyFor(lang).firstVerdict.headline;

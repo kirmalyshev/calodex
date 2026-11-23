@@ -119,6 +119,11 @@ msgstr "“{note}” — గమనించాను, ఇది లెక్క�
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ఈ రోజులో దాదాపు {share}. తదుపరి భోజనం తేలికగా తీసుకుంటే సమతుల్యం అవుతుంది."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 
@@ -161,11 +166,6 @@ msgstr "ఒక భోజనానికి {nutrient} చాలా ఎక్క�
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHigh"
 msgstr "ఒకే భోజనంలో మీ రోజులో పెద్ద భాగం."
-
-#. js-lingui-explicit-id
-#: src/shared/chat-copy.ts
-msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, ఈ రోజులో దాదాపు {share}. తదుపరి భోజనం తేలికగా తీసుకుంటే సమతుల్యం అవుతుంది."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
