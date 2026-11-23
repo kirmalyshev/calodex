@@ -55,12 +55,12 @@ const OLD_TRIAL_WORD: Record<string, RegExp> = {
   no: /prøveperiod/i,
   fi: /kokeilujakso|kokeilujakson/i,
   hu: /próbaidő/i,
-  ro: /perioad\S* de prob/i,
+  ro: /perioad\S*( \S+)? de prob/i,
   "pt-PT": /avaliação/i,
 };
 const SHORT_WORD: Record<string, RegExp> = {
   uk: /тріал/i, bg: /триал/i, hr: /trial/i, sl: /trial/i, sk: /trial/i, cs: /trial/i, pl: /trial/i,
-  nl: /trial/i, sv: /trial/i, da: /trial/i, no: /trial/i, fi: /kokeilu/i, hu: /trial/i, ro: /prob/i,
+  nl: /trial/i, sv: /trial/i, da: /trial/i, no: /trial/i, fi: /kokeilu/i, hu: /trial/i, ro: /\bproba\b|\bprobă\b|probei/i,
   "pt-PT": /teste grátis/i,
 };
 

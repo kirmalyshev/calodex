@@ -1118,7 +1118,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     // "if you're staying" rather than "the subscription starts": a CANCELLATION leaves the expiry
     // where it was, so somebody who has already stopped it still gets this message, and telling
     // them a subscription is about to start would be false rather than merely redundant.
-    body: "Mâine se încheie perioada ta de probă gratuită. Dacă rămâi, nu trebuie să faci nimic; dacă nu, Configurări › Abonamente.",
+    body: "Mâine se încheie proba ta gratuită. Dacă rămâi, nu trebuie să faci nimic; dacă nu, Configurări › Abonamente.",
   },
   evening: {
     title: "Ziua de azi față de plan",

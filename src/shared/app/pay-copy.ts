@@ -1964,7 +1964,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     subscribingPhone: "Se activează abonamentul",
     goalCtaPhone: { lose: "Începe să slăbești", gain: "Începe să iei în greutate", maintain: "Să-mi mențin greutatea", none: "Numără caloriile" },
     subscribePhone: "Abonează-te",
-    trialEnds: "Perioada ta de probă gratuită se termină mâine",
+    trialEnds: "Proba ta gratuită se termină mâine",
     trialEndsNote: "Apoi {renewal}. Anulează azi și nu se încasează nimic.",
     trialEndsCancel: "Anulează azi și nu se încasează nimic.",
     renewsLabelPhone: "Se reînnoiește",

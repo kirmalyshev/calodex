@@ -2929,7 +2929,7 @@ const HU: WebCopy = {
   statProtein: "Fehérje", statCarbs: "Szénhidrát", statFat: "Zsír",
   refusals: {
     "unreadable-label": "Ezt a címkét nem tudtuk beolvasni.",
-    "subscription-required": "Az étkezések rögzítéséhez előfizetés kell. Indítsd el az ingyenes triált a folytatáshoz.",
+    "subscription-required": "Az étkezések rögzítéséhez előfizetés kell. Indítsd el az ingyenes trialt a folytatáshoz.",
     "unsupported-image": "Ezt a fájlt nem tudjuk fotóként beolvasni. JPEG, PNG vagy WebP kell.",
     "not-food": "Ezen nincs étel.",
     "analysis-failed": "Ez nem jött vissza. Próbáld újra.",

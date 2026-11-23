@@ -4605,7 +4605,7 @@ export const YOU_COPY: Localized<YouCopy> = {
       yourDays: "Zilele tale",
       yourPace: "Ritmul tău",
       changeAnswer: "Schimbă un răspuns",
-      freeTrialTitle: "Perioada ta de probă",
+      freeTrialTitle: "Proba ta gratuită",
       dayOfTotal: "Ziua {n} din {total}",
       untilDate: "până pe {date}",
       beforeEnds: "Înainte să se încheie",

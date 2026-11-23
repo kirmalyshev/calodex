@@ -300,7 +300,7 @@ msgstr "Rögzítve."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Az étkezések rögzítéséhez előfizetés kell. A folytatáshoz indítsd el az ingyenes triált a weben."
+msgstr "Az étkezések rögzítéséhez előfizetés kell. A folytatáshoz indítsd el az ingyenes trialt a weben."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts

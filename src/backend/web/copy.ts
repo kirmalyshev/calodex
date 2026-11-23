@@ -3143,7 +3143,7 @@ const HU: PageCopy = {
   chatNoFocusRedate:
     "Itt nincs megnyitott étkezés, amit másik napra lehetne tenni. Nyisd meg az appban a nap módosításához.",
   chatNotOnboarded: "Előbb válaszolj a tervhez tartozó kérdésekre.",
-  chatRefusalSubscription: "Az étkezések rögzítéséhez előfizetés kell. Indítsd el az ingyenes triált a folytatáshoz.",
+  chatRefusalSubscription: "Az étkezések rögzítéséhez előfizetés kell. Indítsd el az ingyenes trialt a folytatáshoz.",
   chatRefusalFailed: "Ez nem jött vissza. Próbáld újra.",
   chatRefusalNotFood: "Ez nem tűnt ételnek.",
   chatRefusalImage: "Ezt a fájlt nem tudjuk fotóként beolvasni. JPEG, PNG vagy WebP kell.",
@@ -3184,7 +3184,7 @@ const HU: PageCopy = {
   offerWhenAfter: "{n}. nap",
   offerBilled: "Indul a számlázás · bármikor lemondhatod",
     offerClose: "Bezárás",
-  titleOffer: "Indítsd el az ingyenes triált",
+  titleOffer: "Indítsd el az ingyenes trialt",
   /** The picker. Its OPTIONS are `LANG_LABEL` — endonyms, never translated. */
   languageLabel: "Nyelv",
   languageSave: "Mentés",

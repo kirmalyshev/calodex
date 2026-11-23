@@ -694,7 +694,7 @@ shared.notificationCopyFor sv 5f60f2ece3aec70c
 shared.notificationCopyFor th 488fafae0a066314
 shared.notificationCopyFor hi 1f067f1d89c0fa36
 shared.notificationCopyFor cs a4e861d843e06a40
-shared.notificationCopyFor ro cfcde4fb85d3c3a4
+shared.notificationCopyFor ro 4eac91a6764a9b0b
 shared.notificationCopyFor el 0487ab5255295092
 shared.notificationCopyFor hu fa1366f86e6f8a8f
 shared.notificationCopyFor da 038be63bc2068642
@@ -829,7 +829,7 @@ shared.payCopyFor sv a893c94dce527f8f
 shared.payCopyFor th 56b9228feded9c7a
 shared.payCopyFor hi d60578accecba9ec
 shared.payCopyFor cs 9ef176a65f6f7af0
-shared.payCopyFor ro 3f7c1c36bd4ca5d5
+shared.payCopyFor ro 067277dea37328e8
 shared.payCopyFor el 062913787b6af965
 shared.payCopyFor hu f4e7873ddd229102
 shared.payCopyFor da c4be5b5114e40ccb
@@ -1324,7 +1324,7 @@ shared.youCopyFor sv 1e04fd4a4ca47022
 shared.youCopyFor th a836471b2253c414
 shared.youCopyFor hi 79057d4afc746492
 shared.youCopyFor cs 197003c3d3ba30f6
-shared.youCopyFor ro 46aeba0c7ae18632
+shared.youCopyFor ro e8c59982e7b4f8a0
 shared.youCopyFor el 43cccd801004051e
 shared.youCopyFor hu 31f1a79b3e3cfab3
 shared.youCopyFor da 86ee56c51bf6cb76
@@ -1461,7 +1461,7 @@ web.pageCopyFor hi 57eb4d0b11c32663
 web.pageCopyFor cs edcd8831a47f7b60
 web.pageCopyFor ro 9ae1c390c3088ec8
 web.pageCopyFor el c69fc2f69e4d2d3c
-web.pageCopyFor hu 35b02004a4488717
+web.pageCopyFor hu 4935945d5016e2af
 web.pageCopyFor da c273d7acb4cee284
 web.pageCopyFor fi 6cce68f945de0145
 web.pageCopyFor no bc141fb007dea980
@@ -1506,7 +1506,7 @@ telegram.telegramCopyFor hi 514bfb87e1f0464b
 telegram.telegramCopyFor cs 35aa891e022dbff4
 telegram.telegramCopyFor ro 9131d132974cd3fc
 telegram.telegramCopyFor el 32358c4f7e410770
-telegram.telegramCopyFor hu c0db5137e345f061
+telegram.telegramCopyFor hu 723393e3d25ab608
 telegram.telegramCopyFor da 64f01a7207fa3fec
 telegram.telegramCopyFor fi 3d12de42a1bd7ec3
 telegram.telegramCopyFor no 5150ced4c3075517
@@ -1551,7 +1551,7 @@ front.webCopyFor hi 4c4df57152232bb5
 front.webCopyFor cs 37a26ff3ad6f4e11
 front.webCopyFor ro dc5e9890749893c3
 front.webCopyFor el 4c68c61e5f0cf67c
-front.webCopyFor hu e9b4ffe5b86d9ff0
+front.webCopyFor hu 51bb42091795e45d
 front.webCopyFor da 49ab91a4ad93a30b
 front.webCopyFor fi cb793874e1616e1e
 front.webCopyFor no 56d5902c5aa9f5f0
