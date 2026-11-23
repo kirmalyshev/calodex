@@ -680,7 +680,7 @@ shared.notificationCopyFor it d7f1dd3c72567ecb
 shared.notificationCopyFor es 144814227253603b
 shared.notificationCopyFor vi 4674f31530a59b78
 shared.notificationCopyFor id d9a8a2c089731b2b
-shared.notificationCopyFor ru a057e6aa53497388
+shared.notificationCopyFor ru 68592dfcfd0ade1f
 shared.notificationCopyFor pt-BR dc22e3378c03d5d1
 shared.notificationCopyFor ja 7e068a9e16d6646f
 shared.notificationCopyFor ko 8f6dd4fee738b4c0
@@ -815,7 +815,7 @@ shared.payCopyFor it f42ecac1998f78c6
 shared.payCopyFor es 8c590fa2ff01b25b
 shared.payCopyFor vi 409b40cd4c66ef18
 shared.payCopyFor id 4a212b26489f6f62
-shared.payCopyFor ru 5ceebaf3781e3c5c
+shared.payCopyFor ru 1e482ca1032a1948
 shared.payCopyFor pt-BR da74648e27b2c5b7
 shared.payCopyFor ja bc444de0ecce47c3
 shared.payCopyFor ko baa57dac8d842b9f
@@ -1130,7 +1130,7 @@ shared.threadCopyFor it cd1cb2543fe62602
 shared.threadCopyFor es 9d5a965d815cdf58
 shared.threadCopyFor vi 7f83782841687505
 shared.threadCopyFor id 36a507bf3fb72d4e
-shared.threadCopyFor ru c55448da93f09d0c
+shared.threadCopyFor ru 0a54cf6cae6e27c5
 shared.threadCopyFor pt-BR 301ab7fd9e161658
 shared.threadCopyFor ja b7a32768973338ea
 shared.threadCopyFor ko 6b9e27956836ce09
@@ -1310,7 +1310,7 @@ shared.youCopyFor it 92c99785e2fbe59b
 shared.youCopyFor es fb9d38b1514144bc
 shared.youCopyFor vi 5c5ba4b3889a6718
 shared.youCopyFor id 148b56570570fd25
-shared.youCopyFor ru 8b34b4b23017051a
+shared.youCopyFor ru 54ae3e566f97ce88
 shared.youCopyFor pt-BR e5b7f9cd7edae100
 shared.youCopyFor ja b6c9874b444aaf8b
 shared.youCopyFor ko 53c14e0cceef36cc
@@ -1445,7 +1445,7 @@ web.pageCopyFor it 825e1be16670b9d5
 web.pageCopyFor es d75ecc4cbafb65b8
 web.pageCopyFor vi 5391e6fb734aca4c
 web.pageCopyFor id 1eb5f51b6aad8fe8
-web.pageCopyFor ru 04c3eba6d3c57c41
+web.pageCopyFor ru 2dfd23f5043be89b
 web.pageCopyFor pt-BR dbeaa2d3ba90d205
 web.pageCopyFor ja 1b3ea0cf040f2c2e
 web.pageCopyFor ko c33be83ccf9b408b
@@ -1490,7 +1490,7 @@ telegram.telegramCopyFor it 3d496e90a8f534b2
 telegram.telegramCopyFor es c834e3f9ecac76a8
 telegram.telegramCopyFor vi 017b6e7247aeceed
 telegram.telegramCopyFor id bc5e51b9b47a477e
-telegram.telegramCopyFor ru 7fa8b533cb4b8d8d
+telegram.telegramCopyFor ru 856a9e374feb525c
 telegram.telegramCopyFor pt-BR 22b5e487aeacc6aa
 telegram.telegramCopyFor ja 0544c43fc98517e2
 telegram.telegramCopyFor ko 5cc4ef574489654a
@@ -1535,7 +1535,7 @@ front.webCopyFor it 126425075f424f63
 front.webCopyFor es 9b1953b3e9612a2c
 front.webCopyFor vi cb376331d074229a
 front.webCopyFor id 2eb07989782b3335
-front.webCopyFor ru 26755283dc346fde
+front.webCopyFor ru eb87a84c59fcf3b7
 front.webCopyFor pt-BR 3fdbf42b6ff94b5f
 front.webCopyFor ja 13b0c2f7ebc8a261
 front.webCopyFor ko 9e522b652bd42cdd

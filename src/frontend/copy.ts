@@ -857,7 +857,7 @@ const RU: WebCopy = {
   offerPerkVerdict: "Честные макросы для каждого приёма пищи",
   offerPerkPlan: "План меняется вместе с весом",
   offerPerkSpud: "Calodex — всегда, когда спросишь",
-  offerToday: "Сегодня", offerBeforeEnd: "До конца пробного периода", offerDayAfter: "День {n}",
+  offerToday: "Сегодня", offerBeforeEnd: "До конца триала", offerDayAfter: "День {n}",
   offerBeforeText: "Мы напомним",
   offerDay8Text: "Дальше начинается оплата · отменить можно в любой момент",
   offerPlans: "Твой тариф",
@@ -870,7 +870,7 @@ const RU: WebCopy = {
   photoWithCaption: "Фото: {text}",
   statProtein: "Белки", statCarbs: "Углеводы", statFat: "Жиры",
   refusals: {
-    "subscription-required": "Чтобы записывать еду, нужна подписка. Начни бесплатный пробный период, чтобы продолжить.",
+    "subscription-required": "Чтобы записывать еду, нужна подписка. Начни бесплатный триал, чтобы продолжить.",
     "unsupported-image": "Этот формат не поддерживается. Нужен JPEG, PNG или WebP.",
     "not-food": "На этом фото еды нет.",
     "unreadable-label": "Не удалось прочитать эту этикетку.",
