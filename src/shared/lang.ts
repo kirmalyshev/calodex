@@ -964,7 +964,7 @@ const RU_GENDERED_GATED = new RegExp(
 
 // Nouns that end in `-л` and are not verbs. `ккал` is the one this corpus actually contains; the
 // list is short on purpose, because a long one is a way of not fixing the pattern.
-const RU_NOT_A_VERB = new Set(["ккал", "стол", "угол", "мл", "рубль", "апрель", "июль"]);
+const RU_NOT_A_VERB = new Set(["ккал", "стол", "угол", "мл", "рубль", "апрель", "июль", "триал", "триала"]);
 
 // STANDALONE: short adjectives and participles. `Готов?` is a whole screen's call to action and
 // carries no pronoun at all, and `поправь граммы сам` has only an imperative. These are gendered
