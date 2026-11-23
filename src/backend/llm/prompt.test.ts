@@ -160,6 +160,8 @@ test("the coach prompt answers a pre-meal question as intent, and names logged m
     "Should I eat this?",
     "not yet eaten",
     "against what is left today",
+    "already inside \"Left today\"",
+    "never subtract it a second time",
     "Never say the plate is still to come",
     "by its dish and its time",
   ]) expect(SYSTEM_COACH).toContain(rule);
