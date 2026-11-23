@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
 import { NOTIFICATION_COPY } from "../../shared/notifications.ts";
 import { PAY_COPY } from "../../shared/app/pay-copy.ts";
 import { YOU_COPY } from "../../shared/app/you-copy.ts";
@@ -24,6 +25,13 @@ describe("Russian trial word (#3393)", () => {
   for (const [name, root] of Object.entries(roots)) {
     it(`${name} has no «пробный период»`, () => {
       expect(strings(root).filter((s) => /пробн/i.test(s))).toEqual([]);
+    });
+  }
+  // The Lingui catalog feeds the chat thread; the compiled file is what ships, so check both.
+  for (const f of ["messages.po", "messages.ts"]) {
+    it(`locales/ru/${f} has no «пробн»`, () => {
+      const text = readFileSync(new URL(`../../shared/locales/ru/${f}`, import.meta.url), "utf8");
+      expect(text.match(/.{0,20}пробн.{0,20}/gi) ?? []).toEqual([]);
     });
   }
   it("uses «триал» in the trial-end push", () => {
