@@ -6,7 +6,7 @@
 
 import { beforeEach, describe, expect, it } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
-import { HEALTH_RETENTION_DAYS, explainTargets, type HealthDay, type MealRecord, dateMinus, localDate } from "@eait/shared";
+import { HEALTH_RETENTION_DAYS, explainTargets, type HealthDay, type MealRecord, dateMinus, localDate, localTime } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import type { CoachInput, CoachTools, LlmPorts, TextInput } from "../llm/port.ts";
@@ -86,7 +86,8 @@ describe("the coach turn", () => {
     const { llm, seen } = recordingCoach();
     const d = makeDeps(llm);
     const userId = await onboard();
-    const m = meal(userId);
+    // A fixed ts, so the time is proven to come from the meal and not from the clock.
+    const m = meal(userId, { ts: "2026-09-02T10:30:00.000Z" });
     await store.insertMeal(m);
     await store.insertMeal(meal(userId, { date: dateMinus(today(), 1), kcal: 1800, protein_g: 90 }));
     await handleText(d, userId, { text: "is this ok?", focusMealId: m.id });
@@ -95,7 +96,7 @@ describe("the coach turn", () => {
     expect(c.localTime).toMatch(/^\d\d:\d\d$/);
     expect(c.targets.kcal).toBeGreaterThan(0);
     expect(c.basis.floorKcal).toBe(1200);
-    expect(c.todayMeals).toEqual([{ time: expect.stringMatching(/^\d\d:\d\d$/), items: ["Rice", "Chicken"], kcal: 500, protein_g: 40 }]);
+    expect(c.todayMeals).toEqual([{ time: localTime(CONFIG.timezone, new Date("2026-09-02T10:30:00.000Z")), items: ["Rice", "Chicken"], kcal: 500, protein_g: 40 }]);
     expect(c.week.map((w) => w.kcal).sort()).toEqual([1800, 500]);
     expect(c.focusMeal?.kcal).toBe(500);
     expect(c.projection).toMatch(/^around [A-Z][a-z]+ \d{4}$/);
