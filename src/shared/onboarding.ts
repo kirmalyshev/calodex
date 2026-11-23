@@ -2303,6 +2303,11 @@ export interface OnboardingEvent {
    * because only the client knows which slot it rendered; it labels the row and gates nothing.
    */
   template?: string;
+  /**
+   * The offering the paywall had drawn when the step happened (ieat-app#3401). Client-reported like
+   * `template`, for the same reason: only the device knows which offering RevenueCat handed it.
+   */
+  paywallOffering?: string;
 }
 
 /** `key@version`, the one shape a reported template takes. */

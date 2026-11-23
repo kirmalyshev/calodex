@@ -305,7 +305,7 @@ msgstr "Zabeleženo."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Za beleženje obrokov potrebuješ naročnino. Za nadaljevanje začni brezplačno preizkusno obdobje na spletu."
+msgstr "Za beleženje obrokov potrebuješ naročnino. Za nadaljevanje začni brezplačni trial na spletu."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -370,7 +370,7 @@ msgstr "Po načrtu."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Še nekaj, za kar bo iOS kmalu vprašal: obvestila. Eno na dan in nikoli več — sporočilo ob 20:30 in opomnik dan pred koncem preizkusnega obdobja, če ga imaš. Nič drugega, nikoli."
+msgstr "Še nekaj, za kar bo iOS kmalu vprašal: obvestila. Eno na dan in nikoli več — sporočilo ob 20:30 in opomnik dan pred koncem triala, če ga imaš. Nič drugega, nikoli."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -560,7 +560,7 @@ msgstr "Preveč poskusov s tega Telegrama. Malo počakaj, nato znova pritisni po
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Preizkusno obdobje teče — {price}, ko se konča, razen če ga ustaviš. Opomnim te dan pred koncem, nikoli dan po njem."
+msgstr "Trial teče — {price}, ko se konča, razen če ga ustaviš. Opomnim te dan pred koncem, nikoli dan po njem."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -223,7 +223,7 @@ describe("the context stamped on events (ieat-app#3196)", () => {
     await store.startOnboardingExperiment(id);
     await store.setSwitch("onboarding.experiments", true, userId);
     await store.putOnboardingAssignment(userId, id, 42);
-    await store.recordOnboardingServed(userId, { contentVersion: 42, lang: "en", surface: "app", screens: {} });
+    await store.recordOnboardingServed(userId, { contentVersion: 42, lang: "en", surface: "app", screens: {}, experiment: { id, arm: "42" } });
     await store.patchProfile(userId, { country: "de" });
 
     await recordOnboardingEvents(deps, userId, [event({
@@ -232,7 +232,7 @@ describe("the context stamped on events (ieat-app#3196)", () => {
     })], request);
 
     expect(await stored()).toEqual([{
-      ...request, lang: "en", country: "de", experiment_id: id, arm: "42", template: "x@1",
+      ...request, lang: "en", country: "de", experiment_id: id, arm: "42", template: "x@1", paywall_offering: null,
     }]);
   });
 
@@ -241,6 +241,15 @@ describe("the context stamped on events (ieat-app#3196)", () => {
       event({ id: "t1", template: "welcome-hero@3" }), event({ id: "t2", template: "<b>@1" }), event({ id: "t3", template: 7 }),
     ], request);
     expect((await stored()).map((c) => c.template).sort()).toEqual(["welcome-hero@3", null, null].sort());
+  });
+
+  it("keeps the paywall offering the client says it drew, bounded (ieat-app#3401)", async () => {
+    await recordOnboardingEvents(deps, userId, [
+      event({ id: "o1", paywallOffering: "exit_offer" }), event({ id: "o2", paywallOffering: "x".repeat(200) }),
+      event({ id: "o3", paywallOffering: 7 }), event({ id: "o4" }),
+    ], request);
+    expect((await stored()).map((c) => c.paywall_offering).sort())
+      .toEqual(["exit_offer", "x".repeat(72), null, null].sort());
   });
 
   it("names a template only when the client reported one for that screen, never the account's served list", async () => {
@@ -258,12 +267,12 @@ describe("the context stamped on events (ieat-app#3196)", () => {
     } finally {
       errors.mockRestore();
     }
-    expect(await stored()).toEqual([{ ...request, lang: null, country: null, experiment_id: null, arm: null, template: null }]);
+    expect(await stored()).toEqual([{ ...request, lang: null, country: null, experiment_id: null, arm: null, template: null, paywall_offering: null }]);
   });
 
   it("names no arm while the experiments switch is off", async () => {
     await recordOnboardingEvents(deps, userId, [event()], request);
-    expect(await stored()).toEqual([{ ...request, lang: "en", country: null, experiment_id: null, arm: null, template: null }]);
+    expect(await stored()).toEqual([{ ...request, lang: "en", country: null, experiment_id: null, arm: null, template: null, paywall_offering: null }]);
   });
 });
 

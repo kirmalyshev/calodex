@@ -183,13 +183,27 @@ const queryContext = (nameEn: string): QueryContext => {
  * the query's noun is no staple. "Basmati rice, cooked" for "rice" and "Whole milk" for "milk" are
  * the food itself, and "Plain cake, lemon cake" names it again in a later segment.
  */
-const namesAsModifier = (name: string, head: string): boolean => {
-  const segs = name.split(",").map((seg, i) => ({ seg, hit: words(seg).some((w) => norm(w) === head), i }));
+/** A segment that qualifies the food rather than names it: "with ...", "no ...", or a USDA "; ..." clause. */
+/**
+ * Nouns for a DISH, where a staple in front names a different dish ("Semolina dumplings", "Potato
+ * pancake", "Potato salad") — unlike a snack or product, where it only names the kind ("Potato
+ * crisps", "Wheat bread", "Corn tortilla"). Normed stems.
+ */
+const DISH_NOUNS = new Set(["dumpling", "pancake", "salad", "pudding", "fritter", "croquette"].map(norm));
+const QUALIFIER = /^\s*(?:;|(?:with|without|no)\b)/i;
+const namesAsModifier = (name: string, head: string, query: readonly string[]): boolean => {
+  let afterSemi = false;
+  const segs = name.split(/,|(?=;)/).map((seg, i) => {
+    afterSemi ||= seg.trimStart().startsWith(";");
+    return { seg, hit: words(seg).some((w) => norm(w) === head), i, qual: afterSemi || QUALIFIER.test(seg) };
+  });
   const staple = (w: string | undefined) => w !== undefined && !SPECIES.has(w) && (SERVES_COOKED.has(w) || SERVES_COOKED.has(singular(w)));
   const first = words(segs[0]!.seg)[0];
-  const modifier = (x: { seg: string; hit: boolean; i: number }) =>
-    x.hit && (x.i === 0 ? staple(first) && first !== undefined && norm(first) !== head && !staple(head) : /^\s*with\b/i.test(x.seg));
-  return segs.some(modifier) && !segs.some((x) => x.i > 0 && x.hit && !/^\s*with\b/i.test(x.seg));
+  const holdsAll = (x: { seg: string }) => query.every((q) => words(x.seg).some((w) => norm(w) === q));
+  const modifier = (x: { seg: string; hit: boolean; i: number; qual: boolean }) =>
+    x.hit && (x.i === 0 ? DISH_NOUNS.has(head) && staple(first) && first !== undefined && !query.includes(norm(first)) && !staple(head) : x.qual);
+  // A later segment that carries EVERY query word names the food again ("Plain cake, lemon cake").
+  return segs.some(modifier) && !segs.some((x) => x.i > 0 && !x.qual && holdsAll(x));
 };
 
 interface Scored { s: number; sHard: number; extras: number; headOk: boolean }
@@ -218,16 +232,15 @@ function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored
   // natural-order one (`food-index.ts`). "Sugar-apples" is a sweetsop, not sugar — a hyphenated
   // head whose far half the name never said is a head the name never said.
   const headOk = a.headParts ? a.headParts.every((p) => qAll.has(norm(p))) : qAll.has(a.headStem!);
-  if (!headOk) {
-    // #903: "dumpling" is not "Semolina dumplings, raw" and "sauce" is not "Ham, ..., with sauce": the
-    // query's head noun inside the row's head phrase (first comma segment) or a "with ..." qualifier
-    // makes a different food. USDA's inverted "Nuts, almond butter" names it as the food itself and
-    // only takes the head penalty.
-    if (qHead !== undefined && a.flags.has(qHead) && namesAsModifier(f.name_en ?? f.name, qHead)) {
-      out.s = out.sHard = -Infinity; out.extras = 0; out.headOk = false; return;
-    }
-    s -= 3;
+  // #903: "dumpling" is not "Semolina dumplings", "sauce" is not "Ham, ...; no sauce": a row that is
+  // led by a staple of its own while the query's noun is none, or that names the noun only in a
+  // "with" / "without" / "no" qualifier, is another food. USDA's inverted "Nuts, almond butter" and
+  // "Basmati rice, cooked" name the food itself and are untouched. This runs whether or not the
+  // head matched: "Semolina dumplings raw" is natural order, and its head IS "dumplings".
+  if (qHead !== undefined && a.flags.has(qHead) && namesAsModifier(f.name_en ?? f.name, qHead, qArr)) {
+    out.s = out.sHard = -Infinity; out.extras = 0; out.headOk = false; return;
   }
+  if (!headOk) s -= 3;
 
   s -= 4 * (a.nComposites - mComposite);
   s -= 4 * (a.nPortions - mPortion);
