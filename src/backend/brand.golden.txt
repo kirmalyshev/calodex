@@ -1166,7 +1166,7 @@ shared.threadCopyFor pa 8b125f7096abd9b0
 shared.threadCopyFor ta a71a9ffff193e414
 shared.threadCopyFor te 0ee6a07c5a32b612
 shared.threadCopyFor ar 6fdaf17f6ca3f6b7
-shared.threadCopyFor bg 35e97d6f525c2636
+shared.threadCopyFor bg 8f0c10a20a4dde5e
 shared.threadCopyFor sq 08597dc3b238ffa1
 shared.updateCopyFor en 3eaefc2b644bff7d
 shared.updateCopyFor fr a008492ea25d279e

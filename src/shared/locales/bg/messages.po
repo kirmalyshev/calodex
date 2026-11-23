@@ -120,7 +120,7 @@ msgstr "„{note}“ — отбелязано е, влиза в сметката
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}ккал — около {share} от дневния план. С по-леко следващо хранене всичко се балансира."
+msgstr "{kcal}ккал, около {share} от дневния план. С по-леко следващо хранене всичко се балансира."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
