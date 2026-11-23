@@ -520,6 +520,11 @@ msgstr "Das war heute dein letztes Foto — dein Tageskontingent wird um Mittern
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Das liegt an mir. Nichts wurde gezählt — versuch es in einer Weile noch einmal."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Limit erreicht. Versuch es später noch einmal."
 

@@ -514,6 +514,11 @@ msgstr "ఈరోజుకు అదే మీ చివరిది — మీ 
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "ఇది నా వైపున ఉన్న సమస్య. ఏమీ లెక్కించబడలేదు — కొద్దిసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "ప్రస్తుతానికి ఇదే పరిమితి. తర్వాత మళ్ళీ ప్రయత్నించండి."
 

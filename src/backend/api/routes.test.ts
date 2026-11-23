@@ -2569,7 +2569,7 @@ describe("store-review sign-in (eait#713)", () => {
     const h = createRouter(
       {
         store: s, config: { ...CONFIG, authRateLimitPerHour: 1000, ...overrides }, llm: demoPorts(), push: fakePush(),
-        mail: { async sendSignInCode(to, code) { sent.push({ to, code }); } },
+        mail: { async sendSignInCode(to, code) { sent.push({ to, code }); }, async sendAlert() {} },
       },
       s, testVerifier,
     );

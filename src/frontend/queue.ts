@@ -54,6 +54,8 @@ interface Job {
   // Landing move owed to this row (#1354): its photo stays hidden until the flyer lands.
   flyFrom: FlyAt | null;
   update: Update | null;
+  /** `provider-down` — OUR side refused (ieat-app#3435): the row draws its own honest words. */
+  down?: boolean;
 }
 
 // Rows live in this tab; a reload gets the server's running jobs back through `restoreJobs`.
@@ -265,8 +267,9 @@ async function follow(job: Job): Promise<void> {
 /** An update lands as the meal's new numbers — a `redated` note moved it off the day — anything else keeps it as it was. */
 function settleUpdate(job: Job, result: PhotoLast | MealUpdateLast | null, words: string | null): void {
   if (result?.kind === "updated" || result?.kind === "redated" || result?.kind === "target-gone") { drop(job); redrawScreen(); return; }
-  const failed = result === null || result.kind === "outcome-unknown" || result.kind === "analysis-failed";
+  const failed = result === null || result.kind === "outcome-unknown" || result.kind === "analysis-failed" || result.kind === "provider-down";
   job.state = failed ? "failed" : "refused";
+  job.down = result?.kind === "provider-down";
   job.words = result === null ? words
     : result.kind === "answered" ? result.text
     : result.kind === "proposed" ? updateCopyFor(lang).refusedOtherMeal
@@ -298,6 +301,7 @@ async function settle(job: Job, result: PhotoLast | MealUpdateLast | null, words
   }
   analytics.capture("meal_photo_failed", { result: result === null ? "refused" : result.kind === "not-food" ? "refused" : result.kind });
   job.state = result?.kind === "not-food" ? "refused" : "failed";
+  job.down = result?.kind === "provider-down";
   job.words = result === null || result.kind === "not-food" || result.kind === "analysis-failed" || result.kind === "outcome-unknown"
     ? words : refusalWords(new ApiError(0, { error: result.kind }, result.kind));
   changed();
@@ -309,7 +313,7 @@ function remove(job: Job): void {
 }
 
 function retry(job: Job): void {
-  Object.assign(job, { id: crypto.randomUUID(), step: 1, line: null, items: [], state: "reading", words: null });
+  Object.assign(job, { id: crypto.randomUUID(), step: 1, line: null, items: [], state: "reading", words: null, down: false });
   changed();
   void run(job);
 }
@@ -429,7 +433,7 @@ export function updateRowEl(job: Job): HTMLElement {
   th.append(glyph("!"));
   const failed = job.state === "failed";
   mm.append(el("span", "qstep still ink", failed ? U.failedTitle : U.refusedTitle),
-    el("span", "qstep still", failed ? (u.kind === "note" ? U.failedNote : U.failedBody) : job.words ?? U.failedBody));
+    el("span", "qstep still", failed ? (job.down ? U.reasons.error : u.kind === "note" ? U.failedNote : U.failedBody) : job.words ?? U.failedBody));
   const act = el("div", "qact");
   const button = (text: string, on: () => void) => { const b = el("button", "", text); b.addEventListener("click", on); act.append(b); };
   // Edit brings what was sent back in its own field, for a refusal as well as a failure.
@@ -524,8 +528,8 @@ function rowEl(job: Job): HTMLElement {
   th.append(glyph("!"));
   const refused = job.state === "refused";
   mm.append(
-    el("b", "", refused ? Q.notMeal : Q.unread),
-    step(job.words !== null && !refused ? job.words : Q.nothingCounted, true, true),
+    el("b", "", refused ? Q.notMeal : job.down ? Q.downTitle : Q.unread),
+    step(job.down ? Q.downNote : job.words !== null && !refused ? job.words : Q.nothingCounted, true, true),
     refused || job.photos.length === 0
       ? actions(Q.retake, () => { remove(job); location.hash = "#/log"; })
       : actions(homeCopyFor(lang).tryAgain, () => retry(job)),

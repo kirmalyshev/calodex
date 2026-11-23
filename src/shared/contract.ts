@@ -49,6 +49,12 @@ export const REFUSAL_STATUS = {
   "cap-exceeded": 429,
   "subscription-required": 402,
   "analysis-failed": 502,
+  /**
+   * The provider's own account refused (401/402 — out of credit, a dead key, ieat-app#3435).
+   * 503 says it plainly: OUR service is unavailable, try later — the honest state the generic
+   * `analysis-failed` could not draw. The charge is refunded and the operator is alerted.
+   */
+  "provider-down": 503,
   "unsupported-image": 415,
   /** A label scan that read no label (ieat-app#2087): refused unbilled, the same 422 as `not-food`. */
   "unreadable-label": 422,

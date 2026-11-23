@@ -269,7 +269,7 @@ export function localAgentPorts(opts: Options): LlmPorts {
     modelServed: call.model ?? null, provider: opts.provider,
     promptTokens: null, completionTokens: null, reasoningTokens: null, costUsd: d.costUsd,
     msFirstByte: null, msFirstItem: null, msTotal: Date.now() - d.startedAt,
-    status, attempt: d.attempt, fallbackUsed: false, generationId: null,
+    status, attempt: d.attempt, fallbackUsed: false, generationId: null, errorBody: null,
     images: call.images.length,
     imageBytes: call.images.reduce((n, b) => n + b.byteLength, 0),
   });

@@ -39,5 +39,23 @@ export function resendMail(opts: { apiKey: string; from: string }): MailPort {
       });
       if (!res.ok) throw new Error(`resend answered ${res.status}`);
     },
+
+    async sendAlert(to, subject, text) {
+      const res = await fetch(RESEND_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${opts.apiKey}`,
+        },
+        body: JSON.stringify({
+          from: currentBrand().app === DEFAULT_APP ? opts.from : BRANDS[currentBrand().app].mailFrom,
+          to: [to],
+          subject,
+          text,
+        }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error(`resend answered ${res.status}`);
+    },
   };
 }

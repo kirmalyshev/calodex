@@ -23,7 +23,12 @@ export function chooseMail(config: Pick<Config, "mailProvider" | "resendApiKey" 
     return resendMail({ apiKey: config.resendApiKey, from: config.mailFrom });
   }
   if (config.mailProvider === "off") {
-    return { async sendSignInCode() { throw new Error("[eait] email sign-in is off on this instance"); } };
+    return {
+      async sendSignInCode() { throw new Error("[eait] email sign-in is off on this instance"); },
+      // An alert still means what it says on an instance with mail off — it lands on the log,
+      // which is the whole channel an operator without Resend has.
+      async sendAlert(_to, subject, text) { console.error(`[eait] ALERT (mail off): ${subject} — ${text}`); },
+    };
   }
   return logMail();
 }

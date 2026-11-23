@@ -516,21 +516,23 @@ export function createChatCore(deps: ChatCoreDeps): ChatCore {
           // if it did reach the server, the re-send is answered from that turn rather than run again.
           // Not kept: the bubble is back, marked below, and its words are one tap from the box.
           if (attemptOf({ kind: failure.kind }) === "retry" && await keep()) return;
-          if (failure.kind === "analysis-failed") {
-            push({ id: uid(), role: "error", kind: "analysis-failed" });
+          if (failure.kind === "analysis-failed" || failure.kind === "provider-down") {
+            push({ id: uid(), role: "error", kind: failure.kind });
             // Her words survive a restart: held in the outbox, drawn failed with Resend/Delete (`keptState`).
-            if (await keep({ kind: "analysis-failed" })) return;
+            if (await keep({ kind: failure.kind })) return;
           } else {
             pushFailure(e, keepsItsWords(failure.kind) ? asked : undefined);
             // The server has just refused an unpaid account; the profile the composer reads may not know yet.
             if (failure.kind === "subscription-required") void deps.refreshProfile();
           }
-          if (failure.refusal && failure.kind !== "analysis-failed") {
+          if (failure.refusal && failure.kind !== "analysis-failed" && failure.kind !== "provider-down") {
             // A refusal IS the answer: the turn was sent, read, and refused on purpose, and the
             // server kept no line for it. The bubble stays plain beside the notice and goes with the
             // next page — never "not sent", which would offer a retry of a turn that was answered.
             // `analysis-failed` is the exception: an upstream that fell over, nothing kept, and the
-            // notice promises a retry — so it takes the "not sent" path below.
+            // notice promises a retry — so it takes the "not sent" path below. `provider-down` rides
+            // beside it: the provider's refusal WAS an upstream failure, and its words promise the
+            // same try-again-in-a-bit.
             //
             // EXCEPT THE ONE REFUSAL THE USER CAN ANSWER (#261). The ask under these words carries a
             // button that takes their money, and the page that lands seconds later drops every live

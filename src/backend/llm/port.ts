@@ -123,6 +123,12 @@ export interface LlmCallMetric {
   generationId: string | null;
   images: number;
   imageBytes: number;
+  /**
+   * What the provider said on a call it refused — its own error body, truncated and scrubbed of
+   * token shapes before it is stored (ieat-app#3435). Null when the call answered, and for
+   * failures that never reached the wire (timeout, parse_error): those have no provider words.
+   */
+  errorBody: string | null;
 }
 export type OnCall = (metric: LlmCallMetric) => void;
 
@@ -149,6 +155,14 @@ export class GatewayRefusal extends Error {
     this.name = "GatewayRefusal";
   }
 }
+
+/**
+ * The gateway statuses that name the OPERATOR's account rather than a model that fell over:
+ * 401 is the key itself refused, 402 is out of credit (ieat-app#3435). A turn that hit one was
+ * billed nothing and is refunded — and the operator is alerted on the metric, not on a funnel
+ * somebody reads a week later. 429/503 are load, not credit, and stay generic analysis-failed.
+ */
+export const CREDIT_CLASS = new Set([401, 402]);
 
 export interface PhotoInput {
   /** Several images are ANGLES OF ONE MEAL, not several meals. One analysis, one billed call. */

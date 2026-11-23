@@ -77,9 +77,17 @@ export type Refusal =
    * The engine failed to produce an analysis. Already logged; the surface just apologises.
    * `retryable` is set only when the gateway said overloaded (429/503) before generating anything:
    * nothing was billed or charged, so sending the same photo again is free. Absent for every
-   * failure that may have cost money, and for one a re-send cannot fix (402, 401).
+   * failure that may have cost money, and for credit-class answers — a re-send cannot fix those;
+   * they are `provider-down` below.
    */
   | { kind: "analysis-failed"; retryable?: true }
+  /**
+   * The provider refused on the OPERATOR's account — key rejected or out of credit (401/402,
+   * ieat-app#3435) before generating anything. Not her failure and not generic `analysis-failed`:
+   * the charge came back, the operator was alerted on the call's metric, and the honest state says
+   * "our side, try again in a bit" — a re-send now would only meet the same refusal.
+   */
+  | { kind: "provider-down" }
   /** The upload is not a JPEG, PNG or WebP. Refused before anything is charged. */
   | { kind: "unsupported-image" }
   /**
@@ -301,7 +309,7 @@ export const outcomeUnknown = (kind: string): boolean => kind === "internal" || 
  */
 export const keptState = (held: { kind: string } | undefined): "pending" | "failed" | "refused" =>
   held === undefined ? "pending"
-    : outcomeUnknown(held.kind) || held.kind === "analysis-failed" ? "failed" : "refused";
+    : outcomeUnknown(held.kind) || held.kind === "analysis-failed" || held.kind === "provider-down" ? "failed" : "refused";
 
 /** One refused turn, as every surface names it: `kind` is `"offline"` when nothing reached the server. */
 export interface RefusedTurn {

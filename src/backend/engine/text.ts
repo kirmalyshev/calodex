@@ -19,7 +19,7 @@ import { itemScanner } from "../llm/partial.ts";
 import { clampDayOffset, emptyEstimate, type AnalyzedMeal } from "../llm/port.ts";
 import { prepareAnalysis } from "./analysis.ts";
 import { groundWhenOn } from "./ground.ts";
-import { charge, checkCaps, refundGatewayRefusal, type JobCharge } from "./caps.ts";
+import { charge, checkCaps, refundGatewayRefusal, refusedOutcome, type JobCharge } from "./caps.ts";
 import { applyCorrection, changeLine, dropOtherPendings, gatedVerdicts, redateMeal, sumTotals, toAnalysis } from "./meals.ts";
 import { afterCorrection, remember } from "./chat.ts";
 import { ROUTER_RECENT_LINES, coachTurn, recentLines } from "./coach.ts";
@@ -207,7 +207,8 @@ export async function textTurn(
     const refunded = fresh && await refundGatewayRefusal(deps, userId, analysisId, e);
     console.error(`[eait] text routing failed: ${(e as Error).message}${refunded ? " (analysis refunded)" : ""}`);
     reportTiming();
-    return { kind: "analysis-failed" };
+    // Same rule as the photo path (ieat-app#3435): a refunded credit-class refusal is our side.
+    return refusedOutcome(e, refunded);
   }
 
   // The model that wrote the answer, when there is one — the coach's, or the router's own sentence.

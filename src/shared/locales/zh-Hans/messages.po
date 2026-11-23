@@ -514,6 +514,11 @@ msgstr "这是你今天的最后一次——每日额度会在午夜重置。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "问题出在我这边。没有计入任何内容——请稍后重试。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "暂时已达上限。请稍后再试。"
 

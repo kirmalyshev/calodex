@@ -490,6 +490,8 @@ export interface LlmCall {
   generationId: string | null;
   images: number;
   imageBytes: number;
+  /** The provider's own error body on a call it refused — truncated and scrubbed (ieat-app#3435). */
+  errorBody: string | null;
 }
 
 export type StoredLlmCall = LlmCall & { id: string; createdAt: number };

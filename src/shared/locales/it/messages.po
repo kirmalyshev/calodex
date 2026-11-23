@@ -520,6 +520,11 @@ msgstr "Quella era l'ultima di oggi — il tuo limite giornaliero riparte a mezz
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "È un problema mio. Non è stato contato nulla — riprova tra poco."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Per ora il limite è questo. Riprova più tardi."
 

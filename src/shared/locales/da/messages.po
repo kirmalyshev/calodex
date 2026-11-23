@@ -514,6 +514,11 @@ msgstr "Det var dit sidste i dag — din daglige kvote nulstilles ved midnat."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Fejlen ligger hos mig. Intet blev talt — prøv igen om lidt."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Det er grænsen for nu. Prøv igen senere."
 

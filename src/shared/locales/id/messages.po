@@ -520,6 +520,11 @@ msgstr "Itu yang terakhir untuk hari ini — jatah harianmu mulai lagi tengah ma
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Ini kesalahan di pihak saya. Tidak ada yang dihitung — coba lagi sebentar lagi."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Untuk sekarang itu batasnya. Coba lagi nanti."
 

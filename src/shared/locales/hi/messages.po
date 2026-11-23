@@ -514,6 +514,11 @@ msgstr "आज के लिए यह आपका आख़िरी था �
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "यह गड़बड़ी मेरी तरफ़ से है। कुछ भी नहीं गिना गया — थोड़ी देर बाद फिर कोशिश करें।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "अभी के लिए इतनी ही सीमा है। बाद में फिर कोशिश करें।"
 

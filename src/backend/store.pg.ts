@@ -1059,8 +1059,12 @@ create table if not exists llm_calls (
   generation_id  text,
   images         integer not null default 0,
   image_bytes    bigint not null default 0,
+  error_body     text,
   created_at     timestamptz not null default now()
 );
+-- The provider's own words on a call it refused (#3435) — the "out of credit" inside a 402.
+-- Nullable by design: an answered call, and a failure that never reached the wire, has no body.
+alter table llm_calls add column if not exists error_body text;
 create index if not exists llm_calls_analysis_idx on llm_calls(analysis_id);
 create index if not exists llm_calls_created_idx on llm_calls(created_at);
 create index if not exists llm_calls_user_idx on llm_calls(user_id, id);
@@ -5617,12 +5621,12 @@ export async function postgresStore(
           user_id, analysis_id, kind, model_requested, model_served, provider,
           prompt_tokens, completion_tokens, reasoning_tokens, cost_usd,
           ms_first_byte, ms_first_item, ms_total, status, attempt, fallback_used,
-          generation_id, images, image_bytes
+          generation_id, images, image_bytes, error_body
         ) values (
           ${userId}, ${call.analysisId}, ${call.kind}, ${call.modelRequested}, ${call.modelServed}, ${call.provider},
           ${call.promptTokens}, ${call.completionTokens}, ${call.reasoningTokens}, ${call.costUsd},
           ${call.msFirstByte}, ${call.msFirstItem}, ${call.msTotal}, ${call.status}, ${call.attempt}, ${call.fallbackUsed},
-          ${call.generationId}, ${call.images}, ${call.imageBytes}
+          ${call.generationId}, ${call.images}, ${call.imageBytes}, ${call.errorBody}
         ) returning id`;
       return rows.length > 0;
     },
@@ -5632,7 +5636,7 @@ export async function postgresStore(
         select id, analysis_id, kind, model_requested, model_served, provider,
                prompt_tokens, completion_tokens, reasoning_tokens, cost_usd,
                ms_first_byte, ms_first_item, ms_total, status, attempt, fallback_used,
-               generation_id, images, image_bytes, created_at
+               generation_id, images, image_bytes, error_body, created_at
           from llm_calls where user_id = ${userId} order by id`;
       return (rows as Record<string, unknown>[]).map((r) => ({
         id: String(r.id),
@@ -5654,6 +5658,7 @@ export async function postgresStore(
         generationId: r.generation_id === null ? null : String(r.generation_id),
         images: num(r.images),
         imageBytes: num(r.image_bytes),
+        errorBody: r.error_body === null ? null : String(r.error_body),
         createdAt: (r.created_at as Date).getTime(),
       }));
     },

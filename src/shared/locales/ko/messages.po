@@ -514,6 +514,11 @@ msgstr "오늘의 마지막 기록이었어요. 하루 한도는 자정에 초�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "문제는 제 쪽에 있어요. 아무것도 계산되지 않았어요 — 잠시 후 다시 시도해 주세요."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "지금은 한도에 도달했어요. 나중에 다시 시도하세요."
 

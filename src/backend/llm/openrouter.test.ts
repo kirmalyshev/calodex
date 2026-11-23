@@ -729,6 +729,28 @@ describe("streaming", () => {
     await expect(streamPorts(impl).analyzePhoto(PHOTO_INPUT, () => {})).rejects.toThrow(/truncated/);
     expect(bodies).toHaveLength(1);
   });
+
+  // #3435: a provider can fail AFTER the stream opened — an `error` chunk where content should be.
+  // That failure has no HTTP status line, but the row still keeps the provider's own words.
+  test("a mid-stream provider error lands on the call's row, scrubbed", async () => {
+    const impl = (async () => {
+      const lines = [
+        `data: ${JSON.stringify({ choices: [{ delta: { content: "{\"isFood\":t" } }] })}\n\n`,
+        `data: ${JSON.stringify({ error: { message: "provider died mid-stream, auth was Bearer sk-or-v1-secretsecret", code: 500 } })}\n\n`,
+        "data: [DONE]\n\n",
+      ];
+      const body = new ReadableStream<Uint8Array>({
+        start(ctrl) { for (const l of lines) ctrl.enqueue(new TextEncoder().encode(l)); ctrl.close(); },
+      });
+      return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+    }) as unknown as typeof fetch;
+    const seen: import("./port.ts").LlmCallMetric[] = [];
+    const onCall = (m: import("./port.ts").LlmCallMetric) => { seen.push(m); };
+    await streamPorts(impl).analyzePhoto({ ...PHOTO_INPUT, onCall }, () => {}).then(() => null, () => null);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((m) => m.errorBody?.includes("provider died mid-stream"))).toBe(true);
+    expect(seen.every((m) => !m.errorBody?.includes("sk-or-v1-secretsecret"))).toBe(true);
+  });
 });
 
 describe("reasoning effort", () => {
@@ -1002,6 +1024,35 @@ describe("call metrics", () => {
     // Nothing was generated, so nothing was priced — and the row says so rather than guessing.
     expect(seen[0]!.costUsd).toBeNull();
     expect(seen[0]!.modelServed).toBeNull();
+  });
+
+  // #3435: the row a refused call writes keeps what the provider said — truncated, and with the
+  // token-bearing shape blanked, because the same body the operator needs to read "out of credit"
+  // in is also a place a leaked credential could hide.
+  test("a refused call's row carries the provider's error body, scrubbed", async () => {
+    const llm = openRouterPorts({
+      apiKey: "test-key-not-a-secret", model: "test-model", chatModel: "test-chat-model",
+      baseUrl: "https://example.invalid/v1/chat/completions", timeoutMs: 5000, maxTokens: 4321,
+      fetchImpl: (async () => new Response(
+        '{"error":{"message":"You have insufficient credits, auth was Bearer sk-or-v1-secretsecret"}}',
+        { status: 402 })) as unknown as typeof fetch,
+    });
+    const { seen, onCall } = collect();
+    await llm.analyzePhoto({ ...PHOTO_INPUT, onCall }).then(() => null, () => null);
+    expect(seen[0]!.status).toBe("http_402");
+    expect(seen[0]!.errorBody).toContain("insufficient credits");
+    expect(seen[0]!.errorBody).not.toContain("sk-or-v1-secretsecret");
+  });
+
+  test("a provider body is capped on the row, not stored whole", async () => {
+    const llm = openRouterPorts({
+      apiKey: "test-key-not-a-secret", model: "test-model", chatModel: "test-chat-model",
+      baseUrl: "https://example.invalid/v1/chat/completions", timeoutMs: 5000, maxTokens: 4321,
+      fetchImpl: (async () => new Response("x".repeat(5000), { status: 503 })) as unknown as typeof fetch,
+    });
+    const { seen, onCall } = collect();
+    await llm.analyzePhoto({ ...PHOTO_INPUT, onCall }).then(() => null, () => null);
+    expect(seen[0]!.errorBody!.length).toBeLessThanOrEqual(500);
   });
 
   test("a reply that misses the schema is schema_retry, then the retry's own row", async () => {

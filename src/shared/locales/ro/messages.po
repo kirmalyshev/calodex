@@ -514,6 +514,11 @@ msgstr "Asta a fost ultima de azi — limita zilnică se resetează la miezul no
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Greșeala e de partea mea. Nu s-a numărat nimic — încearcă din nou puțin mai târziu."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Ai atins limita deocamdată. Încearcă mai târziu."
 

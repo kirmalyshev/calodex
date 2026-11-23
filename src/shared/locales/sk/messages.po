@@ -514,6 +514,11 @@ msgstr "To bolo na dnes posledné — denný limit sa vynuluje o polnoci."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Chyba je na mojej strane. Nič sa nezapočítalo — skús to znova o chvíľu."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Nateraz je to všetko. Skús to neskôr."
 

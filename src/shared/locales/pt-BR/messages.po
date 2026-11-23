@@ -514,6 +514,11 @@ msgstr "Essa foi a última de hoje — sua cota diária renova à meia-noite."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "O problema é do meu lado. Nada foi contado — tente de novo daqui a pouco."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Esse é o limite por enquanto. Tente de novo mais tarde."
 

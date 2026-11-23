@@ -514,6 +514,11 @@ msgstr "Kjo ishte e fundit për sot — kufiri yt ditor zerozohet në mesnatë."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.provider-down"
+msgstr "Problemi është tek unë. Asgjë nuk u llogarit — provo sërish pas pak."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.cap-address"
 msgstr "Ky është kufiri për tani. Provo më vonë."
 
