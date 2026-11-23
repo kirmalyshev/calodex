@@ -39,6 +39,7 @@ import {
 import { chatHistoryWithProvenance, type AdminChatEntry } from "./chat.ts";
 import type { EngineDeps } from "./deps.ts";
 import type { AdminRange } from "../store.ts";
+import type { AdminRecognition, AdminRecognitionListRow, RecognitionFilter } from "../store.ts";
 
 /**
  * The most meals one request may return.
@@ -145,4 +146,24 @@ export function adminWindowEcho(
     to: window.to?.toISOString() ?? null,
     days: window.days ?? null,
   };
+}
+
+/**
+ * THE RECOGNIZER'S OWN ANSWERS (ieat-app#3422).
+ *
+ * The review the whole feature exists for: what the model said, beside the photo and what the
+ * meal stands as now — items, matched foods, final kcal, and `corrected` for any edit after.
+ * Unscoped like every admin read here; the role is the authority, and a route still names one
+ * row at a time by id. The compression-coefficient filter joins the sibling's column
+ * (`meals.photo_compression`, ieat-app#3421): a read with no meal carries no coefficient.
+ */
+export async function adminRecognitions(
+  deps: EngineDeps, filter: RecognitionFilter,
+): Promise<AdminRecognitionListRow[]> {
+  return deps.store.adminRecognitions(filter);
+}
+
+/** One recognition's detail: the raw answer and the parsed items, with the meal as it is now. */
+export async function adminRecognition(deps: EngineDeps, id: string): Promise<AdminRecognition | null> {
+  return deps.store.adminRecognition(id);
 }

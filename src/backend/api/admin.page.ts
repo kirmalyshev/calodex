@@ -178,8 +178,8 @@ tr:last-child td { border-bottom: 0; }
 th.r, td.r { text-align: right; font-variant-numeric: tabular-nums; }
 td.drop { color: var(--bad); }
 td.empty { white-space: normal; text-align: center; color: var(--muted); padding: 28px 12px; }
-#users tbody tr, #diary tbody tr { cursor: pointer; }
-#users tbody tr:hover td, #diary tbody tr:hover td { background: var(--bg); }
+#users tbody tr, #diary tbody tr, #rec-list tbody tr { cursor: pointer; }
+#users tbody tr:hover td, #diary tbody tr:hover td, #rec-list tbody tr:hover td { background: var(--bg); }
 /* ── Campaigns: the list on the left, the open campaign on the right ── */
 .hacts { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .hacts .wide { display: inline; }
@@ -312,7 +312,7 @@ pre { overflow-x: auto; max-width: 100%; }
 .foot .grow { flex: 1; }
 .card.flush > .astate { border: 0; }
 #users input[type=checkbox] { width: 16px; height: 16px; margin: 0; }
-#users tbody tr.on td { background: var(--accent-tint); }
+#users tbody tr.on td, #rec-list tbody tr.on td { background: var(--accent-tint); }
 .apane {
   flex: 0 0 420px; width: 420px; background: var(--surface); border-radius: var(--r-card); box-shadow: 0 0 0 1px var(--hair);
   overflow: hidden; position: sticky; top: 12px; min-width: 0;
@@ -512,6 +512,7 @@ details.how p { margin-top: 8px; }
 #prompt-history summary { padding: 10px 16px; cursor: pointer; display: flex; flex-direction: column; }
 #prompt-history summary small { font-size: 12px; color: var(--muted); }
 #prompt-history pre { margin: 0; padding: 0 16px 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+#rec-detail pre { margin: 0; padding: 0 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
 @media (max-width: 760px) {
   .pcol { flex-direction: column; align-items: stretch; }
   #prompt-history { flex: 0 0 auto; width: auto; }
@@ -550,6 +551,7 @@ details.how p { margin-top: 8px; }
     <a href="#campaigns" data-nav="campaigns">Campaigns</a>
     <a href="#referrals" data-nav="referrals">Referrals</a>
     <a href="#accounts" data-nav="accounts">Accounts</a>
+    <a href="#recognitions" data-nav="recognitions">Recognition</a>
     <h6>Content</h6>
     <a href="#onboarding" data-nav="onboarding">Onboarding copy</a>
     <a href="#templates" data-nav="templates">Push templates<b id="templates-badge" class="hidden"></b></a>
@@ -568,6 +570,7 @@ details.how p { margin-top: 8px; }
         <option value="campaigns">Campaigns</option>
         <option value="referrals">Referrals</option>
         <option value="accounts">Accounts</option>
+        <option value="recognitions">Recognition</option>
       </optgroup>
       <optgroup label="Content">
         <option value="onboarding">Onboarding copy</option>
@@ -1061,12 +1064,49 @@ details.how p { margin-top: 8px; }
   <div id="state-food"></div>
   <div class="vbody hidden" id="body-food"><div class="nv food">
     <div class="card flush" id="switches"></div>
+    <div class="card flush" id="values"></div>
     <div class="card flush">
-      <div class="ph"><b>Recent flips</b><span class="grow"></span><span class="status" id="switch-status"></span></div>
+      <div class="ph"><b>Recent flips</b><span class="grow"></span><span class="status" id="switch-status"></span><span class="status" id="value-status"></span></div>
       <div class="pb flips" id="switch-recent"></div>
+      <div class="pb flips" id="value-recent"></div>
     </div>
     <p class="muted">A flip applies to the next read — an analysis, a profile fetch. Nothing already logged changes.</p>
   </div></div>
+</section>
+
+<!-- The recognizer review (ieat-app#3422): the list on the left, the row's photo, raw answer and
+     the meal it made on the right. Date comes from the shared range control; model is a free-text
+     match; the compression boxes bound the meal's photo_compression (ieat-app#3421). -->
+<section class="view hidden" id="view-recognitions">
+  <div id="state-recognitions"></div>
+  <div class="vbody hidden" id="body-recognitions">
+    <div class="split" id="rec-split">
+      <div class="acol">
+        <div class="card flush">
+          <div class="sbar">
+            <input type="text" id="rec-model" placeholder="model — e.g. qwen/qwen3-vl" autocomplete="off" spellcheck="false" aria-label="Filter by model">
+            <input type="number" id="rec-cmin" placeholder="compress ≥" step="0.05" min="0" max="1" aria-label="Photo compression at least">
+            <input type="number" id="rec-cmax" placeholder="compress ≤" step="0.05" min="0" max="1" aria-label="Photo compression at most">
+            <button id="rec-apply">Apply</button>
+          </div>
+          <div class="scrollx"><table id="rec-list">
+            <thead>
+              <tr><th>When</th><th>Account</th><th>Model</th><th>Prompt</th><th class="r">kcal</th><th>Meal</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table></div>
+          <div class="astate hidden" id="rec-empty"><b>No recognitions in this window.</b><span>Widen the range or clear the model filter.</span></div>
+        </div>
+      </div>
+      <aside class="apane hidden" id="rec-pane" aria-label="Recognition">
+        <div class="ph">
+          <span class="t"><b>Recognition</b></span>
+          <button class="small quiet" id="rec-close">Close</button>
+        </div>
+        <div class="pb" id="rec-detail"></div>
+      </aside>
+    </div>
+  </div>
 </section>
 
     </div>
@@ -1643,7 +1683,7 @@ details.how p { margin-top: 8px; }
   // an empty box is "everything on that side" — and both empty is All time. It is ONE range for
   // every panel that has one, and it lives in the hash so a link reproduces exactly what the
   // admin was looking at. Content and system views never show it.
-  var RANGED = { numbers: 1, pushes: 1, funnel: 1, experiments: 1, campaigns: 1, referrals: 1, accounts: 1 };
+  var RANGED = { numbers: 1, pushes: 1, funnel: 1, experiments: 1, campaigns: 1, referrals: 1, accounts: 1, recognitions: 1 };
   var range = { from: null, to: null };
   var rangeSet = false;   // the admin or a link named a window — until then the hash stays clean
   var rangePreset = null; // the preset button that set the window ("range-7d"…), null once a box is typed
@@ -3510,6 +3550,64 @@ details.how p { margin-top: 8px; }
     return api("GET", "/admin/api/switches").then(renderSwitches);
   }
 
+  // ── The admin values (ieat-app#3421) ───────────────────────────────────────────────────────
+  //
+  // Numeric knobs beside the switches — photo.compression is the JPEG quality every client
+  // encodes a sent photo at, read off the profile on the next fetch. One input per key; the
+  // server enforces the range, so a refused save is worded, never clamped silently.
+
+  var VALUE_LABELS = { "photo.compression": "Photo compression" };
+  var VALUE_WHAT = { "photo.compression": "JPEG quality every client sends at (0.1–1, default 0.8)" };
+
+  function renderValues(res) {
+    var host = $("values");
+    host.textContent = "";
+    res.values.forEach(function (v) {
+      var row = el("div", "srow");
+      row.setAttribute("data-value", v.key);
+      var t = el("span", "t");
+      t.appendChild(el("b", null, VALUE_LABELS[v.key] || v.key));
+      var tail = el("span", null, (VALUE_WHAT[v.key] || v.key) + " · ");
+      tail.appendChild(switchWhen(v.setBy, v.setByEmail, v.setAt));
+      t.appendChild(tail);
+      var input = el("input", null);
+      input.setAttribute("type", "number");
+      input.setAttribute("step", "0.05");
+      input.setAttribute("min", "0.1");
+      input.setAttribute("max", "1");
+      input.value = String(v.value);
+      var save = el("button", "asw", "save");
+      save.addEventListener("click", function () {
+        save.disabled = true;
+        $("value-status").textContent = "saving…";
+        api("PUT", "/admin/api/values/" + encodeURIComponent(v.key), { value: Number(input.value) }).then(loadValues, function (e) {
+          save.disabled = false;
+          $("value-status").textContent = "failed: " + e.message;
+        });
+      });
+      row.appendChild(t);
+      row.appendChild(input);
+      row.appendChild(save);
+      host.appendChild(row);
+    });
+    var recent = $("value-recent");
+    if (recent) {
+      recent.textContent = "";
+      res.recent.forEach(function (f) {
+        var line = el("span", null, (VALUE_LABELS[f.key] || f.key) + " = " + f.value + " — ");
+        line.appendChild(actorEl(f.setBy, f.setByEmail));
+        line.appendChild(document.createTextNode(" at " + atLabel(f.setAt)));
+        recent.appendChild(line);
+      });
+      if (!res.recent.length) recent.appendChild(el("span", "muted", "No sets yet."));
+    }
+    $("value-status").textContent = "";
+  }
+
+  function loadValues() {
+    return api("GET", "/admin/api/values").then(renderValues);
+  }
+
   // ── Accounts (#374, #571) ──────────────────────────────────────────────────────────────────
   //
   // A READ, and the widest one in the product: every account, with the address on it. The server
@@ -4573,7 +4671,8 @@ details.how p { margin-top: 8px; }
     // from that answer instead of asking twice.
     templates: { title: "Push templates", load: function () { return (push ? Promise.resolve(renderPush()) : loadPush()).then(loadCopy); } },
     prompts: { title: "System prompts", load: loadPrompts },
-    food: { title: "Food database", load: loadSwitches }
+    food: { title: "Food database", load: function () { return Promise.all([loadSwitches(), loadValues()]); } },
+    recognitions: { title: "Recognition", load: loadRecognitions }
   };
 
   // view id -> "loading" | "ready". Absent: never opened, failed, or stale and due a read.
@@ -4643,8 +4742,220 @@ details.how p { margin-top: 8px; }
     paintBox($("state-" + id), $("body-" + id), kind, err, VIEWS[id].title.toLowerCase(), function () { run(id); }, false, VIEWS[id].kpis);
   }
 
+  // ── What the model said (ieat-app#3422) ──────────────────────────────────────────────────
+  //
+  // The list is the recognitions in the window; a row opens the review — the photo next to the
+  // model's own answer, the items the parse kept, and the meal as it stands now, including any
+  // edit the user made after. The photo goes through the scoped per-meal route on the account the
+  // row names, and the object URLs are revoked when the pane or the account is released.
+
+  var recSel = null;
+  var recUrls = [];
+
+  function releaseRecPhotos() {
+    recUrls.forEach(function (u) { URL.revokeObjectURL(u); });
+    recUrls = [];
+  }
+
+  // The pane's own close: on a phone the list and the pane take turns, so this is also the
+  // mobile "back to the list". The accounts pane's #view-back/#pane-close pair belongs to it.
+  function closeRecognition() {
+    recSel = null;
+    releaseRecPhotos();
+    $("rec-pane").classList.add("hidden");
+    $("rec-split").classList.remove("open");
+    Array.prototype.forEach.call($("rec-list").querySelectorAll("tbody tr"), function (tr) {
+      tr.classList.remove("on");
+    });
+  }
+  $("rec-close").addEventListener("click", closeRecognition);
+
+  function recPhotoBytes(userId, mealId, n) {
+    return fetch("/admin/api/users/" + userId + "/meals/" + mealId + "/photos/" + n, {
+      headers: { authorization: "Bearer " + token }
+    }).then(function (res) { return res.ok ? res.blob() : null; });
+  }
+
+  function loadRecognitions() {
+    var path = "/admin/api/recognitions" + rangeQuery();
+    var model = $("rec-model").value.trim();
+    if (model) path += (path.indexOf("?") === -1 ? "?" : "&") + "model=" + encodeURIComponent(model);
+    var cmin = $("rec-cmin").value.trim(), cmax = $("rec-cmax").value.trim();
+    var sep = function () { return path.indexOf("?") === -1 ? "?" : "&"; };
+    if (cmin !== "") path += sep() + "cmin=" + encodeURIComponent(cmin);
+    if (cmax !== "") path += sep() + "cmax=" + encodeURIComponent(cmax);
+    return api("GET", path).then(function (view) {
+      var rows = view.recognitions || [];
+      var body = $("rec-list").querySelector("tbody");
+      body.textContent = "";
+      rows.forEach(function (r) {
+        var tr = document.createElement("tr");
+        var cells = [
+          dmon(r.createdAt) + " " + r.createdAt.slice(11, 16),
+          r.userId ? r.userId.slice(0, 8) : "—",
+          r.model || "—",
+          r.promptKey + (r.promptVersion == null ? "" : " v" + r.promptVersion),
+          r.kcal == null ? "—" : String(Math.round(r.kcal)),
+          r.meal ? (r.meal.corrected ? "edited" : "logged") : "refused"
+        ];
+        cells.forEach(function (text, i) {
+          var td = document.createElement("td");
+          td.textContent = text;
+          if (i === 4) td.className = "r";
+          tr.appendChild(td);
+        });
+        if (recSel === r.id) tr.className = "on";
+        tr.addEventListener("click", function () {
+          recSel = r.id;
+          Array.prototype.forEach.call(body.querySelectorAll("tr"), function (x) { x.classList.remove("on"); });
+          tr.className = "on";
+          showRecognition(r.id);
+        });
+        body.appendChild(tr);
+      });
+      $("rec-empty").classList.toggle("hidden", rows.length > 0);
+    });
+  }
+
+  function recKv(parent, label, value) {
+    var d = document.createElement("div");
+    d.className = "kv";
+    var b = document.createElement("span");
+    b.textContent = label;
+    var s = document.createElement("span");
+    s.textContent = value == null ? "—" : String(value);
+    d.appendChild(b); d.appendChild(s);
+    parent.appendChild(d);
+  }
+
+  function showRecognition(id) {
+    releaseRecPhotos();
+    var pane = $("rec-pane");
+    var box = $("rec-detail");
+    box.textContent = "";
+    pane.classList.remove("hidden");
+    var split = $("rec-split");
+    if (split) split.classList.add("open");
+    api("GET", "/admin/api/recognitions/" + id).then(function (r) {
+      if (recSel !== r.id) return;
+      box.textContent = "";
+      var card = document.createElement("div");
+      card.className = "card";
+      var h = document.createElement("h4");
+      h.textContent = r.promptKey + (r.promptVersion == null ? "" : " v" + r.promptVersion)
+        + " · " + (r.model || "no model recorded");
+      card.appendChild(h);
+      var meta = document.createElement("div");
+      recKv(meta, "Account", r.userId);
+      recKv(meta, "Analysis", r.analysisId);
+      recKv(meta, "Meal", r.mealId);
+      recKv(meta, "Read at", r.createdAt);
+      card.appendChild(meta);
+      box.appendChild(card);
+
+      var rawCard = document.createElement("div");
+      rawCard.className = "card";
+      var rh = document.createElement("h4");
+      rh.textContent = "The model's own answer";
+      rawCard.appendChild(rh);
+      var pre = document.createElement("pre");
+      pre.className = "raw";
+      var pretty = r.raw || "";
+      try { pretty = JSON.stringify(JSON.parse(pretty), null, 2); } catch (_) {}
+      pre.textContent = pretty || "The port could not hand the text over.";
+      rawCard.appendChild(pre);
+      box.appendChild(rawCard);
+
+      var parsed = document.createElement("div");
+      parsed.className = "card";
+      var ph = document.createElement("h4");
+      ph.textContent = "What the parse kept — " + (r.kcal == null ? "—" : Math.round(r.kcal)) + " kcal";
+      parsed.appendChild(ph);
+      (r.items || []).forEach(function (i) {
+        var p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = i.name + " — " + i.grams + " g, " + (i.kcal == null ? "—" : Math.round(i.kcal) + " kcal");
+        parsed.appendChild(p);
+      });
+      box.appendChild(parsed);
+
+      if (r.meal) {
+        var meal = document.createElement("div");
+        meal.className = "card";
+        var mh = document.createElement("h4");
+        mh.textContent = "What stands now — " + Math.round(r.meal.kcal) + " kcal"
+          + (r.meal.corrected ? " (edited by the user)" : "");
+        meal.appendChild(mh);
+        var md = document.createElement("p");
+        md.className = "muted";
+        md.textContent = "Logged on " + r.meal.date + (r.mealId ? "" : " — the meal has since been deleted");
+        meal.appendChild(md);
+        (r.meal.items || []).forEach(function (i) {
+          var p = document.createElement("p");
+          p.className = "muted";
+          p.textContent = i.name + " — " + i.grams + " g, " + (i.kcal == null ? "—" : Math.round(i.kcal) + " kcal");
+          meal.appendChild(p);
+        });
+        box.appendChild(meal);
+      } else {
+        var none = document.createElement("div");
+        none.className = "card";
+        var np = document.createElement("p");
+        np.className = "muted";
+        np.textContent = "This read logged no meal — refused, or removed after.";
+        none.appendChild(np);
+        box.appendChild(none);
+      }
+
+      var count = r.meal ? r.meal.photos || 0 : 0;
+      if (count && r.mealId && r.userId) {
+        var shots = document.createElement("div");
+        shots.className = "card";
+        var sh = document.createElement("h4");
+        sh.textContent = "What they photographed";
+        shots.appendChild(sh);
+        box.appendChild(shots);
+        for (var n = 0; n < count; n++) {
+          (function (position) {
+            recPhotoBytes(r.userId, r.mealId, position).then(function (blob) {
+              if (!blob) return;
+              var url = URL.createObjectURL(blob);
+              recUrls.push(url);
+              var img = document.createElement("img");
+              img.className = "shot";
+              img.alt = "Photograph " + (position + 1) + " of the meal this answer produced";
+              img.src = url;
+              shots.appendChild(img);
+            });
+          })(n);
+        }
+      }
+    }, function () {
+      if (recSel !== id) return;
+      box.textContent = "";
+      var bad = document.createElement("div");
+      bad.className = "card";
+      var bp = document.createElement("p");
+      bp.className = "muted";
+      bp.textContent = "This read would not load.";
+      var again = document.createElement("button");
+      again.className = "small";
+      again.textContent = "Retry";
+      again.addEventListener("click", function () { showRecognition(id); });
+      bad.appendChild(bp); bad.appendChild(again);
+      box.appendChild(bad);
+    });
+  }
+
   // view id -> the rangeQS() it last loaded with: a ranged view opened under another window reads again.
   var loadedRange = {};
+
+  $("rec-apply").addEventListener("click", function () { delete state.recognitions; run("recognitions"); });
+  ["rec-model", "rec-cmin", "rec-cmax"].forEach(function (id) {
+    $(id).addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { delete state.recognitions; run("recognitions"); }
+    });
+  });
 
   function run(id) {
     loadedRange[id] = rangeQS();
@@ -4668,6 +4979,7 @@ details.how p { margin-top: 8px; }
   }
 
   function show(id) {
+    if (id !== "recognitions") closeRecognition();
     viewId = id;
     Object.keys(VIEWS).forEach(function (v) { $("view-" + v).classList.toggle("hidden", v !== id); });
     $("view-title").textContent = VIEWS[id].title;

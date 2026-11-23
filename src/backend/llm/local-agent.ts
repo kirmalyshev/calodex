@@ -348,8 +348,9 @@ export function localAgentPorts(opts: Options): LlmPorts {
     deadline: number,
     onCost?: OnCost,
     cutoff?: AbortSignal,
-    /** The metrics rows this call writes — its name; the attempt is the spawn index (#602). */
-    callMetric?: { name: string; onCall?: OnCall | undefined },
+    /** The metrics rows this call writes — its name; the attempt is the spawn index (#602). `onRaw`
+     *  hears the accepted reply once, for the review row the engine stores (ieat-app#3422). */
+    callMetric?: { name: string; onCall?: OnCall | undefined; onRaw?: ((a: { text: string; modelServed: string | null }) => void) | undefined },
   ): Promise<T> {
     const system = `${call.system}\n\nAnswer with a single JSON object that satisfies this JSON schema — no prose, no markdown fences, nothing else:\n${JSON.stringify(z.toJSONSchema(schema, { io: "output" }))}`;
     let lastError = "";
@@ -369,6 +370,8 @@ export function localAgentPorts(opts: Options): LlmPorts {
       const result = schema.safeParse(parsed);
       if (result.success) {
         emitDraft(draft, call, "ok");
+        // The CLI ran the model it was asked for, as `emitDraft` says — it cannot fall back.
+        callMetric?.onRaw?.({ text: reply, modelServed: call.model ?? null });
         return result.data;
       }
       emitDraft(draft, call, attempt === 0 ? "schema_retry" : "parse_error");
@@ -378,7 +381,7 @@ export function localAgentPorts(opts: Options): LlmPorts {
   }
 
   const analyzePhoto: AnalyzePhoto = async (input) => {
-    const { analysis } = await prompts();
+    const { analysis, versions } = await prompts();
     const user = buildUserText(input.profile, input.targets, {
       ...(input.caption !== undefined ? { caption: input.caption } : {}),
       ...(input.label !== undefined ? { label: input.label } : {}),
@@ -386,11 +389,15 @@ export function localAgentPorts(opts: Options): LlmPorts {
       ...(input.repertoire !== undefined ? { repertoire: input.repertoire } : {}),
       ...(input.portionPriors !== undefined ? { portionPriors: input.portionPriors } : {}),
     });
+    // The CLI port reads no lean flag, so the prompt is always `analysis` (ieat-app#3422).
+    const onRaw = input.onRaw === undefined ? undefined
+      : (a: { text: string; modelServed: string | null }) =>
+          input.onRaw!({ ...a, promptKey: "analysis", promptVersion: versions?.analysis ?? null });
     return await complete(
       { system: analysis, user, images: input.images, model: opts.model },
       MealAnalysisSchema, "meal_analysis",
       Date.now() + opts.timeoutMs, input.onCost, input.signal,
-      { name: "meal_analysis", onCall: input.onCall },
+      { name: "meal_analysis", onCall: input.onCall, onRaw },
     );
   };
 

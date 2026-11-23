@@ -3,7 +3,7 @@
 
 export type { EngineDeps } from "./deps.ts";
 export { checkCaps, type CapScope } from "./caps.ts";
-export { adminUserChat, adminUserDiary, adminRangeOf, adminWindowEcho, ADMIN_MEAL_ROWS, type AdminDiary } from "./admin.ts";
+export { adminUserChat, adminUserDiary, adminRangeOf, adminWindowEcho, ADMIN_MEAL_ROWS, adminRecognitions, adminRecognition, type AdminDiary } from "./admin.ts";
 export {
   adminUsers, adminUserSummary, applyRevenueCatEvent, applyRevenueCatTransfer, dailyPhotoCap, entitlementFor,
   freeAnalysesFor, setUserCap, userCap,
@@ -65,6 +65,7 @@ export {
   listScreenTemplates, saveOnboardingVariantScreens, saveScreenTemplate, screenTemplateRevision, templateAsset, uploadTemplateAsset,
 } from "./screen-templates.ts";
 export { adminSwitches, saveSwitch, switchOn, type FlipView, type SwitchView } from "./switches.ts";
+export { adminValueOf, adminValues, saveValue, type SetView, type ValueView } from "./values.ts";
 export { livePrompts, promptHistory, savePrompt, type PromptView, type PromptSave } from "./prompts.ts";
 export { foodSearch, productByBarcode } from "./foods.ts";
 export { listPushTemplates, reviewPushTemplate, savePushTemplate, type PushTemplateListing } from "./push-templates.ts";

@@ -528,8 +528,9 @@ export function openRouterPorts(opts: Options): LlmPorts {
     onCost?: OnCost,
     /** The turn's cutoff, forwarded to every HTTP call this makes (#276). */
     cutoff?: AbortSignal,
-    /** The metrics rows this call writes — its name; the send index is the attempt (#602). */
-    call?: { name: string; onCall?: OnCall | undefined },
+    /** The metrics rows this call writes — its name; the send index is the attempt (#602). `onRaw`
+     *  hears the accepted reply once, for the review row the engine stores (ieat-app#3422). */
+    call?: { name: string; onCall?: OnCall | undefined; onRaw?: ((a: { text: string; modelServed: string | null }) => void) | undefined },
     /** The routing call's guard: its own `max_tokens`, and one retry on the fallback after a stall. */
     guard?: { maxTokens: number; stallMs: number | undefined },
   ): Promise<T> {
@@ -641,6 +642,7 @@ export function openRouterPorts(opts: Options): LlmPorts {
       const result = schema.safeParse(parsed);
       if (result.success) {
         emitCall(payload.draft, "ok");
+        call?.onRaw?.({ text: raw, modelServed: payload.draft?.modelServed ?? null });
         return result.data;
       }
       if (truncated) bail();
@@ -651,7 +653,7 @@ export function openRouterPorts(opts: Options): LlmPorts {
   }
 
   const analyzePhoto: AnalyzePhoto = async (input, onDelta) => {
-    const { analysis, analysis_lean } = await prompts();
+    const { analysis, analysis_lean, versions } = await prompts();
     const content: Content = [
       { type: "text", text: buildUserText(input.profile, input.targets, {
         ...(input.caption !== undefined ? { caption: input.caption } : {}),
@@ -662,14 +664,20 @@ export function openRouterPorts(opts: Options): LlmPorts {
       }) },
       ...input.images.map((b) => ({ type: "image_url" as const, image_url: { url: toDataUrl(b) } })),
     ];
+    // The answer is reported with the prompt it came from: key and `llm_prompts` revision ride the
+    // row the engine stores, so "the model was wrong" can say under which prompt (ieat-app#3422).
+    const key = input.lean ? "analysis_lean" : "analysis";
+    const onRaw = input.onRaw === undefined ? undefined
+      : (a: { text: string; modelServed: string | null }) =>
+          input.onRaw!({ ...a, promptKey: key, promptVersion: versions?.[key] ?? null });
     // The admin's `prompt.photo-lean` switch (#607): L1 asks for less, `widen` returns the rest.
     if (input.lean) {
       const l = await complete(analysis_lean, content, LeanSchema, "meal_analysis", false, onDelta, undefined, input.onCost, input.signal,
-        { name: "meal_analysis", onCall: input.onCall });
+        { name: "meal_analysis", onCall: input.onCall, onRaw });
       return widen(l);
     }
     return await complete(analysis, content, MealAnalysisSchema, "meal_analysis", false, onDelta, undefined, input.onCost, input.signal,
-      { name: "meal_analysis", onCall: input.onCall });
+      { name: "meal_analysis", onCall: input.onCall, onRaw });
   };
 
   const routeText: RouteText = async (input) => {

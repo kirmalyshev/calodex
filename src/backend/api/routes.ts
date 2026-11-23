@@ -15,7 +15,7 @@
 //    encoder cannot drift.
 
 import {
-  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRedateMealRequest, isSaveMealRequest, parseNumbersLogRequest,
+  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRedateMealRequest, isSaveMealRequest, parseNumbersLogRequest,
   type AuthDeviceRequest, type AuthDeviceResponse, type AuthEmailCodeRequest, type AuthEmailVerifyRequest, type AuthProviderRequest,
   type AppendLinesRequest, type AppendLinesResponse, type AuthProviderResponse, type IdentitiesResponse, type Lang, type RedateMealResponse, type SaveMealResponse, type SavedMealsResponse,
   type UnlinkResponse,
@@ -250,6 +250,17 @@ export function createRouter(
   /** `label=1|true` on the photo form: the capture is a nutrition-facts label; `0|false`: read it as a plate, never as a label (ieat-app#2087). */
   const labelFields = (v: unknown): { label?: boolean } =>
     v === "1" || v === "true" ? { label: true } : v === "0" || v === "false" ? { label: false } : {};
+
+  /**
+   * `compression` on a photo form (ieat-app#3421): the quality the client encoded the bytes at,
+   * the same `Limits.photoCompression` the server sent it. A number inside the range is recorded
+   * on the meal; anything else — absent, not a number, out of range — is recorded as NONE rather
+   * than refused, because the photo is still a photo and the field is a measurement of it.
+   */
+  const compressionField = (v: unknown): { compression?: number } => {
+    const n = typeof v === "string" ? Number(v) : NaN;
+    return Number.isFinite(n) && n >= PHOTO_COMPRESSION_MIN && n <= PHOTO_COMPRESSION_MAX ? { compression: n } : {};
+  };
 
   const wantsStream = (req: Request): boolean => (req.headers.get("accept") ?? "").includes(NDJSON);
 
@@ -887,6 +898,7 @@ export function createRouter(
           receivedAt,
           ...(typeof caption === "string" && caption ? { caption } : {}),
           ...labelFields(form.get("label")),
+          ...compressionField(form.get("compression")),
           ...turnFields(turnKey(req) ?? form.get("clientId"), form.get("capturedAt")),
         };
         // THE STREAM. One JSON object per line — each item as the analyzer closes it
@@ -913,6 +925,7 @@ export function createRouter(
           receivedAt,
           ...(typeof caption === "string" && caption ? { caption } : {}),
           ...labelFields(form.get("label")),
+          ...compressionField(form.get("compression")),
           ...fields, clientId: fields.clientId,
         }), 202);
       }
@@ -1110,7 +1123,8 @@ export function createRouter(
         if (files.reduce((n, f) => n + f.size, 0) > deps.config.maxUploadBytes) return json({ error: "too large" }, 413);
 
         const images = await Promise.all(files.map(async (f) => new Uint8Array(await f.arrayBuffer())));
-        const result = await attachPhotos(deps, userId, decodeURIComponent(attachMatch[1]!), images);
+        const { compression } = compressionField(form.get("compression"));
+        const result = await attachPhotos(deps, userId, decodeURIComponent(attachMatch[1]!), images, compression);
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
         // Not a refusal kind: nothing was refused about the ACCOUNT, and the app knows the limit
         // (`limits.maxPhotosPerMeal`) and the meal's own count, so it should never reach this.
@@ -1225,7 +1239,7 @@ export function createRouter(
         if (files.reduce((n, f) => n + f.size, 0) > deps.config.maxUploadBytes) return json({ error: "too large" }, 413);
         const text = form.get("text");
         if (typeof text === "string" && text.length > MAX_USER_LINE) return json({ error: "text too long" }, 400);
-        const input = { text: typeof text === "string" ? text : "", images: files.map((f) => async () => new Uint8Array(await f.arrayBuffer())) };
+        const input = { text: typeof text === "string" ? text : "", images: files.map((f) => async () => new Uint8Array(await f.arrayBuffer())), ...compressionField(form.get("compression")) };
         const id = decodeURIComponent(messageMatch[1]!);
         if (wantsStream(req)) return stream(req, pathname, (line) => editLine(deps, userId, id, input, line));
         const result = await editLine(deps, userId, id, input);

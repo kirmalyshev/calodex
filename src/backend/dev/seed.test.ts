@@ -431,7 +431,10 @@ describe("the shipped prompts", () => {
     const store = memoryStore();
     await seedDevData(store, { timezone: TZ, today: TODAY });
     await seedDevData(store, { timezone: TZ, today: TODAY });
-    expect(await loadPrompts(store)).toEqual(PROMPT_DEFAULTS);
+    const { versions, ...texts } = await loadPrompts(store);
+    expect(texts).toEqual(PROMPT_DEFAULTS);
+    // The revision each prompt answers under rides the same read (ieat-app#3422).
+    expect(versions?.analysis).toBe(1);
     for (const key of PROMPT_KEYS) {
       expect(await store.promptRevisions(key), `seeding wrote a revision of "${key}"`).toHaveLength(1);
     }

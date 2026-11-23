@@ -59,7 +59,7 @@ const after = <T extends object>(port: T, name: keyof T, done: () => void): T =>
     },
   });
 
-type PhotoRequest = Pick<LogPhotoInput, "caption" | "capturedAt" | "receivedAt" | "label">;
+type PhotoRequest = Pick<LogPhotoInput, "caption" | "capturedAt" | "receivedAt" | "label" | "compression">;
 
 const HANDLERS: Record<JobKind, JobHandler> = {
   photo: {
@@ -285,6 +285,9 @@ export async function queuePhoto(
     ...(input.capturedAt !== undefined ? { capturedAt: input.capturedAt } : {}),
     ...(input.receivedAt !== undefined ? { receivedAt: input.receivedAt } : {}),
     ...(input.label !== undefined ? { label: input.label } : {}),
+    // What the stored bytes were compressed to when they were sent (ieat-app#3421) — the job's
+    // photos outlive the request, and the meal records the send's coefficient when it lands.
+    ...(input.compression !== undefined ? { compression: input.compression } : {}),
   };
   if (await deps.store.enqueueJob(userId, { clientId: input.clientId, kind: "photo", requestVersion: HANDLERS.photo.version, request, step: 2, photos })) wake();
   return { kind: "queued", jobId: input.clientId };

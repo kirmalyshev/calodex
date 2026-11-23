@@ -33,7 +33,7 @@ import { RAW_STATE, words } from "../food-index.ts";
 import { charge, checkCaps, checkFreeLog, refundGatewayRefusal, type JobCharge } from "./caps.ts";
 import { afterCorrection, afterLog, firstVerdict, remember } from "./chat.ts";
 import { scriptedLine } from "@eait/shared";
-import { CREDIT_CLASS, GatewayRefusal, clampDayOffset, emptyEstimate, imageMime, type AnalyzedMeal } from "../llm/port.ts";
+import { CREDIT_CLASS, GatewayRefusal, clampDayOffset, emptyEstimate, imageMime, type AnalyzedMeal, type RawAnswer } from "../llm/port.ts";
 import { itemScanner } from "../llm/partial.ts";
 import { eatenAt, once } from "./turns.ts";
 import { isAnonymous } from "./identity.ts";
@@ -53,6 +53,12 @@ export interface LogPhotoInput {
   receivedAt?: number;
   /** A queued job's run: its charge and its meal are written under `owner`'s lease, and `lost()` ends it when the lease is gone. */
   job?: JobCharge;
+  /**
+   * The JPEG quality the client compressed the sent photos to (ieat-app#3421), read off the
+   * upload's `compression` field — what WAS APPLIED to the stored bytes, not what the admin asks
+   * for now. The meal records it; absent, the column stays null.
+   */
+  compression?: number;
 }
 
 /** Sum a day's meals. The single place totals are produced, so two views cannot disagree. */
@@ -194,10 +200,14 @@ export async function analyzePhotos(
   const lean = await switchOn(deps, "prompt.photo-lean");
 
   let analysis: AnalyzedMeal;
+  const rawAnswer: { a: RawAnswer | null } = { a: null };
   clock.calledAt = Date.now();
   try {
     analysis = await deps.llm.analyzePhoto({
       images, profile, targets, onCost, onCall,
+      // The model's own output, for the review row below (ieat-app#3422). It hears the accepted
+      // reply once — a schema retry's text is a failed answer, not the one the meal was made from.
+      onRaw: (a) => { rawAnswer.a = a; },
       // A label is read for its sodium, sugar and fibre; the lean schema has no field for them.
       lean: lean && !label,
       ...(caption !== undefined ? { caption } : {}),
@@ -234,6 +244,28 @@ export async function analyzePhotos(
   // and the prompt-side fields come off. Before the `isFood` gate, so both answers get the same
   // treatment. `question` is handed back rather than dropped — it is the only one of the two that
   // has anywhere to go.
+  // The review row (ieat-app#3422): the model's own answer plus the items the turn worked with,
+  // recorded for EVERY read the analyzer resolved — the gates below may still refuse it, and a
+  // refused read is exactly what the review is for. Written BEFORE grounding, because an answer a
+  // later step loses is still an answer the model gave; one row per analysis, so the second write
+  // simply replaces the items with the PREPARED ones. Awaited so the callers' attach cannot race
+  // it; a store failure is a log line, like `putPhotos`.
+  const recordRecognition = (a: AnalyzedMeal) =>
+    deps.store.recordRecognition(userId, {
+      analysisId,
+      model: rawAnswer.a?.modelServed ?? deps.config.llmModel,
+      // The port's own key: labels never read the lean shape, switch or no switch.
+      promptKey: rawAnswer.a?.promptKey ?? (lean && !label ? "analysis_lean" : "analysis"),
+      promptVersion: rawAnswer.a?.promptVersion ?? null,
+      raw: rawAnswer.a?.text ?? null,
+      items: a.items,
+      kcal: a.kcal,
+    }).then(
+      (landed) => { if (!landed) console.error(`[eait] recognition not recorded: analysis ${analysisId} is gone`); },
+      (e: unknown) => { console.error(`[eait] recognition not recorded: ${(e as Error)?.message ?? e}`); },
+    );
+  await recordRecognition(analysis);
+
   let groundMs: number | null = null;
   let prepared: ReturnType<typeof prepareAnalysis>;
   try {
@@ -247,6 +279,7 @@ export async function analyzePhotos(
     reportTiming(groundMs);
   }
   analysis = prepared.analysis;
+  await recordRecognition(analysis);
 
   // A label that is a label and says nothing legible is not a meal and not a charge: the row is
   // DELETED (`undoAnalysis`): the paid daily cap counts rows (ieat-app#2087). Only a fresh charge
@@ -327,6 +360,8 @@ export async function logPhotoTurn(
     // named explicitly rather than left to the spread, which would carry the analyzer's raw one
     // past every condition `mayAsk` just applied.
     question,
+    // The coefficient the photos were sent with (ieat-app#3421); null on a send that carried none.
+    photo_compression: input.compression ?? null,
   };
   let stored = true;
   if (job) {
@@ -340,6 +375,12 @@ export async function logPhotoTurn(
     stored = await deps.store.putPhotos(userId, record.id, images.map((b) => ({ mime: imageMime(b)!, bytes: b })))
       .then(() => true, (e: unknown) => { console.error(`[eait] photos not stored: ${(e as Error)?.message ?? e}`); return false; });
   }
+  // The meal exists: the recognition row `analyzePhotos` wrote gets its link (ieat-app#3422). Same
+  // rule as the photos — a store failure is a log line, never a failed turn.
+  await deps.store.attachRecognitionMeal(userId, analysisId, record.id).then(
+    (linked) => { if (!linked) console.error(`[eait] recognition not linked: analysis ${analysisId} is gone`); },
+    (e: unknown) => { console.error(`[eait] recognition not linked: ${(e as Error)?.message ?? e}`); },
+  );
 
   await evaluateMilestones(deps, userId);
   const totals = sumTotals(await deps.store.mealsForDate(userId, date));
@@ -830,6 +871,8 @@ export async function attachPhotos(
   userId: string,
   mealId: string,
   images: Uint8Array[],
+  /** The coefficient the angles were sent with (ieat-app#3421); the row's `photo_compression` moves to it. */
+  compression?: number,
 ): Promise<
   | { kind: "attached"; mealId: string; photos: number }
   | { kind: "too-many"; limit: number }
@@ -848,7 +891,7 @@ export async function attachPhotos(
   const held = existing.photos ?? 0;
   if (held + images.length > limit) return { kind: "too-many", limit };
 
-  const photos = await deps.store.appendPhotos(userId, mealId, typed.map((p) => ({ mime: p.mime!, bytes: p.bytes })));
+  const photos = await deps.store.appendPhotos(userId, mealId, typed.map((p) => ({ mime: p.mime!, bytes: p.bytes })), compression);
   // 0 means the meal stopped being the caller's between the read above and the write — deleted, in
   // practice. Answered as the delete race it is, not as a successful attach of nothing.
   if (photos === 0) return { kind: "target-gone", on: "correction" };
@@ -898,6 +941,8 @@ export async function rewriteMeal(
   caption: string | undefined, added: () => Promise<Uint8Array[]>, onEvent: ((event: PhotoEvent) => void) | undefined,
   onCounting?: () => void,
   job?: JobCharge,
+  /** The coefficient `added`'s angles were sent with (ieat-app#3421); recorded when any are stored. */
+  compression?: number,
 ): Promise<MealUpdated | TargetGone | Refusal> {
   const today = localDate(deps.config.timezone);
   // Captured here rather than trusted from `read.images`: the stored count can be stale (another
@@ -926,11 +971,16 @@ export async function rewriteMeal(
   // rewritten (`editLine` returns before it), so a retry starts from the meal as it now stands.
   if (updated === "conflict") return { kind: "meal-changed" };
   if (!updated) return { kind: "target-gone", on: "correction" };
+  // A re-read makes a NEW recognition over the same meal: this one's row links to it (ieat-app#3422).
+  await deps.store.attachRecognitionMeal(userId, read.analysisId, existing.id).then(
+    (linked) => { if (!linked) console.error(`[eait] recognition not linked: analysis ${read.analysisId} is gone`); },
+    (e: unknown) => { console.error(`[eait] recognition not linked: ${(e as Error)?.message ?? e}`); },
+  );
   await evaluateMilestones(deps, userId);
   // Stored AFTER the numbers that describe them, never for a refused turn. A store failure is a
   // log line, as `putPhotos` is in `logPhotoMeal`.
   if (addedBytes.length > 0) {
-    await deps.store.appendPhotos(userId, existing.id, addedBytes.map((b) => ({ mime: imageMime(b)!, bytes: b })))
+    await deps.store.appendPhotos(userId, existing.id, addedBytes.map((b) => ({ mime: imageMime(b)!, bytes: b })), compression)
       .catch((e: unknown) => console.error(`[eait] photos not appended: ${(e as Error)?.message ?? e}`));
   }
   const totals = sumTotals(await deps.store.mealsForDate(userId, updated.date));

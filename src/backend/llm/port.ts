@@ -132,6 +132,23 @@ export interface LlmCallMetric {
 }
 export type OnCall = (metric: LlmCallMetric) => void;
 
+/**
+ * The model's own answer, before parsing and matching (ieat-app#3422).
+ *
+ * `LlmCallMetric` is the call's measurements and never its content — this is the content. It fires
+ * once, on the reply that satisfied the schema: a schema_retry's text is a failed answer the retry
+ * already paid to replace, and the row the engine stores is the one the meal was made from.
+ * `modelServed` comes off the response like the metric's; `promptKey`/`promptVersion` name the
+ * `llm_prompts` revision the port sent, null on the compiled-in fallback. The engine writes it to
+ * `recognitions`; a port that cannot hand its text over does not fire, and the row stores null.
+ */
+export interface RawAnswer {
+  text: string;
+  modelServed: string | null;
+  promptKey: string;
+  promptVersion: number | null;
+}
+
 export class GatewayRefusal extends Error {
   constructor(readonly status: number, message: string) {
     super(message);
@@ -177,6 +194,8 @@ export interface PhotoInput {
   onCost?: OnCost | undefined;
   /** One metrics row per HTTP call — the call's measurements, never its content (#602). */
   onCall?: OnCall | undefined;
+  /** The answer itself, once, on the reply the schema accepted — the review row's content (#3422). */
+  onRaw?: ((answer: RawAnswer) => void) | undefined;
   /**
    * The turn's cutoff, set by `once` — the fetch aborts with it, so a call nobody is waiting for
    * stops holding the socket and the budget (#276). Never the caller's to write.

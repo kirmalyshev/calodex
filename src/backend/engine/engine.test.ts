@@ -324,6 +324,59 @@ describe("photo logging", () => {
     expect(res.date).toBe(localDate("Europe/Berlin"));
   });
 
+  // ieat-app#3422. The model's own answer is kept per analysis, and the row gets its meal link
+  // once the meal exists. The demo port hands over the same JSON it returns — a fake may be
+  // poorer than the real thing, never different in a way a test can see.
+  it("keeps the model's raw answer, linked to the meal it made", async () => {
+    const userId = await onboard();
+    const res = await logPhotoMeal(deps, userId, photo());
+    if (!isMeal(res)) throw new Error("expected a meal");
+    const rows = await store.adminRecognitions({});
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.mealId).toBe(res.mealId);
+    expect(rows[0]!.promptKey).toBe("analysis");
+    const detail = await store.adminRecognition(rows[0]!.id);
+    // The raw text is the model's own output; the items are the PREPARED ones — what the parse
+    // and grounding kept, so the review sits the two beside each other.
+    expect(JSON.parse(detail!.raw!)).toMatchObject({ isFood: true });
+    expect(detail!.items.length).toBeGreaterThan(0);
+    expect(detail!.meal?.date).toBe(res.date);
+  });
+
+  it("keeps a refused read's answer too — the review is for where the model was wrong", async () => {
+    const llm: LlmPorts = {
+      ...demoPorts(),
+      analyzePhoto: async (input) => {
+        const answer = { isFood: false, items: [], kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+        input.onRaw?.({ text: JSON.stringify(answer), modelServed: "fake/model", promptKey: "analysis", promptVersion: null });
+        return { ...answer, satfat_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0, confidence: "high", notes: "a cat" } as AnalyzedMeal;
+      },
+    };
+    const userId = await onboard();
+    expect((await logPhotoMeal(makeDeps({}, llm), userId, photo())).kind).toBe("not-food");
+    const rows = await store.adminRecognitions({});
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.mealId).toBeNull();
+    expect(rows[0]!.model).toBe("fake/model");
+  });
+
+  // A step AFTER the model answered can still kill the turn — the read is recorded before it,
+  // rather than lost with the answer. The malformed items stand in for any post-answer throw.
+  it("keeps the read when the turn dies after the model answered", async () => {
+    const llm: LlmPorts = {
+      ...demoPorts(),
+      analyzePhoto: async () => ({ isFood: true, items: null, kcal: 42, protein_g: 0, carbs_g: 0,
+        fat_g: 0, satfat_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0, confidence: "high",
+        notes: "" }) as unknown as AnalyzedMeal,
+    };
+    const userId = await onboard();
+    await expect(logPhotoMeal(makeDeps({}, llm), userId, photo())).rejects.toThrow();
+    const rows = await store.adminRecognitions({});
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.mealId).toBeNull();
+    expect(rows[0]!.kcal).toBe(42);
+  });
+
   it("returns not-food without writing anything", async () => {
     const llm: LlmPorts = {
       ...demoPorts(),
@@ -3017,6 +3070,27 @@ describe("a settled-unknown photo job names its meal (ieat-app#2674)", () => {
     const { job } = await unknownJob(false);
     expect(job).toMatchObject({ kind: "settled", result: { kind: OUTCOME_UNKNOWN } });
     expect((job as { result: object }).result).not.toHaveProperty("mealId");
+  });
+});
+
+// The send's coefficient rides the job's stored request, so a meal landing minutes after the
+// send still records what its bytes were encoded at — not whatever the admin sets by then.
+describe("the queued send's compression (ieat-app#3421)", () => {
+  it("lands on the meal the job writes", async () => {
+    const userId = await onboard();
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queuePhoto(deps, userId, { ...photo(1), clientId, compression: 0.3 });
+    const until = Date.now() + 10_000;
+    for (;;) {
+      const j = await photoJob(deps, userId, clientId);
+      if (!j || j.kind === "settled") break;
+      if (Date.now() > until) throw new Error("job never settled");
+      await new Promise((r) => setTimeout(r, 15));
+    }
+    const meals = await store.mealsForDate(userId, localDate(deps.config.timezone));
+    expect(meals).toHaveLength(1);
+    expect(meals[0]!.photo_compression).toBe(0.3);
   });
 });
 

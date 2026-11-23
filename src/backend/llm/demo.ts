@@ -206,8 +206,9 @@ export function demoPorts(): LlmPorts {
     // streams the lean shape, so `--demo` walks the same item events, and answers it widened.
     if (input.lean) {
       const lean = toLean(meal);
+      const text = JSON.stringify(lean);
+      input.onRaw?.({ text, modelServed: "demo", promptKey: "analysis_lean", promptVersion: null });
       if (onDelta) {
-        const text = JSON.stringify(lean);
         const step = Math.ceil(text.length / 6);
         for (let i = 0; i < text.length; i += step) {
           await new Promise((r) => setTimeout(r, demoPieceDelayMs(input.caption)));
@@ -216,10 +217,13 @@ export function demoPorts(): LlmPorts {
       }
       return widen(lean);
     }
+    const text = JSON.stringify(meal);
+    // The canned answer's raw text is the JSON it returns — the same bytes the real port hands
+    // the review row off the wire (ieat-app#3422).
+    input.onRaw?.({ text, modelServed: "demo", promptKey: "analysis", promptVersion: null });
     if (onDelta) {
       // The real analyzer writes its JSON over seconds; the pending card is visible in `--demo`
       // and under every e2e flow only if this one does too, in pieces, with a beat between them.
-      const text = JSON.stringify(meal);
       const step = Math.ceil(text.length / 6);
       for (let i = 0; i < text.length; i += step) {
         await new Promise((r) => setTimeout(r, demoPieceDelayMs(input.caption)));

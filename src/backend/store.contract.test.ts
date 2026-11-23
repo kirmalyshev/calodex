@@ -38,7 +38,7 @@ import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { hashToken } from "./auth/tokens.ts";
 import { memoryStore } from "./store.memory.ts";
 import { RLS_TABLES, SCOPE, postgresStore } from "./store.pg.ts";
-import { SWITCH_KEYS, type CampaignRow, type LlmCall, type RevenueCatEventRow, type Store, type StoreOptions } from "./store.ts";
+import { SWITCH_KEYS, type CampaignRow, type LlmCall, type RecognitionWrite, type RevenueCatEventRow, type Store, type StoreOptions } from "./store.ts";
 
 const PG_URL = process.env.TEST_DATABASE_URL;
 
@@ -1938,6 +1938,142 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.recordLlmCall(userId, llmCall());
       await s.deleteUser(userId);
       expect(await s.llmCalls(userId)).toEqual([]);
+    });
+
+    // ieat-app#3422. The model's own answer, kept per analysis: llm_calls is metrics and never
+    // content; this row IS the content. Scoped like the calls, moved by a merge, erased with the
+    // account. The meal link is written when the turn's meal lands, and a refund drops the
+    // analysis link rather than the row — the answer was given whether or not it stayed billed.
+    const recognition = (analysisId: string, over: Partial<RecognitionWrite> = {}): RecognitionWrite => ({
+      analysisId, model: "qwen/qwen3-vl-235b-a22b-instruct", promptKey: "analysis",
+      promptVersion: 3, raw: `{"isFood":true,"items":[{"name":"Rice","grams":200}]}`,
+      items: [{ name: "Rice", grams: 200, name_en: "rice" }], kcal: 260,
+      ...over,
+    });
+
+    it("stores the recognizer's raw answer per analysis, then links it to the meal it made", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const analysisId = await s.recordAnalysis(a, RUN_DATE, "photo");
+      expect(await s.recordRecognition(a, recognition(analysisId))).toBe(true);
+
+      const mine = (await s.adminRecognitions({})).filter((r) => r.userId === a);
+      expect(mine.length).toBe(1);
+      expect(mine[0]).toMatchObject({
+        analysisId, mealId: null, model: "qwen/qwen3-vl-235b-a22b-instruct",
+        promptKey: "analysis", promptVersion: 3, kcal: 260, meal: null,
+      });
+      // The list stays light — the raw text and the parsed items belong to the detail read.
+      expect("raw" in mine[0]!).toBe(false);
+      expect("items" in mine[0]!).toBe(false);
+      const detail = await s.adminRecognition(mine[0]!.id);
+      expect(detail).toMatchObject({
+        raw: `{"isFood":true,"items":[{"name":"Rice","grams":200}]}`,
+        items: [{ name: "Rice", grams: 200, name_en: "rice" }],
+      });
+
+      // The meal lands after the read: the link is written then, and the detail gains it.
+      const m = meal(a);
+      await s.insertMeal(m);
+      expect(await s.attachRecognitionMeal(a, analysisId, m.id)).toBe(true);
+      const linked = await s.adminRecognition(mine[0]!.id);
+      expect(linked?.mealId).toBe(m.id);
+      expect(linked?.meal).toMatchObject({ date: "2026-08-01", kcal: 260, corrected: false, photos: 0 });
+    });
+
+    it("scopes the attach: another account's analysis id links nothing", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const analysisId = await s.recordAnalysis(a, RUN_DATE, "photo");
+      await s.recordRecognition(a, recognition(analysisId));
+      const m = meal(b);
+      await s.insertMeal(m);
+      // b holds a's analysis id and names its own meal: the row must still be a's to touch.
+      expect(await s.attachRecognitionMeal(b, analysisId, m.id)).toBe(false);
+      const mine = (await s.adminRecognitions({})).filter((r) => r.userId === a);
+      expect(mine[0]!.mealId).toBeNull();
+    });
+
+    it("filters the admin list by time and model, newest first", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const one = await s.recordAnalysis(a, RUN_DATE, "photo");
+      const two = await s.recordAnalysis(a, RUN_DATE, "photo");
+      await s.recordRecognition(a, recognition(one, { model: "old/model" }));
+      await s.recordRecognition(a, recognition(two, { model: "new/model" }));
+
+      const all = (await s.adminRecognitions({})).filter((r) => r.userId === a);
+      expect(all.map((r) => r.model)).toEqual(["new/model", "old/model"]);
+      expect((await s.adminRecognitions({ model: "old/model" })).filter((r) => r.userId === a).map((r) => r.model)).toEqual(["old/model"]);
+      // A free-text match: the admin types a piece of the served id ("qwen"), never the whole.
+      expect((await s.adminRecognitions({ model: "model" })).filter((r) => r.userId === a).length).toBe(2);
+      expect((await s.adminRecognitions({ model: "old" })).filter((r) => r.userId === a).map((r) => r.model)).toEqual(["old/model"]);
+      const later = await s.adminRecognitions({ from: new Date(Date.now() + 86_400_000) });
+      expect(later.filter((r) => r.userId === a)).toEqual([]);
+
+      // The meal's photo_compression bounds the filter; a read with no meal carries no
+      // coefficient and never matches either side.
+      const m = meal(a, { photo_compression: 0.5 });
+      await s.insertMeal(m);
+      await s.attachRecognitionMeal(a, one, m.id);
+      const atMin = (await s.adminRecognitions({ compressionMin: 0.8 })).filter((r) => r.userId === a);
+      expect(atMin.map((r) => r.model)).toEqual([]);
+      const atMax = (await s.adminRecognitions({ compressionMax: 0.8 })).filter((r) => r.userId === a);
+      expect(atMax.map((r) => r.model)).toEqual(["old/model"]);
+    });
+
+    it("writes a recognition only against a charge that is THEIRS", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const analysisId = await s.recordAnalysis(a, RUN_DATE, "photo");
+      // b holds a's analysis id — a foreign key proves it exists, not whose it is.
+      expect(await s.recordRecognition(b, recognition(analysisId))).toBe(false);
+      expect((await s.adminRecognitions({})).filter((r) => r.analysisId === analysisId)).toEqual([]);
+      expect(await s.recordRecognition(b, recognition("999999999"))).toBe(false);
+    });
+
+    it("keeps ONE row per analysis — a retried job's second read replaces the first", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const analysisId = await s.recordAnalysis(a, RUN_DATE, "photo");
+      await s.recordRecognition(a, recognition(analysisId, { raw: `{"isFood":false}`, kcal: 90 }));
+      // The retry re-read under the charge it kept: the newest resolved answer is the row.
+      expect(await s.recordRecognition(a, recognition(analysisId))).toBe(true);
+      const mine = (await s.adminRecognitions({})).filter((r) => r.userId === a);
+      expect(mine.length).toBe(1);
+      expect(mine[0]!.kcal).toBe(260);
+      // And the meal lands on the ONE row, deterministically.
+      const m = meal(a);
+      await s.insertMeal(m);
+      expect(await s.attachRecognitionMeal(a, analysisId, m.id)).toBe(true);
+      expect((await s.adminRecognition(mine[0]!.id))?.mealId).toBe(m.id);
+      // `on delete set null`: the meal going away drops the link, never the read.
+      await s.deleteMeal(a, m.id);
+      const after = await s.adminRecognition(mine[0]!.id);
+      expect(after?.mealId).toBeNull();
+      expect(after?.meal).toBeNull();
+    });
+
+    it("moves the rows on merge, drops the analysis link — not the row — on refund, erases with the account", async () => {
+      const s = await open();
+      const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+      const real = (await s.upsertDeviceUser(device(), "en")).userId;
+      const analysisId = await s.recordAnalysis(anon, RUN_DATE, "photo");
+      await s.recordRecognition(anon, recognition(analysisId));
+      await s.mergeUsers(anon, real);
+      expect((await s.adminRecognitions({})).filter((r) => r.userId === real).length).toBe(1);
+
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const refunded = await s.recordAnalysis(u, RUN_DATE, "photo");
+      await s.recordRecognition(u, recognition(refunded));
+      const rowId = (await s.adminRecognitions({})).find((r) => r.userId === u)!.id;
+      expect(await s.undoAnalysis(u, refunded)).toBe(true);
+      expect((await s.adminRecognition(rowId))?.analysisId).toBeNull();
+
+      await s.deleteUser(u);
+      expect(await s.adminRecognition(rowId)).toBeNull();
     });
 
     // #708. A billed turn is claimed by the phone's id for it before anything runs, so a request
@@ -4342,6 +4478,65 @@ function contract(name: string, make: () => Promise<Store>) {
       it("refuses a key the code does not know", async () => {
         const s = await open();
         await expect(s.setSwitch("grounding.nope" as never, false, crypto.randomUUID())).rejects.toThrow();
+      });
+    });
+
+    // ── The admin values (ieat-app#3421) ──────────────────────────────────────────────────────
+
+    describe("the admin values", () => {
+      it("reads null for a value nobody has set, then the newest value", async () => {
+        const s = await open();
+        if ((await s.adminValueHistory(1)).length === 0) {
+          expect(await s.adminValue("photo.compression")).toBeNull();
+        }
+        const admin = crypto.randomUUID();
+        await s.setAdminValue("photo.compression", 0.5, admin);
+        expect(await s.adminValue("photo.compression")).toBe(0.5);
+        await s.setAdminValue("photo.compression", 1, admin);
+        expect(await s.adminValue("photo.compression")).toBe(1);
+      });
+
+      it("keeps every set, newest first, with who and when", async () => {
+        const s = await open();
+        const a = crypto.randomUUID();
+        const b = crypto.randomUUID();
+        await s.setAdminValue("photo.compression", 0.9, a);
+        await s.setAdminValue("photo.compression", 0.3, b);
+        const [newest, older] = await s.adminValueHistory(2);
+        expect(newest).toMatchObject({ key: "photo.compression", value: 0.3, set_by: b });
+        expect(older).toMatchObject({ key: "photo.compression", value: 0.9, set_by: a });
+        expect(Number.isNaN(Date.parse(newest!.set_at))).toBe(false);
+        expect((await s.adminValueHistory(1)).length).toBe(1);
+      });
+
+      it("refuses a key the code does not know", async () => {
+        const s = await open();
+        await expect(s.setAdminValue("photo.nope" as never, 0.5, crypto.randomUUID())).rejects.toThrow();
+      });
+    });
+
+    describe("a meal's photo compression", () => {
+      it("stores the coefficient a photo meal was sent with, null by default", async () => {
+        const s = await open();
+        const uid = (await s.upsertDeviceUser(device(), "en")).userId;
+        const plain = meal(uid);
+        await s.insertMeal(plain);
+        expect((await s.getMeal(uid, plain.id))!.photo_compression ?? null).toBeNull();
+        const sent = { ...meal(uid), photo_compression: 0.4 };
+        await s.insertMeal(sent);
+        expect((await s.getMeal(uid, sent.id))!.photo_compression).toBe(0.4);
+      });
+
+      it("appendPhotos moves it to what the added angles were sent with, and leaves it when none was sent", async () => {
+        const s = await open();
+        const uid = (await s.upsertDeviceUser(device(), "en")).userId;
+        const m = { ...meal(uid), photo_compression: 0.8 };
+        await s.insertMeal(m);
+        const jpeg = { mime: "image/jpeg", bytes: new Uint8Array([1, 2, 3]) };
+        await s.appendPhotos(uid, m.id, [jpeg]);
+        expect((await s.getMeal(uid, m.id))!.photo_compression).toBe(0.8);
+        await s.appendPhotos(uid, m.id, [jpeg], 0.2);
+        expect((await s.getMeal(uid, m.id))!.photo_compression).toBe(0.2);
       });
     });
 
@@ -6768,6 +6963,12 @@ if (PG_URL) {
         // #812: the per-account onboarding flow — the admin's own cross-account read, like the
         // funnel above it; staff exclusion is the method's job, the route names the account.
         "adminOnboardingFlow",
+        // ieat-app#3422: the recognizer review — a cross-account read like every admin read above;
+        // the role is the authority, and the list stays content-free so it cannot be a dump.
+        "adminRecognition", "adminRecognitions",
+        // ieat-app#3421: admin_values belongs to no account — a global setting like the switches
+        // beside it; the writer is the resolved admin's id, never a scope.
+        "adminValue", "adminValueHistory",
         "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
         "countOnboardedSince", "createCampaign", "createUser", "expireJobs", "foodById",
         "forgetJobs", "forgetTurnOutcomes", "getCampaign", "getNotificationCopy", "getOnboardingContent",
@@ -6795,8 +6996,8 @@ if (PG_URL) {
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",
-        "revokeToken", "runningOnboardingExperiment", "screenTemplate", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt", "setCampaignsKilled",
-        "setSwitch", "spendEmailCode", "staffLangs", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "templateAsset", "updateCampaign",
+        "revokeToken", "runningOnboardingExperiment", "screenTemplate", "searchFoods", "seedPushTemplates", "sendsAwaitingReceipt",
+        "setAdminValue", "setCampaignsKilled", "setSwitch", "spendEmailCode", "staffLangs", "startOnboardingExperiment", "stopOnboardingExperiment", "switchEnabled", "switchHistory", "templateAsset", "updateCampaign",
         "upsertDeviceUser", "userIdForIdentity", "userIdForToken",
       ]);
     });
