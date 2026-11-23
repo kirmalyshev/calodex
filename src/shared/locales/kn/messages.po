@@ -119,6 +119,11 @@ msgstr "“{note}” — ಗಮನಿಸಲಾಗಿದೆ, ಇದು ಸಂಖ�
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ಇಂದಿನ ಸುಮಾರು {share}. ಮುಂದಿನ ಊಟ ಹಗುರವಾಗಿದ್ದರೆ ಸಮತೋಲನವಾಗುತ್ತದೆ."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 

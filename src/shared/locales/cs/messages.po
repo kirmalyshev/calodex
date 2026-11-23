@@ -119,6 +119,11 @@ msgstr "„{note}“ — beru na vědomí, je to v číslech."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, asi {share} dnešního dne. Lehčí další jídlo to vyrovná."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 

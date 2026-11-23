@@ -125,6 +125,11 @@ msgstr "«{note}» — anotado, está en los números."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, cerca del {share} de hoy. Una próxima comida más ligera lo equilibra."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "stream.push.title"
 msgstr "{names} · {kcal}kcal"
 

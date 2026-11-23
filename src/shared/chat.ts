@@ -4,7 +4,7 @@
 // writes them into the thread, the app may render one before the round trip lands. A sentence
 // changed here is a sentence changed in the product.
 
-import { kcalNumbers, spellUnit, wholeNumbers } from "./lang.ts";
+import { kcalNumbers, percentNumbers, spellUnit, wholeNumbers } from "./lang.ts";
 import { threadCopyFor } from "./chat-copy.ts";
 import { BARRIERS, LANGS, SITUATIONS, STARTER_FOR_PICK, STARTER_KEYS } from "./types.ts";
 import type {
@@ -292,6 +292,8 @@ export interface FirstVerdictInput {
  * very high or high, then calories on plan with a declared marker high (that marker's own line
  * follows), then on plan. The server speaks it first in `firstVerdictLines`; a client that
  * re-renders a card after an edit says it again from the verdicts the server just returned.
+ * EXCEPT `warn` on the account's first meal: `firstVerdictLines` says `caloriesHighFirst` there
+ * (ieat-app#3400), so a client that draws this on the first meal's card must not show the scold.
  */
 export function verdictHeadline(verdicts: MealVerdicts, lang: Lang): string | null {
   const h = threadCopyFor(lang).firstVerdict.headline;
@@ -342,7 +344,11 @@ export function firstVerdictLines(i: FirstVerdictInput, lang: Lang): string[] {
   const note = quotable(i.caption);
   if (note) lines.unshift(copy.noted({ note }));
   // #49: the headline is the pills' verdict, said first — see `verdictHeadline`.
-  const headline = verdictHeadline(i.verdicts, lang);
+  // ieat-app#3400: the account's FIRST meal over its share gets a figure and an action, not the
+  // later-meal warning — she never logged a second one after being scolded for the first.
+  const headline = i.verdicts.weight === "warn"
+    ? threadCopyFor(lang).firstVerdict.headline.caloriesHighFirst({ kcal, share: percentNumbers(lang)(i.meal.kcal / i.targets.kcal) })
+    : verdictHeadline(i.verdicts, lang);
   if (headline) lines.unshift(headline);
   return lines;
 }
