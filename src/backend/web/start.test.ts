@@ -466,6 +466,9 @@ describe("the sign-up screen", () => {
     // demands, "m" because the marketing box rode the same submit.
     const cookies = res.headers.getSetCookie().join(";");
     expect(cookies).toContain("eait_emailc=m");
+    // Terms alone mints "t" — the marketing flag is what the box adds, nothing more.
+    const plain = await post("/start/email", { terms: "yes" });
+    expect(plain.headers.getSetCookie().join(";")).toContain("eait_emailc=t");
   });
 
   it("keeps the email kickoff a POST: a GET or a consent-less submit starts nothing", async () => {
@@ -488,7 +491,7 @@ describe("the sign-up screen", () => {
     const html = await (await get("/start/signup")).text();
     expect(html).toContain("Continue with Apple");
     expect(html).not.toContain("Continue with Google");
-    // The email pill is not a provider — it submits the always-on /start/email code flow (#2565).
+    // The email pill is not a provider — it submits the /start/email code flow (#2565).
     expect(html).toContain('formaction="/start/email"');
   });
 });

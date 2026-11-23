@@ -21,7 +21,7 @@ import { escape, shell } from "./shell.ts";
  * the agreement (ieat-app#2806), so no honest submit can miss it and the kickoff still refuses
  * one crafted without it. `formaction` names the provider so the one form serves them both.
  *
- * No pairing card: two providers fill the page's one decision.
+ * No pairing card: the sign-in choice fills the page's one decision.
  */
 export interface SignUpView {
   /** `id` picks the provider's mark; `action` is the kickoff POST's formaction. */
