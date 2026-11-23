@@ -94,6 +94,13 @@ export interface PushAudienceRow {
    */
   createdAt: string;
   onboardedAt: string | null;
+  /**
+   * When the account's earliest device registered (ISO) — the moment it joined the audience at
+   * all. The tick reads it beside `onboardedAt`: a catch-up window exists for a tick that was
+   * late, and an account that became reachable (or finished onboarding) only after today's line
+   * was never due (ieat-app#3399).
+   */
+  deviceAt: string;
 }
 
 /** A message about to be sent to ONE device. `id` is the `sendId` the push `data` carries. */

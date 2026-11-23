@@ -233,7 +233,9 @@ export function zoneOf(deps: EngineDeps, reported: string | null): string {
 
 /**
  * Why a visited account got nothing this minute. `not-due`: outside its own evening-line time
- * (`config.eveningLineTime`) + `CATCH_UP_MS`, which is every account most of the day.
+ * (`config.eveningLineTime`) + `CATCH_UP_MS`, which is every account most of the day — and an
+ * account that joined the audience or finished onboarding only after today's line, which was
+ * owed nothing at the line (ieat-app#3399).
  * `sender-taken` / `account-cap`: `claimSend`'s refusals. `evening-off`: its own switch.
  * `nothing-to-say`: never onboarded, or the key is not sendable (`sendableCopy` warns, naming it).
  */
@@ -276,7 +278,17 @@ export async function pushTick(deps: EngineDeps, opts: { now?: number } = {}): P
       const date = localDate(zone, new Date(now));
 
       const at = instantOf(zone, date, deps.config.eveningLineTime);
-      if (now < at || now >= at + CATCH_UP_MS) { skipped["not-due"]++; continue; }
+      // The catch-up window is for a TICK that was late, never for an account that did not exist
+      // at the line (ieat-app#3399): a device or an onboarding that landed today after `at` was
+      // owed nothing at 20:30, and its first push is tomorrow's — not one the minute it signed
+      // up. The same-day clause is what keeps that an "after the line" comparison; a stamp from
+      // another local day orders against that day's own `at`, not this one.
+      const afterTodaysLine = (iso: string | null) =>
+        iso !== null && Date.parse(iso) > at && localDate(zone, new Date(iso)) === date;
+      if (now < at || now >= at + CATCH_UP_MS
+        || afterTodaysLine(audienceRow.deviceAt) || afterTodaysLine(audienceRow.onboardedAt)) {
+        skipped["not-due"]++; continue;
+      }
 
       // The triggers go before the evening line and are the SAME sender: a day that gets a streak or
       // an onboarding push from the tick gets no evening line from it.
