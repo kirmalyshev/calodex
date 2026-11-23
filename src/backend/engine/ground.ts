@@ -186,14 +186,18 @@ const queryContext = (nameEn: string): QueryContext => {
 /** A segment that qualifies the food rather than names it: "with ...", "no ...", or a USDA "; ..." clause. */
 const QUALIFIER = /^\s*(?:;|(?:with|without|no)\b)/i;
 const namesAsModifier = (name: string, head: string, query: readonly string[]): boolean => {
-  const segs = name.split(/,|(?=;)/).map((seg, i) => ({ seg, hit: words(seg).some((w) => norm(w) === head), i }));
+  let afterSemi = false;
+  const segs = name.split(/,|(?=;)/).map((seg, i) => {
+    afterSemi ||= seg.trimStart().startsWith(";");
+    return { seg, hit: words(seg).some((w) => norm(w) === head), i, qual: afterSemi || QUALIFIER.test(seg) };
+  });
   const staple = (w: string | undefined) => w !== undefined && !SPECIES.has(w) && (SERVES_COOKED.has(w) || SERVES_COOKED.has(singular(w)));
   const first = words(segs[0]!.seg)[0];
   const holdsAll = (x: { seg: string }) => query.every((q) => words(x.seg).some((w) => norm(w) === q));
-  const modifier = (x: { seg: string; hit: boolean; i: number }) =>
-    x.hit && (x.i === 0 ? staple(first) && first !== undefined && !query.includes(norm(first)) && !staple(head) : QUALIFIER.test(x.seg));
+  const modifier = (x: { seg: string; hit: boolean; i: number; qual: boolean }) =>
+    x.hit && (x.i === 0 ? staple(first) && first !== undefined && !query.includes(norm(first)) && !staple(head) : x.qual);
   // A later segment that carries EVERY query word names the food again ("Plain cake, lemon cake").
-  return segs.some(modifier) && !segs.some((x) => x.i > 0 && !QUALIFIER.test(x.seg) && holdsAll(x));
+  return segs.some(modifier) && !segs.some((x) => x.i > 0 && !x.qual && holdsAll(x));
 };
 
 interface Scored { s: number; sHard: number; extras: number; headOk: boolean }

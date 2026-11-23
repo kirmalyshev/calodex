@@ -368,6 +368,7 @@ describe("a generic word never grounds to a different food (#903)", () => {
   test("a staple the query itself names is no modifier; a later segment must carry the whole query", () => {
     expect(pick("potato dumplings", [ref("Potato dumplings, cooked", 110)])).toBe("Potato dumplings, cooked");
     expect(pick("dark sauce", [ref("Beef, potatoes, and vegetables excluding carrots, broccoli, and dark-green leafy; soy-based sauce", 90)])).toBeNull();
+    expect(pick("dark sauce", [ref("Beef with vegetables excluding carrots, broccoli, and dark-green leafy; no potatoes, mushroom sauce", 90)])).toBeNull();
   });
   test("the right row still beats no match", () => {
     expect(pick("dumpling", [ref("Semolina dumplings, raw", 120), ref("Dumpling, pork, steamed", 200)])).toBe("Dumpling, pork, steamed");
