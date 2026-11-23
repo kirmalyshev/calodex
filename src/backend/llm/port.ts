@@ -277,7 +277,8 @@ export interface CoachContext {
   /** The server's calendar date and local time — "tonight" has to mean something. */
   today: string;
   localTime: string;
-  todayMeals: { items: string[]; kcal: number; protein_g: number }[];
+  /** `time` is the local "HH:MM" the meal was logged, so the coach can name it ("the chicken rice at 21:22"). */
+  todayMeals: { time: string; items: string[]; kcal: number; protein_g: number }[];
   week: DayTotals[];
   focusMeal?: MealAnalysis;
   /** "around March 2027", or null when no honest projection exists. */

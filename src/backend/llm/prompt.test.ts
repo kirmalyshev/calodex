@@ -148,10 +148,31 @@ const coachInput = (over: Partial<Parameters<typeof buildCoachContext>[0]> = {})
   targets: { kcal: 1680, protein_g: 110, fat_g: 56, carbs_g: 195, sodium_mg: 2000 },
   basis: BASIS,
   today: "2026-09-02", localTime: "19:10",
-  todayMeals: [{ items: ["Rice", "Chicken"], kcal: 640, protein_g: 42 }],
+  todayMeals: [{ time: "12:30", items: ["Rice", "Chicken"], kcal: 640, protein_g: 42 }],
   week: [{ date: "2026-09-01", kcal: 1900, protein_g: 95, carbs_g: 180, fat_g: 60, satfat_g: 15 }],
   projection: "around March 2027",
   ...over,
+});
+
+// #3402: a question about food NOT yet eaten, and a logged meal called by its name and time.
+test("the coach prompt answers a pre-meal question as intent, and names logged meals", () => {
+  for (const rule of [
+    "Should I eat this?",
+    "not yet eaten",
+    "against what is left today",
+    "is a row of \"Today so far\" is already inside \"Left today\"",
+    "an offer not yet logged, or a meal from another day",
+    "The row's verdict stays as it is",
+    "never subtract it a second time",
+    "a second or further helping of a logged one are new food",
+    "Never say the plate is still to come",
+    "Never offer to un-log it, hold it, or check first",
+    "by its dish and its time",
+  ]) expect(SYSTEM_COACH).toContain(rule);
+});
+
+test("today's meals reach the coach with their time, so they can be named", () => {
+  expect(buildCoachContext(coachInput())).toContain("- 12:30 Rice, Chicken — 640kcal, 42g protein");
 });
 
 test("the coach prompt states Calodex's rules, as the thread's one voice", () => {
