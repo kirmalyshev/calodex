@@ -813,7 +813,10 @@ export const coachLine = (text: string): string => normalizePromptText(text, MAX
  */
 export const PROMPT_KEYS = ["analysis", "route", "text_meal", "text_correction", "coach", "analysis_lean"] as const;
 export type PromptKey = typeof PROMPT_KEYS[number];
-export type Prompts = Record<PromptKey, string>;
+export type Prompts = Record<PromptKey, string> & {
+  /** The `llm_prompts` revision each text is, for the row an answer is stored with (ieat-app#3422). */
+  versions?: Partial<Record<PromptKey, number>>;
+};
 
 /**
  * The compiled-in text for each key: what a fresh database serves, and what a broken one serves.
@@ -904,7 +907,7 @@ export function validateStoredPrompt(key: unknown, text: unknown): PromptValidat
 }
 
 /** One live prompt as the store hands it back. `source` is absent only in a hand-made test double. */
-export interface StoredPrompt { key: string; text: string; source?: PromptSource }
+export interface StoredPrompt { key: string; text: string; source?: PromptSource; version?: number }
 
 /**
  * Who wrote a revision, and the reason the column exists.
@@ -931,8 +934,12 @@ export function promptsFrom(rows: readonly StoredPrompt[]): Prompts {
   const out: Prompts = { ...PROMPT_DEFAULTS };
   for (const row of rows) {
     const result = validateStoredPrompt(row?.key, row?.text);
-    if (result.ok) out[result.key] = result.text;
-    else if (isPromptKey(row?.key)) {
+    if (result.ok) {
+      out[result.key] = result.text;
+      // The revision a stored answer was written under — for the review row (ieat-app#3422).
+      // Absent entirely when no row carried one, so an empty store stays exactly the constants.
+      if (typeof row?.version === "number") (out.versions ??= {})[result.key] = row.version;
+    } else if (isPromptKey(row?.key)) {
       console.error(`[eait] stored prompt "${row.key}" refused, serving the compiled-in one: ${result.errors.join("; ")}`);
     }
   }
