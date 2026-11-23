@@ -120,7 +120,7 @@ msgstr "“{note}” — ಗಮನಿಸಲಾಗಿದೆ, ಇದು ಸಂಖ�
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, ಇಂದಿನ ಸುಮಾರು {share}. ಮುಂದಿನ ಊಟ ಹಗುರವಾಗಿದ್ದರೆ ಸಮತೋಲನವಾಗುತ್ತದೆ."
+msgstr "{kcal}kcal, ಇಂದಿನ ಗುರಿಯ ಸುಮಾರು {share}. ಮುಂದಿನ ಊಟವನ್ನು ಸ್ವಲ್ಪ ಹಗುರವಾಗಿರಿಸಿದರೆ ಸುಲಭವಾಗಿ ಸರಿದೂಗಿಸಬಹುದು."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

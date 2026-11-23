@@ -120,7 +120,7 @@ msgstr "“{note}” — diambil kira, ia sudah ada dalam angka."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, kira-kira {share} untuk hari ini. Hidangan seterusnya yang lebih ringan akan mengimbanginya."
+msgstr "{kcal}kcal, sekitar {share} daripada sasaran hari ini. Hidangan seterusnya makan ringan sedikit, nanti seimbang semula."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

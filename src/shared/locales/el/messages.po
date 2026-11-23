@@ -120,7 +120,7 @@ msgstr "«{note}» — σημειώθηκε, είναι μέσα στους αρ
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, περίπου {share} της σημερινής ημέρας. Ένα πιο ελαφρύ επόμενο γεύμα το εξισορροπεί."
+msgstr "{kcal}kcal, περίπου το {share} για σήμερα. Ένα πιο εлаφρύ επόμενο γεύμα θα το ισορροπήσει μια χαρά."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

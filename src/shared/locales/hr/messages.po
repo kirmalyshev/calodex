@@ -120,7 +120,7 @@ msgstr "„{note}” — primljeno, uračunato je u brojke."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, oko {share} današnjeg dana. Lakši sljedeći obrok to izjednačava."
+msgstr "{kcal}kcal, oko {share} današnjeg plana. Sljedeći obrok neka bude malo lakši i sve se lijepo izravna."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

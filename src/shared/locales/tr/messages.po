@@ -120,7 +120,7 @@ msgstr "“{note}” — not ettim, sayılara işlendi."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, bugünün yaklaşık {share} kadarı. Bir sonraki öğünü daha hafif tutmak dengeler."
+msgstr "{kcal}kcal, bugünkü hedefin yaklaşık {share} kadarı. Bir sonraki öğünü biraz hafif tutarak günü rahatça dengelersin."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -120,7 +120,7 @@ msgstr "“{note}” — e shënova, hyn në llogari."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, rreth {share} e ditës së sotme. Një vakt tjetër më i lehtë e ekuilibron."
+msgstr "{kcal}kcal, rreth {share} të planit për sot. Një vakt tjetër pak më i lehtë e ekuilibron shumë mirë."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

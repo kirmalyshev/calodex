@@ -120,7 +120,7 @@ msgstr "“{note}” — รับทราบ รวมไว้ในตัว
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal ประมาณ {share} ของวันนี้ มื้อถัดไปทานเบาลงหน่อยก็สมดุลแล้ว"
+msgstr "{kcal}kcal ประมาณ {share} ของเป้าหมายวันนี้ มื้อถัดไปทานเบาๆ หน่อยก็บาลานซ์ได้สบาย"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -120,7 +120,7 @@ msgstr "„{note}“ — beriem na vedomie, už je to v číslach."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, približne {share} dnešného dňa. Ľahšie ďalšie jedlo to vyrovná."
+msgstr "{kcal}kcal, okolo {share} dnešného plánu. Ďalšie jedlo stačí dať o niečo ľahšie a pekne sa to vyrovná."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

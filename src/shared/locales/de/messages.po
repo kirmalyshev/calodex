@@ -126,7 +126,7 @@ msgstr "„{note}“ — notiert, es steckt in den Zahlen."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.firstVerdict.headline.caloriesHighFirst"
-msgstr "{kcal}kcal, etwa {share} von heute. Eine leichtere nächste Mahlzeit gleicht das aus."
+msgstr "{kcal}kcal, etwa {share} deines Tagesbudgets. Mit einer etwas leichteren nächsten Mahlzeit gleicht sich das wieder gut aus."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
