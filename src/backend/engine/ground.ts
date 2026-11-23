@@ -76,6 +76,9 @@ const REWRITES: [RegExp, string][] = [
   // — there the brand IS the query.
   [/\bcheese\s+burgers?\b/gi, "cheeseburger"], [/\bburgers?\b(?!\s+king)/gi, "hamburger"],
   [/\btoasts?\b/gi, "toasted bread"],
+  // #903: a bare oil is a plain vegetable oil; as "oil" alone it ties every "Oil, <x>" row and the
+  // shortest name ("Oil, oat") wins.
+  [/^\s*(?:cooking\s+)?oil\s*$/gi, "vegetable oil"],
   // The plate calls it "french fries"; the catalog calls it "potatoes, french fried". The rewrite
   // keeps "fried" as the wanted preparation and lets "potato" name the food (#615 review).
   [/\bfrench fries\b/gi, "french fried potatoes"], [/\bfries\b/gi, "french fried potatoes"],
@@ -110,15 +113,16 @@ const dropModifiers = (name: string): string | null => {
 const wantedStates = (q: string[]): string[] => q.flatMap((t) => COOKED_AS[t] ?? (STATES.has(t) ? [t] : []));
 
 /** The words a row must carry: the query without stop words, preparation words and leading modifiers. */
-export const lookupWords = (nameEn: string): string[] => {
+const lookupTokens = (nameEn: string): string[] => {
   const n = rewrite(nameEn);
   if (isSushi(n)) return ["sushi"];
   const q = words(n);
   const stripped = q.filter((w) => !STOP.has(w) && !COOKED_AS[w] && !STATES.has(w));
   let i = 0;
   while (i < stripped.length - 1 && MODIFIERS.has(stripped[i]!)) i++;
-  return stripped.slice(i).map(singular);
+  return stripped.slice(i);
 };
+export const lookupWords = (nameEn: string): string[] => lookupTokens(nameEn).map(singular);
 
 /**
  * How well a row answers a recognised name; higher is better. Name only (#615): the head noun
@@ -142,12 +146,12 @@ const SPECIES = new Set([
   "trout", "sardine", "herring", "mackerel", "shrimp", "prawn", "crab", "lobster", "squid", "octopus",
 ]);
 /**
- * The default a bare food word stands for: "a steak" is a beef steak and "oil" is vegetable oil
- * until the name says otherwise (#903) — a "Pork steak" row is a DIFFERENT head food for it, not a shorter-named win (#637). Joins the
+ * The default a bare food word stands for: "a steak" is a beef steak
+ * until the name says otherwise — a "Pork steak" row is a DIFFERENT head food for it, not a shorter-named win (#637). Joins the
  * query's match set, so a row naming the implied species neither gains an extra nor loses its
  * head. Keys and values are normed stems.
  */
-const IMPLIED_SPECIES: Record<string, string> = { steak: norm("beef"), oil: norm("vegetable") };
+const IMPLIED_SPECIES: Record<string, string> = { steak: "beef" };
 
 interface QueryContext {
   /** Every query word, normed, plus the implied species — the match set for extra/head/brand. */
@@ -166,7 +170,7 @@ const queryContext = (nameEn: string): QueryContext => {
     for (const t of qSet) { const s = IMPLIED_SPECIES[t]; if (s) qAll.add(s); }
   return {
     qAll, qArr: [...qAll],
-    qHead: lookupWords(nameEn).map(norm).at(-1),
+    qHead: ((w) => (w === undefined ? undefined : norm(w)))(lookupTokens(nameEn).at(-1)),
     wantState: new Set(wantedStates(q)),
     // The set holds plurals and words `singular` mangles ("couscous" -> "couscou"): test both forms.
     servesCooked: q.some((t) => SERVES_COOKED.has(t) || SERVES_COOKED.has(singular(t))),
@@ -174,8 +178,11 @@ const queryContext = (nameEn: string): QueryContext => {
 };
 
 /** Whether `head` (a normed stem) sits in the name's first comma segment or in a "with ..." segment. */
-const namesAsModifier = (name: string, head: string): boolean =>
-  name.split(",").some((seg, i) => (i === 0 || /^\s*with\b/i.test(seg)) && words(seg).some((w) => norm(w) === head));
+const namesAsModifier = (name: string, head: string): boolean => {
+  const segs = name.split(",").map((seg, i) => ({ seg, hit: words(seg).some((w) => norm(w) === head), mod: i === 0 || /^\s*with\b/i.test(seg) }));
+  // "Plain cake, lemon cake": the noun also heads a later segment, so the row says it IS that food.
+  return segs.some((x) => x.mod && x.hit) && !segs.some((x) => !x.mod && x.hit);
+};
 
 interface Scored { s: number; sHard: number; extras: number; headOk: boolean }
 function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored): void {
