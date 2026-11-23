@@ -329,6 +329,12 @@ export const kcalNumbers = (lang: Lang) => {
   return (x: number): string => format.format(Math.round(x));
 };
 
+/** A share of the day as the language writes a percentage ("44%", "%44", "44 %"), from a 0–1 fraction. */
+export const percentNumbers = (lang: Lang) => {
+  const format = nf(lang, { style: "percent", maximumFractionDigits: 0 });
+  return (x: number): string => format.format(x);
+};
+
 /**
  * ALWAYS one decimal — the opposite of `numbers`' "keeps a tenth when there is one". The BMI
  * figure is the case (#174): a BMI is written 25.0 even when it is 25.00, because the scale's

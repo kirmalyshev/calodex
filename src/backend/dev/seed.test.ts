@@ -60,7 +60,7 @@ describe("seedDevData", () => {
       // #49: the verdict leads with the pills' headline when they produce one, else the arithmetic
       // — so the greeting's first line is one of the headline strings or the "First one in" opener.
       const openers = [
-        ...Object.values(threadCopyFor(lang).firstVerdict.headline),
+        ...Object.values(threadCopyFor(lang).firstVerdict.headline).filter((h): h is string => typeof h === "string"),
         firstVerdictLines({
           goal: "lose", targets: { kcal: 2000, protein_g: 140, fat_g: 67, carbs_g: 230 },
           via: "photo", verdicts: {}, meal: { kcal: 500, satfat_g: 2, sodium_mg: 300, confidence: "high" },
