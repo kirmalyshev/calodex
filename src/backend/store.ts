@@ -515,6 +515,11 @@ export interface RecognitionWrite {
   kcal: number;
 }
 
+/** The meal a recognition made, as it stands NOW: `corrected` and `items` are "any user edit afterwards". */
+export interface AdminRecognitionMeal {
+  date: string; kcal: number; corrected: boolean; items: MealItem[]; photos: number;
+}
+
 /** The admin's review row — the recognition plus the meal it made, as the meal stands NOW. */
 export interface AdminRecognitionRow {
   id: string;
@@ -527,12 +532,16 @@ export interface AdminRecognitionRow {
   promptVersion: number | null;
   kcal: number | null;
   createdAt: string;
-  /** Current state, post-edit: `corrected` and `items` are "any user edit afterwards". */
-  meal: { date: string; kcal: number; corrected: boolean; items: MealItem[]; photos: number } | null;
+  meal: AdminRecognitionMeal | null;
 }
 
-/** The list read carries no content; the detail read adds the raw answer and the parsed items. */
-export type AdminRecognitionListRow = Omit<AdminRecognitionRow, never>;
+/**
+ * The list read carries no content — neither the answer nor the meal's items; a review opens the
+ * detail for that. The detail adds the raw answer and the parsed items AND the meal's items.
+ */
+export type AdminRecognitionListRow = Omit<AdminRecognitionRow, "meal"> & {
+  meal: Omit<AdminRecognitionMeal, "items"> | null;
+};
 export type AdminRecognition = AdminRecognitionRow & { raw: string | null; items: MealItem[] };
 
 /** The admin's recognitions filter (ieat-app#3422); `from`/`to` bound `created_at`. */
@@ -2402,6 +2411,9 @@ export interface Store {
    * the gates then refuse (`not-food`, `unreadable-label`, an empty estimate) is a row too: the
    * review exists precisely to see where the model was wrong. Scoped `user_id = ?` like every
    * write; false when the account or the analysis is not theirs.
+   *
+   * ONE ROW PER ANALYSIS. A queued-job retry re-records under the charge it kept, and its second
+   * read REPLACES the first — the newest resolved answer is the one the meal was made from.
    */
   recordRecognition(userId: string, rec: RecognitionWrite): Promise<boolean>;
   /**

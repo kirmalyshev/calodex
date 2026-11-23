@@ -235,6 +235,28 @@ export async function analyzePhotos(
   // and the prompt-side fields come off. Before the `isFood` gate, so both answers get the same
   // treatment. `question` is handed back rather than dropped — it is the only one of the two that
   // has anywhere to go.
+  // The review row (ieat-app#3422): the model's own answer plus the items the turn worked with,
+  // recorded for EVERY read the analyzer resolved — the gates below may still refuse it, and a
+  // refused read is exactly what the review is for. Written BEFORE grounding, because an answer a
+  // later step loses is still an answer the model gave; one row per analysis, so the second write
+  // simply replaces the items with the PREPARED ones. Awaited so the callers' attach cannot race
+  // it; a store failure is a log line, like `putPhotos`.
+  const recordRecognition = (a: AnalyzedMeal) =>
+    deps.store.recordRecognition(userId, {
+      analysisId,
+      model: rawAnswer.a?.modelServed ?? deps.config.llmModel,
+      // The port's own key: labels never read the lean shape, switch or no switch.
+      promptKey: rawAnswer.a?.promptKey ?? (lean && !label ? "analysis_lean" : "analysis"),
+      promptVersion: rawAnswer.a?.promptVersion ?? null,
+      raw: rawAnswer.a?.text ?? null,
+      items: a.items,
+      kcal: a.kcal,
+    }).then(
+      (landed) => { if (!landed) console.error(`[eait] recognition not recorded: analysis ${analysisId} is gone`); },
+      (e: unknown) => { console.error(`[eait] recognition not recorded: ${(e as Error)?.message ?? e}`); },
+    );
+  await recordRecognition(analysis);
+
   let groundMs: number | null = null;
   let prepared: ReturnType<typeof prepareAnalysis>;
   try {
@@ -248,23 +270,7 @@ export async function analyzePhotos(
     reportTiming(groundMs);
   }
   analysis = prepared.analysis;
-
-  // The review row (ieat-app#3422): the model's own answer plus the PREPARED items, recorded for
-  // EVERY read the analyzer resolved. The gates below may still refuse this read — a refused read
-  // is exactly what the review is for, so the write sits before them. Awaited so the callers'
-  // `attachRecognitionMeal` cannot race it; a store failure is a log line, like `putPhotos`.
-  await deps.store.recordRecognition(userId, {
-    analysisId,
-    model: rawAnswer.a?.modelServed ?? deps.config.llmModel,
-    promptKey: rawAnswer.a?.promptKey ?? (lean ? "analysis_lean" : "analysis"),
-    promptVersion: rawAnswer.a?.promptVersion ?? null,
-    raw: rawAnswer.a?.text ?? null,
-    items: analysis.items,
-    kcal: analysis.kcal,
-  }).then(
-    (landed) => { if (!landed) console.error(`[eait] recognition not recorded: analysis ${analysisId} is gone`); },
-    (e: unknown) => { console.error(`[eait] recognition not recorded: ${(e as Error)?.message ?? e}`); },
-  );
+  await recordRecognition(analysis);
 
   // A label that is a label and says nothing legible is not a meal and not a charge: the row is
   // DELETED (`undoAnalysis`): the paid daily cap counts rows (ieat-app#2087). Only a fresh charge

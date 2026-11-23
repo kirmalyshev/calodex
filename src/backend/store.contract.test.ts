@@ -2001,8 +2001,39 @@ function contract(name: string, make: () => Promise<Store>) {
       const all = (await s.adminRecognitions({})).filter((r) => r.userId === a);
       expect(all.map((r) => r.model)).toEqual(["new/model", "old/model"]);
       expect((await s.adminRecognitions({ model: "old/model" })).filter((r) => r.userId === a).map((r) => r.model)).toEqual(["old/model"]);
+      // A free-text match: the admin types a piece of the served id ("qwen"), never the whole.
+      expect((await s.adminRecognitions({ model: "model" })).filter((r) => r.userId === a).length).toBe(2);
+      expect((await s.adminRecognitions({ model: "old" })).filter((r) => r.userId === a).map((r) => r.model)).toEqual(["old/model"]);
       const later = await s.adminRecognitions({ from: new Date(Date.now() + 86_400_000) });
       expect(later.filter((r) => r.userId === a)).toEqual([]);
+    });
+
+    it("writes a recognition only against a charge that is THEIRS", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const analysisId = await s.recordAnalysis(a, RUN_DATE, "photo");
+      // b holds a's analysis id — a foreign key proves it exists, not whose it is.
+      expect(await s.recordRecognition(b, recognition(analysisId))).toBe(false);
+      expect((await s.adminRecognitions({})).filter((r) => r.analysisId === analysisId)).toEqual([]);
+      expect(await s.recordRecognition(b, recognition("999999999"))).toBe(false);
+    });
+
+    it("keeps ONE row per analysis — a retried job's second read replaces the first", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const analysisId = await s.recordAnalysis(a, RUN_DATE, "photo");
+      await s.recordRecognition(a, recognition(analysisId, { raw: `{"isFood":false}`, kcal: 90 }));
+      // The retry re-read under the charge it kept: the newest resolved answer is the row.
+      expect(await s.recordRecognition(a, recognition(analysisId))).toBe(true);
+      const mine = (await s.adminRecognitions({})).filter((r) => r.userId === a);
+      expect(mine.length).toBe(1);
+      expect(mine[0]!.kcal).toBe(260);
+      // And the meal lands on the ONE row, deterministically.
+      const m = meal(a);
+      await s.insertMeal(m);
+      expect(await s.attachRecognitionMeal(a, analysisId, m.id)).toBe(true);
+      expect((await s.adminRecognition(mine[0]!.id))?.mealId).toBe(m.id);
     });
 
     it("moves the rows on merge, drops the analysis link — not the row — on refund, erases with the account", async () => {

@@ -178,8 +178,8 @@ tr:last-child td { border-bottom: 0; }
 th.r, td.r { text-align: right; font-variant-numeric: tabular-nums; }
 td.drop { color: var(--bad); }
 td.empty { white-space: normal; text-align: center; color: var(--muted); padding: 28px 12px; }
-#users tbody tr, #diary tbody tr { cursor: pointer; }
-#users tbody tr:hover td, #diary tbody tr:hover td { background: var(--bg); }
+#users tbody tr, #diary tbody tr, #rec-list tbody tr { cursor: pointer; }
+#users tbody tr:hover td, #diary tbody tr:hover td, #rec-list tbody tr:hover td { background: var(--bg); }
 /* ── Campaigns: the list on the left, the open campaign on the right ── */
 .hacts { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .hacts .wide { display: inline; }
@@ -312,7 +312,7 @@ pre { overflow-x: auto; max-width: 100%; }
 .foot .grow { flex: 1; }
 .card.flush > .astate { border: 0; }
 #users input[type=checkbox] { width: 16px; height: 16px; margin: 0; }
-#users tbody tr.on td { background: var(--accent-tint); }
+#users tbody tr.on td, #rec-list tbody tr.on td { background: var(--accent-tint); }
 .apane {
   flex: 0 0 420px; width: 420px; background: var(--surface); border-radius: var(--r-card); box-shadow: 0 0 0 1px var(--hair);
   overflow: hidden; position: sticky; top: 12px; min-width: 0;
@@ -1095,6 +1095,10 @@ details.how p { margin-top: 8px; }
         </div>
       </div>
       <aside class="apane hidden" id="rec-pane" aria-label="Recognition">
+        <div class="ph">
+          <span class="t"><b>Recognition</b></span>
+          <button class="small quiet" id="rec-close">Close</button>
+        </div>
         <div class="pb" id="rec-detail"></div>
       </aside>
     </div>
@@ -4691,6 +4695,19 @@ details.how p { margin-top: 8px; }
     recUrls = [];
   }
 
+  // The pane's own close: on a phone the list and the pane take turns, so this is also the
+  // mobile "back to the list". The accounts pane's #view-back/#pane-close pair belongs to it.
+  function closeRecognition() {
+    recSel = null;
+    releaseRecPhotos();
+    $("rec-pane").classList.add("hidden");
+    $("rec-split").classList.remove("open");
+    Array.prototype.forEach.call($("rec-list").querySelectorAll("tbody tr"), function (tr) {
+      tr.classList.remove("on");
+    });
+  }
+  $("rec-close").addEventListener("click", closeRecognition);
+
   function recPhotoBytes(userId, mealId, n) {
     return fetch("/admin/api/users/" + userId + "/meals/" + mealId + "/photos/" + n, {
       headers: { authorization: "Bearer " + token }
@@ -4791,7 +4808,7 @@ details.how p { margin-top: 8px; }
       (r.items || []).forEach(function (i) {
         var p = document.createElement("p");
         p.className = "muted";
-        p.textContent = i.name + " — " + i.grams + " g, " + Math.round(i.kcal) + " kcal";
+        p.textContent = i.name + " — " + i.grams + " g, " + (i.kcal == null ? "—" : Math.round(i.kcal) + " kcal");
         parsed.appendChild(p);
       });
       box.appendChild(parsed);
@@ -4810,7 +4827,7 @@ details.how p { margin-top: 8px; }
         (r.meal.items || []).forEach(function (i) {
           var p = document.createElement("p");
           p.className = "muted";
-          p.textContent = i.name + " — " + i.grams + " g, " + Math.round(i.kcal) + " kcal";
+          p.textContent = i.name + " — " + i.grams + " g, " + (i.kcal == null ? "—" : Math.round(i.kcal) + " kcal");
           meal.appendChild(p);
         });
         box.appendChild(meal);
@@ -4847,7 +4864,21 @@ details.how p { margin-top: 8px; }
           })(n);
         }
       }
-    }, function () {});
+    }, function () {
+      if (recSel !== id) return;
+      box.textContent = "";
+      var bad = document.createElement("div");
+      bad.className = "card";
+      var bp = document.createElement("p");
+      bp.className = "muted";
+      bp.textContent = "This read would not load.";
+      var again = document.createElement("button");
+      again.className = "small";
+      again.textContent = "Retry";
+      again.addEventListener("click", function () { showRecognition(id); });
+      bad.appendChild(bp); bad.appendChild(again);
+      box.appendChild(bad);
+    });
   }
 
   // view id -> the rangeQS() it last loaded with: a ranged view opened under another window reads again.
@@ -4880,6 +4911,7 @@ details.how p { margin-top: 8px; }
   }
 
   function show(id) {
+    if (id !== "recognitions") closeRecognition();
     viewId = id;
     Object.keys(VIEWS).forEach(function (v) { $("view-" + v).classList.toggle("hidden", v !== id); });
     $("view-title").textContent = VIEWS[id].title;

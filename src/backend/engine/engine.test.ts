@@ -360,6 +360,23 @@ describe("photo logging", () => {
     expect(rows[0]!.model).toBe("fake/model");
   });
 
+  // A step AFTER the model answered can still kill the turn — the read is recorded before it,
+  // rather than lost with the answer. The malformed items stand in for any post-answer throw.
+  it("keeps the read when the turn dies after the model answered", async () => {
+    const llm: LlmPorts = {
+      ...demoPorts(),
+      analyzePhoto: async () => ({ isFood: true, items: null, kcal: 42, protein_g: 0, carbs_g: 0,
+        fat_g: 0, satfat_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0, confidence: "high",
+        notes: "" }) as unknown as AnalyzedMeal,
+    };
+    const userId = await onboard();
+    await expect(logPhotoMeal(makeDeps({}, llm), userId, photo())).rejects.toThrow();
+    const rows = await store.adminRecognitions({});
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.mealId).toBeNull();
+    expect(rows[0]!.kcal).toBe(42);
+  });
+
   it("returns not-food without writing anything", async () => {
     const llm: LlmPorts = {
       ...demoPorts(),

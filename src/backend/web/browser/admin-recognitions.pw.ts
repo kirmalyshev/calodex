@@ -30,7 +30,8 @@ const LIST = {
     id: "7", userId: USER, analysisId: "101", mealId: MEAL,
     model: "qwen/qwen3-vl-235b", promptKey: "analysis", promptVersion: 3,
     kcal: 260, createdAt: "2026-11-20T12:05:00.000Z",
-    meal: { date: "2026-11-20", kcal: 320, corrected: true, items: [{ name: "Rice", grams: 250, kcal: 320 }], photos: 1 },
+    // The list carries no content — the meal's items belong to the detail read, like the raw text.
+    meal: { date: "2026-11-20", kcal: 320, corrected: true, photos: 1 },
   }, {
     id: "6", userId: "99999999-8888-7777-6666-555555555555", analysisId: "99", mealId: null,
     model: "other/model", promptKey: "analysis_lean", promptVersion: null,
@@ -43,6 +44,7 @@ const DETAIL = {
   ...LIST.recognitions[0],
   raw: `{"isFood":true,"items":[{"name":"Rice","grams":200}],"kcal":260}`,
   items: [{ name: "Rice", grams: 200, kcal: 260 }],
+  meal: { date: "2026-11-20", kcal: 320, corrected: true, items: [{ name: "Rice", grams: 250, kcal: 320 }], photos: 1 },
 };
 
 async function stub(page: Page) {
@@ -105,5 +107,10 @@ test("the model box sends the filter, and a row opens the review", async ({ page
   await expect(pane).toContainText("What stands now — 320 kcal (edited by the user)");
   // The photo arrived through the scoped per-meal route and sits in the pane.
   await expect(pane.locator("img.shot")).toHaveCount(1);
+
+  // Close takes the pane down and hands the list back — the only way out on a phone.
+  await page.click("#rec-close");
+  await expect(page.locator("#rec-pane")).toHaveClass(/hidden/);
+  await expect(page.locator("#rec-list tbody tr.on")).toHaveCount(0);
   expect(errors).toEqual([]);
 });

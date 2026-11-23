@@ -23,7 +23,7 @@ import { type ChatMessage,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type ExperimentSurfaceCounts, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
-  type RecognitionWrite, type AdminRecognitionListRow,
+  type RecognitionWrite, type AdminRecognition, type AdminRecognitionListRow,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
   type Acquisition, type RevenueCatEventRow, type OnboardingServed, type OnboardingServedRecord,
 } from "./store.ts";
@@ -409,8 +409,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   let recognitionSeq = 0;
 
   // The admin's row, joined to the meal it made — the meal as it stands NOW, edits included.
+  // `items` rides the detail read only: the list stays light, like the join in Postgres.
   const recognitionRow = (
-    r: (typeof recognitions)[number], mealsMap: Map<string, MealRecord>,
+    r: (typeof recognitions)[number], mealsMap: Map<string, MealRecord>, withItems: boolean,
   ): AdminRecognitionListRow => {
     const m = r.mealId === null ? undefined : mealsMap.get(r.mealId);
     return {
@@ -418,7 +419,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       model: r.model, promptKey: r.promptKey, promptVersion: r.promptVersion,
       kcal: r.kcal, createdAt: new Date(r.createdAt).toISOString(),
       meal: m === undefined ? null : {
-        date: m.date, kcal: m.kcal, corrected: m.corrected, items: clone(m.items), photos: m.photos ?? 0,
+        date: m.date, kcal: m.kcal, corrected: m.corrected,
+        ...(withItems ? { items: clone(m.items) } : {}),
+        photos: m.photos ?? 0,
       },
     };
   };
@@ -2767,10 +2770,14 @@ export function memoryStore(opts: StoreOptions = {}): Store {
 
     async recordRecognition(userId, rec) {
       if (!users.has(userId)) return false;
-      // The Postgres `analysis_id` foreign key, paraphrased: a recognition belongs to a charge
-      // this account was billed, or it is not written.
+      // A recognition belongs to a charge this account was billed, or it is not written — the same
+      // scope the `where exists` clause gives the Postgres insert.
       if (!analyses.some((a) => a.id === rec.analysisId && a.userId === userId)) return false;
-      recognitions.push({ id: String(++recognitionSeq), userId, ...rec, mealId: null, createdAt: now() });
+      // ONE ROW PER ANALYSIS: a retried job re-reads under the charge it kept, and its second
+      // answer replaces the first — the newest resolved read is the one the meal was made from.
+      const existing = recognitions.find((x) => x.analysisId === rec.analysisId);
+      if (existing) Object.assign(existing, { ...rec, createdAt: now() });
+      else recognitions.push({ id: String(++recognitionSeq), userId, ...rec, mealId: null, createdAt: now() });
       return true;
     },
 
@@ -2788,15 +2795,16 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return recognitions
         .filter((r) => (filter.from === undefined || r.createdAt >= filter.from.getTime())
           && (filter.to === undefined || r.createdAt <= filter.to.getTime())
-          && (filter.model === undefined || r.model === filter.model))
+          // A free-text match, like the `position(...) > 0` in Postgres: a piece of the served id.
+          && (filter.model === undefined || (r.model ?? "").includes(filter.model)))
         .sort((a, b) => b.createdAt - a.createdAt || Number(b.id) - Number(a.id))
-        .slice(0, filter.limit ?? 200)
-        .map((r) => recognitionRow(r, meals));
+        .slice(0, Math.max(1, Math.min(1000, Math.floor(filter.limit ?? 200))))
+        .map((r) => recognitionRow(r, meals, false));
     },
 
     async adminRecognition(id) {
       const r = recognitions.find((x) => x.id === id);
-      return r === undefined ? null : { ...recognitionRow(r, meals), raw: r.raw, items: clone(r.items) };
+      return r === undefined ? null : { ...recognitionRow(r, meals, true), raw: r.raw, items: clone(r.items) } as AdminRecognition;
     },
 
     async claimTurn(userId, clientId) {
