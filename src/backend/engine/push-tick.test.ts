@@ -23,8 +23,10 @@ const MIN = 60_000;
 let store: Store;
 let push: FakePush;
 let deps: EngineDeps;
+let storeNow: number;
 beforeEach(() => {
-  store = memoryStore();
+  storeNow = Date.now();
+  store = memoryStore({ now: () => storeNow });
   push = fakePush();
   deps = { store, config: CONFIG, llm: demoPorts(), push, mail: logMail() };
 });
@@ -169,6 +171,32 @@ describe("each account's own 20:30", () => {
     expect(push.sent).toHaveLength(0);
     await pushTick(deps, { now: BERLIN_2030 + 119 * MIN });
     expect(push.sent).toHaveLength(1);
+  });
+});
+
+describe("the catch-up is for a late tick, not an account that did not exist at the line (#3399)", () => {
+  // Kuala Lumpur is UTC+8 year-round: the line is 12:30Z, a 21:20 sign-up 13:20Z.
+  it("a device registered after today's line hears nothing until tomorrow's 20:30", async () => {
+    storeNow = Date.parse("2026-08-20T13:20:00Z"); // 21:20 in Kuala Lumpur
+    await account({ tz: "Asia/Kuala_Lumpur" });
+    storeNow = Date.now();
+
+    const first = await pushTick(deps, { now: Date.parse("2026-08-20T13:21:00Z") }); // 21:21 there
+    expect(first.sent).toBe(0);
+    expect(first.skipped["not-due"]).toBe(1);
+    expect(push.sent).toHaveLength(0);
+
+    const next = await pushTick(deps, { now: Date.parse("2026-08-21T12:30:00Z") });
+    expect(next.sent).toBe(1);
+  });
+
+  it("a device registered before the line still catches up inside the window", async () => {
+    storeNow = Date.parse("2026-08-20T12:00:00Z"); // 20:00 in Kuala Lumpur
+    await account({ tz: "Asia/Kuala_Lumpur" });
+    storeNow = Date.now();
+
+    const tick = await pushTick(deps, { now: Date.parse("2026-08-20T13:20:00Z") }); // 21:20 there
+    expect(tick.sent).toBe(1);
   });
 });
 
