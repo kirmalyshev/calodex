@@ -234,6 +234,13 @@ describe("seed copy speaks the push voice", () => {
     expect(loud).toEqual([]);
   });
 
+  // calodex is public and a self-hosted install sends these seeds as they are: the trial-end line
+  // names the way out in every language. Prod may hold a personal line; the seed never overwrites it.
+  test("every trial-end seed names the Settings path to cancel", () => {
+    const noPath = seeds.filter((t) => t.key === "trial-end" && !t.body.includes("›")).map((t) => t.lang);
+    expect(noPath).toEqual([]);
+  });
+
   // The nudge goes at the evening hour (engine/notify.ts), so its title names no meal of the day.
   test("the Russian nudge is the line prod sends, not the cut one", () => {
     const nudge = seeds.find((t) => t.lang === "ru" && t.key === "nudge" && t.variant === "default");
