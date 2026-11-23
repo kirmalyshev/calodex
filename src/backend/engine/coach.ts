@@ -104,7 +104,7 @@ export async function coachTurn(deps: EngineDeps, userId: string, input: CoachTu
   const projected = projectGoal(input.profile, basis);
   const context: CoachContext = {
     profile: input.profile, targets, basis, today, localTime: localTime(zone),
-    todayMeals: input.todayRows.map((m) => ({ items: m.items.map((i) => i.name), kcal: m.kcal, protein_g: m.protein_g })),
+    todayMeals: input.todayRows.map((m) => ({ time: localTime(zone, new Date(m.ts)), items: m.items.map((i) => i.name), kcal: m.kcal, protein_g: m.protein_g })),
     week: input.week,
     ...(input.discussed ? { focusMeal: input.discussed } : {}),
     projection: projected === null ? null

@@ -95,7 +95,7 @@ describe("the coach turn", () => {
     expect(c.localTime).toMatch(/^\d\d:\d\d$/);
     expect(c.targets.kcal).toBeGreaterThan(0);
     expect(c.basis.floorKcal).toBe(1200);
-    expect(c.todayMeals).toEqual([{ items: ["Rice", "Chicken"], kcal: 500, protein_g: 40 }]);
+    expect(c.todayMeals).toEqual([{ time: expect.stringMatching(/^\d\d:\d\d$/), items: ["Rice", "Chicken"], kcal: 500, protein_g: 40 }]);
     expect(c.week.map((w) => w.kcal).sort()).toEqual([1800, 500]);
     expect(c.focusMeal?.kcal).toBe(500);
     expect(c.projection).toMatch(/^around [A-Z][a-z]+ \d{4}$/);
