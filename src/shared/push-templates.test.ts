@@ -222,3 +222,20 @@ describe("campaign template keys", () => {
     expect(pushKeyGaps(missing as never, "campaign:win-back")).toEqual(["ru/default"]);
   });
 });
+
+// ieat-app#3394: the seeds are what a fresh install or a new instance sends, so they carry the
+// push voice prod carries — no em-dash asides, no exclamation, and none of the translated lines
+// Kirill cut («Запиши сегодняшнюю еду» was the shipped Russian nudge).
+describe("seed copy speaks the push voice", () => {
+  const seeds = LANGS.flatMap((lang) => pushRowsFromCopy(lang, notificationCopyFor(lang)));
+
+  test("no seed carries an em dash or an exclamation mark", () => {
+    const loud = seeds.filter((t) => /[—!！]/.test(t.title + t.body)).map((t) => `${t.lang} ${t.key}/${t.variant}`);
+    expect(loud).toEqual([]);
+  });
+
+  test("the Russian nudge is the line prod sends, not the cut one", () => {
+    const nudge = seeds.find((t) => t.lang === "ru" && t.key === "nudge" && t.variant === "default");
+    expect(nudge).toMatchObject({ title: "Как там обед?", body: "Что сегодня было из еды? Покажи, я посчитаю." });
+  });
+});

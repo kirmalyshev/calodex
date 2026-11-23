@@ -35,6 +35,6 @@ describe("Russian trial word (#3393)", () => {
     });
   }
   it("uses «триал» in the trial-end push", () => {
-    expect(NOTIFICATION_COPY.ru?.["trial-end"].title).toContain("Триал");
+    expect(NOTIFICATION_COPY.ru?.["trial-end"].title).toMatch(/триал/i);
   });
 });
