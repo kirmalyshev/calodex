@@ -43,12 +43,12 @@ describe("Russian trial word (#3393)", () => {
 // uses the short word. The key is the language; the value matches the OLD word in any inflection.
 const OLD_TRIAL_WORD: Record<string, RegExp> = {
   uk: /пробн/i,
-  bg: /пробен|пробни/i,
+  bg: /проб(ен|ни|на|но)/i,
   hr: /probn/i,
   sl: /preizkusn/i,
   sk: /skúšobn/i,
   cs: /zkušební/i,
-  pl: /okres\S* próbn/i,
+  pl: /okres\S* próbn|triale\b/i,
   nl: /proefperiod/i,
   sv: /provperiod/i,
   da: /prøveperiod/i,
@@ -75,6 +75,7 @@ describe("short trial word in every other language (#3393)", () => {
     };
     for (const [name, root] of Object.entries(roots)) {
       it(`${lang} ${name} has no ${old}`, () => {
+        expect(root).toBeDefined(); // a missing language must not pass silently
         expect(strings(root).filter((s) => old.test(s))).toEqual([]);
       });
     }

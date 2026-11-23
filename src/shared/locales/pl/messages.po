@@ -365,7 +365,7 @@ msgstr "Zgodnie z planem."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Jeszcze jedno, o co zaraz zapyta iOS: powiadomienia. Jedno dziennie i nigdy więcej — podsumowanie o 20:30, plus przypomnienie dzień przed końcem triala, jeśli z niego korzystasz. Nic poza tym, nigdy."
+msgstr "Jeszcze jedno, o co zaraz zapyta iOS: powiadomienia. Jedno dziennie i nigdy więcej — podsumowanie o 20:30, plus przypomnienie dzień przed końcem trialu, jeśli z niego korzystasz. Nic poza tym, nigdy."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

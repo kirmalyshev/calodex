@@ -822,7 +822,7 @@ shared.payCopyFor ko baa57dac8d842b9f
 shared.payCopyFor zh-Hans 7590e0bbef0f6b44
 shared.payCopyFor zh-Hant 02c1a801e535b830
 shared.payCopyFor tr 8c041473a25f2d24
-shared.payCopyFor pl 912e62adc2e0b0c8
+shared.payCopyFor pl f751d29809b6fc0e
 shared.payCopyFor nl a0cc1ea2bac39cda
 shared.payCopyFor uk 7c632dbd3046329c
 shared.payCopyFor sv a893c94dce527f8f
@@ -837,10 +837,10 @@ shared.payCopyFor fi c9623a0079315b2a
 shared.payCopyFor no 4284d6edb01f4d8b
 shared.payCopyFor sk e5b4a143a9b1789c
 shared.payCopyFor hr e8433f10f0f9e6c7
-shared.payCopyFor sl cdd4361e9e7a4250
+shared.payCopyFor sl 7599ef1009b5bafb
 shared.payCopyFor ca 27baaf5bc2adf07d
 shared.payCopyFor ms e165883c2c4bc587
-shared.payCopyFor pt-PT 9f9a60e9841c0d92
+shared.payCopyFor pt-PT 1810d85e3238e7a7
 shared.payCopyFor bn 800d40a3692c511a
 shared.payCopyFor gu 07bf119cef06ba4b
 shared.payCopyFor kn 3fd89cb1380f1135
@@ -1137,7 +1137,7 @@ shared.threadCopyFor ko 6b9e27956836ce09
 shared.threadCopyFor zh-Hans 2478f9073c018fd3
 shared.threadCopyFor zh-Hant e86c4529d4b07956
 shared.threadCopyFor tr 66c9f115861a50c2
-shared.threadCopyFor pl fa1b1ef58787e93a
+shared.threadCopyFor pl 77760630b1059c9e
 shared.threadCopyFor nl eabf5c4aa95cc1a7
 shared.threadCopyFor uk 39b8e00ba75671b0
 shared.threadCopyFor sv c5740a35743c5202
