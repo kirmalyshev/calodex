@@ -365,6 +365,18 @@ export function demoPorts(): LlmPorts {
       };
     }
     const eaten = Math.round(todayMeals.reduce((n, m) => n + m.kcal, 0));
+    // "This meal" is the card or offer the thread last showed, which the engine resolves and
+    // hands over as `focusMeal` (#3309). A real coach names it and judges it against the day;
+    // the canned one does too, because "I do not have that plate" is the answer this context
+    // exists to make impossible.
+    const shown = input.context.focusMeal;
+    if (shown && /should i eat|can i eat|eat this|this (meal|plate)|is this (ok|good|fine|healthy|safe)|есть это|это есть|съест|makan(an)? ini|boleh.*makan|haruskah/.test(text)) {
+      const proteinLeft = Math.max(0, Math.round(targets.protein_g - todayMeals.reduce((n, m) => n + m.protein_g, 0)));
+      return {
+        reply: `${shown.items.map((i) => i.name).join(", ")} — about ${Math.round(shown.kcal)}kcal, against the ${Math.max(0, targets.kcal - eaten)}kcal and ${proteinLeft}g protein left today. (Demo answer.)`,
+        suggestions,
+      };
+    }
     // The bar's subject, the way a real coach names it: when the question is about one nutrient.
     // The engine fills the figures; a demo that handed numbers through would be different from
     // the real thing in a way a test can see.
