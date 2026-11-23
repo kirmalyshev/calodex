@@ -6958,12 +6958,12 @@ if (PG_URL) {
         // #812: the per-account onboarding flow — the admin's own cross-account read, like the
         // funnel above it; staff exclusion is the method's job, the route names the account.
         "adminOnboardingFlow",
-        // ieat-app#3421: admin_values belongs to no account — a global setting like the switches
-        // beside it; the writer is the resolved admin's id, never a scope.
-        "adminValue", "adminValueHistory",
         // ieat-app#3422: the recognizer review — a cross-account read like every admin read above;
         // the role is the authority, and the list stays content-free so it cannot be a dump.
         "adminRecognition", "adminRecognitions",
+        // ieat-app#3421: admin_values belongs to no account — a global setting like the switches
+        // beside it; the writer is the resolved admin's id, never a scope.
+        "adminValue", "adminValueHistory",
         "bumpOnboardingContentVersion", "campaignReport", "campaignsKilled", "claimJob", "claimPairingCode",
         "countOnboardedSince", "createCampaign", "createUser", "expireJobs", "foodById",
         "forgetJobs", "forgetTurnOutcomes", "getCampaign", "getNotificationCopy", "getOnboardingContent",
