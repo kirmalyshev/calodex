@@ -61,9 +61,10 @@ const BOARD_PHOTO_FILES = {
   shortcake: "shortcake-sq.webp",
   cake: "cake-sq.webp",
 } as const;
-type BoardPhoto = keyof typeof BOARD_PHOTO_FILES;
+export type BoardPhoto = keyof typeof BOARD_PHOTO_FILES;
 
-const boardPhoto = (key: BoardPhoto): Uint8Array =>
+/** The licensed image behind a key — real food, so a turn that photographs one reads as a plate. */
+export const boardPhoto = (key: BoardPhoto): Uint8Array =>
   new Uint8Array(readFileSync(join(import.meta.dir, "img", BOARD_PHOTO_FILES[key])));
 
 export function seedDeviceId(key: string): string {
