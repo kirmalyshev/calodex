@@ -24,7 +24,7 @@ import type { SwitchKey } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
 import { switchOn } from "./switches.ts";
 import {
-  analyzeFoodRow, norm, singular, words, FILLER, STATES, SUBSTITUTE,
+  analyzeFoodRow, norm, singular, words, STATES, SUBSTITUTE,
   CLS_OTHER, CLS_FILLER, CLS_PRODUCT, CLS_COMPOSITE, CLS_PORTION, CLS_CAP,
   type RowAnalysis,
 } from "../food-index.ts";
@@ -142,12 +142,12 @@ const SPECIES = new Set([
   "trout", "sardine", "herring", "mackerel", "shrimp", "prawn", "crab", "lobster", "squid", "octopus",
 ]);
 /**
- * The species a bare food word means: "a steak" is a beef steak until the name says otherwise —
- * a "Pork steak" row is a DIFFERENT head food for it, not a shorter-named win (#637). Joins the
+ * The default a bare food word stands for: "a steak" is a beef steak and "oil" is vegetable oil
+ * until the name says otherwise (#903) — a "Pork steak" row is a DIFFERENT head food for it, not a shorter-named win (#637). Joins the
  * query's match set, so a row naming the implied species neither gains an extra nor loses its
  * head. Keys and values are normed stems.
  */
-const IMPLIED_SPECIES: Record<string, string> = { steak: "beef", oil: norm("vegetable") };
+const IMPLIED_SPECIES: Record<string, string> = { steak: norm("beef"), oil: norm("vegetable") };
 
 interface QueryContext {
   /** Every query word, normed, plus the implied species — the match set for extra/head/brand. */
@@ -155,7 +155,7 @@ interface QueryContext {
   /** qAll as an array: iterated once per candidate's flags. */
   qArr: string[];
   wantState: Set<string>; servesCooked: boolean;
-  /** The query's head noun (its last content word, normed): the food the name says it is. */
+  /** Head noun after `lookupWords` rewrites and stripping (last word, normed); may not be in `qAll` when a rewrite changed it. */
   qHead: string | undefined;
 }
 const queryContext = (nameEn: string): QueryContext => {
@@ -172,6 +172,10 @@ const queryContext = (nameEn: string): QueryContext => {
     servesCooked: q.some((t) => SERVES_COOKED.has(t) || SERVES_COOKED.has(singular(t))),
   };
 };
+
+/** Whether `head` (a normed stem) sits in the name's first comma segment or in a "with ..." segment. */
+const namesAsModifier = (name: string, head: string): boolean =>
+  name.split(",").some((seg, i) => (i === 0 || /^\s*with\b/i.test(seg)) && words(seg).some((w) => norm(w) === head));
 
 interface Scored { s: number; sHard: number; extras: number; headOk: boolean }
 function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored): void {
@@ -200,9 +204,13 @@ function scoreFoodIn(ctx: QueryContext, f: Complete, a: RowAnalysis, out: Scored
   // head whose far half the name never said is a head the name never said.
   const headOk = a.headParts ? a.headParts.every((p) => qAll.has(norm(p))) : qAll.has(a.headStem!);
   if (!headOk) {
-    // #903: "dumpling" is not "Semolina dumplings", "sauce" is not "Ham, potatoes ..., with sauce":
-    // a row that names the query's head only as a modifier of another food is a different food.
-    if (qHead !== undefined && a.flags.has(qHead) && !FILLER.has(a.words[0]!)) { out.s = out.sHard = -Infinity; out.extras = 0; out.headOk = false; return; }
+    // #903: "dumpling" is not "Semolina dumplings, raw" and "sauce" is not "Ham, ..., with sauce": the
+    // query's head noun inside the row's head phrase (first comma segment) or a "with ..." qualifier
+    // makes a different food. USDA's inverted "Nuts, almond butter" names it as the food itself and
+    // only takes the head penalty.
+    if (qHead !== undefined && a.flags.has(qHead) && namesAsModifier(f.name_en ?? f.name, qHead)) {
+      out.s = out.sHard = -Infinity; out.extras = 0; out.headOk = false; return;
+    }
     s -= 3;
   }
 

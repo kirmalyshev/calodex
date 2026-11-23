@@ -342,6 +342,13 @@ describe("a generic word never grounds to a different food (#903)", () => {
     expect(pick("dumpling", [ref("Semolina dumplings, raw", 120)])).toBeNull();
     expect(pick("dark sauce", [ref("Ham, potatoes and vegetables, with sauce", 90)])).toBeNull();
   });
+  test("USDA-inverted rows that name the food after a category are spared the rejection", () => {
+    expect(pick("hamburger", [ref("Fast foods, hamburger, plain", 297)])).toBe("Fast foods, hamburger, plain");
+    expect(pick("almond butter", [ref("Nuts, almond butter, plain", 614)])).toBe("Nuts, almond butter, plain");
+  });
+  test("the plain-oil default never beats a named oil", () => {
+    expect(pick("olive oil", [ref("Oil, vegetable", 884), ref("Oil, olive", 884)])).toBe("Oil, olive");
+  });
   test("the right row still beats no match", () => {
     expect(pick("dumpling", [ref("Semolina dumplings, raw", 120), ref("Dumpling, pork, steamed", 200)])).toBe("Dumpling, pork, steamed");
     expect(pick("chicken soup", [ref("Soup, chicken noodle", 40)])).toBe("Soup, chicken noodle");
