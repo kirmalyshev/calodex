@@ -124,6 +124,14 @@ interface Choice { finish_reason?: string; message?: { content?: string | null; 
 const UNROUTED = new Set([401, 402, 429, 503]);
 
 /**
+ * Blanks the token-bearing shapes a provider's error body can carry — a `Bearer …` it echoes, a
+ * `sk-…` it saw — before the body is logged or stored (#3435). The body still reads "out of
+ * credit"; it just cannot smuggle a credential into `llm_calls`.
+ */
+const scrubBody = (s: string): string =>
+  s.replace(/Bearer\s+\S+/gi, "Bearer …").replace(/sk-[A-Za-z0-9_-]+/g, "sk-…");
+
+/**
  * What OpenRouter reports for ONE generation — the check every `llm_calls.generation_id` invites:
  * the model that served it, the provider, the token counts it charged for, its latency and its
  * cost, in the shape `GET /api/v1/generation?id=…` returns them (`data` unwrapped here, metrics
@@ -277,6 +285,8 @@ interface CallDraft {
   costUsd: number | null;
   images: number;
   imageBytes: number;
+  /** The provider's own error body on a refused call — scrubbed, capped, kept for the row (#3435). */
+  error: string | null;
 }
 
 /** The envelope fields a completion (or a stream chunk) carries, moved onto the draft. */
@@ -316,6 +326,7 @@ function emitCall(draft: CallDraft | undefined, status: string): void {
     generationId: draft.generationId,
     images: draft.images,
     imageBytes: draft.imageBytes,
+    errorBody: draft.error,
   });
 }
 
@@ -393,6 +404,7 @@ export function openRouterPorts(opts: Options): LlmPorts {
       startedAt: Date.now(), firstByteAt: null, firstItemAt: null,
       modelServed: null, provider: null, generationId: null,
       promptTokens: null, completionTokens: null, reasoningTokens: null, costUsd: null,
+      error: null,
       ...imageStats(body),
     };
     let res: Response;
@@ -414,9 +426,12 @@ export function openRouterPorts(opts: Options): LlmPorts {
 
       if (!res.ok) {
         // The status and a short body go to the log; neither reaches the client. An upstream error
-        // string can echo the prompt, which carries the user's medical free text.
+        // string can echo the prompt, which carries the user's medical free text. The row keeps the
+        // same body, scrubbed of token shapes: it is how a 402's "out of credit" is told from a
+        // 402 that means something else (#3435).
         wire = `http_${res.status}`;
-        const detail = (await res.text()).slice(0, 500);
+        const detail = scrubBody((await res.text()).slice(0, 500));
+        if (draft) draft.error = detail;
         const message = `llm http ${res.status}: ${detail}`;
         const unrouted = UNROUTED.has(res.status) && !billed;
         throw unrouted ? new GatewayRefusal(res.status, message) : new Error(message);
@@ -450,7 +465,11 @@ export function openRouterPorts(opts: Options): LlmPorts {
           try { j = JSON.parse(data); } catch { continue; }
           // A mid-stream error is a status that never had a status line: the content stops, the
           // parse below fails, and without this the log says "not valid JSON" and nothing else.
-          if (j.error) console.error(`[eait] llm stream error: ${JSON.stringify(j.error).slice(0, 300)}`);
+          if (j.error) {
+            const eBody = scrubBody(JSON.stringify(j.error).slice(0, 300));
+            console.error(`[eait] llm stream error: ${eBody}`);
+            if (draft) draft.error = eBody;
+          }
           // Every stream ends with one chunk carrying the request's usage, just before [DONE].
           if (j.usage !== undefined) cost = priceOf(j.usage);
           fillDraft(draft, j, cost);

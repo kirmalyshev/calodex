@@ -184,7 +184,7 @@ export function demoPorts(): LlmPorts {
     promptTokens: null, completionTokens: null, reasoningTokens: null, costUsd: 0,
     msFirstByte: 0, msFirstItem: null, msTotal: 0,
     status: "ok", attempt: 0, fallbackUsed: false, generationId: null,
-    images, imageBytes,
+    images, imageBytes, errorBody: null,
   });
 
   const analyzePhoto: AnalyzePhoto = async (input, onDelta) => {

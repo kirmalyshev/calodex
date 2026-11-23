@@ -1870,7 +1870,7 @@ function contract(name: string, make: () => Promise<Store>) {
       promptTokens: 1200, completionTokens: 400, reasoningTokens: 0,
       costUsd: 0.0014, msFirstByte: 8200, msFirstItem: 9100, msTotal: 33000,
       status: "ok", attempt: 0, fallbackUsed: false,
-      generationId: "gen-abc", images: 1, imageBytes: 2_000_000, ...over,
+      generationId: "gen-abc", images: 1, imageBytes: 2_000_000, errorBody: null, ...over,
     });
 
     it("keeps one metrics row per provider call, scoped to the account that made it", async () => {
@@ -1879,9 +1879,11 @@ function contract(name: string, make: () => Promise<Store>) {
       const b = (await s.upsertDeviceUser(device(), "en")).userId;
       const analysisId = await s.recordAnalysis(a, RUN_DATE, "photo");
       expect(await s.recordLlmCall(a, llmCall({ analysisId }))).toBe(true);
-      // A failed call is a row too — the status is its whole reason for being.
+      // A failed call is a row too — the status is its whole reason for being, and (#3435) the
+      // provider's own words, kept truncated and scrubbed, are the diagnosis that status cannot be.
       expect(await s.recordLlmCall(a, llmCall({
-        analysisId, attempt: 1, status: "http_429",
+        analysisId, attempt: 1, status: "http_402",
+        errorBody: '{"error":{"message":"Insufficient credits"}}',
         modelServed: null, provider: null, promptTokens: null, completionTokens: null,
         reasoningTokens: null, costUsd: null, generationId: null,
       }))).toBe(true);
@@ -1900,7 +1902,10 @@ function contract(name: string, make: () => Promise<Store>) {
         status: "ok", attempt: 0, fallbackUsed: false,
         generationId: "gen-abc", images: 1, imageBytes: 2_000_000,
       });
-      expect(rows[1]).toMatchObject({ status: "http_429", attempt: 1, modelServed: null });
+      expect(rows[1]).toMatchObject({
+        status: "http_402", attempt: 1, modelServed: null,
+        errorBody: '{"error":{"message":"Insufficient credits"}}',
+      });
       expect(rows[2]).toMatchObject({ kind: "coach", analysisId: null });
       // Scoped: b's row is never one of a's.
       expect((await s.llmCalls(b)).map((r) => r.kind)).toEqual(["route"]);

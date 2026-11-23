@@ -1004,6 +1004,35 @@ describe("call metrics", () => {
     expect(seen[0]!.modelServed).toBeNull();
   });
 
+  // #3435: the row a refused call writes keeps what the provider said — truncated, and with the
+  // token-bearing shape blanked, because the same body the operator needs to read "out of credit"
+  // in is also a place a leaked credential could hide.
+  test("a refused call's row carries the provider's error body, scrubbed", async () => {
+    const llm = openRouterPorts({
+      apiKey: "test-key-not-a-secret", model: "test-model", chatModel: "test-chat-model",
+      baseUrl: "https://example.invalid/v1/chat/completions", timeoutMs: 5000, maxTokens: 4321,
+      fetchImpl: (async () => new Response(
+        '{"error":{"message":"You have insufficient credits, auth was Bearer sk-or-v1-secretsecret"}}',
+        { status: 402 })) as unknown as typeof fetch,
+    });
+    const { seen, onCall } = collect();
+    await llm.analyzePhoto({ ...PHOTO_INPUT, onCall }).then(() => null, () => null);
+    expect(seen[0]!.status).toBe("http_402");
+    expect(seen[0]!.errorBody).toContain("insufficient credits");
+    expect(seen[0]!.errorBody).not.toContain("sk-or-v1-secretsecret");
+  });
+
+  test("a provider body is capped on the row, not stored whole", async () => {
+    const llm = openRouterPorts({
+      apiKey: "test-key-not-a-secret", model: "test-model", chatModel: "test-chat-model",
+      baseUrl: "https://example.invalid/v1/chat/completions", timeoutMs: 5000, maxTokens: 4321,
+      fetchImpl: (async () => new Response("x".repeat(5000), { status: 503 })) as unknown as typeof fetch,
+    });
+    const { seen, onCall } = collect();
+    await llm.analyzePhoto({ ...PHOTO_INPUT, onCall }).then(() => null, () => null);
+    expect(seen[0]!.errorBody!.length).toBeLessThanOrEqual(500);
+  });
+
   test("a reply that misses the schema is schema_retry, then the retry's own row", async () => {
     const { llm } = ports([{ nope: true }, MEAL]);
     const { seen, onCall } = collect();
