@@ -305,7 +305,7 @@ msgstr "Zapisano."
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
 msgid "tg.refusal.subscription-required"
-msgstr "Zapisywanie posiłków wymaga subskrypcji. Rozpocznij darmowy okres próbny w przeglądarce, by kontynuować."
+msgstr "Zapisywanie posiłków wymaga subskrypcji. Rozpocznij darmowy trial w przeglądarce, by kontynuować."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
@@ -370,7 +370,7 @@ msgstr "Zgodnie z planem."
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.notify-primer"
-msgstr "Jeszcze jedno, o co zaraz zapyta iOS: powiadomienia. Jedno dziennie i nigdy więcej — podsumowanie o 20:30, plus przypomnienie dzień przed końcem okresu próbnego, jeśli z niego korzystasz. Nic poza tym, nigdy."
+msgstr "Jeszcze jedno, o co zaraz zapyta iOS: powiadomienia. Jedno dziennie i nigdy więcej — podsumowanie o 20:30, plus przypomnienie dzień przed końcem trialu, jeśli z niego korzystasz. Nic poza tym, nigdy."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
@@ -560,7 +560,7 @@ msgstr "Zbyt wiele prób z tego Telegrama. Odczekaj chwilę i naciśnij link pon
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
 msgid "thread.scripted.trial-started"
-msgstr "Okres próbny ruszył — po jego końcu {price}, chyba że go anulujesz. Przypomnę ci dzień przed końcem, nigdy dzień po."
+msgstr "Trial ruszył — po jego końcu {price}, chyba że go anulujesz. Przypomnę ci dzień przed końcem, nigdy dzień po."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

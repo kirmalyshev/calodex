@@ -71,14 +71,19 @@ describe("ProfileResponse.analytics (ieat-app#3196)", () => {
     expect(await version()).toBe(7);
   });
 
-  it("names the held arm only when the copy last served is that arm's", async () => {
+  it("names the arm the serving itself recorded — not one re-derived from the held assignment (ieat-app#3401)", async () => {
     const { store, deps, userId } = await setup();
     const arm = async () => { const a = (await profileView(deps, userId))!.analytics!; return [a.experiment_id, a.arm]; };
     const id = await holdArm(store, userId, 42);
+    // An assignment alone is not a serving: nothing is named until GET /v1/onboarding wrote it.
     expect(await arm()).toEqual([null, null]);
     await serve(store, userId, DEFAULT_ONBOARDING_CONTENT.version);
     expect(await arm()).toEqual([null, null]);
-    await serve(store, userId, 42);
+    await serve(store, userId, 42, { id, arm: "42" });
+    expect(await arm()).toEqual([id, "42"]);
+    // The record, not the experiment's status: a later event still names the arm the user saw
+    // even after the experiment stopped.
+    await store.stopOnboardingExperiment(id);
     expect(await arm()).toEqual([id, "42"]);
   });
 
@@ -120,8 +125,8 @@ const holdArm = async (store: Store, userId: string, version: number) => {
   await store.putOnboardingAssignment(userId, id, version);
   return id;
 };
-const serve = (store: Store, userId: string, contentVersion: number) =>
-  store.recordOnboardingServed(userId, { contentVersion, lang: "de", surface: "app", screens: {} });
+const serve = (store: Store, userId: string, contentVersion: number, experiment: { id: string; arm: string } | null = null) =>
+  store.recordOnboardingServed(userId, { contentVersion, lang: "de", surface: "app", screens: {}, experiment });
 
 describe("analyticsRequestOf (ieat-app#3196)", () => {
   it("reads the binary's own headers", () => {

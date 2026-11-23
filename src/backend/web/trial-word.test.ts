@@ -38,3 +38,56 @@ describe("Russian trial word (#3393)", () => {
     expect(NOTIFICATION_COPY.ru?.["trial-end"].title).toMatch(/триал/i);
   });
 });
+
+// #3393 (Kirill, 23 Nov, q37 "all-trial"): every language that spelt the trial as a long compound now
+// uses the short word. The key is the language; the value matches the OLD word in any inflection.
+const OLD_TRIAL_WORD: Record<string, RegExp> = {
+  uk: /пробн/i,
+  bg: /проб(ен|ни|на|но)|безплатния си период/i,
+  hr: /probn/i,
+  sl: /preizkusn/i,
+  sk: /skúšobn/i,
+  cs: /zkušební/i,
+  pl: /okres\S* próbn|triale\b/i,
+  nl: /proefperiod/i,
+  sv: /provperiod/i,
+  da: /prøveperiod/i,
+  no: /prøveperiod/i,
+  fi: /kokeilujakso|kokeilujakson/i,
+  hu: /próbaidő/i,
+  ro: /perioad\S*( \S+)? de prob/i,
+  "pt-PT": /avaliação/i,
+};
+const SHORT_WORD: Record<string, RegExp> = {
+  uk: /тріал/i, bg: /триал/i, hr: /trial/i, sl: /trial/i, sk: /trial/i, cs: /trial/i, pl: /trial/i,
+  nl: /trial/i, sv: /trial/i, da: /trial/i, no: /trial/i, fi: /kokeilu/i, hu: /trial/i, ro: /\bproba\b|\bprobă\b|probei/i,
+  "pt-PT": /teste grátis/i,
+};
+
+describe("short trial word in every other language (#3393)", () => {
+  for (const [lang, old] of Object.entries(OLD_TRIAL_WORD)) {
+    const roots = {
+      NOTIFICATION_COPY: (NOTIFICATION_COPY as Record<string, unknown>)[lang],
+      PAY_COPY: (PAY_COPY as Record<string, unknown>)[lang],
+      YOU_COPY: (YOU_COPY as Record<string, unknown>)[lang],
+      WEB_COPY: (WEB_COPY as Record<string, unknown>)[lang],
+      PAGE_COPY_BY_LANG: (PAGE_COPY_BY_LANG as Record<string, unknown>)[lang],
+    };
+    for (const [name, root] of Object.entries(roots)) {
+      it(`${lang} ${name} has no ${old}`, () => {
+        expect(root).toBeDefined(); // a missing language must not pass silently
+        expect(strings(root).filter((s) => old.test(s))).toEqual([]);
+      });
+    }
+    for (const f of ["messages.po", "messages.ts"]) {
+      it(`locales/${lang}/${f} has no ${old}`, () => {
+        const text = readFileSync(new URL(`../../shared/locales/${lang}/${f}`, import.meta.url), "utf8");
+        expect(text.match(new RegExp(`.{0,20}(${old.source}).{0,20}`, "gi")) ?? []).toEqual([]);
+      });
+    }
+    it(`${lang} trial-end push uses the short word`, () => {
+      const n = (NOTIFICATION_COPY as Record<string, { "trial-end"?: { title: string } } | undefined>)[lang];
+      expect(n?.["trial-end"]?.title).toMatch(SHORT_WORD[lang]!);
+    });
+  }
+});

@@ -696,7 +696,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   "pt-PT": {
   "trial-end": {
-    title: "O teste acaba amanhã",
+    title: "O teste grátis acaba amanhã",
     body: "Queres cancelar? Definições › Subscrições. Se não, renova automaticamente.",
   },
   evening: {
@@ -952,7 +952,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   da: {
   "trial-end": {
-    title: "Prøven slutter i morgen",
+    title: "Trialen slutter i morgen",
     body: "Vil du stoppe? Indstillinger › Abonnementer. Ellers fornyes det automatisk.",
   },
   evening: {
@@ -984,7 +984,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   hu: {
   "trial-end": {
-    title: "Holnap lejár a próba",
+    title: "Holnap lejár a trial",
     body: "Lemondanád? Beállítások › Előfizetések. Különben automatikusan megújul.",
   },
   evening: {
@@ -1240,7 +1240,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
 },
   nl: {
   "trial-end": {
-    title: "Proef stopt morgen",
+    title: "Trial stopt morgen",
     body: "Wil je stoppen? Instellingen › Abonnementen. Anders wordt het vanzelf verlengd.",
   },
   evening: {

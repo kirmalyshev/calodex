@@ -45,6 +45,9 @@ async function heldArm(deps: EngineDeps, userId: string, lang: Lang): Promise<{ 
   }
 }
 
+// The arm stamped is the LATEST serving's, read when the batch arrives: events a phone queued
+// under an earlier serving and flushed after a re-serve name the newer arm — receipt-time, the
+// same semantics the held-arm stamp had before this.
 const latestServed = (served: OnboardingServedRecord[]) =>
   served.reduce<OnboardingServedRecord | undefined>((a, r) => (!a || r.lastServedAt >= a.lastServedAt ? r : a), undefined);
 
@@ -79,14 +82,17 @@ async function readServerContext(deps: EngineDeps, userId: string, profile: Prof
   ]);
   const referrer = referral?.referredBy ?? null;
   const latest = latestServed(served);
-  const arm = held && latest?.contentVersion === held.variant.content.version ? held : null;
+  // ieat-app#3401: the arm is read off the serving itself, recorded when GET /v1/onboarding
+  // answered — so a later event names the same assignment even after the experiment stops or its
+  // content moves on, and never claims an arm for a live-flow serving. `held` stays only as the
+  // content_version fallback for an account nothing was served to yet.
   return {
     content_version: latest?.contentVersion ?? held?.variant.content.version
       ?? usableContentFor(profile.lang, await deps.store.getOnboardingContent()).version,
     lang: profile.lang,
     country: profile.country,
-    experiment_id: arm?.experimentId ?? null,
-    arm: arm ? String(arm.variant.content.version) : null,
+    experiment_id: latest?.experimentId ?? null,
+    arm: latest?.arm ?? null,
     template: servedTemplates(latest),
     acq_source: effectiveAcqSource(acq?.source ?? null, referrer !== null),
     acq_campaign: acq?.campaign ?? null, acq_adgroup: acq?.adGroup ?? null, acq_keyword: acq?.keyword ?? null,
@@ -130,5 +136,6 @@ export async function onboardingEventContext(
 ): Promise<OnboardingEventContext | undefined> {
   const profile = await deps.store.getProfile(userId);
   const s = profile ? await analyticsServerContext(deps, userId, profile) : null;
-  return { ...request, lang: s?.lang ?? null, country: s?.country ?? null, experiment_id: s?.experiment_id ?? null, arm: s?.arm ?? null, template: null };
+  // `template` and `paywall_offering` are the row's own, from the body — the server stamps null.
+  return { ...request, lang: s?.lang ?? null, country: s?.country ?? null, experiment_id: s?.experiment_id ?? null, arm: s?.arm ?? null, template: null, paywall_offering: null };
 }
