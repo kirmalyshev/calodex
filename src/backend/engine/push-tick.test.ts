@@ -198,6 +198,19 @@ describe("the catch-up is for a late tick, not an account that did not exist at 
     const tick = await pushTick(deps, { now: Date.parse("2026-08-20T13:20:00Z") }); // 21:20 there
     expect(tick.sent).toBe(1);
   });
+
+  it("an onboarding finished after today's line is not caught up either", async () => {
+    storeNow = Date.parse("2026-08-20T12:00:00Z"); // the device was there at 20:00
+    const userId = await account({ tz: "Asia/Kuala_Lumpur" });
+    // The engine stamps `onboarded_at` with the real clock; the store seam is what reaches it.
+    await store.patchProfile(userId, { onboarded_at: "2026-08-20T13:20:00Z" }); // 21:20 there
+    storeNow = Date.now();
+
+    const tick = await pushTick(deps, { now: Date.parse("2026-08-20T13:21:00Z") });
+    expect(tick.sent).toBe(0);
+    expect(tick.skipped["not-due"]).toBe(1);
+    expect(push.sent).toHaveLength(0);
+  });
 });
 
 describe("send_log", () => {

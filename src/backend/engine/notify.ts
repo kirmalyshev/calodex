@@ -233,7 +233,9 @@ export function zoneOf(deps: EngineDeps, reported: string | null): string {
 
 /**
  * Why a visited account got nothing this minute. `not-due`: outside its own evening-line time
- * (`config.eveningLineTime`) + `CATCH_UP_MS`, which is every account most of the day.
+ * (`config.eveningLineTime`) + `CATCH_UP_MS`, which is every account most of the day — and an
+ * account that joined the audience or finished onboarding only after today's line, which was
+ * owed nothing at the line (ieat-app#3399).
  * `sender-taken` / `account-cap`: `claimSend`'s refusals. `evening-off`: its own switch.
  * `nothing-to-say`: never onboarded, or the key is not sendable (`sendableCopy` warns, naming it).
  */
