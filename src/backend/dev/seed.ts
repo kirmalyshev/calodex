@@ -49,7 +49,7 @@ import { readFileSync } from "node:fs";
  * licences ride beside them in `img/LICENSES.md` — the same rows `product/design/pro/img`
  * carries, which is where the squares were cropped from. One key per file in `img/`: the set is
  * the landing's licensed pool, so the screenshot capture picks from it too. Loaded lazily so the
- * module stays cheap to import (the test and the seeder are its only callers).
+ * module stays cheap to import (the test, the seeder and ieat-app's eval-coach are its callers).
  */
 const BOARD_PHOTO_FILES = {
   grainbowl: "grainbowl-sq.webp",

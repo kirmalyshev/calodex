@@ -370,7 +370,7 @@ export function demoPorts(): LlmPorts {
     // the canned one does too, because "I do not have that plate" is the answer this context
     // exists to make impossible.
     const shown = input.context.focusMeal;
-    if (shown && /should i eat|can i eat|eat this|this (meal|plate)|is this (ok|good|fine|healthy|safe)|есть это|это есть|съест|makan(an)? ini|boleh.*makan|haruskah/.test(text)) {
+    if (shown && /(should|can) i (still )?eat (this|it|that)|\beat this\b|\bthis (meal|plate)\b|\bis this (ok|good|fine|healthy|safe)|есть это|это есть|съест|\bmakan(an)? ini\b|\bboleh.{0,20}makan|\bharuskah\b/.test(text)) {
       const proteinLeft = Math.max(0, Math.round(targets.protein_g - todayMeals.reduce((n, m) => n + m.protein_g, 0)));
       return {
         reply: `${shown.items.map((i) => i.name).join(", ")} — about ${Math.round(shown.kcal)}kcal, against the ${Math.max(0, targets.kcal - eaten)}kcal and ${proteinLeft}g protein left today. (Demo answer.)`,
