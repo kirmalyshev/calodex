@@ -164,6 +164,11 @@ msgstr "一餐就占了你一天的一大部分。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}千卡，约占今天的{share}。下一餐清淡些就能平衡。"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "我的蛋白质摄入够吗？"
 

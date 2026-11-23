@@ -164,6 +164,11 @@ msgstr "Een groot deel van je dag in één maaltijd."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ongeveer {share} van vandaag. Een lichtere volgende maaltijd maakt het weer goed."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Krijg ik genoeg eiwit binnen?"
 

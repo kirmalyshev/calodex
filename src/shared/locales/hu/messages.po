@@ -164,6 +164,11 @@ msgstr "Egy étkezésben a napod nagy része."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, a mai nap körülbelül {share}-a. Egy könnyebb következő étkezés kiegyenlíti."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Elég fehérjét eszem?"
 

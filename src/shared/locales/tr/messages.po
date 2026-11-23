@@ -164,6 +164,11 @@ msgstr "Günlük hakkının büyük bir kısmı tek öğünde."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, bugünün yaklaşık {share} kadarı. Bir sonraki öğünü daha hafif tutmak dengeler."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Yeterince protein alıyor muyum?"
 

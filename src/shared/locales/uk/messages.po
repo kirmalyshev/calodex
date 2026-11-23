@@ -164,6 +164,11 @@ msgstr "Велика частина дня в одному прийомі їжі
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}ккал, близько {share} від дня. Легший наступний прийом їжі все вирівняє."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Чи вистачає мені білка?"
 

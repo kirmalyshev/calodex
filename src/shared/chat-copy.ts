@@ -74,7 +74,7 @@ export interface ThreadCopy {
      * is on plan, `caloriesOnPlan` when the calories are and a declared marker is not (its own
      * line follows), and the two share-of-day sentences for a calories pill that is high.
      */
-    headline: { onPlan: string; caloriesOnPlan: string; caloriesHigh: string; caloriesVeryHigh: string };
+    headline: { onPlan: string; caloriesOnPlan: string; caloriesHigh: string; caloriesVeryHigh: string; caloriesHighFirst: (v: { kcal: string; share: string }) => string };
     /** The camera caption, quoted back. */
     noted: (v: { note: string }) => string;
   };
@@ -124,6 +124,7 @@ const THREAD = (i18n: I18n): ThreadCopy => ({
       onPlan: i18n._("thread.firstVerdict.headline.onPlan", undefined, { message: "On plan." }),
       caloriesOnPlan: i18n._("thread.firstVerdict.headline.caloriesOnPlan", undefined, { message: "Calories on plan." }),
       caloriesHigh: i18n._("thread.firstVerdict.headline.caloriesHigh", undefined, { message: "A big share of your day in one meal." }),
+      caloriesHighFirst: (v: { kcal: string; share: string }) => i18n._("thread.firstVerdict.headline.caloriesHighFirst", v, { message: "{kcal}kcal, about {share} of today. A lighter next meal evens it out." }),
       caloriesVeryHigh: i18n._("thread.firstVerdict.headline.caloriesVeryHigh", undefined, { message: "More than half your day in one meal." }),
     },
     noted: (v: { note: string }) => i18n._("thread.firstVerdict.noted", v, { message: "“{note}” — noted, it's in the numbers." }),

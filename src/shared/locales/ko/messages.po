@@ -164,6 +164,11 @@ msgstr "한 끼에 하루의 큰 몫을 먹었어요."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, 오늘의 약 {share}예요. 다음 식사를 가볍게 하면 균형이 맞아요."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "단백질을 충분히 먹고 있나요?"
 

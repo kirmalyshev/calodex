@@ -164,6 +164,11 @@ msgstr "Duża część twojego dnia w jednym posiłku."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, około {share} dzisiejszego dnia. Lżejszy następny posiłek to wyrówna."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Czy jem wystarczająco białka?"
 

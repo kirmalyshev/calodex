@@ -164,6 +164,11 @@ msgstr "1食で1日の大きな割合をとっています。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal、今日の約{share}です。次の食事を軽めにすれば調整できます。"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "タンパク質は足りていますか？"
 

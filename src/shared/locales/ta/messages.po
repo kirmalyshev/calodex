@@ -164,6 +164,11 @@ msgstr "ஒரே உணவில் உங்கள் நாளின் ப�
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, இன்றைய தினத்தின் சுமார் {share}. அடுத்த உணவை இலகுவாக்கினால் சமநிலை ஆகிவிடும்."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "எனக்குப் போதுமான புரதம் கிடைக்கிறதா?"
 

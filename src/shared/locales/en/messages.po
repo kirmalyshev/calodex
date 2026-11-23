@@ -170,6 +170,11 @@ msgstr "A big share of your day in one meal."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, about {share} of today. A lighter next meal evens it out."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Am I getting enough protein?"
 

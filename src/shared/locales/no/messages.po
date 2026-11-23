@@ -164,6 +164,11 @@ msgstr "En stor del av dagen din i ett måltid."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, rundt {share} av i dag. Et lettere neste måltid jevner det ut."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Får jeg nok protein?"
 

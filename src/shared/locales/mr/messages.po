@@ -164,6 +164,11 @@ msgstr "एकाच जेवणात दिवसाचा मोठा व�
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, आजच्या सुमारे {share}. पुढचे जेवण हलके घेतल्यास संतुलन साधले जाईल."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "मला पुरेसे प्रोटीन मिळत आहे का?"
 

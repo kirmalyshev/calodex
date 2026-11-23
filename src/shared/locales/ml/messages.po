@@ -164,6 +164,11 @@ msgstr "ഒരൊറ്റ ഭക്ഷണത്തിൽ ദിവസത്ത�
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ഇന്നത്തെ ഏകദേശം {share}. അടുത്ത ഭക്ഷണം ലഘുവാക്കിയാൽ സന്തുലിതമാകും."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "എനിക്ക് ആവശ്യത്തിന് പ്രോട്ടീൻ കിട്ടുന്നുണ്ടോ?"
 

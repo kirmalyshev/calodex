@@ -170,6 +170,11 @@ msgstr "Một bữa đã chiếm phần lớn lượng calo cả ngày."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, khoảng {share} của hôm nay. Bữa sau nhẹ hơn một chút là cân bằng lại."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Đã đủ đạm chưa?"
 

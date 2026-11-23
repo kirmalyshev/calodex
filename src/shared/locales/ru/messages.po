@@ -170,6 +170,11 @@ msgstr "Большая часть дня в одном приёме пищи."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}ккал, около {share} от дня. Более лёгкий следующий приём пищи всё выровняет."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Мне хватает белка?"
 

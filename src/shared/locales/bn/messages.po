@@ -164,6 +164,11 @@ msgstr "এক খাবারেই দিনের বড় একটা অ�
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, আজকের প্রায় {share}। পরের বেলা হালকা খেলে ভারসাম্য ঠিক হয়ে যাবে।"
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "আমি কি যথেষ্ট প্রোটিন পাচ্ছি?"
 

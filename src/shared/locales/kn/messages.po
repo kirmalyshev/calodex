@@ -164,6 +164,11 @@ msgstr "ಒಂದೇ ಊಟದಲ್ಲಿ ನಿಮ್ಮ ದಿನದ ದೊ�
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, ಇಂದಿನ ಸುಮಾರು {share}. ಮುಂದಿನ ಊಟ ಹಗುರವಾಗಿದ್ದರೆ ಸಮತೋಲನವಾಗುತ್ತದೆ."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "ನನಗೆ ಸಾಕಷ್ಟು ಪ್ರೋಟೀನ್ ಸಿಗುತ್ತಿದೆಯೇ?"
 

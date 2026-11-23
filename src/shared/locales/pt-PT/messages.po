@@ -164,6 +164,11 @@ msgstr "Uma grande parte do teu dia numa só refeição."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, cerca de {share} de hoje. Uma próxima refeição mais leve equilibra."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Estou a comer proteína suficiente?"
 

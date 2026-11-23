@@ -4,7 +4,7 @@
 // writes them into the thread, the app may render one before the round trip lands. A sentence
 // changed here is a sentence changed in the product.
 
-import { kcalNumbers, spellUnit, wholeNumbers } from "./lang.ts";
+import { kcalNumbers, percentNumbers, spellUnit, wholeNumbers } from "./lang.ts";
 import { threadCopyFor } from "./chat-copy.ts";
 import { BARRIERS, LANGS, SITUATIONS, STARTER_FOR_PICK, STARTER_KEYS } from "./types.ts";
 import type {
@@ -342,7 +342,11 @@ export function firstVerdictLines(i: FirstVerdictInput, lang: Lang): string[] {
   const note = quotable(i.caption);
   if (note) lines.unshift(copy.noted({ note }));
   // #49: the headline is the pills' verdict, said first — see `verdictHeadline`.
-  const headline = verdictHeadline(i.verdicts, lang);
+  // ieat-app#3400: the account's FIRST meal over its share gets a figure and an action, not the
+  // later-meal warning — she never logged a second one after being scolded for the first.
+  const headline = i.verdicts.weight === "warn"
+    ? threadCopyFor(lang).firstVerdict.headline.caloriesHighFirst({ kcal, share: percentNumbers(lang)(i.meal.kcal / i.targets.kcal) })
+    : verdictHeadline(i.verdicts, lang);
   if (headline) lines.unshift(headline);
   return lines;
 }

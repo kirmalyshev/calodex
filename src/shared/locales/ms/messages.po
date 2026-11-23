@@ -164,6 +164,11 @@ msgstr "Sebahagian besar hari anda dalam satu hidangan."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, kira-kira {share} untuk hari ini. Hidangan seterusnya yang lebih ringan akan mengimbanginya."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Adakah saya mendapat protein yang cukup?"
 

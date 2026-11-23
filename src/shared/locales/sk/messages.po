@@ -164,6 +164,11 @@ msgstr "Veľká časť dňa v jednom jedle."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
+msgid "thread.firstVerdict.headline.caloriesHighFirst"
+msgstr "{kcal}kcal, približne {share} dnešného dňa. Ľahšie ďalšie jedlo to vyrovná."
+
+#. js-lingui-explicit-id
+#: src/shared/chat-copy.ts
 msgid "thread.coachStarters.support"
 msgstr "Prijímam dosť bielkovín?"
 
