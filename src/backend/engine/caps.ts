@@ -9,6 +9,7 @@ import type { Refusal } from "@eait/shared";
 import type { EngineDeps } from "./deps.ts";
 import type { SpendLimit } from "../store.ts";
 import { GatewayRefusal, type OnCall, type OnCost } from "../llm/port.ts";
+import { alertProviderCredit } from "./alert.ts";
 import { dailyPhotoCap, entitlementFor, firstVerdictAllowance, freeAnalysesFor } from "./entitlement.ts";
 import { isAnonymous } from "./identity.ts";
 
@@ -198,6 +199,9 @@ export async function charge(
     );
   }, onCall: (m) => {
     const { call, ...metric } = m;
+    // #3435: a credit-class answer alerts the operator the moment the metric lands — not on the
+    // outcome the turn maps it to, which a silent caller could swallow.
+    alertProviderCredit(deps, m);
     void deps.store.recordLlmCall(userId, {
       ...metric, analysisId: id,
       kind: call === "meal_analysis" ? photoKind : (LLM_CALL_KIND[call] ?? call),

@@ -572,6 +572,12 @@ export interface Config {
    */
   mailFrom: string;
   /**
+   * Where an OPERATOR alert goes (ieat-app#3435): a credit-class provider answer (401/402) mails
+   * here at once, throttled — the same address the stack's expiry/disk alerts already reach.
+   * Empty means no mail is sent; the alert still lands on the server log.
+   */
+  alertEmail: string;
+  /**
    * Sign-in code sends per recipient per hour, on top of `authRateLimitPerHour`. The per-ADDRESS
    * bound cannot stop one network mailing one mailbox, and this is what can. Zero disables it.
    */
@@ -815,6 +821,7 @@ export function configDefaults(): Config {
     posthogKey: "",
     posthogHost: "",
     mailFrom: BRANDS[DEFAULT_APP].mailFrom,
+    alertEmail: "",
     emailCodesPerHour: 5,
     emailCodesPerDay: 10,
     storeReviewEmail: "",
@@ -1105,6 +1112,7 @@ export function loadConfig(): Config {
     posthogKey: (process.env.EAIT__BACKEND__POSTHOG_KEY ?? d.posthogKey).trim(),
     posthogHost: (process.env.EAIT__BACKEND__POSTHOG_HOST ?? d.posthogHost).trim(),
     mailFrom: process.env.EAIT__BACKEND__MAIL_FROM ?? d.mailFrom,
+    alertEmail: (process.env.EAIT__BACKEND__ALERT_EMAIL ?? d.alertEmail).trim(),
     emailCodesPerHour: int("EAIT__BACKEND__EMAIL_CODES_PER_HOUR", d.emailCodesPerHour),
     emailCodesPerDay: int("EAIT__BACKEND__EMAIL_CODES_PER_DAY", d.emailCodesPerDay),
     ...storeReview(),

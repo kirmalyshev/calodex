@@ -13,5 +13,8 @@ export function logMail(): MailPort {
     async sendSignInCode(to, code) {
       console.log(`[eait] mail (log only): sign-in code ${code} for ${to}`);
     },
+    async sendAlert(to, subject) {
+      console.log(`[eait] mail (log only): alert "${subject}" for ${to}`);
+    },
   };
 }

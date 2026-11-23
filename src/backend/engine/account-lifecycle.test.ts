@@ -20,7 +20,7 @@ const CONSENT = { terms: true, marketing: false };
 
 let store: Store;
 let codes: string[];
-const mail: MailPort = { async sendSignInCode(_to, code) { codes.push(code); } };
+const mail: MailPort = { async sendSignInCode(_to, code) { codes.push(code); }, async sendAlert() {} };
 const depsFor = (s: Store): EngineDeps => ({ store: s, config: CONFIG, llm: demoPorts(), push: fakePush(), mail });
 beforeEach(() => { store = memoryStore(); codes = []; });
 
