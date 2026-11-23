@@ -1061,9 +1061,11 @@ details.how p { margin-top: 8px; }
   <div id="state-food"></div>
   <div class="vbody hidden" id="body-food"><div class="nv food">
     <div class="card flush" id="switches"></div>
+    <div class="card flush" id="values"></div>
     <div class="card flush">
-      <div class="ph"><b>Recent flips</b><span class="grow"></span><span class="status" id="switch-status"></span></div>
+      <div class="ph"><b>Recent flips</b><span class="grow"></span><span class="status" id="switch-status"></span><span class="status" id="value-status"></span></div>
       <div class="pb flips" id="switch-recent"></div>
+      <div class="pb flips" id="value-recent"></div>
     </div>
     <p class="muted">A flip applies to the next read — an analysis, a profile fetch. Nothing already logged changes.</p>
   </div></div>
@@ -3510,6 +3512,64 @@ details.how p { margin-top: 8px; }
     return api("GET", "/admin/api/switches").then(renderSwitches);
   }
 
+  // ── The admin values (ieat-app#3421) ───────────────────────────────────────────────────────
+  //
+  // Numeric knobs beside the switches — photo.compression is the JPEG quality every client
+  // encodes a sent photo at, read off the profile on the next fetch. One input per key; the
+  // server enforces the range, so a refused save is worded, never clamped silently.
+
+  var VALUE_LABELS = { "photo.compression": "Photo compression" };
+  var VALUE_WHAT = { "photo.compression": "JPEG quality every client sends at (0.1–1, default 0.8)" };
+
+  function renderValues(res) {
+    var host = $("values");
+    host.textContent = "";
+    res.values.forEach(function (v) {
+      var row = el("div", "srow");
+      row.setAttribute("data-value", v.key);
+      var t = el("span", "t");
+      t.appendChild(el("b", null, VALUE_LABELS[v.key] || v.key));
+      var tail = el("span", null, (VALUE_WHAT[v.key] || v.key) + " · ");
+      tail.appendChild(switchWhen(v.setBy, v.setByEmail, v.setAt));
+      t.appendChild(tail);
+      var input = el("input", null);
+      input.setAttribute("type", "number");
+      input.setAttribute("step", "0.05");
+      input.setAttribute("min", "0.1");
+      input.setAttribute("max", "1");
+      input.value = String(v.value);
+      var save = el("button", "asw", "save");
+      save.addEventListener("click", function () {
+        save.disabled = true;
+        $("value-status").textContent = "saving…";
+        api("PUT", "/admin/api/values/" + encodeURIComponent(v.key), { value: Number(input.value) }).then(loadValues, function (e) {
+          save.disabled = false;
+          $("value-status").textContent = "failed: " + e.message;
+        });
+      });
+      row.appendChild(t);
+      row.appendChild(input);
+      row.appendChild(save);
+      host.appendChild(row);
+    });
+    var recent = $("value-recent");
+    if (recent) {
+      recent.textContent = "";
+      res.recent.forEach(function (f) {
+        var line = el("span", null, (VALUE_LABELS[f.key] || f.key) + " = " + f.value + " — ");
+        line.appendChild(actorEl(f.setBy, f.setByEmail));
+        line.appendChild(document.createTextNode(" at " + atLabel(f.setAt)));
+        recent.appendChild(line);
+      });
+      if (!res.recent.length) recent.appendChild(el("span", "muted", "No sets yet."));
+    }
+    $("value-status").textContent = "";
+  }
+
+  function loadValues() {
+    return api("GET", "/admin/api/values").then(renderValues);
+  }
+
   // ── Accounts (#374, #571) ──────────────────────────────────────────────────────────────────
   //
   // A READ, and the widest one in the product: every account, with the address on it. The server
@@ -4573,7 +4633,7 @@ details.how p { margin-top: 8px; }
     // from that answer instead of asking twice.
     templates: { title: "Push templates", load: function () { return (push ? Promise.resolve(renderPush()) : loadPush()).then(loadCopy); } },
     prompts: { title: "System prompts", load: loadPrompts },
-    food: { title: "Food database", load: loadSwitches }
+    food: { title: "Food database", load: function () { return Promise.all([loadSwitches(), loadValues()]); } }
   };
 
   // view id -> "loading" | "ready". Absent: never opened, failed, or stale and due a read.

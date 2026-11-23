@@ -4340,6 +4340,65 @@ function contract(name: string, make: () => Promise<Store>) {
       });
     });
 
+    // ── The admin values (ieat-app#3421) ──────────────────────────────────────────────────────
+
+    describe("the admin values", () => {
+      it("reads null for a value nobody has set, then the newest value", async () => {
+        const s = await open();
+        if ((await s.adminValueHistory(1)).length === 0) {
+          expect(await s.adminValue("photo.compression")).toBeNull();
+        }
+        const admin = crypto.randomUUID();
+        await s.setAdminValue("photo.compression", 0.5, admin);
+        expect(await s.adminValue("photo.compression")).toBe(0.5);
+        await s.setAdminValue("photo.compression", 1, admin);
+        expect(await s.adminValue("photo.compression")).toBe(1);
+      });
+
+      it("keeps every set, newest first, with who and when", async () => {
+        const s = await open();
+        const a = crypto.randomUUID();
+        const b = crypto.randomUUID();
+        await s.setAdminValue("photo.compression", 0.9, a);
+        await s.setAdminValue("photo.compression", 0.3, b);
+        const [newest, older] = await s.adminValueHistory(2);
+        expect(newest).toMatchObject({ key: "photo.compression", value: 0.3, set_by: b });
+        expect(older).toMatchObject({ key: "photo.compression", value: 0.9, set_by: a });
+        expect(Number.isNaN(Date.parse(newest!.set_at))).toBe(false);
+        expect((await s.adminValueHistory(1)).length).toBe(1);
+      });
+
+      it("refuses a key the code does not know", async () => {
+        const s = await open();
+        await expect(s.setAdminValue("photo.nope" as never, 0.5, crypto.randomUUID())).rejects.toThrow();
+      });
+    });
+
+    describe("a meal's photo compression", () => {
+      it("stores the coefficient a photo meal was sent with, null by default", async () => {
+        const s = await open();
+        const uid = (await s.upsertDeviceUser(device(), "en")).userId;
+        const plain = meal(uid);
+        await s.insertMeal(plain);
+        expect((await s.getMeal(uid, plain.id))!.photo_compression ?? null).toBeNull();
+        const sent = { ...meal(uid), photo_compression: 0.4 };
+        await s.insertMeal(sent);
+        expect((await s.getMeal(uid, sent.id))!.photo_compression).toBe(0.4);
+      });
+
+      it("appendPhotos moves it to what the added angles were sent with, and leaves it when none was sent", async () => {
+        const s = await open();
+        const uid = (await s.upsertDeviceUser(device(), "en")).userId;
+        const m = { ...meal(uid), photo_compression: 0.8 };
+        await s.insertMeal(m);
+        const jpeg = { mime: "image/jpeg", bytes: new Uint8Array([1, 2, 3]) };
+        await s.appendPhotos(uid, m.id, [jpeg]);
+        expect((await s.getMeal(uid, m.id))!.photo_compression).toBe(0.8);
+        await s.appendPhotos(uid, m.id, [jpeg], 0.2);
+        expect((await s.getMeal(uid, m.id))!.photo_compression).toBe(0.2);
+      });
+    });
+
     // ── The food catalog ──────────────────────────────────────────────────────────────────────
     //
     // GLOBAL tables — no user anywhere, which is the point of running these here: the suite above

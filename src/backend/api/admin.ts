@@ -53,7 +53,7 @@ import {
   sendTestPush, pushOpenView, pushRecentView, adminUserPushLog, sendAdminPush,
   listPushTemplates, reviewPushTemplate, savePushTemplate,
   campaignOverview, createCampaign, dryRunCampaign, setCampaignStatus, setCampaignsKilled, testSendCampaign, updateCampaign,
-  resetOnboardingContent, saveOnboardingContent, saveSwitch, setUserCap, userCap,
+  resetOnboardingContent, saveOnboardingContent, saveSwitch, saveValue, adminValues, setUserCap, userCap,
   type EngineDeps,
   listScreenTemplates, saveOnboardingVariantScreens, saveScreenTemplate, screenTemplateRevision, uploadTemplateAsset,
 } from "../engine/index.ts";
@@ -391,6 +391,18 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     const body = await req.json().catch(() => null) as { enabled?: unknown } | null;
     const result = await saveSwitch(deps, sw[1], body?.enabled, adminId);
     return result.ok ? json(await adminSwitches(deps)) : json({ errors: result.errors }, 422);
+  }
+
+  // ── The values (ieat-app#3421): numeric knobs beside the switches — `photo.compression` is the
+  // JPEG quality every client is told to send at. Same rule: `set_by` is the resolved admin.
+  if (req.method === "GET" && pathname === "/admin/api/values") {
+    return json(await adminValues(deps));
+  }
+  const av = /^\/admin\/api\/values\/([a-z._-]+)$/.exec(pathname);
+  if (req.method === "PUT" && av) {
+    const body = await req.json().catch(() => null) as { value?: unknown } | null;
+    const result = await saveValue(deps, av[1], body?.value, adminId);
+    return result.ok ? json(await adminValues(deps)) : json({ errors: result.errors }, 422);
   }
 
   // ── Experiments (ieat-app#2669) ─────────────────────────────────────────────────────────

@@ -65,6 +65,7 @@ export {
   listScreenTemplates, saveOnboardingVariantScreens, saveScreenTemplate, screenTemplateRevision, templateAsset, uploadTemplateAsset,
 } from "./screen-templates.ts";
 export { adminSwitches, saveSwitch, switchOn, type FlipView, type SwitchView } from "./switches.ts";
+export { adminValueOf, adminValues, saveValue, type SetView, type ValueView } from "./values.ts";
 export { livePrompts, promptHistory, savePrompt, type PromptView, type PromptSave } from "./prompts.ts";
 export { foodSearch, productByBarcode } from "./foods.ts";
 export { listPushTemplates, reviewPushTemplate, savePushTemplate, type PushTemplateListing } from "./push-templates.ts";
