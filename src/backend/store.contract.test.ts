@@ -4259,6 +4259,25 @@ function contract(name: string, make: () => Promise<Store>) {
         ]);
       });
 
+      // ieat-app#3401 — the served experiment is part of what "the same serving" means: a repeat
+      // moves the latest row's clock, a changed one is a serving of its own, and a live-flow
+      // serving (no experiment) reads back its nulls rather than matching the experiment row.
+      it("carries the served experiment, and a changed one is a new row", async () => {
+        const s = await open();
+        const u = (await s.upsertDeviceUser(device(), "de")).userId;
+        await s.recordOnboardingServed(u, served({ experiment: { id: "exp1", arm: "42" } }));
+        const [row] = await s.onboardingServed(u);
+        expect([row!.experimentId, row!.arm]).toEqual(["exp1", "42"]);
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served({ experiment: { id: "exp1", arm: "42" } }));
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served({ experiment: { id: "exp1", arm: "43" } }));
+        await Bun.sleep(5);
+        await s.recordOnboardingServed(u, served());
+        const rows = await s.onboardingServed(u);
+        expect(rows.map((r) => r.arm)).toEqual(["42", "43", null]);
+      });
+
       it("is the account's own: another account reads none of it, and erasure takes it", async () => {
         const s = await open();
         const u = (await s.upsertDeviceUser(device(), "de")).userId;

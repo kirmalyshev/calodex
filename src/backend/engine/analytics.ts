@@ -45,6 +45,9 @@ async function heldArm(deps: EngineDeps, userId: string, lang: Lang): Promise<{ 
   }
 }
 
+// The arm stamped is the LATEST serving's, read when the batch arrives: events a phone queued
+// under an earlier serving and flushed after a re-serve name the newer arm — receipt-time, the
+// same semantics the held-arm stamp had before this.
 const latestServed = (served: OnboardingServedRecord[]) =>
   served.reduce<OnboardingServedRecord | undefined>((a, r) => (!a || r.lastServedAt >= a.lastServedAt ? r : a), undefined);
 

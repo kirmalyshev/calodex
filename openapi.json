@@ -9011,6 +9011,10 @@
           "template": {
             "type": "string",
             "description": "The served template this screen was drawn from, `key@version` (ieat-app#3196). Client-reported, because only the client knows which slot it rendered; it labels the row and gates nothing."
+          },
+          "paywallOffering": {
+            "type": "string",
+            "description": "The offering the paywall had drawn when the step happened (ieat-app#3401). Client-reported like `template`, for the same reason: only the device knows which offering RevenueCat handed it."
           }
         },
         "required": [
