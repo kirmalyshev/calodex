@@ -162,6 +162,7 @@ test("the coach prompt answers a pre-meal question as intent, and names logged m
     "against what is left today",
     "already inside \"Left today\"",
     "never subtract it a second time",
+    "a second or further helping of a logged one are new food",
     "Never say the plate is still to come",
     "Never offer to un-log it, hold it, or check first",
     "by its dish and its time",
