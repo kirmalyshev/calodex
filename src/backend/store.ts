@@ -589,6 +589,8 @@ export const SWITCH_KEYS = [
   "grounding.photo", "grounding.text", "prompt.photo-lean", "onboarding.experiments",
   // The exit offer, one per platform it can surface on (ieat-app#3155).
   "paywall.exit-offer.ios", "paywall.exit-offer.web",
+  // Voice input in the chat composer, both clients behind the one flag (ieat-app#3494).
+  "voice.input",
 ] as const;
 export type SwitchKey = (typeof SWITCH_KEYS)[number];
 

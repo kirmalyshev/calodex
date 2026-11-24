@@ -223,6 +223,19 @@ describe("profile", () => {
     expect(view.targets.kcal).toBeGreaterThanOrEqual(1200);
   });
 
+  // ieat-app#3494 — the voice-input switch, sent on every response and OFF by default: a client
+  // draws no mic until the admin arms it, and a flip lands on the next fetch, no deploy.
+  it("sends the voice-input switch off by default, on once the admin flips it", async () => {
+    const token = await session();
+    const flag = async () => ((await (await get(ROUTES.profile, token)).json() as ProfileResponse).voiceInputEnabled);
+    expect(await flag()).toBe(false);
+    await store.setSwitch("voice.input", true, crypto.randomUUID());
+    expect(await flag()).toBe(true);
+    // The PATCH answers the same flag — its view is assembled separately from GET's.
+    const patched = await patch(ROUTES.profile, { height_cm: 170 }, token);
+    expect(((await patched.json()) as ProfileResponse).voiceInputEnabled).toBe(true);
+  });
+
   // The distribution channel (ieat-app#2899) rides on the profile read, best-effort.
   describe("the x-eait-channel header", () => {
     const getWith = (token: string, channel?: string) => handle(new Request(url(ROUTES.profile), {

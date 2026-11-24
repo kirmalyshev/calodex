@@ -948,6 +948,13 @@ export interface ProfileResponse {
    * this response.
    */
   hasLoggedMeal: boolean;
+  /**
+   * The admin's `voice.input` switch (ieat-app#3494), read on every response like
+   * `exitOfferEnabled`: the chat composer's mic, one flag for the phone and the web. BOTH
+   * clients default OFF and draw no mic while it is — a server that predates the field sends
+   * none, which a client reads as off, the default anyway.
+   */
+  voiceInputEnabled: boolean;
   /** {@link DonateLinks} — the operator's donation URLs, every one null when none are set. */
   donate: DonateLinks;
   /** {@link ReferralView} — this account's link and what it has done (#899). */
