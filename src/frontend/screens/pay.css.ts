@@ -5,7 +5,7 @@
 
 export const payCss = `
 body:has(.pay) .wtop { display: none; }
-.pay { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow-y: auto; }
+.pay { position: fixed; inset: 0; z-index: 60; background: var(--surface); overflow-y: auto; }
 .pay .sheet { min-height: 100%; max-width: 430px; margin: 0 auto; display: flex;
   flex-direction: column; position: relative; }
 .pay .x { position: absolute; left: 12px; top: 12px; z-index: 2; }
@@ -49,7 +49,9 @@ body:has(.pay) .wtop { display: none; }
 .pay .plan2 .nm { font-size: 16px; font-weight: 500; }
 /* 3.1.2(c): the billed line stays as big as the per-month figure; both regular, only the title is heavy. */
 .pay .plan2 .billed, .pay .plan2 .pm { font-size: 13px; font-weight: 400; }
-.pay .plan2:not(:has(>input:checked)) :is(.nm, .billed, .pm) { color: var(--muted); }
+/* 3.1.2(c): the billed amount is the primary text colour at medium weight, picked or not (Kirill q54). */
+.pay .plan2 .billed { font-weight: 500; color: var(--ink); }
+.pay .plan2:not(:has(>input:checked)) :is(.nm, .pm) { color: var(--muted); }
 /* B's timeline (Cal AI 06): a dot per step with its icon, the rail between them — the second rail
    is the line's colour, like the phone's stepRailOff. */
 /* margin: auto 0 centres the timeline in the column's free height (ieat-app#3505) — the phone's

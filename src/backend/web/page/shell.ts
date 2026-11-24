@@ -224,6 +224,7 @@ label.check {
 
 /* The soft offer (#42): the plan's one ask — perks, an honest timeline, the close that is the
    free meal. A LINK for the ×, because it changes nothing. */
+body:has(.offer) { background: var(--surface); }
 .offer { position: relative; padding-top: .5rem; }
 .offer .x {
   position: static; margin: 0 auto 0 0; width: 44px; height: 44px; border-radius: 50%;
@@ -264,7 +265,9 @@ label.check {
 .plan2 .nmc { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .plan2 .nm { font-size: 16px; font-weight: 500; }
 .plan2 .billed, .plan2 .pm { font-size: 13px; font-weight: 400; }
-.plan2:not(:has(>input:checked)) :is(.nm, .billed, .pm) { color: var(--muted); }
+/* 3.1.2(c): the billed amount is the primary text colour at medium weight, picked or not (Kirill q54). */
+.plan2 .billed { font-weight: 500; color: var(--ink); }
+.plan2:not(:has(>input:checked)) :is(.nm, .pm) { color: var(--muted); }
 /* B · try for free: the trial as a timeline, a rail between the dots. */
 .offer .tl { list-style: none; margin: .5rem 0; padding: 0; display: flex; flex-direction: column; }
 .offer .tl li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 22px 50px; min-height: 36px; }

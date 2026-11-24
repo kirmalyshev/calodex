@@ -97,3 +97,17 @@ describe("the web special-offer card is silver", () => {
     expect(/\.pay \.offer\s*\{[^}]*linear-gradient\(135deg/.test(css)).toBe(true);
   });
 });
+
+// Kirill q54 (24 Nov): a white page; the billed line is the primary text colour at medium weight (3.1.2(c)).
+describe("the web pay sheet is white with a dark medium billed line", () => {
+  test("#/pay: the sheet is --surface; billed is ink 500, never muted", () => {
+    expect(/\.pay \{[^}]*background: var\(--surface\)/.test(css)).toBe(true);
+    expect(css).toMatch(/\.pay \.plan2 \.billed \{[^}]*font-weight: 500; color: var\(--ink\)/);
+    expect(css).not.toMatch(/:is\(\.nm, \.billed/);
+  });
+  test("/start/offer: the same", () => {
+    expect(shell).toMatch(/body:has\(\.offer\) \{ background: var\(--surface\)/);
+    expect(shell).toMatch(/\.plan2 \.billed \{[^}]*font-weight: 500; color: var\(--ink\)/);
+    expect(shell).not.toMatch(/:is\(\.nm, \.billed/);
+  });
+});
