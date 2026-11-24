@@ -36,7 +36,7 @@ export interface ShellCopy {
   composerMicNothing: string;
   /** The line under the composer for any other recognition error — `network` when Chrome is offline, `audio-capture` (role=status). */
   composerMicUnavailable: string;
-  /** The "+" chooser's two tiles (web "+ Log", the phone's +) and the word that closes it. */
+  /** The "+" chooser's Photo and Text tiles (web "+ Log", the phone's +) and the word that closes it. */
   plusPhoto: string;
   plusText: string;
   closeLog: string;

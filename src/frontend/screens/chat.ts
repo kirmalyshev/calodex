@@ -682,9 +682,9 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     await draw();
     if (notice.textContent === kept()) tell(keptNotice(uid));
   });
-  // The web's + (the boards' "+ Log"): a button in the top bar that opens two tiles over a veil —
-  // Photo (the file picker) and Text (the composer, focused). It turns into an ink Close above the
-  // veil; Esc or a click on the veil closes it too.
+  // The web's + (the boards' "+ Log"): a button in the top bar that opens the phone's chooser over
+  // a veil — Photo (the file picker), Search, Text (the composer, focused) and Numbers. It turns
+  // into an ink Close above the veil; Esc or a click on the veil closes it too.
   const logBtn = el("button", "cp-log") as HTMLButtonElement;
   logBtn.type = "button";
   logBtn.setAttribute("aria-haspopup", "menu");

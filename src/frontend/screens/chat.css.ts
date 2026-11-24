@@ -131,8 +131,8 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
   display: flex; align-items: center; justify-content: center; padding: 0; }
 .chip button .ico { width: 14px; height: 14px; }
 
-/* "+ Log" (the boards' cp-log) and its chooser: two tiles centred over a frosted veil that covers the
-   column under the bar; the button turns ink and reads Close, above it. */
+/* "+ Log" (the boards' cp-log) and its chooser: the phone's tiles centred over a frosted veil that
+   covers the column under the bar; the button turns ink and reads Close, above it. */
 .cp-log { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px 0 10px; border: 0; border-radius: 10px;
   background: var(--accent); color: var(--accent-ink); font: 600 15px var(--display); cursor: pointer; }
 .cp-log .ico { width: 18px; height: 18px; background: currentColor; }
@@ -140,7 +140,7 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
 .cp-veil { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center;
   background: color-mix(in srgb, var(--bg) 66%, transparent); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 .cp-wgrid { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.cp-wrow { display: flex; gap: 16px; }
+.cp-wrow { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
 .cp-tile { width: 200px; height: 120px; border: 0; border-radius: 12px; background: var(--surface); color: var(--ink); cursor: pointer;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font: inherit;
   box-shadow: 0 10px 30px -12px rgba(23, 25, 28, .35), 0 1px 2px rgba(23, 25, 28, .08); }
@@ -158,7 +158,7 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
 @media (max-width: 760px) {
   /* The phone's chooser (ieat-app#3513): one row of equal tiles whatever the count — four today. */
   .cp-wrow { flex-wrap: nowrap; gap: 10px; width: min(390px, 100vw); box-sizing: border-box; padding: 0 12px; }
-  .cp-tile { flex: 1 1 0; width: auto; min-width: 0; height: 96px; }
+  .cp-tile { flex: 1 1 0; min-width: 0; height: 96px; }
   .cp-tile b { font-size: 15px; }
 }
 
