@@ -31,7 +31,7 @@ export interface WebPaywallConfig {
   /** The declined-plans offer's checkout template; "" = a decline goes straight to the app. */
   exitOfferCheckoutUrl: string;
   exitOfferPrice: number;
-  /** The struck-through anchor; `yearlyPrice` when the operator sets none. */
+  /** The struck-through anchor when NO monthly plan is sold (else twelve monthlies is); `yearlyPrice` when the operator sets none. */
   exitOfferRegularPrice: number;
   /** The ISO 4217 code every price is formatted in — "EUR". Empty only while nothing is sold. */
   currency: string;

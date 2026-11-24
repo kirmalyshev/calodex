@@ -35,9 +35,9 @@ export interface YearlyPlan extends PaywallPlan {
  * The one offer a decline leads to: the cheaper yearly plan, its regular price struck through.
  */
 export interface ExitOffer extends PaywallPlan {
-  /** The regular yearly price, for the strike-through. */
+  /** The regular price struck through: twelve monthlies while a monthly plan is sold, else the regular yearly price. */
   regularPrice: string;
-  /** Whole percent cheaper than the regular yearly price — floored, never overstated. */
+  /** Whole percent cheaper than `regularPrice` — floored, never overstated. */
   percentOff: number;
   /** The offer spread over a month, formatted like every other price. */
   perMonth: string;
