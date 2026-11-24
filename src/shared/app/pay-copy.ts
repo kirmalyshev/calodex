@@ -649,7 +649,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     goalCtaPhone: { lose: "Начать худеть", gain: "Начать набирать вес", maintain: "Сохранить вес", none: "Считать калории" },
     subscribePhone: "Подписаться",
     seePlansPhone: "Смотреть тарифы",
-    declinedNotePhone: "План сохранён. Выберите тариф, чтобы начать записывать еду.",
+    declinedNotePhone: "План сохранён. Выбери тариф, чтобы начать записывать еду.",
     trialEnds: "Твой триал кончается завтра",
     trialEndsNote: "Затем {renewal}. Отмени сегодня — и ничего не спишется.",
     trialEndsCancel: "Отмени сегодня — и ничего не спишется.",

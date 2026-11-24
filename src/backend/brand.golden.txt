@@ -680,7 +680,7 @@ shared.notificationCopyFor it e7741279b3664f5e
 shared.notificationCopyFor es 56709a25a468cdd1
 shared.notificationCopyFor vi af9d25411fa20233
 shared.notificationCopyFor id d266ceb4c6921c96
-shared.notificationCopyFor ru 7fe0184284bd9199
+shared.notificationCopyFor ru 4ade5b8a59f7e937
 shared.notificationCopyFor pt-BR f5c0601b225796ea
 shared.notificationCopyFor ja b9e6e2488ac58324
 shared.notificationCopyFor ko 8468826104354fcf
@@ -700,7 +700,7 @@ shared.notificationCopyFor hu bcfda1f7edaf3fcc
 shared.notificationCopyFor da 8ede2232a192e5ea
 shared.notificationCopyFor fi 5eecd324cad3d756
 shared.notificationCopyFor no 37f3b85191b4811d
-shared.notificationCopyFor sk e55bd4bc81152193
+shared.notificationCopyFor sk 0b48365853617c86
 shared.notificationCopyFor hr 86dc8b33c8b55a89
 shared.notificationCopyFor sl 09d6a0a7f6c51caa
 shared.notificationCopyFor ca a93c8bc7c95ac11b
@@ -815,7 +815,7 @@ shared.payCopyFor it 294bd72a49fbcc0b
 shared.payCopyFor es 36c86607dcac9106
 shared.payCopyFor vi b87e5b961e934cea
 shared.payCopyFor id cea5ce2cb0e611f4
-shared.payCopyFor ru d2d43aad891dead9
+shared.payCopyFor ru 023d247cfb4b67eb
 shared.payCopyFor pt-BR 8e157fb2ef5e809d
 shared.payCopyFor ja 5b51219e0245ec8e
 shared.payCopyFor ko 78e678a8fc44f9ff

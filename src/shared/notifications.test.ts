@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { lintCopy } from "./claims.ts";
+import { pushClaimErrors } from "./push-templates.ts";
 import { trialReminder, trialReminderDate } from "./entitlement.ts";
 import {
   DEFAULT_NOTIFICATION_COPY, NOTIFICATION_COPY, NOTIFICATION_IDS, REMINDER_TIME, eveningPrescription,
@@ -307,6 +308,7 @@ describe("onboarding-photo, the next-day push (ieat-app#3443)", () => {
     for (const lang of Object.keys(NOTIFICATION_COPY) as (keyof typeof NOTIFICATION_COPY)[]) {
       const m = NOTIFICATION_COPY[lang]?.["onboarding-photo"];
       expect(m?.body.length).toBeGreaterThan(0);
+      expect(pushClaimErrors(m!.title, m!.body), lang).toEqual([]);
       if (lang !== "en") expect(m?.body).not.toBe(DEFAULT_NOTIFICATION_COPY["onboarding-photo"].body);
     }
   });

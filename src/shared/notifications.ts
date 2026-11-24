@@ -329,7 +329,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "План есть",
-      body: "Запиши первый приём пищи. Просто сфотографируй, что ешь.",
+      body: "Запиши первую еду. Просто сфоткай, что ешь.",
       alternates: { v2: "Что у тебя сегодня на тарелке? Покажи.", v3: "Начать можно хоть с кофе.", v4: "Ты фоткаешь, я считаю. Договорились?" },
     },
     "streak-risk": {
@@ -873,7 +873,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Plán je hotový",
-    body: "Zapíš svoje prvé jedlo. Stačí odfotiť, čo jete.",
+    body: "Zapíš svoje prvé jedlo. Stačí odfotiť, čo ješ.",
     alternates: { v2: "Ukáž, čo dobré dnes ješ.", v3: "Začni čímkoľvek ďalším, aj káva sa počíta.", v4: "Namier foťák na jedlo a ja spočítam kalórie." },
   },
   "streak-risk": {
