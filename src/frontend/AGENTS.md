@@ -1,7 +1,7 @@
 # AGENTS.md — web
 
 The web application. The third workspace, the only one whose code runs in somebody's browser, and
-since #423 an application of its own rather than a bundle the backend hands out.
+an application of its own.
 
 Root `AGENTS.md` covers the repo; this covers this directory. `src/backend/AGENTS.md` owns the API this talks
 to, and `shared` is the contract both implement.
@@ -9,12 +9,13 @@ to, and `shared` is the contract both implement.
 ## What this is
 
 `app.eait.fit` — the browser's front door, and its own process. `server/index.ts` generates the page
-with a per-response CSP nonce and serves the bundle beside it; `deploy/Dockerfile.web` is its image
-and `web` is its compose service, publishing nothing. Three applications on this box, three deploys:
+with a per-response CSP nonce and serves the bundle beside it; `src/iac/Dockerfile.frontend` is its image
+and `frontend` is its compose service in `docker-compose.prod.yml`, publishing nothing. A deployment
+that keeps its own deploy tree names its own image and service. Three applications on this box, three deploys:
 this one, the API, and the landing page.
 
 **ONE ORIGIN, COMPOSED AT THE EDGE — and that is the property to protect.** Caddy's `@app` block
-sends `/`, `/app.js` and `/sw.js` here; `/api/v1/*`, `/start` and `/admin` go to the backend on the same
+sends `/`, `/app.js`, `/sw.js` and `/medals/*` here; `/api/v1/*`, `/start` and `/admin` go to the backend on the same
 hostname. That is what lets this client call its API with a relative path under `connect-src 'self'`
 and no CORS header anywhere. Splitting the two applications did not split the origin, and a change
 that makes the browser talk to a second one undoes the whole arrangement.
@@ -26,7 +27,7 @@ There is no Caddy on a laptop, so `server/index.ts` forwards what is not its own
 bun run demo                                   # the backend, in memory, on :8484
 bun run web:build                              # → src/frontend/dist/main.js, served at /app.js
 EAIT__FRONTEND__BACKEND_ORIGIN=http://127.0.0.1:8484 bun run web   # this app on :8485, API proxied
-bun run check                                  # typecheck (all three halves) + the build + tests
+bun run check                                  # everything the `check` script in `package.json` runs
 bun run web:e2e                                # the browser suite, against the demo model
 ```
 
@@ -50,10 +51,11 @@ the exclude is written so a new file in this directory is browser code by defaul
   and costs nothing. Five screens that each re-render a container do not need reconciling. If you
   reach for React, you are adding a build toolchain and two packages to avoid writing
   `replaceChildren`.
-- **`@eait/shared` is imported for TYPES only.** `import type`, always. A value import pulls that
-  workspace's runtime code into a browser bundle, and `targets.ts` is server arithmetic. It is also
-  what lets both images skip `bun install` entirely: a type import is erased before anything is
-  resolved. Its ONE precedent (#78): dependency-free modules under `src/shared/ui/` — tokens,
+- **`@eait/shared` is imported by an allowlist.** `WEB_MODULES` in `test/imports.test.ts` names the
+  shared modules the browser may value-import. Each one is pure and dependency-free. Everything else
+  is `import type`, which is erased before anything is resolved. A value import of any other module
+  pulls that workspace's runtime code into the browser bundle. A module joins `WEB_MODULES` only
+  when it is pure. The ONE precedent for `ui/` (#78): dependency-free modules under `src/shared/ui/` — tokens,
   icons, motion, geometry, units — and the surface copy tables may be imported by RELATIVE path, as
   `../shared/mascot.ts`, `stream.ts`, `budget.ts` and `copy.ts` already are. The boundary that makes
   it safe is enforced by a test in `src/shared/ui.test.ts`: a module in `ui/` may import another
@@ -114,13 +116,14 @@ twice: that is an endless pair of requests against a server that has already sai
   row on Home, nothing on Chat) is `frame.bar` — append into it or leave it empty.
 - A new server call → a method in `api.ts`. If the endpoint does not exist yet, it goes in
   `src/shared/contract.ts` first, then the backend, then here — the order the root `AGENTS.md` sets.
-- A screen's own copy → the surface's `src/shared/app/<surface>-copy.ts` table, in all eight
-  languages (`shell-copy.ts` is the shell's own). A string only this client shows goes in
+- A screen's own copy → the surface's `src/shared/app/<surface>-copy.ts` table, in every
+  language in `LANGS` (`shell-copy.ts` is the shell's own). A string only this client shows goes in
   `copy.ts` as before.
 - Styling → `screens/<surface>.css.ts` for the surface's own rules, `shell.css.ts` for the frame and
   the shared primitives. `server/index.ts` composes its ONE `<style>` block from them plus the
   generated `lightVars`/`fontFaces`/`motionCss`/`iconCss` — a second block is a second thing to keep
   under the policy, and a token retyped into a string is a second copy of it.
 - A new path this process answers → a branch in `server/index.ts` AND the `@app` matcher in
-  `app.caddy.j2`, in the same commit. The edge sends this container two exact paths; a third one
-  added here alone is a route only a laptop ever reaches.
+  `src/iac/Caddyfile` (and in a private deploy's own edge file, if it has one), in the same commit.
+  A path added here alone is a route only a laptop ever reaches.
+  `src/scripts/caddyfile-routes.test.ts` checks the public Caddyfile.

@@ -1,6 +1,6 @@
 # AGENTS.md — backend
 
-> This workspace also lives inside a private monorepo (the app, the web client, the landing, the deploy tree). Paths such as `src/mobile/…`, `docs/…`, `scripts/…`, `deploy/…` and `#NNN` issue references point there; the rules they support hold here regardless.
+> `#NNN` and `ieat-app#NNN` references point to a private tracker. The rules they support hold here regardless.
 
 The server. Root `AGENTS.md` covers the repo; this covers this workspace.
 
@@ -42,14 +42,12 @@ route. A route that computes is a rule the tests cannot reach.
   NOTHING rather than returning everybody, which is the whole point of it. Measured, through the
   live API, by deleting the predicate from `chatBefore`: with the policy on, one account's lines and
   no others; with it off, 48 lines belonging to three accounts.
-  `RLS_TABLES` in `store.pg.ts` is the list and the DDL is generated from it — `users` (keyed on
-  `id`, the row IS the account), `tokens`, `identities`, `meals`, `meal_photos`, `pendings`,
-  `pairing_codes`, `portion_corrections`, `analyses`, `onboarding_events`, `chat_messages`,
-  `push_tokens`, `health_days`, `turns`. Out of it, because they belong to nobody: `onboarding_content`,
-  `notification_copy`.
+  `RLS_TABLES` in `store.pg.ts` is the list, and the DDL is generated from it. `users` is keyed on
+  `id`, because the row IS the account. A table that belongs to nobody stays out of it
+  (`onboarding_content`, `notification_copy`).
 - **What declares it is the store's own wrapper, and `SCOPE` says what every method may touch.**
   `postgresStore` wraps each method in a transaction that sets `app.user_id` from the argument
-  holding it — so the ninety-nine statements in that file did not have to be rewritten, and one
+  holding it — so no statement in that file had to be rewritten, and one
   added tomorrow is covered without being touched. `sql` there is the CURRENT connection, an
   `AsyncLocalStorage`-backed proxy over the pool; the setting is always `set_config(…, true)`,
   because `Bun.sql` hands a connection to the next caller the moment a transaction commits and a
@@ -113,8 +111,7 @@ route. A route that computes is a rule the tests cannot reach.
 - **Errors are logged, never returned.** An error string from deep in the stack can carry the
   prompt, and the prompt carries the user's medical free text. Config goes through `redact()`.
 - **Never log the API key, the database URL with credentials, or raw image bytes.**
-- **The app never creates the database.** `migrate()` creates tables inside a database that must
-  already exist.
+- **The app never creates the database.** See the root `AGENTS.md` § The store port.
 - **A migration is EXPAND now and CONTRACT a release later** (ieat-app#3108). A deploy replaces one
   replica at a time, so the new build runs `migrate()` at boot while the PREVIOUS build still
   serves on the other replica against the same database. Every statement must be one that previous
@@ -127,26 +124,22 @@ route. A route that computes is a rule the tests cannot reach.
   stopped reading it named in the PR. Falsified the day a deploy stops all replicas before booting
   the new build.
 - **State conditions live in the store's own guarded statements**, never in a read the engine did
-  first: deliveries can be concurrent, nothing is transactional, and a decision made from a stale
-  read is dropped permanently. **`onboarding_content` and `notification_copy` are that rule
-  applied to a document**: the per-language write is `jsonb_set` on the locked row, so two admins
-  saving two languages cannot carry each other away, and the revision number comes off the
-  `version` COLUMN in the same statement rather than off a count the engine took first. That column
-  used to be an operator's convenience; it is load-bearing now. And both columns held a jsonb
-  STRING rather than an object until #358 — `${JSON.stringify(doc)}::jsonb` is a no-op cast,
-  because the driver already encodes a bound value — which `json()` hid on every read. The first
-  write after this repairs the row.
+  first. Deliveries can be concurrent and nothing is transactional, so a decision made from a stale
+  read is dropped permanently. **`onboarding_content` and `notification_copy` apply this rule to a
+  document.** The per-language write is `jsonb_set` on the locked row, so two admins saving two
+  languages cannot carry each other away. The revision number comes off the `version` COLUMN in the
+  same statement, not off a count the engine took first. `version` is load-bearing. Bind jsonb
+  without `JSON.stringify`: `${JSON.stringify(doc)}::jsonb` is a no-op cast, because the driver
+  already encodes a bound value, and it stores a jsonb STRING instead of an object.
 - **The admin is a ROLE an account carries** (`users.role`, checked `=== "admin"` AFTER the user is
-  resolved). It was its own authority — a shared `EAIT__BACKEND__ADMIN_TOKEN` reached before any
-  user existed — until #391b; that token is retired, because a replayable secret in a header and a
-  role are two ways in, and two ways in must not survive a deploy. What did not change: nobody
-  holding the role means the surface does not exist, and every path under it answers 404, not 403.
-  An identified ordinary account gets 404 as well; only an anonymous request gets 401, because the
-  public page already proves the route exists. **The role is granted OUT OF BAND and only out of
-  band** — `EAIT__BACKEND__ADMIN_BOOTSTRAP_USER_ID`, a user id and never a provider subject, applied
-  at boot. It is not on `Profile`, so no `PATCH` can write it in either store; it is not in the
-  column list `mergeUsers` copies, so no merge can carry it. Deleting the last admin switches the
-  surface off, which the variable never could.
+  resolved). There is no admin token: a replayable secret in a header and a role would be two ways
+  in, and the role is the only one. Nobody holding the role means the surface does not exist, and
+  every path under it answers 404, not 403. An identified ordinary account gets 404 as well. Only an
+  anonymous request gets 401, because the public page already proves the route exists. **The role is
+  granted OUT OF BAND and only out of band**: `EAIT__BACKEND__ADMIN_BOOTSTRAP_USER_ID`, a user id and
+  never a provider subject, applied at boot. It is not on `Profile`, so no `PATCH` can write it in
+  either store. It is not in the column list `mergeUsers` copies, so no merge can carry it. Deleting
+  the last admin switches the surface off, which the variable never could.
 
 ## A self-hosted model server
 
@@ -175,23 +168,31 @@ flag in that file, or this provider breaks on the next request.
   One price pair covers both models. OpenRouter ignores both settings.
 - **It is a different processor.** Production runs OpenRouter, and the privacy page names it and its
   providers. Pointing production at another server changes who sees the photos, so the privacy page
-  changes FIRST — the order the Alibaba fallback followed (ieat-app#1908 before #1914).
+  changes FIRST (ieat-app#1908 before #1914 for the Alibaba fallback).
 
 Verified against a real Ollama (0.9.0, CPU, `qwen2.5vl:3b` + `qwen2.5:3b`, 2026-10-10): a photo
 streamed and parsed in 164 s, the coach answered in 123 s. Proof that the wiring works, not of
-accuracy — that is `docs/ACCURACY.md`'s question, per model.
+accuracy, which is a per-model question.
 
 ## Windows and bounds
 
-`/v1/diary/week` is bounded (`MAX_WINDOW_DAYS`, re-exported from the contract so the app can be
-TOLD it). `/v1/diary/day` is **not** bounded — it validates the shape of a date and nothing else.
-When you read or write a comment about either, say which one it constrains: a bound described as
-covering more than it does is how a client comes to refuse something the server would have answered.
+Four diary routes carry four different bounds. When you read or write a comment about one, say
+which one it constrains: a bound described as covering more than it does is how a client comes to
+refuse something the server would have answered.
+
+- `/v1/diary/week` is bounded by `MAX_WINDOW_DAYS`, re-exported from the contract so the app can be
+  TOLD it.
+- `/v1/diary/days` is bounded by `DIARY_RANGE_MAX_DAYS` (31 calendar days) in the contract.
+- `/v1/diary/day` is **not** bounded. It validates the shape of a date and nothing else.
+- `/v1/diary/average` takes `week=0..3` (`AVERAGE_WEEKS_BACK`), not a date window.
+
+The `MAX_WINDOW_DAYS` inside `src/shared/dates.ts` is a different, unexported constant. Check
+which one a comment names.
 
 ## Testing
 
 `bun test ./src/backend` — no database needed, because the memory store is a real implementation of
-the port rather than a mock. `EAIT__BACKEND__DATABASE_URL` is only for `make run-backend`.
+the port rather than a mock. `EAIT__BACKEND__DATABASE_URL` is only for a real backend (`./dev up --backend`).
 
 The Postgres half runs when `TEST_DATABASE_URL` is set and says loudly when it is not. Point it at a
 database of THIS worktree's own — `./dev env show` names the one the backend uses; the test suite
@@ -199,16 +200,13 @@ wants a second one beside it, never slot 0's `eait`. The URL must name the `eait
 `eait`: the row-level-security cases assert that first, because a superuser reads every row whatever
 a policy says.
 
-The demo analyzer (`llm/demo.ts`) must stay **as poor as the real one**. A fake may be poorer than
-the real thing, never different in a way a test can see: it once supplied `verdicts: {}` where the
-real analyzer supplies none, so `--demo` could not reproduce a crash that hit every real run.
+The demo analyzer (`llm/demo.ts`) must stay as poor as the real one: see the root `AGENTS.md`
+§ Hard conventions (do not break).
 
 ## Adding to this workspace
 
-New endpoint → the route in `src/shared/contract.ts` FIRST, then one handler here that calls one
-engine function, then a client method. New product logic → `engine/`. New LLM capability → a port
-type in `llm/port.ts`, a prompt in `prompt.ts`, an implementation in `openrouter.ts`, and a canned
-one in `demo.ts` so the tests still run.
+The steps for a new endpoint, new product logic and a new LLM capability are in
+the root `AGENTS.md` § Where to add things.
 
 A SEVENTH SYSTEM PROMPT IS FOUR EDITS, and the tests name the one you forget: the constant and its
 entry in `PROMPT_DEFAULTS`, its key in `PROMPT_KEYS`, the same key in the `llm_prompts_key_check`
@@ -219,8 +217,6 @@ the key with no database; miss it and run the store contract suite against Postg
 naming it too.
 
 ## Auth, the paid tier, and the surfaces the server owns
-
-> Moved verbatim from the root `AGENTS.md`, which is the router and no longer carries the detail.
 
 - **Onboarding also happens in a browser, at `/start`.** `src/backend/web/`, served by the backend,
   server-rendered, no JavaScript and no build step — so the page and the form handler are the same
@@ -235,7 +231,7 @@ naming it too.
   the shape `/admin` and the purchase webhook use; one configured is a supported host and the
   other's routes 404. Apple's client secret is not a stored string — it is a five-minute ES256 JWT
   minted per exchange from the `.p8`, and the Service ID (not the bundle id) is what its token
-  carries as `aud`. Design and configuration: `docs/WEB_ONBOARDING.md`.
+  carries as `aud`.
 
 - **Photos live with the meal.** A logged meal's photos are stored in `meal_photos` (bytea, cascade
   from `meals` and `users`), written by `logPhotoMeal` AFTER the caps are charged and the meal is
@@ -243,60 +239,66 @@ naming it too.
   (`GET /v1/meals/:id/photos/:n`); they move with a merge and go with the meal or the account.
   Never on the server's disk, never logged, never in a result. The phone still deletes every
   capture in a `finally`; fetched photos sit in expo-image's disk cache, cleared with the session.
-  `scripts/export-photos.ts` is the one cross-user read and is host-side only. Design:
-  `docs/superpowers/specs/2026-09-05-photo-storage-design.md`.
+  The one cross-user photo read is a host-side export script in the deploying repo. It is not an API route.
 - **A session token is stored as a hash, and expires when it stops being used.**
   `src/backend/auth/tokens.ts`. The `tokens` table holds `sha256(token)` and there is no column
   holding the token — a dump names accounts and login times without letting the reader become any of
   them, which matters because a dump runs nightly by cron and is rsynced off the box on purpose.
   Expiry is IDLE time, not age: 180 days without a request, slid forward on use. An absolute one
   signs out the people who use the app most, on a schedule, for no benefit.
-- **The paid tier is SERVER state, and the RevenueCat webhook is its only source.** The App Store
-  takes the payment, RevenueCat is told, and it posts to `/v1/revenuecat/webhook` — which is off
-  entirely unless `EAIT__BACKEND__REVENUECAT_WEBHOOK_TOKEN` is set (404, like `/admin`, because
-  "there is a purchase webhook here" is information). No client route grants an entitlement and
-  there must never be one: the phone's own `CustomerInfo` from the SDK is a rendering hint, and it
-  disagrees with the server for a few seconds after every purchase, when only one of the two is the
-  thing refusing requests. The app is TOLD, in `ProfileResponse.entitlement` and
-  `limits.dailyPhotoCap`. **The cap is decided in `dailyPhotoCap` (`engine/entitlement.ts`) and
-  nowhere else** — `checkCaps` refuses with it and `limitsOf` reports it, and two copies of that
-  number is the app promising an allowance the server will not honour. A paid account gets a bigger
-  per-user cap. **There is no free tier and no sample** (ieat-app#2364:
-  the 3-day trial is the only way in). `checkCaps` answers every analysis of an unentitled account —
-  photo, library or typed, so a sentence is not the free way around the ask — with
-  `subscription-required` (402), before any charge, until the webhook has written an entitlement.
-  Three exceptions only: a SELF-HOSTED instance that sets `EAIT__BACKEND__PAYWALL=off` (`config.paywall`;
-  production never sets it, and the app repo's deploy tests refuse it), an analysis count the
-  ADMIN granted one account (`getFreeAnalyses`, none by default) — a development store grants every account it creates
-  through that same path (`dev/grant.ts`, `--grant N`), which is how a demo, the e2e runners and the
-  tests log meals — and ONE analysis for an account holding T1's `own-meal` arm in a running
-  experiment (ieat-app#3165), the larger of it and any grant, read off the stored assignment and
-  enforced by the guarded charge as the lifetime limit's `floor`. It ends with the experiment or
-  the `onboarding.experiments` switch. `limits.subscriptionRequired` (`unpaidRefused`, the grant included) tells the app,
-  and the app opens the paywall on it; the refusal is the authority, the sheet only its
-  rendering. **The sheet is the app's own** (`src/mobile/lib/paywall-sheet.tsx` in the app repo, drawn from
-  `product/design/pro/phone/pay-*.html`) and its words are `PAY_COPY` (`src/shared/app/pay-copy.ts`) — so they ship with a build, in every shipped language, and
-  `pay-copy.test.ts` puts them through the claims gate. RevenueCat supplies offerings and purchase calls only; no RevenueCat paywall is built or presented. The app never branches on the SDK's own `CustomerInfo`. A purchase ends by polling
-  OUR profile until the webhook has landed (`lib/paywall.tsx`), because for those seconds the phone
-  says subscribed and the server still answers 402. **And then the app carries out the action the
-  sheet interrupted** — the photo, the typed meal, the correction, the question — on its own: a gate
-  the user resolves never costs them their input, and never asks for a second attempt (#662). On
-  2026-09-13 a typed meal met the sheet, the purchase went through, and the meal was simply gone. **A lifetime unlock and a subscription are SEPARATE grants on one
-  record**, because a customer can hold both: `expiresAt` is the subscription, `lifetimeProductId`
-  is the unlock, and `entitlementLive` says entitled if either does. One field carried both once,
-  and refunding the lifetime then revoked a monthly plan that was still paid for. Each delivery
-  touches exactly one of them — an expiry sets the subscription, `NON_RENEWING_PURCHASE` grants the
-  unlock, and `CANCELLATION`/`EXPIRATION` with no expiry clears it only when the stored unlock came
-  from the same product. **Every state condition lives in the store's own guarded statements, never in a
-  read the engine did first**: deliveries can be concurrent, nothing is transactional, and the
-  webhook answers 200 either way, so a decision made from a stale read is dropped permanently.
-  **Webhook delivery is not
-  ordered**, so `putEntitlement` applies an event only when it is newer than the last one applied TO THAT GRANT — the
-  same rule `weight_measured_at` enforces, and without it a cancellation generated before a renewal
-  arrives after it and revokes a subscription somebody is paying for. And the id in the payload is
-  the ONE user id in this codebase that comes from a request body: that is what the message is, it
-  is safe only because of the shared secret checked before the body is read, and `putEntitlement`
-  never creates a user.
+- **The paid tier is SERVER state, and the RevenueCat webhook is its only source.**
+  - The App Store takes the payment and RevenueCat posts to `/v1/revenuecat/webhook`. The route is
+    off entirely unless `EAIT__BACKEND__REVENUECAT_WEBHOOK_TOKEN` is set. It answers 404 then, like
+    `/admin`, because "there is a purchase webhook here" is information.
+  - No client route grants an entitlement, and there must never be one. The phone's own
+    `CustomerInfo` from the SDK is a rendering hint. It disagrees with the server for a few seconds
+    after every purchase, and only the server refuses requests. The app is TOLD, in
+    `ProfileResponse.entitlement` and `limits.dailyPhotoCap`.
+  - **The cap is decided in `dailyPhotoCap` (`engine/entitlement.ts`) and nowhere else.**
+    `checkCaps` refuses with it and `limitsOf` reports it. Two copies of that number would be the
+    app promising an allowance the server will not honour. An entitled account gets
+    `paidDailyPhotoCap` per day.
+  - **There is no free tier and no sample** (ieat-app#2364: the 3-day trial is the only way in).
+    `checkCaps` answers every analysis of an unentitled account with `subscription-required`
+    (402), before any charge, until the webhook has written an entitlement. That covers photo,
+    library and typed analyses, so a sentence is not the free way around the ask.
+  - Three exceptions only:
+    - A SELF-HOSTED instance that sets `EAIT__BACKEND__PAYWALL=off` (`config.paywall`). Production
+      never sets it, and the deploying repo's tests refuse it.
+    - An analysis count the ADMIN granted one account (`getFreeAnalyses`, none by default). A
+      development store grants every account it creates through that same path (`dev/grant.ts`,
+      `--grant N`), which is how a demo, the e2e runners and the tests log meals.
+    - ONE analysis for an account holding T1's `own-meal` arm in a running experiment
+      (ieat-app#3165). It is the larger of that one and any grant, read off the stored assignment and
+      enforced by the guarded charge as the lifetime limit's `floor`. It ends with the experiment or
+      the `onboarding.experiments` switch.
+  - `limits.subscriptionRequired` (`unpaidRefused`, the grant included) tells the app, and the app
+    opens the paywall on it. The refusal is the authority and the sheet only renders it.
+  - **The paywall sheet is the app's own, and its words are `PAY_COPY`**
+    (`src/shared/app/pay-copy.ts`). They ship with a build, in every shipped language, and
+    `pay-copy.test.ts` puts them through the claims gate. RevenueCat supplies offerings and purchase
+    calls only. No RevenueCat paywall is built or presented. The app never branches on the SDK's own
+    `CustomerInfo`.
+  - A purchase ends with the app polling OUR profile until the webhook has landed, because for those
+    seconds the phone says subscribed and the server still answers 402. **Then the app carries out
+    the action the sheet interrupted**: the photo, the typed meal, the correction, the question. A
+    gate the user resolves never costs them their input and never asks for a second attempt (#662).
+  - **A lifetime unlock and a subscription are SEPARATE grants on one record**, because a customer
+    can hold both. `expiresAt` is the subscription, `lifetimeProductId` is the unlock, and
+    `entitlementLive` says entitled if either does. One field carrying both would let a lifetime
+    refund revoke a monthly plan that is still paid for.
+  - Each delivery touches exactly one grant. An expiry sets the subscription. `NON_RENEWING_PURCHASE`
+    grants the unlock. `CANCELLATION` or `EXPIRATION` with no expiry clears the unlock only when the
+    stored unlock came from the same product.
+  - **Every state condition lives in the store's own guarded statements.** See the first bullet of
+    this list on state conditions. The webhook answers 200 either way, so a decision made from a
+    stale read is dropped permanently.
+  - **Webhook delivery is not ordered.** `putEntitlement` applies an event only when it is newer
+    than the last one applied TO THAT GRANT, the same rule `weight_measured_at` enforces. Without it,
+    a cancellation generated before a renewal arrives after it and revokes a subscription somebody
+    is paying for.
+  - The id in the payload is the ONE user id in this codebase that comes from a request body, as
+    the per-user scoping invariant above says. `putEntitlement` never creates a user.
 - **A cap on an account is not a cap while accounts are free.** `POST /v1/auth/device` mints one for
   anybody with a 32-character string, so anything an account were given for
   free would cost an attacker one HTTP call to reset — and the minting is itself the attack: it spends the
@@ -306,16 +308,9 @@ naming it too.
   of it was written by the client. IPv6 keys on the /64. In memory — a restart forgives everyone,
   and so does the failover that moves the counting to the replica Caddy's `lb_policy first` had not
   been using; the day traffic splits across both replicas, the counting moves into the store.
-- **`deploy/backup.sh` is scheduled by ansible, not by a comment.** `roles/eait_app/tasks/backup.yml`
-  writes `/etc/cron.d/eait-backup` and takes the first dump during the deploy that installs it, then
-  asserts a file exists. The tree lives at `/srv/eait/**src**`; a cron line missing that `src` fails
-  every night into a log nobody reads, which is what the old one did. The off-site half is
-  `deploy/backup-offsite.sh`: restic pushes the dumps — encrypted before a byte leaves the box, they
-  carry medical free text — to the repository in `eait_restic_repository`, on the same cron file,
-  once `eait_backup_offsite_enabled` is set; the three credentials travel the environment → host →
-  refuse path the mail key uses, and every deploy then RESTORES the latest dump back from the
-  remote and asserts it is a database dump, because an upload nobody has restored is not a backup.
-  `make remote-backup-check` is that same proof on demand.
+- **A backup is scheduled and proven by the deploy, not by a comment.** An upload nobody has
+  restored is not a backup, and a dump carries medical free text, so it is encrypted before it
+  leaves the host.
 - **The dump connects as the SUPERUSER `eait`, never as `eait_app`.** The backend owns its tables
   and the policies are `force`d, so the owner is subject to them too — and `pg_dump` sets
   `row_security = off`, which Postgres refuses outright from a role that cannot bypass:
@@ -366,8 +361,7 @@ naming it too.
   sentence is the fallback when the coach fails, so an outage is today's chat, never
   `analysis-failed` on a turn already charged. The coach has its own model,
   `EAIT__BACKEND__LLM_CHAT_MODEL` (text only; the analyzer keeps the vision one), and the
-  persona and its rules are one prompt, `SYSTEM_COACH`, with a test naming each rule. Design:
-  `docs/superpowers/specs/2026-09-02-coach-chat-design.md`.
+  persona and its rules are one prompt, `SYSTEM_COACH`, with a test naming each rule.
 - **The web session cookie is `/start`'s alone.** `src/backend/web/start.ts` reads it and nothing
   else does — `resolveUserId` in `api/routes.ts` stays bearer-only, because an API that accepts a
   cookie is an API another origin can post to on a signed-in browser. `SameSite=Lax` is what
@@ -401,23 +395,20 @@ naming it too.
   ever take again. Apple sends the address on the FIRST authorization and never again, so an
   absent one must never overwrite a stored one. Asking for it obliges Apple's
   `response_mode=form_post` on the web, which `web/start.ts` bridges back to a GET so the
-  `SameSite=Lax` state cookie still guards the callback. Retiring the old "no email, no name"
-  promise is issue #95, and every surface that carried it moved in the same change — the claim is
-  refused on the admin WRITE and on the READ (`retired-no-email` in `claims.ts`, `usableWelcome`),
-  because onboarding copy is stored per host and outlives the binary that shipped it.
+  `SameSite=Lax` state cookie still guards the callback. The old "no email, no name"
+  promise is refused on the admin WRITE and on the READ (`retired-no-email` in `claims.ts`,
+  `usableWelcome`), because onboarding copy is stored per host and outlives the binary that shipped it.
   The redirect is the BUNDLE ID scheme, the one of Google's two accepted forms that Expo's
   scheme plugin already registers; writing `ios.infoPlist.CFBundleURLTypes` to take the other turns
   that plugin off and drops the app's own deep links.
-- **A system prompt is AUTHORED in `src/backend/llm/prompt.ts` and SERVED from a row.** It used to
-  be truer than that — "no prompt string is written anywhere else" — and it stopped being true when
-  the prose moved into `llm_prompts` so it could be edited without a deploy. What still holds: no
-  second prompt string is written in the SOURCE, and the six constants are where the text is
-  authored. **Every store comes up holding them as rows** — `memoryStore` in its constructor,
+- **A system prompt is AUTHORED in `src/backend/llm/prompt.ts` and SERVED from a row** of
+  `llm_prompts`, so it can be edited without a deploy. No second prompt string is written in the
+  SOURCE, and the six constants are where the text is authored. **Every store comes up holding them as rows** — `memoryStore` in its constructor,
   `postgresStore` by running `syncShippedPrompts` at boot — so a test, a `./dev` stack and a
   self-hosted deployment all read a prompt the way production does instead of testing the fallback
   and shipping the row. The fallback is still there and still tested: an empty table, a deleted row,
   a row that fails containment or a database that is down all resolve back to the constants
-  (`loadPrompts`, which cannot throw). It is the safety net now, not the normal state.
+  (`loadPrompts`, which cannot throw). It is the safety net, not the normal state.
 - **A prompt row says WHO wrote it, and that column is what keeps the constants authoritative.**
   Once rows exist everywhere, rows win — so without `source` a prompt edited in `prompt.ts` could
   never reach a host that had booted once, and the constants would quietly stop being the source of
@@ -465,26 +456,16 @@ naming it too.
   six out by hand, and `prompt.schema.test.ts` fails naming the key when the two disagree, so a
   seventh prompt cannot half-land. What would falsify all of this: a per-user prompt (it would need
   the scoping), or any builder, schema or tool definition following the prose into the table.
-- **Public copy passes a claims gate before it is written, not before it is reviewed.**
-  `src/landing/claims.ts` fails the build on a health claim (`lose weight`, `guaranteed`,
-  `lowers cholesterol`, `detox`) and on a superiority or exclusivity claim (`the only app`, `every
-  other app`). FTC substantiation is per claim; an unsubstantiated "the only" is an
-  *Alleinstellungsbehauptung* under §5 UWG and actionable by any competitor. The rule set is a
-  deliberate copy of `eait-marketer/src/claims.ts` — change one, change both, **with one stated
-  divergence**: since #358 those four health families also carry patterns for the other seven
-  languages (`src/shared/claims.ts`), because this repo's copy is admin-editable in eight and that
-  repo's social assets are English. The divergence is additive and one-way — a German pattern
-  cannot match an English caption — so porting a rule TO the marketing repo is still a
-  copy-paste, and porting one back means dropping the language block. `src/shared/claims.test.ts`
-  holds both directions.
-- **A number quoted in public copy is read from the code that produces it.** The landing's floor
-  section quotes `KCAL_FLOOR`, and a test fails when the copy and the constant disagree. A safety
-  guarantee described in marketing that the app does not implement is the worst sentence this repo
-  could publish.
-- **`--env-file` feeds compose's interpolation, not the container's environment.** A variable that
-  is in `deploy/.env.prod` and not in that service's `environment:` block reaches nothing. It looks
-  configured from the host and is absent inside the process; `EAIT__BACKEND__LANDING_URL` shipped that way and the
-  only thing that found it was posting the form at the deployed server.
+- **Public copy passes a claims gate before it is written, not before it is reviewed.** The rule
+  set is `src/shared/claims.ts`, and the landing build is one caller of it. The rule and its
+  divergence from the marketing repo's copy are in `src/shared/AGENTS.md` § Invariants a reviewer
+  should check first.
+- **A number quoted in public copy is read from the code that produces it,** and a test fails when
+  the copy and the constant disagree. A safety guarantee described in marketing that the app does
+  not implement is the worst sentence this repo could publish.
+- **A container sees only what its service's `environment:` block names.** A compose `--env-file`
+  feeds interpolation, not the container's environment, so a variable absent from that block
+  reaches nothing, however configured it looks from the host.
 - **The photo route streams when asked, and the last line is the answer.** `POST /v1/meals/photo`
   with `accept: application/x-ndjson` answers `200` at once and writes one JSON object per line:
   a `reading` line, an `item` per object the
@@ -494,7 +475,7 @@ naming it too.
   it is the JSON route it always was, and `logPhotoMeal` without `onEvent` streams nothing.
   The pending card renders item NAME and GRAMS only; the kcal, the macros and the verdicts are the
   final card's, so nothing provisional is a number the product later contradicts. Measured
-  2026-09-05 (`docs/ACCURACY.md`): the 30 s wait was grok-4.5's reasoning — a median 37 s to first
+  2026-09-05: the 30 s wait was grok-4.5's reasoning — a median 37 s to first
   visible token, 0 to 4433 reasoning tokens on the SAME photo — and that endpoint refuses to switch
   reasoning off, which is why the analyzer runs a model that does not reason and
   `EAIT__BACKEND__LLM_REASONING_EFFORT` ships `off`.
@@ -523,8 +504,8 @@ naming it too.
   The numbers stay the old ones until the write lands. POST /v1/messages and PATCH /v1/meals/:id stay: shipped
   builds call them. A dead worker's `ingredients` or `reread` re-runs once; a `note` never does (its
   chat lines would repeat) and settles `OUTCOME_UNKNOWN`.
-- **There is no cross-sender daily cap on pushes** (Kirill, ieat-app#1965; R1, the Telegram bot's
-  one-a-day rule, is retired for app pushes). `push_claim` is one row per `(user, local day,
+- **There is no cross-sender daily cap on pushes** (Kirill, ieat-app#1965; the Telegram bot's
+  one-a-day rule does not apply to app pushes). `push_claim` is one row per `(user, local day,
   sender)` and exists for idempotency: the tick runs every minute on two replicas, so each sender
   claims its day BEFORE it sends. The sender is `pushSenderOf(kind, ref)` — the tick's scheduled
   message (a trigger or the evening line, one sender), `meal:<slot>` (the web push for a per-meal
@@ -536,13 +517,13 @@ naming it too.
   transaction that holds the account row's lock to the insert; a lost race on the same sender is
   `sender-taken`, never a throw. **`claimSend` (`engine/notify.ts`) is the one place every sender claims**,
   so a refusal there (`sender-taken` or `account-cap`) is the whole rule; a new sender calls it and
-  nothing else. A campaign is still once per account (`claimCampaignSend`); a repeat setting is added
-  only when a campaign needs one. The trial-ends day is no longer silent: the phone's local
-  reminder stays and the evening line goes as well. The staff test push (`sendTestPush`, users.staff
+  nothing else. A campaign is once per account (`claimCampaignSend`); a repeat setting is added
+  only when a campaign needs one. On the trial-ends day the phone's local reminder stays and the
+  evening line goes as well. The staff test push (`sendTestPush`, users.staff
   or EAIT__BACKEND__CAMPAIGN_STAFF_IDS as a bootstrap fallback) claims nothing and is bounded by
   `TEST_PUSH_DAILY_CAP` (`test-cap`, 409), a stuck-button bound and not a product rule; a non-staff
-  test is the `admin-test` sender. Unchanged: Apple 4.5.4 (promotional only with tips and offers
-  on), the account-wide notifications switch, the claims gate. `push_slot` is written by the
+  test is the `admin-test` sender. Apple 4.5.4 holds (promotional only with tips and offers
+  on), as do the account-wide notifications switch and the claims gate. `push_slot` is written by the
   scheduled sender only while a build that still reads it can run; drop it with that shim.
 - **The singletons run on the LEADER, and leadership is a Postgres advisory lock** (#414). The
   evening line, the daily sweeps (health retention, turn outcomes, settled jobs, abandoned accounts, idle
