@@ -110,7 +110,7 @@ export const DEFAULT_NOTIFICATION_COPY: NotificationCopy = {
   },
   "onboarding-photo": {
     title: "Your plan's ready",
-    body: "Log your first meal. Just snap a photo of what you're eating.",
+    body: "Next time you eat, show me the plate before the first bite.",
     alternates: { v2: "I'd like to see what you're having today.", v3: "Start with whatever's next, coffee included.", v4: "Point the camera at your next meal and I'll do the counting." },
   },
   "streak-risk": {
@@ -149,7 +149,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "Ton plan est prêt",
-      body: "Note ton premier repas. Prends simplement en photo ce que tu manges.",
+      body: "La prochaine fois que tu passes à table, prends une photo avant de commencer.",
       alternates: { v2: "Envoie une petite photo de ce que tu manges aujourd'hui.", v3: "Commence par ce que tu prends maintenant, même un simple café.", v4: "Prends ton repas en photo, je m'occupe de calculer les calories." },
     },
     "streak-risk": {
@@ -179,7 +179,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "Dein Plan steht",
-      body: "Trag deine erste Mahlzeit ein. Fotografier einfach, was du isst.",
+      body: "Beim nächsten Essen einfach kurz den Teller fotografieren, bevor du anfängst.",
       alternates: { v2: "Schick einfach ein Foto von dem, was du heute isst.", v3: "Fang einfach mit der nächsten Kleinigkeit an, auch wenn es nur ein Kaffee ist.", v4: "Kurz dein Essen knipsen, das Kalorienzählen übernehme ich." },
     },
     "streak-risk": {
@@ -209,7 +209,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "Il tuo piano è pronto",
-      body: "Registra il tuo primo pasto. Basta una foto di quello che mangi.",
+      body: "La prossima volta che mangi, fai una foto al piatto prima di iniziare.",
       alternates: { v2: "Manda una foto di quello che mangi oggi.", v3: "Comincia da quello che prendi adesso, anche solo un caffè.", v4: "Scatta una foto a quello che mangi, a contare le calorie ci penso io." },
     },
     "streak-risk": {
@@ -239,7 +239,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "Tu plan está listo",
-      body: "Registra tu primera comida. Solo haz una foto de lo que comes.",
+      body: "La próxima vez que comas, sácale una foto al plato antes de empezar.",
       alternates: { v2: "Mándame una foto de lo que comas hoy.", v3: "Empieza con lo próximo que tomes, aunque sea un café.", v4: "Sácale foto a tu próxima comida y yo me encargo de las calorías." },
     },
     "streak-risk": {
@@ -269,7 +269,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "Kế hoạch đã sẵn sàng",
-      body: "Ghi bữa ăn đầu tiên của bạn. Chỉ cần chụp ảnh món bạn đang ăn.",
+      body: "Lần tới ăn gì, chụp đĩa đồ ăn trước khi ăn nhé.",
       alternates: { v2: "Hôm nay ăn gì thì chụp gửi mình xem với nhé.", v3: "Bắt đầu từ món tiếp theo bạn dùng nhé, kể cả ly cà phê.", v4: "Chụp ảnh bữa ăn tiếp theo, việc tính calo cứ để mình lo." },
     },
     "streak-risk": {
@@ -299,7 +299,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "Plan kamu sudah siap",
-      body: "Catat makan pertamamu. Cukup foto makanan yang kamu santap.",
+      body: "Pas makan berikutnya, foto piringmu sebelum suapan pertama.",
       alternates: { v2: "Coba tunjukkan makananmu hari ini.", v3: "Mulai dari apa pun selanjutnya, kopi juga dihitung.", v4: "Arahkan kamera ke makananmu, biar aku yang hitung kalorinya." },
     },
     "streak-risk": {
@@ -329,7 +329,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
     },
     "onboarding-photo": {
       title: "План есть",
-      body: "Запиши первую еду. Просто сфоткай, что ешь.",
+      body: "Перед едой сфоткай тарелку, остальное на мне.",
       alternates: { v2: "Что у тебя сегодня на тарелке? Покажи.", v3: "Начать можно хоть с кофе.", v4: "Ты фоткаешь, я считаю. Договорились?" },
     },
     "streak-risk": {
@@ -361,7 +361,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Plani është gati",
-    body: "Regjistro vaktin e parë. Thjesht bëj një foto të asaj që po ha.",
+    body: "Herën tjetër që ha, më trego pjatën para kafshatës së parë.",
     alternates: { v2: "Më trego çfarë po ha sot.", v3: "Fillo me çfarëdo që ke radhën, edhe kafeja numërohet.", v4: "Drejtoje kamerën nga ushqimi dhe unë i numëroj kaloritë." },
   },
   "streak-risk": {
@@ -393,7 +393,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Планът ти е тук",
-    body: "Запиши първото си хранене. Просто снимай какво ядеш.",
+    body: "Следващия път покажи чинията преди първата хапка.",
     alternates: { v2: "Покажи какво хапваш днес.", v3: "Започни със следващото ядене, дори да е само кафе.", v4: "Насочи камерата към храната и аз ще пресметна калориите." },
   },
   "streak-risk": {
@@ -425,7 +425,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "ప్లాన్ సిద్ధమైంది",
-    body: "మీ మొదటి భోజనాన్ని నమోదు చేయండి. మీరు తింటున్న దాని ఫోటో తీస్తే చాలు.",
+    body: "తర్వాత తినేటప్పుడు, మొదలుపెట్టే ముందే ప్లేట్‌ను ఒక ఫోటో తీయండి.",
     alternates: { v2: "ఈరోజు ఏమి తింటున్నా ఒక ఫోటో తీసి పంపండి.", v3: "తర్వాత తీసుకునే దానితోనే మొదలుపెట్టండి, టీ లేదా కాఫీ అయినా ఫర్వాలేదు.", v4: "తర్వాతి భోజనాన్ని ఫోటో తీయండి, క్యాలరీలు లెక్కించే పని నాది." },
   },
   "streak-risk": {
@@ -457,7 +457,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "உங்கள் திட்டம் தயார்",
-    body: "உங்கள் முதல் உணவைப் பதிவு செய்யுங்கள். சாப்பிடுவதை ஒரு புகைப்படம் எடுத்தால் போதும்.",
+    body: "அடுத்த முறை சாப்பிடுவதற்கு முன் உங்கள் தட்டைப் புகைப்படம் எடுங்கள்.",
     alternates: { v2: "இன்று என்ன சாப்பிடுகிறீர்கள் என்று காட்டுங்கள்.", v3: "அடுத்து சாப்பிடுவதிலிருந்து தொடங்குங்கள், காபியும் கணக்கில் வரும்.", v4: "கேமராவை உணவை நோக்கி வையுங்கள், கலோரிகளை நான் கணக்கிடுகிறேன்." },
   },
   "streak-risk": {
@@ -489,7 +489,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "ਪਲਾਨ ਤਿਆਰ ਹੈ",
-    body: "ਆਪਣਾ ਪਹਿਲਾ ਖਾਣਾ ਦਰਜ ਕਰੋ। ਜੋ ਖਾ ਰਹੇ ਹੋ ਉਸਦੀ ਬਸ ਇੱਕ ਫੋਟੋ ਖਿੱਚੋ।",
+    body: "ਅਗਲੀ ਵਾਰ ਖਾਣ ਤੋਂ ਪਹਿਲਾਂ ਪਲੇਟ ਦੀ ਇੱਕ ਫ਼ੋਟੋ ਖਿੱਚ ਲਵੋ।",
     alternates: { v2: "ਅੱਜ ਜੋ ਵੀ ਖਾਓ, ਉਸਦੀ ਇੱਕ ਫ਼ੋਟੋ ਭੇਜ ਦਿਓ।", v3: "ਅਗਲੀ ਜੋ ਵੀ ਚੀਜ਼ ਲਵੋ ਉਸੇ ਤੋਂ ਸ਼ੁਰੂ ਕਰੋ, ਚਾਹ ਜਾਂ ਕੌਫ਼ੀ ਵੀ ਚੱਲੇਗੀ।", v4: "ਅਗਲੇ ਖਾਣੇ ਦੀ ਫ਼ੋਟੋ ਖਿੱਚੋ, ਕੈਲੋਰੀਆਂ ਗਿਣਨਾ ਮੇਰੇ 'ਤੇ ਛੱਡ ਦਿਓ।" },
   },
   "streak-risk": {
@@ -521,7 +521,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "ଆପଣଙ୍କ ପ୍ଲାନ୍ ପ୍ରସ୍ତୁତ",
-    body: "ଆପଣଙ୍କ ପ୍ରଥମ ଖାଦ୍ୟ ଲଗ୍ କରନ୍ତୁ। ଯାହା ଖାଉଛନ୍ତି ତାହାର ଗୋଟିଏ ଫଟୋ ନିଅନ୍ତୁ।",
+    body: "ପରବର୍ତ୍ତୀ ଖାଇବା ପୂର୍ବରୁ ଥାଳିର ଗୋଟିଏ ଫଟୋ ଦେଖାନ୍ତୁ।",
     alternates: { v2: "ଆଜି କଣ ଖାଉଛନ୍ତି ଦେଖାନ୍ତୁ।", v3: "ପରବର୍ତ୍ତୀ ଖାଦ୍ୟରୁ ଆରମ୍ଭ କରନ୍ତୁ, କଫି ମଧ୍ୟ ଚଳିବ।", v4: "ଖାଦ୍ୟ ଆଡ଼କୁ କ୍ୟାମେରା ରଖନ୍ତୁ, କ୍ୟାଲୋରୀ ମୁଁ ଗଣିଦେବି।" },
   },
   "streak-risk": {
@@ -553,7 +553,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "प्लॅन तयार आहे",
-    body: "तुमचे पहिले जेवण नोंदवा. जे खात आहात त्याचा फक्त एक फोटो काढा.",
+    body: "पुढच्या वेळी जेवताना पहिला घास घेण्याआधी ताटाचा फोटो दाखवा.",
     alternates: { v2: "आज काय खाताय ते दाखवा.", v3: "पुढच्या खाण्यापासून सुरुवात करा, कॉफीसुद्धा चालेल.", v4: "कॅमेरा जेवणाकडे धरा, कॅलरी मोजण्याचे काम मी करतो." },
   },
   "streak-risk": {
@@ -585,7 +585,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "പ്ലാൻ റെഡിയാണ്",
-    body: "നിങ്ങളുടെ ആദ്യ ഭക്ഷണം രേഖപ്പെടുത്തൂ. കഴിക്കുന്നതിന്റെ ഒരു ഫോട്ടോ എടുത്താൽ മതി.",
+    body: "അടുത്ത തവണ കഴിക്കാൻ തുടങ്ങുന്നതിന് മുമ്പ് പ്ലേറ്റിന്റെ ഒരു ഫോട്ടോ എടുക്കൂ.",
     alternates: { v2: "ഇന്ന് എന്ത് കഴിച്ചാലും ഒരു ഫോട്ടോ അയച്ചു തരൂ.", v3: "അടുത്തതായി എന്ത് കഴിച്ചാലും അതോടെ തുടങ്ങാം, ഒരു കാപ്പി ആയാലും മതി.", v4: "അടുത്ത ഭക്ഷണത്തിന്റെ ഫോട്ടോ എടുക്കൂ, കലോറി കണക്കുകൂട്ടൽ ഞാൻ നോക്കിക്കോളാം." },
   },
   "streak-risk": {
@@ -617,7 +617,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "ಪ್ಲಾನ್ ಸಿದ್ಧವಾಗಿದೆ",
-    body: "ನಿಮ್ಮ ಮೊದಲ ಊಟವನ್ನು ದಾಖಲಿಸಿ. ತಿನ್ನುತ್ತಿರುವುದರ ಒಂದು ಫೋಟೋ ತೆಗೆದರೆ ಸಾಕು.",
+    body: "ಮುಂದಿನ ಬಾರಿ ಊಟ ಮಾಡುವಾಗ, ಶುರು ಮಾಡುವ ಮುನ್ನ ತಟ್ಟೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ.",
     alternates: { v2: "ಇಂದು ನೀವು ಏನೇ ತಿಂದರೂ ಒಂದು ಫೋಟೋ ಕಳುಹಿಸಿ.", v3: "ಮುಂದೆ ತೆಗೆದುಕೊಳ್ಳುವ ಯಾವುದರಿಂದಾದರೂ ಶುರುಮಾಡಿ, ಕಾಫಿ ಆದರೂ ಸರಿ.", v4: "ಮುಂದಿನ ಊಟದ ಫೋಟೋ ತೆಗೆಯಿರಿ, ಕ್ಯಾಲೊರಿ ಲೆಕ್ಕ ಮಾಡುವ ಕೆಲಸ ನಂದು." },
   },
   "streak-risk": {
@@ -649,7 +649,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "તમારો પ્લાન તૈયાર છે",
-    body: "તમારું પહેલું ભોજન નોંધો. જે ખાઓ છો તેનો બસ એક ફોટો લો.",
+    body: "આગલી વખતે જમતાં પહેલાં થાળીનો ફોટો પાડી લો.",
     alternates: { v2: "આજે શું ખાઓ છો તે બતાવો.", v3: "હવે પછી જે પણ ખાઓ તેનાથી શરૂઆત કરો, કોફી પણ ગણાય.", v4: "કેમેરા જમવા તરફ રાખો, કેલરી હું ગણી લઈશ." },
   },
   "streak-risk": {
@@ -681,7 +681,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "প্ল্যান তৈরি",
-    body: "আপনার প্রথম খাবার লগ করুন। যা খাচ্ছেন তার একটা ছবি তুললেই হবে।",
+    body: "পরের বার খাওয়ার আগে প্লেটের একটা ছবি তুলে নিন।",
     alternates: { v2: "আজ যা খাচ্ছেন, একটা ছবি তুলে পাঠিয়ে দিন।", v3: "পরের খাবার যা-ই হোক তা দিয়েই শুরু করুন, এক কাপ চা হলেও চলবে।", v4: "পরের খাবারের একটা ছবি তুলুন, ক্যালোরি গোনার কাজটা আমার।" },
   },
   "streak-risk": {
@@ -713,7 +713,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "O plano está pronto",
-    body: "Regista a tua primeira refeição. Basta tirares uma foto ao que estás a comer.",
+    body: "Na próxima refeição, mostra-me o prato antes da primeira garfada.",
     alternates: { v2: "Mostra-me o que vais comer hoje.", v3: "Começa pelo próximo petisco, o café também conta.", v4: "Aponta a câmara à tua refeição e eu conto as calorias." },
   },
   "streak-risk": {
@@ -745,7 +745,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Pelan anda dah siap",
-    body: "Catat hidangan pertama anda. Ambil sahaja gambar makanan yang anda makan.",
+    body: "Bila nak makan nanti, tangkap gambar pinggan sebelum mula ya.",
     alternates: { v2: "Kongsikan gambar apa yang anda makan hari ini.", v3: "Mulakan dengan apa saja hidangan seterusnya, kopi pun boleh.", v4: "Tangkap gambar hidangan anda, biar saya kirakan kalorinya." },
   },
   "streak-risk": {
@@ -777,7 +777,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "El teu pla està a punt",
-    body: "Registra el teu primer àpat. Només cal que facis una foto del que menges.",
+    body: "El proper cop que mengis, ensenya'm el plat abans de començar.",
     alternates: { v2: "Ensenya'm què menges avui.", v3: "Comença pel que vingui, el cafè també compta.", v4: "Apunta la càmera al proper àpat i jo compto les calories." },
   },
   "streak-risk": {
@@ -809,7 +809,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Načrt je pripravljen",
-    body: "Zabeleži svoj prvi obrok. Samo poslikaj, kar ješ.",
+    body: "Pri naslednjem obroku slikaj krožnik, še preden začneš.",
     alternates: { v2: "Pošlji fotko tega, kar bo danes na meniju.", v3: "Začni s čimerkoli, kar je naslednje, tudi z navadno kavo.", v4: "Slikaj naslednji obrok, štetje kalorij pa prepusti meni." },
   },
   "streak-risk": {
@@ -841,7 +841,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Plan je spreman",
-    body: "Zabilježi svoj prvi obrok. Samo slikaj što jedeš.",
+    body: "Idući put prije prvog zalogaja samo poslikaj tanjur.",
     alternates: { v2: "Pokaži što fino jedeš danas.", v3: "Kreni s bilo čim idućim, kava se isto računa.", v4: "Usmjeri kameru prema obroku, a ja ću zbrojiti kalorije." },
   },
   "streak-risk": {
@@ -873,7 +873,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Plán je hotový",
-    body: "Zapíš svoje prvé jedlo. Stačí odfotiť, čo ješ.",
+    body: "Nabudúce pred prvým sústom odfoť tanier.",
     alternates: { v2: "Ukáž, čo dobré dnes ješ.", v3: "Začni čímkoľvek ďalším, aj káva sa počíta.", v4: "Namier foťák na jedlo a ja spočítam kalórie." },
   },
   "streak-risk": {
@@ -905,7 +905,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Planen din er klar",
-    body: "Logg ditt første måltid. Ta bare et bilde av det du spiser.",
+    body: "Neste gang du spiser: knips et bilde av maten før første bit.",
     alternates: { v2: "Send et bilde av det du spiser i dag.", v3: "Start med det neste du inntar, kaffe teller også.", v4: "Ta bilde av neste måltid, så fikser jeg kaloriene." },
   },
   "streak-risk": {
@@ -937,7 +937,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Suunnitelma on valmis",
-    body: "Kirjaa ensimmäinen ateriasi. Ota vain kuva siitä, mitä syöt.",
+    body: "Näytä lautanen ennen ensimmäistä haukkua seuraavalla kerralla.",
     alternates: { v2: "Näytä mitä syöt tänään.", v3: "Aloita seuraavasta syömisestä, kahvikin lasketaan.", v4: "Osoita kamera seuraavaan ateriaan, niin minä lasken kalorit." },
   },
   "streak-risk": {
@@ -969,7 +969,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Planen er klar",
-    body: "Log dit første måltid. Tag bare et billede af det, du spiser.",
+    body: "Vis mig tallerkenen inden første bid, næste gang du spiser.",
     alternates: { v2: "Vis mig, hvad du spiser i dag.", v3: "Start med det næste, kaffe tæller også med.", v4: "Ret kameraet mod dit næste måltid, så tæller jeg kalorierne." },
   },
   "streak-risk": {
@@ -1001,7 +1001,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Kész a terved",
-    body: "Rögzítsd az első étkezésedet. Csak fotózd le, amit eszel.",
+    body: "A következő étkezésnél lőj egy fotót a tányérról, mielőtt elkezdenéd.",
     alternates: { v2: "Dobj egy fotót arról, mit eszel ma.", v3: "Kezdd a legközelebbi dologgal, akár egy sima kávéval.", v4: "Fotózd le a következő kajádat, a kalóriaszámolást bízd rám." },
   },
   "streak-risk": {
@@ -1033,7 +1033,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Το πλάνο είναι έτοιμο",
-    body: "Κατάγραψε το πρώτο σου γεύμα. Απλώς τράβηξε μια φωτογραφία από ό,τι τρως.",
+    body: "Την επόμενη φορά, δείξε μου το πιάτο πριν την πρώτη μπουκιά.",
     alternates: { v2: "Δείξε μου τι τρως σήμερα.", v3: "Ξεκίνα με ό,τι ακολουθεί, ακόμα και ο καφές μετράει.", v4: "Στρέψε την κάμερα στο επόμενο γεύμα και θα μετρήσω τις θερμίδες." },
   },
   "streak-risk": {
@@ -1065,7 +1065,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Planul tău e gata",
-    body: "Notează prima ta masă. Fă doar o poză cu ce mănânci.",
+    body: "Data viitoare când mănânci, fă o poză farfuriei înainte să începi.",
     alternates: { v2: "Trimite o poză cu ce mănânci azi.", v3: "Începe cu ce ai în față acum, chiar și o simplă cafea.", v4: "Fă o poză la ce mănânci, de calculat caloriile mă ocup eu." },
   },
   "streak-risk": {
@@ -1097,7 +1097,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Plán je hotový",
-    body: "Zapiš své první jídlo. Stačí vyfotit, co jíš.",
+    body: "Až budeš příště jíst, vyfoť talíř ještě před prvním soustem.",
     alternates: { v2: "Pošli fotku toho, co dneska jíš.", v3: "Začni čímkoliv dalším, klidně i samotnou kávou.", v4: "Vyfoť další jídlo a počítání kalorií nech na mně." },
   },
   "streak-risk": {
@@ -1129,7 +1129,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "प्लान तैयार है",
-    body: "अपना पहला भोजन दर्ज करें। जो खा रहे हैं, बस उसकी एक फोटो लें।",
+    body: "अगली बार खाने से पहले बस अपनी प्लेट की एक फोटो खींच लीजिए।",
     alternates: { v2: "आज जो भी खाएं, उसकी एक फोटो भेज दीजिए।", v3: "अगली जो भी चीज़ लें उसी से शुरू करें, चाय या कॉफ़ी भी चलेगी।", v4: "अगले खाने की फोटो खींचिए, कैलोरी गिनने का काम मुझ पर छोड़ दीजिए।" },
   },
   "streak-risk": {
@@ -1161,7 +1161,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "แผนของคุณพร้อมแล้ว",
-    body: "บันทึกมื้อแรกของคุณ แค่ถ่ายรูปอาหารที่กินอยู่",
+    body: "มื้อถัดไป ก่อนกินคำแรกช่วยถ่ายรูปจานให้ดูหน่อยนะ",
     alternates: { v2: "ขอดูหน่อยว่าวันนี้กินอะไรบ้าง", v3: "เริ่มจากของกินมื้อต่อไปได้เลย กาแฟก็นับนะ", v4: "แค่ส่องกล้องไปที่มื้อถัดไป เดี๋ยวช่วยนับแคลอรีให้" },
   },
   "streak-risk": {
@@ -1193,7 +1193,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Planen är klar",
-    body: "Logga din första måltid. Ta bara en bild av det du äter.",
+    body: "Nästa gång du ska äta: knäpp en bild på maten innan du börjar.",
     alternates: { v2: "Skicka en bild på det du äter i dag.", v3: "Börja med nästa grej du tar, till och med en kaffe räknas.", v4: "Fota nästa måltid så sköter jag kaloriräkningen." },
   },
   "streak-risk": {
@@ -1225,7 +1225,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Твій план готовий",
-    body: "Запиши перший прийом їжі. Просто сфотографуй, що їси.",
+    body: "Перед наступною їжею просто сфотографуй тарілку.",
     alternates: { v2: "Покажи, що в тебе сьогодні смачненького.", v3: "Почни з будь-якого перекусу, навіть кава підійде.", v4: "Наведи камеру на страву, а підрахунки за мною." },
   },
   "streak-risk": {
@@ -1257,7 +1257,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Je plan is klaar",
-    body: "Log je eerste maaltijd. Maak gewoon een foto van wat je eet.",
+    body: "Laat volgende keer je bord zien voor je eerste hap.",
     alternates: { v2: "Laat maar zien wat je vandaag eet.", v3: "Begin met wat nu komt, koffie telt ook mee.", v4: "Richt je camera op je volgende maaltijd en ik tel de calorieën." },
   },
   "streak-risk": {
@@ -1289,7 +1289,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Plan jest gotowy",
-    body: "Zapisz swój pierwszy posiłek. Wystarczy zrobić zdjęcie tego, co jesz.",
+    body: "Następnym razem przed pierwszym kęsem zrób zdjęcie talerza.",
     alternates: { v2: "Pokaż, co masz dziś dobrego na talerzu.", v3: "Zacznij od czegokolwiek, kawa też się liczy.", v4: "Skieruj aparat na posiłek, a ja policzę kalorie." },
   },
   "streak-risk": {
@@ -1321,7 +1321,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Planın hazır",
-    body: "İlk öğününü kaydet. Yediğinin bir fotoğrafını çekmen yeter.",
+    body: "Bir dahaki yemekte tabağının fotoğrafını çek, gerisini bana bırak.",
     alternates: { v2: "Bugün yediklerinin bir fotoğrafını atman yeterli.", v3: "Sıradaki atıştırmalıkla başla, bir kahve bile olur.", v4: "Sıradaki öğününü çek, kalori sayma işi bende." },
   },
   "streak-risk": {
@@ -1353,7 +1353,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "計畫做好了",
-    body: "記錄你的第一餐。拍一張你吃的東西就好。",
+    body: "下次吃東西前，先拍下盤子再開動。",
     alternates: { v2: "今天吃什麼，拍張照傳給我看看吧。", v3: "從下一樣要吃的開始拍就行，就算是咖啡也算。", v4: "對著下一餐拍張照，算熱量的事交給我。" },
   },
   "streak-risk": {
@@ -1385,7 +1385,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "你的计划做好了",
-    body: "记录你的第一餐。拍一张你吃的东西就行。",
+    body: "下次吃东西前，动筷子前先拍一下盘子。",
     alternates: { v2: "给我看看你今天吃什么好吃的。", v3: "从手边的这口开始就行，咖啡也算。", v4: "把镜头对准下一餐，热量我来帮你算。" },
   },
   "streak-risk": {
@@ -1417,7 +1417,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "플랜이 준비됐어요",
-    body: "첫 끼니를 기록해 보세요. 먹는 것을 사진으로 찍기만 하면 돼요.",
+    body: "다음 식사 때 첫 입 드시기 전에 접시를 보여주세요.",
     alternates: { v2: "오늘 드시는 음식 보여주세요.", v3: "다음에 먹는 것부터 시작해요, 커피 한 잔도 좋아요.", v4: "다음 식사에 카메라를 비추면 계산은 제가 할게요." },
   },
   "streak-risk": {
@@ -1449,7 +1449,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "プランができました",
-    body: "最初の食事を記録しましょう。食べるものを写真に撮るだけです。",
+    body: "次に食べるときは、箸をつける前にお皿を見せてください。",
     alternates: { v2: "今日何を食べるか見せてください。", v3: "次の一口からで大丈夫、コーヒーだけでも記録できます。", v4: "次の食事にカメラを向けるだけで、カロリーは計算します。" },
   },
   "streak-risk": {
@@ -1481,7 +1481,7 @@ export const NOTIFICATION_COPY: Localized<NotificationCopy> = {
   },
   "onboarding-photo": {
     title: "Seu plano tá pronto",
-    body: "Registre sua primeira refeição. É só tirar uma foto do que você está comendo.",
+    body: "Na próxima refeição, tira uma foto do prato antes de começar.",
     alternates: { v2: "Manda uma foto do que você for comer hoje.", v3: "Começa pelo próximo que você tomar, até um cafezinho vale.", v4: "Tira foto do seu próximo prato que eu cuido das calorias." },
   },
   "streak-risk": {
