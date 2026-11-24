@@ -131,8 +131,9 @@ route. A route that computes is a rule the tests cannot reach.
   same statement, not off a count the engine took first. `version` is load-bearing. These two
   document writes bind the object, not `JSON.stringify` of it. The driver already encodes a bound
   value, so `${JSON.stringify(doc)}::jsonb` is a no-op cast that stores a jsonb STRING, and
-  `jsonb_set` on a string is an error. Not every jsonb write follows this: `setMealReminders`
-  still binds `${JSON.stringify(settings)}::jsonb`.
+  `jsonb_set` on a string is an error. `setMealReminders` binds its object the same way, and
+  `mealRemindersOf` reads through `json()`, so a row stored as a jsonb string before ieat-app#3489
+  still reads; `store.contract.test.ts` pins both halves.
 - **The admin is a ROLE an account carries** (`users.role`, checked `=== "admin"` AFTER the user is
   resolved). There is no admin token: a replayable secret in a header and a role would be two ways
   in, and the role is the only one. Nobody holding the role means the surface does not exist, and
