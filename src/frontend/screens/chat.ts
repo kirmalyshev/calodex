@@ -586,12 +586,15 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     send.setAttribute("aria-label", attached.length > 0 ? COPY.sendPhoto : shellCopyFor(lang).composerSend);
     voice?.sync();
   };
-  // The mic (#570): takes Send's slot while there is nothing to send. `null` elsewhere.
-  const voice = attachMic({
-    form: comp.form, field: cfield, words, send,
-    armed: () => attached.length > 0 || words.value.trim() !== "",
-    onChange: () => arm(),
-  });
+  // The mic (#570, flagged by ieat-app#3494): takes Send's slot while there is nothing to send —
+  // and only once the server's `voice.input` switch is on. `null` elsewhere: no flag, no button.
+  const voice = me?.voiceInputEnabled === true
+    ? attachMic({
+      form: comp.form, field: cfield, words, send,
+      armed: () => attached.length > 0 || words.value.trim() !== "",
+      onChange: () => arm(),
+    })
+    : null;
   const attach = (files: File[]): void => {
     attached = [...attached, ...files];
     arm();
