@@ -226,33 +226,59 @@ label.check {
    free meal. A LINK for the ×, because it changes nothing. */
 .offer { position: relative; padding-top: .5rem; }
 .offer .x {
-  position: absolute; top: 0; right: 0; width: 44px; height: 44px; border-radius: 50%;
+  position: static; margin: 0 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   color: var(--muted); background: var(--surface); border: 1px solid var(--hair); font-size: 1.15rem;
 }
-.offer .beat { text-align: center; color: var(--muted); margin: 0 0 .35rem; }
 .offer h1 { text-align: center; }
-.perk { display: flex; gap: .6rem; align-items: center; font-weight: 600; margin: 0 0 .55rem; }
-.tick {
-  flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%;
-  background: var(--accent); color: var(--accent-ink);
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.tick svg { width: 12px; height: 12px; }
-.rowline { display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 0; border-top: 1px solid var(--hair); }
-.rowline:first-child { border-top: 0; }
-/* The "when" label holds its width — the words beside it are the long ones, so it is never the
-   cell that wraps onto two lines ("Day 8" on a 390 px offer, #263). */
-.rowline > strong { flex: none; }
+/* The offer's three steps (ieat-app#3464), drawn as the in-app pay screen draws them (pay.css.ts):
+   A's plan rows — radios, the trial band, billed under the name (3.1.2(c): as heavy as the per-month
+   figure) — B's timeline and C's card. A is script-free: its title and note follow the checked
+   radio through :has. */
+.offer h1 { margin: .5rem 0 1rem; }
+.offer .t-m, .offer .note-m { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) :is(.t-y, .note-y) { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) :is(.t-m, .note-m) { display: block; }
+.offer .sub { text-align: center; color: var(--muted); margin: -.4rem 0 1rem; }
+.pwp2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
+.plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px;
+  box-shadow: 0 0 0 1px var(--hair); cursor: pointer; position: relative; overflow: hidden; }
+.plan2 input[type=radio] { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.plan2:has(>input:checked), .plan2:focus-within { box-shadow: 0 0 0 2px var(--ink); }
+.plan2 .band { background: var(--hair); color: var(--ink); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; text-align: center; padding: 4px 0; }
+.plan2:has(>input:checked) .band { background: var(--ink); color: var(--surface); }
+.plan2 .nr { display: flex; align-items: center; gap: 12px; padding: 14px; }
+.plan2 .ck { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--hair); position: relative; }
+.plan2:has(>input:checked) .ck { background: var(--accent); box-shadow: none; }
+.plan2:has(>input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px;
+  width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.plan2 .nmc { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.plan2 .nm { font-size: 16px; font-weight: 600; }
+.plan2 .billed, .plan2 .pm { font-size: 14px; font-weight: 600; }
+.plan2:not(:has(>input:checked)) :is(.nm, .billed, .pm) { color: var(--muted); }
+/* B · try for free: the trial as a timeline, a rail between the dots. */
+.offer .tl { list-style: none; margin: .5rem 0; padding: 0; display: flex; flex-direction: column; }
+.offer .tl li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 22px 50px; min-height: 36px; }
+.offer .tl li span { color: var(--muted); font-size: .8125rem; }
+.offer .tl li::before { content: ""; position: absolute; left: 0; top: 0; width: 36px; height: 36px;
+  border-radius: 50%; background: var(--accent); }
+.offer .tl li:not(:last-child)::after { content: ""; position: absolute; left: 16px; top: 36px; bottom: 0;
+  width: 4px; background: var(--accent); }
+.offer .tl li:nth-child(2)::after { background: var(--hair); }
+.offer .nopay { margin: 0 0 .5rem; text-align: center; font-weight: 600; }
+/* C · the special offer card. */
+.offer .special { text-align: center; padding: 24px; margin-bottom: 1.25rem; }
+.offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.offer .price { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin-top: 1rem;
+  font-size: 22px; font-weight: 600; }
+.offer .price s { color: var(--muted); font-weight: 500; font-size: 18px; text-decoration-thickness: 2px; }
+.offer .per { margin: 8px 0 0; font-weight: 500; }
+.offer a.button { display: block; text-align: center; text-decoration: none; margin-bottom: .6rem; }
 
-/* The offer's plans and foot (#263): the CTA clears the last plan row the way the app's screen
-   does; the note under it is the one the CHECKED radio names — a :has, because this page runs no
-   script — and the legal links are the boards' centred muted footer, not a raw link. */
-.offer .plans { margin-bottom: 1.25rem; }
+/* The offer's foot (#263): the note under the CTA, and the legal links as the boards' centred muted footer. */
 .offer .note { font-size: .8125rem; color: var(--muted); text-align: center; margin: 0; }
-.offer .note-m { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) .note-y { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) .note-m { display: block; }
 .offer .fine { font-size: .8125rem; color: var(--muted); text-align: center; margin: .35rem 0 0; }
 .offer .fine a { color: inherit; }
 .offer .fine a:hover { color: var(--ink); }

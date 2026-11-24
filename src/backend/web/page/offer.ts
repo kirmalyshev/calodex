@@ -1,76 +1,121 @@
-import { payPlans, type PayPlanRow } from "@eait/shared/ui/kit";
-import { fill, payCopyFor } from "@eait/shared";
-import type { Lang } from "@eait/shared";
+import { fill, payCopyFor, paywallPercent, trialBillLine, zeroLike } from "@eait/shared";
+import type { Lang, WebPaywall } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { topBar } from "./parts.ts";
 import { escape, shell } from "./shell.ts";
 
 /**
- * The soft offer (#42): the plan's one ask, with the honest timeline and a close that keeps the
- * welcome's promise — nothing to pay until the plan and the first verdict, and the × is the meal.
- * `headline` is the shared `offerHeadline`'s (the computed target by the computed month) or the
- * page's own fallback when a goal carries no target to name.
- *
- * The plans are the shared `payPlans` rows — Monthly and Yearly, never a Lifetime (#263) — and
- * the CTA is the form's submit: the checked radio rides the GET as `?plan=`, so the plan the
- * page shows is the plan `/start/checkout` sends. No script: the radio's checked state IS the
- * selection.
+ * The web offer before sign-up (ieat-app#3464), Cal AI's flow in three server-rendered steps:
+ * A the plans → × → B try for free → × → C the special offer → × the sign-up. Same words and the
+ * same figures as the in-app `#/pay` (`frontend/screens/pay.ts`): every price arrives formatted
+ * in `paywall` (the engine's `paywallOf`), the page computes none. No script — A's checked radio
+ * rides the form's GET as `?plan=`, its title and note follow it through `:has`, and each × is
+ * a link to the next step.
  */
+export type OfferStep = "plans" | "try" | "offer";
+
 export interface OfferView {
-  headline: string;
-  /** `/start/checkout`, the form's action — it fills `{userId}` from the session, never a client. */
+  step: OfferStep;
+  /** The account's sellable plans, prices and checkout links — `paywallOf`'s answer. */
+  paywall: WebPaywall;
+  /** `/start/checkout`, A's form action — it fills `{userId}` from the session, never a client. */
   checkoutUrl: string;
   /** The published privacy policy, or null where no landing is configured to publish one. */
   privacyHref: string | null;
   /** The terms document — the operator's `TERMS_URL`, or null where none is published. */
   termsHref: string | null;
-  /** The note under the CTA while the YEARLY card is checked — the trial line, or the renewal
-      line on a host that grants none. */
-  noteYearly: string;
-  /** The same note for the MONTHLY pick — the trial line while the host sells one (the trial is
-      on both plans, ieat-app#1591), the renew-at-once words where it does not. */
-  noteMonthly: string;
-  /** Where × goes — the web app's first meal, or this surface's own chat when there is none. */
+  /** Where × goes: the next step, or after the last one the flow's own next place. */
   closeHref: string;
-  /** The host's trial length in days — 0 means no trial, and the timeline's trial rows stay off
-      the card entirely rather than promising a length that does not exist (ieat-app#1591). */
-  trialDays: number;
-  /** The configured plans as `payPlans` rows — priced and named by the caller. */
-  plans: PayPlanRow[];
+  /** The host's zone, for the day billing starts. */
+  timezone: string;
+  now: Date;
   lang: Lang;
 }
-
-const TICK = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.4 3.4L13 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 export function offer(v: OfferView): string {
   const PAGE_COPY = pageCopyFor(v.lang);
   const pay = payCopyFor(v.lang);
-  const row = (what: string, detail: string): string =>
-    `<div class="rowline"><strong>${escape(what)}</strong><span class="muted">${escape(detail)}</span></div>`;
-  const perk = (p: string): string =>
-    `<p class="perk"><span class="tick">${TICK}</span>${escape(p)}</p>`;
-  // The centred muted footer the plans board draws — each link only where the operator publishes
-  // it, and a page that sells nothing never renders a lone legal line. No Restore: web has none.
+  const w = v.paywall;
   const legal: string[] = [];
   if (v.termsHref !== null) legal.push(`<a href="${escape(v.termsHref)}">${escape(pay.termsLink)}</a>`);
   if (v.privacyHref !== null) legal.push(`<a href="${escape(v.privacyHref)}">${escape(pay.privacyLink)}</a>`);
+  const fine = legal.length === 0 ? "" : `<p class="fine">${legal.join(" · ")}</p>`;
+  const x = `<a class="x" href="${escape(v.closeHref)}" aria-label="${escape(PAGE_COPY.offerClose)}">×</a>`;
+  const cta = (href: string, words: string): string =>
+    `<a class="button primary" href="${escape(href)}">${escape(words)}</a>`;
+  const page = (inner: string): string => shell(PAGE_COPY.titleOffer, `
+${topBar(PAGE_COPY)}
+<div class="offer">
+${x}
+${inner}
+${fine}
+</div>
+`, v.lang);
+
+  if (v.step === "try" && w.yearly !== null) {
+    const days = w.trialDays;
+    const renewal = fill(pay.pricePerYear, { price: w.yearly.price });
+    const zero = zeroLike(w.yearly.price);
+    const li = (when: string, what: string): string => `<li><b>${escape(when)}</b><span>${escape(what)}</span></li>`;
+    return page(`<h1>${escape(fill(pay.tryTitle, {}))}</h1>
+<ol class="tl">
+${li(pay.tryToday, pay.benefitPlan)}
+${li(fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind)}
+${li(fill(pay.tryDay, { day: String(days) }), fill(pay.tryBill, { renewal }))}
+</ol>
+<p class="nopay">${escape(pay.noPaymentDue)}</p>
+<p class="nopay num">${escape(trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal))}</p>
+${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}
+<p class="note">${escape(fill(pay.trialNote, { renewal }))}</p>`);
+  }
+
+  if (v.step === "offer" && w.exitOffer !== null) {
+    const o = w.exitOffer;
+    const percent = paywallPercent(o.percentOff, v.lang);
+    return page(`<h1>${escape(pay.offerSpecialTitle)}</h1>
+<p class="sub">${escape(fill(pay.offerSub, {}))}</p>
+<div class="card special">
+<div class="off num">${escape(fill(pay.offerOff, { percent }))}</div>
+<div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
+<p class="per num">${escape(w.monthly !== null ? fill(pay.offerVsMonthly, { percent }) : fill(pay.offerPerMonth, { price: o.perMonth }))}</p>
+</div>
+${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}
+<p class="note">${escape(pay.offerNote)}</p>`);
+  }
+
+  // A · the plans: Yearly over Monthly, each a real radio — the plan checked is the plan checkout
+  // sends. The trial rides yearly only (pay.ts): its title, band and note follow the pick.
+  const days = w.yearly !== null ? w.trialDays : 0;
+  const band = days > 0 ? fill(pay.trialBadge, { days: String(days) }) : null;
+  const row = (value: "yearly" | "monthly", name: string, billed: string | null, perMonth: string,
+      trial: string | null, checked: boolean): string => `<label class="plan2">
+<input type="radio" name="plan" value="${value}"${checked ? " checked" : ""}>
+${trial === null ? "" : `<div class="band">${escape(trial)}</div>`}
+<div class="nr"><i class="ck"></i><div class="nmc"><div class="nm">${escape(name)}</div>${billed === null ? "" : `<small class="billed">${escape(billed)}</small>`}</div><div class="pm num">${escape(perMonth)}</div></div>
+</label>`;
+  const rows = [
+    w.yearly === null ? "" : row("yearly", pay.planYearly, fill(pay.billedYearly, { price: w.yearly.price }),
+      fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true),
+    w.monthly === null ? "" : row("monthly", pay.planMonthly, null,
+      fill(pay.perMonthShort, { price: w.monthly.price }), null, w.yearly === null),
+  ].join("\n");
+  const noteY = w.yearly === null ? "" : days > 0
+    ? fill(pay.trialNote, { renewal: fill(pay.pricePerYear, { price: w.yearly.price }) })
+    : fill(pay.renewNoteYearly, { price: w.yearly.price });
+  const noteM = w.monthly === null ? "" : fill(pay.renewNoteMonthly, { price: w.monthly.price });
   return shell(PAGE_COPY.titleOffer, `
 ${topBar(PAGE_COPY)}
 <form class="offer" action="${escape(v.checkoutUrl)}" method="get">
-<a class="x" href="${escape(v.closeHref)}" aria-label="${escape(PAGE_COPY.offerClose)}">×</a>
-<p class="beat">${escape(PAGE_COPY.offerBeat)}</p>
-<h1>${escape(v.headline)}</h1>
-${[PAGE_COPY.offerPerkVerdict, PAGE_COPY.offerPerkPlan, PAGE_COPY.offerPerkSpud].map(perk).join("\n")}
-${v.trialDays > 0 ? `<div class="card">
-${row(PAGE_COPY.offerWhenToday, fill(pay.trialBadge, { days: String(v.trialDays) }))}
-${row(PAGE_COPY.offerWhenEnding, PAGE_COPY.offerReminder)}
-${row(fill(PAGE_COPY.offerWhenAfter, { n: String(v.trialDays + 1) }), PAGE_COPY.offerBilled)}
-</div>` : ""}
-${payPlans(v.plans, PAGE_COPY.titlePlan)}
-<button class="button primary" type="submit">${escape(v.trialDays > 0 ? fill(pay.startTrial, { days: String(v.trialDays) }) : pay.continueCta)}</button>
-<p class="note note-y">${escape(v.noteYearly)}</p>
-<p class="note note-m">${escape(v.noteMonthly)}</p>
-${legal.length === 0 ? "" : `<p class="fine">${legal.join(" · ")}</p>`}
+${x}
+<h1 class="t-y">${escape(fill(days > 0 ? pay.plansTrialTitle : pay.plansUnlockTitle, { days: String(days) }))}</h1>
+<h1 class="t-m">${escape(fill(pay.plansUnlockTitle, {}))}</h1>
+<div class="pwp2" role="radiogroup" aria-label="${escape(PAGE_COPY.titlePlan)}">
+${rows}
+</div>
+<button class="button primary" type="submit">${escape(pay.continueCta)}</button>
+<p class="note note-y">${escape(noteY)}</p>
+<p class="note note-m">${escape(noteM)}</p>
+${fine}
 </form>
 `, v.lang);
 }
