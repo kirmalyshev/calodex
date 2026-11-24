@@ -815,7 +815,7 @@ shared.payCopyFor it 13ecd135099a484d
 shared.payCopyFor es f3c900257c1ee188
 shared.payCopyFor vi 6e27b00f36688266
 shared.payCopyFor id d6b6553e4d34f9a7
-shared.payCopyFor ru 2450657d430b75b9
+shared.payCopyFor ru 19fb1e184da4b0dd
 shared.payCopyFor pt-BR dd159d994a7a283f
 shared.payCopyFor ja 4ed1c3f63ee7cadf
 shared.payCopyFor ko 2b6f6b1b9c8d0e91
@@ -829,7 +829,7 @@ shared.payCopyFor sv d0955133ea507ab3
 shared.payCopyFor th 0e3ac569dfdfb8f1
 shared.payCopyFor hi 670059d4e0e3e999
 shared.payCopyFor cs 0d9aa6ea70bd5a60
-shared.payCopyFor ro 14a9a95a294858eb
+shared.payCopyFor ro 3470ee7707b30f1f
 shared.payCopyFor el e57692b67f305017
 shared.payCopyFor hu bcd6726e10f69583
 shared.payCopyFor da 682a80d5a233c021
@@ -837,7 +837,7 @@ shared.payCopyFor fi 0ce620d454b03126
 shared.payCopyFor no 3cd5d5a9af993816
 shared.payCopyFor sk ea930a0a93f782f4
 shared.payCopyFor hr af65bf32891db641
-shared.payCopyFor sl 7eeef0a62cd3cd7d
+shared.payCopyFor sl 21416a750b8dfede
 shared.payCopyFor ca 1ca84772c0b8a4e6
 shared.payCopyFor ms b88e3c43020ccd01
 shared.payCopyFor pt-PT 37bf64abe6f1d17d
@@ -848,7 +848,7 @@ shared.payCopyFor ml 5e0d5354342f6605
 shared.payCopyFor mr 00618b248cc7a2f2
 shared.payCopyFor or ab69f5333fb527f8
 shared.payCopyFor pa 7f31b307bc0e2ef9
-shared.payCopyFor ta 4cd99284d4561a0e
+shared.payCopyFor ta 6ceb803955fefd53
 shared.payCopyFor te 0b86994297493daf
 shared.payCopyFor ar 2bbd4c94e75032b1
 shared.payCopyFor bg 191b3f2ef029a67b

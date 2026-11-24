@@ -100,8 +100,8 @@ describe("PAY_COPY", () => {
     expect(PAY_COPY.de!.noPaymentDue).toBe("Jetzt nichts zu zahlen");
     // ru: offerSpecialTitle says "Специальное предложение"
     expect(PAY_COPY.ru!.offerSpecialTitle).toBe("Специальное предложение");
-    // ru: plansUnlockTitle says "Разблокируй {app_name}, чтобы продолжить"
-    expect(PAY_COPY.ru!.plansUnlockTitle).toBe("Разблокируй {app_name}, чтобы продолжить");
+    // ru: plansUnlockTitle says "Открой {app_name}, чтобы продолжить"
+    expect(PAY_COPY.ru!.plansUnlockTitle).toBe("Открой {app_name}, чтобы продолжить");
     // ro: offerClaimTrial does not use "Revendică"
     expect(PAY_COPY.ro!.offerClaimTrial).not.toContain("Revendică");
     // es: offerClaimTrial does not use "Canjea"
