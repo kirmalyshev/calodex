@@ -181,7 +181,7 @@ export interface PayCopy {
   plansUnlockTitle: string;
   /** pay-cal-a: the Yearly row's saving, after the plan name — `{percent}` from `offerMath`. */
   planSave: string;
-  /** pay-cal-a: the Yearly row's billed price — 3.1.2(c): the billed amount stays on the card. */
+  /** pay-cal-a: the Yearly row's billed price — 3.1.2(c): the billed amount stays on the row. */
   billedYearly: string;
   /** pay-cal-a: a row's per-month figure on the right. */
   perMonthShort: string;
@@ -195,7 +195,7 @@ export interface PayCopy {
   tryRemind: string;
   /** pay-cal-b: the billing step — `{renewal}` is `pricePerYear`, already priced. */
   tryBill: string;
-  /** pay-cal-a/b: the line over the CTA while a trial is sold. */
+  /** pay-cal-b: the line over the CTA. */
   noPaymentDue: string;
   /** pay-cal-b: the CTA — `{price}` is zero in the store's currency. */
   tryCta: string;
@@ -205,7 +205,7 @@ export interface PayCopy {
   offerSub: string;
   /** pay-cal-c: the CTA while the offer product carries a trial; without one it is `offerClaim`. */
   offerClaimTrial: string;
-  /** pay-cal-c: the note while the offer carries a trial — `{renewal}` is the offer's `pricePerYear`. */
+  /** pay-cal-c: the note while the offer carries a trial — `{days}` the offer product's free days off the store, `{renewal}` the offer's `pricePerYear`. */
   offerTrialNote: string;
 }
 
@@ -2264,7 +2264,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     restoreLink: "Gendan",
     termsLink: "Vilkår",
     privacyLink: "Privatliv",
-    plansTrialTitle: "Start din gratis prøveperiode på {days} dage for at fortsætte",
+    plansTrialTitle: "Start din gratis trial på {days} dage for at fortsætte",
     plansUnlockTitle: "Lås {app_name} op for at fortsætte",
     planSave: "spar {percent}",
     billedYearly: "{price} faktureres årligt",
@@ -2272,13 +2272,13 @@ export const PAY_COPY: Localized<PayCopy> = {
     tryTitle: "Vi vil gerne have, at du prøver {app_name} gratis",
     tryToday: "I dag",
     tryDay: "Dag {day}",
-    tryRemind: "Vi minder dig om det, før prøveperioden slutter",
+    tryRemind: "Vi minder dig om det, før din trial slutter",
     tryBill: "Derefter {renewal}. Annuller før, så betaler du intet",
     noPaymentDue: "Intet at betale nu",
     tryCta: "Prøv for {price}",
     offerSpecialTitle: "Dit særlige tilbud",
     offerSub: "Begynd at logge måltider med {app_name} i dag",
-    offerClaimTrial: "Hent din gratis prøveperiode",
+    offerClaimTrial: "Hent din gratis trial",
     offerTrialNote: "{days} dage gratis, derefter {renewal}. Faktureres årligt og fornyes automatisk, medmindre du annullerer i App Store.",
 
   },
@@ -2486,7 +2486,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     restoreLink: "Restaurează",
     termsLink: "Termeni",
     privacyLink: "Confidențialitate",
-    plansTrialTitle: "Începe perioada de probă gratuită de {days} zile ca să continui",
+    plansTrialTitle: "Începe proba gratuită de {days} zile ca să continui",
     plansUnlockTitle: "Deblochează {app_name} ca să continui",
     planSave: "economisești {percent}",
     billedYearly: "{price} facturat anual",
@@ -2782,7 +2782,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     restoreLink: "Återställ",
     termsLink: "Villkor",
     privacyLink: "Integritet",
-    plansTrialTitle: "Starta din gratis provperiod på {days} dagar för att fortsätta",
+    plansTrialTitle: "Starta din gratis trial på {days} dagar för att fortsätta",
     plansUnlockTitle: "Lås upp {app_name} för att fortsätta",
     planSave: "spara {percent}",
     billedYearly: "{price} faktureras årligen",
@@ -2790,13 +2790,13 @@ export const PAY_COPY: Localized<PayCopy> = {
     tryTitle: "Vi vill att du ska prova {app_name} gratis",
     tryToday: "I dag",
     tryDay: "Dag {day}",
-    tryRemind: "Vi påminner dig innan provperioden tar slut",
+    tryRemind: "Vi påminner dig innan din trial tar slut",
     tryBill: "Sedan {renewal}. Avsluta före, så betalar du inget",
     noPaymentDue: "Inget att betala nu",
     tryCta: "Prova för {price}",
     offerSpecialTitle: "Ditt specialerbjudande",
     offerSub: "Börja logga måltider med {app_name} i dag",
-    offerClaimTrial: "Hämta din gratis provperiod",
+    offerClaimTrial: "Hämta din gratis trial",
     offerTrialNote: "{days} dagar gratis, sedan {renewal}. Faktureras årligen och förnyas automatiskt om du inte avslutar i App Store.",
 
   },
@@ -2930,7 +2930,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     restoreLink: "Herstel",
     termsLink: "Voorwaarden",
     privacyLink: "Privacy",
-    plansTrialTitle: "Start je gratis proefperiode van {days} dagen om door te gaan",
+    plansTrialTitle: "Start je gratis trial van {days} dagen om door te gaan",
     plansUnlockTitle: "Ontgrendel {app_name} om door te gaan",
     planSave: "bespaar {percent}",
     billedYearly: "{price} jaarlijks gefactureerd",
@@ -2938,13 +2938,13 @@ export const PAY_COPY: Localized<PayCopy> = {
     tryTitle: "We willen dat je {app_name} gratis probeert",
     tryToday: "Vandaag",
     tryDay: "Dag {day}",
-    tryRemind: "We herinneren je eraan voordat de proefperiode afloopt",
+    tryRemind: "We herinneren je eraan voordat je trial afloopt",
     tryBill: "Daarna {renewal}. Zeg eerder op en betaal niets",
     noPaymentDue: "Nu niets te betalen",
     tryCta: "Probeer voor {price}",
     offerSpecialTitle: "Je speciale aanbieding",
     offerSub: "Begin vandaag met het loggen van maaltijden met {app_name}",
-    offerClaimTrial: "Claim je gratis proefperiode",
+    offerClaimTrial: "Claim je gratis trial",
     offerTrialNote: "{days} dagen gratis, daarna {renewal}. Jaarlijks gefactureerd en verlengt automatisch tenzij je opzegt in de App Store.",
 
   },
