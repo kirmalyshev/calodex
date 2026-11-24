@@ -8,10 +8,14 @@ import { expect, test } from "./fixtures.ts";
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const FIXTURE = "src/backend/web/browser/fixture-meal.png";
 
-/** Let rise/grow land before measuring — axe reads opacity mid-flight as low contrast. The longest
-   stagger is ~1.9s; two seconds covers it (an infinite animation, like .scan, can never satisfy a
-   playState poll). */
-const settle = (page: Page): Promise<void> => page.waitForTimeout(2000);
+/** Let rise/grow land before measuring — axe reads opacity mid-flight as low contrast. Waits for
+   every FINITE animation to finish rather than sleeping: a fixed 2 s covered the longest stagger
+   on a quiet host and not on a loaded one, where the compositor lags the wall clock (#3510). An
+   infinite animation, like .scan, never finishes, so it is left out of the poll. */
+const settle = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.effect?.getComputedTiming().iterations === Infinity || a.playState === "finished"));
+};
 
 /** The page's violations as one line each — the list IS the failure message. */
 const axeFindings = async (page: Page): Promise<string[]> =>
@@ -20,6 +24,8 @@ const axeFindings = async (page: Page): Promise<string[]> =>
 
 for (const [width, height] of [[390, 844], [1440, 900]] as const) {
   test(`the diary, the chat, You and the offer have no axe violations at ${width}px`, async ({ inWebApp: page }) => {
+    // Four pages, a photo analysis and four settles per viewport: a walk, not a check.
+    test.slow();
     await page.setViewportSize({ width, height });
 
     // The offer is the first-meal flow's last step, reached the way app-first-meal.pw.ts reaches
