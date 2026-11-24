@@ -164,6 +164,7 @@ export async function profileView(deps: EngineDeps, userId: string): Promise<Pro
     exitOfferEnabled,
     coachName: threadCopyFor(profile.lang).coach.name,
     hasLoggedMeal: await hasLoggedMeal(deps, userId),
+    voiceInputEnabled: await switchOn(deps, "voice.input"),
     donate: donateOf(deps.config),
     referral: await referralView(deps, userId),
     analytics: await analyticsServerContext(deps, userId, profile),
@@ -491,6 +492,7 @@ export async function patchProfile(
       coachName: threadCopyFor(profile.lang).coach.name,
       donate: donateOf(deps.config),
       hasLoggedMeal: await hasLoggedMeal(deps, userId),
+      voiceInputEnabled: await switchOn(deps, "voice.input"),
       // The FIRST answer to the country question is the app's cue for the friend's-link step, which
       // asks `link && !applied` of THIS response (#3195: that step is gone). An empty link reads as
       // "no program" to every shipped build. A later edit, or the system's own fill, keeps the link:

@@ -22,6 +22,9 @@ export const SWITCH_DEFAULT: Record<SwitchKey, boolean> = {
   // `/start/checkout?plan=exit`, where off answers 404 like a plan never configured.
   "paywall.exit-offer.ios": false,
   "paywall.exit-offer.web": false,
+  // Ships OFF (ieat-app#3494): the mic exists in no composer until the admin arms it, on the phone
+  // and the web alike — sent on every ProfileResponse, so a flip needs no deploy and no build.
+  "voice.input": false,
 };
 
 export async function switchOn(deps: EngineDeps, key: SwitchKey): Promise<boolean> {

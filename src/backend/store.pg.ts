@@ -1479,7 +1479,7 @@ create table if not exists admin_switches (
 alter table admin_switches drop constraint if exists admin_switches_key_check;
 alter table admin_switches add constraint admin_switches_key_check
   check (key in ('grounding.photo', 'grounding.text', 'prompt.photo-lean', 'onboarding.experiments',
-    'paywall.exit-offer.ios', 'paywall.exit-offer.web'));
+    'paywall.exit-offer.ios', 'paywall.exit-offer.web', 'voice.input'));
 
 -- THE ADMIN VALUES (ieat-app#3421): the numeric counterpart of admin_switches — a coefficient is
 -- not a switch, and a boolean row cannot hold one. Append-only and GLOBAL for the same reasons:

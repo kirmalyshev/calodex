@@ -10954,6 +10954,10 @@
             "type": "boolean",
             "description": "Whether this account has ever logged a meal — any date, not just inside the diary window (#92 review). The first-meal surfaces (Home's free-meal flow, the log's first verdict) read it as the ONE \"nothing logged yet\" answer, so two clients can never disagree about which meal was first, and neither repeats the `/v1/diary/week` probe it replaced. The other conditions of that gate — `onboarded`, `entitlement`, `limits.subscriptionRequired` — are already on this response."
           },
+          "voiceInputEnabled": {
+            "type": "boolean",
+            "description": "The admin's `voice.input` switch (ieat-app#3494), read on every response like `exitOfferEnabled`: the chat composer's mic, one flag for the phone and the web. BOTH clients default OFF and draw no mic while it is — a server that predates the field sends none, which a client reads as off, the default anyway."
+          },
           "donate": {
             "$ref": "#/components/schemas/DonateLinks",
             "description": "{@link  DonateLinks }  — the operator's donation URLs, every one null when none are set."
@@ -10992,6 +10996,7 @@
           "exitOfferEnabled",
           "coachName",
           "hasLoggedMeal",
+          "voiceInputEnabled",
           "donate",
           "referral",
           "analytics"
