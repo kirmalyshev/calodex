@@ -1872,7 +1872,10 @@ describe("the soft offer after the plan", () => {
       // 3.1.2(c): the billed price and the day billing starts, at the weight of the zero CTA.
       expect(b).toMatch(/<p class="nopay num">Then [^<]*39\.99[^<]* from [^<]+<\/p>/);
       expect(b).toContain("Try for €0.00");
-      expect(b).toContain(`href="https://pay.rev.cat/eait/${userId}"`);
+      expect(b).toContain('href="/start/checkout?plan=yearly"');
+      // The id is filled by the checkout route from the session, never carried by the page.
+      expect(b).not.toContain(userId);
+      expect((await get("/start/checkout?plan=yearly", session)).headers.get("location")).toBe(`https://pay.rev.cat/eait/${userId}`);
       expect(closeOf(b)).toBe("/start/offer?step=offer");
     });
 
@@ -1883,7 +1886,9 @@ describe("the soft offer after the plan", () => {
       expect(c).toContain("<s>€59.88</s>");
       expect(c).toContain("€23.99 / year");
       expect(c).toContain("less than our monthly rate");
-      expect(c).toContain(`href="https://pay.rev.cat/u/${userId}"`);
+      expect(c).toContain('href="/start/checkout?plan=exit"');
+      expect(c).not.toContain(userId);
+      expect((await get("/start/checkout?plan=exit", session)).headers.get("location")).toBe(`https://pay.rev.cat/u/${userId}`);
       expect(closeOf(c)).toBe("/start/signup");
     });
 

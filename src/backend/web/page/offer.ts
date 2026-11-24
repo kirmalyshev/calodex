@@ -26,7 +26,7 @@ export interface OfferView {
   termsHref: string | null;
   /** Where × goes: the next step, or after the last one the flow's own next place. */
   closeHref: string;
-  /** The reader's zone, for the day billing starts. */
+  /** The host's zone, for the day billing starts. */
   timezone: string;
   now: Date;
   lang: Lang;
@@ -65,7 +65,7 @@ ${li(fill(pay.tryDay, { day: String(days) }), fill(pay.tryBill, { renewal }))}
 </ol>
 <p class="nopay">${escape(pay.noPaymentDue)}</p>
 <p class="nopay num">${escape(trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal))}</p>
-${cta(w.yearly.checkoutUrl, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}
+${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}
 <p class="note">${escape(fill(pay.trialNote, { renewal }))}</p>`);
   }
 
@@ -79,7 +79,7 @@ ${cta(w.yearly.checkoutUrl, zero === null ? pay.continueCta : fill(pay.tryCta, {
 <div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
 <p class="per num">${escape(w.monthly !== null ? fill(pay.offerVsMonthly, { percent }) : fill(pay.offerPerMonth, { price: o.perMonth }))}</p>
 </div>
-${cta(o.checkoutUrl, pay.offerClaim)}
+${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}
 <p class="note">${escape(pay.offerNote)}</p>`);
   }
 
