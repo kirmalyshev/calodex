@@ -54,12 +54,12 @@ ${fine}
     const days = w.trialDays;
     const renewal = fill(pay.pricePerYear, { price: w.yearly.price });
     const zero = zeroLike(w.yearly.price);
-    const li = (when: string, what: string): string => `<li><b>${escape(when)}</b><span>${escape(what)}</span></li>`;
+    const li = (when: string, what: string, cls = ""): string => `<li${cls === "" ? "" : ` class="${cls}"`}><b>${escape(when)}</b><span>${escape(what)}</span></li>`;
     return page(`<h1>${escape(fill(pay.tryTitle, {}))}</h1>
 <ol class="tl">
 ${li(pay.tryToday, pay.benefitPlan)}
 ${li(fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind)}
-${li(fill(pay.tryDay, { day: String(days) }), trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal))}
+${li(fill(pay.tryDay, { day: String(days) }), trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal), "bill")}
 </ol>
 <p class="nopay">${escape(pay.noPaymentDue)}</p>
 ${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}`);
