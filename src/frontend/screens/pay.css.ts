@@ -1,22 +1,33 @@
-// The pay screen's own styles (#263, #3359) — the pay-plans board's .split frame, inside `wmain`.
-// The sells-nothing fallback still draws the kit's plan rows (`payPlansEl`).
+// The pay screen's own styles (#263, ieat-app#3465) — the phone's Cal AI sheet, full-screen over
+// the app: the nav leaves the tree and the pane is a phone-width column centred at any width (at
+// 1440 the same sheet centred, never a split). The sells-nothing fallback still draws the kit's
+// plan rows (`payPlansEl`).
 
 export const payCss = `
-/* The board widens the main like the log's grid does. */
-.wmain:has(.pay) { max-width: 1160px; }
-.pay { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 0; }
-.pay .hero { min-height: 320px; border-radius: var(--r-card); overflow: hidden; }
-.pay .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pay .pane { position: relative; display: flex; flex-direction: column; justify-content: center;
-  padding: 0 48px 0 96px; }
-.pay .x { position: absolute; right: 16px; top: 4px; }
-.pay .pcol { display: flex; flex-direction: column; gap: 12px; max-width: 420px; }
-.pay .pcol h1 { margin: 0 0 10px; }
-.pay .pcol .cta { margin-top: 10px; }
-.pay .pcol .t12 { text-align: center; margin: 0; }
+body:has(.pay) .wtop { display: none; }
+.pay { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow-y: auto; }
+.pay .sheet { min-height: 100%; max-width: 430px; margin: 0 auto; display: flex;
+  flex-direction: column; position: relative; }
+.pay .x { position: absolute; left: 12px; top: 12px; z-index: 2; }
+.pay .hero { flex: 1; min-height: 96px; position: relative; }
+.pay .hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  display: block; }
+/* The foot (the phone's s.foot): a hairline over it and the CTA block inside. On B/C the hero is
+   gone — the pane takes the whole sheet and loses the border (the phone's B draws none). */
+.pay .pane { display: flex; flex-direction: column; padding: 12px 20px
+  calc(12px + env(safe-area-inset-bottom, 0px)); }
+.pay .sheet:has(.hero) .pane { border-top: 1px solid var(--hair); }
+.pay .sheet:not(:has(.hero)) .pane { flex: 1; padding-top: 76px; }
+.pay .pcol { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.pay .pcol h1 { margin: 0 0 6px; text-align: center; }
+.pay .pcol > p { margin: 0; }
+.pay .pcol > .t12, .pay .pcol > .t13 { text-align: center; }
+.pay .pcol .fill { flex: 1; }
+.pay .pcol .mid { flex: 1; display: flex; align-items: center; justify-content: center; }
+.pay .paylinks { display: flex; justify-content: center; align-items: center; min-height: 32px; }
 .pay .paylinks a { color: inherit; text-decoration: underline; }
 /* A's plan rows (Cal AI 04, ieat-app#3442): Yearly over Monthly — the trial band on top, the check,
-   the name with the billed price under it, the per-month figure on the right. */
+   the name (with its saving tag) and the billed price under it, the per-month figure on the right. */
 .pay .pwp2 { display: flex; flex-direction: column; gap: 10px; }
 .pay .plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px;
   box-shadow: 0 0 0 1px var(--line); cursor: pointer; position: relative; overflow: hidden; }
@@ -37,19 +48,25 @@ export const payCss = `
 .pay .plan2 .billed { font-size: 14px; font-weight: 600; } /* 3.1.2(c): as heavy as the per-month figure */
 .pay .plan2 .pm { font-size: 14px; font-weight: 600; }
 .pay .plan2:not(:has(>input:checked)) :is(.nm, .billed, .pm) { color: var(--muted); }
-/* B · try for free (Cal AI 06): the trial as a timeline, a rail between the dots. */
-.pay .tl { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; }
-.pay .tl li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 22px 50px; min-height: 36px; }
-.pay .tl li::before { content: ""; position: absolute; left: 0; top: 0; width: 36px; height: 36px;
-  border-radius: 50%; background: var(--accent); }
-.pay .tl li:not(:last-child)::after { content: ""; position: absolute; left: 16px; top: 36px; bottom: 0;
-  width: 4px; background: var(--accent); }
+/* B's timeline (Cal AI 06): a dot per step with its icon, the rail between them — the second rail
+   is the line's colour, like the phone's stepRailOff. */
+.pay .tl { list-style: none; margin: 0; padding: 0; }
+.pay .tl li { position: relative; display: grid; grid-template-columns: 36px 1fr; column-gap: 14px;
+  padding-bottom: 20px; }
+.pay .tl li:last-child { padding-bottom: 0; }
+.pay .tl li .td { grid-row: span 2; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center; justify-content: center; }
+.pay .tl li .td .ico { width: 18px; height: 18px; background: var(--accent-ink); }
+.pay .tl li:not(:last-child)::after { content: ""; position: absolute; left: 16px; top: 36px;
+  bottom: 2px; width: 4px; background: var(--accent); }
 .pay .tl li:nth-child(2)::after { background: var(--line); }
-.pay .nopay { margin: 0; text-align: center; font-weight: 600; }
-.pay .pcol p.sub { margin: -6px 0 6px; }
+.pay .tl li b { font-size: 16px; font-weight: 600; }
+.pay .tl li .num { font-size: 14px; font-weight: 600; }
+.pay .nopay { display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 600; }
+.pay .nopay .ico { width: 16px; height: 16px; background: var(--ink); }
 /* pay-exit (#451): the offer card the plans swap to on the first decline — the board's own
    measurements, radii included (16, not --r-card's 12). */
-.pay .pcol h1.d28 { margin: 0 0 6px; }
 .pay .offer { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow);
   text-align: center; padding: 24px; }
 .pay .offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
@@ -59,17 +76,4 @@ export const payCss = `
 .pay .offer .price s { color: var(--muted); font-weight: 500; font-size: 18px;
   text-decoration-thickness: 2px; }
 .pay .offer .per { margin: 8px 0 0; font-weight: 500; }
-@media (max-width: 960px) {
-  .pay .pane { padding: 0 24px; }
-}
-@media (max-width: 760px) {
-  /* One column under the board's split — the plate shrinks to a banner over the pane, the same
-     give-it-up the phone's 120 pt floor takes. The × leaves the overlay it sits in at split
-     widths and joins the column instead, or it covers the headline. */
-  .pay { grid-template-columns: 1fr; }
-  .pay .hero { min-height: 0; height: 160px; }
-  .pay .pane { padding: 20px 0; }
-  .pay .x { position: static; align-self: flex-end; }
-  .pay .pcol { max-width: none; }
-}
 `;

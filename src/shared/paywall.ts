@@ -29,6 +29,12 @@ export interface YearlyPlan extends PaywallPlan {
    * formatted strings; `null` when monthly is not configured or the saving is under one percent.
    */
   perMonthSave: string | null;
+  /**
+   * "save 33%" — the tag the Yearly row's NAME carries, the phone's `planSave` beside
+   * `planYearly` (ieat-app#3465). Same rule as `perMonthSave`: null when monthly is not
+   * configured or the saving is under one percent.
+   */
+  save: string | null;
 }
 
 /**
