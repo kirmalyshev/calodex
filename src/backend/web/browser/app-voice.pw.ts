@@ -1,8 +1,7 @@
 // The chat composer's mic (#570, flagged by ieat-app#3494): through the browser's own speech
 // recognition, and only once the server's `voice.input` switch is on — `voiceInputEnabled` rides
 // the profile, and an account the flag is off for draws no button whether the API is there or not.
-// With a stubbed recognizer a result lands in the field and is NOT sent, from the round or from
-// the + menu's Voice tile.
+// With a stubbed recognizer a result lands in the field and is NOT sent.
 import { expect, test } from "./fixtures.ts";
 
 const SAFARI = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
@@ -61,13 +60,28 @@ test.describe("the flag on", () => {
     await expect(page.locator(".thread li.me")).toHaveCount(0);
   });
 
-  test("the + menu's Voice tile starts listening", async ({ inWebApp: page }) => {
+  // The + menu is the phone's chooser and the phone has no Voice tile (ieat-app#3513): four tiles,
+  // the same four with the flag on — the mic lives only in the composer's send slot.
+  test("the + menu shows the phone's four tiles, and no Voice", async ({ inWebApp: page }) => {
     await voiceOn(page);
     await page.addInitScript(STUB);
     await page.reload();
     await page.getByRole("button", { name: "Log a meal" }).click();
-    await page.getByRole("menuitem", { name: "Voice" }).click();
-    await expect(page.locator(".cfield textarea.box")).toHaveValue("chicken salad and orange juice");
-    await expect(page.locator(".thread li.me")).toHaveCount(0);
+    await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["Photo", "Search", "Text", "Numbers"]);
+  });
+
+  // …and at phone width it is the phone's one row, not a wrap (ieat-app#3513).
+  test("at 390px the chooser is one row", async ({ inWebApp: page }) => {
+    await voiceOn(page);
+    await page.addInitScript(STUB);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    await page.getByRole("button", { name: "Log a meal" }).click();
+    const row = page.locator(".cp-wrow");
+    const tiles = page.getByRole("menu").getByRole("menuitem");
+    await expect(tiles).toHaveCount(4);
+    const box = await row.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.height).toBeLessThanOrEqual(110);
   });
 });

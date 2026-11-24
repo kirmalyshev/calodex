@@ -44,7 +44,7 @@ function recognizer(): (new () => Recognition) | null {
 export function attachMic(o: {
   form: HTMLElement; field: HTMLElement; words: HTMLInputElement | HTMLTextAreaElement; send: HTMLButtonElement;
   armed: () => boolean; onChange: () => void;
-}): { sync: () => void; start: () => void } | null {
+}): { sync: () => void } | null {
   const Ctor = recognizer();
   if (Ctor === null) return null;
   const { form, field, words, send } = o;
@@ -116,5 +116,5 @@ export function attachMic(o: {
   words.addEventListener("input", () => { say(null); stop(); });
   words.addEventListener("keydown", (e) => { if ((e as KeyboardEvent).key === "Escape") stop(); });
   sync();
-  return { sync, start: () => { if (rec === null) start(); } };
+  return { sync };
 }
