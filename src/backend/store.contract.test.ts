@@ -322,6 +322,36 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.consentOf(userId))?.marketingConsentAt).not.toBeNull();
     });
 
+    it("meal reminders: what is saved is read back, per user (ieat-app#3489)", async () => {
+      const s = await open();
+      const { userId } = await s.upsertDeviceUser(device(), "en");
+      const other = (await s.upsertDeviceUser(device(), "en")).userId;
+      expect(await s.mealRemindersOf(userId)).toBeNull();
+      const saved = {
+        breakfast: { on: false, time: "07:15" },
+        lunch: { on: true, time: "13:00" },
+        dinner: { on: true, time: "20:00" },
+        evening: false,
+      };
+      await s.setMealReminders(userId, saved);
+      expect(await s.mealRemindersOf(userId)).toEqual(saved);
+      expect(await s.mealRemindersOf(other)).toBeNull();
+    });
+
+    (name === "postgres" ? it : it.skip)("meal reminders: a row written as a jsonb STRING before #3489 still reads as the object (ieat-app#3489)", async () => {
+      const s = await open();
+      const { userId } = await s.upsertDeviceUser(device(), "en");
+      const legacy = { breakfast: { on: true, time: "08:00" }, lunch: { on: false, time: "12:00" }, dinner: { on: true, time: "19:30" } };
+      const raw = await rawSql();
+      try {
+        await raw`update users set meal_reminders = to_jsonb(${JSON.stringify(legacy)}::text) where id = ${userId}`;
+        expect((await raw`select jsonb_typeof(meal_reminders) as t from users where id = ${userId}`)[0].t).toBe("string");
+        expect(await s.mealRemindersOf(userId)).toEqual(legacy);
+      } finally {
+        await raw.end();
+      }
+    });
+
     it("treats an unticked box as 'no stamp', never as 'take it back'", async () => {
       // The marketing box starts empty on every screen, so an unticked answer is the absence of a
       // NEW consent, not a withdrawal of a stored one — a returning sign-in must not un-consent
