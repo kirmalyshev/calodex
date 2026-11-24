@@ -2745,12 +2745,14 @@ export async function postgresStore(
 
     async mealRemindersOf(userId) {
       const rows = await sql`select meal_reminders from users where id = ${userId}`;
-      const v = (rows[0] as { meal_reminders: unknown } | undefined)?.meal_reminders ?? null;
+      // json() also reads a row written as a jsonb STRING before ieat-app#3489 (the old JSON.stringify bind).
+      const v = json<unknown>((rows[0] as { meal_reminders: unknown } | undefined)?.meal_reminders ?? null, null);
+      if (v !== null && !isMealReminders(v)) console.error(`[eait] meal_reminders for ${userId} is not a MealReminders; read as never saved`);
       return isMealReminders(v) ? v : null;
     },
 
     async setMealReminders(userId, settings) {
-      await sql`update users set meal_reminders = ${JSON.stringify(settings)}::jsonb where id = ${userId}`;
+      await sql`update users set meal_reminders = ${settings} where id = ${userId}`;
     },
 
     async consentOf(userId) {
