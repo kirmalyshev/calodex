@@ -22,7 +22,6 @@ body:has(.pay) .wtop { display: none; }
 .pay .pcol h1 { margin: 0 0 6px; text-align: center; }
 .pay .pcol > p { margin: 0; }
 .pay .pcol > .t12, .pay .pcol > .t13 { text-align: center; }
-.pay .pcol .fill { flex: 1; }
 .pay .pcol .mid { flex: 1; display: flex; align-items: center; justify-content: center; }
 .pay .paylinks { display: flex; justify-content: center; align-items: center; min-height: 32px; }
 .pay .paylinks a { color: inherit; text-decoration: underline; }
@@ -50,7 +49,9 @@ body:has(.pay) .wtop { display: none; }
 .pay .plan2:not(:has(>input:checked)) :is(.nm, .billed, .pm) { color: var(--muted); }
 /* B's timeline (Cal AI 06): a dot per step with its icon, the rail between them — the second rail
    is the line's colour, like the phone's stepRailOff. */
-.pay .tl { list-style: none; margin: 0; padding: 0; }
+/* margin: auto 0 centres the timeline in the column's free height (ieat-app#3505) — the phone's
+   s.tryMid: no photo on B, so nothing floats between the title and the CTA block. */
+.pay .tl { list-style: none; margin: auto 0; padding: 0; }
 .pay .tl li { position: relative; display: grid; grid-template-columns: 36px 1fr; column-gap: 14px;
   padding-bottom: 20px; }
 .pay .tl li:last-child { padding-bottom: 0; }

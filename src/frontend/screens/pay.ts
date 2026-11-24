@@ -221,8 +221,10 @@ export function payScreen(frame: Frame): HTMLElement {
     cta.addEventListener("click", () => analytics.capture("paywall_purchase_started", { plan: "yearly", trial_shown: true, storefront: null }));
     const nopay = el("p", "nopay");
     nopay.append(kitEl(ico("check")), pay.noPaymentDue);
+    // No photo on B, so nothing floats (ieat-app#3505): `margin: auto 0` centres the timeline in
+    // the space the title and the CTA block leave — the phone's `s.tryMid`.
     const parts: HTMLElement[] = [el("h1", "d d28", fill(pay.tryTitle, {})), steps,
-      el("div", "fill"), nopay, cta, el("p", "t12 m", pay.renewsPlain)];
+      nopay, cta, el("p", "t12 m", pay.renewsPlain)];
     const foot = legal();
     if (foot !== null) parts.push(foot);
     col.replaceChildren(...parts);

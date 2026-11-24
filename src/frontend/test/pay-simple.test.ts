@@ -45,6 +45,23 @@ describe("the web pay sheet stays the phone's simple sheet (ieat-app#3465)", () 
     expect(part("const showTry", "const showOffer")).toContain("dropHero()");
     expect(part("const showOffer", "let step")).toContain("dropHero()");
   });
+  // ieat-app#3505: A's photo takes ALL the free height and the title/plans/CTA sit together at the
+  // bottom — the phone's `s.heroFull` with no spacer in the foot. On B (no photo) the timeline
+  // centres in the free height like C's card, never floating between the title and the CTA.
+  test("A: the hero takes the free height; nothing floats under the plans", () => {
+    const hero = /\.pay \.hero\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(hero).toContain("flex: 1");
+    expect(hero).toContain("min-height");
+    const a = part("const pane", "const showTry");
+    expect(a).not.toContain('"fill"');
+    expect(a).not.toContain('"mid"');
+  });
+  test("B: the timeline centres vertically — no floating spacer (ieat-app#3505)", () => {
+    const b = part("const showTry", "const showOffer");
+    expect(b).not.toContain('el("div", "fill")');
+    const tl = /\.pay \.tl\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(tl).toContain("margin: auto 0;");
+  });
   test("a full-screen sheet: fixed over the app, the × top-left, phone-width centred", () => {
     expect(css).toContain("position: fixed");
     expect(css).toContain("body:has(.pay) .wtop"); // the nav leaves the tree, not just the pixels
