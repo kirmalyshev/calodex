@@ -212,7 +212,7 @@ describe("renewsPlain (ieat-app#3465)", () => {
     for (const lang of LANGS_READY) {
       const line = PAY_COPY[lang]!.renewsPlain;
       expect(line, lang).toBeTruthy();
-      expect(line, lang).not.toMatch(/[{}0-9€$]/);
+      expect(line, lang).not.toMatch(/[{}\p{Nd}\p{Sc}]/u);
       expect(lintCopy({ "PAY_COPY.renewsPlain": line }), lang).toEqual([]);
     }
   });
