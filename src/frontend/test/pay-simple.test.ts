@@ -73,3 +73,20 @@ describe("the web pay sheet stays the phone's simple sheet (ieat-app#3465)", () 
     expect(sheet).toContain("margin: 0 auto");
   });
 });
+
+// Kirill, 24 Nov 16:56 ("sloppy, corner-y, not smooth"): the polish pass, the same on the phone's
+// sheet (ieat-app scripts/paywall-sheet-simple.test.ts) and on /start/offer (page/shell.ts).
+const shell = await Bun.file(new URL("../../backend/web/page/shell.ts", import.meta.url)).text();
+describe("the web pay sheet is smooth, not corner-y", () => {
+  for (const [name, text] of [["#/pay", css], ["/start/offer", shell]] as const) {
+    test(`${name}: the photo fades into the page, Continue is a pill, cards are 18`, () => {
+      expect(text).toMatch(/mask-image: linear-gradient\(to bottom, #000/);
+      expect(text).toMatch(/\.cta\s*\{\s*border-radius: 999px/);
+      expect(/\.plan2\s*\{[^}]*border-radius: 18px/.test(text)).toBe(true);
+    });
+    test(`${name}: only the title is heavy — name medium, billed and per-month regular`, () => {
+      expect(text).toMatch(/\.plan2 \.nm \{[^}]*font-weight: 500/);
+      expect(text).toMatch(/\.plan2 \.billed, (?:\.pay )?\.plan2 \.pm \{[^}]*font-weight: 400/);
+    });
+  }
+});

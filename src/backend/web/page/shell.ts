@@ -233,7 +233,10 @@ label.check {
 /* A's photo is the one the paywall shows (ieat-app#3465): it bleeds to main's edges, and the ×
    rides on it the way it does on the phone's sheet. B and C keep the × in flow. */
 .offer .heroimg { width: calc(100% + 2.5rem); margin: -1.75rem -1.25rem 1rem; max-width: none;
-  height: min(40vh, 21rem); object-fit: cover; }
+  height: min(40vh, 21rem); object-fit: cover; mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent); }
+.offer:has(> .heroimg) h1 { position: relative; margin-top: -3rem; font-weight: 600; }
+.offer .cta { border-radius: 999px; }
 .offer:has(> .heroimg) .x { position: absolute; left: calc(12px - 1.25rem); top: calc(12px - 1.25rem); }
 .offer h1 { text-align: center; }
 /* The offer's three steps (ieat-app#3464), drawn as the in-app pay screen draws them (pay.css.ts):
@@ -245,7 +248,7 @@ label.check {
 .offer:has(input[name=plan][value=monthly]:checked) .t-y { display: none; }
 .offer:has(input[name=plan][value=monthly]:checked) .t-m { display: block; }
 .pwp2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
-.plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px;
+.plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 18px;
   box-shadow: 0 0 0 1px var(--hair); cursor: pointer; position: relative; overflow: hidden; }
 .plan2 input[type=radio] { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 .plan2:has(>input:checked), .plan2:focus-within { box-shadow: 0 0 0 2px var(--ink); }
@@ -259,8 +262,8 @@ label.check {
 .plan2:has(>input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px;
   width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .plan2 .nmc { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.plan2 .nm { font-size: 16px; font-weight: 600; }
-.plan2 .billed, .plan2 .pm { font-size: 14px; font-weight: 600; }
+.plan2 .nm { font-size: 16px; font-weight: 500; }
+.plan2 .billed, .plan2 .pm { font-size: 13px; font-weight: 400; }
 .plan2:not(:has(>input:checked)) :is(.nm, .billed, .pm) { color: var(--muted); }
 /* B · try for free: the trial as a timeline, a rail between the dots. */
 .offer .tl { list-style: none; margin: .5rem 0; padding: 0; display: flex; flex-direction: column; }
