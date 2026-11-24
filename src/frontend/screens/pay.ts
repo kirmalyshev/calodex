@@ -236,7 +236,7 @@ export function payScreen(frame: Frame): HTMLElement {
     dropHero();
     const card = el("div", "offer pop");
     card.append(
-      el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) }).toUpperCase()),
+      el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })),
       el("div", "hr"),
     );
     const price = el("div", "price num");
