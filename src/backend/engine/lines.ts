@@ -12,6 +12,8 @@ export interface EditLineInput {
   images: (() => Promise<Uint8Array>)[];
   /** The coefficient the added angles were sent with (ieat-app#3421). */
   compression?: number;
+  /** The longest edge the added angles were resized to (ieat-app#3421). */
+  maxEdge?: number;
 }
 
 const GONE: TargetGone = { kind: "target-gone", on: "correction" };
@@ -98,7 +100,7 @@ export async function editLine(
   const text = input.text.trim();
   const out = await rewriteMeal(deps, userId, existing, profile, text || undefined,
     () => Promise.all(input.images.map((read) => read())), onEvent,
-    undefined, undefined, input.compression);
+    undefined, undefined, input.compression, input.maxEdge);
   if (out.kind !== "updated") return out;
   // LAST. The numbers describe the photos and these words now; a line that changed before a
   // refused turn would describe an analysis that never happened.

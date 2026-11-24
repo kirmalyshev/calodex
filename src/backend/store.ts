@@ -598,7 +598,7 @@ export type SwitchKey = (typeof SWITCH_KEYS)[number];
  * client encodes a sent photo at; the profile sends the newest row's value, the compiled
  * `PHOTO_COMPRESSION_DEFAULT` when no row exists.
  */
-export const VALUE_KEYS = ["photo.compression"] as const;
+export const VALUE_KEYS = ["photo.compression", "photo.max_edge_px"] as const;
 export type AdminValueKey = (typeof VALUE_KEYS)[number];
 
 /** One set of one admin value: the append-only row, `set_at` an ISO string on both stores. */
@@ -2202,9 +2202,10 @@ export interface Store {
    *
    * `compression` (ieat-app#3421) is the coefficient the appended angles were sent with; the row's
    * `photo_compression` moves to it — the LAST send's is what the stored bytes carry. Omitted,
+   * `maxEdge` (ieat-app#3421) moves `photo_max_edge` the same way. Omitted,
    * the column is left alone (a re-analysis attaching stored bytes sent nothing new).
    */
-  appendPhotos(userId: string, mealId: string, photos: { mime: string; bytes: Uint8Array }[], compression?: number): Promise<number>;
+  appendPhotos(userId: string, mealId: string, photos: { mime: string; bytes: Uint8Array }[], compression?: number, maxEdge?: number): Promise<number>;
   /** Scoped: another user's meal id is an empty list. Position ascending. */
   getPhotos(userId: string, mealId: string): Promise<StoredPhoto[]>;
   /** Scoped: null for another user's meal, and for a position that does not exist. */

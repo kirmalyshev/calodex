@@ -843,6 +843,9 @@
                   },
                   "compression": {
                     "type": "string"
+                  },
+                  "maxEdge": {
+                    "type": "string"
                   }
                 }
               }
@@ -1044,6 +1047,9 @@
                     "type": "string"
                   },
                   "compression": {
+                    "type": "string"
+                  },
+                  "maxEdge": {
                     "type": "string"
                   }
                 }
@@ -1602,6 +1608,9 @@
                     }
                   },
                   "compression": {
+                    "type": "string"
+                  },
+                  "maxEdge": {
                     "type": "string"
                   }
                 }
@@ -3045,6 +3054,9 @@
                     "type": "string"
                   },
                   "compression": {
+                    "type": "string"
+                  },
+                  "maxEdge": {
                     "type": "string"
                   }
                 }
@@ -7605,6 +7617,10 @@
           "photoCompression": {
             "type": "number",
             "description": "The JPEG quality every client encodes a photo at before sending it (ieat-app#3421), from `PHOTO_COMPRESSION_MIN` through `PHOTO_COMPRESSION_MAX` — ONE coefficient, set by the admin and held by the server, read by every client that sends a photo. Sent rather than compiled in because that is the whole feature: the admin changes it once and the phones and the browser follow on their next profile fetch, with no binary and no deploy between them."
+          },
+          "photoMaxEdge": {
+            "type": "number",
+            "description": "The longest edge, in px, every client resizes a photo to before sending it (ieat-app#3421), from `PHOTO_MAX_EDGE_MIN` through `PHOTO_MAX_EDGE_MAX`. The second knob beside `photoCompression`, sent for the same reason: the admin changes it once and every client follows."
           }
         },
         "required": [
@@ -7616,7 +7632,8 @@
           "diaryWindowDays",
           "modelCallTimeoutMs",
           "emailSignIn",
-          "photoCompression"
+          "photoCompression",
+          "photoMaxEdge"
         ],
         "additionalProperties": false,
         "description": "The server's effective limits, as told to the client.\n\nThese are ENV-CONFIGURED on the server (`EAIT__BACKEND__MAX_UPLOAD_MB`, `EAIT__BACKEND__MAX_PHOTOS_PER_MEAL`) and therefore differ between environments — which is exactly why they are sent rather than compiled into the app. A limit the server enforces and the client separately hardcodes is two numbers that must agree, and the failure when they stop agreeing is a user picking four photos and being refused by a server that allows two.\n\nThe constants below are the DEFAULTS and the fallback for a client that has not loaded a profile yet. They are not the authority; the server is."
@@ -8086,6 +8103,13 @@
               "null"
             ],
             "description": "The JPEG quality the photos were compressed to before they were sent (ieat-app#3421), the admin's `photo.compression` at send time. Null on a meal sent before the coefficient existed, on a photo-less meal, and on a send that carried none — it records WHAT WAS APPLIED, never what the admin currently asks for."
+          },
+          "photo_max_edge": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The longest edge, in px, the photos were resized to before they were sent (ieat-app#3421), recorded like `photo_compression`: what was applied, null when nothing was resized."
           },
           "focus": {
             "anyOf": [

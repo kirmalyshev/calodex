@@ -409,6 +409,24 @@ describe("photo", () => {
     expect(dayView.meals).toHaveLength(1); // one meal, not three
   });
 
+  it("records the max edge the photo was resized to, and none when absent or out of range", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const post = async (n: number, edge?: string) => {
+      const f = new FormData();
+      f.append("photo", new File([jpegBytes(n)], "a.jpg", { type: "image/jpeg" }));
+      if (edge !== undefined) f.append("maxEdge", edge);
+      const res = await handle(new Request(url(ROUTES.photo), {
+        method: "POST", headers: { authorization: `Bearer ${token}`, "content-length": DECLARED_LENGTH }, body: f,
+      }));
+      expect(res.status).toBe(200);
+      return ((await res.json()) as { mealId: string }).mealId;
+    };
+    expect((await store.getMeal(userId, await post(1, "1280")))!.photo_max_edge).toBe(1280);
+    expect((await store.getMeal(userId, await post(2)))!.photo_max_edge ?? null).toBeNull();
+    expect((await store.getMeal(userId, await post(3, "100")))!.photo_max_edge ?? null).toBeNull();
+  });
+
   it("records the compression the photo was sent with on the meal, and nothing when none was sent", async () => {
     const token = await session();
     const userId = (await store.userIdForToken(token))!;

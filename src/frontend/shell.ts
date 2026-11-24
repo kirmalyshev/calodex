@@ -31,7 +31,7 @@ import { ico } from "../shared/ui/kit.ts";
 import { joinsQueue } from "../shared/outbox.ts";
 import { keptState, outcomeUnknown } from "../shared/results.ts";
 import { LANG_TAG, UNIT_KCAL, kcalNumbers, narrowLang, wholeNumbers } from "../shared/lang.ts";
-import { DIARY_RANGE_MAX_DAYS, PHOTO_COMPRESSION_DEFAULT } from "../shared/contract.ts";
+import { DIARY_RANGE_MAX_DAYS, PHOTO_COMPRESSION_DEFAULT, PHOTO_MAX_EDGE_DEFAULT } from "../shared/contract.ts";
 import { localDate, windowStart } from "../shared/dates.ts";
 import { mealNames } from "../shared/meal-names.ts";
 import type { Lang } from "../shared/types.ts";
@@ -147,6 +147,8 @@ export const forgetProfile = (): void => { profileCache = null; };
  * `setModelCallTimeout`. What `enqueue` encodes at, and what its form field then reports.
  */
 export const photoCompression = (): number => profileCache?.limits.photoCompression ?? PHOTO_COMPRESSION_DEFAULT;
+/** The longest edge a photo leaves at (ieat-app#3421): `Limits.photoMaxEdge`, the shared default before a profile lands. */
+export const photoMaxEdge = (): number => profileCache?.limits.photoMaxEdge ?? PHOTO_MAX_EDGE_DEFAULT;
 
 /**
  * The navigation row, in the boards' order (Register P, `web/today.html`): Home · Progress · Chat ·

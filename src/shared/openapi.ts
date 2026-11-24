@@ -110,11 +110,11 @@ export const API: readonly Endpoint[] = [
   // ── Meals ──
   { route: "photo", method: "POST", path: "/v1/meals/photo", auth: "bearer",
     summary: "Log a meal from one to four photos. Charged. Streams progress with `accept: application/x-ndjson`.",
-    request: { multipart: { photo: "file[]", caption: "string", label: "string", compression: "string" } },
+    request: { multipart: { photo: "file[]", caption: "string", label: "string", compression: "string", maxEdge: "string" } },
     responses: { 200: "PhotoResponse", 400: ERROR, 411: ERROR, 413: ERROR }, refuses: true, stream: "PhotoProgress" },
   { route: "photoQueue", method: "POST", path: "/v1/meals/photo/queue", auth: "bearer",
     summary: "Queue a photo meal: 202 once the upload is in; the analysis runs on server-side. `clientId` is required and is the job id.",
-    request: { multipart: { photo: "file[]", caption: "string", label: "string", clientId: "string", capturedAt: "string", compression: "string" } },
+    request: { multipart: { photo: "file[]", caption: "string", label: "string", clientId: "string", capturedAt: "string", compression: "string", maxEdge: "string" } },
     responses: { 202: "PhotoQueuedResponse", 400: ERROR, 411: ERROR, 413: ERROR } },
   { route: "mealUpdateQueue", method: "POST", path: "/v1/meals/update/queue", auth: "bearer",
     summary: "Queue a change to a logged meal: an ingredient edit, a chat correction or a re-read of the photo. 202 once queued; follow it on the photo job route. `clientId` is required and is the job id.",
@@ -141,7 +141,7 @@ export const API: readonly Endpoint[] = [
     responses: { 200: { type: "string", format: "binary" }, 404: ERROR } },
   { route: "mealPhotos", method: "POST", path: "/v1/meals/{id}/photos", auth: "bearer",
     summary: "Another angle of a logged meal. Stored, not analyzed, not charged.",
-    request: { multipart: { photo: "file[]", compression: "string" } },
+    request: { multipart: { photo: "file[]", compression: "string", maxEdge: "string" } },
     responses: { 200: "AttachPhotosResponse", 400: ERROR, 409: ERROR, 411: ERROR, 413: ERROR }, refuses: true },
   { route: "mealReanalyze", method: "POST", path: "/v1/meals/{id}/reanalyze", auth: "bearer",
     summary: "Run the analyzer again over the stored photos. Charged like a photo.",
@@ -195,7 +195,7 @@ export const API: readonly Endpoint[] = [
     responses: { 200: "DeleteLineResponse", 400: ERROR, 409: ERROR, 429: ERROR } },
   { route: "message", method: "PATCH", path: "/v1/messages/{id}", auth: "bearer",
     summary: "Re-caption a photo line and add angles; the analyzer re-reads every photo. Charged.",
-    request: { multipart: { photo: "file[]", text: "string", compression: "string" } },
+    request: { multipart: { photo: "file[]", text: "string", compression: "string", maxEdge: "string" } },
     responses: { 200: "EditLineLast", 400: ERROR, 409: ERROR, 411: ERROR, 413: ERROR }, refuses: true, stream: "PhotoProgress" },
 
   // ── Push, diary, health, account ──

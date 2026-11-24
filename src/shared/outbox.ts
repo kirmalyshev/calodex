@@ -26,6 +26,8 @@ export interface Queued<Photo> {
   photos: Photo[];
   /** The JPEG quality `photos` were encoded at (ieat-app#3421): sent on the form so the meal records WHAT WAS APPLIED to the kept bytes, not what the admin asks for whenever the send lands. */
   compress?: number | undefined;
+  /** The longest edge, in px, `photos` were resized to (ieat-app#3421); reported like `compress`. */
+  maxEdge?: number | undefined;
   /** When the photo was taken or the words typed: the meal is dated by it, not by the send. */
   capturedAt: string;
   /** The meal a queued correction was about, as it was when typed. */

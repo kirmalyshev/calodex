@@ -15,7 +15,7 @@
 //    encoder cannot drift.
 
 import {
-  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRedateMealRequest, isSaveMealRequest, parseNumbersLogRequest,
+  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, PHOTO_MAX_EDGE_MAX, PHOTO_MAX_EDGE_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRedateMealRequest, isSaveMealRequest, parseNumbersLogRequest,
   type AuthDeviceRequest, type AuthDeviceResponse, type AuthEmailCodeRequest, type AuthEmailVerifyRequest, type AuthProviderRequest,
   type AppendLinesRequest, type AppendLinesResponse, type AuthProviderResponse, type IdentitiesResponse, type Lang, type RedateMealResponse, type SaveMealResponse, type SavedMealsResponse,
   type UnlinkResponse,
@@ -260,6 +260,11 @@ export function createRouter(
   const compressionField = (v: unknown): { compression?: number } => {
     const n = typeof v === "string" ? Number(v) : NaN;
     return Number.isFinite(n) && n >= PHOTO_COMPRESSION_MIN && n <= PHOTO_COMPRESSION_MAX ? { compression: n } : {};
+  };
+  /** `maxEdge` on a photo form (ieat-app#3421): the longest edge in px the client resized to; recorded or NONE, like `compression`. */
+  const maxEdgeField = (v: unknown): { maxEdge?: number } => {
+    const n = typeof v === "string" ? Number(v) : NaN;
+    return Number.isFinite(n) && n >= PHOTO_MAX_EDGE_MIN && n <= PHOTO_MAX_EDGE_MAX ? { maxEdge: n } : {};
   };
 
   const wantsStream = (req: Request): boolean => (req.headers.get("accept") ?? "").includes(NDJSON);
@@ -899,6 +904,7 @@ export function createRouter(
           ...(typeof caption === "string" && caption ? { caption } : {}),
           ...labelFields(form.get("label")),
           ...compressionField(form.get("compression")),
+          ...maxEdgeField(form.get("maxEdge")),
           ...turnFields(turnKey(req) ?? form.get("clientId"), form.get("capturedAt")),
         };
         // THE STREAM. One JSON object per line — each item as the analyzer closes it
@@ -926,6 +932,7 @@ export function createRouter(
           ...(typeof caption === "string" && caption ? { caption } : {}),
           ...labelFields(form.get("label")),
           ...compressionField(form.get("compression")),
+          ...maxEdgeField(form.get("maxEdge")),
           ...fields, clientId: fields.clientId,
         }), 202);
       }
@@ -1124,7 +1131,8 @@ export function createRouter(
 
         const images = await Promise.all(files.map(async (f) => new Uint8Array(await f.arrayBuffer())));
         const { compression } = compressionField(form.get("compression"));
-        const result = await attachPhotos(deps, userId, decodeURIComponent(attachMatch[1]!), images, compression);
+        const { maxEdge } = maxEdgeField(form.get("maxEdge"));
+        const result = await attachPhotos(deps, userId, decodeURIComponent(attachMatch[1]!), images, compression, maxEdge);
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
         // Not a refusal kind: nothing was refused about the ACCOUNT, and the app knows the limit
         // (`limits.maxPhotosPerMeal`) and the meal's own count, so it should never reach this.
@@ -1239,7 +1247,7 @@ export function createRouter(
         if (files.reduce((n, f) => n + f.size, 0) > deps.config.maxUploadBytes) return json({ error: "too large" }, 413);
         const text = form.get("text");
         if (typeof text === "string" && text.length > MAX_USER_LINE) return json({ error: "text too long" }, 400);
-        const input = { text: typeof text === "string" ? text : "", images: files.map((f) => async () => new Uint8Array(await f.arrayBuffer())), ...compressionField(form.get("compression")) };
+        const input = { text: typeof text === "string" ? text : "", images: files.map((f) => async () => new Uint8Array(await f.arrayBuffer())), ...compressionField(form.get("compression")), ...maxEdgeField(form.get("maxEdge")) };
         const id = decodeURIComponent(messageMatch[1]!);
         if (wantsStream(req)) return stream(req, pathname, (line) => editLine(deps, userId, id, input, line));
         const result = await editLine(deps, userId, id, input);

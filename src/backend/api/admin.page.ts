@@ -3556,8 +3556,8 @@ details.how p { margin-top: 8px; }
   // encodes a sent photo at, read off the profile on the next fetch. One input per key; the
   // server enforces the range, so a refused save is worded, never clamped silently.
 
-  var VALUE_LABELS = { "photo.compression": "Photo compression" };
-  var VALUE_WHAT = { "photo.compression": "JPEG quality every client sends at (0.1–1, default 0.8)" };
+  var VALUE_LABELS = { "photo.compression": "Photo compression", "photo.max_edge_px": "Photo max edge (px)" };
+  var VALUE_WHAT = { "photo.compression": "JPEG quality every client sends at (0.1–1, default 0.8)", "photo.max_edge_px": "Longest edge every client resizes a photo to (512–2048 px, default 768)" };
 
   function renderValues(res) {
     var host = $("values");
@@ -3572,9 +3572,10 @@ details.how p { margin-top: 8px; }
       t.appendChild(tail);
       var input = el("input", null);
       input.setAttribute("type", "number");
-      input.setAttribute("step", "0.05");
-      input.setAttribute("min", "0.1");
-      input.setAttribute("max", "1");
+      var edge = v.key === "photo.max_edge_px";
+      input.setAttribute("step", edge ? "1" : "0.05");
+      input.setAttribute("min", edge ? "512" : "0.1");
+      input.setAttribute("max", edge ? "2048" : "1");
       input.value = String(v.value);
       var save = el("button", "asw", "save");
       save.addEventListener("click", function () {

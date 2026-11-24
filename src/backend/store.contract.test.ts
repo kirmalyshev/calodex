@@ -4494,6 +4494,8 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(await s.adminValue("photo.compression")).toBe(0.5);
         await s.setAdminValue("photo.compression", 1, admin);
         expect(await s.adminValue("photo.compression")).toBe(1);
+        await s.setAdminValue("photo.max_edge_px", 1536, admin);
+        expect(await s.adminValue("photo.max_edge_px")).toBe(1536);
       });
 
       it("keeps every set, newest first, with who and when", async () => {
@@ -4537,6 +4539,19 @@ function contract(name: string, make: () => Promise<Store>) {
         expect((await s.getMeal(uid, m.id))!.photo_compression).toBe(0.8);
         await s.appendPhotos(uid, m.id, [jpeg], 0.2);
         expect((await s.getMeal(uid, m.id))!.photo_compression).toBe(0.2);
+      });
+
+      it("records photo_max_edge on insert and moves it on append, leaving it when none was sent", async () => {
+        const s = await open();
+        const uid = (await s.upsertDeviceUser(device(), "en")).userId;
+        const m = { ...meal(uid), photo_max_edge: 768 };
+        await s.insertMeal(m);
+        expect((await s.getMeal(uid, m.id))!.photo_max_edge).toBe(768);
+        const jpeg = { mime: "image/jpeg", bytes: new Uint8Array([1, 2, 3]) };
+        await s.appendPhotos(uid, m.id, [jpeg]);
+        expect((await s.getMeal(uid, m.id))!.photo_max_edge).toBe(768);
+        await s.appendPhotos(uid, m.id, [jpeg], undefined, 1536);
+        expect((await s.getMeal(uid, m.id))!.photo_max_edge).toBe(1536);
       });
     });
 

@@ -31,7 +31,7 @@ import type {
 } from "@eait/shared/contract";
 import { ApiError, Unauthenticated, api } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
-import { appliedCompression, shrinkPhotos } from "../photo.ts";
+import { appliedAt, shrinkPhotos } from "../photo.ts";
 import { firstMealEdit, mealTitle, type Portion } from "../portion.ts";
 import { fitHero, kitEl, payPlansEl } from "../kit.ts";
 import { ico, photoHero } from "../../shared/ui/kit.ts";
@@ -190,8 +190,9 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
       const files = picked;
       run(async () => {
         // What goes up is the resized frame — the byte cap weighs it, not what was picked.
-        const shrunk = await shrinkPhotos(files, me.limits.photoCompression);
-        const compress = appliedCompression(files, shrunk, me.limits.photoCompression);
+        const shrunk = await shrinkPhotos(files, me.limits.photoCompression, me.limits.photoMaxEdge);
+        const compress = appliedAt(files, shrunk, me.limits.photoCompression);
+        const maxEdge = appliedAt(files, shrunk, me.limits.photoMaxEdge);
         if (shrunk.reduce((n, f) => n + f.size, 0) > maxUploadBytes) { say(COPY.photoTooLarge); return; }
         lastPhotoUrl = await new Promise<string | null>((resolve) => {
           const r = new FileReader();
@@ -206,7 +207,7 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
           // compiler that has already decided `null`.
           const got: { logged: MealLogged | null } = { logged: null };
           const keptNote = await sendOrKeep(
-            { id: crypto.randomUUID(), userId: me.profile.user_id, kind: "photo", text: null, photos: shrunk, compress, capturedAt: new Date().toISOString() },
+            { id: crypto.randomUUID(), userId: me.profile.user_id, kind: "photo", text: null, photos: shrunk, compress, maxEdge, capturedAt: new Date().toISOString() },
             {
               onLine: (line) => {
                 const ev = line as PhotoProgress;

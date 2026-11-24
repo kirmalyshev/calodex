@@ -29,12 +29,12 @@ import { ApiError, Unauthenticated, api, apiBlob } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { blobSrc, eaitIconEl, fitHero, gramMacsEl, optionRowEl, verdictListEl } from "../kit.ts";
 import { failureOf, outbox } from "../outbox.ts";
-import { appliedCompression, shrinkPhotos } from "../photo.ts";
+import { appliedAt, shrinkPhotos } from "../photo.ts";
 import { updateFor } from "../queue.ts";
 import {
   COPY, MESSAGES, dayPickerButton, PENDING, Said, UNKNOWN, clear, composerRow, el, flush,
   failBadge, heldProposal, kept, keptLineEl, keptNotice, lang, lastThreadEntries, findMeal, mealLine, outstandingTurn,
-  MEAL_PHOTOS, proposalCard, profile, refusalWords, sendOrKeep, setHeldProposal, setLastThread, photoCompression,
+  MEAL_PHOTOS, proposalCard, profile, refusalWords, sendOrKeep, setHeldProposal, setLastThread, photoCompression, photoMaxEdge,
   setRedraw, smallCta, takeCarried, takeTurn, timeFmt, names, type Frame,
 } from "../shell.ts";
 import { attachMic } from "../voice.ts";
@@ -620,13 +620,16 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
       liveAnswer = null;
       // What goes up is the resized frame — the byte cap weighs it, not what was picked.
       const quality = photoCompression();
-      const shrunk = await shrinkPhotos(files, quality);
-      const compress = appliedCompression(files, shrunk, quality);
+      const edge = photoMaxEdge();
+      const shrunk = await shrinkPhotos(files, quality, edge);
+      const compress = appliedAt(files, shrunk, quality);
+      const maxEdge = appliedAt(files, shrunk, edge);
       if (me !== null && shrunk.reduce((n, f) => n + f.size, 0) > me.limits.maxUploadBytes) throw new Said(COPY.photoTooLarge);
       // Several files are ANGLES OF ONE MEAL, `photo` fields like the app's.
       const form = new FormData();
       for (const f of shrunk) form.append("photo", f);
       if (compress !== undefined) form.append("compression", String(compress));
+      if (maxEdge !== undefined) form.append("maxEdge", String(maxEdge));
       if (files.length > 0 && focusMeal !== null) {
         // ANGLES ON THE FOCUSED MEAL, not a new turn: the sheet's upload posts to the meal's own
         // collection — the words in the box stay for the correction turn that reads them.
@@ -641,7 +644,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
         words.value = ""; arm();
         try {
           const saved = await sendHers({
-            id: crypto.randomUUID(), userId: uid ?? "", kind: "photo", text: text === "" ? null : text, photos: shrunk, compress,
+            id: crypto.randomUUID(), userId: uid ?? "", kind: "photo", text: text === "" ? null : text, photos: shrunk, compress, maxEdge,
             capturedAt: new Date().toISOString(),
           });
           attached = [];
