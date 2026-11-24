@@ -93,6 +93,10 @@ describe("the web pay sheet is smooth, not corner-y", () => {
 
 // Kirill, 24 Nov 17:27: the special-offer card is Cal AI 12's soft silver gradient.
 describe("the web special-offer card is silver", () => {
+  test("/start/offer: the same token gradient, so dark mode stays readable", () => {
+    expect(/\.offer \.special \{[^}]*linear-gradient\(135deg, var\(--surface\)/.test(shell)).toBe(true);
+    expect(/\.pay \.offer \{[^}]*linear-gradient\(135deg, var\(--surface\)/.test(css)).toBe(true);
+  });
   test("#/pay: a gradient behind the percent", () => {
     expect(/\.pay \.offer\s*\{[^}]*linear-gradient\(135deg/.test(css)).toBe(true);
   });
