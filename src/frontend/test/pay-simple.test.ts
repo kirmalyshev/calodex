@@ -90,3 +90,10 @@ describe("the web pay sheet is smooth, not corner-y", () => {
     });
   }
 });
+
+// Kirill, 24 Nov 17:27: the special-offer card is Cal AI 12's soft silver gradient.
+describe("the web special-offer card is silver", () => {
+  test("#/pay: a gradient behind the percent", () => {
+    expect(/\.pay \.offer\s*\{[^}]*linear-gradient\(135deg/.test(css)).toBe(true);
+  });
+});

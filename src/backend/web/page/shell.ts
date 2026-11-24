@@ -278,7 +278,8 @@ label.check {
 .offer .tl li:nth-child(2)::after { background: var(--hair); }
 .offer .nopay { margin: 0 0 .5rem; text-align: center; font-weight: 600; }
 /* C · the special offer card. */
-.offer .special { text-align: center; padding: 24px; margin-bottom: 1.25rem; }
+.offer .special { text-align: center; padding: 24px; margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, #fbfcfd 0%, #dfe5ec 45%, #f6f7f9 70%, #e3e8ee 100%); }
 .offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
 .offer .price { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin-top: 1rem;
   font-size: 22px; font-weight: 600; }

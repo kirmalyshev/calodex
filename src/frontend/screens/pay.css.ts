@@ -71,7 +71,7 @@ body:has(.pay) .wtop { display: none; }
 .pay .nopay .ico { width: 16px; height: 16px; background: var(--ink); }
 /* pay-exit (#451): the offer card the plans swap to on the first decline — the board's own
    measurements, radii included (16, not --r-card's 12). */
-.pay .offer { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow);
+.pay .offer { background: linear-gradient(135deg, #fbfcfd 0%, #dfe5ec 45%, #f6f7f9 70%, #e3e8ee 100%); border-radius: 16px; box-shadow: var(--shadow);
   text-align: center; padding: 24px; }
 .pay .offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
 .pay .offer .hr { margin: 18px 0 14px; }
