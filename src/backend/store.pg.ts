@@ -2745,9 +2745,9 @@ export async function postgresStore(
 
     async mealRemindersOf(userId) {
       const rows = await sql`select meal_reminders from users where id = ${userId}`;
-      let v = (rows[0] as { meal_reminders: unknown } | undefined)?.meal_reminders ?? null;
-      // Rows written before ieat-app#3489 hold a jsonb STRING (the old JSON.stringify bind): read them as the object they were meant to be.
-      if (typeof v === "string") { try { v = JSON.parse(v); } catch { v = null; } }
+      // json() also reads a row written as a jsonb STRING before ieat-app#3489 (the old JSON.stringify bind).
+      const v = json<unknown>((rows[0] as { meal_reminders: unknown } | undefined)?.meal_reminders ?? null, null);
+      if (v !== null && !isMealReminders(v)) console.error(`[eait] meal_reminders for ${userId} is not a MealReminders; read as never saved`);
       return isMealReminders(v) ? v : null;
     },
 

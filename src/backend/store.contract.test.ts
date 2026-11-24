@@ -338,6 +338,19 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.mealRemindersOf(other)).toBeNull();
     });
 
+    // The read repairs a string row, so only the column's own type proves the WRITE binds an object.
+    (name === "postgres" ? it : it.skip)("meal reminders: the column holds a jsonb object after a save (ieat-app#3489)", async () => {
+      const s = await open();
+      const { userId } = await s.upsertDeviceUser(device(), "en");
+      await s.setMealReminders(userId, { breakfast: { on: true, time: "08:00" }, lunch: { on: true, time: "12:00" }, dinner: { on: false, time: "19:00" } });
+      const raw = await rawSql();
+      try {
+        expect((await raw`select jsonb_typeof(meal_reminders) as t from users where id = ${userId}`)[0].t).toBe("object");
+      } finally {
+        await raw.end();
+      }
+    });
+
     (name === "postgres" ? it : it.skip)("meal reminders: a row written as a jsonb STRING before #3489 still reads as the object (ieat-app#3489)", async () => {
       const s = await open();
       const { userId } = await s.upsertDeviceUser(device(), "en");
@@ -347,6 +360,8 @@ function contract(name: string, make: () => Promise<Store>) {
         await raw`update users set meal_reminders = to_jsonb(${JSON.stringify(legacy)}::text) where id = ${userId}`;
         expect((await raw`select jsonb_typeof(meal_reminders) as t from users where id = ${userId}`)[0].t).toBe("string");
         expect(await s.mealRemindersOf(userId)).toEqual(legacy);
+        await raw`update users set meal_reminders = to_jsonb('not json'::text) where id = ${userId}`;
+        expect(await s.mealRemindersOf(userId)).toBeNull(); // garbage reads as never saved, never throws
       } finally {
         await raw.end();
       }
