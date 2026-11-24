@@ -63,6 +63,7 @@ async function limitsOf(deps: EngineDeps, userId: string, entitled: boolean): Pr
     // The admin's knob (ieat-app#3421), read per profile so a set lands on the next fetch —
     // an OTA-free answer on every client that sends a photo.
     photoCompression: await adminValueOf(deps, "photo.compression"),
+    photoMaxEdge: await adminValueOf(deps, "photo.max_edge_px"),
   };
 }
 

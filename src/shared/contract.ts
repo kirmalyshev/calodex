@@ -206,6 +206,12 @@ export interface Limits {
    * follow on their next profile fetch, with no binary and no deploy between them.
    */
   photoCompression: number;
+  /**
+   * The longest edge, in px, every client resizes a photo to before sending it (ieat-app#3421), from
+   * `PHOTO_MAX_EDGE_MIN` through `PHOTO_MAX_EDGE_MAX`. The second knob beside `photoCompression`,
+   * sent for the same reason: the admin changes it once and every client follows.
+   */
+  photoMaxEdge: number;
 }
 
 /** Fallback only — see `Limits`. Total upload size, above which a large POST is a DoS. */
@@ -218,6 +224,12 @@ export const MAX_PHOTOS_PER_MEAL = 4;
  * did (ieat-app#3421).
  */
 export const PHOTO_COMPRESSION_DEFAULT = 0.8;
+/** The default for `Limits.photoMaxEdge`: the longest edge every client resized to before the knob existed. */
+export const PHOTO_MAX_EDGE_DEFAULT = 768;
+/** The largest longest-edge the admin may set. */
+export const PHOTO_MAX_EDGE_MAX = 2048;
+/** The smallest longest-edge the admin may set. */
+export const PHOTO_MAX_EDGE_MIN = 512;
 /** The widest the admin may open the coefficient: lossless JPEG. */
 export const PHOTO_COMPRESSION_MAX = 1;
 /** The smallest the admin may set the coefficient: below this a photo degrades past what the model can read. */

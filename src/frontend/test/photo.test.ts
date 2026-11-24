@@ -6,7 +6,11 @@
 // (`src/mobile/lib/capture.ts`), because both feed the same billed analysis.
 
 import { describe, expect, it } from "bun:test";
-import { UPLOAD_EDGE, fitWithin } from "../photo.ts";
+import { PHOTO_MAX_EDGE_DEFAULT } from "../../shared/contract.ts";
+import { appliedAt, fitWithin, shrinkPhoto } from "../photo.ts";
+
+// The edge is the server's `Limits.photoMaxEdge` now; its default is what every client used before (ieat-app#3421).
+const UPLOAD_EDGE = PHOTO_MAX_EDGE_DEFAULT;
 
 describe("fitWithin", () => {
   it("leaves an already-small image untouched", () => {
@@ -18,6 +22,22 @@ describe("fitWithin", () => {
     expect(fitWithin(960, 1280, UPLOAD_EDGE)).toEqual({ width: 576, height: 768 });
     expect(fitWithin(4032, 3024, UPLOAD_EDGE)).toEqual({ width: 768, height: 576 });
     expect(fitWithin(3024, 4032, UPLOAD_EDGE)).toEqual({ width: 576, height: 768 });
+  });
+
+  it("follows the edge it is given", () => {
+    expect(fitWithin(4032, 3024, 2048)).toEqual({ width: 2048, height: 1536 });
+    expect(fitWithin(4032, 3024, 512)).toEqual({ width: 512, height: 384 });
+  });
+
+  it("reports an applied value only when every file was re-encoded", () => {
+    const a = new File([], "a"), b = new File([], "b");
+    expect(appliedAt([a, b], [new File([], "a2"), new File([], "b2")], 1024)).toBe(1024);
+    expect(appliedAt([a, b], [new File([], "a2"), b], 1024)).toBeUndefined();
+  });
+
+  it("sends a file untouched when the server named no edge", async () => {
+    const f = new File([new Uint8Array([1])], "a.jpg", { type: "image/jpeg" });
+    expect(await shrinkPhoto(f, 0.8, undefined as unknown as number)).toBe(f);
   });
 
   it("never enlarges", () => {

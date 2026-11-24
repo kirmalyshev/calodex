@@ -1,16 +1,13 @@
 // photo.ts — the one place a picked photo is resized before it leaves the browser.
 //
 // The twin of the phone's `shrink` (`src/mobile/lib/capture.ts`, in the app repo): same longest
-// edge, same JPEG re-encode, because a web upload and a phone upload are the same billed analysis
-// and two sizes would be two cost/accuracy profiles for one feature. 768 px is the measured knee —
-// a 960×1280 frame costs ~1200 vision tokens where 576×768 costs ~436.
+// edge, same JPEG re-encode, both read from the server's `Limits` (ieat-app#3421): a web upload and
+// a phone upload are the same billed analysis and two sizes would be two cost/accuracy profiles.
+// 768 px was the measured knee — a 960×1280 frame costs ~1200 vision tokens where 576×768 ~436.
 //
 // The re-encode also narrows what the server is ever asked to refuse: a browser that decodes HEIC
 // (Safari) sends JPEG out the other side instead of eating the 415, and a format the browser
 // cannot decode falls back to the original file for the server's own sniff to answer.
-
-/** The longest edge an uploaded photo may keep. Paired with the app's `UPLOAD_EDGE`. */
-export const UPLOAD_EDGE = 768;
 
 /** The frame a w×h image is drawn into: the longest edge capped at `edge`, aspect kept. */
 export function fitWithin(
@@ -23,18 +20,20 @@ export function fitWithin(
 }
 
 /**
- * One picked file as it should go up: at most `UPLOAD_EDGE` on the long edge, JPEG at `quality` —
- * the server's `Limits.photoCompression` (ieat-app#3421), read by the caller so the value sent on
- * the form and the value the bytes were encoded at can never disagree. A file already
+ * One picked file as it should go up: at most `edge` px on the long edge (the server's
+ * `Limits.photoMaxEdge`), JPEG at `quality` (`Limits.photoCompression`) — ieat-app#3421, both read by
+ * the caller so the values sent on the form and the values the bytes were made at can never disagree. A file already
  * small enough is returned untouched, and anything the browser cannot decode — or canvas refuses —
  * is too: the upload proceeds with the original bytes and the server's `imageMime` sniff answers
  * for it, exactly as before this step existed.
  */
-export async function shrinkPhoto(file: File, quality: number): Promise<File> {
+export async function shrinkPhoto(file: File, quality: number, edge: number): Promise<File> {
+  // A server that predates the edge sends none: NaN dimensions would fail silently inside the canvas.
+  if (!Number.isFinite(edge)) return file;
   try {
     const bitmap = await createImageBitmap(file);
     try {
-      const { width, height } = fitWithin(bitmap.width, bitmap.height, UPLOAD_EDGE);
+      const { width, height } = fitWithin(bitmap.width, bitmap.height, edge);
       if (width === bitmap.width && height === bitmap.height) return file;
       const canvas = document.createElement("canvas");
       canvas.width = width;
@@ -57,17 +56,17 @@ export async function shrinkPhoto(file: File, quality: number): Promise<File> {
 }
 
 /** Every picked file, resized in parallel — several files are angles of one meal. */
-export function shrinkPhotos(files: File[], quality: number): Promise<File[]> {
-  return Promise.all(files.map((f) => shrinkPhoto(f, quality)));
+export function shrinkPhotos(files: File[], quality: number, edge: number): Promise<File[]> {
+  return Promise.all(files.map((f) => shrinkPhoto(f, quality, edge)));
 }
 
 /**
- * The `compression` value a send of `shrunk` may report: `quality` when EVERY file was re-encoded
- * at it, `undefined` when anything went up untouched — a pick already inside `UPLOAD_EDGE`, or one
+ * The `compression` or `maxEdge` value a send of `shrunk` may report: `value` when EVERY file was re-encoded
+ * at it, `undefined` when anything went up untouched — a pick already inside the edge, or one
  * the browser could not decode (ieat-app#3421). Claiming the coefficient for bytes it was never
  * applied to would mislabel the meal's provenance, the whole point of the field; `undefined`
  * leaves it null, which is the truth.
  */
-export function appliedCompression(files: readonly File[], shrunk: readonly File[], quality: number): number | undefined {
-  return shrunk.every((s, i) => s !== files[i]) ? quality : undefined;
+export function appliedAt(files: readonly File[], shrunk: readonly File[], value: number): number | undefined {
+  return shrunk.every((s, i) => s !== files[i]) ? value : undefined;
 }

@@ -1909,6 +1909,14 @@ describe("the grounding switches", () => {
     expect(photoFlips.every((f) => f.setByEmail === "admin@eait.fit")).toBe(true);
   });
 
+  it("the max edge is bounded 512–2048, default 768, and the profile sends it", async () => {
+    expect((await admin("PUT", "/admin/api/values/photo.max_edge_px", { value: 511 })).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.max_edge_px", { value: 2049 })).status).toBe(422);
+    expect((await admin("PUT", "/admin/api/values/photo.max_edge_px", { value: 1280 })).status).toBe(200);
+    const profile = await (await admin("GET", ROUTES.profile, undefined, adminBearer)).json() as { limits: { photoMaxEdge: number } };
+    expect(profile.limits.photoMaxEdge).toBe(1280);
+  });
+
   it("PUT appends a row under the resolved admin and the store reads it back", async () => {
     const adminId = (await store.userIdForToken(adminBearer))!;
     const res = await admin("PUT", "/admin/api/switches/grounding.photo", { enabled: false, set_by: "someone-else", setBy: "x" });
@@ -1955,6 +1963,7 @@ describe("the admin values", () => {
     const body = await res.json() as { values: { key: string; value: number; setBy: string | null; setAt: string | null; setByEmail: string | null }[]; recent: unknown[] };
     expect(body.values).toEqual([
       { key: "photo.compression", value: 0.8, setBy: null, setAt: null, setByEmail: null },
+      { key: "photo.max_edge_px", value: 768, setBy: null, setAt: null, setByEmail: null },
     ]);
     expect(body.recent).toEqual([]);
   });

@@ -3193,6 +3193,22 @@ describe("the queued send's compression (ieat-app#3421)", () => {
     expect(meals).toHaveLength(1);
     expect(meals[0]!.photo_compression).toBe(0.3);
   });
+
+  it("carries the max edge too, as its own value", async () => {
+    const userId = await onboard();
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queuePhoto(deps, userId, { ...photo(1), clientId, compression: 0.3, maxEdge: 1280 });
+    const until = Date.now() + 10_000;
+    for (;;) {
+      const j = await photoJob(deps, userId, clientId);
+      if (!j || j.kind === "settled") break;
+      if (Date.now() > until) throw new Error("job never settled");
+      await new Promise((r) => setTimeout(r, 15));
+    }
+    const meals = await store.mealsForDate(userId, localDate(deps.config.timezone));
+    expect(meals[0]).toMatchObject({ photo_compression: 0.3, photo_max_edge: 1280 });
+  });
 });
 
 // A remove can reach the server before the job exists (the upload is still streaming): it is remembered, and the enqueue that follows logs nothing (ieat-app#2684).

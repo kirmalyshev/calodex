@@ -442,6 +442,8 @@ export interface MealRecord extends MealAnalysis {
    * what the admin currently asks for.
    */
   photo_compression?: number | null;
+  /** The longest edge, in px, the photos were resized to before they were sent (ieat-app#3421), recorded like `photo_compression`: what was applied, null when nothing was resized. */
+  photo_max_edge?: number | null;
   /** The phone break taken after this meal (ieat-app#2129): how long, and whether it was held to the end. Null until one is recorded; absent on bare rows. */
   focus?: MealFocus | null;
   /** Set when the meal was read off a nutrition label (ieat-app#2087); null on every other meal. */

@@ -2,18 +2,23 @@
 // append-only history; this file is the default, the range each key accepts, the read-per-request,
 // and the admin's view and write.
 
-import { PHOTO_COMPRESSION_DEFAULT, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN } from "@eait/shared";
+import {
+  PHOTO_COMPRESSION_DEFAULT, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN,
+  PHOTO_MAX_EDGE_DEFAULT, PHOTO_MAX_EDGE_MAX, PHOTO_MAX_EDGE_MIN,
+} from "@eait/shared";
 import { VALUE_KEYS, type AdminValueKey } from "../store.ts";
 import type { EngineDeps } from "./deps.ts";
 
 /** What a never-set value means: the behaviour every client already had (#3421's 0.8 JPEG quality). */
 export const VALUE_DEFAULT: Record<AdminValueKey, number> = {
   "photo.compression": PHOTO_COMPRESSION_DEFAULT,
+  "photo.max_edge_px": PHOTO_MAX_EDGE_DEFAULT,
 };
 
 /** What a set may say, per key. `photo.compression` is the issue's 0.1–1 coefficient. */
 export const VALUE_RANGE: Record<AdminValueKey, { min: number; max: number }> = {
   "photo.compression": { min: PHOTO_COMPRESSION_MIN, max: PHOTO_COMPRESSION_MAX },
+  "photo.max_edge_px": { min: PHOTO_MAX_EDGE_MIN, max: PHOTO_MAX_EDGE_MAX },
 };
 
 export async function adminValueOf(deps: EngineDeps, key: AdminValueKey): Promise<number> {

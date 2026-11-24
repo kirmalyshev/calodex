@@ -919,6 +919,8 @@ alter table meals add column if not exists photos integer not null default 0;
 -- The JPEG quality the photos were sent with (ieat-app#3421). NULLABLE: a meal sent before the
 -- coefficient existed has no value, which is exactly what the row must say.
 alter table meals add column if not exists photo_compression double precision;
+-- The longest edge, in px, the photos were resized to before they were sent (ieat-app#3421). NULLABLE for the same reason.
+alter table meals add column if not exists photo_max_edge double precision;
 
 create table if not exists pendings (
   id         uuid primary key,
@@ -1493,7 +1495,7 @@ create table if not exists admin_values (
 );
 alter table admin_values drop constraint if exists admin_values_key_check;
 alter table admin_values add constraint admin_values_key_check
-  check (key in ('photo.compression'));
+  check (key in ('photo.compression', 'photo.max_edge_px'));
 
 -- Daily health aggregates read off the user's phone. NEVER raw samples: this product uses a handful
 -- of numbers per day, and a per-second heart rate series would be a large pile of special-category
@@ -1873,6 +1875,7 @@ function toMeal(r: MealRow, restrictions: readonly string[]): MealRecord {
     question: json<MealQuestion | null>(r.question, null),
     photos: num(r.photos),
     photo_compression: (r.photo_compression === null || r.photo_compression === undefined ? null : num(r.photo_compression)),
+    photo_max_edge: (r.photo_max_edge === null || r.photo_max_edge === undefined ? null : num(r.photo_max_edge)),
     focus: json<MealFocus | null>(r.focus, null),
     label: json<MealLabel | null>(r.label, null),
   };
@@ -4779,13 +4782,13 @@ export async function postgresStore(
       const rows = await sql`
         insert into meals (id, user_id, ts, date, is_food, items, kcal, protein_g, carbs_g, fat_g,
                            satfat_g, fiber_g, sugar_g, sodium_mg, verdicts, confidence, notes,
-                           corrected, model, question, label, photo_compression)
+                           corrected, model, question, label, photo_compression, photo_max_edge)
         values (${m.id}, ${m.user_id}, ${m.ts}, ${m.date}, ${m.isFood},
                 ${m.items}, ${m.kcal}, ${m.protein_g}, ${m.carbs_g}, ${m.fat_g},
                 ${m.satfat_g}, ${m.fiber_g}, ${m.sugar_g}, ${m.sodium_mg},
                 ${m.verdicts}, ${m.confidence}, ${m.notes}, ${m.corrected},
                 ${m.model}, ${m.question ?? null}, ${m.label ?? null},
-                ${m.photo_compression ?? null})
+                ${m.photo_compression ?? null}, ${m.photo_max_edge ?? null})
         on conflict (id) do nothing returning id`;
       return rows.length > 0;
     },
@@ -4864,7 +4867,7 @@ export async function postgresStore(
           where id = ${mealId} and user_id = ${userId}`;
       });
     },
-    async appendPhotos(userId, mealId, input, compression) {
+    async appendPhotos(userId, mealId, input, compression, maxEdge) {
       // A CLIENT-SUPPLIED ID, so the same guard `getMeal` and `updateMeal` carry: absent, not a
       // type error at the column. Without it Postgres raises 22P02 on anything that is not a UUID
       // and the route answers 500 to what is really "no such meal".
@@ -4886,6 +4889,11 @@ export async function postgresStore(
           // The appended angles were compressed to it — the row's value is the LAST send's.
           await tx`
             update meals set photo_compression = ${compression}
+            where id = ${mealId} and user_id = ${userId}`;
+        }
+        if (maxEdge !== undefined) {
+          await tx`
+            update meals set photo_max_edge = ${maxEdge}
             where id = ${mealId} and user_id = ${userId}`;
         }
         const counted = await tx`

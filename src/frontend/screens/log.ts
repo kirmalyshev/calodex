@@ -33,7 +33,7 @@ import {
 } from "../shell.ts";
 import type { Frame } from "../shell.ts";
 import { outbox, type WebQueued } from "../outbox.ts";
-import { appliedCompression, shrinkPhotos } from "../photo.ts";
+import { appliedAt, shrinkPhotos } from "../photo.ts";
 import {
   ctaEl, fitHero, gramMacsEl, kitEl, optionRowEl, photoHeroEl, verdictListEl,
 } from "../kit.ts";
@@ -105,6 +105,7 @@ export function logScreen(frame: Frame): HTMLElement {
   let picked: File[] = [];
   /** The quality `picked` were encoded at (ieat-app#3421): `undefined` when anything went up untouched. */
   let pickedCompress: number | undefined;
+  let pickedEdge: number | undefined;
   // Picks race each other — a slow first shrink must not overwrite a newer, faster one.
   let pickSeq = 0;
   let photoUrl = "";
@@ -180,14 +181,15 @@ export function logScreen(frame: Frame): HTMLElement {
     }
     const mine = ++pickSeq;
     // Resized BEFORE the byte check: the cap weighs what goes up, not what was picked.
-    const shrunk = await shrinkPhotos(files, me.limits.photoCompression);
+    const shrunk = await shrinkPhotos(files, me.limits.photoCompression, me.limits.photoMaxEdge);
     if (mine !== pickSeq) return;
     if (shrunk.reduce((sum, f) => sum + f.size, 0) > me.limits.maxUploadBytes) {
       tell(COPY.photoTooLarge);
       return;
     }
     picked = shrunk;
-    pickedCompress = appliedCompression(files, shrunk, me.limits.photoCompression);
+    pickedCompress = appliedAt(files, shrunk, me.limits.photoCompression);
+    pickedEdge = appliedAt(files, shrunk, me.limits.photoMaxEdge);
     dropLead.textContent = picked.map((f) => f.name).join(", ") || L.web.dropHint;
   };
   void takeFiles([]);
@@ -425,6 +427,7 @@ export function logScreen(frame: Frame): HTMLElement {
     again.addEventListener("click", () => {
       picked = [];
       pickedCompress = undefined;
+      pickedEdge = undefined;
       photoUrl = "";
       dropLead.textContent = L.web.dropHint;
       note.value = "";
@@ -449,7 +452,7 @@ export function logScreen(frame: Frame): HTMLElement {
     const entry: WebQueued = {
       id: crypto.randomUUID(), userId: me.profile.user_id, kind: "photo",
       text: note.value.trim() === "" ? null : note.value.trim(),
-      photos: [...picked], compress: pickedCompress, capturedAt: captured.toISOString(),
+      photos: [...picked], compress: pickedCompress, maxEdge: pickedEdge, capturedAt: captured.toISOString(),
       // "Analyse it as a meal photo" after an unreadable label: same file, label reading off.
       ...(plate ? { plate: true } : {}),
     };
