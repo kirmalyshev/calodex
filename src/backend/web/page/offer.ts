@@ -1,6 +1,7 @@
-import { fill, payCopyFor, paywallPercent, trialBillLine, zeroLike } from "@eait/shared";
+import { fill, payCopyFor, paywallPercent, trialBillLine, welcomePlateAlt, WELCOME_PLATES, zeroLike } from "@eait/shared";
 import type { Lang, WebPaywall } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
+import { IMG_URL_DIR } from "./board.ts";
 import { escape, shell } from "./shell.ts";
 
 /**
@@ -69,7 +70,6 @@ ${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay
     const o = w.exitOffer;
     const percent = paywallPercent(o.percentOff, v.lang);
     return page(`<h1>${escape(pay.offerSpecialTitle)}</h1>
-<p class="sub">${escape(fill(pay.offerSub, {}))}</p>
 <div class="card special">
 <div class="off num">${escape(fill(pay.offerOff, { percent }))}</div>
 <div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
@@ -89,13 +89,16 @@ ${trial === null ? "" : `<div class="band">${escape(trial)}</div>`}
 <div class="nr"><i class="ck"></i><div class="nmc"><div class="nm">${escape(name)}</div>${billed === null ? "" : `<small class="billed">${escape(billed)}</small>`}</div><div class="pm num">${escape(perMonth)}</div></div>
 </label>`;
   const rows = [
-    w.yearly === null ? "" : row("yearly", pay.planYearly, fill(pay.billedYearly, { price: w.yearly.price }),
+    w.yearly === null ? "" : row("yearly",
+      w.yearly.save === null ? pay.planYearly : `${pay.planYearly} · ${w.yearly.save}`,
+      fill(pay.billedYearly, { price: w.yearly.price }),
       fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true),
     w.monthly === null ? "" : row("monthly", pay.planMonthly, null,
       fill(pay.perMonthShort, { price: w.monthly.price }), null, w.yearly === null),
   ].join("\n");
   return shell(PAGE_COPY.titleOffer, `
 <form class="offer" action="${escape(v.checkoutUrl)}" method="get">
+<img class="heroimg" src="${IMG_URL_DIR}/frenchtoast.webp" alt="${escape(welcomePlateAlt(WELCOME_PLATES["french-toast"], v.lang))}">
 ${x}
 <h1 class="t-y">${escape(fill(days > 0 ? pay.plansTrialTitle : pay.plansUnlockTitle, { days: String(days) }))}</h1>
 <h1 class="t-m">${escape(fill(pay.plansUnlockTitle, {}))}</h1>

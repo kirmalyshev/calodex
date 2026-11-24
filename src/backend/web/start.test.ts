@@ -1870,6 +1870,21 @@ describe("the soft offer after the plan", () => {
       expect(closeOf(a)).toBe("/start/offer?step=try");
     });
 
+    it("A opens on the same photo the paywall shows, on A only, and the Yearly name carries the save", async () => {
+      const { session } = await walk();
+      const a = await (await get("/start/offer", session)).text();
+      // The hero the in-app `#/pay` and the phone show (ieat-app#3465).
+      expect(a).toContain('<img class="heroimg" src="/start/assets/img/frenchtoast.webp"');
+      expect(a).toContain('alt="Protein 10 g, Carbs 53 g, Fat 13 g, 365 kcal"');
+      expect(a).toContain("Yearly · save 33%");
+      const b = await (await get("/start/offer?step=try", session)).text();
+      const c = await (await get("/start/offer?step=offer", session)).text();
+      expect(b).not.toContain('<img class="heroimg"');
+      expect(c).not.toContain('<img class="heroimg"');
+      // C is Cal AI's element count here too: title, card, CTA — no sub-line.
+      expect(c).not.toContain('class="sub"');
+    });
+
     it("B is the trial timeline: no payment due, the billed amount WITH its date, the zero CTA", async () => {
       const { session, userId } = await walk();
       const b = await (await get("/start/offer?step=try", session)).text();
