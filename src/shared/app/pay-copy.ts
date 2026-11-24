@@ -207,6 +207,8 @@ export interface PayCopy {
   offerClaimTrial: string;
   /** pay-cal-c: the note while the offer carries a trial — `{days}` the offer product's free days off the store, `{renewal}` the offer's `pricePerYear`. */
   offerTrialNote: string;
+  /** pay-cal-c: the line under the offer price — `{percent}` is the offer against twelve months of the monthly plan, computed from the store prices. */
+  offerVsMonthly: string;
 }
 
 export const PAY_COPY: Localized<PayCopy> = {
@@ -282,6 +284,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Start logging meals with {app_name} today",
     offerClaimTrial: "Claim your free trial now",
     offerTrialNote: "{days} days free, then {renewal}. Billed yearly, renews automatically unless cancelled in the App Store.",
+    offerVsMonthly: "{percent} less than our monthly rate!",
 
   },
   fr: {
@@ -356,6 +359,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Commence à noter tes repas avec {app_name} dès aujourd'hui",
     offerClaimTrial: "Profite de ton essai gratuit",
     offerTrialNote: "{days} jours gratuits, puis {renewal}. Facturé chaque année, se renouvelle automatiquement sauf résiliation dans l'App Store.",
+    offerVsMonthly: "{percent} de moins que le tarif mensuel !",
 
   },
   de: {
@@ -430,6 +434,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Erfasse deine Mahlzeiten ab heute mit {app_name}",
     offerClaimTrial: "Kostenlose Testphase sichern",
     offerTrialNote: "{days} Tage kostenlos, danach {renewal}. Jährliche Abrechnung, verlängert sich automatisch, sofern du nicht im App Store kündigst.",
+    offerVsMonthly: "{percent} günstiger als unser Monatspreis!",
 
   },
   it: {
@@ -504,6 +509,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Inizia a registrare i pasti con {app_name} oggi",
     offerClaimTrial: "Attiva la prova gratuita",
     offerTrialNote: "{days} giorni gratis, poi {renewal}. Fatturazione annuale, si rinnova automaticamente salvo disdetta nell'App Store.",
+    offerVsMonthly: "{percent} in meno rispetto al mensile!",
 
   },
   es: {
@@ -578,6 +584,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Empieza hoy a registrar tus comidas con {app_name}",
     offerClaimTrial: "Canjea tu prueba gratis",
     offerTrialNote: "{days} días gratis, luego {renewal}. Se factura cada año y se renueva automáticamente salvo que canceles en el App Store.",
+    offerVsMonthly: "¡{percent} menos que nuestra tarifa mensual!",
 
   },
   vi: {
@@ -652,6 +659,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Bắt đầu ghi lại bữa ăn với {app_name} ngay hôm nay",
     offerClaimTrial: "Nhận bản dùng thử miễn phí",
     offerTrialNote: "{days} ngày miễn phí, sau đó {renewal}. Tính phí hằng năm, tự động gia hạn trừ khi bạn hủy trong App Store.",
+    offerVsMonthly: "Rẻ hơn {percent} so với gói tháng!",
 
   },
   id: {
@@ -726,6 +734,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Mulai catat makananmu dengan {app_name} hari ini",
     offerClaimTrial: "Klaim uji coba gratismu",
     offerTrialNote: "Gratis {days} hari, lalu {renewal}. Ditagih setahun sekali, diperpanjang otomatis kecuali dibatalkan di App Store.",
+    offerVsMonthly: "{percent} lebih murah dari tarif bulanan kami!",
 
   },
   ru: {
@@ -800,6 +809,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Начни записывать приёмы пищи в {app_name} уже сегодня",
     offerClaimTrial: "Забрать бесплатный триал",
     offerTrialNote: "{days} дн. бесплатно, затем {renewal}. Списывается раз в год, продлевается автоматически, пока не отменишь в App Store.",
+    offerVsMonthly: "На {percent} дешевле, чем помесячная оплата!",
 
   },
   sq: {
@@ -874,6 +884,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Fillo të regjistrosh vaktet me {app_name} që sot",
     offerClaimTrial: "Merr provën falas",
     offerTrialNote: "{days} ditë falas, pastaj {renewal}. Faturohet çdo vit, rinovohet automatikisht nëse nuk anulohet në App Store.",
+    offerVsMonthly: "{percent} më lirë se tarifa jonë mujore!",
 
   },
   bg: {
@@ -948,6 +959,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Започни да записваш храненията си с {app_name} още днес",
     offerClaimTrial: "Вземи безплатния триал",
     offerTrialNote: "{days} дни безплатно, после {renewal}. Таксува се годишно, подновява се автоматично, освен ако не откажеш в App Store.",
+    offerVsMonthly: "с {percent} по-евтино от месечната цена!",
 
   },
   te: {
@@ -1022,6 +1034,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "ఈరోజే {app_name}తో భోజనాలను నమోదు చేయడం ప్రారంభించండి",
     offerClaimTrial: "మీ ఉచిత ట్రయల్ పొందండి",
     offerTrialNote: "{days} రోజులు ఉచితం, తర్వాత {renewal}. ఏడాదికి ఒకసారి బిల్ అవుతుంది, App Storeలో రద్దు చేయకపోతే ఆటోమేటిక్‌గా రెన్యూ అవుతుంది.",
+    offerVsMonthly: "మా నెలవారీ రేటు కంటే {percent} తక్కువ!",
 
   },
   ta: {
@@ -1096,6 +1109,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "இன்றே {app_name}-உடன் உணவுகளைப் பதிவு செய்யத் தொடங்குங்கள்",
     offerClaimTrial: "உங்கள் இலவச சோதனையைப் பெறுங்கள்",
     offerTrialNote: "{days} நாட்கள் இலவசம், பிறகு {renewal}. ஆண்டுக்கு ஒருமுறை வசூலிக்கப்படும்; App Store-இல் ரத்துசெய்யாவிட்டால் தானாகப் புதுப்பிக்கப்படும்.",
+    offerVsMonthly: "எங்கள் மாதாந்திரக் கட்டணத்தை விட {percent} குறைவு!",
 
   },
   pa: {
@@ -1170,6 +1184,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "ਅੱਜ ਹੀ {app_name} ਨਾਲ ਖਾਣਾ ਦਰਜ ਕਰਨਾ ਸ਼ੁਰੂ ਕਰੋ",
     offerClaimTrial: "ਆਪਣਾ ਮੁਫ਼ਤ ਟ੍ਰਾਇਲ ਲਓ",
     offerTrialNote: "{days} ਦਿਨ ਮੁਫ਼ਤ, ਫਿਰ {renewal}। ਸਾਲਾਨਾ ਬਿਲ ਹੁੰਦਾ ਹੈ, App Store ਵਿੱਚ ਰੱਦ ਨਾ ਕਰਨ ਤੱਕ ਆਪਣੇ-ਆਪ ਰੀਨਿਊ ਹੁੰਦਾ ਹੈ।",
+    offerVsMonthly: "ਸਾਡੀ ਮਹੀਨਾਵਾਰ ਦਰ ਨਾਲੋਂ {percent} ਘੱਟ!",
 
   },
   or: {
@@ -1244,6 +1259,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "ଆଜି ହିଁ {app_name} ସହିତ ଭୋଜନ ଲଗ୍ କରିବା ଆରମ୍ଭ କରନ୍ତୁ",
     offerClaimTrial: "ଆପଣଙ୍କ ମାଗଣା ଟ୍ରାଏଲ୍ ନିଅନ୍ତୁ",
     offerTrialNote: "{days} ଦିନ ମାଗଣା, ତାପରେ {renewal}। ବାର୍ଷିକ ବିଲ୍ ହୁଏ, App Storeରେ ବାତିଲ୍ ନକଲେ ନିଜେ ରିନ୍ୟୁ ହୁଏ।",
+    offerVsMonthly: "ଆମ ମାସିକ ଦରଠାରୁ {percent} କମ୍!",
 
   },
   mr: {
@@ -1318,6 +1334,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "आजच {app_name} सह जेवणाची नोंद करायला सुरुवात करा",
     offerClaimTrial: "तुमचा मोफत ट्रायल मिळवा",
     offerTrialNote: "{days} दिवस मोफत, नंतर {renewal}. वार्षिक बिल आकारले जाते, App Store मध्ये रद्द न केल्यास आपोआप रिन्यू होते.",
+    offerVsMonthly: "आमच्या मासिक दरापेक्षा {percent} कमी!",
 
   },
   ml: {
@@ -1392,6 +1409,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "ഇന്നു തന്നെ {app_name} ഉപയോഗിച്ച് ഭക്ഷണം രേഖപ്പെടുത്തി തുടങ്ങൂ",
     offerClaimTrial: "നിങ്ങളുടെ സൗജന്യ ട്രയൽ നേടൂ",
     offerTrialNote: "{days} ദിവസം സൗജന്യം, പിന്നെ {renewal}. വർഷംതോറും ബിൽ ചെയ്യും, App Store-ൽ റദ്ദാക്കിയില്ലെങ്കിൽ സ്വയം പുതുക്കും.",
+    offerVsMonthly: "ഞങ്ങളുടെ പ്രതിമാസ നിരക്കിനെക്കാൾ {percent} കുറവ്!",
 
   },
   kn: {
@@ -1466,6 +1484,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "ಇಂದೇ {app_name} ಜೊತೆ ಊಟಗಳನ್ನು ದಾಖಲಿಸಲು ಆರಂಭಿಸಿ",
     offerClaimTrial: "ನಿಮ್ಮ ಉಚಿತ ಟ್ರಯಲ್ ಪಡೆಯಿರಿ",
     offerTrialNote: "{days} ದಿನ ಉಚಿತ, ನಂತರ {renewal}. ವಾರ್ಷಿಕವಾಗಿ ಬಿಲ್ ಆಗುತ್ತದೆ, App Store ನಲ್ಲಿ ರದ್ದುಮಾಡದಿದ್ದರೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ನವೀಕರಿಸಲಾಗುತ್ತದೆ.",
+    offerVsMonthly: "ನಮ್ಮ ಮಾಸಿಕ ದರಕ್ಕಿಂತ {percent} ಕಡಿಮೆ!",
 
   },
   gu: {
@@ -1540,6 +1559,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "આજે જ {app_name} સાથે ભોજન નોંધવાનું શરૂ કરો",
     offerClaimTrial: "તમારું મફત ટ્રાયલ મેળવો",
     offerTrialNote: "{days} દિવસ મફત, પછી {renewal}. વાર્ષિક બિલ થાય છે, App Store માં રદ ન કરો ત્યાં સુધી આપમેળે રિન્યૂ થાય છે.",
+    offerVsMonthly: "અમારા માસિક દર કરતાં {percent} ઓછું!",
 
   },
   bn: {
@@ -1614,6 +1634,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "আজই {app_name} দিয়ে খাবার লগ করা শুরু করুন",
     offerClaimTrial: "আপনার ফ্রি ট্রায়াল নিন",
     offerTrialNote: "{days} দিন ফ্রি, তারপর {renewal}। বছরে একবার বিল হয়, App Store-এ বাতিল না করলে নিজে থেকে রিনিউ হয়।",
+    offerVsMonthly: "আমাদের মাসিক রেটের চেয়ে {percent} কম!",
 
   },
   "pt-PT": {
@@ -1688,6 +1709,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Começa hoje a registar as tuas refeições com a {app_name}",
     offerClaimTrial: "Aproveitar o teste grátis",
     offerTrialNote: "{days} dias grátis, depois {renewal}. Faturado anualmente, renova automaticamente, a menos que cancele na App Store.",
+    offerVsMonthly: "Menos {percent} do que o preço mensal!",
   },
 
   ms: {
@@ -1762,6 +1784,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Mula catat hidangan anda dengan {app_name} hari ini",
     offerClaimTrial: "Tuntut percubaan percuma anda",
     offerTrialNote: "{days} hari percuma, kemudian {renewal}. Dibilkan setiap tahun, diperbaharui secara automatik melainkan dibatalkan di App Store.",
+    offerVsMonthly: "{percent} lebih murah daripada kadar bulanan kami!",
 
   },
   ca: {
@@ -1836,6 +1859,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Comença avui a registrar els àpats amb {app_name}",
     offerClaimTrial: "Aprofita la prova gratuïta",
     offerTrialNote: "{days} dies gratis, després {renewal}. Es factura cada any i es renova automàticament tret que ho cancel·lis a l'App Store.",
+    offerVsMonthly: "{percent} menys que la nostra tarifa mensual!",
 
   },
   sl: {
@@ -1910,6 +1934,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Začni beležiti obroke z {app_name} še danes",
     offerClaimTrial: "Prevzemi brezplačni trial",
     offerTrialNote: "{days} dni brezplačno, nato {renewal}. Zaračuna se letno, samodejno se podaljša, razen če prekličeš v App Store.",
+    offerVsMonthly: "{percent} ceneje kot mesečna cena!",
 
   },
   hr: {
@@ -1984,6 +2009,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Počni bilježiti obroke s {app_name} već danas",
     offerClaimTrial: "Iskoristi besplatni trial",
     offerTrialNote: "{days} dana besplatno, zatim {renewal}. Naplaćuje se godišnje, automatski se produljuje osim ako ne otkažeš u App Storeu.",
+    offerVsMonthly: "{percent} jeftinije od mjesečne cijene!",
 
   },
   sk: {
@@ -2058,6 +2084,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Začni zapisovať jedlá s {app_name} ešte dnes",
     offerClaimTrial: "Uplatniť bezplatný trial",
     offerTrialNote: "{days} dní zadarmo, potom {renewal}. Účtuje sa ročne, automaticky sa obnovuje, pokiaľ ho nezrušíš v App Store.",
+    offerVsMonthly: "O {percent} lacnejšie ako mesačná cena!",
 
   },
   no: {
@@ -2132,6 +2159,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Begynn å logge måltider med {app_name} i dag",
     offerClaimTrial: "Hent den gratis trialen",
     offerTrialNote: "{days} dager gratis, deretter {renewal}. Faktureres årlig og fornyes automatisk med mindre du sier opp i App Store.",
+    offerVsMonthly: "{percent} billigere enn månedsprisen vår!",
 
   },
   fi: {
@@ -2206,6 +2234,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Aloita aterioiden kirjaaminen {app_name}-sovelluksella jo tänään",
     offerClaimTrial: "Lunasta ilmainen kokeilu",
     offerTrialNote: "{days} päivää ilmaiseksi, sitten {renewal}. Laskutetaan vuosittain ja uusiutuu automaattisesti, ellet peru App Storessa.",
+    offerVsMonthly: "{percent} edullisemmin kuin kuukausihinta!",
 
   },
   da: {
@@ -2280,6 +2309,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Begynd at logge måltider med {app_name} i dag",
     offerClaimTrial: "Hent din gratis trial",
     offerTrialNote: "{days} dage gratis, derefter {renewal}. Faktureres årligt og fornyes automatisk, medmindre du annullerer i App Store.",
+    offerVsMonthly: "{percent} billigere end vores månedspris!",
 
   },
   hu: {
@@ -2354,6 +2384,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Kezdd el még ma rögzíteni az étkezéseidet a {app_name} appal",
     offerClaimTrial: "Igénylem az ingyenes próbát",
     offerTrialNote: "{days} nap ingyenes, utána {renewal}. Évente számlázzuk, automatikusan megújul, ha nem mondod le az App Store-ban.",
+    offerVsMonthly: "{percent} kedvezmény a havi díjhoz képest!",
 
   },
   el: {
@@ -2428,6 +2459,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Ξεκίνα σήμερα να καταγράφεις τα γεύματά σου με το {app_name}",
     offerClaimTrial: "Εξαργύρωσε τη δωρεάν δοκιμή",
     offerTrialNote: "{days} ημέρες δωρεάν, μετά {renewal}. Χρέωση ετησίως, ανανεώνεται αυτόματα εκτός αν ακυρώσεις στο App Store.",
+    offerVsMonthly: "{percent} φθηνότερα από τη μηνιαία χρέωση!",
 
   },
   ro: {
@@ -2502,6 +2534,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Începe azi să-ți notezi mesele cu {app_name}",
     offerClaimTrial: "Revendică proba gratuită",
     offerTrialNote: "{days} zile gratuit, apoi {renewal}. Facturat anual, se reînnoiește automat dacă nu anulezi în App Store.",
+    offerVsMonthly: "Cu {percent} mai ieftin decât tariful lunar!",
 
   },
   cs: {
@@ -2576,6 +2609,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Začni zapisovat jídla s {app_name} ještě dnes",
     offerClaimTrial: "Získat bezplatný trial",
     offerTrialNote: "{days} dní zdarma, poté {renewal}. Účtuje se ročně, automaticky se obnovuje, pokud ho nezrušíš v App Store.",
+    offerVsMonthly: "O {percent} levněji než měsíční cena!",
 
   },
   hi: {
@@ -2650,6 +2684,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "आज ही {app_name} के साथ भोजन लॉग करना शुरू करें",
     offerClaimTrial: "अपना मुफ़्त ट्रायल पाएँ",
     offerTrialNote: "{days} दिन मुफ़्त, फिर {renewal}। सालाना बिल होता है, App Store में रद्द न करने तक अपने-आप रिन्यू होता है।",
+    offerVsMonthly: "हमारे मासिक रेट से {percent} कम!",
 
   },
   th: {
@@ -2724,6 +2759,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "เริ่มบันทึกมื้ออาหารกับ {app_name} วันนี้",
     offerClaimTrial: "รับสิทธิ์ทดลองใช้ฟรี",
     offerTrialNote: "ฟรี {days} วัน จากนั้น {renewal} เรียกเก็บรายปี ต่ออายุอัตโนมัติ เว้นแต่คุณจะยกเลิกใน App Store",
+    offerVsMonthly: "ถูกกว่าแพ็กเกจรายเดือน {percent}!",
 
   },
   sv: {
@@ -2798,6 +2834,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Börja logga måltider med {app_name} i dag",
     offerClaimTrial: "Hämta din gratis trial",
     offerTrialNote: "{days} dagar gratis, sedan {renewal}. Faktureras årligen och förnyas automatiskt om du inte avslutar i App Store.",
+    offerVsMonthly: "{percent} billigare än vårt månadspris!",
 
   },
   uk: {
@@ -2872,6 +2909,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Почни записувати прийоми їжі в {app_name} уже сьогодні",
     offerClaimTrial: "Отримати безкоштовний тріал",
     offerTrialNote: "{days} дн. безкоштовно, потім {renewal}. Списується раз на рік, подовжується автоматично, доки не скасуєш в App Store.",
+    offerVsMonthly: "На {percent} дешевше, ніж щомісячна оплата!",
 
   },
   nl: {
@@ -2946,6 +2984,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Begin vandaag met het loggen van maaltijden met {app_name}",
     offerClaimTrial: "Claim je gratis trial",
     offerTrialNote: "{days} dagen gratis, daarna {renewal}. Jaarlijks gefactureerd en verlengt automatisch tenzij je opzegt in de App Store.",
+    offerVsMonthly: "{percent} goedkoper dan ons maandtarief!",
 
   },
   pl: {
@@ -3020,6 +3059,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Zacznij zapisywać posiłki w {app_name} już dziś",
     offerClaimTrial: "Odbierz darmowy trial",
     offerTrialNote: "{days} dni za darmo, potem {renewal}. Rozliczane rocznie, odnawia się automatycznie, o ile nie anulujesz w App Store.",
+    offerVsMonthly: "{percent} taniej niż w planie miesięcznym!",
 
   },
   tr: {
@@ -3094,6 +3134,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Öğünlerini {app_name} ile kaydetmeye bugün başla",
     offerClaimTrial: "Ücretsiz denemeni al",
     offerTrialNote: "{days} gün ücretsiz, sonra {renewal}. Yıllık faturalanır, App Store'da iptal etmezsen otomatik yenilenir.",
+    offerVsMonthly: "Aylık ücretimizden {percent} daha uygun!",
 
   },
   "zh-Hant": {
@@ -3168,6 +3209,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "今天就開始用 {app_name} 記錄餐點",
     offerClaimTrial: "領取免費試用",
     offerTrialNote: "免費 {days} 天，之後 {renewal}。按年計費，除非在 App Store 取消，否則會自動續訂。",
+    offerVsMonthly: "比月費方案省 {percent}！",
   },
 
   "zh-Hans": {
@@ -3242,6 +3284,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "今天就开始用 {app_name} 记录餐食",
     offerClaimTrial: "领取免费试用",
     offerTrialNote: "免费 {days} 天，之后 {renewal}。按年计费，除非在 App Store 取消，否则会自动续订。",
+    offerVsMonthly: "比月付方案省 {percent}！",
   },
 
   ko: {
@@ -3316,6 +3359,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "오늘부터 {app_name}(으)로 식사를 기록해 보세요",
     offerClaimTrial: "무료 체험 받기",
     offerTrialNote: "{days}일 무료, 이후 {renewal}. 연 단위로 결제되며 App Store에서 취소하지 않으면 자동 갱신돼요.",
+    offerVsMonthly: "월간 요금보다 {percent} 저렴해요!",
 
   },
   ja: {
@@ -3390,6 +3434,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "今日から{app_name}で食事の記録を始めましょう",
     offerClaimTrial: "無料トライアルを受け取る",
     offerTrialNote: "{days}日間無料、その後{renewal}。年払いで、App Storeで解約しない限り自動更新されます。",
+    offerVsMonthly: "月額プランより{percent}お得！",
 
   },
   "pt-BR": {
@@ -3464,6 +3509,7 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerSub: "Comece hoje a registrar suas refeições com o {app_name}",
     offerClaimTrial: "Resgatar o teste grátis",
     offerTrialNote: "{days} dias grátis, depois {renewal}. Cobrado anualmente, renova automaticamente, a menos que você cancele na App Store.",
+    offerVsMonthly: "{percent} menos que o plano mensal!",
   },
 };
 
