@@ -26,6 +26,9 @@ const KEYS = [
   "trialEnds", "trialEndsNote", "trialEndsCancel", "renewsLabelPhone",
   "lapsedTitlePhone",
   "closeLabel", "restoreLink", "termsLink", "privacyLink",
+  "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
+  "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
+  "tryCta", "offerSpecialTitle", "offerSub", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
 ] as const;
 
 describe("PAY_COPY", () => {
@@ -59,6 +62,18 @@ describe("PAY_COPY", () => {
       offerPrice: ["{price}"],
       offerPerMonth: ["{price}"],
       trialEndsNote: ["{renewal}"],
+      plansTrialTitle: ["{days}"],
+      plansUnlockTitle: ["{app_name}"],
+      planSave: ["{percent}"],
+      billedYearly: ["{price}"],
+      perMonthShort: ["{price}"],
+      tryTitle: ["{app_name}"],
+      tryDay: ["{day}"],
+      tryBill: ["{renewal}"],
+      tryThenBilled: ["{renewal}", "{date}"],
+      tryCta: ["{price}"],
+      offerTrialNote: ["{days}", "{renewal}"],
+      offerVsMonthly: ["{percent}"],
     };
     for (const lang of LANGS_READY) {
       const copy = PAY_COPY[lang]!;
@@ -67,7 +82,35 @@ describe("PAY_COPY", () => {
           expect(copy[key as keyof typeof copy], `${lang}.${key}`).toContain(ph);
         }
       }
+      expect(copy.offerSub, `${lang}.offerSub`).toMatch(/\{(app_name|app_name_tel)\}/);
     }
+  });
+
+  it("uses natural spoken phrasing in paywall copy (ieat-app#3454)", () => {
+    // Replaces stiff / literal machine-translation phrasing:
+    // ja: plansUnlockTitle must say アンロック, not 解除 (cancel/release)
+    expect(PAY_COPY.ja!.plansUnlockTitle).toContain("アンロック");
+    expect(PAY_COPY.ja!.plansUnlockTitle).not.toContain("解除");
+    // fr: noPaymentDue says "Rien à payer maintenant" (not "dû maintenant")
+    expect(PAY_COPY.fr!.noPaymentDue).toBe("Rien à payer maintenant");
+    // it: noPaymentDue says "Nessun pagamento adesso" (not "dovuto ora")
+    expect(PAY_COPY.it!.noPaymentDue).toBe("Nessun pagamento adesso");
+    // es: noPaymentDue says "No pagas nada ahora" (not "pendiente")
+    expect(PAY_COPY.es!.noPaymentDue).toBe("No pagas nada ahora");
+    // de: noPaymentDue says "Jetzt nichts zu zahlen" (not "Zahlung fällig")
+    expect(PAY_COPY.de!.noPaymentDue).toBe("Jetzt nichts zu zahlen");
+    // ru: offerSpecialTitle says "Специальное предложение"
+    expect(PAY_COPY.ru!.offerSpecialTitle).toBe("Специальное предложение");
+    // ru: plansUnlockTitle says "Открой {app_name}, чтобы продолжить"
+    expect(PAY_COPY.ru!.plansUnlockTitle).toBe("Открой {app_name}, чтобы продолжить");
+    // ro: offerClaimTrial does not use "Revendică"
+    expect(PAY_COPY.ro!.offerClaimTrial).not.toContain("Revendică");
+    // es: offerClaimTrial does not use "Canjea"
+    expect(PAY_COPY.es!.offerClaimTrial).not.toContain("Canjea");
+    // pt-BR: offerClaimTrial does not use "Resgatar"
+    expect(PAY_COPY["pt-BR"]!.offerClaimTrial).not.toContain("Resgatar");
+    // no: plansTrialTitle does not use "den gratis trialen"
+    expect(PAY_COPY.no!.plansTrialTitle).not.toContain("den gratis trialen");
   });
 
   it("never restates the trial the CTA already named, in any language (ieat-app#3160)", () => {
