@@ -226,7 +226,7 @@ label.check {
    free meal. A LINK for the ×, because it changes nothing. */
 .offer { position: relative; padding-top: .5rem; }
 .offer .x {
-  position: absolute; top: 0; right: 0; width: 44px; height: 44px; border-radius: 50%;
+  position: static; margin: 0 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   color: var(--muted); background: var(--surface); border: 1px solid var(--hair); font-size: 1.15rem;
 }
@@ -269,7 +269,7 @@ label.check {
 .offer .tl li:nth-child(2)::after { background: var(--hair); }
 .offer .nopay { margin: 0 0 .5rem; text-align: center; font-weight: 600; }
 /* C · the special offer card. */
-.offer .pop { text-align: center; padding: 24px; margin-bottom: 1.25rem; }
+.offer .special { text-align: center; padding: 24px; margin-bottom: 1.25rem; }
 .offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
 .offer .price { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin-top: 1rem;
   font-size: 22px; font-weight: 600; }

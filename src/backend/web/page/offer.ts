@@ -74,7 +74,7 @@ ${cta(w.yearly.checkoutUrl, zero === null ? pay.continueCta : fill(pay.tryCta, {
     const percent = paywallPercent(o.percentOff, v.lang);
     return page(`<h1>${escape(pay.offerSpecialTitle)}</h1>
 <p class="sub">${escape(fill(pay.offerSub, {}))}</p>
-<div class="card pop">
+<div class="card special">
 <div class="off num">${escape(fill(pay.offerOff, { percent }))}</div>
 <div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
 <p class="per num">${escape(w.monthly !== null ? fill(pay.offerVsMonthly, { percent }) : fill(pay.offerPerMonth, { price: o.perMonth }))}</p>
