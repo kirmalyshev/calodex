@@ -226,7 +226,7 @@ label.check {
    free meal. A LINK for the ×, because it changes nothing. */
 .offer { position: relative; padding-top: .5rem; }
 .offer .x {
-  position: static; margin: 0 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
+  position: static; margin: 0 auto 0 0; width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   color: var(--muted); background: var(--surface); border: 1px solid var(--hair); font-size: 1.15rem;
 }
@@ -236,9 +236,9 @@ label.check {
    figure) — B's timeline and C's card. A is script-free: its title and note follow the checked
    radio through :has. */
 .offer h1 { margin: .5rem 0 1rem; }
-.offer .t-m, .offer .note-m { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) :is(.t-y, .note-y) { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) :is(.t-m, .note-m) { display: block; }
+.offer .t-m { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) .t-y { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) .t-m { display: block; }
 .offer .sub { text-align: center; color: var(--muted); margin: -.4rem 0 1rem; }
 .pwp2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
 .plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px;

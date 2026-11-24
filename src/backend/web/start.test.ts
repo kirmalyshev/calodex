@@ -1870,7 +1870,9 @@ describe("the soft offer after the plan", () => {
       expect(b).toContain("We want you to try");
       expect(b).toContain("No payment due now");
       // 3.1.2(c): the billed price and the day billing starts, at the weight of the zero CTA.
-      expect(b).toMatch(/<p class="nopay num">Then [^<]*39\.99[^<]* from [^<]+<\/p>/);
+      expect(b).toMatch(/<li><b>[^<]*<\/b><span>Then [^<]*39\.99[^<]* from [^<]+<\/span><\/li>/);
+      // Once per screen: the billed amount appears in the step and nowhere else on the page.
+      expect(b.split("39.99").length - 1).toBe(1);
       expect(b).toContain("Try for €0.00");
       expect(b).toContain('href="/start/checkout?plan=yearly"');
       // The id is filled by the checkout route from the session, never carried by the page.
@@ -1886,6 +1888,7 @@ describe("the soft offer after the plan", () => {
       expect(c).toContain("<s>€59.88</s>");
       expect(c).toContain("€23.99 / year");
       expect(c).toContain("less than our monthly rate");
+      expect(c.split("23.99").length - 1).toBe(1);
       expect(c).toContain('href="/start/checkout?plan=exit"');
       expect(c).not.toContain(userId);
       expect((await get("/start/checkout?plan=exit", session)).headers.get("location")).toBe(`https://pay.rev.cat/u/${userId}`);
@@ -1897,7 +1900,9 @@ describe("the soft offer after the plan", () => {
       const a = await (await get("/start/offer?step=bogus", session)).text();
       expect(a).toContain('class="plan2"');
       expect(closeOf(a)).toBe("/start/offer?step=try");
-      expect(a).toMatch(/<p class="note note-m">€4\.99 a month\. Renews automatically/);
+      // Simple like Cal AI: no top bar, and the billed amount only on the yearly card.
+      expect(a).not.toContain('class="wbar"');
+      expect(a.split("39.99").length - 1).toBe(1);
     });
 
     it("a monthly-only host is A alone, monthly checked; a yearly-only host's C names the per-month price", async () => {
