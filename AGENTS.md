@@ -22,9 +22,7 @@ A pasted or delegated review (an "expert UX" pass, a reviewer agent, a critique 
 is input, not a decision. Where it contradicts a direction the principal has already given
 explicitly, that direction stands: apply the review's points that do not conflict with it, leave
 the ones that do, and name each conflict in one line rather than re-arguing it. Only the principal
-reverses their own call. The v5 onboarding is the case: a review said to drop the plan-time
-subscription offer and the Spud support moments, which were both asked for by name, and the answer
-was "my prev sayings prevail". This is wrong the day the principal delegates a decision to a
+reverses their own call. This is wrong the day the principal delegates a decision to a
 reviewer by name; until then, a reviewer advises.
 
 ## Stack & commands
@@ -52,7 +50,7 @@ reviewer by name; until then, a reviewer advises.
 `./dev` runs this repo's two services detached, one pidfile each, on ports derived from a SLOT — so
 several worktrees coexist instead of fighting over 8484. `src/scripts/dev-env.ts` is the only thing that
 computes a port, a database name or a URL; `src/scripts/dev.sh` starts and stops and computes none of
-them. Ported from the private monorepo with its iOS, Metro and landing halves removed.
+them.
 
 - **The ladder starts at 8484, and 8787 is the other repository's.** That monorepo runs its own
   stack on this laptop, on 8787+10N, 8788+10N, 8081+10N and 4173+10N; a base here ending in 4 and
@@ -142,9 +140,11 @@ already exist. Auto-create shipped once and it was silent data loss.
 - New onboarding question → a field on `Profile`, a step in `ONBOARDING_STEPS` (the DEFAULT order;
   an experiment arm may reorder within `ORDER_AFTER`, and a new question adds its edges there), an
   entry in `SCREEN_FIELDS` (respecting the two-field cap), an `asks` entry in
-  `DEFAULT_ONBOARDING_CONTENT`, and a prompt in `CHAT_PROMPTS`
-  with its `kind`. A question that collects NO profile field needs a READER first, named before it
-  is written.
+  `DEFAULT_ONBOARDING_CONTENT` AND in every other language's table in `onboarding-content.ts`
+  (each is a whole `OnboardingContent`, so `typecheck` names the one that lacks it), and a prompt in
+  `CHAT_PROMPTS` with its `kind`. A question that collects NO profile field is a prompt plus a place
+  in `ONBOARDING_INTERSTITIALS` and `ONBOARDING_PLACES`, and its words go in `onboarding-chat.ts`.
+  It needs a READER first, named before it is written.
 - New LLM capability → a port type in `src/backend/llm/port.ts`, a prompt in `prompt.ts`, an
   implementation in `openrouter.ts`, and a canned version in `demo.ts` so the tests still run. The
   prompt's TEXT is overridable by a row in `llm_prompts` and `prompt.ts` is the seed and the

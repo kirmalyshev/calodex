@@ -5,7 +5,8 @@ the web use. `src/backend/AGENTS.md` covers the server; this covers this directo
 
 ```
 handlers.ts   NO grammY. Telegram id + message → the account → ONE engine function → plain text
-              through a port (`Chat`, `Tap`). The copy lives here: `TELEGRAM_COPY`, `refusalText`.
+              through a port (`Chat`, `Tap`). `refusalText` lives here.
+copy.ts       the bot's words: `telegramCopyFor(lang)`, built from the Lingui catalogs.
 bot.ts        the grammY half: middleware, file download, album buffer, supervisor. Thin.
 albums.ts     `AlbumBuffer`, carried over unchanged from the old @eait_bot.
 ```
@@ -13,7 +14,8 @@ albums.ts     `AlbumBuffer`, carried over unchanged from the old @eait_bot.
 ## Rules
 
 - **Dormant unless configured.** `src/backend/index.ts` starts it only when
-  `EAIT__BACKEND__TELEGRAM_BOT_TOKEN` is set, and never under `--demo`. Either way one boot line says
+  `EAIT__BACKEND__TELEGRAM_BOT_TOKEN` is set, never under `--demo`, and on the leader replica only
+  (`src/backend/AGENTS.md` § Auth, the paid tier, and the surfaces the server owns, the singletons bullet). Either way one boot line says
   which. SIGTERM stops it before the store closes.
 - **grammY stays out of `engine/` and out of `handlers.ts`, and the handlers import the engine only
   through `engine/index.ts`.** A test reads the imports (`handlers.test.ts`, "the boundary").
@@ -21,8 +23,8 @@ albums.ts     `AlbumBuffer`, carried over unchanged from the old @eait_bot.
   username, first name, chat id, or an id in text or callback data. `bot.test.ts` sends a username
   and checks that the store never holds it.
 - **A `telegram` identity comes from spending a link code, and only from that.** `/start <code>` →
-  `linkTelegram` (`engine/identity.ts`). An unknown Telegram user gets `TELEGRAM_COPY.stranger` and a
-  sign-in link, whatever they send. Nothing is charged for that.
+  `linkTelegram` (`engine/identity.ts`). An unknown Telegram user gets the localized `stranger` line
+  (`telegramCopyFor`) and a sign-in link, whatever they send. Nothing is charged for that.
 - **A link already on another account MOVES to the code's account** (`store.moveIdentity`), and that
   is the safer answer, not the looser one: a code can be sent to somebody with a pretext, and
   refusing to move left that stranger receiving their photos with no way back, since the bot has no
@@ -73,9 +75,10 @@ albums.ts     `AlbumBuffer`, carried over unchanged from the old @eait_bot.
 ## Where to add things
 
 A new command or message kind → a method on `telegramHandlers` that calls one engine function,
-plus one line in `createBot`. New copy → `TELEGRAM_COPY` or `REFUSAL_WORDS`, which the claims test
-already covers.
+plus one line in `createBot`. New copy → a literal message id in `copy.ts` plus an entry in every
+`src/shared/locales/*/messages.po`. The English copy passes the claims gate (`handlers.test.ts`);
+that lint covers English only.
 
 ## Verify
 
-`bun test src/backend/telegram`. For a live run you need a bot token (see `README.md`).
+`bun test src/backend/telegram`. For a live run you need a bot token (see the repository `README.md` § Telegram).

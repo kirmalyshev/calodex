@@ -1,6 +1,6 @@
 # AGENTS.md — iac
 
-How eait runs in production: two images, a compose file, and the edge in front of them.
+How a self-hoster runs eait: two images, a compose file, and the edge in front of them. The hosted production deployment uses its own deploy tree, not this stack.
 
 Root `AGENTS.md` covers the repo. This covers this directory, plus the two files that live at the
 root because they are the pair of the development ones already there — `docker-compose.prod.yml`
@@ -9,7 +9,7 @@ beside `docker-compose.yml`, and `.env.prod.example` beside `.env.example`.
 ## What this is, and what it deliberately is not
 
 ```
-docker-compose.prod.yml      the stack: caddy, backend, frontend, db            (repo root)
+docker-compose.prod.yml      the stack: caddy, backend, frontend, db, db-init  (repo root)
 .env.prod.example            every variable a deploy needs                      (repo root)
 .dockerignore                the build context, which is the whole repo         (repo root)
 src/iac/Dockerfile.backend   the backend's production image
@@ -36,19 +36,16 @@ infrastructure as code. It is not machine provisioning, and it is not going to b
 `self-host.sh` is a wrapper over that compose file and nothing else — no second stack. It writes
 `.env.prod` only when absent (generated passwords are never regenerated: the app role's password is
 only read by initdb), takes the model key from the environment or a no-echo prompt, and never puts a
-secret in argv. Local mode sets `EAIT__DEPLOY__BIND_ADDR=127.0.0.1`, `HTTP_PORT=8080` and a
-`http://localhost` site address; `BIND_ADDR`, `HTTP_PORT` and `HTTPS_PORT` only move the PUBLISHED
-side of Caddy's ports.
+secret in argv. Local mode sets `EAIT__DEPLOY__BIND_ADDR=127.0.0.1`, `EAIT__DEPLOY__HTTP_PORT=8080` and a
+`http://localhost` site address; `EAIT__DEPLOY__BIND_ADDR`, `EAIT__DEPLOY__HTTP_PORT` and
+`EAIT__DEPLOY__HTTPS_PORT` only move the PUBLISHED side of Caddy's ports.
 
 ## The one rule everything here serves
 
-**ONE ORIGIN.** Caddy serves a single hostname: `/`, `/app.js` and `/sw.js` come from the `frontend`
+**ONE ORIGIN.** Caddy serves a single hostname: `/`, `/app.js`, `/sw.js` and `/medals/*` come from the `frontend`
 container, everything else — `/api/v1/*`, `/start`, `/admin`, `/health` — from the `backend`
-container. `src/frontend/AGENTS.md` says why, and it is not routing preference: the browser client
-calls its API with relative paths under `connect-src 'self'` and the backend has no CORS header
-anywhere. A deployment that puts the two on two hostnames has broken the product's security model.
-The fix that then suggests itself is `Access-Control-Allow-Origin`, which is a door this product
-does not need open.
+container. A deployment that puts the two on two hostnames breaks the product's security model.
+See `src/frontend/AGENTS.md` § What this is for why.
 
 ## Hard rules
 
@@ -58,9 +55,8 @@ does not need open.
   hobby database ends up ransomed, and it is the one containment property this repository can
   actually guarantee, because it belongs to the compose file rather than to the host. Reach the
   database with `docker compose exec db psql`.
-- **The app never creates the database.** The Postgres image's initdb does, from `POSTGRES_DB`;
-  `migrate()` creates tables inside a database that must already exist. Auto-create shipped once and
-  it was silent data loss.
+- **The app never creates the database.** The Postgres image's initdb does, from `POSTGRES_DB`.
+  The reason is in the root `AGENTS.md` § The store port.
 - **`db-init.sh` OWES the migration every object class it creates, and that is now a test rather
   than a habit.** `store.pg.ts` forces a deny-by-default policy on every user-scoped table, which
   binds an owner but never a SUPERUSER — so the backend connects as `eait_app`, and `eait_app` has
@@ -76,9 +72,9 @@ does not need open.
 - **A consumer may mount this script instead of copying it, and two of them do.** It is the half of
   row-level security that lives outside `store.pg.ts`, so a copy is a restatement of this schema's
   ownership rules that goes stale silently — as a backend that will not boot, on somebody else's
-  host. What such a consumer may rely on: the path, the role name `eait_app`, and the four variables
-  it requires (`PGPASSWORD`, `EAIT__DEPLOY__APP_DB_PASSWORD`, and `POSTGRES_USER`/`POSTGRES_DB` for
-  which database and superuser), plus `PGHOST`/`PGPORT` defaulting to compose's `db:5432`. Moving or
+  host. What such a consumer may rely on: the path, the role name `eait_app`, and the two variables
+  it requires (`PGPASSWORD`, `EAIT__DEPLOY__APP_DB_PASSWORD`), the two it defaults to `eait`
+  (`POSTGRES_USER`/`POSTGRES_DB`, which superuser and which database), plus `PGHOST`/`PGPORT` defaulting to compose's `db:5432`. Moving or
   renaming any of those is a breaking change for them, and this list is what says so.
 - **POSIX `sh`, and `sh` is bash on macOS.** The word in `${VAR:?word}` is quote-parsed even inside
   double quotes, so an apostrophe in one of those messages opens a quote that never closes. ash and
@@ -101,25 +97,25 @@ does not need open.
   compose file has to be runnable by hand: it is the only description of the stack there is, it is
   what somebody debugs at 2am, and it is what proves the routing locally. A config that needs a
   renderer first is a second artefact, and a second artefact can differ from the one deployed.
-- **`EAIT__FRONTEND__BACKEND_ORIGIN` stays unset in production.** It is the LAPTOP's dev proxy —
-  with no Caddy on a laptop, the web server forwards what is not its own to the backend. Setting it
-  on a deployment puts a second, untested path in front of the API on the exact arrangement where
-  the edge is what composes the one origin.
+- **`EAIT__FRONTEND__BACKEND_ORIGIN` stays unset in production.** It is the laptop's dev proxy. The edge
+  composes the one origin on a deployment; see `src/frontend/AGENTS.md`.
 
 ## Where to add things
 
 - A new backend setting → `src/backend/config.ts` first, then `.env.prod.example`, then the
   `environment:` block in `docker-compose.prod.yml`. `src/scripts/prod-env.test.ts` fails until all
   three agree, which is the order it enforces rather than merely documents.
-- A new path the edge must route → `src/iac/Caddyfile`. Two exact paths go to the frontend and
-  everything else to the backend, so a new BACKEND path needs nothing; a new path the web
-  application answers needs a branch in `src/frontend/server/index.ts` AND an entry in the `@app`
-  matcher, in the same commit.
+- A new path the edge must route → `src/iac/Caddyfile`. The `@app` matcher lists what goes to the
+  frontend and everything else goes to the backend, so a new BACKEND path needs nothing. A new path
+  the web application answers needs a branch in `src/frontend/server/index.ts` AND an entry in the
+  `@app` matcher, in the same commit. `src/scripts/caddyfile-routes.test.ts` fails until they agree.
+  A deployment that keeps its own edge config needs the same entry there.
 - A new runtime dependency in the backend or in `src/shared` → nothing here: the build installs with
   `--filter=@eait/backend` and the runtime copies both `src/backend/node_modules` and
   `src/shared/node_modules`. One in `src/frontend` is bundled by `bun build` in the frontend image's
-  build stage. The proof that an image still boots is the Verify section — all four containers
-  `healthy` — not that it built.
+  build stage. The proof that an image still boots is the Verify section — the three curls answer,
+  and `/health` answers only after `db-init` exited 0, because the backend waits on it — not that
+  it built.
 
 ## Deliberately not done
 

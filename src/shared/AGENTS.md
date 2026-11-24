@@ -1,6 +1,6 @@
 # AGENTS.md — shared
 
-> This workspace also lives inside a private monorepo (the app, the web client, the landing, the deploy tree). Paths such as `src/mobile/…`, `docs/…`, `scripts/…`, `deploy/…` and `#NNN` issue references point there; the rules they support hold here regardless.
+> This workspace also lives inside a private monorepo (the iOS app, the landing, the deploy tree). Paths such as `src/mobile/…`, `src/landing/…`, `product/…`, `docs/…`, `scripts/…`, `deploy/…`, and `#NNN` issue references point there. `src/frontend/…` and `src/shared/app/…` are in this repository. The rules they support hold here regardless.
 
 The contract both sides implement. Root `AGENTS.md` covers the repo; this covers this workspace.
 
@@ -45,7 +45,8 @@ Everything is exported through `index.ts` (`export *`), so a new export needs no
 - **Verdicts are computed, never accepted** — not from the model, not from the client.
   `AnalyzedMeal` is `MealAnalysis` minus `verdicts` and the gap must never be closed with a cast.
 - **Dates are computed in the configured zone, never UTC.** Shift a stored `YYYY-MM-DD` with
-  `dateMinus` — calendar subtraction, DST-safe. Never subtract fixed 24-hour spans.
+  `dateMinus` — calendar subtraction, DST-safe. Never subtract fixed 24-hour spans and re-derive: that is off by one across a DST transition near
+  midnight, twice a year, never reproducibly.
 - **`YYYY-MM-DD` and `YYYY-MM` compare correctly as strings.** That is deliberate and is why
   ordering, windows and month arithmetic use plain `<`/`>` rather than parsing.
 - **The calorie floor is unconditional.** Share cap first, floor second. Any new code path that
@@ -62,12 +63,9 @@ Everything is exported through `index.ts` (`export *`), so a new export needs no
 
 ## Localization (#358)
 
-**The product renders forty-two languages: `en`, `fr`, `de`, `it`, `es`, `vi`, `id`, `ru` and, from
-waves 1-4a of #2206, `pt-BR`, `ja`, `ko`, `zh-Hans`, `zh-Hant`, `tr`, `pl`, `nl`, `uk`, `sv`, `th`,
-`hi`, `cs`, `ro`, `el`, `hu`, `da`, `fi`, `no`, `sk`, `hr`, `sl`, `ca`, `ms`, `pt-PT`, `bn`, `gu`,
-`kn`, `ml`, `mr`, `or`, `pa`, `ta`, `te` (the target is every base language the App Store listing
-carries; Hebrew and Urdu wait for the RTL ruling).** `LANGS`
-(`types.ts`) is what the server stores and the model answers in — it is the forty-two PLUS `ar`,
+**The product renders every language in `LANGS_READY`.** The target is every base language the App Store
+listing carries; Hebrew and Urdu wait for the RTL ruling. `LANGS`
+(`types.ts`) is what the server stores and the model answers in — it is `LANGS_READY` PLUS `ar`,
 accepted since #3310 so an Arabic-speaking profile's coach answers in Arabic. `LANGS_READY`
 (`lang.ts`) is the smaller, honest claim — what the app can render ITSELF end to end — and it is
 what a picker offers; `ar` is not in it (its copy falls back to `en`, and RTL is #358). The two
@@ -97,12 +95,14 @@ gets its meal names in that language.
     nothing about an id in the SOURCE that never reached them, and `i18n._` falls back to the
     `message:` descriptor — which is the English. Renaming one id without extracting left
     `i18n:check`, the typecheck and all 1,899 tests green while that sentence shipped English
-    in eight languages; measured, not assumed. `localizedGaps` failed by name on exactly this
+    in every language; measured, not assumed. `localizedGaps` failed by name on exactly this
     and a catalog has no equivalent, so the extractor is the check. Extract first and the
     `git diff --exit-code` already there turns an unextracted string into a red build.
 - **A new string goes in the `*-copy.ts` beside the module that reads it**, as a key on that
-  module's one `Localized` table, in every language of `LANGS`. Not in a `.json` bundle, not behind an
-  extraction step: `lang.ts`'s header says why, and compiled-in languages need neither.
+  module's one `Localized` table, in every language of `LANGS`. In a table that is not yet migrated,
+  that is the whole rule: no `.json` bundle and no extraction step (`lang.ts`'s header says why).
+  In a migrated table (the list in the Lingui bullet above), a new string follows the Lingui rule
+  there: a literal id, then `lingui extract`.
 - **`localizedGaps` is what keeps `LANGS_READY` honest.** One test per workspace
   (`copy.i18n.test.ts`) hands it `import * as everything` and fails by name — "CHAT_COPY has no vi
   (Tiếng Việt)" — when a table is missing a language the list claims. A table nothing EXPORTS is a
@@ -117,7 +117,7 @@ gets its meal names in that language.
   carries its own unit word in its template; the four places that CONCATENATE one onto a figure
   (the plan card, the diary headline, a Telegram meal line) read `UNIT_KCAL`, because a Russian plan
   card read "1 500 kcal" with "Порог — 1500 ккал." two lines under it. That table is a SPELLING and
-  not a unit: the same quantity in all forty-two, which is the `LANG_LABEL` situation and not the
+  not a unit: the same quantity in every language, which is the `LANG_LABEL` situation and not the
   imperial one. `HEALTH_FIELDS.unit` stays SI and this does not license changing it.
 - **Numbers and dates are `Intl`.** `numbers(lang)` keeps a tenth (a weight somebody typed);
   `wholeNumbers(lang)` rounds (a kcal from a photo, where a decimal claims a precision the analyzer
@@ -125,18 +125,13 @@ gets its meal names in that language.
   and a table of ours got Spanish, Russian and Vietnamese wrong at once before it was deleted.
 - **A TABLE THAT IS NOT `Localized<T>` IS INVISIBLE TO EVERY CHECK HERE.** `localizedGaps` detects
   a table by SHAPE, so English literals in an ordinary record are not a gap — they are not a table.
-  That is how the whole health-trend screen stayed English inside a translated app: `TREND_PERIODS`
-  held `label`/`noun` as plain strings, the axis formatters were pinned to `en-GB`/`en-US`, and
-  `trendSummary` took no language at all. Making `lang` required repo-wide would not have found it
-  either, because none of those functions HAD a language parameter to make required. The fix is the
-  general one — the words moved into `HEALTH_COPY`, the formatters are built from `LANG_TAG[lang]`,
-  and `trendPeriods(lang)`/`trendBuckets(…, lang)`/`trendSummary(…, lang)` take the language. When
+  The rule: words live in a `Localized<T>` table such as `HEALTH_COPY`, formatters are built from
+  `LANG_TAG[lang]`, and `trendPeriods(lang)`, `trendBuckets(…, lang)` and `trendSummary(…, lang)` take
+  the language. A function with no `lang` parameter cannot be found by making `lang` required. When
   you add a surface, ask whether its words are in a `Localized<T>`; if they are not, no test here
   is watching them.
-- **A sentence is a TEMPLATE, never fragments joined by code.** `trendSummary` built the VoiceOver
-  line by concatenating "by", "from", "to", "Lowest" around the numbers. Word order is not a
-  constant across forty-two languages, and for a reader with low vision that sentence IS the chart. It
-  is one string per language with named placeholders now. The same rule caught Russian's `по`,
+- **A sentence is a TEMPLATE, never fragments joined by code** (§ Invariants a reviewer should check first). For `trendSummary` the sentence is the
+  chart read aloud, so word order matters most there. It is one string per language with named placeholders. The same rule caught Russian's `по`,
   which governs the dative plural: `HealthCopy.periods[p].per` exists beside `noun` because one
   field cannot be both `неделя` and `неделям`.
 - **A test refuses to let the Russian decide who the reader is.** Russian past tense agrees with
@@ -148,22 +143,26 @@ gets its meal names in that language.
   language bucket, because nothing but Russian has Cyrillic in it — and the three `copy.i18n`
   tests fail naming the key. Fifteen sentences, four of them in `fr`/`it`/`es`/`ru` where the
   adjective in "you're not alone" picks a gender too; those were rephrased around the situation
-  rather than the person, which is the move that works in all forty-two.
+  rather than the person, which is the move that works in every language.
 
 - **A COUNTRY'S NAME IS CLDR'S, NOT COPY.** `COUNTRY_CODES` covers the dominant home of every
-  shipped language — it was `de | gb | us | other` while the product shipped in eight languages,
-  so a Vietnamese or Indonesian reader met "so I know your supermarket, not somebody else's" above
-  a list whose only true answer was "Somewhere else". Growing it was only affordable because the
-  labels left the content: thirty-nine countries in forty-two languages is ~1,600 strings, and our own month
-  table had Spanish, Russian and Vietnamese wrong at once before `Intl` replaced it. So
-  `countryLabel` reads `COUNTRY_NAMES`, generated from `Intl.DisplayNames` at build time (`bun src/scripts/country-names.ts`; Hermes has none, and `country-names.test.ts` fails on a missing language/country; the snapshot is one host's ICU, so there is deliberately no equality-with-runtime test), `countrySearchNames` is the local plus English name a search matches, `countryOptions` sorts with `Intl.Collator` because
-  Austria files under Ö in German and А in Russian, and `other` is the ONE option still written by
-  hand — it is a sentinel, not a region, and "Somewhere else" is the product's voice.
-  `optionLabelIsData` is the single predicate the validator, the admin editor and the renderer all
-  read, so none of them can disagree about which labels an admin owns. Adding a country is one
-  code in one array. And the PROMPT gets the name, never the code: `it`, `at`, `id` and `ca` read
-  as an English pronoun, a preposition, a column and an abbreviation inside the line that decides
-  which brands the analyzer expects on the plate.
+  shipped language. Each country in each language would be a string of its own, so the labels are
+  not content.
+  - Source: `countryLabel` reads `COUNTRY_NAMES`, generated from `Intl.DisplayNames` at build time
+    (`bun src/scripts/country-names.ts`). Hermes has no `Intl.DisplayNames`. `country-names.test.ts`
+    fails on a missing language or country. The snapshot is one host's ICU, so there is deliberately
+    no equality-with-runtime test.
+  - Search: `countrySearchNames` is the local plus the English name.
+  - Sort: `countryOptions` sorts with `Intl.Collator`, because Austria files under Ö in German and
+    А in Russian.
+  - `other` is the ONE option still written by hand. It is a sentinel, not a region, and "Somewhere
+    else" is the product's voice.
+  - `optionLabelIsData` is the single predicate the validator, the admin editor and the renderer
+    all follow. None of them can disagree about which labels an admin owns.
+  - Adding a country is one code in one array.
+  - The PROMPT gets the name, never the code: `it`, `at`, `id` and `ca` read as an English pronoun,
+    a preposition, a column and an abbreviation inside the line that decides which brands the
+    analyzer expects on the plate.
 - **`LANG_LABEL` is never translated.** A list of languages written in the language the reader is
   trying to leave is the one list they cannot read. It is also what the LLM prompt names the reply
   language with (`languageLine`), because a language's own name is the same string wherever it is
@@ -174,13 +173,12 @@ gets its meal names in that language.
 - **A `Localized` table proves a language is PRESENT, never that it is complete.** `localizedGaps`
   stops at the table — `lang.ts` says so — so everything one level inside it is a test's job. That
   is where the remaining holes live: `HEALTH_COPY.labels` spreads the English underneath every
-  language, so a new metric is present in all forty-two and correct in one (`health-copy.test.ts`
+  language, so a new metric is present in every language and correct in one (`health-copy.test.ts`
   asserts the non-English labels DIFFER, with the genuine coincidences pinned as `lang.key` pairs);
   and the four `Record<…>` copy maps are keyed by their id union rather than by `string`, so the
   compiler names the language that forgets one instead of a `!` throwing inside a chat bubble.
 - **The claims gate (`claims.ts`) reads every language for four families, and English only for the
-  rest.** It used to be English patterns alone, which was survivable while there was one language
-  of public copy and it was the one the gate read. `?lang=` ended that: `onboarding_content` and
+  rest.** `?lang=` makes English-only patterns insufficient: `onboarding_content` and
   `notification_copy` are typed by an admin, stored per host, and outlive the binary — and one of
   them is a push notification, which arrives unasked on a lock screen with no review and no
   recall. `validateNotificationCopy` accepted *Garantierter Gewichtsverlust*.
@@ -221,12 +219,11 @@ gets its meal names in that language.
   backend.** `src/mobile` is not in this repo and imports `@eait/shared` from the parent monorepo,
   so a table in `backend/` is a table the phone cannot read. **No "and the rest" below** — a client
   author cannot migrate against that, and the list is the deliverable.
+  `ios-list.test.ts` fails when a name in these paragraphs is not an export.
 
   *Onboarding:* `onboardingContentFor` / `usableContentFor`, `askLines`, `askPlaceholder` (the one
-  with NO language — it reads `content` only), `answerLabel`, `IDLE_PLACEHOLDER`, `QUICK_REPLIES`,
-  `GOAL_CARDS`, `GOAL_FOLLOWUPS`, `STRUGGLE_LABELS`, `struggleCard`, `GAIN_PACE_CARD`,
-  `UNDER_AGE_CARD`, `UNDER_AGE_LINES`, `AMBIGUOUS_AGE`, `ACTIVITY_REPLIES`, `weightAck`,
-  `strugglesCloser`, `restrictionsReply`, `belowHealthyCard`, `checkDirection`, `switchedLine`,
+  with NO language — it reads `content` only), `answerLabel`, `IDLE_PLACEHOLDER`, `UNDER_AGE_CARD`,
+  `UNDER_AGE_LINES`, `AMBIGUOUS_AGE`, `belowHealthyCard`, `checkDirection`, `switchedLine`,
   `capNote`, `projectionLine`, `reconcileGoalEdit`, `checkNumber`.
 
   *Onboarding's option chips:* `screenOptionValues(screenId, lang)` for the VALUES and
@@ -293,13 +290,13 @@ gets its meal names in that language.
   constructor — a process abort on the phone that compiles, typechecks and passes every test on
   Node or bun, where ICU is full. The guarded helpers own the fallbacks — `countText` and
   `listConjunction` here — `countryLabel` needs none, it reads the baked `COUNTRY_NAMES` — because this workspace runs on the
-  phone too, `app/*-copy.ts` included. `projection.ts`'s old twelve-month table was written against
+  phone too, `src/shared/app/*-copy.ts` included. `projection.ts`'s old twelve-month table was written against
   a build that answered a numeric month, which is the thing to check if a device ever does — not
   these tables.
 - **Admin-editable copy is stored per language in the SAME row.** `onboarding_content` and
   `notification_copy` hold a `Localized<…>` map rather than one revision: no column, no migration,
   and a row written before #358 is read as English, which is what it was. A save in one language
-  carries the seven it is not editing. `usableContentFor(lang, stored)` falls back to THAT
+  carries every other language unchanged. `usableContentFor(lang, stored)` falls back to THAT
   language's compiled-in copy, never to English.
 
 ## Testing
@@ -318,8 +315,6 @@ will ever use it, it does not belong here — put it in that side and keep this 
 
 ## Dates, health arithmetic, and the onboarding contract
 
-> Moved verbatim from the root `AGENTS.md`, which is the router and no longer carries the detail.
-
 - **`HEALTH_RETENTION_DAYS` is one number with four jobs, and they must agree.** How old a health
   row may be and still be stored, the widest trend a client may read, how far the phone's first
   sync reaches, and — through `DIARY_WINDOW_DAYS` — how far the diary's per-day totals go, because
@@ -329,18 +324,15 @@ will ever use it, it does not belong here — put it in that side and keep this 
   calendar months, every stored year), `bucketSeries` (the MEAN of the days with a reading — a
   weekly total and a monthly total do not share an axis, an average per day does — and null stays
   null, a gap and never a zero), `correlate` (Pearson over the buckets known on both sides, and no
-  answer under five of them) and `correlationWords`. `app/health.tsx` draws; it computes nothing.
-  `lib/components/chart.tsx` is hand-drawn on `react-native-svg`, which was already a dependency,
+  answer under five of them) and `correlationWords`. `src/mobile/app/health.tsx` draws; it computes nothing.
+  `src/mobile/lib/components/kit/charts.tsx` is hand-drawn on `react-native-svg`, which was already a dependency,
   and takes only theme tokens: the accent for the primary series, `textMuted` for the second, and
   a caption in words saying which is which.
 - **The phone aggregates health in the SERVER's timezone, never its own.** `ProfileResponse.timezone`
   carries it, and `dates.ts` lives in `shared` for that reason. Two zones means a day's meals and
   that same day's health describe two different twenty-four-hour windows — on one screen, invisibly,
   only for people who travel.
-- **Dates are computed in the configured zone, not UTC.** `dates.ts`. To shift a stored
-  `YYYY-MM-DD`, use `dateMinus` — calendar subtraction, DST-safe. Never subtract fixed 24-hour spans
-  and re-derive; that is off by one across a DST transition near midnight, twice a year, never
-  reproducibly.
+- **Dates are computed in the configured zone, not UTC.** See § Invariants a reviewer should check first; `dates.ts` owns it.
 - **A meal's date changes ONLY via re-date.** `EditMealRequest` has no `date` field, so the manual
   editor cannot reach it. `MealPatch` does, for the one sanctioned path.
 - **Onboarding is plain screens, one question each, and the design is `product/design/onboarding/`**
@@ -348,13 +340,13 @@ will ever use it, it does not belong here — put it in that side and keep this 
   the phone shows, in English: change both in the same change. The answers are asked one at a time
   in the arm's order, `DEFAULT_ORDER` otherwise; `diet` and `medical` are two views of the one
   `restrictions` column.
-  **A question earns its place by having a reader.** Why now, the hardest moment and eating out
-  were cut on 2026-08-26 because nothing in `src/` read back what they wrote — the user pays for a
-  question like that and never sees it come back. `struggles` survived because it picks the
-  on-track caption one screen later and Chat's first starters, which the user does see.
+  **A question earns its place by having a reader.** Something in `src/` must read the answer back
+  to the user. A question nothing reads costs the user an answer and shows nothing in return. Name
+  the reader before you write the question. Today `barriers` and `situations` have one: they pick the
+  on-track caption one screen later and Chat's first starters.
 - **Onboarding: the WORDS are editable, the QUESTIONS are not.** `src/shared/onboarding.ts` holds
-  three layers and the line between them is the whole design. STEPS are the profile fields the
-  calorie target needs — fixed in code. SCREENS are how those fields are grouped and the unit the
+  three layers and the line between them is the whole design. STEPS are the answer keys in
+  `ONBOARDING_STEPS` — fixed in code. SCREENS are how those fields are grouped and the unit the
   copy is keyed by — fixed in code, and one may be switched off only when nothing on it reaches
   `explainTargets` (today: only `country`). CONTENT is `asks` (what Spud says to pose each field,
   one entry per bubble), the option labels, the front door and the plan — fully editable in the
@@ -364,7 +356,7 @@ will ever use it, it does not belong here — put it in that side and keep this 
   (`onboarding-order.ts`), validated on the save; it cannot add, drop or reword a question.
 - **The REPLIES and the support cards are code, not copy.** `src/shared/onboarding-chat.ts` holds
   the branch logic. An admin text box in front of a health statistic is an unsubstantiated claim
-  one typo away from every phone, with no gate in front of it — the thing `landing/claims.ts`
+  one typo away from every phone, with no gate in front of it — the thing the private monorepo's `src/landing/claims.ts`
   exists to stop in public copy — so a cited figure stays code. Two percentages in that file are
   READ from `MAX_DEFICIT_SHARE`/`MAX_SURPLUS_SHARE` rather than typed. Three rules hold over every
   reply and each has a test: speak to the branch taken, deliver a stat once, and never lean on
@@ -377,7 +369,7 @@ will ever use it, it does not belong here — put it in that side and keep this 
   and upgrades in place — onboarding must never open on a spinner. The server runs the same guard
   on the read, so the admin editor opens on something that can be saved.
 - **Onboarding analytics carry no answers.** `REPORTABLE_FIELDS` is the whitelist: enumerated
-  choices only (`goal`, `sex`, `activity`, `pace`, `country`, `restrictions`). Never a weight, a
+  choices only — the fields in the `REPORTABLE_FIELDS` constant in `onboarding.ts`. Never a weight, a
   height, a year of birth, the medical free text, or the conversation answer. Enforced
   on the client AND again in `recordOnboardingEvents`, because a client-side promise about what it
   sends is not a control. The funnel is erased with the account, which is a real analytics cost
