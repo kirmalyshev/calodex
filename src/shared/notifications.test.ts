@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { lintCopy } from "./claims.ts";
 import { trialReminder, trialReminderDate } from "./entitlement.ts";
 import {
-  DEFAULT_NOTIFICATION_COPY, NOTIFICATION_IDS, REMINDER_TIME, eveningPrescription,
+  DEFAULT_NOTIFICATION_COPY, NOTIFICATION_COPY, NOTIFICATION_IDS, REMINDER_TIME, eveningPrescription,
   fillNotification, reminderPlan, validateNotificationCopy,
 } from "./notifications.ts";
 
@@ -298,5 +298,16 @@ describe("reminderPlan", () => {
   it("does not move a date across a DST transition inside the window", () => {
     expect(reminderPlan({ active: true, expiresAt: "2026-10-29T10:00:00Z", trial: true }, TZ, on("2026-10-22T10:00:00Z")))
       .toEqual([{ id: "trial-end", date: "2026-10-28" }]);
+  });
+});
+
+describe("onboarding-photo, the next-day push (ieat-app#3443)", () => {
+  it("asks for the first meal, in every language, and is sendable under the claims gate", () => {
+    expect(DEFAULT_NOTIFICATION_COPY["onboarding-photo"].body).toBe("Log your first meal. Just snap a photo of what you're eating.");
+    for (const lang of Object.keys(NOTIFICATION_COPY) as (keyof typeof NOTIFICATION_COPY)[]) {
+      const m = NOTIFICATION_COPY[lang]?.["onboarding-photo"];
+      expect(m?.body.length).toBeGreaterThan(0);
+      if (lang !== "en") expect(m?.body).not.toBe(DEFAULT_NOTIFICATION_COPY["onboarding-photo"].body);
+    }
   });
 });
