@@ -46,7 +46,7 @@ export const payCss = `
   width: 4px; background: var(--accent); }
 .pay .tl li:nth-child(2)::after { background: var(--line); }
 .pay .nopay { margin: 0; text-align: center; font-weight: 600; }
-.pay .pcol p.sub { margin: -6px 0 6px; text-align: center; }
+.pay .pcol p.sub { margin: -6px 0 6px; }
 /* pay-exit (#451): the offer card the plans swap to on the first decline — the board's own
    measurements, radii included (16, not --r-card's 12). */
 .pay .pcol h1.d28 { margin: 0 0 6px; }
