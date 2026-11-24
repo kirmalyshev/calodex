@@ -61,13 +61,13 @@ test.describe("the flag on", () => {
     await expect(page.locator(".thread li.me")).toHaveCount(0);
   });
 
-  test("the + menu's Voice tile starts listening", async ({ inWebApp: page }) => {
+  // The + menu is the phone's chooser and the phone has no Voice tile (ieat-app#3513): four tiles,
+  // the same four with the flag on — the mic lives only in the composer's send slot.
+  test("the + menu shows the phone's four tiles, and no Voice", async ({ inWebApp: page }) => {
     await voiceOn(page);
     await page.addInitScript(STUB);
     await page.reload();
     await page.getByRole("button", { name: "Log a meal" }).click();
-    await page.getByRole("menuitem", { name: "Voice" }).click();
-    await expect(page.locator(".cfield textarea.box")).toHaveValue("chicken salad and orange juice");
-    await expect(page.locator(".thread li.me")).toHaveCount(0);
+    await expect(page.getByRole("menuitem")).toHaveText(["Photo", "Search", "Text", "Numbers"]);
   });
 });

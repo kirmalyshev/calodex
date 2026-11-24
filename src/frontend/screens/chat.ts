@@ -750,8 +750,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
       tile("keyboard", shellCopyFor(lang).plusText, () => words.focus()),
       tile("numbers", numbersCopyFor(lang).plusNumbers, () => { void openNumbers(undefined); }),
     );
-    // Voice (#570): only where the browser can listen, and only to START — a tap while listening is the mic round's own.
-    if (voice !== null) row.append(tile("mic", shellCopyFor(lang).plusVoice, () => { words.focus(); voice.start(); }));
+
     menu.append(row, el("p", "cp-hint", COPY.plusHint));
     veil.append(menu);
     veil.addEventListener("click", (e) => { if (e.target === veil || e.target === menu) closeLog(); });
