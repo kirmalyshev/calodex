@@ -13,7 +13,7 @@ import { fill } from "../../shared/lang.ts";
 import { WELCOME_PLATES } from "../../shared/onboarding.ts";
 import { paywallPercent, zeroLike, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
-import { welcomePlateAlt } from "../../shared/app/pay-lines.ts";
+import { trialBillLine, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl } from "../kit.ts";
@@ -42,7 +42,7 @@ interface PlanPick { value: "yearly" | "monthly"; plan: PaywallPlan }
     `null` is "nothing to pick": the caller draws the host-sells-nothing offer. */
 function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string):
     { group: HTMLElement; picked: () => PlanPick | null } | null {
-  const band = w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }).toLocaleUpperCase(lang) : null;
+  const band = w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
   const row = (value: "yearly" | "monthly", name: string, billed: string | null, perMonth: string,
       trial: string | null, checked: boolean): HTMLElement => {
     const lab = el("label", "plan2");
@@ -179,6 +179,15 @@ export function payScreen(frame: Frame): HTMLElement {
   const plansFoot = legal();
   if (plansFoot !== null) col.append(plansFoot);
 
+  // A step swap replaces the whole column: focus would fall to <body>, so the screen reader would
+  // stay silent on the new screen. The new h1 takes it (tabindex -1: focusable, not a tab stop).
+  const focusTitle = (): void => {
+    const h = col.querySelector<HTMLElement>("h1");
+    if (h === null) return;
+    h.tabIndex = -1;
+    h.focus({ preventScroll: true });
+  };
+
   // B · try for free (Cal AI 06): the trial as a timeline — today, the reminder the day before it
   // ends, the day it bills — then "No payment due now" and the yearly checkout priced at its zero.
   const showTry = (yearly: PaywallPlan, days: number): void => {
@@ -198,10 +207,14 @@ export function payScreen(frame: Frame): HTMLElement {
     cta.href = yearly.checkoutUrl;
     cta.addEventListener("click", () => analytics.capture("paywall_purchase_started", { plan: "yearly", trial_shown: true, storefront: null }));
     const parts: HTMLElement[] = [el("h1", "d d28", fill(pay.tryTitle, {})), steps,
-      el("p", "nopay", pay.noPaymentDue), cta, el("p", "t12 m", fill(pay.trialNote, { renewal }))];
+      el("p", "nopay", pay.noPaymentDue),
+      // 3.1.2(c): the billed amount and its day, at the weight of the zero on the button below.
+      el("p", "nopay num", trialBillLine(pay, lang, Intl.DateTimeFormat().resolvedOptions().timeZone, new Date(), days, renewal)),
+      cta, el("p", "t12 m", fill(pay.trialNote, { renewal }))];
     const foot = legal();
     if (foot !== null) parts.push(foot);
     col.replaceChildren(...parts);
+    focusTitle();
   };
 
   // C · the special offer (Cal AI 12, web/pay-exit #451): one card — the percent, twelve monthlies
@@ -209,7 +222,7 @@ export function payScreen(frame: Frame): HTMLElement {
   const showOffer = (offer: NonNullable<WebPaywall["exitOffer"]>): void => {
     const card = el("div", "offer pop");
     card.append(
-      el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) }).toLocaleUpperCase(lang)),
+      el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })),
       el("div", "hr"),
     );
     const price = el("div", "price num");
@@ -225,6 +238,7 @@ export function payScreen(frame: Frame): HTMLElement {
     const foot = legal();
     if (foot !== null) parts.push(foot);
     col.replaceChildren(...parts);
+    focusTitle();
   };
 
   // The × walks A → B → C, then closes (Kirill, 24 Nov: exactly Cal AI). B only while the yearly

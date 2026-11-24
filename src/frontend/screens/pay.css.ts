@@ -24,7 +24,7 @@ export const payCss = `
 .pay .plan2:has(>input:checked) { box-shadow: 0 0 0 2px var(--ink); }
 .pay .plan2:focus-within { box-shadow: 0 0 0 2px var(--ink); }
 .pay .plan2 .band { background: var(--hair); color: var(--ink); font-size: 12px; font-weight: 700;
-  letter-spacing: .06em; text-align: center; padding: 4px 0; }
+  letter-spacing: .06em; text-transform: uppercase; text-align: center; padding: 4px 0; }
 .pay .plan2:has(>input:checked) .band { background: var(--ink); color: var(--surface); }
 .pay .plan2 .nr { display: flex; align-items: center; gap: 12px; padding: 14px; }
 .pay .plan2 .ck { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
@@ -34,9 +34,9 @@ export const payCss = `
   width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .pay .plan2 .nmc { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pay .plan2 .nm { font-size: 16px; font-weight: 600; }
-.pay .plan2 .billed { font-size: 13px; color: var(--muted); }
+.pay .plan2 .billed { font-size: 14px; font-weight: 600; } /* 3.1.2(c): as heavy as the per-month figure */
 .pay .plan2 .pm { font-size: 14px; font-weight: 600; }
-.pay .plan2:not(:has(>input:checked)) :is(.nm, .pm) { color: var(--muted); }
+.pay .plan2:not(:has(>input:checked)) :is(.nm, .billed, .pm) { color: var(--muted); }
 /* B · try for free (Cal AI 06): the trial as a timeline, a rail between the dots. */
 .pay .tl { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; }
 .pay .tl li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 22px 50px; min-height: 36px; }
@@ -52,7 +52,7 @@ export const payCss = `
 .pay .pcol h1.d28 { margin: 0 0 6px; }
 .pay .offer { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow);
   text-align: center; padding: 24px; }
-.pay .offer .off { font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.pay .offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
 .pay .offer .hr { margin: 18px 0 14px; }
 .pay .offer .price { display: flex; justify-content: center; align-items: baseline; gap: 12px;
   font-size: 22px; font-weight: 600; }

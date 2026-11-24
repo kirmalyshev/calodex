@@ -152,6 +152,9 @@ describe("zeroLike — a price string's own zero (#3442: B's \"Try for €0.00\"
     expect(zeroLike("39,99 €")).toBe("0,00 €");
     expect(zeroLike("$1,299.00")).toBe("$0.00");
   });
+  test("a typographic apostrophe groups like an ASCII one (Swiss CHF 1’299.00)", () => {
+    expect(zeroLike("CHF 1’299.00")).toBe("CHF 0.00");
+  });
   test("a currency without decimals stays without", () => {
     expect(zeroLike("¥4,800")).toBe("¥0");
     expect(zeroLike("1 499 ₽")).toBe("0 ₽");

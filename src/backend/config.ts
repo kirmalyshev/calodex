@@ -1413,7 +1413,10 @@ export function webPaywallFromEnv(): WebPaywallConfig {
   if (w.exitOfferCheckoutUrl !== "" && (w.exitOfferPrice <= 0 || w.exitOfferRegularPrice <= 0)) {
     throw new Error("[eait] EAIT__BACKEND__WEB_EXIT_OFFER_URL needs EAIT__BACKEND__WEB_EXIT_OFFER_PRICE and a regular price to strike through — its own, or EAIT__BACKEND__WEB_PRICE_YEARLY");
   }
-  if (w.exitOfferCheckoutUrl !== "" && w.exitOfferPrice >= w.exitOfferRegularPrice) {
+  // The anchor the card strikes through is twelve monthlies while a monthly plan is sold
+  // (`engine/profile.ts`), so "undercut" is measured against that, not against the yearly price.
+  const regular = w.monthlyCheckoutUrl !== "" && w.monthlyPrice > 0 ? w.monthlyPrice * 12 : w.exitOfferRegularPrice;
+  if (w.exitOfferCheckoutUrl !== "" && w.exitOfferPrice >= regular) {
     throw new Error("[eait] EAIT__BACKEND__WEB_EXIT_OFFER_PRICE must undercut the regular price — an exit offer that saves nothing would show a '0 % off' card; leave WEB_EXIT_OFFER_URL empty instead");
   }
   const sellsSomething = w.yearlyCheckoutUrl !== "" || w.monthlyCheckoutUrl !== "" || w.exitOfferCheckoutUrl !== "";

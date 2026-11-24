@@ -180,7 +180,7 @@ export function exitOfferOn(
  * holds no number, so the caller draws its wordless fallback rather than a wrong zero.
  */
 export function zeroLike(price: string): string | null {
-  const m = /\d(?:[\d.,'\s  ]*\d)?/.exec(price);
+  const m = /\d(?:[\d.,'’\s  ]*\d)?/.exec(price);
   if (m === null) return null;
   const dec = /[.,](\d{1,2})$/.exec(m[0]);
   const zero = dec ? `0${dec[0][0]}${"0".repeat(dec[1]!.length)}` : "0";
