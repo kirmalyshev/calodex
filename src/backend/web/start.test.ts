@@ -1887,6 +1887,24 @@ describe("the soft offer after the plan", () => {
       expect(closeOf(c)).toBe("/start/signup");
     });
 
+    it("an unknown ?step is A, and the trial rides yearly only: the monthly note has no trial words", async () => {
+      const { session } = await walk();
+      const a = await (await get("/start/offer?step=bogus", session)).text();
+      expect(a).toContain('class="plan2"');
+      expect(closeOf(a)).toBe("/start/offer?step=try");
+      expect(a).toMatch(/<p class="note note-m">€4\.99 a month\. Renews automatically/);
+    });
+
+    it("a monthly-only host is A alone, monthly checked; a yearly-only host's C names the per-month price", async () => {
+      const m = await walk({ ...FULL, yearlyCheckoutUrl: "", yearlyPrice: 0 });
+      const a = await (await get("/start/offer", m.session)).text();
+      expect(a).toContain('value="monthly" checked');
+      expect(a).not.toContain('class="band"');
+      const y = await walk({ ...FULL, monthlyCheckoutUrl: "", monthlyPrice: 0, exitOfferRegularPrice: 39.99 });
+      const c = await (await get("/start/offer?step=offer", y.session)).text();
+      expect(c).not.toContain("less than our monthly rate");
+    });
+
     it("skips what is not sold: no trial → A closes to C; switch off → B closes to the sign-up", async () => {
       const noTrial = await walk({ ...FULL, trialDays: 0 });
       const a = await (await get("/start/offer", noTrial.session)).text();
@@ -1896,7 +1914,9 @@ describe("the soft offer after the plan", () => {
       const b = await (await get("/start/offer?step=try", off.session)).text();
       expect(closeOf(b)).toBe("/start/signup");
       // C asked for directly while the switch is off is A, never an offer the checkout would 404.
-      expect(await (await get("/start/offer?step=offer", off.session)).text()).toContain('class="plan2"');
+      const offOffer = await (await get("/start/offer?step=offer", off.session)).text();
+      expect(offOffer).toContain('class="plan2"');
+      expect(offOffer).not.toContain("pay.rev.cat/u/");
     });
   });
 
