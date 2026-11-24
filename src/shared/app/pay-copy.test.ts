@@ -206,3 +206,14 @@ describe("PAY_COPY", () => {
     }
   }, 30_000);
 });
+
+describe("renewsPlain (ieat-app#3465)", () => {
+  it("is the price-free auto-renew line in every language", () => {
+    for (const lang of LANGS_READY) {
+      const line = PAY_COPY[lang]!.renewsPlain;
+      expect(line, lang).toBeTruthy();
+      expect(line, lang).not.toMatch(/[{}0-9€$]/);
+      expect(lintCopy({ "PAY_COPY.renewsPlain": line }), lang).toEqual([]);
+    }
+  });
+});
