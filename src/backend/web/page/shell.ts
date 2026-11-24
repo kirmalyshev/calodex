@@ -230,6 +230,11 @@ label.check {
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   color: var(--muted); background: var(--surface); border: 1px solid var(--hair); font-size: 1.15rem;
 }
+/* A's photo is the one the paywall shows (ieat-app#3465): it bleeds to main's edges, and the ×
+   rides on it the way it does on the phone's sheet. B and C keep the × in flow. */
+.offer .heroimg { width: calc(100% + 2.5rem); margin: -1.75rem -1.25rem 1rem; max-width: none;
+  height: min(40vh, 21rem); object-fit: cover; }
+.offer:has(> .heroimg) .x { position: absolute; left: calc(12px - 1.25rem); top: calc(12px - 1.25rem); }
 .offer h1 { text-align: center; }
 /* The offer's three steps (ieat-app#3464), drawn as the in-app pay screen draws them (pay.css.ts):
    A's plan rows — radios, the trial band, billed under the name (3.1.2(c): as heavy as the per-month
@@ -239,7 +244,6 @@ label.check {
 .offer .t-m { display: none; }
 .offer:has(input[name=plan][value=monthly]:checked) .t-y { display: none; }
 .offer:has(input[name=plan][value=monthly]:checked) .t-m { display: block; }
-.offer .sub { text-align: center; color: var(--muted); margin: -.4rem 0 1rem; }
 .pwp2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
 .plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px;
   box-shadow: 0 0 0 1px var(--hair); cursor: pointer; position: relative; overflow: hidden; }
