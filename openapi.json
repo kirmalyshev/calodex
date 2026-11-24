@@ -6565,11 +6565,11 @@
           },
           "regularPrice": {
             "type": "string",
-            "description": "The regular yearly price, for the strike-through."
+            "description": "The regular price struck through: twelve monthlies while a monthly plan is sold, else the regular yearly price."
           },
           "percentOff": {
             "type": "number",
-            "description": "Whole percent cheaper than the regular yearly price — floored, never overstated."
+            "description": "Whole percent cheaper than `regularPrice` — floored, never overstated."
           },
           "perMonth": {
             "type": "string",
