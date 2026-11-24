@@ -1,21 +1,19 @@
-// The plans (#263): `#/pay` — the web's pay-plans board (W9), drawn as the iOS paywall sheet
-// (ieat-app#3359, boards W9/phone-paywall): the welcome-plate hero, the title, its three
-// benefits, Yearly and Monthly side by side, the billed amount as each card's figure.
+// The plans (#263): `#/pay`, drawn on Cal AI's paywall flow (ieat-app#3442, boards pay-cal-a/b/c —
+// the phone's three steps): A the plans → × → B try for free (while the trial is sold) → × → C the
+// exit offer (once per account, web/pay-exit #451, while the admin's web switch is on) → × closes.
 //
 // Everything sellable arrives in `ProfileResponse.paywall` (#77): the plans' checkout links with
-// this account's id already filled, the prices formatted in its language, the yearly card's
-// per-month-plus-save line, and the footer's Terms/Privacy hrefs. The screen computes no price
-// and builds no link — a null plan is a plan the host does not sell and never draws. The trial
-// is on the yearly plan only, as on the phone: the trial words ride while yearly is picked and
-// monthly names its own renewal. A decline (the ×) swaps the plans for the exit offer in place,
-// once per account (web/pay-exit, #451); a host with no offer configured, or an account that has
-// already met it, closes to Home.
+// this account's id already filled, the prices formatted in its language, the per-month figures,
+// the offer's struck price (twelve monthlies, ieat-app#3442) and percent, and the footer's
+// Terms/Privacy hrefs. The screen computes no price and builds no link — a null plan is a plan
+// the host does not sell and never draws; B's zero is the yearly price's own (`zeroLike`). The
+// trial rides the picked plan's days: the trial words while one is sold, the renewal otherwise.
 
 import { fill } from "../../shared/lang.ts";
 import { WELCOME_PLATES } from "../../shared/onboarding.ts";
-import { paywallPercent, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
+import { paywallPercent, zeroLike, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
-import { welcomePlateAlt } from "../../shared/app/pay-lines.ts";
+import { trialBillLine, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl } from "../kit.ts";
@@ -38,31 +36,29 @@ const markOfferSeen = (uid: string): void => {
 
 interface PlanPick { value: "yearly" | "monthly"; plan: PaywallPlan }
 
-/** The sheet's plan pair (web/pay-plans' `.pwp2`): Yearly and Monthly side by side, each a real
-    radio so selection works as it does on `/start`'s markup — the plan picked is the plan the
-    CTA buys. `null` is "nothing to pick": the caller draws the host-sells-nothing offer. */
+/** A's plan rows (Cal AI 04): Yearly over Monthly, each a real radio so selection works as it does
+    on `/start`'s markup — the plan picked is the plan the CTA buys. Yearly carries the trial as a
+    band on top, its billed price under the name (3.1.2(c)) and its per-month figure on the right.
+    `null` is "nothing to pick": the caller draws the host-sells-nothing offer. */
 function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string):
     { group: HTMLElement; picked: () => PlanPick | null } | null {
-  const trial = w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
-  const card = (value: "yearly" | "monthly", name: string, price: string,
-      extra: { trial?: string | null; save?: string | null }, checked: boolean): HTMLElement => {
+  const band = w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
+  const row = (value: "yearly" | "monthly", name: string, billed: string | null, perMonth: string,
+      trial: string | null, checked: boolean): HTMLElement => {
     const lab = el("label", "plan2");
     const input = el("input", "") as HTMLInputElement;
     input.type = "radio";
     input.name = "plan";
     input.value = value;
     if (checked) input.checked = true;
+    lab.append(input);
+    if (trial !== null) lab.append(el("div", "band", trial));
     const nr = el("div", "nr");
-    nr.append(el("i", "ck"), el("div", "nm", name));
-    lab.append(input, nr);
-    if (extra.trial != null) lab.append(el("div", "tr", extra.trial));
-    const pr = el("div", "pr");
-    pr.append(price);
-    // No period caption ("a year"/"a month") — the card's own name already says it (#3359,
-    // Kirill on the Yearly card). The per-month + save line stays, and the note under the CTA
-    // carries the full-period wording the billing copy owes.
-    if (extra.save != null) pr.append(el("small", "save", extra.save));
-    lab.append(pr);
+    const nm = el("div", "nmc");
+    nm.append(el("div", "nm", name));
+    if (billed !== null) nm.append(el("small", "billed", billed));
+    nr.append(el("i", "ck"), nm, el("div", "pm num", perMonth));
+    lab.append(nr);
     return lab;
   };
   const cards: PlanPick[] = [];
@@ -71,12 +67,13 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
   group.setAttribute("aria-label", label);
   if (w.yearly !== null) {
     cards.push({ value: "yearly", plan: w.yearly });
-    group.append(card("yearly", pay.planYearly, w.yearly.price,
-      { trial, save: w.yearly.perMonthSave }, true));
+    group.append(row("yearly", pay.planYearly, fill(pay.billedYearly, { price: w.yearly.price }),
+      fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true));
   }
   if (w.monthly !== null) {
     cards.push({ value: "monthly", plan: w.monthly });
-    group.append(card("monthly", pay.planMonthly, w.monthly.price, {}, w.yearly === null));
+    group.append(row("monthly", pay.planMonthly, null,
+      fill(pay.perMonthShort, { price: w.monthly.price }), null, w.yearly === null));
   }
   if (cards.length === 0) return null;
   const picked = (): PlanPick | null => {
@@ -121,16 +118,9 @@ export function payScreen(frame: Frame): HTMLElement {
   close.append(kitEl(ico("x")));
 
   const col = el("div", "pcol");
-  col.append(el("h1", "d d34", pay.plansTitle));
-  // The sheet's three benefits — the icons the phone draws beside the same lines.
-  const bl = el("ul", "bl");
-  for (const [icon, line] of
-    [["camera", pay.benefitPhoto], ["check", pay.benefitPlan], ["chat", pay.benefitChat]] as const) {
-    const li = el("li", "");
-    li.append(kitEl(ico(icon)), line);
-    bl.append(li);
-  }
-  col.append(bl);
+  // Cal AI 04: the title promises the trial only while the picked plan carries one.
+  const title = el("h1", "d d34");
+  col.append(title);
 
   const go = el("a", "cta p") as HTMLAnchorElement;
   const note = el("p", "t12 m");
@@ -139,6 +129,7 @@ export function payScreen(frame: Frame): HTMLElement {
       [{ value: "monthly", name: pay.planMonthly, checked: true }], COPY.offerPlans)));
     go.href = "/start/checkout";
     // No paywall config means nothing about a trial is known — Continue, not a promise of one.
+    title.textContent = fill(pay.plansUnlockTitle, {});
     go.textContent = pay.continueCta;
     note.textContent = "";
   } else {
@@ -149,11 +140,11 @@ export function payScreen(frame: Frame): HTMLElement {
       // The trial is on yearly only: the trial CTA and `{renewal}` ride while yearly is picked
       // (yearly's own `pricePerYear`), and monthly names its monthly renewal instead.
       const days = sel.value === "yearly" ? w.trialDays : 0;
+      title.textContent = days > 0 ? fill(pay.plansTrialTitle, { days: String(days) }) : fill(pay.plansUnlockTitle, {});
+      go.textContent = pay.continueCta;
       if (days > 0) {
-        go.textContent = fill(pay.startTrial, { days: String(days) });
         note.textContent = fill(pay.trialNote, { renewal: fill(pay.pricePerYear, { price: sel.plan.price }) });
       } else {
-        go.textContent = pay.continueCta;
         note.textContent = fill(
           sel.value === "yearly" ? pay.renewNoteYearly : pay.renewNoteMonthly,
           { price: sel.plan.price });
@@ -188,46 +179,91 @@ export function payScreen(frame: Frame): HTMLElement {
   const plansFoot = legal();
   if (plansFoot !== null) col.append(plansFoot);
 
-  // The exit offer (web/pay-exit, #451): the first decline of the plans swaps them for it in
-  // place — the regular yearly struck through, the offer price, per month — rather than closing.
-  // `offered` keeps the second × (and the ones after it) a plain close for the rest of this
-  // mount; the stored flag does the same across visits.
-  let offered = false;
-  close.addEventListener("click", (ev) => {
-    const offer = w?.exitOffer ?? null;
-    const uid = frame.me?.profile.user_id;
-    if (offered || offer === null || uid === undefined || offerSeen(uid)) {
-      analytics.capture("paywall_dismissed", { result: "cancelled", blocked });
-      return;
+  // A step swap replaces the whole column: focus would fall to <body>, so the screen reader would
+  // stay silent on the new screen. The new h1 takes it (tabindex -1: focusable, not a tab stop).
+  const focusTitle = (): void => {
+    const h = col.querySelector<HTMLElement>("h1");
+    if (h === null) return;
+    h.tabIndex = -1;
+    h.focus({ preventScroll: true });
+  };
+
+  // B · try for free (Cal AI 06): the trial as a timeline — today, the reminder the day before it
+  // ends, the day it bills — then "No payment due now" and the yearly checkout priced at its zero.
+  const showTry = (yearly: PaywallPlan, days: number): void => {
+    const renewal = fill(pay.pricePerYear, { price: yearly.price });
+    const steps = el("ol", "tl");
+    for (const [when, what] of [
+      [pay.tryToday, pay.benefitPlan],
+      [fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind],
+      [fill(pay.tryDay, { day: String(days) }), fill(pay.tryBill, { renewal })],
+    ] as const) {
+      const li = el("li", "");
+      li.append(el("b", "", when), el("span", "t13 m", what));
+      steps.append(li);
     }
-    analytics.capture("paywall_offer_step", { step: "shown" });
-    ev.preventDefault();
-    offered = true;
-    markOfferSeen(uid);
+    const zero = zeroLike(yearly.price);
+    const cta = el("a", "cta p", zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero })) as HTMLAnchorElement;
+    cta.href = yearly.checkoutUrl;
+    cta.addEventListener("click", () => analytics.capture("paywall_purchase_started", { plan: "yearly", trial_shown: true, storefront: null }));
+    const parts: HTMLElement[] = [el("h1", "d d28", fill(pay.tryTitle, {})), steps,
+      el("p", "nopay", pay.noPaymentDue),
+      // 3.1.2(c): the billed amount and its day, at the weight of the zero on the button below.
+      el("p", "nopay num", trialBillLine(pay, lang, Intl.DateTimeFormat().resolvedOptions().timeZone, new Date(), days, renewal)),
+      cta, el("p", "t12 m", fill(pay.trialNote, { renewal }))];
+    const foot = legal();
+    if (foot !== null) parts.push(foot);
+    col.replaceChildren(...parts);
+    focusTitle();
+  };
+
+  // C · the special offer (Cal AI 12, web/pay-exit #451): one card — the percent, twelve monthlies
+  // struck through, the offer per year, and the monthly-rate line while a monthly plan is sold.
+  const showOffer = (offer: NonNullable<WebPaywall["exitOffer"]>): void => {
     const card = el("div", "offer pop");
     card.append(
       el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })),
       el("div", "hr"),
     );
     const price = el("div", "price num");
-    price.append(
-      el("s", "", offer.regularPrice),
-      el("span", "", fill(pay.offerPrice, { price: offer.price })),
-    );
-    card.append(price, el("p", "t13 m num per", fill(pay.offerPerMonth, { price: offer.perMonth })));
+    price.append(el("s", "", offer.regularPrice), el("span", "", fill(pay.offerPrice, { price: offer.price })));
+    card.append(price, el("p", "t13 m num per", w?.monthly != null
+      ? fill(pay.offerVsMonthly, { percent: paywallPercent(offer.percentOff, lang) })
+      : fill(pay.offerPerMonth, { price: offer.perMonth })));
     const claim = el("a", "cta p", pay.offerClaim) as HTMLAnchorElement;
     claim.href = offer.checkoutUrl;
-    const decline = el("a", "cta g", pay.offerDecline) as HTMLAnchorElement;
-    decline.href = "#/";
     claim.addEventListener("click", () => analytics.capture("paywall_offer_step", { step: "claimed" }));
-    decline.addEventListener("click", () => {
-      analytics.capture("paywall_offer_step", { step: "declined" });
-      analytics.capture("paywall_dismissed", { result: "cancelled", blocked });
-    });
-    const parts = [el("h1", "d d28", pay.offerTitle), card, claim, decline, el("p", "t12 m", pay.offerNote)];
+    const parts: HTMLElement[] = [el("h1", "d d28", pay.offerSpecialTitle), el("p", "m sub", fill(pay.offerSub, {})),
+      card, claim, el("p", "t12 m", pay.offerNote)];
     const foot = legal();
     if (foot !== null) parts.push(foot);
     col.replaceChildren(...parts);
+    focusTitle();
+  };
+
+  // The × walks A → B → C, then closes (Kirill, 24 Nov: exactly Cal AI). B only while the yearly
+  // trial is sold; C once per account (`offered` this mount, the stored flag across visits) and only
+  // while the server sent an offer, which it does only while the admin's web switch is on.
+  let step: "plans" | "try" | "offer" = "plans";
+  close.addEventListener("click", (ev) => {
+    const offer = w?.exitOffer ?? null;
+    const uid = frame.me?.profile.user_id;
+    if (step === "plans" && w?.yearly != null && w.trialDays > 0) {
+      ev.preventDefault();
+      step = "try";
+      showTry(w.yearly, w.trialDays);
+      return;
+    }
+    if (step === "offer" || offer === null || uid === undefined || offerSeen(uid)) {
+      if (step === "offer") analytics.capture("paywall_offer_step", { step: "declined" });
+      analytics.capture("paywall_dismissed", { result: "cancelled", blocked });
+      return;
+    }
+    analytics.capture("paywall_offer_step", { step: "shown" });
+    ev.preventDefault();
+    step = "offer";
+    markOfferSeen(uid);
+    showOffer(offer);
   });
 
   pane.append(close, col);

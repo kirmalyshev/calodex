@@ -35,9 +35,9 @@ export interface YearlyPlan extends PaywallPlan {
  * The one offer a decline leads to: the cheaper yearly plan, its regular price struck through.
  */
 export interface ExitOffer extends PaywallPlan {
-  /** The regular yearly price, for the strike-through. */
+  /** The regular price struck through: twelve monthlies while a monthly plan is sold, else the regular yearly price. */
   regularPrice: string;
-  /** Whole percent cheaper than the regular yearly price — floored, never overstated. */
+  /** Whole percent cheaper than `regularPrice` — floored, never overstated. */
   percentOff: number;
   /** The offer spread over a month, formatted like every other price. */
   perMonth: string;
@@ -170,4 +170,19 @@ export function exitOfferOn(
   platform: "ios" | "web",
 ): boolean {
   return profile?.exitOfferEnabled?.[platform] === true;
+}
+
+/**
+ * A price string's own zero (#3442): B's "Try for {price}" on the web, where the browser holds the
+ * server's formatted strings and no currency. The number run is replaced by 0, keeping the sign, its
+ * side and the decimal mark — "€39.99" → "€0.00", "39,99 €" → "0,00 €", "¥4,800" → "¥0". A
+ * separator followed by one or two digits is a decimal mark; three is grouping. Null when the string
+ * holds no number, so the caller draws its wordless fallback rather than a wrong zero.
+ */
+export function zeroLike(price: string): string | null {
+  const m = /\d(?:[\d.,'’\s  ]*\d)?/.exec(price);
+  if (m === null) return null;
+  const dec = /[.,](\d{1,2})$/.exec(m[0]);
+  const zero = dec ? `0${dec[0][0]}${"0".repeat(dec[1]!.length)}` : "0";
+  return price.slice(0, m.index) + zero + price.slice(m.index + m[0].length);
 }

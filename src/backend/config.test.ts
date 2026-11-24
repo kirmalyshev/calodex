@@ -456,6 +456,22 @@ describe("the web onboarding", () => {
       expect(() => loadConfig()).toThrow(/WEB_EXIT_OFFER_PRICE/);
     });
 
+    it("measures 'undercut' against twelve monthlies when a monthly plan is sold (#3442)", () => {
+      withRequired({ ...SELLS,
+        EAIT__BACKEND__WEB_CHECKOUT_MONTHLY_URL: "https://pay.rev.cat/m/{userId}",
+        EAIT__BACKEND__WEB_PRICE_MONTHLY: "4.99",
+        EAIT__BACKEND__WEB_EXIT_OFFER_URL: "https://pay.rev.cat/u/{userId}",
+        EAIT__BACKEND__WEB_EXIT_OFFER_PRICE: "44.99" });
+      expect(loadConfig().webPaywall.exitOfferPrice).toBe(44.99);
+      clear();
+      withRequired({ ...SELLS,
+        EAIT__BACKEND__WEB_CHECKOUT_MONTHLY_URL: "https://pay.rev.cat/m/{userId}",
+        EAIT__BACKEND__WEB_PRICE_MONTHLY: "4.99",
+        EAIT__BACKEND__WEB_EXIT_OFFER_URL: "https://pay.rev.cat/u/{userId}",
+        EAIT__BACKEND__WEB_EXIT_OFFER_PRICE: "59.88" });
+      expect(() => loadConfig()).toThrow(/WEB_EXIT_OFFER_PRICE/);
+    });
+
     it("lets the exit offer's anchor be set apart from the yearly price", () => {
       withRequired({
         ...SELLS,

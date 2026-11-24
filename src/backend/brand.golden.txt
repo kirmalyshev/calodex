@@ -817,11 +817,11 @@ shared.payCopyFor vi fb094d8e7ecc9d4b
 shared.payCopyFor id aff5534868bc2acd
 shared.payCopyFor ru 23a8cd68b2dd271a
 shared.payCopyFor pt-BR 7b4a28962cc76e2c
-shared.payCopyFor ja 9a5ee03924c121d3
+shared.payCopyFor ja 920fc0b0ecb3a294
 shared.payCopyFor ko 933ae8ddb3db0108
 shared.payCopyFor zh-Hans b2e836e561c2acae
 shared.payCopyFor zh-Hant 151c0135e0a217ed
-shared.payCopyFor tr 5f2fbe421aa74cfb
+shared.payCopyFor tr 82da6e21ce9958de
 shared.payCopyFor pl ee0d88081fa875d3
 shared.payCopyFor nl e67138c4f78dd712
 shared.payCopyFor uk 8337705b0e03f70e
@@ -831,7 +831,7 @@ shared.payCopyFor hi 2e85b5e65796b376
 shared.payCopyFor cs 340711b4cead8488
 shared.payCopyFor ro 950a610c1c57dacf
 shared.payCopyFor el 0dc997049f070fed
-shared.payCopyFor hu 277b1f21ea82d0ee
+shared.payCopyFor hu 92c8ebd252b95b3a
 shared.payCopyFor da 69825cbe5cc5dfb4
 shared.payCopyFor fi 2938b01f0aeb1c0d
 shared.payCopyFor no ef5e8451d3de7861
