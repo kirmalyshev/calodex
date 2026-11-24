@@ -1,8 +1,10 @@
 // The composer's mic (#570): the browser's own speech recognition.
 //
 // The button exists wherever `SpeechRecognition || webkitSpeechRecognition` exists (Kirill, 13 Oct:
-// Chrome too). The audio goes to the browser vendor — Google in Chrome, Apple in Safari — which the
-// privacy page says. Where the API is absent the composer is the plain one, no button, no hint.
+// Chrome too) AND the server's `voice.input` switch is on — the caller gates on the profile's
+// `voiceInputEnabled` (ieat-app#3494). The audio goes to the browser vendor — Google in Chrome,
+// Apple in Safari — which the privacy page says. Where the API is absent the composer is the plain
+// one, no button, no hint.
 //
 // The words land in the composer's own field and go out only when she presses Send; the mic never
 // sends. A stopped or interrupted transcript stays in the field. Two switches below keep Kirill's
