@@ -63,7 +63,8 @@ ${li(fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind)}
 ${li(fill(pay.tryDay, { day: String(days) }), trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal), "bill")}
 </ol>
 <p class="nopay">${escape(pay.noPaymentDue)}</p>
-${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}`);
+${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}
+<p class="note">${escape(pay.renewsPlain)}</p>`);
   }
 
   if (v.step === "offer" && w.exitOffer !== null) {
@@ -75,7 +76,8 @@ ${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay
 <div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
 <p class="per num">${escape(w.monthly !== null ? fill(pay.offerVsMonthly, { percent }) : fill(pay.offerPerMonth, { price: o.perMonth }))}</p>
 </div>
-${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}`);
+${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}
+<p class="note">${escape(fill(pay.renewNoteYearly, { price: o.price }))}</p>`);
   }
 
   // A · the plans: Yearly over Monthly, each a real radio — the plan checked is the plan checkout
@@ -106,6 +108,7 @@ ${x}
 ${rows}
 </div>
 <button class="button primary" type="submit">${escape(pay.continueCta)}</button>
+<p class="note">${escape(pay.renewsPlain)}</p>
 ${fine}
 </form>
 `, v.lang);

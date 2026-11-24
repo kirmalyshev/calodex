@@ -283,6 +283,9 @@ label.check {
 .offer .per { margin: 8px 0 0; font-weight: 500; }
 .offer a.button { display: block; text-align: center; text-decoration: none; margin-bottom: .6rem; }
 
+/* The renews line under the CTA — the phone's t12 m / role="micro" note (#3465). */
+.offer .note { font-size: 12px; color: var(--muted); text-align: center; margin: -.1rem 0 .35rem; }
+
 /* The offer's foot (#263): the legal links as the boards' centred muted footer. */
 .offer .fine { font-size: .8125rem; color: var(--muted); text-align: center; margin: .35rem 0 0; }
 .offer .fine a { color: inherit; }
