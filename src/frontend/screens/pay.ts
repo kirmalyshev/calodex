@@ -1,6 +1,8 @@
-// The plans (#263): `#/pay`, drawn on Cal AI's paywall flow (ieat-app#3442, boards pay-cal-a/b/c —
-// the phone's three steps): A the plans → × → B try for free (while the trial is sold) → × → C the
-// exit offer (once per account, web/pay-exit #451, while the admin's web switch is on) → × closes.
+// The plans (#263): `#/pay`, drawn as the phone's Cal AI sheet (ieat-app#3465, boards pay-cal-a/b/c):
+// a full-screen sheet — the nav leaves the tree and the pane is a phone-width column centred at
+// any width. A the plans → × → B try for free (while the trial is sold) → × → C the exit offer
+// (once per account, web/pay-exit #451, while the admin's web switch is on) → × closes. Only A
+// carries the photo; B and C drop it, like the phone.
 //
 // Everything sellable arrives in `ProfileResponse.paywall` (#77): the plans' checkout links with
 // this account's id already filled, the prices formatted in its language, the per-month figures,
@@ -19,9 +21,10 @@ import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl } from "../kit.ts";
 import * as analytics from "../analytics.ts";
 
-/** The web's welcome plate — the grain bowl `/start` opens with, served by the backend off
-    shared/assets/img on this origin. The alt names the plate's own figures (#2862/#2863). */
-const HERO_SRC = "/start/assets/img/hero.webp";
+/** The pay sheet's hero — the welcome plate the phone's sheet draws on A (ieat-app#3465), served
+    by the backend off shared/assets/img on this origin. The alt names the plate's own figures
+    (#2862/#2863). */
+const HERO_SRC = "/start/assets/img/frenchtoast.webp";
 
 /** The exit offer's once-per-account flag, keyed by the account id — a second account on this
     browser still gets its one show. Not the bearer: a flag authenticates nothing. A read that
@@ -38,7 +41,8 @@ interface PlanPick { value: "yearly" | "monthly"; plan: PaywallPlan }
 
 /** A's plan rows (Cal AI 04): Yearly over Monthly, each a real radio so selection works as it does
     on `/start`'s markup — the plan picked is the plan the CTA buys. Yearly carries the trial as a
-    band on top, its billed price under the name (3.1.2(c)) and its per-month figure on the right.
+    band on top, its billed price under the name (3.1.2(c)) and its per-month figure on the right;
+    its NAME carries the saving the server derives (`YearlyPlan.save`, the phone's `planSave`).
     `null` is "nothing to pick": the caller draws the host-sells-nothing offer. */
 function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string):
     { group: HTMLElement; picked: () => PlanPick | null } | null {
@@ -67,7 +71,9 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
   group.setAttribute("aria-label", label);
   if (w.yearly !== null) {
     cards.push({ value: "yearly", plan: w.yearly });
-    group.append(row("yearly", pay.planYearly, fill(pay.billedYearly, { price: w.yearly.price }),
+    group.append(row("yearly",
+      w.yearly.save === null ? pay.planYearly : `${pay.planYearly} · ${w.yearly.save}`,
+      fill(pay.billedYearly, { price: w.yearly.price }),
       fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true));
   }
   if (w.monthly !== null) {
@@ -85,6 +91,7 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
 
 export function payScreen(frame: Frame): HTMLElement {
   const box = el("section", "pay");
+  const sheet = el("div", "sheet");
   const pay = payCopyFor(lang);
   const w = frame.me?.paywall;
   // An account already entitled has no plans left to draw: the fallthrough lands Home, as an
@@ -105,21 +112,25 @@ export function payScreen(frame: Frame): HTMLElement {
     return { plan: sel?.value ?? "monthly", trial_shown: sel?.value === "yearly" && (w?.trialDays ?? 0) > 0, storefront: null };
   };
 
-  const hero = el("div", "hero");
-  const img = el("img", "") as HTMLImageElement;
-  img.src = HERO_SRC;
-  img.alt = welcomePlateAlt(WELCOME_PLATES["grain-bowl"], lang);
-  hero.append(img);
-
-  const pane = el("div", "pane");
+  // The × over the photo, top-left like the phone's CloseButton.
   const close = el("a", "ib x") as HTMLAnchorElement;
   close.href = "#/";
   close.setAttribute("aria-label", pay.closeLabel);
   close.append(kitEl(ico("x")));
 
+  // Only A carries the photo; B and C drop it like the phone does (`dropHero`), and the pane
+  // takes the whole sheet (`:has(.hero)` in the css decides).
+  const hero = el("div", "hero");
+  const img = el("img", "") as HTMLImageElement;
+  img.src = HERO_SRC;
+  img.alt = welcomePlateAlt(WELCOME_PLATES["french-toast"], lang);
+  hero.append(img);
+  const dropHero = (): void => { hero.remove(); };
+
+  const pane = el("div", "pane");
   const col = el("div", "pcol");
   // Cal AI 04: the title promises the trial only while the picked plan carries one.
-  const title = el("h1", "d d34");
+  const title = el("h1", "d d22");
   col.append(title);
 
   const go = el("a", "cta p") as HTMLAnchorElement;
@@ -137,23 +148,19 @@ export function payScreen(frame: Frame): HTMLElement {
       const sel = plans.picked();
       if (sel === null) return;
       go.href = sel.plan.checkoutUrl;
-      // The trial is on yearly only: the trial CTA and `{renewal}` ride while yearly is picked
-      // (yearly's own `pricePerYear`), and monthly names its monthly renewal instead.
+      // The trial is on yearly only: the trial words ride while yearly is picked; a plan that
+      // sells no trial takes the store's own Subscribe (the phone's subscribePhone).
       const days = sel.value === "yearly" ? w.trialDays : 0;
       title.textContent = days > 0 ? fill(pay.plansTrialTitle, { days: String(days) }) : fill(pay.plansUnlockTitle, {});
-      go.textContent = pay.continueCta;
-      if (days > 0) {
-        note.textContent = fill(pay.trialNote, { renewal: fill(pay.pricePerYear, { price: sel.plan.price }) });
-      } else {
-        note.textContent = fill(
-          sel.value === "yearly" ? pay.renewNoteYearly : pay.renewNoteMonthly,
-          { price: sel.plan.price });
-      }
+      go.textContent = days > 0 ? pay.continueCta : pay.subscribePhone;
     };
     plans.group.addEventListener("change", update);
     plans.group.addEventListener("change", () => analytics.capture("paywall_plan_selected", sold()));
     update();
     col.append(plans.group);
+    // #3465: the billed amount is said ONCE on this screen — the Yearly row's own line (3.1.2(c)).
+    // The line under the CTA is the price-free renewsPlain on every step that carries it.
+    note.textContent = pay.renewsPlain;
   }
   col.append(go, note);
   go.addEventListener("click", () => analytics.capture("paywall_purchase_started", sold()));
@@ -189,28 +196,33 @@ export function payScreen(frame: Frame): HTMLElement {
   };
 
   // B · try for free (Cal AI 06): the trial as a timeline — today, the reminder the day before it
-  // ends, the day it bills — then "No payment due now" and the yearly checkout priced at its zero.
+  // ends, the day it bills (its `what` IS the billed line, said once, #3465) — then "No payment
+  // due now" and the yearly checkout priced at its zero. No photo: the pane takes the sheet.
   const showTry = (yearly: PaywallPlan, days: number): void => {
+    dropHero();
     const renewal = fill(pay.pricePerYear, { price: yearly.price });
     const steps = el("ol", "tl");
-    for (const [when, what] of [
-      [pay.tryToday, pay.benefitPlan],
-      [fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind],
-      [fill(pay.tryDay, { day: String(days) }), fill(pay.tryBill, { renewal })],
+    for (const [ic, when, what, billed] of [
+      ["check", pay.tryToday, pay.benefitPlan, false],
+      ["clock", fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind, false],
+      // 3.1.2(c): the billed amount and its day, at the weight of the zero on the button below.
+      ["card", fill(pay.tryDay, { day: String(days) }),
+        trialBillLine(pay, lang, Intl.DateTimeFormat().resolvedOptions().timeZone, new Date(), days, renewal), true],
     ] as const) {
       const li = el("li", "");
-      li.append(el("b", "", when), el("span", "t13 m", what));
+      const dot = el("i", "td");
+      dot.append(kitEl(ico(ic)));
+      li.append(dot, el("b", "", when), el("span", billed ? "num" : "t13 m", what));
       steps.append(li);
     }
     const zero = zeroLike(yearly.price);
     const cta = el("a", "cta p", zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero })) as HTMLAnchorElement;
     cta.href = yearly.checkoutUrl;
     cta.addEventListener("click", () => analytics.capture("paywall_purchase_started", { plan: "yearly", trial_shown: true, storefront: null }));
+    const nopay = el("p", "nopay");
+    nopay.append(kitEl(ico("check")), pay.noPaymentDue);
     const parts: HTMLElement[] = [el("h1", "d d28", fill(pay.tryTitle, {})), steps,
-      el("p", "nopay", pay.noPaymentDue),
-      // 3.1.2(c): the billed amount and its day, at the weight of the zero on the button below.
-      el("p", "nopay num", trialBillLine(pay, lang, Intl.DateTimeFormat().resolvedOptions().timeZone, new Date(), days, renewal)),
-      cta, el("p", "t12 m", fill(pay.trialNote, { renewal }))];
+      el("div", "fill"), nopay, cta, el("p", "t12 m", pay.renewsPlain)];
     const foot = legal();
     if (foot !== null) parts.push(foot);
     col.replaceChildren(...parts);
@@ -218,11 +230,13 @@ export function payScreen(frame: Frame): HTMLElement {
   };
 
   // C · the special offer (Cal AI 12, web/pay-exit #451): one card — the percent, twelve monthlies
-  // struck through, the offer per year, and the monthly-rate line while a monthly plan is sold.
+  // struck through, the offer per year, and the monthly-rate line while a monthly plan is sold —
+  // then the claim and ONE legal line (the renewal at the offer price). No subtitle, no photo.
   const showOffer = (offer: NonNullable<WebPaywall["exitOffer"]>): void => {
+    dropHero();
     const card = el("div", "offer pop");
     card.append(
-      el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })),
+      el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) }).toUpperCase()),
       el("div", "hr"),
     );
     const price = el("div", "price num");
@@ -230,11 +244,13 @@ export function payScreen(frame: Frame): HTMLElement {
     card.append(price, el("p", "t13 m num per", w?.monthly != null
       ? fill(pay.offerVsMonthly, { percent: paywallPercent(offer.percentOff, lang) })
       : fill(pay.offerPerMonth, { price: offer.perMonth })));
+    const mid = el("div", "mid");
+    mid.append(card);
     const claim = el("a", "cta p", pay.offerClaim) as HTMLAnchorElement;
     claim.href = offer.checkoutUrl;
     claim.addEventListener("click", () => analytics.capture("paywall_offer_step", { step: "claimed" }));
-    const parts: HTMLElement[] = [el("h1", "d d28", pay.offerSpecialTitle), el("p", "m sub", fill(pay.offerSub, {})),
-      card, claim, el("p", "t12 m", pay.offerNote)];
+    const parts: HTMLElement[] = [el("h1", "d d28", pay.offerSpecialTitle), mid, claim,
+      el("p", "t13 m", fill(pay.renewNoteYearly, { price: offer.price }))];
     const foot = legal();
     if (foot !== null) parts.push(foot);
     col.replaceChildren(...parts);
@@ -266,7 +282,8 @@ export function payScreen(frame: Frame): HTMLElement {
     showOffer(offer);
   });
 
-  pane.append(close, col);
-  box.append(hero, pane);
+  pane.append(col);
+  sheet.append(close, hero, pane);
+  box.append(sheet);
   return box;
 }
