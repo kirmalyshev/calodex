@@ -70,19 +70,28 @@ export async function signIn(page: Page, subject: string, provider: "apple" | "g
   await expect(page).toHaveURL(/\/start\/(q|country)/);
 }
 
+/** How long one page of the walk may take to arrive — a full page load on a host at load 80, not a quiet laptop. */
+const NEXT_PAGE_MS = 20_000;
+
 /** Answer whatever question is open until the plan appears. `extra` overrides per prompt id —
  * an array ticks those checkboxes, which is how a chips answer like restrictions is given. */
 /** Answer the walk to the plan, or until the question `until` is open (left unanswered). */
 export async function onboard(page: Page, extra: Record<string, string | string[]> = {}, until?: string) {
   const answers: Record<string, string | string[]> = { ...ANSWERS, ...extra };
+  // THE WALK IS ~40 PAGE LOADS, and the 30 s test budget was sized for a quiet host: under load 37-86
+  // (release gates 47, 48, 52, #3510) the same walk needs more than that, and every spec that
+  // calls it (smoke, signup, referral, onboarding) timed out in the middle of a step that was
+  // still making progress. `slow()` triples THIS test's budget; the per-step waits below stay
+  // short enough that a page that never arrives still fails on its own message.
+  test.slow();
   for (let i = 0; i < 40; i++) {
     if (/\/start\/plan/.test(page.url())) return;
     // The click that ended the last turn only STARTED a navigation: counting elements now can see
     // neither a question nor a Continue link, read that as "nothing left to answer" and stop on a
     // moment card (the ontrack one, under load). Wait for what the next page is made of first.
     await Promise.race([
-      page.locator('input[name="prompt"], a.cta').first().waitFor({ state: "attached", timeout: 5000 }), // the prompt input is type=hidden: never "visible"
-      page.waitForURL(/\/start\/plan/, { timeout: 5000 }),
+      page.locator('input[name="prompt"], a.cta').first().waitFor({ state: "attached", timeout: NEXT_PAGE_MS }), // the prompt input is type=hidden: never "visible"
+      page.waitForURL(/\/start\/plan/, { timeout: NEXT_PAGE_MS }),
     ]).catch(() => {});
     if (/\/start\/plan/.test(page.url())) return;
     const promptEl = page.locator('input[name="prompt"]').first();

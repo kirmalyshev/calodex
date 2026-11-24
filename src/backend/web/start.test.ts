@@ -1856,10 +1856,9 @@ describe("the soft offer after the plan", () => {
       await post("/start/streak", { answer: "14" }, session);
       return { session, userId: await webUser(session) };
     };
-    /** Simple like Cal AI: no top bar, no note under the CTA, and the billed figure once. */
+    /** Simple like Cal AI: no top bar, and the billed figure once. */
     const expectSimple = (html: string, billed: string): void => {
       expect(html).not.toContain('class="wbar"');
-      expect(html).not.toContain('class="note');
       expect(html.split(billed).length - 1).toBe(1);
     };
     const closeOf = (html: string): string => /<a class="x" href="([^"]+)"/.exec(html)![1]!.replaceAll("&amp;", "&");
@@ -1883,6 +1882,13 @@ describe("the soft offer after the plan", () => {
       expect(c).not.toContain('<img class="heroimg"');
       // C is Cal AI's element count here too: title, card, CTA — no sub-line.
       expect(c).not.toContain('class="sub"');
+      // The price-free renewsPlain under the CTA on A and B, the offer's priced renewal on C —
+      // the same lines `#/pay` and the phone carry at the same steps (#3465).
+      expect(a).toMatch(/<button class="button primary" type="submit">Continue<\/button>\s*<p class="note">Renews automatically\. Cancel any time\.<\/p>/);
+      expect(b).toMatch(/<a class="button primary" href="[^"]*">Try for €0\.00<\/a>\s*<p class="note">Renews automatically\. Cancel any time\.<\/p>/);
+      expect(c).toContain('<p class="note">€23.99 a year. Renews automatically. Cancel any time.</p>');
+      // `#/pay` pins renewsPlain to zero on C — the priced renewal IS this screen's one line.
+      expect(c).not.toContain('<p class="note">Renews automatically. Cancel any time.</p>');
     });
 
     it("B is the trial timeline: no payment due, the billed amount WITH its date, the zero CTA", async () => {
@@ -1909,7 +1915,10 @@ describe("the soft offer after the plan", () => {
       expect(c).toContain("<s>€59.88</s>");
       expect(c).toContain("€23.99 / year");
       expect(c).toContain("less than our monthly rate");
-      expectSimple(c, "23.99");
+      expect(c).not.toContain('class="wbar"');
+      // The billed figure twice: the card's price and the offer's renewal line under the claim —
+      // the one place the figure repeats, like `#/pay` (#3465).
+      expect(c.split("23.99").length - 1).toBe(2);
       expect(c).toContain('href="/start/checkout?plan=exit"');
       expect(c).not.toContain(userId);
       expect((await get("/start/checkout?plan=exit", session)).headers.get("location")).toBe(`https://pay.rev.cat/u/${userId}`);
