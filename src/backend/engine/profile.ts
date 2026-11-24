@@ -95,7 +95,11 @@ function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed:
   const w = deps.config.webPaywall;
   const url = (template: string) => template.replaceAll("{userId}", encodeURIComponent(userId));
   const price = (n: number) => paywallPrice(n, w.currency, lang);
-  const math = offerMath(w.exitOfferRegularPrice, w.exitOfferPrice);
+  // The struck price is TWELVE MONTHS OF THE MONTHLY PLAN while one is sold (ieat-app#3442, Kirill
+  // 24 Nov): the offer card says "{percent} less than our monthly rate", true by construction. With no
+  // monthly plan the configured regular price stands in, as before.
+  const regular = w.monthlyCheckoutUrl !== "" && w.monthlyPrice > 0 ? w.monthlyPrice * 12 : w.exitOfferRegularPrice;
+  const math = offerMath(regular, w.exitOfferPrice);
   return {
     trialDays: w.trialDays,
     yearly: w.yearlyCheckoutUrl === "" ? null : {
@@ -112,7 +116,7 @@ function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed:
     exitOffer: !exitOfferArmed || w.exitOfferCheckoutUrl === "" || math === null ? null : {
       checkoutUrl: url(w.exitOfferCheckoutUrl),
       price: price(w.exitOfferPrice),
-      regularPrice: price(w.exitOfferRegularPrice),
+      regularPrice: price(regular),
       percentOff: math.percentOff,
       perMonth: price(math.perMonth),
     },

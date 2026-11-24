@@ -320,8 +320,10 @@ describe("profile", () => {
       expect(view.paywall.exitOffer).toEqual({
         checkoutUrl: `https://pay.rev.cat/u/${userId}`,
         price: "€23.99",
-        regularPrice: "€39.99",
-        percentOff: 40,
+        // ieat-app#3442 (Kirill, 24 Nov 07:07): the struck price is twelve months of the monthly plan,
+        // so "{percent} less than our monthly rate" is true by construction: 12 × €4.99 = €59.88.
+        regularPrice: "€59.88",
+        percentOff: 59,
         perMonth: "€2.00",
       });
     });
@@ -349,7 +351,7 @@ describe("profile", () => {
       expect(web.exitOfferEnabled).toEqual({ ios: false, web: true });
       expect(web.paywall.exitOffer).toEqual({
         checkoutUrl: `https://pay.rev.cat/u/${userId}`,
-        price: "€23.99", regularPrice: "€39.99", percentOff: 40, perMonth: "€2.00",
+        price: "€23.99", regularPrice: "€59.88", percentOff: 59, perMonth: "€2.00",
       });
     });
 
@@ -359,9 +361,14 @@ describe("profile", () => {
       expect(view.exitOfferEnabled).toEqual({ ios: false, web: true });
       expect(view.paywall.exitOffer).toBeNull();
       // And the third leg: an offer whose own discount cannot stand is no offer, switch or no.
-      const noMath = await viewFor({ ...SELLING, exitOfferRegularPrice: 0 }, "en-GB",
+      // With a monthly plan the regular is twelve monthlies (#3442), so the leg is an offer that does
+      // not undercut them; without one it is the configured regular price, as before.
+      const noMath = await viewFor({ ...SELLING, exitOfferPrice: 59.88 }, "en-GB",
         { "paywall.exit-offer.web": true });
       expect(noMath.paywall.exitOffer).toBeNull();
+      const noMonthly = await viewFor({ ...SELLING, monthlyCheckoutUrl: "", exitOfferRegularPrice: 0 }, "en-GB",
+        { "paywall.exit-offer.web": true });
+      expect(noMonthly.paywall.exitOffer).toBeNull();
     });
 
     it("re-reads the switch per response — a flip back off disarms what was armed", async () => {

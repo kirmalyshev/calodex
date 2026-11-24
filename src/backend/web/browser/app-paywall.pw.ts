@@ -22,10 +22,10 @@ const PAYWALL = {
   monthly: { checkoutUrl: "https://pay.example/m/{userId}", price: "€4.99" },
   exitOffer: {
     checkoutUrl: "https://pay.example/u/{userId}",
-    price: "€23.99",
-    regularPrice: "€39.99",
-    percentOff: 40,
-    perMonth: "€2.00",
+    price: "€19.99",
+    regularPrice: "€59.88",
+    percentOff: 66,
+    perMonth: "€1.67",
   },
   termsUrl: "https://example.com/terms",
   privacyUrl: "https://example.com/privacy",
@@ -44,7 +44,7 @@ async function selling(page: Page, subject: string): Promise<void> {
   await page.goto("/#/pay");
 }
 
-test("draws the sheet: hero, benefits, the plan pair, trial wording", async ({ page }) => {
+test("A · the plans on Cal AI's flow: the trial title, Yearly over Monthly, Continue (#3442)", async ({ page }) => {
   await selling(page, "paywall-sheet");
 
   // The welcome plate the web's own front door shows, read aloud by its figures.
@@ -52,38 +52,32 @@ test("draws the sheet: hero, benefits, the plan pair, trial wording", async ({ p
   await expect(img).toHaveAttribute("src", "/start/assets/img/hero.webp");
   await expect(img).toHaveAttribute("alt", "Protein 8 g, Carbs 50 g, Fat 12 g, 345 kcal");
 
-  await expect(page.locator(".pay h1")).toHaveText("Know if every meal fits");
-  const benefits = page.locator(".pay .bl li");
-  await expect(benefits).toHaveCount(3);
-  await expect(benefits.nth(0)).toContainText("One photo logs a meal");
+  await expect(page.locator(".pay h1")).toHaveText("Start your 3-day free trial to continue");
+  await expect(page.locator(".pay .bl")).toHaveCount(0);
 
-  // Yearly and Monthly side by side, the billed amount the card's figure. The trial badge
-  // rides yearly only — monthly has no trial on the web sheet.
+  // Yearly over Monthly: the trial band on Yearly only, its billed price under the name (3.1.2(c)),
+  // the per-month figure on the right of each row.
   const cards = page.locator(".pay .plan2");
   await expect(cards).toHaveCount(2);
   const yearly = cards.nth(0);
   const monthly = cards.nth(1);
+  await expect(yearly.locator(".band")).toHaveText("3 DAYS FREE");
   await expect(yearly.locator(".nm")).toHaveText("Yearly");
-  await expect(yearly.locator(".tr")).toHaveText("3 days free");
-  await expect(yearly.locator(".pr")).toContainText("€39.99");
-  // No "a year"/"a month" caption — the card's own name already says the period (#3359, Kirill).
-  await expect(yearly.locator(".pr small")).toHaveCount(1);
-  await expect(yearly.locator(".pr .save")).toHaveText("€3.33/month · save 33%");
+  await expect(yearly.locator(".billed")).toHaveText("€39.99 billed yearly");
+  await expect(yearly.locator(".pm")).toHaveText("€3.33/mo");
+  await expect(monthly.locator(".band")).toHaveCount(0);
   await expect(monthly.locator(".nm")).toHaveText("Monthly");
-  await expect(monthly.locator(".tr")).toHaveCount(0);
-  await expect(monthly.locator(".pr")).toContainText("€4.99");
-  await expect(monthly.locator(".pr small")).toHaveCount(0);
+  await expect(monthly.locator(".pm")).toHaveText("€4.99/mo");
 
-  // Yearly picked: the CTA promises the trial, the note names its renewal price and cadence,
-  // and the link carries this account's id — which the route filled for it.
+  // Yearly picked: Continue, the note names the renewal, the link carries this account's id.
   const cta = page.locator(".pay .cta.p").first();
-  await expect(cta).toHaveText("Try 3 days free");
+  await expect(cta).toHaveText("Continue");
   await expect(cta).toHaveAttribute("href", /pay\.example\/y\//);
   await expect(page.locator(".pay .t12.m").first()).toContainText("€39.99 a year");
 
-  // Monthly picked: no trial rides it — plain Continue and the monthly renewal note.
+  // Monthly picked: no trial rides it — the unlock title and the monthly renewal note.
   await monthly.click();
-  await expect(cta).toHaveText("Continue");
+  await expect(page.locator(".pay h1")).toHaveText("Unlock Calodex to continue");
   await expect(cta).toHaveAttribute("href", /pay\.example\/m\//);
   await expect(page.locator(".pay .t12.m").first()).toContainText("€4.99 a month");
 
@@ -93,12 +87,32 @@ test("draws the sheet: hero, benefits, the plan pair, trial wording", async ({ p
   await expect(links.nth(0)).toHaveAttribute("href", "https://example.com/terms");
 });
 
-test("a decline swaps the plans for the exit offer", async ({ page }) => {
+test("× walks A → B (try for free) → C (the special offer) → closes (#3442)", async ({ page }) => {
   await selling(page, "paywall-offer");
   await page.locator(".pay .x").click();
+
+  // B: the trial as a timeline, no payment due, the yearly checkout priced at its zero.
+  await expect(page.locator(".pay h1")).toHaveText("We want you to try Calodex for free");
+  await expect(page.locator(".pay .tl li")).toHaveCount(3);
+  await expect(page.locator(".pay .tl li").nth(2)).toContainText("Day 3");
+  await expect(page.locator(".pay .nopay")).toHaveText("No payment due now");
+  const tryCta = page.locator(".pay .cta.p").first();
+  await expect(tryCta).toHaveText("Try for €0.00");
+  await expect(tryCta).toHaveAttribute("href", /pay\.example\/y\//);
+  await expect(page.locator(".pay .paylinks a")).toHaveCount(2);
+
+  // C: twelve monthlies struck, the offer per year, the monthly-rate line, Claim to the offer link.
+  await page.locator(".pay .x").click();
+  await expect(page.locator(".pay h1")).toHaveText("Your special offer");
   const offer = page.locator(".pay .offer");
-  await expect(offer).toContainText("€23.99");
-  await expect(offer).toContainText("€2.00");
+  await expect(offer.locator(".off")).toHaveText("66% OFF");
+  await expect(offer.locator("s")).toHaveText("€59.88");
+  await expect(offer).toContainText("€19.99");
+  await expect(offer).toContainText("66% less than our monthly rate!");
   const claim = page.locator(".pay .cta.p").first();
   await expect(claim).toHaveAttribute("href", /pay\.example\/u\//);
+
+  // C's × closes to Home.
+  await page.locator(".pay .x").click();
+  await expect(page).not.toHaveURL(/#\/pay/);
 });

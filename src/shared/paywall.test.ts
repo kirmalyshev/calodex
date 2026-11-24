@@ -1,5 +1,5 @@
-import { describe, expect, it } from "bun:test";
-import { exitOfferOn, offerMath, paywallPercent, paywallPrice, perMonth, swapCurrencySign } from "./paywall.ts";
+import { describe, expect, it, test } from "bun:test";
+import { exitOfferOn, offerMath, paywallPercent, paywallPrice, perMonth, swapCurrencySign, zeroLike } from "./paywall.ts";
 
 // The one arithmetic the web paywall (#96) and the native one (#928) share: the exit offer's
 // percent off and its per-month equivalent, derived from the two prices that were actually
@@ -143,5 +143,20 @@ describe("swapCurrencySign", () => {
     expect(swapCurrencySign("MYR 39.99", "MYR")).toBe("RM 39.99");
     expect(swapCurrencySign("RM39.99", "MYR")).toBe("RM39.99");
     expect(swapCurrencySign("$39.99", "USD")).toBe("$39.99");
+  });
+});
+
+describe("zeroLike — a price string's own zero (#3442: B's \"Try for €0.00\")", () => {
+  test("keeps the sign, its side and the decimal mark", () => {
+    expect(zeroLike("€39.99")).toBe("€0.00");
+    expect(zeroLike("39,99 €")).toBe("0,00 €");
+    expect(zeroLike("$1,299.00")).toBe("$0.00");
+  });
+  test("a currency without decimals stays without", () => {
+    expect(zeroLike("¥4,800")).toBe("¥0");
+    expect(zeroLike("1 499 ₽")).toBe("0 ₽");
+  });
+  test("no number is no answer", () => {
+    expect(zeroLike("Free")).toBeNull();
   });
 });

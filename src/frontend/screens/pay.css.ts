@@ -15,31 +15,38 @@ export const payCss = `
 .pay .pcol .cta { margin-top: 10px; }
 .pay .pcol .t12 { text-align: center; margin: 0; }
 .pay .paylinks a { color: inherit; text-decoration: underline; }
-/* The sheet's three benefit rows — an accent icon beside each line (web/pay-plans, #3359). */
-.pay .bl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.pay .bl li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
-.pay .bl .ico { width: 18px; height: 18px; flex: none; color: var(--accent); }
-/* The plan pair, side by side as the sheet draws them — billed amount the figure, the trial and
-   the save line under it. Radii/padding follow the board's card, the check disc the kit's own. */
-.pay .pwp2 { display: flex; gap: 10px; }
-.pay .plan2 { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;
-  background: var(--surface); border-radius: var(--r-card); padding: 14px;
-  box-shadow: 0 0 0 1px var(--hair); cursor: pointer; position: relative; }
+/* A's plan rows (Cal AI 04, ieat-app#3442): Yearly over Monthly — the trial band on top, the check,
+   the name with the billed price under it, the per-month figure on the right. */
+.pay .pwp2 { display: flex; flex-direction: column; gap: 10px; }
+.pay .plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px;
+  box-shadow: 0 0 0 1px var(--line); cursor: pointer; position: relative; overflow: hidden; }
 .pay .plan2 input[type=radio] { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 .pay .plan2:has(>input:checked) { box-shadow: 0 0 0 2px var(--ink); }
 .pay .plan2:focus-within { box-shadow: 0 0 0 2px var(--ink); }
-.pay .plan2 .nr { display: flex; align-items: center; gap: 8px; }
+.pay .plan2 .band { background: var(--hair); color: var(--ink); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-align: center; padding: 4px 0; }
+.pay .plan2:has(>input:checked) .band { background: var(--ink); color: var(--surface); }
+.pay .plan2 .nr { display: flex; align-items: center; gap: 12px; padding: 14px; }
 .pay .plan2 .ck { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%;
   box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
 .pay .plan2:has(>input:checked) .ck { background: var(--accent); box-shadow: none; }
 .pay .plan2:has(>input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px;
   width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.pay .plan2 .nm { font-size: 15px; font-weight: 600; }
-.pay .plan2 .tr { color: var(--accent); font-size: 13px; font-weight: 600; }
-.pay .plan2 .pr { display: flex; flex-direction: column; font-size: 20px; font-weight: 700;
-  letter-spacing: -.01em; }
-.pay .plan2 .pr small { font-size: 12px; font-weight: 500; color: var(--muted); }
-.pay .plan2 .pr .save { color: var(--accent); }
+.pay .plan2 .nmc { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pay .plan2 .nm { font-size: 16px; font-weight: 600; }
+.pay .plan2 .billed { font-size: 13px; color: var(--muted); }
+.pay .plan2 .pm { font-size: 14px; font-weight: 600; }
+.pay .plan2:not(:has(>input:checked)) :is(.nm, .pm) { color: var(--muted); }
+/* B · try for free (Cal AI 06): the trial as a timeline, a rail between the dots. */
+.pay .tl { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; }
+.pay .tl li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 22px 50px; min-height: 36px; }
+.pay .tl li::before { content: ""; position: absolute; left: 0; top: 0; width: 36px; height: 36px;
+  border-radius: 50%; background: var(--accent); }
+.pay .tl li:not(:last-child)::after { content: ""; position: absolute; left: 16px; top: 36px; bottom: 0;
+  width: 4px; background: var(--accent); }
+.pay .tl li:nth-child(2)::after { background: var(--line); }
+.pay .nopay { margin: 0; text-align: center; font-weight: 600; }
+.pay .pcol p.sub { margin: -6px 0 6px; text-align: center; }
 /* pay-exit (#451): the offer card the plans swap to on the first decline — the board's own
    measurements, radii included (16, not --r-card's 12). */
 .pay .pcol h1.d28 { margin: 0 0 6px; }
@@ -52,7 +59,6 @@ export const payCss = `
 .pay .offer .price s { color: var(--muted); font-weight: 500; font-size: 18px;
   text-decoration-thickness: 2px; }
 .pay .offer .per { margin: 8px 0 0; font-weight: 500; }
-.pay .pcol .cta.g { margin-top: -6px; }
 @media (max-width: 960px) {
   .pay .pane { padding: 0 24px; }
 }
