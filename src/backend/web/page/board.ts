@@ -123,4 +123,4 @@ export const hidden = (name: string, value: string): string =>
  * (`sendTestPush`) needs an image on the API host in a format iOS accepts as an attachment.
  */
 export const IMG_URL_DIR = "/start/assets/img";
-export const IMG_FILES = ["hero.webp", "salmon-sq.webp", "salmon.webp", "icon.webp", "push-test.png"] as const;
+export const IMG_FILES = ["hero.webp", "frenchtoast.webp", "salmon-sq.webp", "salmon.webp", "icon.webp", "push-test.png"] as const;
