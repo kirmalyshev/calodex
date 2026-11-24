@@ -3,7 +3,7 @@ import { LANGS_READY } from "../lang.ts";
 import { LANGS } from "../types.ts";
 import { WELCOME_PLATES } from "../onboarding.ts";
 import { PAY_COPY } from "./pay-copy.ts";
-import { welcomePlateAlt, yearlySaveLine } from "./pay-lines.ts";
+import { trialBillLine, welcomePlateAlt, yearlySaveLine } from "./pay-lines.ts";
 
 describe("yearlySaveLine", () => {
   it("is computed from the two prices, per storefront currency", () => {
@@ -35,3 +35,16 @@ describe("welcomePlateAlt", () => {
   });
 });
 
+
+// ieat-app#3442 (3.1.2(c)): the billed amount and its date beside the zero-priced CTA.
+describe("trialBillLine", () => {
+  const now = new Date("2026-11-24T10:00:00Z");
+  it("names the renewal price and the day the trial ends", () => {
+    expect(trialBillLine(PAY_COPY.en, "en", "UTC", now, 3, "€39.99 a year")).toBe("Then €39.99 a year from 27 Nov");
+  });
+  it("leaves no placeholder in any language", () => {
+    for (const lang of LANGS_READY) {
+      expect(trialBillLine(PAY_COPY[lang] ?? PAY_COPY.en, lang, "UTC", now, 3, "X")).not.toContain("{");
+    }
+  });
+});

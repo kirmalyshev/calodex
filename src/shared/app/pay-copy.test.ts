@@ -27,7 +27,7 @@ const KEYS = [
   "lapsedTitlePhone",
   "closeLabel", "restoreLink", "termsLink", "privacyLink",
   "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
-  "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "noPaymentDue",
+  "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
   "tryCta", "offerSpecialTitle", "offerSub", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
 ] as const;
 
@@ -70,6 +70,7 @@ describe("PAY_COPY", () => {
       tryTitle: ["{app_name}"],
       tryDay: ["{day}"],
       tryBill: ["{renewal}"],
+      tryThenBilled: ["{renewal}", "{date}"],
       tryCta: ["{price}"],
       offerTrialNote: ["{days}", "{renewal}"],
       offerVsMonthly: ["{percent}"],
