@@ -150,14 +150,20 @@ test("× walks A → B (try for free) → C (the special offer) → closes (#344
   await expect(page).not.toHaveURL(/#\/pay/);
 });
 
-test("A · the billed amount weighs what the per-month figure weighs (3.1.2(c), #3442)", async ({ page }) => {
+test("A · the billed amount is dark and medium, never lighter than the per-month figure (3.1.2(c), #3442, q54)", async ({ page }) => {
   await selling(page, "paywall-billed");
   const yearly = page.locator(".pay .plan2").first();
   const billed = yearly.locator(".billed");
   await expect(billed).toHaveText("€39.99 billed yearly");
-  await expect(billed).toHaveCSS("font-weight", "600");
-  await expect(billed).toHaveCSS("font-size", "14px");
-  await expect(yearly.locator(".pm")).toHaveCSS("font-size", "14px");
+  // Kirill q54: the primary text colour at medium weight (the picked name's own colour), 13px like the per-month figure.
+  await expect(billed).toHaveCSS("font-weight", "500");
+  await expect(billed).toHaveCSS("font-size", "13px");
+  await expect(yearly.locator(".pm")).toHaveCSS("font-size", "13px");
+  const ink = await yearly.locator(".nm").evaluate((e) => getComputedStyle(e).color);
+  await expect(billed).toHaveCSS("color", ink);
+  // Unpicked, it stays dark: only the name and the per-month figure go grey.
+  await page.locator(".pay .plan2").nth(1).click();
+  await expect(billed).toHaveCSS("color", ink);
 });
 
 test("no trial owed: A's × goes straight to C, never through B (#3442)", async ({ page }) => {
