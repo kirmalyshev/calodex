@@ -25,6 +25,17 @@ export function yearlySaveLine(
   });
 }
 
+/** "save 33%" — the tag the Yearly row's NAME carries (the phone's `planSave` beside `planYearly`),
+    null on the same inputs `yearlySaveLine` refuses. ieat-app#3465. */
+export function yearlySave(
+  pay: Pick<PayCopy, "planSave">, lang: Lang,
+  monthlyPrice: number | null, yearlyPrice: number | null,
+): string | null {
+  if (monthlyPrice === null || yearlyPrice === null) return null;
+  const m = offerMath(monthlyPrice * 12, yearlyPrice);
+  return m === null ? null : fill(pay.planSave, { percent: nb(paywallPercent(m.percentOff, lang)) });
+}
+
 /**
  * The plans hero's alt text (ieat-app#3359): the plate's own figures in the chat labels' words —
  * "Protein 8 g, Carbs 50 g, Fat 12 g, 345 kcal" — the unit after each number, the calorie count

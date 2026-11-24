@@ -3,7 +3,7 @@ import { LANGS_READY } from "../lang.ts";
 import { LANGS } from "../types.ts";
 import { WELCOME_PLATES } from "../onboarding.ts";
 import { PAY_COPY } from "./pay-copy.ts";
-import { trialBillLine, welcomePlateAlt, yearlySaveLine } from "./pay-lines.ts";
+import { trialBillLine, welcomePlateAlt, yearlySave, yearlySaveLine } from "./pay-lines.ts";
 
 describe("yearlySaveLine", () => {
   it("is computed from the two prices, per storefront currency", () => {
@@ -20,6 +20,28 @@ describe("yearlySaveLine", () => {
       const line = yearlySaveLine(PAY_COPY[lang]!, lang, "EUR", 4.99, 39.99)!;
       expect(line, lang).not.toContain("{");
       expect(line, lang).toContain("33");
+    }
+  });
+});
+
+// ieat-app#3465 — the row's name carries the saving on every pay surface, so the web payload
+// derives the same tag the phone draws beside `planYearly`.
+describe("yearlySave", () => {
+  it("is the name's saving tag from the same two prices", () => {
+    expect(yearlySave(PAY_COPY.en, "en", 4.99, 39.99)).toBe("save 33%");
+    // German writes the percent sign spaced; the language owns the template, not the test.
+    expect(yearlySave(PAY_COPY.de!, "de", 4.99, 39.99)).toMatch(/^spare .*33.*%$/);
+  });
+  it("is null with a price missing or no saving", () => {
+    expect(yearlySave(PAY_COPY.en, "en", null, 39.99)).toBeNull();
+    expect(yearlySave(PAY_COPY.en, "en", 4.99, null)).toBeNull();
+    expect(yearlySave(PAY_COPY.en, "en", 4.99, 59.88)).toBeNull();
+  });
+  it("leaves no placeholder in any language", () => {
+    for (const lang of LANGS_READY) {
+      const tag = yearlySave(PAY_COPY[lang]!, lang, 4.99, 39.99)!;
+      expect(tag, lang).not.toContain("{");
+      expect(tag, lang).toContain("33");
     }
   });
 });
