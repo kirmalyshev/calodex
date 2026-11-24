@@ -2,7 +2,7 @@
 // card's per-month saving, computed from the two StoreKit prices, and the trial promise, which
 // rides only while the yearly plan with a trial is the one picked.
 
-import { fill, spellUnit } from "../lang.ts";
+import { dayMonthAt, fill, spellUnit } from "../lang.ts";
 import type { WelcomePlate } from "../onboarding.ts";
 import { chatScreenCopyFor } from "./chat-copy.ts";
 import { offerMath, paywallPercent, paywallPrice } from "../paywall.ts";
@@ -40,3 +40,14 @@ export function welcomePlateAlt(plate: WelcomePlate, lang: Lang): string {
 }
 
 
+
+/**
+ * Guideline 3.1.2(c): the billed amount and the day billing starts, drawn beside the CTA priced at zero —
+ * "Then €39.99 a year from 27 Nov". `renewal` is `pricePerYear` already priced; the phone and the web
+ * sheet say the same thing. The day is `days` after `now`, in the reader's own zone.
+ */
+export function trialBillLine(
+  pay: Pick<PayCopy, "tryThenBilled">, lang: Lang, zone: string, now: Date, days: number, renewal: string,
+): string {
+  return fill(pay.tryThenBilled, { renewal, date: dayMonthAt(lang, zone, new Date(now.getTime() + days * 86_400_000)) });
+}
