@@ -3,7 +3,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BUNDLE_PATH, SHELL_PATH, WORKER_PATH } from "../frontend/server/index.ts";
+import { BUNDLE_PATH, MEDAL_PATH, SHELL_PATH, WORKER_PATH } from "../frontend/server/index.ts";
 
 const caddyfile = readFileSync(join(import.meta.dir, "..", "iac", "Caddyfile"), "utf8");
 const patterns = /^\s*@app path (.+)$/m.exec(caddyfile)?.[1]?.trim().split(/\s+/) ?? [];
@@ -14,8 +14,9 @@ const routed = (p: string): boolean =>
 
 test("@app routes every path the frontend server serves", () => {
   expect(patterns.length).toBeGreaterThan(0);
-  // The medal sample is any name MEDAL_PATH accepts.
-  for (const p of [SHELL_PATH, BUNDLE_PATH, WORKER_PATH, "/medals/01-first-meal.webp"]) {
+  const medal = "/medals/01-first-meal.webp";
+  expect(MEDAL_PATH.test(medal)).toBe(true);
+  for (const p of [SHELL_PATH, BUNDLE_PATH, WORKER_PATH, medal]) {
     expect({ p, routed: routed(p) }).toEqual({ p, routed: true });
   }
 });

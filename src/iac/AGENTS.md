@@ -45,7 +45,7 @@ secret in argv. Local mode sets `EAIT__DEPLOY__BIND_ADDR=127.0.0.1`, `EAIT__DEPL
 **ONE ORIGIN.** Caddy serves a single hostname: `/`, `/app.js`, `/sw.js` and `/medals/*` come from the `frontend`
 container, everything else — `/api/v1/*`, `/start`, `/admin`, `/health` — from the `backend`
 container. A deployment that puts the two on two hostnames breaks the product's security model.
-See `src/frontend/AGENTS.md` § ONE ORIGIN, COMPOSED AT THE EDGE for why.
+See `src/frontend/AGENTS.md` § What this is for why.
 
 ## Hard rules
 
@@ -113,8 +113,9 @@ See `src/frontend/AGENTS.md` § ONE ORIGIN, COMPOSED AT THE EDGE for why.
 - A new runtime dependency in the backend or in `src/shared` → nothing here: the build installs with
   `--filter=@eait/backend` and the runtime copies both `src/backend/node_modules` and
   `src/shared/node_modules`. One in `src/frontend` is bundled by `bun build` in the frontend image's
-  build stage. The proof that an image still boots is the Verify section — the long-running
-  containers `healthy` and `db-init` exited 0 — not that it built.
+  build stage. The proof that an image still boots is the Verify section — the three curls answer,
+  and `/health` answers only after `db-init` exited 0, because the backend waits on it — not that
+  it built.
 
 ## Deliberately not done
 

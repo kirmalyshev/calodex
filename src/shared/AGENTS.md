@@ -1,6 +1,6 @@
 # AGENTS.md — shared
 
-> This workspace also lives inside a private monorepo (the app, the web client, the landing, the deploy tree). Paths such as `src/mobile/…`, `product/…`, `landing/…`, `docs/…`, `scripts/…`, `deploy/…`, the bare `app/…` and `lib/…` paths, and `#NNN` issue references point there. The rules they support hold here regardless.
+> This workspace also lives inside a private monorepo (the iOS app, the landing, the deploy tree). Paths such as `src/mobile/…`, `src/landing/…`, `product/…`, `docs/…`, `scripts/…`, `deploy/…`, and `#NNN` issue references point there. `src/frontend/…` and `src/shared/app/…` are in this repository. The rules they support hold here regardless.
 
 The contract both sides implement. Root `AGENTS.md` covers the repo; this covers this workspace.
 
@@ -130,7 +130,7 @@ gets its meal names in that language.
   the language. A function with no `lang` parameter cannot be found by making `lang` required. When
   you add a surface, ask whether its words are in a `Localized<T>`; if they are not, no test here
   is watching them.
-- **A sentence is a TEMPLATE, never fragments joined by code** (first section). For `trendSummary` the sentence is the
+- **A sentence is a TEMPLATE, never fragments joined by code** (§ Invariants a reviewer should check first). For `trendSummary` the sentence is the
   chart read aloud, so word order matters most there. It is one string per language with named placeholders. The same rule caught Russian's `по`,
   which governs the dative plural: `HealthCopy.periods[p].per` exists beside `noun` because one
   field cannot be both `неделя` and `неделям`.
@@ -290,7 +290,7 @@ gets its meal names in that language.
   constructor — a process abort on the phone that compiles, typechecks and passes every test on
   Node or bun, where ICU is full. The guarded helpers own the fallbacks — `countText` and
   `listConjunction` here — `countryLabel` needs none, it reads the baked `COUNTRY_NAMES` — because this workspace runs on the
-  phone too, `app/*-copy.ts` included. `projection.ts`'s old twelve-month table was written against
+  phone too, `src/shared/app/*-copy.ts` included. `projection.ts`'s old twelve-month table was written against
   a build that answered a numeric month, which is the thing to check if a device ever does — not
   these tables.
 - **Admin-editable copy is stored per language in the SAME row.** `onboarding_content` and
@@ -332,7 +332,7 @@ will ever use it, it does not belong here — put it in that side and keep this 
   carries it, and `dates.ts` lives in `shared` for that reason. Two zones means a day's meals and
   that same day's health describe two different twenty-four-hour windows — on one screen, invisibly,
   only for people who travel.
-- **Dates are computed in the configured zone, not UTC.** See the first section; `dates.ts` owns it.
+- **Dates are computed in the configured zone, not UTC.** See § Invariants a reviewer should check first; `dates.ts` owns it.
 - **A meal's date changes ONLY via re-date.** `EditMealRequest` has no `date` field, so the manual
   editor cannot reach it. `MealPatch` does, for the one sanctioned path.
 - **Onboarding is plain screens, one question each, and the design is `product/design/onboarding/`**
@@ -356,7 +356,7 @@ will ever use it, it does not belong here — put it in that side and keep this 
   (`onboarding-order.ts`), validated on the save; it cannot add, drop or reword a question.
 - **The REPLIES and the support cards are code, not copy.** `src/shared/onboarding-chat.ts` holds
   the branch logic. An admin text box in front of a health statistic is an unsubstantiated claim
-  one typo away from every phone, with no gate in front of it — the thing `landing/claims.ts`
+  one typo away from every phone, with no gate in front of it — the thing the private monorepo's `src/landing/claims.ts`
   exists to stop in public copy — so a cited figure stays code. Two percentages in that file are
   READ from `MAX_DEFICIT_SHARE`/`MAX_SURPLUS_SHARE` rather than typed. Three rules hold over every
   reply and each has a test: speak to the branch taken, deliver a stat once, and never lean on

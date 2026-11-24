@@ -128,9 +128,11 @@ route. A route that computes is a rule the tests cannot reach.
   read is dropped permanently. **`onboarding_content` and `notification_copy` apply this rule to a
   document.** The per-language write is `jsonb_set` on the locked row, so two admins saving two
   languages cannot carry each other away. The revision number comes off the `version` COLUMN in the
-  same statement, not off a count the engine took first. `version` is load-bearing. Bind jsonb
-  without `JSON.stringify`: `${JSON.stringify(doc)}::jsonb` is a no-op cast, because the driver
-  already encodes a bound value, and it stores a jsonb STRING instead of an object.
+  same statement, not off a count the engine took first. `version` is load-bearing. These two
+  document writes bind the object, not `JSON.stringify` of it. The driver already encodes a bound
+  value, so `${JSON.stringify(doc)}::jsonb` is a no-op cast that stores a jsonb STRING, and
+  `jsonb_set` on a string is an error. Not every jsonb write follows this: `setMealReminders`
+  still binds `${JSON.stringify(settings)}::jsonb`.
 - **The admin is a ROLE an account carries** (`users.role`, checked `=== "admin"` AFTER the user is
   resolved). There is no admin token: a replayable secret in a header and a role would be two ways
   in, and the role is the only one. Nobody holding the role means the surface does not exist, and
@@ -180,8 +182,8 @@ Four diary routes carry four different bounds. When you read or write a comment 
 which one it constrains: a bound described as covering more than it does is how a client comes to
 refuse something the server would have answered.
 
-- `/v1/diary/week` is bounded by `MAX_WINDOW_DAYS`, re-exported from the contract so the app can be
-  TOLD it.
+- `/v1/diary/week` is bounded by `MAX_WINDOW_DAYS`, `engine/diary.ts`'s alias of the contract's
+  `DIARY_WINDOW_DAYS`, which the contract exports so the app can be TOLD it.
 - `/v1/diary/days` is bounded by `DIARY_RANGE_MAX_DAYS` (31 calendar days) in the contract.
 - `/v1/diary/day` is **not** bounded. It validates the shape of a date and nothing else.
 - `/v1/diary/average` takes `week=0..3` (`AVERAGE_WEEKS_BACK`), not a date window.
@@ -290,8 +292,8 @@ naming it too.
   - Each delivery touches exactly one grant. An expiry sets the subscription. `NON_RENEWING_PURCHASE`
     grants the unlock. `CANCELLATION` or `EXPIRATION` with no expiry clears the unlock only when the
     stored unlock came from the same product.
-  - **Every state condition lives in the store's own guarded statements.** See the first bullet of
-    this list on state conditions. The webhook answers 200 either way, so a decision made from a
+  - **Every state condition lives in the store's own guarded statements.** See § Invariants a
+    reviewer should check first. The webhook answers 200 either way, so a decision made from a
     stale read is dropped permanently.
   - **Webhook delivery is not ordered.** `putEntitlement` applies an event only when it is newer
     than the last one applied TO THAT GRANT, the same rule `weight_measured_at` enforces. Without it,
@@ -457,9 +459,9 @@ naming it too.
   seventh prompt cannot half-land. What would falsify all of this: a per-user prompt (it would need
   the scoping), or any builder, schema or tool definition following the prose into the table.
 - **Public copy passes a claims gate before it is written, not before it is reviewed.** The rule
-  set is `src/shared/claims.ts`, and the landing build is one caller of it. The rule and its
-  divergence from the marketing repo's copy are in `src/shared/AGENTS.md` § Invariants a reviewer
-  should check first.
+  set is `src/shared/claims.ts`, and the landing build is one caller of it. The rule is
+  `src/shared/AGENTS.md` § Localization (#358). Its copy of the marketing repo's rule set, and why
+  it is a copy, is the header of `src/shared/claims.ts`.
 - **A number quoted in public copy is read from the code that produces it,** and a test fails when
   the copy and the constant disagree. A safety guarantee described in marketing that the app does
   not implement is the worst sentence this repo could publish.
