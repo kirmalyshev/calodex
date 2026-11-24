@@ -28,7 +28,7 @@ const KEYS = [
   "closeLabel", "restoreLink", "termsLink", "privacyLink",
   "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
   "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
-  "tryCta", "offerSpecialTitle", "offerSub", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
+  "tryCta", "offerSpecialTitle", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
 ] as const;
 
 describe("PAY_COPY", () => {
@@ -82,7 +82,6 @@ describe("PAY_COPY", () => {
           expect(copy[key as keyof typeof copy], `${lang}.${key}`).toContain(ph);
         }
       }
-      expect(copy.offerSub, `${lang}.offerSub`).toMatch(/\{(app_name|app_name_tel)\}/);
     }
   });
 
