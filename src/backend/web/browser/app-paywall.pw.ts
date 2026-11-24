@@ -159,7 +159,7 @@ test("A · the billed amount is dark and medium, never lighter than the per-mont
   await expect(billed).toHaveCSS("font-weight", "500");
   await expect(billed).toHaveCSS("font-size", "13px");
   await expect(yearly.locator(".pm")).toHaveCSS("font-size", "13px");
-  const ink = await yearly.locator(".nm").evaluate((e) => getComputedStyle(e).color);
+  const ink = await yearly.locator(".nm").evaluate((e: unknown) => (globalThis as unknown as { getComputedStyle(x: unknown): { color: string } }).getComputedStyle(e).color);
   await expect(billed).toHaveCSS("color", ink);
   // Unpicked, it stays dark: only the name and the per-month figure go grey.
   await page.locator(".pay .plan2").nth(1).click();
