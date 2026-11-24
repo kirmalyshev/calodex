@@ -73,3 +73,45 @@ describe("the web pay sheet stays the phone's simple sheet (ieat-app#3465)", () 
     expect(sheet).toContain("margin: 0 auto");
   });
 });
+
+// Kirill, 24 Nov 16:56 ("sloppy, corner-y, not smooth"): the polish pass, the same on the phone's
+// sheet (ieat-app scripts/paywall-sheet-simple.test.ts) and on /start/offer (page/shell.ts).
+const shell = await Bun.file(new URL("../../backend/web/page/shell.ts", import.meta.url)).text();
+describe("the web pay sheet is smooth, not corner-y", () => {
+  for (const [name, text] of [["#/pay", css], ["/start/offer", shell]] as const) {
+    test(`${name}: the photo fades into the page, Continue is a pill, cards are 18`, () => {
+      expect(text).toMatch(/mask-image: linear-gradient\(to bottom, #000/);
+      expect(text).toMatch(/\.cta\s*\{\s*border-radius: 999px/);
+      expect(/\.plan2\s*\{[^}]*border-radius: 18px/.test(text)).toBe(true);
+    });
+    test(`${name}: only the title is heavy — name medium, billed and per-month regular`, () => {
+      expect(text).toMatch(/\.plan2 \.nm \{[^}]*font-weight: 500/);
+      expect(text).toMatch(/\.plan2 \.billed, (?:\.pay )?\.plan2 \.pm \{[^}]*font-weight: 400/);
+    });
+  }
+});
+
+// Kirill, 24 Nov 17:27: the special-offer card is Cal AI 12's soft silver gradient.
+describe("the web special-offer card is silver", () => {
+  test("/start/offer: the same token gradient, so dark mode stays readable", () => {
+    expect(/\.offer \.special \{[^}]*linear-gradient\(135deg, var\(--surface\)/.test(shell)).toBe(true);
+    expect(/\.pay \.offer \{[^}]*linear-gradient\(135deg, var\(--surface\)/.test(css)).toBe(true);
+  });
+  test("#/pay: a gradient behind the percent", () => {
+    expect(/\.pay \.offer\s*\{[^}]*linear-gradient\(135deg/.test(css)).toBe(true);
+  });
+});
+
+// Kirill q54 (24 Nov): a white page; the billed line is the primary text colour at medium weight (3.1.2(c)).
+describe("the web pay sheet is white with a dark medium billed line", () => {
+  test("#/pay: the sheet is --surface; billed is ink 500, never muted", () => {
+    expect(/\.pay \{[^}]*background: var\(--surface\)/.test(css)).toBe(true);
+    expect(css).toMatch(/\.pay \.plan2 \.billed \{[^}]*font-weight: 500; color: var\(--ink\)/);
+    expect(css).not.toMatch(/:is\(\.nm, \.billed/);
+  });
+  test("/start/offer: the same", () => {
+    expect(shell).toMatch(/body:has\(\.offer\) \{ background: var\(--surface\)/);
+    expect(shell).toMatch(/\.plan2 \.billed \{[^}]*font-weight: 500; color: var\(--ink\)/);
+    expect(shell).not.toMatch(/:is\(\.nm, \.billed/);
+  });
+});
