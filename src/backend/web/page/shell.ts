@@ -226,19 +226,19 @@ label.check {
    free meal. A LINK for the ×, because it changes nothing. */
 .offer { position: relative; padding-top: .5rem; }
 .offer .x {
-  position: static; margin: 0 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
+  position: static; margin: 0 auto 0 0; width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   color: var(--muted); background: var(--surface); border: 1px solid var(--hair); font-size: 1.15rem;
 }
 .offer h1 { text-align: center; }
 /* The offer's three steps (ieat-app#3464), drawn as the in-app pay screen draws them (pay.css.ts):
    A's plan rows — radios, the trial band, billed under the name (3.1.2(c): as heavy as the per-month
-   figure) — B's timeline and C's card. A is script-free: its title and note follow the checked
+   figure) — B's timeline and C's card. A is script-free: its title follows the checked
    radio through :has. */
 .offer h1 { margin: .5rem 0 1rem; }
-.offer .t-m, .offer .note-m { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) :is(.t-y, .note-y) { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) :is(.t-m, .note-m) { display: block; }
+.offer .t-m { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) .t-y { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) .t-m { display: block; }
 .offer .sub { text-align: center; color: var(--muted); margin: -.4rem 0 1rem; }
 .pwp2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
 .plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px;
@@ -262,6 +262,8 @@ label.check {
 .offer .tl { list-style: none; margin: .5rem 0; padding: 0; display: flex; flex-direction: column; }
 .offer .tl li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 22px 50px; min-height: 36px; }
 .offer .tl li span { color: var(--muted); font-size: .8125rem; }
+/* 3.1.2(c): the billed amount and its date at the weight of the zero CTA below. */
+.offer .tl li.bill span { color: var(--ink); font-size: 1rem; font-weight: 600; }
 .offer .tl li::before { content: ""; position: absolute; left: 0; top: 0; width: 36px; height: 36px;
   border-radius: 50%; background: var(--accent); }
 .offer .tl li:not(:last-child)::after { content: ""; position: absolute; left: 16px; top: 36px; bottom: 0;
@@ -277,8 +279,7 @@ label.check {
 .offer .per { margin: 8px 0 0; font-weight: 500; }
 .offer a.button { display: block; text-align: center; text-decoration: none; margin-bottom: .6rem; }
 
-/* The offer's foot (#263): the note under the CTA, and the legal links as the boards' centred muted footer. */
-.offer .note { font-size: .8125rem; color: var(--muted); text-align: center; margin: 0; }
+/* The offer's foot (#263): the legal links as the boards' centred muted footer. */
 .offer .fine { font-size: .8125rem; color: var(--muted); text-align: center; margin: .35rem 0 0; }
 .offer .fine a { color: inherit; }
 .offer .fine a:hover { color: var(--ink); }

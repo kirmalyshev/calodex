@@ -1,7 +1,6 @@
 import { fill, payCopyFor, paywallPercent, trialBillLine, zeroLike } from "@eait/shared";
 import type { Lang, WebPaywall } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
-import { topBar } from "./parts.ts";
 import { escape, shell } from "./shell.ts";
 
 /**
@@ -44,7 +43,6 @@ export function offer(v: OfferView): string {
   const cta = (href: string, words: string): string =>
     `<a class="button primary" href="${escape(href)}">${escape(words)}</a>`;
   const page = (inner: string): string => shell(PAGE_COPY.titleOffer, `
-${topBar(PAGE_COPY)}
 <div class="offer">
 ${x}
 ${inner}
@@ -56,17 +54,15 @@ ${fine}
     const days = w.trialDays;
     const renewal = fill(pay.pricePerYear, { price: w.yearly.price });
     const zero = zeroLike(w.yearly.price);
-    const li = (when: string, what: string): string => `<li><b>${escape(when)}</b><span>${escape(what)}</span></li>`;
+    const li = (when: string, what: string, cls = ""): string => `<li${cls === "" ? "" : ` class="${cls}"`}><b>${escape(when)}</b><span>${escape(what)}</span></li>`;
     return page(`<h1>${escape(fill(pay.tryTitle, {}))}</h1>
 <ol class="tl">
 ${li(pay.tryToday, pay.benefitPlan)}
 ${li(fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind)}
-${li(fill(pay.tryDay, { day: String(days) }), fill(pay.tryBill, { renewal }))}
+${li(fill(pay.tryDay, { day: String(days) }), trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal), "bill")}
 </ol>
 <p class="nopay">${escape(pay.noPaymentDue)}</p>
-<p class="nopay num">${escape(trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal))}</p>
-${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}
-<p class="note">${escape(fill(pay.trialNote, { renewal }))}</p>`);
+${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}`);
   }
 
   if (v.step === "offer" && w.exitOffer !== null) {
@@ -79,8 +75,7 @@ ${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay
 <div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
 <p class="per num">${escape(w.monthly !== null ? fill(pay.offerVsMonthly, { percent }) : fill(pay.offerPerMonth, { price: o.perMonth }))}</p>
 </div>
-${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}
-<p class="note">${escape(pay.offerNote)}</p>`);
+${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}`);
   }
 
   // A · the plans: Yearly over Monthly, each a real radio — the plan checked is the plan checkout
@@ -99,12 +94,7 @@ ${trial === null ? "" : `<div class="band">${escape(trial)}</div>`}
     w.monthly === null ? "" : row("monthly", pay.planMonthly, null,
       fill(pay.perMonthShort, { price: w.monthly.price }), null, w.yearly === null),
   ].join("\n");
-  const noteY = w.yearly === null ? "" : days > 0
-    ? fill(pay.trialNote, { renewal: fill(pay.pricePerYear, { price: w.yearly.price }) })
-    : fill(pay.renewNoteYearly, { price: w.yearly.price });
-  const noteM = w.monthly === null ? "" : fill(pay.renewNoteMonthly, { price: w.monthly.price });
   return shell(PAGE_COPY.titleOffer, `
-${topBar(PAGE_COPY)}
 <form class="offer" action="${escape(v.checkoutUrl)}" method="get">
 ${x}
 <h1 class="t-y">${escape(fill(days > 0 ? pay.plansTrialTitle : pay.plansUnlockTitle, { days: String(days) }))}</h1>
@@ -113,8 +103,6 @@ ${x}
 ${rows}
 </div>
 <button class="button primary" type="submit">${escape(pay.continueCta)}</button>
-<p class="note note-y">${escape(noteY)}</p>
-<p class="note note-m">${escape(noteM)}</p>
 ${fine}
 </form>
 `, v.lang);
