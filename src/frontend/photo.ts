@@ -28,6 +28,8 @@ export function fitWithin(
  * for it, exactly as before this step existed.
  */
 export async function shrinkPhoto(file: File, quality: number, edge: number): Promise<File> {
+  // A server that predates the edge sends none: NaN dimensions would fail silently inside the canvas.
+  if (!Number.isFinite(edge)) return file;
   try {
     const bitmap = await createImageBitmap(file);
     try {

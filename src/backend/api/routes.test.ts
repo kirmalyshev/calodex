@@ -425,6 +425,11 @@ describe("photo", () => {
     expect((await store.getMeal(userId, await post(1, "1280")))!.photo_max_edge).toBe(1280);
     expect((await store.getMeal(userId, await post(2)))!.photo_max_edge ?? null).toBeNull();
     expect((await store.getMeal(userId, await post(3, "100")))!.photo_max_edge ?? null).toBeNull();
+    expect((await store.getMeal(userId, await post(4, "512")))!.photo_max_edge).toBe(512);
+    expect((await store.getMeal(userId, await post(5, "2048")))!.photo_max_edge).toBe(2048);
+    for (const [n, bad] of [[6, "511"], [7, "2049"], [8, "abc"], [9, ""]] as const) {
+      expect((await store.getMeal(userId, await post(n, bad)))!.photo_max_edge ?? null).toBeNull();
+    }
   });
 
   it("records the compression the photo was sent with on the meal, and nothing when none was sent", async () => {

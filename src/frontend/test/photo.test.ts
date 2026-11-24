@@ -6,10 +6,11 @@
 // (`src/mobile/lib/capture.ts`), because both feed the same billed analysis.
 
 import { describe, expect, it } from "bun:test";
-import { appliedAt, fitWithin } from "../photo.ts";
+import { PHOTO_MAX_EDGE_DEFAULT } from "../../shared/contract.ts";
+import { appliedAt, fitWithin, shrinkPhoto } from "../photo.ts";
 
-// The edge is the server's `Limits.photoMaxEdge` now; 768 is its default (ieat-app#3421).
-const UPLOAD_EDGE = 768;
+// The edge is the server's `Limits.photoMaxEdge` now; its default is what every client used before (ieat-app#3421).
+const UPLOAD_EDGE = PHOTO_MAX_EDGE_DEFAULT;
 
 describe("fitWithin", () => {
   it("leaves an already-small image untouched", () => {
@@ -32,6 +33,11 @@ describe("fitWithin", () => {
     const a = new File([], "a"), b = new File([], "b");
     expect(appliedAt([a, b], [new File([], "a2"), new File([], "b2")], 1024)).toBe(1024);
     expect(appliedAt([a, b], [new File([], "a2"), b], 1024)).toBeUndefined();
+  });
+
+  it("sends a file untouched when the server named no edge", async () => {
+    const f = new File([new Uint8Array([1])], "a.jpg", { type: "image/jpeg" });
+    expect(await shrinkPhoto(f, 0.8, undefined as unknown as number)).toBe(f);
   });
 
   it("never enlarges", () => {
