@@ -25,19 +25,18 @@ import {
   chatCopyFor as CHAT,
   askPlaceholder, checkDirection, checkNumber, defaultUnits, dietOf, disabledScreens, ftInToCm,
   heightToCm, isAnswered, promptsFor,
-  isRefusal, MAX_USER_LINE, medicalOf, normalizeReferralCode, offerHeadline, optionLabel, planGoalLine, projectGoal,
+  isRefusal, MAX_USER_LINE, medicalOf, normalizeReferralCode, optionLabel, planGoalLine, projectGoal,
   promptById, reconcileGoalEdit,
   renderableVerdicts, resolveCountry, ROUTES, screenForStep,
   screenOptions, screenOptionValues, suggestionFirst,
   switchedLine, targetRange, TARGET_STEP_KG, threadCopyFor, weightToKg,
   LANGS_READY, acceptLang, acceptLanguageTags, countText, numbers, signupCopyFor, verdictPillLabel,
-  payCopyFor, paywallPrice, perMonth, ONBOARDING_ORDER_VERSION, orderFellBack,
+  ONBOARDING_ORDER_VERSION, orderFellBack,
   type ChatEntry, type ChatPrompt, type ChatPromptId, type CountryCode, type Diet, type Goal, type Lang,
   type Barrier, type CountedBefore, type MedicalTag, type NumberField, type OnboardingContent, type PatchProfileRequest,
   type Profile, type Situation, type StreakGoal, type UnitSystem,
 } from "@eait/shared";
 import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
-import type { PayPlanRow } from "@eait/shared/ui/kit";
 import { AuthError, type IdentityVerifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
 import { emailSignInEnabled } from "../mail/choose.ts";
@@ -46,7 +45,7 @@ import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
   onboardingContentFor, onboardingServedFor, serveOnboarding, mintPairingCode, patchProfile, profileView, recordOnboardingEvents,
-  sendEmailCode, signInWithProvider, switchOn, verifyEmailCode,
+  sendEmailCode, signInWithProvider, switchOn, paywallOf, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
 } from "../engine/index.ts";
@@ -62,7 +61,7 @@ import {
   referralStep, signUp, stopped,
   FONT_FILES, FONT_URL_DIR, IMG_FILES, IMG_URL_DIR,
   type PageCopy,
-  type ChatLine, type ChatProposal,
+  type ChatLine, type ChatProposal, type OfferStep,
 } from "./page.ts";
 
 /**
@@ -1868,55 +1867,26 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     const closeTo = await isAnonymous(ctx.deps, userId)
       ? `${START_PREFIX}/signup`
       : await resumeTo(ctx, userId, profile);
-    if (config.webPaywall.yearlyCheckoutUrl === "" && config.webPaywall.monthlyCheckoutUrl === "") {
-      return seeOther(closeTo);
-    }
-    // The plan rows (#263): Monthly and Yearly, named from PAY_COPY and priced off the
-    // configured amounts — a figure is never written into copy. The checked radio submits as
-    // `?plan=` on the form's GET, so the plan the page shows is the plan checkout sends.
-    const w = config.webPaywall;
-    const pay = payCopyFor(profile.lang);
-    const cur = (n: number) => paywallPrice(n, w.currency, profile.lang);
-    const plans: PayPlanRow[] = [];
-    if (w.yearlyCheckoutUrl !== "") plans.push({
-      value: "yearly", name: pay.planYearly,
-      badge: w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null,
-      line: fill(pay.pricePerYear, { price: cur(w.yearlyPrice) }),
-      price: fill(pay.pricePerMonth, { price: cur(perMonth(w.yearlyPrice)) }),
-      checked: true,
-    });
-    if (w.monthlyCheckoutUrl !== "") plans.push({
-      value: "monthly", name: pay.planMonthly,
-      // ieat-app#1591: one length everywhere — the trial badge rides the monthly row too.
-      badge: w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null,
-      price: fill(pay.pricePerMonth, { price: cur(w.monthlyPrice) }),
-    });
+    // Everything sellable, priced and linked by the one function the in-app pay screen reads
+    // (`ProfileResponse.paywall`), so this page and `#/pay` cannot drift. C is `exitOffer`: null
+    // while the admin's web switch is off or no offer is configured (ieat-app#3155).
+    const wp = paywallOf(ctx.deps, profile.lang, userId, await switchOn(ctx.deps, "paywall.exit-offer.web"));
+    if (wp.yearly === null && wp.monthly === null) return seeOther(closeTo);
+    // A → × → B → × → C → × the sign-up (ieat-app#3464): B only while the yearly trial is sold,
+    // C only while an offer is armed. A step that is not sold is A, never a page the checkout 404s.
+    const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 ? ["try" as const] : []),
+      ...(wp.exitOffer !== null ? ["offer" as const] : [])];
+    const asked = url.searchParams.get("step");
+    const step = chain.find((s) => s === asked) ?? "plans";
+    const next = chain[chain.indexOf(step) + 1];
     return html(offer({
-      // `offerHeadline` names the computed target by the computed month — never literals, and
-      // never a figure the projection cannot stand behind; it answers null for those, and the
-      // page's own fallback title is what is said instead.
-      headline: offerHeadline(profile, new Date(), profile.lang)
-        ?? pageCopyFor(profile.lang).offerTitleElse,
+      step, paywall: wp,
       checkoutUrl: `${START_PREFIX}/checkout`,
       privacyHref: legalUrls(config).privacy || null,
       termsHref: legalUrls(config).terms || null,
-      // The note under the CTA is the one the checked radio names — the trial promise rides BOTH
-      // plans now (ieat-app#1591), `{renewal}` already priced on each plan's own cadence.
-      noteYearly: w.yearlyCheckoutUrl === "" ? ""
-        : w.trialDays > 0
-          ? fill(pay.trialNote, {
-            renewal: fill(pay.pricePerYear, { price: cur(w.yearlyPrice) }),
-          })
-          : fill(pay.renewNoteYearly, { price: cur(w.yearlyPrice) }),
-      noteMonthly: w.monthlyCheckoutUrl === "" ? ""
-        : w.trialDays > 0
-          ? fill(pay.trialNote, {
-            renewal: fill(pay.pricePerMonth, { price: cur(w.monthlyPrice) }),
-          })
-          : fill(pay.renewNoteMonthly, { price: cur(w.monthlyPrice) }),
-      closeHref: closeTo,
-      trialDays: w.trialDays,
-      plans,
+      closeHref: next === undefined ? closeTo : `${START_PREFIX}/offer?step=${next}`,
+      timezone: config.timezone,
+      now: new Date(),
       lang: profile.lang,
     }));
   }

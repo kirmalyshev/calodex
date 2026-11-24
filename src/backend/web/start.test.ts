@@ -1835,32 +1835,75 @@ describe("the soft offer after the plan", () => {
     return session;
   };
 
-  it("heads the offer with the computed target and month, never literals", async () => {
+  it("draws A on Cal AI's plans: trial title, billed price at the per-month weight (3.1.2(c)), no invented price", async () => {
     const session = await toPlan();
     const html = await (await get("/start/offer", session)).text();
-    // offerHeadline(): 80kg → 70 by a named month — a claim the projection stands behind.
-    expect(html).toContain("Get to 70kg by");
+    expect(html).toContain("Start your 7-day free trial to continue");
+    expect(html).toContain('class="plan2"');
+    expect(html).toContain('<small class="billed">€39.99 billed yearly</small>');
+    expect(html).toContain("€3.33/mo");
+    expect(html).not.toContain("$");
   });
 
-  it("says the three perks and the honest timeline, with no invented price", async () => {
-    const session = await toPlan();
-    const html = await (await get("/start/offer", session)).text();
-    for (const perk of [
-      "Honest macros on every meal",
-      "Your plan moves when your weight does",
-      "Calodex, any time you ask",
-    ]) expect(html).toContain(escape(perk));
-    expect(html).toContain("7 days free");
-    expect(html).toContain("We remind you");
-    expect(html).toContain("cancel any time");
-    expect(html).not.toContain("$");
+  // The Cal AI flow (ieat-app#3464): A → × → B → × → C → × → sign-up, every step a server-rendered page.
+  describe("the A → × → B → × → C flow", () => {
+    const FULL = { ...PAYWALL, monthlyCheckoutUrl: "https://pay.rev.cat/m/{userId}", monthlyPrice: 4.99,
+      exitOfferCheckoutUrl: "https://pay.rev.cat/u/{userId}", exitOfferPrice: 23.99 };
+    const walk = async (webPaywall = FULL, armed = true) => {
+      router({ ...CONFIG, webPaywall }, undefined, undefined, true);
+      if (armed) await store.setSwitch("paywall.exit-offer.web", true, crypto.randomUUID());
+      const session = await answerAll(undefined, ANSWERS);
+      await post("/start/streak", { answer: "14" }, session);
+      return { session, userId: await webUser(session) };
+    };
+    const closeOf = (html: string): string => /<a class="x" href="([^"]+)"/.exec(html)![1]!.replaceAll("&amp;", "&");
+
+    it("× on A goes to B, not to the sign-up", async () => {
+      const { session } = await walk();
+      const a = await (await get("/start/offer", session)).text();
+      expect(closeOf(a)).toBe("/start/offer?step=try");
+    });
+
+    it("B is the trial timeline: no payment due, the billed amount WITH its date, the zero CTA", async () => {
+      const { session, userId } = await walk();
+      const b = await (await get("/start/offer?step=try", session)).text();
+      expect(b).toContain("We want you to try");
+      expect(b).toContain("No payment due now");
+      // 3.1.2(c): the billed price and the day billing starts, at the weight of the zero CTA.
+      expect(b).toMatch(/<p class="nopay num">Then [^<]*39\.99[^<]* from [^<]+<\/p>/);
+      expect(b).toContain("Try for €0.00");
+      expect(b).toContain(`href="https://pay.rev.cat/eait/${userId}"`);
+      expect(closeOf(b)).toBe("/start/offer?step=offer");
+    });
+
+    it("C is the special offer, twelve monthlies struck, and its × is the sign-up", async () => {
+      const { session, userId } = await walk();
+      const c = await (await get("/start/offer?step=offer", session)).text();
+      expect(c).toContain("Your special offer");
+      expect(c).toContain("<s>€59.88</s>");
+      expect(c).toContain("€23.99 / year");
+      expect(c).toContain("less than our monthly rate");
+      expect(c).toContain(`href="https://pay.rev.cat/u/${userId}"`);
+      expect(closeOf(c)).toBe("/start/signup");
+    });
+
+    it("skips what is not sold: no trial → A closes to C; switch off → B closes to the sign-up", async () => {
+      const noTrial = await walk({ ...FULL, trialDays: 0 });
+      const a = await (await get("/start/offer", noTrial.session)).text();
+      expect(closeOf(a)).toBe("/start/offer?step=offer");
+      expect(await (await get("/start/offer?step=try", noTrial.session)).text()).not.toContain("No payment due now");
+      const off = await walk(FULL, false);
+      const b = await (await get("/start/offer?step=try", off.session)).text();
+      expect(closeOf(b)).toBe("/start/signup");
+      // C asked for directly while the switch is off is A, never an offer the checkout would 404.
+      expect(await (await get("/start/offer?step=offer", off.session)).text()).toContain('class="plan2"');
+    });
   });
 
   it("makes the trial CTA the checkout route, which sends THIS account to the checkout", async () => {
     const session = await toPlan();
     const userId = await webUser(session);
     const html = await (await get("/start/offer", session)).text();
-    expect(html).toContain("Try 7 days free");
     expect(html).toContain('action="/start/checkout"');
     // One route both offers link to — this page and the web app's offer that holds — so the id is
     // filled in one place, from the session, and never carried by a client.
@@ -1940,7 +1983,8 @@ describe("the soft offer after the plan", () => {
 
   it("lets the offer go quietly — × is the flow's own next place (ieat-app#3205)", async () => {
     const session = await toPlan(true);
-    const html = await (await get("/start/offer", session)).text();
+    // A's × walks to B (ieat-app#3464); B's × is the last step, so it is the flow's next place.
+    const html = await (await get("/start/offer?step=try", session)).text();
     // The close is `resumeTo`'s answer, not a hard-coded exit: this signed-in session is still
     // mid-funnel with the streak goal unasked — so the next place is that question, not out.
     expect(html).toMatch(/aria-label="[^"]*"[^>]*>×<\/a>/);
@@ -2002,7 +2046,7 @@ describe("purchase before sign-up (ieat-app#3205)", () => {
 
   it("points the offer's close at the sign-up for an anonymous session, not the product", async () => {
     const { session } = await atOffer();
-    const html = await (await get("/start/offer", session)).text();
+    const html = await (await get("/start/offer?step=try", session)).text();
     // A decline on the web has nowhere anonymous to land: the session is a cookie that dies
     // with the browser, and the product refuses the first meal `identity-required`. Required
     // or not, the sign-in is the only honest way forward.

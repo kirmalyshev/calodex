@@ -91,7 +91,7 @@ async function exitOfferEnabledOf(deps: EngineDeps): Promise<ExitOfferSwitches> 
  * at all: the decline then goes straight to the app. So is an offer the admin's `web` switch has
  * not armed (ieat-app#3155) — switched off is the same shape as never configured.
  */
-function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed: boolean): WebPaywall {
+export function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed: boolean): WebPaywall {
   const w = deps.config.webPaywall;
   const url = (template: string) => template.replaceAll("{userId}", encodeURIComponent(userId));
   const price = (n: number) => paywallPrice(n, w.currency, lang);
