@@ -13,8 +13,13 @@ const FIXTURE = "src/backend/web/browser/fixture-meal.png";
    on a quiet host and not on a loaded one, where the compositor lags the wall clock (#3510). An
    infinite animation, like .scan, never finishes, so it is left out of the poll. */
 const settle = async (page: Page): Promise<void> => {
-  await page.waitForFunction(() =>
-    document.getAnimations().every((a) => a.effect?.getComputedTiming().iterations === Infinity || a.playState === "finished"));
+  // A function, not a string: the page's CSP forbids eval. `globalThis` because this workspace's
+  // tsconfig has no DOM lib to type `document` against.
+  await page.waitForFunction(() => {
+    type Anim = { playState: string; effect: { getComputedTiming(): { iterations: number } } };
+    const doc = (globalThis as unknown as { document: { getAnimations(): Anim[] } }).document;
+    return doc.getAnimations().every((a) => a.effect.getComputedTiming().iterations === Infinity || a.playState === "finished");
+  });
 };
 
 /** The page's violations as one line each — the list IS the failure message. */
