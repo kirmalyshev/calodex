@@ -1878,6 +1878,7 @@ describe("the grounding switches", () => {
       { key: "onboarding.experiments", enabled: false, setBy: null, setAt: null, setByEmail: null },
       { key: "paywall.exit-offer.ios", enabled: false, setBy: null, setAt: null, setByEmail: null },
       { key: "paywall.exit-offer.web", enabled: false, setBy: null, setAt: null, setByEmail: null },
+      { key: "voice.input", enabled: false, setBy: null, setAt: null, setByEmail: null },
     ]);
     expect(body.recent).toEqual([]);
   });
