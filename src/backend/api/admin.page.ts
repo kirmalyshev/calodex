@@ -982,6 +982,51 @@ details.how p { margin-top: 8px; }
           <div id="beats"></div>
         </div>
 
+        <div id="ob-target" data-sec="target">
+          <p class="muted">The target ruler: its markers and the suggestion lines.</p>
+          <div id="target"></div>
+        </div>
+
+        <div id="ob-pace" data-sec="pace">
+          <p class="muted">The pace screen.</p>
+          <div id="pace"></div>
+        </div>
+
+        <div id="ob-plan" data-sec="plan">
+          <p class="muted">The plan screen.</p>
+          <div id="plan"></div>
+        </div>
+
+        <div id="ob-signup" data-sec="signup">
+          <p class="muted">The save-your-plan sign-up.</p>
+          <div id="signup"></div>
+        </div>
+
+        <div id="ob-referral" data-sec="referral">
+          <p class="muted">The referral screen.</p>
+          <div id="referral"></div>
+        </div>
+
+        <div id="ob-health" data-sec="health">
+          <p class="muted">The Apple Health offer.</p>
+          <div id="health"></div>
+        </div>
+
+        <div id="ob-liveActivity" data-sec="liveActivity">
+          <p class="muted">The Live Activity steps.</p>
+          <div id="liveActivity"></div>
+        </div>
+
+        <div id="ob-firstMeal" data-sec="firstMeal">
+          <p class="muted">The first meal.</p>
+          <div id="firstMeal"></div>
+        </div>
+
+        <div id="ob-refusals" data-sec="refusals">
+          <p class="muted">The refusal lines.</p>
+          <div id="refusals"></div>
+        </div>
+
         <div class="bar" id="bar">
           <span class="status" id="status"></span>
           <button id="reload">Reload</button>
@@ -1144,7 +1189,7 @@ details.how p { margin-top: 8px; }
         ? { authorization: "Bearer " + token, "content-type": "application/json" }
         : { authorization: "Bearer " + token },
       body: body ? JSON.stringify(body) : undefined
-    }).then(function (res) {
+    }).catch(function (e) { e.network = true; throw e; }).then(function (res) {
       return res.text().then(function (text) {
         // A 500 from a proxy is HTML, and a view's error must say 500 rather than "Unexpected token".
         var parsed = {};
@@ -4716,7 +4761,9 @@ details.how p { margin-top: 8px; }
     bar.className = "aerr";
     var msg = document.createElement("span");
     msg.textContent = "Couldn't load " + what + ". "
-      + (err && err.status ? "The server answered " + err.status + "." : "The request did not get an answer.");
+      + (err && err.status ? "The server answered " + err.status + "."
+        : err && err.message && !err.network ? "The page failed: " + err.message + "."
+        : "The request did not get an answer.");
     var sp = document.createElement("span");
     sp.className = "sp";
     var again = document.createElement("button");
