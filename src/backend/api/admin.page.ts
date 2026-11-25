@@ -1189,7 +1189,7 @@ details.how p { margin-top: 8px; }
         ? { authorization: "Bearer " + token, "content-type": "application/json" }
         : { authorization: "Bearer " + token },
       body: body ? JSON.stringify(body) : undefined
-    }).then(function (res) {
+    }).catch(function (e) { e.network = true; throw e; }).then(function (res) {
       return res.text().then(function (text) {
         // A 500 from a proxy is HTML, and a view's error must say 500 rather than "Unexpected token".
         var parsed = {};
@@ -4762,7 +4762,7 @@ details.how p { margin-top: 8px; }
     var msg = document.createElement("span");
     msg.textContent = "Couldn't load " + what + ". "
       + (err && err.status ? "The server answered " + err.status + "."
-        : err && err.message ? "The page failed: " + err.message + "."
+        : err && err.message && !err.network ? "The page failed: " + err.message + "."
         : "The request did not get an answer.");
     var sp = document.createElement("span");
     sp.className = "sp";

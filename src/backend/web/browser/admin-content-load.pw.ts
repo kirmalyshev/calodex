@@ -1,8 +1,4 @@
-// The onboarding copy view in /admin loads every shipped language (ieat-app#3582).
-//
-// The real /admin/api/content answer, per language, from the real router over the memory store; the
-// other admin endpoints are stubbed empty. What is under test is the page's own JavaScript: a throw
-// while rendering the copy must not be reported as "the request did not get an answer".
+// The onboarding copy view in /admin loads every language and names a failure truthfully (ieat-app#3582).
 
 import { expect, test, type Page } from "@playwright/test";
 import { LANGS, ROUTES } from "@eait/shared";
@@ -62,7 +58,7 @@ for (const lang of LANGS) {
     page.on("pageerror", (e) => errors.push(String(e)));
     await stub(page, await realContent());
     await page.goto(`/admin#onboarding`);
-    await page.locator("#screens > *").first().waitFor({ timeout: 10_000 }).catch(() => {});
+    await expect(page.locator("#screens > *").first()).toBeAttached({ timeout: 10_000 });
     expect(errors).toEqual([]);
     await expect(page.locator("#state-onboarding .aerr")).toHaveCount(0);
   });
@@ -74,4 +70,26 @@ test("a throw while rendering the copy is not reported as a network failure", as
   const bar = page.locator("#state-onboarding .aerr");
   await expect(bar).toContainText("The page failed:");
   await expect(bar).not.toContainText("did not get an answer");
+});
+
+test("every onboarding section in the nav opens exactly one panel with its host", async ({ page }) => {
+  await stub(page, await realContent());
+  await page.goto(`/admin#onboarding`);
+  const nav = page.locator("#ob-nav button");
+  await expect(nav.first()).toBeVisible({ timeout: 10_000 });
+  const n = await nav.count();
+  expect(n).toBeGreaterThan(6);
+  for (let i = 0; i < n; i++) {
+    await nav.nth(i).click();
+    const open = page.locator("#body-onboarding [data-sec]:not(.hidden)");
+    await expect(open).toHaveCount(1);
+    await expect(open.locator(":scope > div[id]:not([id^=ob-])").first()).not.toBeEmpty();
+  }
+});
+
+test("a request that gets no answer is still reported as one", async ({ page }) => {
+  await stub(page, await realContent());
+  await page.route("**/admin/api/content**", (r) => r.abort());
+  await page.goto(`/admin#onboarding`);
+  await expect(page.locator("#state-onboarding .aerr")).toContainText("did not get an answer");
 });
