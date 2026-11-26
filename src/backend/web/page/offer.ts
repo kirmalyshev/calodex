@@ -1,5 +1,5 @@
 import { billedAround, fill, payCopyFor, paywallPercent, trialBillLine, welcomePlateAlt, WELCOME_PLATES, zeroLike } from "@eait/shared";
-import type { Lang, WebPaywall } from "@eait/shared";
+import type { ExitOffer, Lang, WebPaywall } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { IMG_URL_DIR } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -67,51 +67,52 @@ ${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay
 <p class="note">${escape(pay.renewsPlain)}</p>`);
   }
 
-  if (v.step === "offer" && w.exitOffer !== null) {
-    const o = w.exitOffer;
-    const percent = paywallPercent(o.percentOff, v.lang);
-    return page(`<h1>${escape(pay.offerSpecialTitle)}</h1>
-<div class="card special">
-<div class="off num">${escape(fill(pay.offerOff, { percent }))}</div>
-<div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
-<p class="per num">${escape(w.monthly !== null ? fill(pay.offerVsMonthly, { percent }) : fill(pay.offerPerMonth, { price: o.perMonth }))}</p>
-</div>
-${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}
-<p class="note">${escape(fill(pay.renewNoteYearly, { price: o.price }))}</p>`);
-  }
+  // C · the special offer is A with values changed (Kirill q90 = A, ieat-app#3617; boards pay-cal-c,
+  // pay-cal-c-notrial): the offer on Yearly's row, its percent in the band, the regular struck before
+  // the billed price, Claim, and A's one note carrying the offer's renewal. The web offer sells no
+  // free days, so the title is A's unlock title.
+  return plans(v.step === "offer" ? w.exitOffer : null);
 
-  // A · the plans: Yearly over Monthly, each a real radio — the plan checked is the plan checkout
-  // sends. The trial rides yearly only (pay.ts): its title, band and note follow the pick.
-  // The New Year promotion (ieat-app#3606, pay-cal-a-newyear) swaps values only: no trial, its
-  // band, the regular yearly price struck before its own, its footer, and yearly buys plan=newyear.
-  const ny = w.yearly !== null ? w.promoYearly : null;
-  const days = w.yearly !== null && ny === null ? w.trialDays : 0;
-  const band = ny !== null ? fill(pay.promoBand, { percent: paywallPercent(ny.percent, v.lang) })
-    : days > 0 ? fill(pay.trialBadge, { days: String(days) }) : null;
-  const row = (value: "yearly" | "monthly" | "newyear", name: string, billed: string | null, perMonth: string,
-      trial: string | null, checked: boolean): string => `<label class="plan2">
+  function plans(o: ExitOffer | null): string {
+    // A · the plans: Yearly over Monthly, each a real radio — the plan checked is the plan checkout
+    // sends. The trial rides yearly only (pay.ts): its title, band and note follow the pick.
+    // The New Year promotion (ieat-app#3606, pay-cal-a-newyear) swaps values only: no trial, its
+    // band, the regular yearly price struck before its own, its footer, and yearly buys plan=newyear.
+    const ny = o === null && w.yearly !== null ? w.promoYearly : null;
+    const days = o === null && w.yearly !== null && ny === null ? w.trialDays : 0;
+    const band = o !== null ? fill(pay.offerOff, { percent: paywallPercent(o.percentOff, v.lang) })
+      : ny !== null ? fill(pay.promoBand, { percent: paywallPercent(ny.percent, v.lang) })
+      : days > 0 ? fill(pay.trialBadge, { days: String(days) }) : null;
+    const row = (value: "yearly" | "monthly" | "newyear" | "exit", name: string, billed: string | null, perMonth: string,
+        trial: string | null, checked: boolean): string => `<label class="plan2">
 <input type="radio" name="plan" value="${value}"${checked ? " checked" : ""}>
 ${trial === null ? "" : `<div class="band">${escape(trial)}</div>`}
 <div class="nr"><i class="ck"></i><div class="nmc"><div class="nm">${escape(name)}</div>${billed === null ? "" : `<small class="billed">${billed}</small>`}</div><div class="pm num">${escape(perMonth)}</div></div>
 </label>`;
-  const [before, after] = billedAround(pay);
-  const rows = [
-    w.yearly === null ? "" : ny !== null
-      ? row("newyear", pay.planYearly,
-        `${escape(before)}<s>${escape(w.yearly.price)}</s> <b>${escape(ny.price)}</b>${escape(after)}`,
-        fill(pay.perMonthShort, { price: ny.pricePerMonth }), band, true)
-      : row("yearly",
-        w.yearly.save === null ? pay.planYearly : `${pay.planYearly} · ${w.yearly.save}`,
-        escape(fill(pay.billedYearly, { price: w.yearly.price })),
-        fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true),
-    w.monthly === null ? "" : row("monthly", pay.planMonthly, null,
-      fill(pay.perMonthShort, { price: w.monthly.price }), null, w.yearly === null),
-  ].join("\n");
-  // The footer follows the pick like the title: the promotion's terms while yearly is checked.
-  const note = ny === null || w.yearly === null ? `<p class="note">${escape(pay.renewsPlain)}</p>`
-    : `<p class="note t-y">${escape(fill(pay.promoFooter, { price: ny.price, regular: w.yearly.price }))}</p>
+    const [before, after] = billedAround(pay);
+    const rows = [
+      o !== null ? row("exit", pay.planYearly,
+        `${escape(before)}<s>${escape(o.regularPrice)}</s> ${escape(o.price)}${escape(after)}`,
+        fill(pay.perMonthShort, { price: o.perMonth }), band, true)
+      : w.yearly === null ? "" : ny !== null
+        ? row("newyear", pay.planYearly,
+          `${escape(before)}<s>${escape(w.yearly.price)}</s> <b>${escape(ny.price)}</b>${escape(after)}`,
+          fill(pay.perMonthShort, { price: ny.pricePerMonth }), band, true)
+        : row("yearly",
+          w.yearly.save === null ? pay.planYearly : `${pay.planYearly} · ${w.yearly.save}`,
+          escape(fill(pay.billedYearly, { price: w.yearly.price })),
+          fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true),
+      w.monthly === null ? "" : row("monthly", pay.planMonthly, null,
+        fill(pay.perMonthShort, { price: w.monthly.price }), null, o === null && w.yearly === null),
+    ].join("\n");
+    // The footer follows the pick like the title: the offer's renewal or the promotion's terms while
+    // yearly is checked, A's price-free line while Monthly is.
+    const note = o !== null ? `<p class="note t-y">${escape(fill(pay.renewNoteYearly, { price: o.price }))}</p>
+<p class="note t-m">${escape(pay.renewsPlain)}</p>`
+      : ny === null || w.yearly === null ? `<p class="note">${escape(pay.renewsPlain)}</p>`
+      : `<p class="note t-y">${escape(fill(pay.promoFooter, { price: ny.price, regular: w.yearly.price }))}</p>
 <p class="note t-m">${escape(pay.renewsPlain)}</p>`;
-  return shell(PAGE_COPY.titleOffer, `
+    return shell(PAGE_COPY.titleOffer, `
 <form class="offer" action="${escape(v.checkoutUrl)}" method="get">
 <img class="heroimg" src="${IMG_URL_DIR}/frenchtoast.webp" alt="${escape(welcomePlateAlt(WELCOME_PLATES["french-toast"], v.lang))}">
 ${x}
@@ -120,9 +121,10 @@ ${x}
 <div class="pwp2" role="radiogroup" aria-label="${escape(PAGE_COPY.titlePlan)}">
 ${rows}
 </div>
-<button class="button primary" type="submit">${escape(pay.continueCta)}</button>
+<button class="button primary" type="submit">${escape(o === null ? pay.continueCta : pay.offerClaim)}</button>
 ${note}
 ${fine}
 </form>
 `, v.lang);
+  }
 }
