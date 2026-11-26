@@ -492,6 +492,107 @@ describe("POST /start/consent keeps the banner's answer (ieat-app#3621)", () => 
   });
 });
 
+describe("the consent banner on every /start page (ieat-app#3621, board ob-welcome-consent)", () => {
+  const LEGAL: Config = { ...CONFIG, landingUrl: "https://eait.fit" };
+  const AF: Config = { ...LEGAL, appsflyerWebS2sToken: "s2s-token", appsflyerWebAppId: "web-123" };
+  let fetchSpy: ReturnType<typeof spyOn<typeof globalThis, "fetch">> | null = null;
+  afterEach(() => { fetchSpy?.mockRestore(); fetchSpy = null; });
+  const FORM = 'action="/start/consent"';
+  /** The `back` field every one of the banner's forms carries. */
+  const backOf = (html: string): string[] =>
+    [...html.matchAll(/<input type="hidden" name="back" value="([^"]*)">/g)].map((m) => m[1]!.replaceAll("&amp;", "&"));
+
+  it("shows the board's line, 'use' linked to the privacy policy's cookie section, Decline then Accept", async () => {
+    router(LEGAL);
+    const html = await (await get("/start?utm_source=meta&email=x")).text();
+    expect(html).toContain('We <a href="https://eait.fit/privacy#cookies">use</a> cookies');
+    const decline = html.indexOf('name="choice" value="decline"');
+    const accept = html.indexOf('name="choice" value="accept"');
+    expect(decline).toBeGreaterThan(-1);
+    expect(accept).toBeGreaterThan(decline);
+    expect(html.split(FORM)).toHaveLength(3);
+    expect(html).toContain(">Decline</button>");
+    expect(html).toContain(">Accept</button>");
+    // The path and the allow-listed click params, nothing else the link carried.
+    expect(backOf(html)).toEqual(["/start?utm_source=meta", "/start?utm_source=meta"]);
+    expect(html).not.toContain("email=x");
+  });
+
+  it("has the linked verb exactly once in every language's sentence", () => {
+    for (const lang of LANGS) {
+      const copy = pageCopyFor(lang);
+      expect(copy.cookieNotice.split("{link}"), lang).toHaveLength(2);
+      expect(copy.cookieLink.trim(), lang).not.toBe("");
+    }
+  });
+
+  it("draws the line with no link where no privacy policy is configured", async () => {
+    const html = await (await get("/start")).text();
+    expect(html).toContain("We use cookies");
+    expect(html).not.toContain("#cookies");
+  });
+
+  it("is on the pre-account question and on a signed-in page too, carrying each page's own address", async () => {
+    const q = await (await get("/start/q?utm_source=meta")).text();
+    expect(backOf(q)).toEqual(["/start/q?utm_source=meta", "/start/q?utm_source=meta"]);
+    const first = await post("/start/q", { prompt: "goal", answer: "lose" });
+    const session = cookieFrom(first, "eait_web");
+    const page = await (await get("/start/q", session)).text();
+    expect(page).toContain(FORM);
+    expect(backOf(page)).toEqual(["/start/q", "/start/q"]);
+  });
+
+  it("is gone once either answer is recorded", async () => {
+    for (const choice of ["accept", "decline"]) {
+      for (const path of ["/start", "/start/q", "/start/signup"]) {
+        const html = await (await get(path, `eait_consent=${choice}`)).text();
+        expect(html, `${choice} ${path}`).not.toContain(FORM);
+        expect(html, `${choice} ${path}`).not.toContain('class="ck"');
+      }
+    }
+  });
+
+  it("speaks the page's language", async () => {
+    router(LEGAL);
+    const de = pageCopyFor("de");
+    const html = await (await get("/start", undefined, { "accept-language": "de" })).text();
+    const [before, after] = de.cookieNotice.split("{link}");
+    expect(html).toContain(`${escape(before!)}<a href="https://eait.fit/privacy#cookies">${escape(de.cookieLink)}</a>${escape(after!)}`);
+    expect(html).toContain(`>${escape(de.cookieDecline)}</button>`);
+    expect(html).toContain(`>${escape(de.cookieAccept)}</button>`);
+    expect(html).not.toContain(">Decline</button>");
+  });
+
+  /** Accept (or Decline) on the front door, then the first answer, as a browser would. */
+  const walk = async (choice: "accept" | "decline") => {
+    router(AF);
+    fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async () => new Response(null, { status: 200 })) as unknown as typeof fetch);
+    const door = await (await get("/start?utm_source=meta")).text();
+    const [back] = backOf(door);
+    const answered = await post("/start/consent", { choice, back: back! });
+    const consent = cookieFrom(answered, "eait_consent");
+    const again = await (await get(answered.headers.get("location")!, consent)).text();
+    expect(again).not.toContain(FORM);
+    expect(again).toContain('href="/start/q?utm_source=meta"');
+    const q = await (await get("/start/q?utm_source=meta", consent)).text();
+    const landing = q.match(/<input type="hidden" name="landing" value="([^"]*)">/)![1]!.replaceAll("&amp;", "&");
+    const res = await post("/start/q", { prompt: "goal", answer: "lose", landing }, consent);
+    expect(res.status).toBe(303);
+    return fetchSpy;
+  };
+
+  it("end to end: Accept on the front door, then the first answer sends the AppsFlyer visit", async () => {
+    const spy = await walk("accept");
+    expect(spy).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String((spy.mock.calls[0]! as unknown as [string, RequestInit])[1].body));
+    expect(body.event_url.endsWith("/start?utm_source=meta")).toBe(true);
+  });
+
+  it("end to end: Decline on the front door, and no visit leaves", async () => {
+    expect(await walk("decline")).not.toHaveBeenCalled();
+  });
+});
+
 describe("the one control script", () => {
   // The inline script's source, cut by string search rather than a tag regex — a regex that
   // filters HTML is the pattern static analysis flags, so there is none here to flag.

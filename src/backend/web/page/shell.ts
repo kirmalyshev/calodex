@@ -328,6 +328,29 @@ ${W3_CSS}
 
 /* The pay plans' radios (#263) — the kit's own rules, the same string the app's kitCss carries. */
 ${payCss()}
+
+/* The consent banner (ieat-app#3621, board ob-welcome-consent, approved q94): a white sheet docked
+   at the foot of the phone-width column, one line and two buttons of equal weight — the same size,
+   outlined, ink text, neither in the accent. --ck is its height, reserved at the bottom of the
+   page and added to every sticky foot, so the page's own content and its Continue stay whole above
+   it (the board's doors rise by the same 126). Without the banner it is 0 and nothing moves. */
+:root { --ck: 0px; }
+body:has(> .ck) { --ck: 126px; padding-bottom: var(--ck); }
+.ck {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; max-width: 390px; margin: 0 auto;
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  box-shadow: 0 0 0 1px var(--hair), 0 -8px 24px -16px rgba(23,25,28,.18);
+  padding: 16px 16px 34px; font-family: var(--sans);
+}
+.ck p { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink); }
+.ck p a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.ck-b { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.ck-b button {
+  display: flex; align-items: center; justify-content: center; height: 44px; margin: 0; padding: 0 12px;
+  border: 0; border-radius: 22px; background: var(--surface); box-shadow: 0 0 0 1px var(--line);
+  font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: 0; line-height: 1; color: var(--ink);
+}
+.ck-b button:hover { box-shadow: 0 0 0 1px var(--ink); }
 `;
 
 /**

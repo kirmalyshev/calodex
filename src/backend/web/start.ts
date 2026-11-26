@@ -65,6 +65,7 @@ import {
   type PageCopy,
   type ChatLine, type ChatProposal, type OfferStep,
 } from "./page.ts";
+import { consentBanner } from "./page/parts.ts";
 
 /**
  * Re-exported from the contract, which is where the one spelling lives (#408), so a second literal
@@ -670,7 +671,35 @@ function refusalText(r: { reason: string; minHealthyKg?: number }, lang: Lang): 
   return copy.outOfRange;
 }
 
+/**
+ * Every `/start` route, and the consent banner on every HTML page it answers (ieat-app#3621, q93/q94).
+ *
+ * ONE SEAM, NOT ONE PER PAGE. The banner shows to every visitor until either answer is recorded,
+ * on every page this surface renders, signed in or not — so it is added to the finished document
+ * here rather than threaded through sixteen `shell()` callers that would each have to remember it.
+ * The language is the one the page already declared in `<html lang>`, which `shell()` always
+ * writes, so the banner can never speak a different language from the page under it.
+ */
 export async function startRoutes(req: Request, url: URL, ctx: StartContext): Promise<Response> {
+  const res = await routeStart(req, url, ctx);
+  const choice = cookieHeader(req)[CONSENT_COOKIE];
+  if (choice === "accept" || choice === "decline") return res;
+  if (!(res.headers.get("content-type") ?? "").startsWith("text/html")) return res;
+  const doc = await res.text();
+  const at = doc.lastIndexOf("</main>");
+  if (at === -1) return new Response(doc, { status: res.status, headers: res.headers });
+  const lang = (/<html lang="([^"]+)"/.exec(doc)?.[1] ?? "en") as Lang;
+  const banner = consentBanner(pageCopyFor(lang), {
+    privacyHref: legalUrls(ctx.deps.config).privacy || null,
+    // The path, and of its query only the allow-listed click params: those are what must survive
+    // the round trip, and nothing else a link carried (an `email=` included) is echoed into a page.
+    back: clickParamsOf(url.searchParams) === "" ? url.pathname : `${url.pathname}?${clickParamsOf(url.searchParams)}`,
+  });
+  const at2 = at + "</main>".length;
+  return new Response(`${doc.slice(0, at2)}${banner}${doc.slice(at2)}`, { status: res.status, headers: res.headers });
+}
+
+async function routeStart(req: Request, url: URL, ctx: StartContext): Promise<Response> {
   const { config } = ctx.deps;
   // A BUTTON THAT CANNOT WORK IS WORSE THAN NO BUTTON. Both providers refuse origins a laptop can
   // offer — Apple wants https on a domain it can resolve, Google takes http on loopback only — and
