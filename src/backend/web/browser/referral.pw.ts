@@ -29,7 +29,7 @@ test("a friend's link: invite page, the walk, the step prefilled, applied", asyn
   await page.getByRole("button").click();
   await expect(page).toHaveURL(/\/start\/country/);
   await page.locator('label.opt:has(input[value="de"])').click();
-  await page.locator('button[type="submit"]').last().click();
+  await page.locator('main button[type="submit"]').last().click();
 
   // No step is asked (#3195): the link the walk carried is applied at the country.
   await expect(page).not.toHaveURL(/\/start\/referral/);

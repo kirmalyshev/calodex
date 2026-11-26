@@ -46,7 +46,7 @@ test("answers before an account, the plan before the sign-up, and the first meal
   await expect(page).toHaveURL(/\/start\/country/);
   // A country is a card: the label carries the radio, Continue posts it.
   await page.locator('label.opt:has(input[value="de"])').click();
-  await page.locator('button[type="submit"]').last().click();
+  await page.locator('main button[type="submit"]').last().click();
 
   // The handoff: this deployment has no web application, so the product's own thread is it.
   await expect(page).toHaveURL(/\/start\/chat/);
