@@ -267,6 +267,9 @@ body:has(.offer) { background: var(--surface); }
 .plan2 .billed, .plan2 .pm { font-size: 13px; font-weight: 400; }
 /* 3.1.2(c): the billed amount is the primary text colour at medium weight, picked or not (Kirill q54). */
 .plan2 .billed { font-weight: 500; color: var(--ink); }
+/* pay-cal-a-newyear (ieat-app#3606): the regular yearly price struck and muted, the promotion's the heaviest figure. */
+.plan2 .billed s { color: var(--muted); font-weight: 400; }
+.plan2 .billed b { font-weight: 700; font-size: 16px; }
 .plan2:not(:has(>input:checked)) :is(.nm, .pm) { color: var(--muted); }
 /* B · try for free: the trial as a timeline, a rail between the dots. */
 .offer .tl { list-style: none; margin: .5rem 0; padding: 0; display: flex; flex-direction: column; }

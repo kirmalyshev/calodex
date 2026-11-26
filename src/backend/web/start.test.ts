@@ -1863,6 +1863,53 @@ describe("the soft offer after the plan", () => {
     };
     const closeOf = (html: string): string => /<a class="x" href="([^"]+)"/.exec(html)![1]!.replaceAll("&amp;", "&");
 
+    // ieat-app#3606, board pay-cal-a-newyear: while the promotion is live and priced, A is the same
+    // screen with values swapped — the no-trial title, the promotion band, the regular yearly price
+    // struck before the promotion's, its per-month, its footer — and yearly checks out at plan=newyear.
+    const NY = { from: new Date(Date.now() - 3_600_000).toISOString(), until: new Date(Date.now() + 3_600_000).toISOString(),
+      percent: 40, trialDays: 0, iosCode: "", webCheckoutUrl: "https://pay.rev.cat/ny/{userId}", webPrice: 23.99, skipTrialStep: true };
+    const promoA = async (promoNewYear: typeof NY | null, armed = true): Promise<string> => {
+      router({ ...CONFIG, webPaywall: FULL, promoNewYear }, undefined, undefined, true);
+      if (armed) await store.setSwitch("paywall.promo.newyear", true, crypto.randomUUID());
+      const session = await answerAll(undefined, ANSWERS);
+      await post("/start/streak", { answer: "14" }, session);
+      return (await get("/start/offer", session)).text();
+    };
+
+    it("A during the New Year promotion: its band, the struck yearly price, its price and footer, plan=newyear", async () => {
+      const a = await promoA(NY);
+      expect(a).toContain('<h1 class="t-y">Unlock');
+      expect(a).not.toContain("-day free trial");
+      expect(a).toContain('<div class="band">New Year −40%</div>');
+      expect(a).not.toContain("save 33%");
+      expect(a).toContain('<div class="nm">Yearly</div><small class="billed"><s>€39.99</s> <b>€23.99</b> billed yearly</small>');
+      expect(a).toContain("€2.00/mo");
+      expect(a).toContain('<input type="radio" name="plan" value="newyear" checked>');
+      expect(a).toContain('<p class="note t-y">€23.99 first year, then €39.99/year. Cancel any time.</p>');
+      // Monthly is unchanged: its row, and its own renewal line once it is picked.
+      expect(a).toContain('value="monthly"');
+      expect(a).toContain('<p class="note t-m">Renews automatically. Cancel any time.</p>');
+    });
+
+    // PaywallPromo.skipTrialStep (ieat-app#3606): while the promotion is drawn, × on A closes — no B,
+    // and C is already suppressed — unless the operator kept the step.
+    it("× on the promotion's A closes when skipTrialStep, and walks to B when it is off", async () => {
+      const closeOf = (html: string): string => /<a class="x" href="([^"]+)"/.exec(html)![1]!.replaceAll("&amp;", "&");
+      expect(closeOf(await promoA(NY))).toBe("/start/signup");
+      expect(closeOf(await promoA({ ...NY, skipTrialStep: false }))).toBe("/start/offer?step=try");
+      // Not drawn (no web price): today's A, today's B.
+      expect(closeOf(await promoA({ ...NY, webPrice: 0 }))).toBe("/start/offer?step=try");
+    });
+
+    it("A is today's screen when the promotion is not live, or the web cannot price it", async () => {
+      for (const a of [await promoA(NY, false), await promoA({ ...NY, webPrice: 0 })]) {
+        expect(a).not.toContain("New Year");
+        expect(a).not.toContain("<s>");
+        expect(a).toContain('value="yearly" checked');
+        expect(a).toContain("Yearly · save 33%");
+      }
+    });
+
     it("× on A goes to B, not to the sign-up", async () => {
       const { session } = await walk();
       const a = await (await get("/start/offer", session)).text();
