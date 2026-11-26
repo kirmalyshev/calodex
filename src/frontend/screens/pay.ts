@@ -15,7 +15,7 @@ import { fill } from "../../shared/lang.ts";
 import { WELCOME_PLATES } from "../../shared/onboarding.ts";
 import { paywallPercent, zeroLike, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
-import { trialBillLine, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
+import { billedAround, trialBillLine, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl } from "../kit.ts";
@@ -37,17 +37,22 @@ const markOfferSeen = (uid: string): void => {
   try { localStorage.setItem(SEEN + uid, "1"); } catch { /* a storage that refuses shows it again */ }
 };
 
-interface PlanPick { value: "yearly" | "monthly"; plan: PaywallPlan }
+interface PlanPick { value: "yearly" | "monthly" | "newyear"; plan: PaywallPlan }
 
 /** A's plan rows (Cal AI 04): Yearly over Monthly, each a real radio so selection works as it does
     on `/start`'s markup — the plan picked is the plan the CTA buys. Yearly carries the trial as a
     band on top, its billed price under the name (3.1.2(c)) and its per-month figure on the right;
     its NAME carries the saving the server derives (`YearlyPlan.save`, the phone's `planSave`).
-    `null` is "nothing to pick": the caller draws the host-sells-nothing offer. */
+    `null` is "nothing to pick": the caller draws the host-sells-nothing offer.
+    While `promoYearly` is sent (ieat-app#3606, pay-cal-a-newyear) Yearly is the promotion: its
+    band, its bare name, the regular price struck before its own, and `/start/checkout?plan=newyear`
+    — the same link `/start/offer` submits to. */
 function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string):
     { group: HTMLElement; picked: () => PlanPick | null } | null {
-  const band = w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
-  const row = (value: "yearly" | "monthly", name: string, billed: string | null, perMonth: string,
+  const ny = w.yearly !== null ? w.promoYearly : null;
+  const band = ny !== null ? fill(pay.promoBand, { percent: paywallPercent(ny.percent, lang) })
+    : w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
+  const row = (value: PlanPick["value"], name: string, billed: (string | HTMLElement)[] | null, perMonth: string,
       trial: string | null, checked: boolean): HTMLElement => {
     const lab = el("label", "plan2");
     const input = el("input", "") as HTMLInputElement;
@@ -60,7 +65,11 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
     const nr = el("div", "nr");
     const nm = el("div", "nmc");
     nm.append(el("div", "nm", name));
-    if (billed !== null) nm.append(el("small", "billed", billed));
+    if (billed !== null) {
+      const small = el("small", "billed");
+      small.append(...billed);
+      nm.append(small);
+    }
     nr.append(el("i", "ck"), nm, el("div", "pm num", perMonth));
     lab.append(nr);
     return lab;
@@ -69,11 +78,17 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
   const group = el("div", "pwp2");
   group.setAttribute("role", "radiogroup");
   group.setAttribute("aria-label", label);
-  if (w.yearly !== null) {
+  if (w.yearly !== null && ny !== null) {
+    const [before, after] = billedAround(pay);
+    cards.push({ value: "newyear", plan: { checkoutUrl: "/start/checkout?plan=newyear", price: ny.price } });
+    group.append(row("newyear", pay.planYearly,
+      [before, el("s", "", w.yearly.price), " ", el("b", "", ny.price), after],
+      fill(pay.perMonthShort, { price: ny.pricePerMonth }), band, true));
+  } else if (w.yearly !== null) {
     cards.push({ value: "yearly", plan: w.yearly });
     group.append(row("yearly",
       w.yearly.save === null ? pay.planYearly : `${pay.planYearly} · ${w.yearly.save}`,
-      fill(pay.billedYearly, { price: w.yearly.price }),
+      [fill(pay.billedYearly, { price: w.yearly.price })],
       fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true));
   }
   if (w.monthly !== null) {
@@ -149,18 +164,21 @@ export function payScreen(frame: Frame): HTMLElement {
       if (sel === null) return;
       go.href = sel.plan.checkoutUrl;
       // The trial is on yearly only: the trial words ride while yearly is picked; a plan that
-      // sells no trial takes the store's own Subscribe (the phone's subscribePhone).
+      // sells no trial takes the store's own Subscribe (the phone's subscribePhone). The New Year
+      // promotion is the board's Continue, no trial, and its own footer (pay-cal-a-newyear).
       const days = sel.value === "yearly" ? w.trialDays : 0;
+      const ny = sel.value === "newyear" && w.yearly !== null ? w.promoYearly : null;
       title.textContent = days > 0 ? fill(pay.plansTrialTitle, { days: String(days) }) : fill(pay.plansUnlockTitle, {});
-      go.textContent = days > 0 ? pay.continueCta : pay.subscribePhone;
+      go.textContent = days > 0 || ny !== null ? pay.continueCta : pay.subscribePhone;
+      // #3465: the billed amount is said ONCE on this screen — the Yearly row's own line (3.1.2(c)).
+      // The line under the CTA is the price-free renewsPlain, but for the promotion's own terms.
+      note.textContent = ny !== null && w.yearly !== null
+        ? fill(pay.promoFooter, { price: ny.price, regular: w.yearly.price }) : pay.renewsPlain;
     };
     plans.group.addEventListener("change", update);
     plans.group.addEventListener("change", () => analytics.capture("paywall_plan_selected", sold()));
     update();
     col.append(plans.group);
-    // #3465: the billed amount is said ONCE on this screen — the Yearly row's own line (3.1.2(c)).
-    // The line under the CTA is the price-free renewsPlain on every step that carries it.
-    note.textContent = pay.renewsPlain;
   }
   col.append(go, note);
   go.addEventListener("click", () => analytics.capture("paywall_purchase_started", sold()));
@@ -266,7 +284,9 @@ export function payScreen(frame: Frame): HTMLElement {
   close.addEventListener("click", (ev) => {
     const offer = w?.exitOffer ?? null;
     const uid = frame.me?.profile.user_id;
-    if (step === "plans" && w?.yearly != null && w.trialDays > 0) {
+    // While the promotion is drawn and `skipTrialStep` (ieat-app#3606), no B: × on its A closes.
+    const skipTry = frame.me?.promo?.skipTrialStep === true && w?.promoYearly != null;
+    if (step === "plans" && w?.yearly != null && w.trialDays > 0 && !skipTry) {
       ev.preventDefault();
       step = "try";
       showTry(w.yearly, w.trialDays);

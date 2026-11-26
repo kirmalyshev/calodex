@@ -76,6 +76,15 @@ export interface WebPaywall {
    */
   promoCheckoutUrl: string | null;
   /**
+   * The promotion's yearly figures for the web plans screen (ieat-app#3606, board
+   * pay-cal-a-newyear): its price, formatted like `YearlyPlan.price`, struck against which the
+   * regular `yearly.price` is drawn; that price over a month, like `YearlyPlan.pricePerMonth`; and
+   * the whole percent the band names. Null unless the promotion is live AND sold here — a web
+   * checkout, its `WEB_PRICE_NEWYEAR` and a yearly plan to strike through — and a client then
+   * draws today's plans, unchanged.
+   */
+  promoYearly: PromoYearly | null;
+  /**
    * The legal footer's Terms href — the operator's `TERMS_URL`, verbatim. "" means no terms are
    * published and a client draws no link, the shape `/start`'s own consent line takes.
    */
@@ -85,6 +94,13 @@ export interface WebPaywall {
    * landing is configured to publish it.
    */
   privacyUrl: string;
+}
+
+/** {@link WebPaywall.promoYearly}. */
+export interface PromoYearly {
+  price: string;
+  pricePerMonth: string;
+  percent: number;
 }
 
 /**
@@ -187,6 +203,12 @@ export interface PaywallPromo {
   endsAt: string;
   /** The App Store offer code to redeem on the phone; null when none is configured. */
   iosCode: string | null;
+  /**
+   * Skip the try-for-free step while this promotion is live (ieat-app#3606): × on the
+   * promotion's plans closes rather than offering the regular trial. The operator's
+   * `PROMO_NEWYEAR_SKIP_TRIAL_STEP`, default true.
+   */
+  skipTrialStep: boolean;
 }
 
 /**

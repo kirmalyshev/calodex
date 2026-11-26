@@ -44,6 +44,7 @@ const VARS = [
   "EAIT__BACKEND__WEB_EXIT_OFFER_REGULAR_PRICE", "EAIT__BACKEND__WEB_CURRENCY",
   "EAIT__BACKEND__PROMO_NEWYEAR_FROM", "EAIT__BACKEND__PROMO_NEWYEAR_UNTIL", "EAIT__BACKEND__PROMO_NEWYEAR_PERCENT",
   "EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS", "EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE", "EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL",
+  "EAIT__BACKEND__WEB_PRICE_NEWYEAR", "EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP",
   "EAIT__BACKEND__APPLE_SERVICE_ID", "EAIT__BACKEND__APPLE_TEAM_ID", "EAIT__BACKEND__APPLE_KEY_ID",
   "EAIT__BACKEND__APPLE_PRIVATE_KEY",
   "EAIT__BACKEND__TELEGRAM_BOT_TOKEN",
@@ -549,7 +550,11 @@ describe("the New Year promotion", () => {
     withRequired({ ...WINDOW,
       EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS: "7",
       EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE: "NEWYEAR",
-      EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL: "https://pay.rev.cat/ny/{userId}" });
+      EAIT__BACKEND__WEB_CHECKOUT_YEARLY_URL: "https://pay.rev.cat/y/{userId}",
+      EAIT__BACKEND__WEB_PRICE_YEARLY: "39.99",
+      EAIT__BACKEND__WEB_CURRENCY: "EUR",
+      EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL: "https://pay.rev.cat/ny/{userId}",
+      EAIT__BACKEND__WEB_PRICE_NEWYEAR: "23.99" });
     expect(loadConfig().promoNewYear).toEqual({
       from: "2026-12-26T00:00:00.000Z",
       until: "2027-01-07T23:00:00.000Z",
@@ -557,12 +562,86 @@ describe("the New Year promotion", () => {
       trialDays: 7,
       iosCode: "NEWYEAR",
       webCheckoutUrl: "https://pay.rev.cat/ny/{userId}",
+      webPrice: 23.99,
+      skipTrialStep: true,
     });
   });
 
   it("defaults the trial to none and the codes to empty", () => {
     withRequired(WINDOW);
-    expect(loadConfig().promoNewYear).toMatchObject({ trialDays: 0, iosCode: "", webCheckoutUrl: "" });
+    expect(loadConfig().promoNewYear).toMatchObject({ trialDays: 0, iosCode: "", webCheckoutUrl: "", webPrice: 0 });
+  });
+
+  // ieat-app#3606: the web paywall draws the promotion's yearly price, so a web checkout for it
+  // without that price is a card with a hole in it — refused like a plan without its price.
+  const SELLS_YEARLY = {
+    EAIT__BACKEND__WEB_CHECKOUT_YEARLY_URL: "https://pay.rev.cat/y/{userId}",
+    EAIT__BACKEND__WEB_PRICE_YEARLY: "39.99",
+    EAIT__BACKEND__WEB_CURRENCY: "EUR",
+  };
+  const NY_CHECKOUT = { EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL: "https://pay.rev.cat/ny/{userId}" };
+
+  it("reads the web promotion's price", () => {
+    withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT, EAIT__BACKEND__WEB_PRICE_NEWYEAR: "23.99" });
+    expect(loadConfig().promoNewYear?.webPrice).toBe(23.99);
+    expect(demoConfig().promoNewYear?.webPrice).toBe(23.99);
+  });
+
+  it("refuses a web checkout for the promotion without its price, or a price that is not one", () => {
+    withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT });
+    expect(() => loadConfig()).toThrow(/WEB_PRICE_NEWYEAR/);
+    clear();
+    withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT, EAIT__BACKEND__WEB_PRICE_NEWYEAR: "cheap" });
+    expect(() => loadConfig()).toThrow(/WEB_PRICE_NEWYEAR/);
+  });
+
+  it("refuses a promotion price that does not undercut the regular yearly price", () => {
+    for (const p of ["39.99", "44.99"]) {
+      withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT, EAIT__BACKEND__WEB_PRICE_NEWYEAR: p });
+      expect(() => loadConfig()).toThrow(/WEB_PRICE_NEWYEAR/);
+      clear();
+    }
+    // …and with no yearly plan sold there is nothing for it to undercut.
+    withRequired({ ...WINDOW, ...NY_CHECKOUT, EAIT__BACKEND__WEB_PRICE_NEWYEAR: "23.99" });
+    expect(() => loadConfig()).toThrow(/WEB_PRICE_NEWYEAR/);
+  });
+
+  it("refuses a band that promises more than the price gives — PERCENT off yearly, in whole cents", () => {
+    // 39.99 at −40% is 23.994: 23.99 keeps the promise, 24.00 breaks it by a fraction of a cent.
+    withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT, EAIT__BACKEND__WEB_PRICE_NEWYEAR: "24.00" });
+    expect(() => loadConfig()).toThrow(/WEB_PRICE_NEWYEAR.*PROMO_NEWYEAR_PERCENT|PROMO_NEWYEAR_PERCENT.*WEB_PRICE_NEWYEAR/);
+    clear();
+    withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT, EAIT__BACKEND__PROMO_NEWYEAR_PERCENT: "50", EAIT__BACKEND__WEB_PRICE_NEWYEAR: "23.99" });
+    expect(() => loadConfig()).toThrow(/WEB_PRICE_NEWYEAR.*PROMO_NEWYEAR_PERCENT|PROMO_NEWYEAR_PERCENT.*WEB_PRICE_NEWYEAR/);
+    clear();
+    // A price deeper than the band is fine: the band never overstates.
+    withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT, EAIT__BACKEND__WEB_PRICE_NEWYEAR: "19.99" });
+    expect(loadConfig().promoNewYear?.webPrice).toBe(19.99);
+  });
+
+  // The try-for-free step during the promotion (ieat-app#3606): skipped unless the operator says not.
+  it("skips the try-for-free step by default, and keeps it on 0 or false", () => {
+    withRequired(WINDOW);
+    expect(loadConfig().promoNewYear?.skipTrialStep).toBe(true);
+    for (const v of ["0", "false"]) {
+      clear();
+      withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP: v });
+      expect(loadConfig().promoNewYear?.skipTrialStep).toBe(false);
+      expect(demoConfig().promoNewYear?.skipTrialStep).toBe(false);
+    }
+  });
+
+  it("does not count the trial-step flag as a promotion setting — the env files ship it", () => {
+    for (const v of ["1", "0"]) {
+      withRequired({ EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP: v });
+      expect(loadConfig().promoNewYear).toBeNull();
+      clear();
+    }
+  });
+
+  it("counts the promotion price as a promotion setting", () => {
+    withRequired({ EAIT__BACKEND__WEB_PRICE_NEWYEAR: "23.99" });
+    expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR_FROM/);
   });
 
   it("refuses half a window", () => {

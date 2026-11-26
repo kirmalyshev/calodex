@@ -243,11 +243,11 @@ body:has(.offer) { background: var(--surface); }
 /* The offer's three steps (ieat-app#3464), drawn as the in-app pay screen draws them (pay.css.ts):
    A's plan rows — radios, the trial band, billed under the name (3.1.2(c): as heavy as the per-month
    figure) — and B's timeline; C is A with the offer's values (ieat-app#3617). A and C are
-   script-free: the title and C's note follow the checked radio through :has. */
+   script-free: the title and the note follow the checked radio through :has. */
 .offer h1 { margin: .5rem 0 1rem; }
-.offer .t-m, .offer .n-m { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) :is(.t-y, .n-y) { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) :is(.t-m, .n-m) { display: block; }
+.offer .t-m { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) .t-y { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) .t-m { display: block; }
 .pwp2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
 .plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 18px;
   box-shadow: 0 0 0 1px var(--hair); cursor: pointer; position: relative; overflow: hidden; }
@@ -267,6 +267,9 @@ body:has(.offer) { background: var(--surface); }
 .plan2 .billed, .plan2 .pm { font-size: 13px; font-weight: 400; }
 /* 3.1.2(c): the billed amount is the primary text colour at medium weight, picked or not (Kirill q54). */
 .plan2 .billed { font-weight: 500; color: var(--ink); }
+/* pay-cal-a-newyear (ieat-app#3606): the regular yearly price struck and muted, the promotion's the heaviest figure. */
+.plan2 .billed s { color: var(--muted); font-weight: 400; }
+.plan2 .billed b { font-weight: 700; font-size: 16px; }
 .plan2:not(:has(>input:checked)) :is(.nm, .pm) { color: var(--muted); }
 /* B · try for free: the trial as a timeline, a rail between the dots. */
 .offer .tl { list-style: none; margin: .5rem 0; padding: 0; display: flex; flex-direction: column; }
