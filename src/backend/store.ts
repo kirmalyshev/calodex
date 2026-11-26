@@ -1659,6 +1659,20 @@ export interface Store {
    * written — that guard, or no such account.
    */
   putAcquisition(userId: string, acquisition: Acquisition): Promise<boolean>;
+  /**
+   * The visitor's answer to the /start consent banner (ieat-app#3621), written when /start mints
+   * this account, whenever its signed-in visitor answers or resets the banner, and at a sign-in (a
+   * Decline always, an Accept only onto null): true accepted, false declined or withdrawn, null
+   * never asked. In a merge a Decline on either side wins and a lone answer carries over. Not on `Profile`, so no PATCH
+   * writes it. Read by the RevenueCat webhook before a web purchase is forwarded to AppsFlyer.
+   */
+  webAttributionConsentOf(userId: string): Promise<boolean | null>;
+  setWebAttributionConsent(userId: string, consented: boolean): Promise<void>;
+  /**
+   * A sign-in's answer, in one guarded statement: a Decline is always written, an Accept only onto
+   * an account that holds null. The value the account holds afterwards, or null for no such user.
+   */
+  adoptWebAttributionConsent(userId: string, accepted: boolean): Promise<boolean | null>;
 
   /**
    * The account a sign-in merged `userId` into, or null when it was never merged away (#2694).

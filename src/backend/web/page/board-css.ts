@@ -14,7 +14,7 @@ export const BOARD_CSS = `
   ${lightVars}
   --r-card: 12px; --r-ctl: 10px; --r-cta: 28px;
   --shadow: 0 1px 2px rgb(23 25 28 / .04), 0 8px 24px rgb(23 25 28 / .06);
-  display: flex; flex-direction: column; min-height: 100svh; max-width: none; margin: 0;
+  display: flex; flex-direction: column; min-height: calc(100svh - var(--cbn)); max-width: none; margin: 0;
   padding: 0; width: 100%; background: var(--bg);
   font-family: var(--sans);
 }
@@ -81,7 +81,7 @@ export const BOARD_CSS = `
 .ob h1.q { font-size: 32px; font-weight: 700; letter-spacing: -.032em; line-height: 1.13; text-wrap: balance; }
 /* Continue sits at the foot of the screen, and stays there over a list that scrolls under it. */
 .ob .qform > .cta.p:last-child, .ob .igroup > .cta.p:last-child {
-  margin-top: auto; position: sticky; bottom: 24px; z-index: 1; max-width: none; align-self: stretch; }
+  margin-top: auto; position: sticky; bottom: calc(24px + var(--cbn)); z-index: 1; max-width: none; align-self: stretch; }
 .ob .notice { color: var(--warn); background: var(--warn-tint); padding: 10px 14px; border-radius: var(--r-ctl);
               font-size: 14px; line-height: 1.45; }
 
@@ -397,7 +397,7 @@ export const BOARD_CSS = `
   .ob .wcenter { padding: 0; align-items: flex-start; }
   .ob .wdemo { flex-direction: column; gap: 24px; padding: 0 0 32px !important; width: 100%; }
   .ob .wherobox { width: 100%; }
-  .ob .whero { width: 100%; height: min(560px, 66.4svh); aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none;
+  .ob .whero { width: 100%; height: min(560px, calc(66.4svh - var(--cbn))); aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none;
     -webkit-mask: linear-gradient(#000 78%, transparent); mask: linear-gradient(#000 78%, transparent); }
   .ob .whead { padding: 0 24px; align-items: stretch; text-align: center; max-width: none; }
   .ob .whead h1 { font-size: 30px; }

@@ -1194,6 +1194,67 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.putAcquisition(crypto.randomUUID(), ads)).toBe(false);
     });
 
+    it("keeps the /start consent banner's answer per account, null until asked (ieat-app#3621)", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      expect(await s.webAttributionConsentOf(a)).toBeNull();
+      await s.setWebAttributionConsent(a, true);
+      expect(await s.webAttributionConsentOf(a)).toBe(true);
+      await s.setWebAttributionConsent(a, false);
+      expect(await s.webAttributionConsentOf(a)).toBe(false);
+      // Another account's answer is not this one's, and no account is no answer.
+      await s.setWebAttributionConsent(b, true);
+      expect(await s.webAttributionConsentOf(a)).toBe(false);
+      expect(await s.webAttributionConsentOf(crypto.randomUUID())).toBeNull();
+      // It is not on the profile, so no PATCH can write it.
+      expect(Object.keys(await s.getProfile(a) ?? {})).not.toContain("web_attribution_consent");
+    });
+
+    it("adopts a sign-in's consent answer in one guarded statement: a Decline always, an Accept only onto null", async () => {
+      const s = await open();
+      const holding = async (held: boolean | null) => {
+        const id = (await s.upsertDeviceUser(device(), "en")).userId;
+        if (held !== null) await s.setWebAttributionConsent(id, held);
+        return id;
+      };
+      const unasked = await holding(null);
+      expect(await s.adoptWebAttributionConsent(unasked, true)).toBe(true);
+      expect(await s.webAttributionConsentOf(unasked)).toBe(true);
+      const declined = await holding(false);
+      expect(await s.adoptWebAttributionConsent(declined, true)).toBe(false);
+      expect(await s.webAttributionConsentOf(declined)).toBe(false);
+      const accepted = await holding(true);
+      expect(await s.adoptWebAttributionConsent(accepted, false)).toBe(false);
+      expect(await s.webAttributionConsentOf(accepted)).toBe(false);
+      expect(await s.adoptWebAttributionConsent(crypto.randomUUID(), true)).toBeNull();
+    });
+
+    it("merges the consent answers so a Decline on either side wins, and a lone answer carries over", async () => {
+      const s = await open();
+      const pair = async (from: boolean | null, into: boolean | null) => {
+        const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+        const real = (await s.upsertDeviceUser(device(), "en")).userId;
+        if (from !== null) await s.setWebAttributionConsent(anon, from);
+        if (into !== null) await s.setWebAttributionConsent(real, into);
+        expect(typeof (await s.mergeUsers(anon, real))).toBe("number");
+        return s.webAttributionConsentOf(real);
+      };
+      expect(await pair(true, null)).toBe(true);
+      expect(await pair(false, null)).toBe(false);
+      expect(await pair(true, false)).toBe(false);
+      expect(await pair(false, true)).toBe(false);
+      expect(await pair(null, null)).toBeNull();
+    });
+
+    it("forgets the consent answer with the account", async () => {
+      const s = await open();
+      const gone = (await s.upsertDeviceUser(device(), "en")).userId;
+      await s.setWebAttributionConsent(gone, true);
+      await s.deleteUser(gone);
+      expect(await s.webAttributionConsentOf(gone)).toBeNull();
+    });
+
     // ── Photos ─────────────────────────────────────────────────────────────────────────────
     //
     // The bytes live with the meal and are read by `meal_id AND user_id`, never by a guessable

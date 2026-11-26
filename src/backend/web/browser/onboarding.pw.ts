@@ -27,7 +27,7 @@ test.describe("the walk", () => {
     // The goal cards: clicking the card's label checks the radio inside it.
     await page.locator('label.opt:has(input[value="lose"])').click();
     await expect(page.locator('input[value="lose"]')).toBeChecked();
-    await page.locator('button[type="submit"]').last().click();
+    await page.locator('main button[type="submit"]').last().click();
     // The next question follows the goal; the how-it-works card waits until after the last one.
     await expect(page.locator('input[name="prompt"]')).toHaveAttribute("value", "sex");
     await onboard(page);
@@ -51,7 +51,7 @@ test.describe("the walk", () => {
         if (await field.isVisible()) await field.fill(answer);
         else await field.evaluate((el, v) => { (el as { value: string }).value = String(v); }, answer);
       }
-      await page.locator('button[type="submit"]').last().click();
+      await page.locator('main button[type="submit"]').last().click();
     }
     // The cm ruler is up; switching to ft,in redraws the same height the other way.
     await expect(page.locator('input[name="prompt"]')).toHaveAttribute("value", "height_cm");
@@ -60,13 +60,13 @@ test.describe("the walk", () => {
     // The wire is inches now — 68″ is the 172 cm the store keeps.
     await page.locator('input[name="answer"]').first()
       .evaluate((el) => { (el as { value: string }).value = "68"; });
-    await page.locator('button[type="submit"]').last().click();
+    await page.locator('main button[type="submit"]').last().click();
     // The choice carries: the weight ruler opens in pounds without being asked again.
     await expect(page.locator('input[name="prompt"]')).toHaveAttribute("value", "weight_kg");
     await expect(page.locator(".bign small").first()).toContainText("lb");
     await page.locator('input[name="answer"]').first()
       .evaluate((el) => { (el as { value: string }).value = "163"; });
-    await page.locator('button[type="submit"]').last().click();
+    await page.locator('main button[type="submit"]').last().click();
     // … and the stored values are metric, because every unit here is display-only.
     const res = await page.request.get("/v1/profile", {
       headers: { authorization: `Bearer ${await sessionToken(page)}` },
@@ -86,7 +86,7 @@ test.describe("the walk", () => {
       await expect(page.locator('input[name="prompt"]').first()).toHaveAttribute("value", id);
       const row = page.locator(`label.opt:has(input[name="answer"][value="${answer}"])`);
       if (await row.count()) await row.click();
-      await page.locator('button[type="submit"]').last().click();
+      await page.locator('main button[type="submit"]').last().click();
     }
     await expect(page.locator('input[name="prompt"]')).toHaveAttribute("value", "height_cm");
     const slider = page.getByRole("slider");
@@ -119,7 +119,7 @@ test.describe("the walk", () => {
     await page.keyboard.press("End");
     await page.keyboard.press("Home");
     await page.keyboard.press("ArrowUp");
-    await page.locator('button[type="submit"]').last().click();
+    await page.locator('main button[type="submit"]').last().click();
 
     await onboard(page, {}, "pace");
     const pace = page.getByRole("slider");
@@ -148,7 +148,7 @@ test.describe("the walk", () => {
       const row = page.locator(`label.opt:has(input[name="answer"][value="${answer}"])`);
       if (await row.count()) await row.click();
       else await page.locator('input[name="answer"]').first().fill(answer);
-      await page.locator('button[type="submit"]').last().click();
+      await page.locator('main button[type="submit"]').last().click();
     }
     // The token before the stop — after the delete it must resolve nothing.
     const token = await sessionToken(page);

@@ -323,6 +323,34 @@ ${W3_CSS}
 
 /* The pay plans' radios (#263) — the kit's own rules, the same string the app's kitCss carries. */
 ${payCss()}
+
+/* The consent banner (ieat-app#3621, board ob-welcome-consent): a white sheet docked at the foot
+   of the phone-width column, one centred line and two buttons of the same size: Accept filled
+   in the accent like Get started, Decline outlined. --cbn is its height, reserved at the bottom of the page and added
+   to every sticky foot, so the page's own content and its Continue stay whole above it (the
+   board's doors rise by the same 126). The server writes class="cbn-on" on the body when it adds the
+   banner, so no selector support is assumed; without it --cbn is 0 and nothing moves. */
+:root { --cbn: 0px; }
+body.cbn-on { --cbn: 126px; padding-bottom: var(--cbn); }
+.cbn {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; max-width: 390px; margin: 0 auto;
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  box-shadow: 0 0 0 1px var(--hair), 0 -8px 24px -16px rgba(23,25,28,.18);
+  padding: 16px 16px 34px; font-family: var(--sans);
+}
+.cbn p { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink); text-align: center; }
+.cbn p a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.cbn-b { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.cbn-b button {
+  display: flex; align-items: center; justify-content: center; height: 44px; margin: 0; padding: 0 12px;
+  border: 0; border-radius: 22px; background: var(--surface); box-shadow: 0 0 0 1px var(--line);
+  font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: 0; line-height: 1; color: var(--ink);
+}
+.cbn-b button:hover { box-shadow: 0 0 0 1px var(--ink); }
+/* Accept is the page's primary action, filled like Get started; Decline stays outlined. */
+/* The ring keeps it the same size as Decline, whose outline is drawn outside its 44px box. */
+.cbn-b button.primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 1px var(--accent); }
+.cbn-b button.primary:hover { transform: none; box-shadow: 0 0 0 1px var(--accent); filter: brightness(1.05); }
 `;
 
 /**

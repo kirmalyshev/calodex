@@ -712,6 +712,11 @@ alter table users add column if not exists acq_campaign text;
 alter table users add column if not exists acq_adgroup  text;
 alter table users add column if not exists acq_keyword  text;
 alter table users add column if not exists acq_via      text check (acq_via in ('adservices', 'revenuecat'));
+-- The /start consent banner's answer (ieat-app#3621), written at the mint and on every signed-in
+-- answer or reset: null never asked. The RevenueCat webhook forwards a web purchase to AppsFlyer
+-- only on true. Absent from PROFILE_COLUMNS, so no PATCH writes it; in mergeUsers a Decline on
+-- either side wins and a lone answer carries over.
+alter table users add column if not exists web_attribution_consent boolean;
 -- Every RevenueCat webhook delivery (ieat-app#3196), beside the resolved entitlement on users.
 -- Keyed on RevenueCat's event id, so a redelivery writes nothing. user_id is null for a delivery
 -- that names no account of ours; otherwise it goes with the account and moves with a merge. In
@@ -2190,6 +2195,9 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   acquisitionOf: 0,
   // From the app's own token, or from the webhook naming the account as `putEntitlement` does.
   putAcquisition: 0,
+  webAttributionConsentOf: 0,
+  setWebAttributionConsent: 0,
+  adoptWebAttributionConsent: 0,
   dropPushToken: 0,
   pushTokensFor: 0,
   setTimezone: 0,
@@ -3319,6 +3327,16 @@ export async function postgresStore(
           from users from_u
           where into_u.id = ${intoUserId} and from_u.id = ${fromUserId} and from_u.acq_via is not null
             and (into_u.acq_via is null or (into_u.acq_via = 'revenuecat' and from_u.acq_via = 'adservices'))`;
+        // The /start banner's answer (ieat-app#3621): a Decline on either side wins, and a lone
+        // answer carries over — a newer Decline in one browser must not lose to an older Accept on
+        // the account it signs into. Matches store.memory.ts.
+        await tx`
+          update users into_u set web_attribution_consent =
+            case when into_u.web_attribution_consent is null then from_u.web_attribution_consent
+                 else into_u.web_attribution_consent and from_u.web_attribution_consent end
+          from users from_u
+          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
+            and from_u.web_attribution_consent is not null`;
         // Experiment assignments move by the gap rule below: the account that already holds one
         // keeps it, the anonymous session's fills what is missing. An assignment is what makes a
         // variant sticky, and a run split across two ids would assign the same person twice.
@@ -3811,6 +3829,25 @@ export async function postgresStore(
         where id = ${userId} and acq_via is distinct from 'adservices'
         returning id`;
       return rows.length > 0;
+    },
+
+    async webAttributionConsentOf(userId) {
+      const [r] = await sql`select web_attribution_consent from users where id = ${userId}`;
+      return r?.web_attribution_consent ?? null;
+    },
+
+    async setWebAttributionConsent(userId, consented) {
+      await sql`update users set web_attribution_consent = ${consented} where id = ${userId}`;
+    },
+
+    async adoptWebAttributionConsent(userId, accepted) {
+      // One statement, so a Decline committed between a read and a write cannot be undone by it.
+      const [r] = await sql`
+        update users set web_attribution_consent =
+          case when ${accepted} then coalesce(web_attribution_consent, true) else false end
+        where id = ${userId}
+        returning web_attribution_consent`;
+      return r?.web_attribution_consent ?? null;
     },
 
     async putEntitlement(userId, patch) {

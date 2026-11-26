@@ -71,7 +71,7 @@ export const W3_CSS = `
 .ob .pln .brow .plan { background: var(--accent); color: #fff; border-radius: 8px; justify-content: flex-end; }
 .ob .pln .bal .tick { position: absolute; top: 20px; bottom: -4px; width: 3px; margin-left: -1px; border-radius: 2px; background: var(--ink); }
 .ob .pln .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.ob .pln .pfoot { width: 100%; max-width: none; align-self: stretch; position: sticky; bottom: 0; z-index: 1;
+.ob .pln .pfoot { width: 100%; max-width: none; align-self: stretch; position: sticky; bottom: var(--cbn); z-index: 1;
                     background: var(--bg); padding: 12px 0 16px; }
 .ob .pln .cta { max-width: none; }
 .ob .pln h2 { margin-top: 24px; }
@@ -243,7 +243,7 @@ export const W3_CSS = `
 .ob .cty .opt:has(input:checked) .ck { background: var(--accent); box-shadow: none; }
 .ob .cty .opt:has(input:checked) .ck::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
   border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.ob .cty .cta.p { max-width: none; align-self: stretch; position: sticky; bottom: 24px; z-index: 1; }
+.ob .cty .cta.p { max-width: none; align-self: stretch; position: sticky; bottom: calc(24px + var(--cbn)); z-index: 1; }
 @media (max-width: 720px) { .ob .cty .opts { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .ob .cty .opts { grid-template-columns: 1fr; } }
 `;

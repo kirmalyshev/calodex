@@ -26,12 +26,13 @@ const warnedTypes = new Set<string>();
  * one of our accounts, copy them onto it. The store keeps Apple's own AdServices answer over them.
  * A FIRST delivery naming an account is also one `subscription_<type>` analytics event; a retried
  * one is not, because the event id is already logged. An id a sign-in merged away is resolved to
- * the account that survived it first, as the entitlement is.
+ * the account that survived it first, as the entitlement is. Answers whether this was that first
+ * delivery (the row was new).
  */
 export async function logRevenueCatEvent(
   deps: EngineDeps, row: RevenueCatEventRow,
   lifecycle: { is_trial_conversion: boolean | null; cancel_reason: string | null } = { is_trial_conversion: null, cancel_reason: null },
-): Promise<void> {
+): Promise<boolean> {
   if (row.userId !== null) row = { ...row, userId: await survivorOf(deps, row.userId) };
   const fresh = await deps.store.recordRevenueCatEvent(row);
   if (row.userId !== null && row.acquisition !== null) {
@@ -53,6 +54,7 @@ export async function logRevenueCatEvent(
       environment: row.environment, ...lifecycle,
     }, null);
   }
+  return fresh;
 }
 
 /**

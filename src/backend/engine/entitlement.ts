@@ -389,7 +389,7 @@ export async function applyRevenueCatEvent(
  * The account `userId` lives on now: itself, or the survivor a sign-in merged it into (#3201).
  * Logged as the id pair only, never the payload.
  */
-export async function survivorOf(deps: EngineDeps, userId: string): Promise<string> {
+export async function survivorOf(deps: Pick<EngineDeps, "store">, userId: string): Promise<string> {
   const survivor = await deps.store.mergedInto(userId);
   if (survivor === null) return userId;
   console.log(`[eait] revenuecat: ${userId} was merged into ${survivor}, delivery resolved to it`);

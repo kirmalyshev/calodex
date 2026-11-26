@@ -476,6 +476,8 @@ export function createRouter(
       if (isStartPath(pathname)) {
         return await startRoutes(req, url, {
           deps, store, verifier, providers, origin: webOrigin(req),
+          // The socket peer, for the AppsFlyer visit's address when no proxy named one (ieat-app#3621).
+          peerAddress: peer?.requestIP(req)?.address ?? null,
           // WHETHER THERE IS A DIARY TO SEND ANYBODY TO, and this process no longer holds the
           // answer in its own filesystem. Until #423 it did: the shell and the bundle were served
           // from here, so "is there a web app" was "is there a file". The web application is its

@@ -85,16 +85,25 @@ export interface RateLimiterOptions {
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
 export function clientAddress(req: Request, socketPeer?: string | undefined): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const parts = forwarded.split(",").map((p) => p.trim()).filter(Boolean);
-    const observed = parts[parts.length - 1];
-    if (observed) return normaliseAddress(observed);
-  }
-  if (socketPeer) return normaliseAddress(socketPeer);
+  const observed = observedAddress(req, socketPeer);
+  if (observed !== null) return normaliseAddress(observed);
   // Nothing to key on. ONE shared bucket rather than a unique key per request: the alternative is
   // an unlimited limiter that looks configured, which is the worst of both.
   return "unknown";
+}
+
+/**
+ * The address the request was observed from, as written: the last X-Forwarded-For hop (the one our
+ * own proxy appended), else the socket peer, else null. Not normalised — `clientAddress` keys on it.
+ */
+export function observedAddress(req: Request, socketPeer?: string | null | undefined): string | null {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const parts = forwarded.split(",").map((p) => p.trim()).filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (last) return last;
+  }
+  return socketPeer || null;
 }
 
 /**

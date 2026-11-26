@@ -109,7 +109,10 @@ export async function onboard(page: Page, extra: Record<string, string | string[
       for (const v of answer) {
         await page.locator(`label.opt:has(input[name="answer"][value="${v}"])`).click();
       }
-      await page.locator('button[type="submit"]').last().click();
+      // The page's own submit, inside <main>: the consent banner docks after it with two submits
+      // of its own, and a click on one of those answers the banner, not the question. Playwright
+      // refuses a click the banner would intercept, so this also proves Continue stays reachable.
+      await page.locator('main button[type="submit"]').last().click();
       continue;
     }
     if (answer === undefined) {
@@ -117,7 +120,7 @@ export async function onboard(page: Page, extra: Record<string, string | string[
       // free-text one, which takes an empty line. Both submit the same way.
       const text = page.locator('input[type="text"][name="answer"], input[type="number"][name="answer"]');
       if (await text.count() && await text.first().isVisible()) await text.first().fill("0");
-      await page.locator('button[type="submit"]').last().click();
+      await page.locator('main button[type="submit"]').last().click();
       continue;
     }
     // A choice is its LABEL — the radios sit inside it, drawn away by the card styles.
@@ -126,7 +129,7 @@ export async function onboard(page: Page, extra: Record<string, string | string[
     if (await row.count()) {
       if (await row.first().isVisible()) await row.first().click();
       else await page.locator(`input[name="answer"][value="${answer}"]`).check({ force: true });
-      await page.locator('button[type="submit"]').last().click();
+      await page.locator('main button[type="submit"]').last().click();
       continue;
     }
     const field = page.locator('input[name="answer"]').first();
@@ -134,7 +137,7 @@ export async function onboard(page: Page, extra: Record<string, string | string[
     // in the drag paths; here the field is the wire, so it is set straight.
     if (await field.isVisible()) await field.fill(answer);
     else await field.evaluate((el, v) => { (el as { value: string }).value = String(v); }, answer);
-    await page.locator('button[type="submit"]').last().click();
+    await page.locator('main button[type="submit"]').last().click();
   }
   if (until === undefined) await expect(page).toHaveURL(/\/start\/plan/);
   else throw new Error(`the walk never opened ${until}`);

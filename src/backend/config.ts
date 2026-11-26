@@ -442,6 +442,14 @@ export interface Config {
   /** Where that catalog lives. */
   fooddbUrl: string;
   /**
+   * AppsFlyer web attribution (ieat-app#3621): the S2S API token
+   * (`EAIT__BACKEND__APPSFLYER_WEB_S2S_TOKEN`, a secret) and the web app id
+   * (`EAIT__BACKEND__APPSFLYER_WEB_APP_ID`, `website-<domain>`). Either empty = off: /start sends
+   * no visit and the webhook forwards no web purchase. `demoConfig` never reads them.
+   */
+  appsflyerWebS2sToken: string;
+  appsflyerWebAppId: string;
+  /**
    * How long one fooddb product read may take before the scan is answered without it (#639).
    * Short on purpose — a barcode lookup is somebody standing in a shop; the snapshot refresh is a
    * background job and does not read this.
@@ -826,6 +834,8 @@ export function configDefaults(): Config {
     telegramBotToken: "",
     fooddbReadKey: "",
     fooddbUrl: "https://food-api.eait.fit",
+    appsflyerWebS2sToken: "",
+    appsflyerWebAppId: "",
     fooddbTimeoutMs: 4_000,
     fooddbMissTtlMs: 60_000,
     telegramBotUsername: "",
@@ -1117,6 +1127,8 @@ export function loadConfig(): Config {
     telegramBotToken: telegramBotTokenFromEnv(),
     fooddbReadKey: (process.env.EAIT__BACKEND__FOODDB_READ_KEY ?? "").trim(),
     fooddbUrl: (process.env.EAIT__BACKEND__FOODDB_URL ?? "").trim() || d.fooddbUrl,
+    appsflyerWebS2sToken: (process.env.EAIT__BACKEND__APPSFLYER_WEB_S2S_TOKEN ?? "").trim(),
+    appsflyerWebAppId: (process.env.EAIT__BACKEND__APPSFLYER_WEB_APP_ID ?? "").trim(),
     fooddbTimeoutMs: int("EAIT__BACKEND__FOODDB_TIMEOUT_MS", d.fooddbTimeoutMs),
     fooddbMissTtlMs: int("EAIT__BACKEND__FOODDB_MISS_TTL_MS", d.fooddbMissTtlMs),
     adminBootstrapUserId: (process.env.EAIT__BACKEND__ADMIN_BOOTSTRAP_USER_ID ?? d.adminBootstrapUserId).trim(),
@@ -1222,7 +1234,7 @@ export function telegramBotTokenFromEnv(): string {
 export function redact(c: Config): Record<string, unknown> {
   const {
     llmApiKey: _k, revenueCatWebhookToken: _rc,
-    expoPushAccessToken: _e, webPushVapidPrivateKey: _wp, googleWebClientSecret: _g, applePrivateKey: _ap, telegramBotToken: _tg, fooddbReadKey: _fk, resendApiKey: _rs, storeReviewCode: _sr, posthogKey: _ph, databaseUrl,
+    expoPushAccessToken: _e, webPushVapidPrivateKey: _wp, googleWebClientSecret: _g, applePrivateKey: _ap, telegramBotToken: _tg, fooddbReadKey: _fk, appsflyerWebS2sToken: _af, resendApiKey: _rs, storeReviewCode: _sr, posthogKey: _ph, databaseUrl,
     ...rest
   } = c;
   return {
@@ -1247,6 +1259,7 @@ export function redact(c: Config): Record<string, unknown> {
     applePrivateKey: c.applePrivateKey === "" ? "(unset — Apple is off on /start)" : "***",
     telegramBotToken: c.telegramBotToken === "" ? "(unset — the Telegram connector is off)" : "***",
     fooddbReadKey: c.fooddbReadKey === "" ? "(unset — the catalog refresh is off)" : "***",
+    appsflyerWebS2sToken: c.appsflyerWebS2sToken === "" ? "(unset — web attribution is off)" : "***",
     resendApiKey: c.resendApiKey === "" ? "(unset — mail is logged)" : "***",
     storeReviewCode: c.storeReviewCode === "" ? "(unset — store-review sign-in is off)" : "***",
     posthogKey: c.posthogKey === "" ? "(unset — server analytics is off)" : "***",
