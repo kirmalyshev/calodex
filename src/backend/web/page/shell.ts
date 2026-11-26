@@ -329,13 +329,14 @@ ${W3_CSS}
 /* The pay plans' radios (#263) — the kit's own rules, the same string the app's kitCss carries. */
 ${payCss()}
 
-/* The consent banner (ieat-app#3621, board ob-welcome-consent, approved q94): a white sheet docked
-   at the foot of the phone-width column, one line and two buttons of equal weight — the same size,
-   outlined, ink text, neither in the accent. --ck is its height, reserved at the bottom of the
-   page and added to every sticky foot, so the page's own content and its Continue stay whole above
-   it (the board's doors rise by the same 126). Without the banner it is 0 and nothing moves. */
+/* The consent banner (ieat-app#3621, board ob-welcome-consent): a white sheet docked at the foot
+   of the phone-width column, one line and two buttons of equal weight — the same size, outlined,
+   ink text, neither in the accent. --ck is its height, reserved at the bottom of the page and added
+   to every sticky foot, so the page's own content and its Continue stay whole above it (the
+   board's doors rise by the same 126). The server writes class="ck-on" on <body> when it adds the
+   banner, so no selector support is assumed; without it --ck is 0 and nothing moves. */
 :root { --ck: 0px; }
-body:has(> .ck) { --ck: 126px; padding-bottom: var(--ck); }
+body.ck-on { --ck: 126px; padding-bottom: var(--ck); }
 .ck {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; max-width: 390px; margin: 0 auto;
   background: var(--surface); border-radius: 20px 20px 0 0;

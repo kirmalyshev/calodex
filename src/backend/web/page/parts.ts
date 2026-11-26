@@ -2,6 +2,7 @@
 
 import { currentBrand } from "@eait/shared";
 import type { PageCopy } from "../copy.ts";
+import type { ConsentChoice } from "../../engine/appsflyer-web.ts";
 import { escape } from "./shell.ts";
 
 export const bubbles = (lines: readonly string[]): string =>
@@ -18,7 +19,7 @@ export const topBar = (PAGE_COPY: PageCopy): string =>
   `<div class="wbar"><strong>${escape(currentBrand().name)}</strong><small>${escape(PAGE_COPY.topBarNote)}</small></div>`;
 
 /**
- * The consent banner (ieat-app#3621, board ob-welcome-consent, approved q94): one line, the verb
+ * The consent banner (ieat-app#3621, board ob-welcome-consent): one line, the verb
  * linking the privacy policy's cookie section, and Decline then Accept as two equal POST forms.
  * No script: each button posts `choice` and `back` (this page's own path and query, so an ad's
  * click params on it survive the round trip) to `/start/consent`. With no policy configured the
@@ -28,7 +29,7 @@ export function consentBanner(copy: PageCopy, opts: { privacyHref: string | null
   const verb = escape(copy.cookieLink);
   const linked = opts.privacyHref === null ? verb : `<a href="${escape(`${opts.privacyHref}#cookies`)}">${verb}</a>`;
   const line = copy.cookieNotice.split("{link}").map(escape).join(linked);
-  const button = (choice: "decline" | "accept", label: string) =>
+  const button = (choice: ConsentChoice, label: string) =>
     `<form method="post" action="/start/consent"><input type="hidden" name="choice" value="${choice}">` +
     `<input type="hidden" name="back" value="${escape(opts.back)}"><button type="submit">${escape(label)}</button></form>`;
   // The region is named by its own sentence, so its name is in the page's language too.

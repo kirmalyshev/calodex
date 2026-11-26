@@ -30,7 +30,7 @@ import {
   renderableVerdicts, resolveCountry, ROUTES, screenForStep,
   screenOptions, screenOptionValues, suggestionFirst,
   switchedLine, targetRange, TARGET_STEP_KG, threadCopyFor, weightToKg,
-  LANGS_READY, acceptLang, acceptLanguageTags, countText, numbers, signupCopyFor, verdictPillLabel,
+  LANGS, LANGS_READY, acceptLang, acceptLanguageTags, countText, numbers, signupCopyFor, verdictPillLabel,
   ONBOARDING_ORDER_VERSION, orderFellBack,
   type ChatEntry, type ChatPrompt, type ChatPromptId, type CountryCode, type Diet, type Goal, type Lang,
   type Barrier, type CountedBefore, type MedicalTag, type NumberField, type OnboardingContent, type PatchProfileRequest,
@@ -50,8 +50,8 @@ import {
   type EngineDeps,
 } from "../engine/index.ts";
 import { analyticsRequestOf, track } from "../engine/analytics.ts";
-import { clickParamsOf, sendWebVisit } from "../engine/appsflyer-web.ts";
-import { clientAddress } from "../api/ratelimit.ts";
+import { clickParamsOf, isConsentChoice, sendWebVisit, type ConsentChoice } from "../engine/appsflyer-web.ts";
+import { observedAddress } from "../api/ratelimit.ts";
 import { blankProfile, type Store } from "../store.ts";
 import { legalUrls } from "../brand.ts";
 import {
@@ -182,13 +182,18 @@ const SESSION_COOKIE = "eait_web";
  */
 const REF_COOKIE = "eait_ref";
 /**
- * The /start consent banner's answer (Kirill, q93): `accept` or `decline`, the visitor's own choice
- * and nothing else. A record of a choice is what makes the choice keepable, so it needs no consent of
- * its own. Only `accept` lets an AppsFlyer web visit leave (`webAttributionAllowed`).
+ * The /start consent banner's answer: `accept` or `decline`, the visitor's own choice and nothing
+ * else. A record of a choice is what makes the choice keepable, so it needs no consent of its own.
+ * Only `accept` lets anything reach AppsFlyer (`mayAttribute`).
  */
 const CONSENT_COOKIE = "eait_consent";
 const CONSENT_MAX_AGE = 365 * 24 * 60 * 60;
 const CONSENT_PATH = `${START_PREFIX}/consent`;
+/** The privacy page's "Change cookie choice" link: forget the answer, so the banner asks again. */
+const CONSENT_RESET_PATH = `${CONSENT_PATH}/reset`;
+
+/** `path`, plus `?query` when there is one. */
+const withQuery = (path: string, query: string): string => query === "" ? path : `${path}?${query}`;
 
 /**
  * Where the consent POST sends the visitor back to: a path on THIS origin under `/start`, or the
@@ -201,9 +206,21 @@ function consentBack(raw: unknown, origin: string): string {
   try {
     const at = new URL(raw, origin);
     const under = at.pathname === START_PREFIX || at.pathname.startsWith(`${START_PREFIX}/`);
-    return at.origin === new URL(origin).origin && under ? `${at.pathname}${at.search}` : START_PREFIX;
+    // Of the query, only the allow-listed click params: nothing else a link carried is echoed back.
+    return at.origin === new URL(origin).origin && under ? withQuery(at.pathname, clickParamsOf(at.searchParams)) : START_PREFIX;
   } catch {
     return START_PREFIX;
+  }
+}
+/** Write the banner's answer onto an account. A failure is logged with the account and answered false. */
+async function keepConsent(store: Store, userId: string, accepted: boolean): Promise<boolean> {
+  try {
+    await store.setWebAttributionConsent(userId, accepted);
+    return true;
+  } catch (e) {
+    const { name, code } = (e ?? {}) as { name?: unknown; code?: unknown };
+    console.error(`[eait] start: consent write failed, user ${userId}: ${String(name ?? "error")}${code === undefined ? "" : ` ${String(code)}`}`);
+    return false;
   }
 }
 const REF_MAX_AGE = 7 * 24 * 60 * 60;
@@ -258,6 +275,8 @@ export interface StartContext {
    * every deployed host does (`iac/.../env.prod.j2`). The redirect URI is built from it.
    */
   origin: string;
+  /** The socket peer's address, or null: the AppsFlyer visit's address when no proxy named one. */
+  peerAddress: string | null;
   /**
    * The per-address sign-in allowance, the SAME one `/v1/auth/*` takes. Null means go ahead;
    * a number is the seconds to wait.
@@ -672,34 +691,58 @@ function refusalText(r: { reason: string; minHealthyKg?: number }, lang: Lang): 
 }
 
 /**
- * Every `/start` route, and the consent banner on every HTML page it answers (ieat-app#3621, q93/q94).
+ * Every `/start` route, and the consent banner on every HTML page it answers that has a `</main>`
+ * (ieat-app#3621).
  *
  * ONE SEAM, NOT ONE PER PAGE. The banner shows to every visitor until either answer is recorded,
  * on every page this surface renders, signed in or not — so it is added to the finished document
- * here rather than threaded through sixteen `shell()` callers that would each have to remember it.
- * The language is the one the page already declared in `<html lang>`, which `shell()` always
+ * here rather than threaded through every `shell()` caller, each of which would have to remember
+ * it. The language is the one the page already declared in `<html lang>`, which `shell()` always
  * writes, so the banner can never speak a different language from the page under it.
  */
 export async function startRoutes(req: Request, url: URL, ctx: StartContext): Promise<Response> {
-  const res = await routeStart(req, url, ctx);
-  const choice = cookieHeader(req)[CONSENT_COOKIE];
-  if (choice === "accept" || choice === "decline") return res;
+  const cookies = cookieHeader(req);
+  const raw = cookies[CONSENT_COOKIE];
+  const consent = isConsentChoice(raw) ? raw : null;
+  const res = await routeStart(req, url, ctx, cookies, consent);
+  if (consent !== null) return res;
   if (!(res.headers.get("content-type") ?? "").startsWith("text/html")) return res;
   const doc = await res.text();
   const at = doc.lastIndexOf("</main>");
   if (at === -1) return new Response(doc, { status: res.status, headers: res.headers });
-  const lang = (/<html lang="([^"]+)"/.exec(doc)?.[1] ?? "en") as Lang;
+  const declared = /<html lang="([^"]+)"/.exec(doc)?.[1];
+  const lang = LANGS.find((l) => l === declared) ?? "en";
+  // The page's address, and of its query only the allow-listed click params: those are what must
+  // survive the round trip. A POSTed page has no query, so its own `landing` field stands in — the
+  // same click params, already allow-listed, carried by the question it re-renders.
+  const landingField = /<input type="hidden" name="landing" value="([^"]*)">/.exec(doc)?.[1]?.replaceAll("&amp;", "&") ?? "";
+  const kept = clickParamsOf(url.searchParams) || clickParamsOf(new URLSearchParams(landingField));
   const banner = consentBanner(pageCopyFor(lang), {
     privacyHref: legalUrls(ctx.deps.config).privacy || null,
-    // The path, and of its query only the allow-listed click params: those are what must survive
-    // the round trip, and nothing else a link carried (an `email=` included) is echoed into a page.
-    back: clickParamsOf(url.searchParams) === "" ? url.pathname : `${url.pathname}?${clickParamsOf(url.searchParams)}`,
+    back: withQuery(url.pathname, kept),
   });
-  const at2 = at + "</main>".length;
-  return new Response(`${doc.slice(0, at2)}${banner}${doc.slice(at2)}`, { status: res.status, headers: res.headers });
+  const end = at + "</main>".length;
+  // The class reserves the banner's height at the foot of the page (`page/shell.ts`).
+  const page = `${doc.slice(0, end)}${banner}${doc.slice(end)}`.replace("<body>", '<body class="ck-on">');
+  return new Response(page, { status: res.status, headers: res.headers });
 }
 
-async function routeStart(req: Request, url: URL, ctx: StartContext): Promise<Response> {
+/**
+ * Whether a POST came from this site. A browser that sends `Sec-Fetch-Site` says so directly
+ * (`none` is the visitor's own navigation); otherwise `Origin` must be this origin. A request with
+ * NEITHER is allowed: an old browser sends neither, and so does a test or a script — none of which
+ * is a cross-site form a page elsewhere could make a signed-in browser post.
+ */
+function fromThisSite(req: Request, origin: string): boolean {
+  const site = req.headers.get("sec-fetch-site");
+  const from = req.headers.get("origin");
+  if (site === null && from === null) return true;
+  return site === "same-origin" || site === "none" || from === origin;
+}
+
+async function routeStart(
+  req: Request, url: URL, ctx: StartContext, cookies: Record<string, string>, consent: ConsentChoice | null,
+): Promise<Response> {
   const { config } = ctx.deps;
   // A BUTTON THAT CANNOT WORK IS WORSE THAN NO BUTTON. Both providers refuse origins a laptop can
   // offer — Apple wants https on a domain it can resolve, Google takes http on loopback only — and
@@ -718,7 +761,6 @@ async function routeStart(req: Request, url: URL, ctx: StartContext): Promise<Re
 
   const { pathname } = url;
   const secure = ctx.origin.startsWith("https://");
-  const cookies = cookieHeader(req);
   // The session, resolved once for every path here. On the sign-up flow it is the SESSION ACCOUNT
   // the OAuth callback attaches the identity to (S8): onboarding runs on an account with no
   // identity — the cookie's — and sign-up writes Apple or Google onto it.
@@ -762,14 +804,27 @@ async function routeStart(req: Request, url: URL, ctx: StartContext): Promise<Re
     return seeOther(START_PREFIX, [setCookie(LANG_COOKIE, asked, { secure, maxAge: LANG_MAX_AGE })]);
   }
 
-  // THE CONSENT BANNER'S TWO BUTTONS (q93): the answer is kept, then the visitor goes back to the
-  // page they answered on. Any account or none — the record is the browser's, not a person's.
+  // THE CONSENT BANNER'S TWO BUTTONS: the answer is kept in the browser and, with a live session,
+  // on the account too — the webhook reads the account's, so a Decline after the mint must reach
+  // it. Then the visitor goes back to the page they answered on. Only from this site: a page
+  // elsewhere must not be able to answer for a signed-in browser.
   if (req.method === "POST" && pathname === CONSENT_PATH) {
     const form = await req.formData().catch(() => null);
     const choice = form?.get("choice");
     const back = consentBack(form?.get("back"), ctx.origin);
-    if (choice !== "accept" && choice !== "decline") return seeOther(back);
+    if (!isConsentChoice(choice) || !fromThisSite(req, ctx.origin)) return seeOther(back);
+    if (userId !== null) await keepConsent(ctx.store, userId, choice === "accept");
     return seeOther(back, [setCookie(CONSENT_COOKIE, choice, { secure, maxAge: CONSENT_MAX_AGE })]);
+  }
+
+  // "CHANGE COOKIE CHOICE", linked from the privacy page. A GET because a link on a static page
+  // cannot POST, and it needs no origin check because it can only WITHDRAW: the cookie goes, a live
+  // session's account is set to declined (nothing more is forwarded until the visitor answers
+  // again), and /start shows the banner. A cross-site trigger can make somebody be asked again,
+  // never make anything be sent.
+  if (req.method === "GET" && pathname === CONSENT_RESET_PATH) {
+    if (userId !== null) await keepConsent(ctx.store, userId, false);
+    return seeOther(START_PREFIX, [setCookie(CONSENT_COOKIE, "", { secure, maxAge: 0 })]);
   }
 
   // The typeface, on this origin, which is what lets the CSP stay at `font-src 'self'` and load
@@ -1395,19 +1450,15 @@ async function routeStart(req: Request, url: URL, ctx: StartContext): Promise<Re
           open.field === undefined ? undefined : (answer.patch as Record<string, unknown>)[open.field]);
         const token = await ctx.store.issueToken(fresh);
         // The banner's answer, kept on the account so the RevenueCat webhook can honour it when this
-        // account buys on the web. No answer writes nothing. A failed write never fails the answer.
-        const choice = cookies[CONSENT_COOKIE];
-        if (choice === "accept" || choice === "decline") {
-          await ctx.store.setWebAttributionConsent(fresh, choice === "accept").catch((e: unknown) => {
-            console.error(`[eait] start: consent write failed: ${(e as Error | null)?.name ?? "error"}`);
-          });
-        }
+        // account buys on the web. No answer writes nothing. A failed write never fails the answer,
+        // and sends no visit: an Accept the account does not hold is not one to act on.
+        const kept = consent === null ? false : await keepConsent(ctx.store, fresh, consent === "accept");
         // The account's one AppsFlyer visit, fire-and-forget: it never throws and the 303 never
-        // waits on it. `clientAddress` keys IPv6 on its /64; the network address is still an IP.
+        // waits on it.
         void sendWebVisit(ctx.deps.config, {
           userId: fresh, clickParams: landing, origin: ctx.origin,
-          ip: clientAddress(req).replace(/\/64$/, ""), userAgent: req.headers.get("user-agent"),
-          consented: cookies[CONSENT_COOKIE] === "accept",
+          ip: observedAddress(req, ctx.peerAddress), userAgent: req.headers.get("user-agent"),
+          consented: kept && consent === "accept",
         });
         return seeOther(`${START_PREFIX}/q`, [setCookie(SESSION_COOKIE, token, { secure })]);
       }

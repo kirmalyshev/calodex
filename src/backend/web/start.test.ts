@@ -28,6 +28,7 @@ import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
 import type { Store, StoreOptions } from "../store.ts";
 import type { EngineDeps } from "../engine/index.ts";
+import { REVENUECAT_WEBHOOK_PATH } from "../api/revenuecat.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
 import { chatHistory, day, handleText, isAnonymous, linkTelegram, saveOnboardingContent } from "../engine/index.ts";
@@ -601,6 +602,148 @@ describe("the consent banner on every /start page (ieat-app#3621, board ob-welco
 
   it("end to end: Decline on the front door, and no visit leaves", async () => {
     expect(await walk("decline")).not.toHaveBeenCalled();
+  });
+});
+
+describe("the consent answer reaches the account, and only from this site (ieat-app#3621)", () => {
+  const RC = "rc-webhook-secret-token-long-enough";
+  const AF: Config = { ...CONFIG, appsflyerWebS2sToken: "s2s-token", appsflyerWebAppId: "web-123", revenueCatWebhookToken: RC };
+  let fetchSpy: ReturnType<typeof spyOn<typeof globalThis, "fetch">> | null = null;
+  const stubFetch = (impl: () => Promise<Response> = async () => new Response(null, { status: 200 })) => {
+    fetchSpy = spyOn(globalThis, "fetch").mockImplementation(impl as unknown as typeof fetch);
+    return fetchSpy;
+  };
+  afterEach(() => { fetchSpy?.mockRestore(); fetchSpy = null; });
+  /** A RevenueCat Billing trial start for `userId`, delivered to the webhook; resolves once the forward has run. */
+  const webPurchase = async (userId: string) => {
+    const res = await handle(new Request(`https://api.eait.fit${REVENUECAT_WEBHOOK_PATH}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: RC },
+      body: JSON.stringify({ api_version: "1.0", event: {
+        id: crypto.randomUUID(), type: "INITIAL_PURCHASE", app_user_id: userId, entitlement_ids: ["eait_fit_pro"],
+        product_id: "yearly", period_type: "TRIAL", store: "RC_BILLING", environment: "PRODUCTION",
+        expiration_at_ms: Date.now() + 86_400_000, event_timestamp_ms: Date.now(),
+      } }),
+    }));
+    expect(res.status).toBe(200);
+    await new Promise((r) => setTimeout(r, 20));
+  };
+  const mint = async (cookie?: string, headers: Record<string, string> = {}) => {
+    const res = await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" }, cookie, headers);
+    expect(res.status).toBe(303);
+    const session = cookieFrom(res, "eait_web");
+    return { session, userId: await webUser(session) };
+  };
+
+  it("a signed-in Decline after a minted Accept is the account's answer: a web purchase then sends nothing", async () => {
+    router(AF);
+    const spy = stubFetch();
+    // The control: a minted Accept alone does reach AppsFlyer with the purchase.
+    const control = await mint("eait_consent=accept");
+    spy.mockClear();
+    await webPurchase(control.userId);
+    expect(spy).toHaveBeenCalledTimes(1);
+    const { session, userId } = await mint("eait_consent=accept");
+    expect(await store.webAttributionConsentOf(userId)).toBe(true);
+    const res = await post("/start/consent", { choice: "decline", back: "/start/q" }, `${session}; eait_consent=accept`);
+    expect(res.status).toBe(303);
+    expect(await store.webAttributionConsentOf(userId)).toBe(false);
+    spy.mockClear();
+    await webPurchase(userId);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("a first answer with no consent, then Accept with the session, stores true", async () => {
+    router(AF);
+    const { session, userId } = await mint();
+    expect(await store.webAttributionConsentOf(userId)).toBeNull();
+    await post("/start/consent", { choice: "accept", back: "/start/q" }, session);
+    expect(await store.webAttributionConsentOf(userId)).toBe(true);
+  });
+
+  it("a failed consent write at the mint still answers 303 with the session, logs the account, and sends no visit", async () => {
+    router(AF);
+    store.setWebAttributionConsent = async () => { throw Object.assign(new Error("db down"), { code: "57P01" }); };
+    const spy = stubFetch();
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { userId } = await mint("eait_consent=accept");
+      expect(spy).not.toHaveBeenCalled();
+      expect(error.mock.calls.map((c) => String(c[0]))).toContain(`[eait] start: consent write failed, user ${userId}: Error 57P01`);
+    } finally { error.mockRestore(); }
+  });
+
+  it("the visit carries the observed address: the last IPv4 hop, a whole IPv6 address, or no ip at all", async () => {
+    router(AF);
+    const ipOf = async (headers: Record<string, string>) => {
+      const spy = stubFetch();
+      await mint("eait_consent=accept", headers);
+      const body = JSON.parse(String((spy.mock.calls[0]! as unknown as [string, RequestInit])[1].body));
+      spy.mockRestore();
+      return body;
+    };
+    expect((await ipOf({ "x-forwarded-for": "198.51.100.1, 203.0.113.7" })).ip).toBe("203.0.113.7");
+    expect((await ipOf({ "x-forwarded-for": "2001:db8:1:2:3:4:5:6" })).ip).toBe("2001:db8:1:2:3:4:5:6");
+    expect(await ipOf({})).not.toHaveProperty("ip");
+  });
+
+  it("refuses a cross-site answer: no cookie and no store write, back where it came from", async () => {
+    router(AF);
+    const { session, userId } = await mint("eait_consent=accept");
+    for (const headers of [{ origin: "https://evil.example" }, { "sec-fetch-site": "cross-site" }, { "sec-fetch-site": "same-site" }]) {
+      const res = await post("/start/consent", { choice: "decline", back: "/start/q" }, session, headers);
+      expect(res.status).toBe(303);
+      expect(res.headers.get("location")).toBe("/start/q");
+      expect(res.headers.getSetCookie().filter((c) => c.startsWith("eait_consent="))).toEqual([]);
+    }
+    expect(await store.webAttributionConsentOf(userId)).toBe(true);
+  });
+
+  it("takes an answer from this origin, or a same-origin or direct fetch", async () => {
+    for (const headers of [{ origin: "https://api.eait.fit" }, { "sec-fetch-site": "same-origin" }, { "sec-fetch-site": "none" }]) {
+      const res = await post("/start/consent", { choice: "accept", back: "/start" }, undefined, headers);
+      expect(res.headers.getSetCookie().filter((c) => c.startsWith("eait_consent=accept"))).toHaveLength(1);
+    }
+  });
+
+  it("sends back only the allow-listed click params of back's query", async () => {
+    const res = await post("/start/consent", { choice: "accept", back: "/start?email=x&utm_source=m" });
+    expect(res.headers.get("location")).toBe("/start?utm_source=m");
+  });
+
+  it("the POSTed retry page's banner keeps the landing's click params", async () => {
+    const res = await post("/start/q", { prompt: "goal", landing: "utm_source=meta&email=x" });
+    expect(res.status).toBe(200);
+    const backs = [...(await res.text()).matchAll(/<input type="hidden" name="back" value="([^"]*)">/g)].map((m) => m[1]);
+    expect(backs).toEqual(["/start/q?utm_source=meta", "/start/q?utm_source=meta"]);
+  });
+
+  it("reserves the banner's space with a class the server writes, and only while it shows", async () => {
+    const shown = await (await get("/start")).text();
+    expect(shown).toContain('<body class="ck-on">');
+    expect(shown).not.toContain(":has(> .ck)");
+    expect(await (await get("/start", "eait_consent=accept")).text()).toContain("<body>");
+  });
+
+  it("reset clears the answer cookie and sends the visitor to /start, where the banner shows again", async () => {
+    const res = await get("/start/consent/reset", "eait_consent=accept");
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe("/start");
+    expect(res.headers.getSetCookie()).toContain("eait_consent=; Path=/start; HttpOnly; SameSite=Lax; Secure; Max-Age=0");
+    // The browser has dropped the cookie, so the next page asks again.
+    expect(await (await get("/start")).text()).toContain('action="/start/consent"');
+  });
+
+  it("reset with a session that had Accepted withdraws it: a later web purchase sends nothing", async () => {
+    router(AF);
+    const spy = stubFetch();
+    const { session, userId } = await mint("eait_consent=accept");
+    const res = await get("/start/consent/reset", `${session}; eait_consent=accept`);
+    expect(res.status).toBe(303);
+    expect(await store.webAttributionConsentOf(userId)).toBe(false);
+    spy.mockClear();
+    await webPurchase(userId);
+    expect(spy).not.toHaveBeenCalled();
   });
 });
 
