@@ -54,6 +54,7 @@ const VARS = [
   "EAIT__BACKEND__EMAIL_CODES_PER_HOUR", "EAIT__BACKEND__EMAIL_CODES_PER_DAY",
   "EAIT__BACKEND__STORE_REVIEW_EMAIL", "EAIT__BACKEND__STORE_REVIEW_CODE",
   "EAIT__BACKEND__POSTHOG_KEY", "EAIT__BACKEND__POSTHOG_HOST",
+  "EAIT__BACKEND__APPSFLYER_WEB_S2S_TOKEN", "EAIT__BACKEND__APPSFLYER_WEB_APP_ID",
 ] as const;
 
 /** A syntactically real PKCS#8 PEM. Nothing here signs with it — `web-oauth.test.ts` does that. */
@@ -965,6 +966,28 @@ describe("the PKCS#8 guard words", () => {
       set("   \n ");
       expect(applePrivateKeyFromEnv()).toBe("");
     });
+  });
+});
+
+describe("AppsFlyer web attribution (ieat-app#3621)", () => {
+  // Shaped like a token and not one: this repository is public.
+  const TOKEN = "afs2s_not-a-real-token";
+
+  it("is off unless set, trimmed, and the token never reaches a printable config", () => {
+    withRequired();
+    expect(loadConfig().appsflyerWebS2sToken).toBe("");
+    expect(loadConfig().appsflyerWebAppId).toBe("");
+    withRequired({ EAIT__BACKEND__APPSFLYER_WEB_S2S_TOKEN: ` ${TOKEN}\n`, EAIT__BACKEND__APPSFLYER_WEB_APP_ID: " website-eait.fit " });
+    expect(loadConfig().appsflyerWebS2sToken).toBe(TOKEN);
+    expect(loadConfig().appsflyerWebAppId).toBe("website-eait.fit");
+    expect(JSON.stringify(redact(loadConfig()))).toContain("appsflyerWebS2sToken");
+    expect(JSON.stringify(redact(loadConfig()))).not.toContain("not-a-real-token");
+  });
+
+  it("is never read under --demo, which must not reach for a network", () => {
+    process.env.EAIT__BACKEND__APPSFLYER_WEB_S2S_TOKEN = TOKEN;
+    process.env.EAIT__BACKEND__APPSFLYER_WEB_APP_ID = "website-eait.fit";
+    expect(demoConfig().appsflyerWebS2sToken).toBe("");
   });
 });
 
