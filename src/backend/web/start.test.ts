@@ -720,7 +720,7 @@ describe("the consent answer reaches the account, and only from this site (ieat-
 
   it("reserves the banner's space with a class the server writes, and only while it shows", async () => {
     const shown = await (await get("/start")).text();
-    expect(shown).toContain('<body class="ck-on">');
+    expect(shown).toContain('</head><body class="ck-on"><main');
     expect(shown).not.toContain(":has(> .ck)");
     expect(await (await get("/start", "eait_consent=accept")).text()).toContain("<body>");
   });

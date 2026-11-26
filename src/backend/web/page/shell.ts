@@ -333,7 +333,7 @@ ${payCss()}
    of the phone-width column, one line and two buttons of equal weight — the same size, outlined,
    ink text, neither in the accent. --ck is its height, reserved at the bottom of the page and added
    to every sticky foot, so the page's own content and its Continue stay whole above it (the
-   board's doors rise by the same 126). The server writes class="ck-on" on <body> when it adds the
+   board's doors rise by the same 126). The server writes class="ck-on" on the body when it adds the
    banner, so no selector support is assumed; without it --ck is 0 and nothing moves. */
 :root { --ck: 0px; }
 body.ck-on { --ck: 126px; padding-bottom: var(--ck); }
