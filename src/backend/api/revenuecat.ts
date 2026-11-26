@@ -20,6 +20,7 @@
 import {
   applyRevenueCatEvent, applyRevenueCatTransfer, logRevenueCatEvent, type EngineDeps, type RevenueCatEvent, type RevenueCatTransfer,
 } from "../engine/index.ts";
+import { forwardWebPurchase } from "../engine/appsflyer-web.ts";
 import type { RevenueCatEventRow } from "../store.ts";
 import { timingSafeEqual } from "../auth/timingsafe.ts";
 
@@ -285,6 +286,9 @@ export async function revenueCatWebhook(
       const { name, code } = (err ?? {}) as { name?: unknown; code?: unknown };
       console.warn(`[eait] revenuecat: event log write failed, event ${logged.id} ${logged.type}: ${String(name ?? "error")} ${String(code ?? "-")}`);
     });
+    // A web purchase reaches AppsFlyer from here, and only on the visitor's Accept (ieat-app#3621).
+    // Fire-and-forget: it never throws, and the answer below never waits on it.
+    void forwardWebPurchase(deps, logged, lifecycle.is_trial_conversion);
   }
   const done = (body: { ok: true; applied: boolean }): Response => json(body);
   const transfer = parseRevenueCatTransfer(body);

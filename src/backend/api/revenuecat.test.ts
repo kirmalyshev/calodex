@@ -5,7 +5,7 @@
 // another entitlement, or for an account this server never issued, is answered 200 and ignored,
 // because the alternative is RevenueCat retrying a message that will never mean anything different.
 
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { ROUTES, entitlementActive, type ProfileResponse } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
@@ -1088,5 +1088,60 @@ describe("subscription event names (ieat-app#3196)", () => {
     warn.mockRestore();
     expect(lines).toEqual(["[eait] revenuecat: type SOMETHING_NEW maps to no analytics event"]);
     expect(sink.captured).toHaveLength(0);
+  });
+});
+
+describe("a web purchase is forwarded to AppsFlyer by this webhook, not RevenueCat (ieat-app#3621)", () => {
+  const AF = { ...base, revenueCatWebhookToken: TOKEN, appsflyerWebS2sToken: "s2s-token", appsflyerWebAppId: "web-123" };
+  let fetchSpy: ReturnType<typeof spyOn<typeof globalThis, "fetch">> | null = null;
+  const stubFetch = (impl: () => Promise<Response>) => {
+    fetchSpy = spyOn(globalThis, "fetch").mockImplementation(impl as unknown as typeof fetch);
+    return fetchSpy;
+  };
+  afterEach(() => { fetchSpy?.mockRestore(); fetchSpy = null; });
+  /** The forward is fire-and-forget: let it run before asserting on it. */
+  const settle = () => new Promise((r) => setTimeout(r, 20));
+  const webTrial = (userId: string) =>
+    purchase(userId, { id: crypto.randomUUID(), period_type: "TRIAL", store: "RC_BILLING", environment: "PRODUCTION" });
+
+  it("an accepted account's web trial start reaches AppsFlyer once, and the answer is unchanged", async () => {
+    mount(AF);
+    const spy = stubFetch(async () => new Response(null, { status: 200 }));
+    const { userId } = await account();
+    await store.setWebAttributionConsent(userId, true);
+    const res = await deliver(webTrial(userId));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, applied: true });
+    await settle();
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [target, init] = spy.mock.calls[0]! as unknown as [string, RequestInit];
+    expect(target).toBe("https://events.appsflyer.com/v2.0/s2s/inapps/app/web/web-123");
+    expect(JSON.parse(String(init.body))).toMatchObject({ user_id: { customer_user_id: userId }, event_name: "af_start_trial" });
+  });
+
+  it("a declined account's web purchase reaches nothing", async () => {
+    mount(AF);
+    const spy = stubFetch(async () => new Response(null, { status: 200 }));
+    const { userId } = await account();
+    await store.setWebAttributionConsent(userId, false);
+    expect((await deliver(webTrial(userId))).status).toBe(200);
+    await settle();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("still answers what it answered before when the fetch rejects", async () => {
+    mount(AF);
+    stubFetch(async () => { throw new TypeError("network down"); });
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { userId, token } = await account();
+      await store.setWebAttributionConsent(userId, true);
+      const res = await deliver(webTrial(userId));
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ok: true, applied: true });
+      await settle();
+      expect(entitlementActive((await profile(token)).entitlement.expiresAt, Date.now())).toBe(true);
+      expect(error).toHaveBeenCalledWith("[eait] appsflyer web purchase failed: TypeError");
+    } finally { error.mockRestore(); }
   });
 });
