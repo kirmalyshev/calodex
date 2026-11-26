@@ -1475,7 +1475,10 @@ export function promoNewYearFromEnv(): PromoConfig | null {
     iosCode: (process.env.EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE ?? "").trim(),
     webCheckoutUrl: checkoutTemplate("EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL", process.env.EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL),
   };
-  if (Object.values(raw).every((v) => v === "")) return null;
+  // TRIAL_DAYS=0 is the shipped default in both env files and means "no trial", not "configured":
+  // counted as set, it would refuse to boot every host whose window is still empty.
+  const { trialDays: trial, ...rest } = raw;
+  if (Object.values(rest).every((v) => v === "") && (trial === "" || trial === "0")) return null;
   const instant = (name: string, v: string): string => {
     if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.test(v) || Number.isNaN(Date.parse(v))) {
       throw new Error(`[eait] ${name} must be an ISO-8601 instant with its zone — e.g. 2026-12-26T00:00:00Z — whenever any EAIT__BACKEND__PROMO_NEWYEAR_* is set, not "${v}"`);

@@ -540,6 +540,11 @@ describe("the New Year promotion", () => {
     expect(configDefaults().promoNewYear).toBeNull();
   });
 
+  it("is still off when only the trial is set — the env files ship TRIAL_DAYS=0", () => {
+    withRequired({ EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS: "0" });
+    expect(loadConfig().promoNewYear).toBeNull();
+  });
+
   it("reads the window, the percent, the trial, the iOS code and the web checkout", () => {
     withRequired({ ...WINDOW,
       EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS: "7",
