@@ -433,8 +433,8 @@ export interface Config {
   /**
    * AppsFlyer web attribution (ieat-app#3621): the S2S API token
    * (`EAIT__BACKEND__APPSFLYER_WEB_S2S_TOKEN`, a secret) and the web app id
-   * (`EAIT__BACKEND__APPSFLYER_WEB_APP_ID`, `website-<domain>`). Both empty = off, and either
-   * empty = off: `/start` then sends no visit. `demoConfig` never reads them.
+   * (`EAIT__BACKEND__APPSFLYER_WEB_APP_ID`, `website-<domain>`). Either empty = off: /start sends
+   * no visit and the webhook forwards no web purchase. `demoConfig` never reads them.
    */
   appsflyerWebS2sToken: string;
   appsflyerWebAppId: string;

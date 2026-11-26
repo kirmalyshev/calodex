@@ -712,9 +712,10 @@ alter table users add column if not exists acq_campaign text;
 alter table users add column if not exists acq_adgroup  text;
 alter table users add column if not exists acq_keyword  text;
 alter table users add column if not exists acq_via      text check (acq_via in ('adservices', 'revenuecat'));
--- The /start consent banner's answer, kept when /start minted the account (ieat-app#3621): null
--- never asked. The RevenueCat webhook forwards a web purchase to AppsFlyer only on true. Absent from
--- PROFILE_COLUMNS, so no PATCH writes it; mergeUsers carries it onto a survivor that has none.
+-- The /start consent banner's answer (ieat-app#3621), written at the mint and on every signed-in
+-- answer or reset: null never asked. The RevenueCat webhook forwards a web purchase to AppsFlyer
+-- only on true. Absent from PROFILE_COLUMNS, so no PATCH writes it; mergeUsers carries it onto a
+-- survivor that has none.
 alter table users add column if not exists web_attribution_consent boolean;
 -- Every RevenueCat webhook delivery (ieat-app#3196), beside the resolved entitlement on users.
 -- Keyed on RevenueCat's event id, so a redelivery writes nothing. user_id is null for a delivery

@@ -1660,8 +1660,9 @@ export interface Store {
    */
   putAcquisition(userId: string, acquisition: Acquisition): Promise<boolean>;
   /**
-   * The visitor's answer to the /start consent banner, kept when /start minted this account
-   * (ieat-app#3621): true accepted, false declined, null never asked. Not on `Profile`, so no PATCH
+   * The visitor's answer to the /start consent banner (ieat-app#3621), written when /start mints
+   * this account and again whenever its signed-in visitor answers or resets the banner: true
+   * accepted, false declined or withdrawn, null never asked. A merge fills a survivor's null. Not on `Profile`, so no PATCH
    * writes it. Read by the RevenueCat webhook before a web purchase is forwarded to AppsFlyer.
    */
   webAttributionConsentOf(userId: string): Promise<boolean | null>;
