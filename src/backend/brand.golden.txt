@@ -828,14 +828,14 @@ shared.payCopyFor uk 9539df1ddc7c0370
 shared.payCopyFor sv 41e461d06878844e
 shared.payCopyFor th 35440cf0e83a63c3
 shared.payCopyFor hi 00d35a88dd267830
-shared.payCopyFor cs 71581008904e078f
+shared.payCopyFor cs 1a9132eeef2348b3
 shared.payCopyFor ro 8df164c81fd32009
 shared.payCopyFor el 50b361539d423ad5
 shared.payCopyFor hu 68e4e01b3e33ab80
 shared.payCopyFor da a21017fe7d6e0feb
 shared.payCopyFor fi 91eb7394284fd004
 shared.payCopyFor no 9f27878b6e19cf36
-shared.payCopyFor sk 229621f380742e16
+shared.payCopyFor sk 51a9c0e297c8a96f
 shared.payCopyFor hr b8005c11a975db76
 shared.payCopyFor sl 8bbffe98b5dbd8a9
 shared.payCopyFor ca 965bcd91b826b156

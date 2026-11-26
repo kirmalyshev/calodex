@@ -239,3 +239,32 @@ describe("renewsPlain (ieat-app#3465)", () => {
     }
   });
 });
+
+// ieat-app#3628: `{days}` is filled with a bare number, so a count noun after it must agree with
+// every count the store sells. SOLD is what is sold today (the 3-day trial, the 7-day promotion
+// trial); a new length added here goes red wherever the copy cannot carry it. Czech and Slovak
+// decline the noun by count (1 den/deň, 2–4 dny/dni, 5+ dní), so their strings use the
+// abbreviation they already ship ("d" / "d.") instead of a declined noun.
+describe("trial-day counts agree with the noun after them (ieat-app#3628)", () => {
+  const SOLD = [3, 7];
+  const KEYS = ["introTitle", "offerTrialFoot", "offerTrialNote", "plansTrialTitle", "startTrial", "trialBadge", "trialPromise"] as const;
+  // `\b` is ASCII-only in JS, so "dní" never ends on one: the noun is closed by "not a letter" instead.
+  const word = (n: number, nouns: string) => new RegExp(`(?<![\\p{L}\\d])${n} (${nouns})(?!\\p{L})`, "u");
+  const wrong: Record<string, (n: number) => RegExp> = {
+    // "po dobu 3 dnů" is the genitive plural, right for every count from 2.
+    cs: (n) => word(n, n === 1 ? "dny|dní|dnů" : n <= 4 ? "den|dní" : "den|dny"),
+    sk: (n) => word(n, n === 1 ? "dni|dní" : n <= 4 ? "deň|dní" : "deň|dni"),
+  };
+
+  for (const [lang, bad] of Object.entries(wrong)) {
+    it(`${lang}: no declined day noun disagrees with a sold count`, () => {
+      const copy = PAY_COPY[lang as keyof typeof PAY_COPY]!;
+      for (const key of KEYS) {
+        for (const n of SOLD) {
+          const s = copy[key].replaceAll("{days}", String(n));
+          expect(s, `${lang}.${key} at ${n}`).not.toMatch(bad(n));
+        }
+      }
+    });
+  }
+});
