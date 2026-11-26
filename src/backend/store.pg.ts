@@ -3326,13 +3326,16 @@ export async function postgresStore(
           from users from_u
           where into_u.id = ${intoUserId} and from_u.id = ${fromUserId} and from_u.acq_via is not null
             and (into_u.acq_via is null or (into_u.acq_via = 'revenuecat' and from_u.acq_via = 'adservices'))`;
-        // The /start banner's answer fills a gap and never overrides the survivor's own
-        // (ieat-app#3621). Matches store.memory.ts.
+        // The /start banner's answer (ieat-app#3621): a Decline on either side wins, and a lone
+        // answer carries over — a newer Decline in one browser must not lose to an older Accept on
+        // the account it signs into. Matches store.memory.ts.
         await tx`
-          update users into_u set web_attribution_consent = from_u.web_attribution_consent
+          update users into_u set web_attribution_consent =
+            case when into_u.web_attribution_consent is null then from_u.web_attribution_consent
+                 else into_u.web_attribution_consent and from_u.web_attribution_consent end
           from users from_u
           where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
-            and into_u.web_attribution_consent is null and from_u.web_attribution_consent is not null`;
+            and from_u.web_attribution_consent is not null`;
         // Experiment assignments move by the gap rule below: the account that already holds one
         // keeps it, the anonymous session's fills what is missing. An assignment is what makes a
         // variant sticky, and a run split across two ids would assign the same person twice.

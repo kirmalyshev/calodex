@@ -1211,7 +1211,7 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(Object.keys(await s.getProfile(a) ?? {})).not.toContain("web_attribution_consent");
     });
 
-    it("carries the consent answer onto a merge survivor that has none, never over one it has", async () => {
+    it("merges the consent answers so a Decline on either side wins, and a lone answer carries over", async () => {
       const s = await open();
       const pair = async (from: boolean | null, into: boolean | null) => {
         const anon = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -1224,7 +1224,7 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await pair(true, null)).toBe(true);
       expect(await pair(false, null)).toBe(false);
       expect(await pair(true, false)).toBe(false);
-      expect(await pair(false, true)).toBe(true);
+      expect(await pair(false, true)).toBe(false);
       expect(await pair(null, null)).toBeNull();
     });
 

@@ -97,7 +97,8 @@ export async function sendWebVisit(config: WebAttributionConfig, visit: WebVisit
     user_id: { customer_user_id: visit.userId },
     event_url: `${visit.origin}/start?${visit.clickParams}`,
   };
-  if (visit.ip !== null) body.ip = visit.ip;
+  // A dual-stack socket reports an IPv4 peer as `::ffff:a.b.c.d`; AppsFlyer is sent the IPv4 it is.
+  if (visit.ip !== null) body.ip = visit.ip.replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/i, "");
   if (visit.userAgent) body.user_agent = visit.userAgent.slice(0, 1024);
   try {
     const res = await fetchFn(

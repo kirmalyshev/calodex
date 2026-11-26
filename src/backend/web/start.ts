@@ -812,8 +812,14 @@ async function routeStart(
     const form = await req.formData().catch(() => null);
     const choice = form?.get("choice");
     const back = consentBack(form?.get("back"), ctx.origin);
-    if (!isConsentChoice(choice) || !fromThisSite(req, ctx.origin)) return seeOther(back);
-    if (userId !== null) await keepConsent(ctx.store, userId, choice === "accept");
+    if (!isConsentChoice(choice) || !fromThisSite(req, ctx.origin)) {
+      // Said, so a misconfigured origin behind the proxy is not a banner that silently never sticks.
+      console.warn(`[eait] start: consent answer refused: choice ${isConsentChoice(choice) ? "ok" : "bad"}, sec-fetch-site ${req.headers.get("sec-fetch-site") ?? "-"}, origin ${req.headers.get("origin") ?? "-"}`);
+      return seeOther(back);
+    }
+    // The cookie only once the account holds the same answer: a Decline the account did not take
+    // must not hide the banner while an earlier Accept keeps forwarding. Asked again instead.
+    if (userId !== null && !(await keepConsent(ctx.store, userId, choice === "accept"))) return seeOther(back);
     return seeOther(back, [setCookie(CONSENT_COOKIE, choice, { secure, maxAge: CONSENT_MAX_AGE })]);
   }
 
@@ -823,7 +829,9 @@ async function routeStart(
   // again), and /start shows the banner. A cross-site trigger can make somebody be asked again,
   // never make anything be sent.
   if (req.method === "GET" && pathname === CONSENT_RESET_PATH) {
-    if (userId !== null) await keepConsent(ctx.store, userId, false);
+    // The cookie goes only once the account is withdrawn too; a failed write keeps it, so the
+    // banner's absence still says what the account holds.
+    if (userId !== null && !(await keepConsent(ctx.store, userId, false))) return seeOther(START_PREFIX);
     return seeOther(START_PREFIX, [setCookie(CONSENT_COOKIE, "", { secure, maxAge: 0 })]);
   }
 
@@ -1053,6 +1061,9 @@ async function routeStart(
       return failed();
     }
     void trackSignIn(ctx.deps, req, name, userId, result);
+    // This browser's banner answer goes onto the account the sign-in landed on, which may be an
+    // older one holding an older answer: a Decline given here must not lose to it.
+    if (consent !== null) await keepConsent(ctx.store, result.userId, consent === "accept");
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),
@@ -1205,6 +1216,8 @@ async function routeStart(
       return seeOther(`${START_PREFIX}/email/code?error=${result.kind === "code-wrong" ? "wrong" : "dead"}`);
     }
     void trackSignIn(ctx.deps, req, "email", userId, result);
+    // As on the provider callback: this browser's answer onto the account it landed on.
+    if (consent !== null) await keepConsent(ctx.store, result.userId, consent === "accept");
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),

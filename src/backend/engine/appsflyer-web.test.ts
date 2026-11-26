@@ -183,11 +183,22 @@ describe("forwardWebPurchase (ieat-app#3621, option A)", () => {
   });
 
   it("reads consent from, and names, the account a merged-away id now lives on", async () => {
-    const survivor = await accountWith(true);
-    const merged = await accountWith(false);
+    const survivor = await accountWith(null);
+    const merged = await accountWith(true);
     await store.mergeUsers(merged, survivor);
     const [c] = await forward(row(merged));
     expect(JSON.parse(String(c!.init.body)).user_id).toEqual({ customer_user_id: survivor });
+    // A Decline on either side of a merge wins: nothing is forwarded for the survivor then.
+    const accepted = await accountWith(true);
+    const declined = await accountWith(false);
+    await store.mergeUsers(declined, accepted);
+    expect(await forward(row(declined))).toEqual([]);
+  });
+
+  it("sends an IPv4-mapped address as the plain IPv4 it is", async () => {
+    const { calls, fetchFn } = recorder();
+    await sendWebVisit(ON, { ...VISIT, ip: "::ffff:203.0.113.9" }, fetchFn);
+    expect(JSON.parse(String(calls[0]!.init.body)).ip).toBe("203.0.113.9");
   });
 
   it("a declined account's web purchase sends NOTHING (Kirill)", async () => {

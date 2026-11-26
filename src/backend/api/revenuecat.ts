@@ -20,7 +20,7 @@
 import {
   applyRevenueCatEvent, applyRevenueCatTransfer, logRevenueCatEvent, type EngineDeps, type RevenueCatEvent, type RevenueCatTransfer,
 } from "../engine/index.ts";
-import { forwardWebPurchase } from "../engine/appsflyer-web.ts";
+import { forwardWebPurchase, WEB_BILLING_STORE } from "../engine/appsflyer-web.ts";
 import type { RevenueCatEventRow } from "../store.ts";
 import { timingSafeEqual } from "../auth/timingsafe.ts";
 
@@ -284,7 +284,10 @@ export async function revenueCatWebhook(
     };
     const fresh = await logRevenueCatEvent(deps, logged, lifecycle).catch((err: unknown) => {
       const { name, code } = (err ?? {}) as { name?: unknown; code?: unknown };
-      console.warn(`[eait] revenuecat: event log write failed, event ${logged.id} ${logged.type}: ${String(name ?? "error")} ${String(code ?? "-")}`);
+      // A web purchase whose log write failed is also not forwarded to AppsFlyer, and RevenueCat has its
+      // 200, so it will not come back on its own: the line says to replay it.
+      const unsent = logged.store === WEB_BILLING_STORE ? "; web attribution not sent, replay it from RevenueCat" : "";
+      console.warn(`[eait] revenuecat: event log write failed, event ${logged.id} ${logged.type}: ${String(name ?? "error")} ${String(code ?? "-")}${unsent}`);
       return false;
     });
     // A web purchase reaches AppsFlyer from here, and only on the visitor's Accept (ieat-app#3621).

@@ -673,6 +673,43 @@ describe("the consent answer reaches the account, and only from this site (ieat-
     } finally { error.mockRestore(); }
   });
 
+  it("a sign-in carries this browser's answer onto the account it lands on: a newer Decline beats an older Accept", async () => {
+    router(AF);
+    const first = await signIn("consent-subject");
+    const account = await webUser(first);
+    await store.setWebAttributionConsent(account, true);
+    // Another browser, which declined, signs into the same account.
+    await signIn("consent-subject", "google", undefined, "eait_consent=decline");
+    expect(await store.webAttributionConsentOf(account)).toBe(false);
+    // And a browser that has not answered changes nothing.
+    await store.setWebAttributionConsent(account, true);
+    await signIn("consent-subject");
+    expect(await store.webAttributionConsentOf(account)).toBe(true);
+  });
+
+  it("a banner answer whose account write fails sets no cookie, so the banner asks again", async () => {
+    router(AF);
+    const { session, userId } = await mint("eait_consent=accept");
+    expect(await store.webAttributionConsentOf(userId)).toBe(true);
+    store.setWebAttributionConsent = async () => { throw new Error("db down"); };
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await post("/start/consent", { choice: "decline", back: "/start/q" }, session);
+      expect(res.status).toBe(303);
+      expect(res.headers.getSetCookie().some((c) => c.startsWith("eait_consent="))).toBe(false);
+      const reset = await get("/start/consent/reset", session);
+      expect(reset.headers.getSetCookie().some((c) => c.startsWith("eait_consent="))).toBe(false);
+    } finally { error.mockRestore(); }
+  });
+
+  it("a refused banner answer says why in the log, without the cookie's values", async () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await post("/start/consent", { choice: "accept", back: "/start" }, undefined, { origin: "https://evil.example" });
+      expect(warn.mock.calls.map((c) => String(c[0])).some((l) => l.startsWith("[eait] start: consent answer refused"))).toBe(true);
+    } finally { warn.mockRestore(); }
+  });
+
   it("the visit carries the observed address: the last IPv4 hop, a whole IPv6 address, or no ip at all", async () => {
     router(AF);
     const ipOf = async (headers: Record<string, string>) => {

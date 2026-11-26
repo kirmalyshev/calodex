@@ -1272,9 +1272,11 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const fromAcq = acquisitions.get(fromUserId);
       if (mergedAcquisitionWins(fromAcq, acquisitions.get(intoUserId))) acquisitions.set(intoUserId, fromAcq);
       acquisitions.delete(fromUserId);
-      // The /start banner's answer fills a gap and never overrides the survivor's own (ieat-app#3621).
+      // The /start banner's answer (ieat-app#3621).
       const fromConsent = webConsent.get(fromUserId);
-      if (fromConsent !== undefined && !webConsent.has(intoUserId)) webConsent.set(intoUserId, fromConsent);
+      // A Decline on either side wins; a lone answer carries over (matches store.pg.ts).
+      const intoConsent = webConsent.get(intoUserId);
+      if (fromConsent !== undefined) webConsent.set(intoUserId, intoConsent === undefined ? fromConsent : intoConsent && fromConsent);
       webConsent.delete(fromUserId);
       for (const e of rcEvents.values()) if (e.userId === fromUserId) e.userId = intoUserId;
       // The merged-away zone and slots were handled above (the zone only fills a gap); what is left
