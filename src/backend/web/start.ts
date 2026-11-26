@@ -723,7 +723,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   });
   const end = at + "</main>".length;
   // The class reserves the banner's height at the foot of the page (`page/shell.ts`).
-  const page = `${doc.slice(0, end)}${banner}${doc.slice(end)}`.replace("</head><body>", '</head><body class="ck-on">');
+  const page = `${doc.slice(0, end)}${banner}${doc.slice(end)}`.replace("</head><body>", '</head><body class="cbn-on">');
   return new Response(page, { status: res.status, headers: res.headers });
 }
 

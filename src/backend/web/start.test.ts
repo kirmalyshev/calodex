@@ -559,7 +559,7 @@ describe("the consent banner on every /start page (ieat-app#3621, board ob-welco
       for (const path of ["/start", "/start/q", "/start/signup"]) {
         const html = await (await get(path, `eait_consent=${choice}`)).text();
         expect(html, `${choice} ${path}`).not.toContain(FORM);
-        expect(html, `${choice} ${path}`).not.toContain('class="ck"');
+        expect(html, `${choice} ${path}`).not.toContain('class="cbn"');
       }
     }
   });
@@ -720,9 +720,25 @@ describe("the consent answer reaches the account, and only from this site (ieat-
 
   it("reserves the banner's space with a class the server writes, and only while it shows", async () => {
     const shown = await (await get("/start")).text();
-    expect(shown).toContain('</head><body class="ck-on"><main');
-    expect(shown).not.toContain(":has(> .ck)");
+    expect(shown).toContain('</head><body class="cbn-on"><main');
+    expect(shown).not.toContain(":has(> .cbn)");
     expect(await (await get("/start", "eait_consent=accept")).text()).toContain("<body>");
+  });
+
+  it("owns its class names: the plan and country checkmarks (.ck) are never made a fixed bar", async () => {
+    const shown = await (await get("/start")).text();
+    expect(shown).toContain('<div class="cbn" role="region"');
+    const css = shown.slice(shown.indexOf("<style>"), shown.indexOf("</style>"));
+    expect(css).not.toMatch(/(^|[}\s])\.ck\s*\{[^}]*position:\s*fixed/);
+  });
+
+  it("draws Accept as the primary button and Decline outlined, the line centred (q97)", async () => {
+    const shown = await (await get("/start")).text();
+    const banner = shown.slice(shown.indexOf('<div class="cbn"'));
+    expect(banner).toMatch(/<button type="submit">[^<]+<\/button><\/form><form[^>]*><input type="hidden" name="choice" value="accept">/);
+    expect(banner).toMatch(/value="accept">.*?<button type="submit" class="primary">/);
+    const css = shown.slice(shown.indexOf("<style>"), shown.indexOf("</style>"));
+    expect(css).toMatch(/\.cbn p \{[^}]*text-align: center/);
   });
 
   it("reset clears the answer cookie and sends the visitor to /start, where the banner shows again", async () => {

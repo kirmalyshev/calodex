@@ -31,9 +31,9 @@ export function consentBanner(copy: PageCopy, opts: { privacyHref: string | null
   const line = copy.cookieNotice.split("{link}").map(escape).join(linked);
   const button = (choice: ConsentChoice, label: string) =>
     `<form method="post" action="/start/consent"><input type="hidden" name="choice" value="${choice}">` +
-    `<input type="hidden" name="back" value="${escape(opts.back)}"><button type="submit">${escape(label)}</button></form>`;
+    `<input type="hidden" name="back" value="${escape(opts.back)}"><button type="submit"${choice === "accept" ? ' class="primary"' : ""}>${escape(label)}</button></form>`;
   // The region is named by its own sentence, so its name is in the page's language too.
   const name = escape(copy.cookieNotice.replace("{link}", copy.cookieLink));
-  return `<div class="ck" role="region" aria-label="${name}"><p>${line}</p>` +
-    `<div class="ck-b">${button("decline", copy.cookieDecline)}${button("accept", copy.cookieAccept)}</div></div>`;
+  return `<div class="cbn" role="region" aria-label="${name}"><p>${line}</p>` +
+    `<div class="cbn-b">${button("decline", copy.cookieDecline)}${button("accept", copy.cookieAccept)}</div></div>`;
 }
