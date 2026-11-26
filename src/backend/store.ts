@@ -1668,6 +1668,11 @@ export interface Store {
    */
   webAttributionConsentOf(userId: string): Promise<boolean | null>;
   setWebAttributionConsent(userId: string, consented: boolean): Promise<void>;
+  /**
+   * A sign-in's answer, in one guarded statement: a Decline is always written, an Accept only onto
+   * an account that holds null. The value the account holds afterwards, or null for no such user.
+   */
+  adoptWebAttributionConsent(userId: string, accepted: boolean): Promise<boolean | null>;
 
   /**
    * The account a sign-in merged `userId` into, or null when it was never merged away (#2694).

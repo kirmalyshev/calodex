@@ -699,6 +699,60 @@ describe("the consent answer reaches the account, and only from this site (ieat-
     expect(await store.webAttributionConsentOf(fresh)).toBe(true);
   });
 
+  /** The provider callback's own redirect, for a test that reads what it set. */
+  const callback = async (subject: string, cookie: string) => {
+    const start = await post("/start/auth/google", { terms: "yes" });
+    const state = new URL(start.headers.get("location")!).searchParams.get("state")!;
+    const res = await get(
+      `/start/auth/google/callback?code=${subject}&state=${encodeURIComponent(state)}`,
+      `${cookieFrom(start, "eait_oauth")}; ${cookie}`);
+    expect(res.status).toBe(303);
+    return res;
+  };
+  const consentCookie = (res: Response) => res.headers.getSetCookie().find((c) => c.startsWith("eait_consent="));
+
+  it("a sign-in's Accept onto an account holding a Decline sets the cookie to decline, so the browser agrees with the account", async () => {
+    router(AF);
+    const account = await webUser(await signIn("declined-subject"));
+    await store.setWebAttributionConsent(account, false);
+    const res = await callback("declined-subject", "eait_consent=accept");
+    expect(await store.webAttributionConsentOf(account)).toBe(false);
+    expect(consentCookie(res)).toBe("eait_consent=decline; Path=/start; HttpOnly; SameSite=Lax; Secure; Max-Age=31536000");
+    // An account the Accept did land on leaves the browser's cookie alone.
+    await signIn("accepted-subject");
+    expect(consentCookie(await callback("accepted-subject", "eait_consent=accept"))).toBeUndefined();
+  });
+
+  it("a sign-in whose consent write throws clears the cookie and logs the account, so the banner asks again", async () => {
+    router(AF);
+    const account = await webUser(await signIn("throwing-subject"));
+    store.adoptWebAttributionConsent = async () => { throw Object.assign(new Error("db down"), { code: "57P01" }); };
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await callback("throwing-subject", "eait_consent=accept");
+      expect(consentCookie(res)).toBe("eait_consent=; Path=/start; HttpOnly; SameSite=Lax; Secure; Max-Age=0");
+      expect(error.mock.calls.map((c) => String(c[0]))).toContain(`[eait] start: consent write failed, user ${account}: Error 57P01`);
+    } finally { error.mockRestore(); }
+  });
+
+  it("an email-code sign-in keeps an account's Decline against a browser Accept, and sets the cookie to decline", async () => {
+    router(AF);
+    let code = "";
+    deps.mail.sendSignInCode = async (_to, sent) => { code = sent; };
+    const session = await signIn("email-declined-subject");
+    const account = await webUser(session);
+    await store.setWebAttributionConsent(account, false);
+    const kickoff = await post("/start/email", { terms: "yes" }, session);
+    const emailc = cookieFrom(kickoff, "eait_emailc");
+    const sent = await post("/start/email/address", { email: "declined@example.com" }, `${session}; ${emailc}`);
+    const res = await post("/start/email/code", { code },
+      `${session}; ${emailc}; ${cookieFrom(sent, "eait_email")}; eait_consent=accept`);
+    expect(res.status).toBe(303);
+    expect(await webUser(cookieFrom(res, "eait_web"))).toBe(account);
+    expect(await store.webAttributionConsentOf(account)).toBe(false);
+    expect(consentCookie(res)).toBe("eait_consent=decline; Path=/start; HttpOnly; SameSite=Lax; Secure; Max-Age=31536000");
+  });
+
   it("a banner answer whose account write fails sets no cookie, so the banner asks again", async () => {
     router(AF);
     const { session, userId } = await mint("eait_consent=accept");

@@ -1515,6 +1515,13 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (users.has(userId)) webConsent.set(userId, consented);
     },
 
+    async adoptWebAttributionConsent(userId, accepted) {
+      if (!users.has(userId)) return null;
+      const held = accepted ? webConsent.get(userId) ?? true : false;
+      webConsent.set(userId, held);
+      return held;
+    },
+
     async putEntitlement(userId, patch) {
       // No such user is a NO-OP, not a new row. RevenueCat names accounts by an id we gave it, and
       // it also has ids of its own for a device that never signed in here — writing an entitlement

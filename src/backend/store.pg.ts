@@ -2197,6 +2197,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   putAcquisition: 0,
   webAttributionConsentOf: 0,
   setWebAttributionConsent: 0,
+  adoptWebAttributionConsent: 0,
   dropPushToken: 0,
   pushTokensFor: 0,
   setTimezone: 0,
@@ -3837,6 +3838,16 @@ export async function postgresStore(
 
     async setWebAttributionConsent(userId, consented) {
       await sql`update users set web_attribution_consent = ${consented} where id = ${userId}`;
+    },
+
+    async adoptWebAttributionConsent(userId, accepted) {
+      // One statement, so a Decline committed between a read and a write cannot be undone by it.
+      const [r] = await sql`
+        update users set web_attribution_consent =
+          case when ${accepted} then coalesce(web_attribution_consent, true) else false end
+        where id = ${userId}
+        returning web_attribution_consent`;
+      return r?.web_attribution_consent ?? null;
     },
 
     async putEntitlement(userId, patch) {
