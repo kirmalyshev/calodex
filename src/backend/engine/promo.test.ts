@@ -17,6 +17,7 @@ const PROMO: PromoConfig = {
   trialDays: 7,
   iosCode: "NEWYEAR",
   webCheckoutUrl: "https://pay.rev.cat/ny/{userId}",
+  webPrice: 23.99,
 };
 
 const at = (iso: string) => new Date(iso);
@@ -137,5 +138,34 @@ describe("ProfileResponse.promo and the exit offer it suppresses", () => {
     expect(out.view.promo?.id).toBe("newyear");
     expect(out.view.exitOfferEnabled.web).toBe(false);
     expect(out.view.paywall.exitOffer).toBeNull();
+  });
+});
+
+// ieat-app#3606: the web paywall's promotion figures — the promotion's yearly price and its
+// per-month spread, formatted like every other price — sent only while the web can sell it.
+describe("WebPaywall.promoYearly", () => {
+  const live = async (promo: PromoConfig, armed = true) => {
+    const { store, deps } = mount(promo);
+    const u = await account(store);
+    if (armed) await store.setSwitch("paywall.promo.newyear", true, admin);
+    return (await profileView(deps, u))!.paywall.promoYearly;
+  };
+
+  it("is the promotion's price, per month and percent while it is live", async () => {
+    expect(await live(liveNow())).toEqual({ price: "€23.99", pricePerMonth: "€2.00", percent: 40 });
+  });
+
+  it("is null while the promotion is not live", async () => {
+    expect(await live(liveNow(), false)).toBeNull();
+  });
+
+  it("is null with no web price, no web checkout, or no yearly plan to strike through", async () => {
+    expect(await live({ ...liveNow(), webPrice: 0 })).toBeNull();
+    expect(await live({ ...liveNow(), webCheckoutUrl: "" })).toBeNull();
+    const { store, deps } = mount(liveNow());
+    deps.config.webPaywall = { ...PAYWALL, yearlyCheckoutUrl: "" };
+    const u = await account(store);
+    await store.setSwitch("paywall.promo.newyear", true, admin);
+    expect((await profileView(deps, u))!.paywall.promoYearly).toBeNull();
   });
 });
