@@ -1879,7 +1879,9 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     if (wp.yearly === null && wp.monthly === null) return seeOther(closeTo);
     // A → × → B → × → C → × the sign-up (ieat-app#3464): B only while the yearly trial is sold,
     // C only while an offer is armed. A step that is not sold is A, never a page the checkout 404s.
-    const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 ? ["try" as const] : []),
+    // While the promotion is drawn and `skipTrialStep` (ieat-app#3606), no B: × on its A closes.
+    const skipTry = promo?.skipTrialStep === true && wp.promoYearly !== null;
+    const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 && !skipTry ? ["try" as const] : []),
       ...(wp.exitOffer !== null ? ["offer" as const] : [])];
     const asked = url.searchParams.get("step");
     const step = chain.find((s) => s === asked) ?? "plans";

@@ -11,6 +11,13 @@ import type { PayCopy } from "./pay-copy.ts";
 
 const nb = (x: string) => x.replace(/[\u0020\u00A0\u202F]/g, "\u00A0");
 
+/** pay-cal-a-newyear's Yearly billed line in pieces (ieat-app#3606): `billedYearly` either side of
+    its `{price}`, where both web surfaces draw the regular price struck and then the promotion's. */
+export function billedAround(pay: Pick<PayCopy, "billedYearly">): [before: string, after: string] {
+  const [before = "", after = ""] = pay.billedYearly.split("{price}");
+  return [before, after];
+}
+
 /** "€3.33/month · save 33%" — null when a price is missing or yearly is no real saving. */
 export function yearlySaveLine(
   pay: Pick<PayCopy, "perMonthSave">, lang: Lang, currency: string,
