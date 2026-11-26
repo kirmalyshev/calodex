@@ -8,6 +8,7 @@
 import { describe, expect, it } from "bun:test";
 import { lintCopy } from "../claims.ts";
 import { fill, LANGS_READY } from "../lang.ts";
+import { paywallPercent } from "../paywall.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { PAY_COPY, payCopyFor } from "./pay-copy.ts";
 
@@ -29,6 +30,8 @@ const KEYS = [
   "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
   "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
   "tryCta", "offerSpecialTitle", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
+  "promoBadge", "promoTitle", "promoBody", "promoNoTrial", "promoTrial", "promoEnds", "promoCta",
+  "promoIosNote",
 ] as const;
 
 describe("PAY_COPY", () => {
@@ -74,6 +77,12 @@ describe("PAY_COPY", () => {
       tryCta: ["{price}"],
       offerTrialNote: ["{days}", "{renewal}"],
       offerVsMonthly: ["{percent}"],
+      promoTitle: ["{percent}"],
+      promoBody: ["{price}", "{regular}"],
+      promoTrial: ["{days}", "{price}"],
+      promoEnds: ["{date}"],
+      promoCta: ["{percent}"],
+      promoIosNote: ["{code}"],
     };
     for (const lang of LANGS_READY) {
       const copy = PAY_COPY[lang]!;
@@ -81,6 +90,18 @@ describe("PAY_COPY", () => {
         for (const ph of phs) {
           expect(copy[key as keyof typeof copy], `${lang}.${key}`).toContain(ph);
         }
+      }
+    }
+  });
+
+  it("gives every promo* string exactly English's placeholders, in every language (ieat-app#3605)", () => {
+    // Containment above misses the other direction: a translation that ADDS `{regular}` where the
+    // English has none renders a literal brace the client never fills.
+    const placeholders = (s: string) => [...s.matchAll(/\{\w+\}/g)].map((m) => m[0]).sort();
+    const promoKeys = KEYS.filter((k): k is Extract<(typeof KEYS)[number], `promo${string}`> => k.startsWith("promo"));
+    for (const lang of LANGS_READY) {
+      for (const key of promoKeys) {
+        expect(placeholders(PAY_COPY[lang]![key]), `${lang}.${key}`).toEqual(placeholders(PAY_COPY.en[key]));
       }
     }
   });
@@ -188,6 +209,16 @@ describe("PAY_COPY", () => {
     expect(en.restoreLink).toBe("Restore");
     expect(en.termsLink).toBe("Terms");
     expect(en.privacyLink).toBe("Privacy");
+    // pay-promo (ieat-app#3605): the New Year card. `{percent}` is `paywallPercent`'s, sign included.
+    const fifty = paywallPercent(50, "en");
+    expect(en.promoBadge).toBe("New Year");
+    expect(fill(en.promoTitle, { percent: fifty })).toBe("50% off your first year");
+    expect(en.promoBody).toBe("Yearly for {price} instead of {regular}. Renews at {regular} a year.");
+    expect(en.promoNoTrial).toBe("Paid today. No free days on this offer.");
+    expect(en.promoTrial).toBe("{days} days free, then {price} for your first year.");
+    expect(en.promoEnds).toBe("Ends {date}");
+    expect(fill(en.promoCta, { percent: fifty })).toBe("Get 50% off");
+    expect(en.promoIosNote).toBe("Opens the App Store with the code {code} filled in.");
   });
 
   it("carries no claim the gate refuses, in any of the eight", () => {
