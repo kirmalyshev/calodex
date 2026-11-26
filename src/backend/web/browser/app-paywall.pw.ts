@@ -10,6 +10,8 @@
 // computes a number the server did not already compute.
 
 import type { Page } from "@playwright/test";
+import type { WebPaywall } from "@eait/shared";
+import { offer } from "../page/offer.ts";
 import { expect, test, signIn } from "./fixtures.ts";
 
 /** A selling host's `WebPaywall`, `{userId}` intact — filled into the links after sign-in. */
@@ -30,17 +32,21 @@ const PAYWALL = {
     percentOff: 66,
     perMonth: "€1.67",
   },
+  promoCheckoutUrl: null,
+  promoYearly: null,
   termsUrl: "https://example.com/terms",
   privacyUrl: "https://example.com/privacy",
 };
 
 /** Sign in, arm the profile answer with the paywall block, and open `#/pay` on it. */
-async function selling(page: Page, subject: string, patch: Partial<typeof PAYWALL> | Record<string, unknown> = {}): Promise<void> {
+async function selling(page: Page, subject: string, patch: Partial<typeof PAYWALL> | Record<string, unknown> = {},
+    promo?: Record<string, unknown>): Promise<void> {
   await page.route("**/v1/profile", async (route) => {
     const res = await route.fetch();
     const body = await res.json();
     const uid = body.profile.user_id as string;
     body.paywall = JSON.parse(JSON.stringify({ ...PAYWALL, ...patch }).replaceAll("{userId}", uid));
+    if (promo !== undefined) body.promo = promo;
     await route.fulfill({ response: res, json: body });
   });
   await signIn(page, subject);
@@ -102,6 +108,98 @@ test("A · the plans on Cal AI's flow: the trial title, Yearly over Monthly, Con
   const links = page.locator(".pay .paylinks a");
   await expect(links).toHaveCount(2);
   await expect(links.nth(0)).toHaveAttribute("href", "https://example.com/terms");
+});
+
+// ieat-app#3606, board pay-cal-a-newyear: A with values changed while the promotion is live and
+// priced — no trial title, its band, the regular yearly price struck before its own, its per-month,
+// its footer — and Continue on yearly checks out at plan=newyear. Monthly is unchanged.
+const NEWYEAR = { promoCheckoutUrl: "https://pay.example/ny/{userId}", promoYearly: { price: "€23.99", pricePerMonth: "€2.00", percent: 40 } };
+
+test("A · the New Year promotion: its band, the struck yearly price, its price and footer, plan=newyear (#3606)", async ({ page }) => {
+  await selling(page, "paywall-newyear", NEWYEAR);
+  await expect(page.locator(".pay h1")).toHaveText("Unlock Calodex to continue");
+  const yearly = page.locator(".pay .plan2").first();
+  await expect(yearly.locator(".band")).toHaveText("New Year −40%");
+  await expect(yearly.locator(".nm")).toHaveText("Yearly");
+  await expect(yearly.locator(".billed s")).toHaveText("€39.99");
+  await expect(yearly.locator(".billed b")).toHaveText("€23.99");
+  await expect(yearly.locator(".billed")).toHaveText("€39.99 €23.99 billed yearly");
+  await expect(yearly.locator(".pm")).toHaveText("€2.00/mo");
+  const cta = page.locator(".pay .cta.p").first();
+  await expect(cta).toHaveText("Continue");
+  await expect(cta).toHaveAttribute("href", "/start/checkout?plan=newyear");
+  await expect(page.locator(".pay .t12.m").first()).toHaveText("€23.99 first year, then €39.99/year. Cancel any time.");
+
+  // Monthly picked: today's monthly — its title, Subscribe, its own link and renewal line.
+  await page.locator(".pay .plan2").nth(1).click();
+  await expect(page.locator(".pay h1")).toHaveText("Unlock Calodex to continue");
+  await expect(cta).toHaveText("Subscribe");
+  await expect(cta).toHaveAttribute("href", /pay\.example\/m\//);
+  await expect(page.locator(".pay .t12.m").first()).toHaveText("Renews automatically. Cancel any time.");
+});
+
+// PaywallPromo.skipTrialStep (ieat-app#3606): × on the promotion's A closes — no B, and the server
+// already sends no exit offer while it is live — unless the operator kept the step.
+const PROMO = { id: "newyear", percent: 40, trialDays: 0, endsAt: "2027-01-08T00:00:00.000Z", iosCode: null, skipTrialStep: true };
+
+test("A · the promotion with skipTrialStep: × closes, no try-for-free step (#3606)", async ({ page }) => {
+  await selling(page, "paywall-newyear-skip", { ...NEWYEAR, exitOffer: null }, PROMO);
+  await expect(page.locator(".pay .band")).toHaveText("New Year −40%");
+  await page.locator(".pay .x").click();
+  await expect(page).not.toHaveURL(/#\/pay/);
+});
+
+test("A · the promotion with skipTrialStep off: × walks to B as today (#3606)", async ({ page }) => {
+  await selling(page, "paywall-newyear-keep", { ...NEWYEAR, exitOffer: null }, { ...PROMO, skipTrialStep: false });
+  await expect(page.locator(".pay .band")).toHaveText("New Year −40%");
+  await page.locator(".pay .x").click();
+  await expect(page.locator(".pay h1")).toHaveText("We want you to try Calodex for free");
+});
+
+test("A · no promotion figures from the server: today's plans, no promotion anywhere (#3606)", async ({ page }) => {
+  await selling(page, "paywall-newyear-off", { promoCheckoutUrl: "https://pay.example/ny/{userId}" });
+  await expect(page.locator(".pay h1")).toHaveText("Start your 3-day free trial to continue");
+  await expect(page.locator(".pay")).not.toContainText("New Year");
+  await expect(page.locator(".pay .billed s")).toHaveCount(0);
+  await expect(page.locator(".pay .cta.p").first()).toHaveAttribute("href", /pay\.example\/y\//);
+});
+
+/** `/start/offer`'s A, rendered by its own module into this origin — the browser suite's backends
+    sell nothing, so the page is served the way admin-order.pw.ts serves the admin's. */
+async function startOffer(page: Page, patch: Record<string, unknown>): Promise<void> {
+  const paywall = { ...PAYWALL, ...patch } as unknown as WebPaywall;
+  await page.route("**/start/offer", (r) => r.fulfill({
+    status: 200, contentType: "text/html; charset=utf-8",
+    body: offer({ step: "plans", paywall, checkoutUrl: "/start/checkout", privacyHref: null, termsHref: null,
+      closeHref: "/start/offer?step=try", timezone: "UTC", now: new Date(), lang: "en" }),
+  }));
+  await page.goto("/start/offer");
+}
+
+test("/start/offer · the same New Year A, its footer following the pick, and none once it is off (#3606)", async ({ page }) => {
+  await startOffer(page, NEWYEAR);
+  await expect(page.locator("h1:visible")).toHaveText("Unlock Calodex to continue");
+  const yearly = page.locator(".plan2").first();
+  await expect(yearly.locator(".band")).toHaveText("New Year −40%");
+  await expect(yearly.locator(".nm")).toHaveText("Yearly");
+  await expect(yearly.locator(".billed s")).toHaveText("€39.99");
+  await expect(yearly.locator(".billed b")).toHaveText("€23.99");
+  await expect(yearly.locator(".pm")).toHaveText("€2.00/mo");
+  await expect(page.locator(".note:visible")).toHaveText("€23.99 first year, then €39.99/year. Cancel any time.");
+  // Continue submits the checked radio: yearly is plan=newyear.
+  await expect(page.locator("input[name=plan]:checked")).toHaveAttribute("value", "newyear");
+  await page.route("**/start/checkout?plan=newyear", (r) => r.fulfill({ status: 200, body: "checkout" }));
+  await page.locator(".plan2").nth(1).click();
+  await expect(page.locator(".note:visible")).toHaveText("Renews automatically. Cancel any time.");
+  await yearly.click();
+  await page.locator("button[type=submit]").click();
+  await expect(page).toHaveURL(/\/start\/checkout\?plan=newyear$/);
+
+  await startOffer(page, { promoCheckoutUrl: "https://pay.example/ny/x" });
+  await expect(page.locator("h1:visible")).toHaveText("Start your 3-day free trial to continue");
+  await expect(page.locator("body")).not.toContainText("New Year");
+  await expect(page.locator(".billed s")).toHaveCount(0);
+  await expect(page.locator("input[name=plan]:checked")).toHaveAttribute("value", "yearly");
 });
 
 test("× walks A → B (try for free) → C (the special offer) → closes (#3442)", async ({ page }) => {

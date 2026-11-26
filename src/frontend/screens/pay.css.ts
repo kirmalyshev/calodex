@@ -50,6 +50,9 @@ body:has(.pay) .wtop { display: none; }
 .pay .plan2 .billed, .pay .plan2 .pm { font-size: 13px; font-weight: 400; }
 /* 3.1.2(c): the billed amount is the primary text colour at medium weight, picked or not (Kirill q54). */
 .pay .plan2 .billed { font-weight: 500; color: var(--ink); }
+/* pay-cal-a-newyear (ieat-app#3606): the regular yearly price struck and muted, the promotion's the heaviest figure. */
+.pay .plan2 .billed s { color: var(--muted); font-weight: 400; }
+.pay .plan2 .billed b { font-weight: 700; font-size: 16px; }
 .pay .plan2:not(:has(>input:checked)) :is(.nm, .pm) { color: var(--muted); }
 /* B's timeline (Cal AI 06): a dot per step with its icon, the rail between them — the second rail
    is the line's colour, like the phone's stepRailOff. */

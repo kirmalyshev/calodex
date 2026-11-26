@@ -46,7 +46,7 @@ describe("the web pay sheet stays the phone's simple sheet (ieat-app#3465)", () 
     }
     const pair = part("function planPair", "export function payScreen");
     expect(pair).toContain("fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })");
-    expect(pair).toContain('el("s", "", was)');
+    expect(pair).toContain('el("s", "", offer.regularPrice)');
   });
   test("the photo is screen A's, and only A's", () => {
     expect(count(src, "frenchtoast.webp")).toBe(1);

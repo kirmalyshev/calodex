@@ -10268,6 +10268,10 @@
               "null"
             ],
             "description": "The App Store offer code to redeem on the phone; null when none is configured."
+          },
+          "skipTrialStep": {
+            "type": "boolean",
+            "description": "Skip the try-for-free step while this promotion is live (ieat-app#3606): × on the promotion's plans closes rather than offering the regular trial. The operator's `PROMO_NEWYEAR_SKIP_TRIAL_STEP`, default true."
           }
         },
         "required": [
@@ -10275,7 +10279,8 @@
           "percent",
           "trialDays",
           "endsAt",
-          "iosCode"
+          "iosCode",
+          "skipTrialStep"
         ],
         "additionalProperties": false,
         "description": "A time-boxed promotion, as `ProfileResponse.promo` carries it (ieat-app#3604) — present ONLY while it is live: the admin's switch on AND the server's clock inside the operator's configured window. Every figure is the operator's; the client computes none of it."
@@ -11053,6 +11058,27 @@
         ],
         "additionalProperties": false,
         "description": "Profile plus everything derived from it, so the app never recomputes targets locally."
+      },
+      "PromoYearly": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "string"
+          },
+          "pricePerMonth": {
+            "type": "string"
+          },
+          "percent": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "price",
+          "pricePerMonth",
+          "percent"
+        ],
+        "additionalProperties": false,
+        "description": "{@link  WebPaywall.promoYearly } ."
       },
       "Provider": {
         "type": "string",
@@ -11965,6 +11991,17 @@
             ],
             "description": "The promotion's web checkout (ieat-app#3604), `{userId}` already filled — navigate to it, never template it. Null outside a live `ProfileResponse.promo`, and while the operator configured no web checkout for it."
           },
+          "promoYearly": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PromoYearly"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The promotion's yearly figures for the web plans screen (ieat-app#3606, board pay-cal-a-newyear): its price, formatted like `YearlyPlan.price`, struck against which the regular `yearly.price` is drawn; that price over a month, like `YearlyPlan.pricePerMonth`; and the whole percent the band names. Null unless the promotion is live AND sold here — a web checkout, its `WEB_PRICE_NEWYEAR` and a yearly plan to strike through — and a client then draws today's plans, unchanged."
+          },
           "termsUrl": {
             "type": "string",
             "description": "The legal footer's Terms href — the operator's `TERMS_URL`, verbatim. \"\" means no terms are published and a client draws no link, the shape `/start`'s own consent line takes."
@@ -11980,6 +12017,7 @@
           "monthly",
           "exitOffer",
           "promoCheckoutUrl",
+          "promoYearly",
           "termsUrl",
           "privacyUrl"
         ],

@@ -55,6 +55,17 @@ export interface PromoConfig {
   iosCode: string;
   /** The web checkout template, `{userId}` in it; "" = no web checkout for it. */
   webCheckoutUrl: string;
+  /**
+   * The web checkout's yearly price, an AMOUNT in the web paywall's currency (ieat-app#3606); 0 =
+   * not configured, and the web paywall then draws no promotion. Required with `webCheckoutUrl`,
+   * and below the regular yearly price.
+   */
+  webPrice: number;
+  /**
+   * Skip the try-for-free step (B) while the promotion is live (ieat-app#3606): × on the
+   * promotion's plans closes. Default true; `PROMO_NEWYEAR_SKIP_TRIAL_STEP=0`/`false` keeps B.
+   */
+  skipTrialStep: boolean;
 }
 
 export interface Config {
@@ -1402,19 +1413,21 @@ function checkoutTemplate(name: string, raw: string | undefined): string {
   return v;
 }
 
+/** A `WEB_PRICE_*` amount: empty is 0 (not offered), anything else a positive number or a boot refusal. */
+function price(name: string, raw: string | undefined): number {
+  if (raw === undefined || raw === "") return 0;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`[eait] ${name} must be a positive amount — e.g. 39.99 — not "${raw}"`);
+  }
+  return n;
+}
+
 export function webPaywallFromEnv(): WebPaywallConfig {
   // The reads are `process.env.NAME` literals at every call site — a name handed to a helper is
   // one the deploy scan in `src/scripts/prod-env.test.ts` cannot see, and a variable the scan
   // cannot see is one that ends up set nowhere.
   const url = checkoutTemplate;
-  const price = (name: string, raw: string | undefined): number => {
-    if (raw === undefined || raw === "") return 0;
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n <= 0) {
-      throw new Error(`[eait] ${name} must be a positive amount — e.g. 39.99 — not "${raw}"`);
-    }
-    return n;
-  };
   const yearlyPrice = price("EAIT__BACKEND__WEB_PRICE_YEARLY", process.env.EAIT__BACKEND__WEB_PRICE_YEARLY);
   const w: WebPaywallConfig = {
     yearlyCheckoutUrl:
@@ -1466,7 +1479,7 @@ export function webPaywallFromEnv(): WebPaywallConfig {
  * setting that silently does nothing. An instant must name its zone (`Z` or `+01:00`): a bare
  * date or local time is read in whatever zone the host runs in.
  */
-export function promoNewYearFromEnv(): PromoConfig | null {
+export function promoNewYearFromEnv(yearlyPrice = webPaywallFromEnv().yearlyPrice): PromoConfig | null {
   const raw = {
     from: process.env.EAIT__BACKEND__PROMO_NEWYEAR_FROM ?? "",
     until: process.env.EAIT__BACKEND__PROMO_NEWYEAR_UNTIL ?? "",
@@ -1474,6 +1487,7 @@ export function promoNewYearFromEnv(): PromoConfig | null {
     trialDays: process.env.EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS ?? "",
     iosCode: (process.env.EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE ?? "").trim(),
     webCheckoutUrl: checkoutTemplate("EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL", process.env.EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL),
+    webPrice: process.env.EAIT__BACKEND__WEB_PRICE_NEWYEAR ?? "",
   };
   // TRIAL_DAYS=0 is the shipped default in both env files and means "no trial", not "configured":
   // counted as set, it would refuse to boot every host whose window is still empty.
@@ -1492,11 +1506,28 @@ export function promoNewYearFromEnv(): PromoConfig | null {
   if (raw.percent === "" || !Number.isInteger(percent) || percent < 1 || percent > 90) {
     throw new Error(`[eait] EAIT__BACKEND__PROMO_NEWYEAR_PERCENT must be a whole number from 1 to 90 when the promotion is configured, not "${raw.percent}"`);
   }
+  // The exit offer's rule (ieat-app#3606): a web checkout the paywall cannot price is a card with a
+  // hole in it, and a promotion that does not undercut the yearly plan it strikes through saves nothing.
+  const webPrice = price("EAIT__BACKEND__WEB_PRICE_NEWYEAR", raw.webPrice);
+  if (raw.webCheckoutUrl !== "" && webPrice <= 0) {
+    throw new Error("[eait] EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL is set but EAIT__BACKEND__WEB_PRICE_NEWYEAR is not a positive amount — the web paywall draws the promotion's price");
+  }
+  if (webPrice > 0 && webPrice >= yearlyPrice) {
+    throw new Error("[eait] EAIT__BACKEND__WEB_PRICE_NEWYEAR must undercut EAIT__BACKEND__WEB_PRICE_YEARLY — the promotion strikes the regular yearly price through");
+  }
+  // The band says "−{PERCENT}" over this price, so the price must give at least that much off the
+  // struck yearly one — compared in whole cents, so a float cannot round a broken promise into a kept one.
+  if (webPrice > 0 && Math.round(webPrice * 100) * 100 > Math.round(yearlyPrice * 100) * (100 - percent)) {
+    throw new Error(`[eait] EAIT__BACKEND__WEB_PRICE_NEWYEAR (${webPrice}) gives less than EAIT__BACKEND__PROMO_NEWYEAR_PERCENT (${percent}%) off EAIT__BACKEND__WEB_PRICE_YEARLY (${yearlyPrice}) — the band would promise a discount the price does not give`);
+  }
   return {
     from, until, percent,
     trialDays: int("EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS", 0),
     iosCode: raw.iosCode,
     webCheckoutUrl: raw.webCheckoutUrl,
+    webPrice,
+    // A behaviour flag, not a setting: the env files ship it, so it is outside the "any set" check above.
+    skipTrialStep: !["0", "false"].includes(process.env.EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP ?? ""),
   };
 }
 
