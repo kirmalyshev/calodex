@@ -2023,7 +2023,7 @@ describe("the soft offer after the plan", () => {
   const NEWYEAR = {
     from: new Date(Date.now() - 3_600_000).toISOString(),
     until: new Date(Date.now() + 3_600_000).toISOString(),
-    percent: 40, trialDays: 0, iosCode: "", webCheckoutUrl: "https://pay.rev.cat/ny/{userId}",
+    percent: 40, trialDays: 0, iosCode: "", webCheckoutUrl: "https://pay.rev.cat/ny/{userId}", webPrice: 23.99, skipTrialStep: true,
   };
   it("routes plan=newyear to the promotion's checkout only while it is live", async () => {
     router({ ...CONFIG, webPaywall: PAYWALL, promoNewYear: NEWYEAR });

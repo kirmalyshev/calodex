@@ -102,6 +102,7 @@ export function paywallOf(
   deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed: boolean, promo: PaywallPromo | null,
 ): WebPaywall {
   const w = deps.config.webPaywall;
+  const ny = deps.config.promoNewYear;
   const url = (template: string) => template.replaceAll("{userId}", encodeURIComponent(userId));
   const price = (n: number) => paywallPrice(n, w.currency, lang);
   // The struck price is TWELVE MONTHS OF THE MONTHLY PLAN while one is sold (ieat-app#3442, Kirill
@@ -133,6 +134,10 @@ export function paywallOf(
     },
     promoCheckoutUrl: promo === null || !deps.config.promoNewYear?.webCheckoutUrl
       ? null : url(deps.config.promoNewYear.webCheckoutUrl),
+    // The web promotion's figures (ieat-app#3606): only while it can be bought here AND drawn —
+    // its checkout, its price, and the regular yearly plan it is struck against.
+    promoYearly: promo === null || ny === null || ny.webCheckoutUrl === "" || ny.webPrice <= 0 || w.yearlyCheckoutUrl === ""
+      ? null : { price: price(ny.webPrice), pricePerMonth: price(perMonth(ny.webPrice)), percent: promo.percent },
     // The footer's links — the same two the `/start` pages already render, sent so the app's pay
     // surfaces never carry a second copy of where they point.
     termsUrl: legalUrls(deps.config).terms,
