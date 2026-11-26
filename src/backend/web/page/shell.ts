@@ -245,9 +245,9 @@ body:has(.offer) { background: var(--surface); }
    figure) — B's timeline and C's card. A is script-free: its title follows the checked
    radio through :has. */
 .offer h1 { margin: .5rem 0 1rem; }
-.offer .t-m { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) .t-y { display: none; }
-.offer:has(input[name=plan][value=monthly]:checked) .t-m { display: block; }
+.offer .t-m, .offer .n-m { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) :is(.t-y, .n-y) { display: none; }
+.offer:has(input[name=plan][value=monthly]:checked) :is(.t-m, .n-m) { display: block; }
 .pwp2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
 .plan2 { display: flex; flex-direction: column; background: var(--surface); border-radius: 18px;
   box-shadow: 0 0 0 1px var(--hair); cursor: pointer; position: relative; overflow: hidden; }
@@ -280,14 +280,6 @@ body:has(.offer) { background: var(--surface); }
   width: 4px; background: var(--accent); }
 .offer .tl li:nth-child(2)::after { background: var(--hair); }
 .offer .nopay { margin: 0 0 .5rem; text-align: center; font-weight: 600; }
-/* C · the special offer card. */
-.offer .special { text-align: center; padding: 24px; margin-bottom: 1.25rem;
-  background: linear-gradient(135deg, var(--surface) 0%, var(--line) 45%, var(--surface) 70%, var(--line) 100%); }
-.offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
-.offer .price { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin-top: 1rem;
-  font-size: 22px; font-weight: 600; }
-.offer .price s { color: var(--muted); font-weight: 500; font-size: 18px; text-decoration-thickness: 2px; }
-.offer .per { margin: 8px 0 0; font-weight: 500; }
 .offer a.button { display: block; text-align: center; text-decoration: none; margin-bottom: .6rem; }
 
 /* The renews line under the CTA — the phone's t12 m / role="micro" note (#3465). */

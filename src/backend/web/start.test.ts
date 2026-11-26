@@ -1879,16 +1879,17 @@ describe("the soft offer after the plan", () => {
       const b = await (await get("/start/offer?step=try", session)).text();
       const c = await (await get("/start/offer?step=offer", session)).text();
       expect(b).not.toContain('<img class="heroimg"');
-      expect(c).not.toContain('<img class="heroimg"');
+      expect(c).toContain('<img class="heroimg"'); // C is A with values (ieat-app#3617): A's photo
       // C is Cal AI's element count here too: title, card, CTA — no sub-line.
       expect(c).not.toContain('class="sub"');
       // The price-free renewsPlain under the CTA on A and B, the offer's priced renewal on C —
       // the same lines `#/pay` and the phone carry at the same steps (#3465).
       expect(a).toMatch(/<button class="button primary" type="submit">Continue<\/button>\s*<p class="note">Renews automatically\. Cancel any time\.<\/p>/);
       expect(b).toMatch(/<a class="button primary" href="[^"]*">Try for €0\.00<\/a>\s*<p class="note">Renews automatically\. Cancel any time\.<\/p>/);
-      expect(c).toContain('<p class="note">€23.99 a year. Renews automatically. Cancel any time.</p>');
-      // `#/pay` pins renewsPlain to zero on C — the priced renewal IS this screen's one line.
-      expect(c).not.toContain('<p class="note">Renews automatically. Cancel any time.</p>');
+      // C is A (ieat-app#3617): its one note is the offer's priced renewal while Yearly (the offer) is
+      // picked, and A's price-free line while Monthly is — `:has` shows one of the two.
+      expect(c).toContain('<p class="note n-y">€23.99 a year. Renews automatically. Cancel any time.</p>');
+      expect(c).toContain('<p class="note n-m">Renews automatically. Cancel any time.</p>');
     });
 
     it("B is the trial timeline: no payment due, the billed amount WITH its date, the zero CTA", async () => {
@@ -1908,18 +1909,25 @@ describe("the soft offer after the plan", () => {
       expect(closeOf(b)).toBe("/start/offer?step=offer");
     });
 
-    it("C is the special offer, twelve monthlies struck, and its × is the sign-up", async () => {
+    it("C is A with changed values: the offer on Yearly's row, twelve monthlies struck, Claim; its × is the sign-up", async () => {
+      // Kirill q90 = A (ieat-app#3617; boards pay-cal-c, pay-cal-c-notrial): no card, no title of its own.
       const { session, userId } = await walk();
       const c = await (await get("/start/offer?step=offer", session)).text();
-      expect(c).toContain("Your special offer");
-      expect(c).toContain("<s>€59.88</s>");
-      expect(c).toContain("€23.99 / year");
-      expect(c).toContain("less than our monthly rate");
+      for (const gone of ["Your special offer", "less than our monthly rate", 'class="card special"', "€23.99 / year"]) {
+        expect(c, gone).not.toContain(gone);
+      }
+      expect(c).toContain('<input type="radio" name="plan" value="exit" checked>');
+      expect(c).toMatch(/<div class="band">\d+% off<\/div>/);
+      expect(c).toContain('<small class="billed"><s>€59.88</s> €23.99 billed yearly</small>');
+      expect(c).toContain('<div class="nm">Yearly</div>');
+      expect(c).toContain('<button class="button primary" type="submit">Claim</button>');
+      // The web offer sells no free days: A's unlock title, as on pay-cal-c-notrial.
+      expect(c).toContain('<h1 class="t-y">Unlock Calodex to continue</h1>');
       expect(c).not.toContain('class="wbar"');
       // The billed figure twice: the card's price and the offer's renewal line under the claim —
       // the one place the figure repeats, like `#/pay` (#3465).
       expect(c.split("23.99").length - 1).toBe(2);
-      expect(c).toContain('href="/start/checkout?plan=exit"');
+      expect(c).toContain('<form class="offer" action="/start/checkout" method="get">');
       expect(c).not.toContain(userId);
       expect((await get("/start/checkout?plan=exit", session)).headers.get("location")).toBe(`https://pay.rev.cat/u/${userId}`);
       expect(closeOf(c)).toBe("/start/signup");

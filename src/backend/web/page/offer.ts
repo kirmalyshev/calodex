@@ -1,5 +1,5 @@
 import { fill, payCopyFor, paywallPercent, trialBillLine, welcomePlateAlt, WELCOME_PLATES, zeroLike } from "@eait/shared";
-import type { Lang, WebPaywall } from "@eait/shared";
+import type { ExitOffer, Lang, WebPaywall } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { IMG_URL_DIR } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -67,37 +67,38 @@ ${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay
 <p class="note">${escape(pay.renewsPlain)}</p>`);
   }
 
-  if (v.step === "offer" && w.exitOffer !== null) {
-    const o = w.exitOffer;
-    const percent = paywallPercent(o.percentOff, v.lang);
-    return page(`<h1>${escape(pay.offerSpecialTitle)}</h1>
-<div class="card special">
-<div class="off num">${escape(fill(pay.offerOff, { percent }))}</div>
-<div class="price num"><s>${escape(o.regularPrice)}</s><span>${escape(fill(pay.offerPrice, { price: o.price }))}</span></div>
-<p class="per num">${escape(w.monthly !== null ? fill(pay.offerVsMonthly, { percent }) : fill(pay.offerPerMonth, { price: o.perMonth }))}</p>
-</div>
-${cta(`${v.checkoutUrl}?plan=exit`, pay.offerClaim)}
-<p class="note">${escape(fill(pay.renewNoteYearly, { price: o.price }))}</p>`);
-  }
+  // C · the special offer is A with values changed (Kirill q90 = A, ieat-app#3617; boards pay-cal-c,
+  // pay-cal-c-notrial): the offer on Yearly's row, its percent in the band, the regular struck before
+  // the billed price, Claim, and A's one note carrying the offer's renewal. The web offer sells no
+  // free days, so the title is A's unlock title.
+  return plans(v.step === "offer" ? w.exitOffer : null);
 
+  function plans(o: ExitOffer | null): string {
   // A · the plans: Yearly over Monthly, each a real radio — the plan checked is the plan checkout
   // sends. The trial rides yearly only (pay.ts): its title, band and note follow the pick.
-  const days = w.yearly !== null ? w.trialDays : 0;
-  const band = days > 0 ? fill(pay.trialBadge, { days: String(days) }) : null;
-  const row = (value: "yearly" | "monthly", name: string, billed: string | null, perMonth: string,
+  const days = o === null && w.yearly !== null ? w.trialDays : 0;
+  const band = o !== null ? fill(pay.offerOff, { percent: paywallPercent(o.percentOff, v.lang) })
+    : days > 0 ? fill(pay.trialBadge, { days: String(days) }) : null;
+  const row = (value: "yearly" | "exit" | "monthly", name: string, was: string | null, billed: string | null, perMonth: string,
       trial: string | null, checked: boolean): string => `<label class="plan2">
 <input type="radio" name="plan" value="${value}"${checked ? " checked" : ""}>
 ${trial === null ? "" : `<div class="band">${escape(trial)}</div>`}
-<div class="nr"><i class="ck"></i><div class="nmc"><div class="nm">${escape(name)}</div>${billed === null ? "" : `<small class="billed">${escape(billed)}</small>`}</div><div class="pm num">${escape(perMonth)}</div></div>
+<div class="nr"><i class="ck"></i><div class="nmc"><div class="nm">${escape(name)}</div>${billed === null ? "" : `<small class="billed">${was === null ? "" : `<s>${escape(was)}</s> `}${escape(billed)}</small>`}</div><div class="pm num">${escape(perMonth)}</div></div>
 </label>`;
   const rows = [
-    w.yearly === null ? "" : row("yearly",
-      w.yearly.save === null ? pay.planYearly : `${pay.planYearly} · ${w.yearly.save}`,
+    o !== null ? row("exit", pay.planYearly, o.regularPrice, fill(pay.billedYearly, { price: o.price }),
+      fill(pay.perMonthShort, { price: o.perMonth }), band, true)
+    : w.yearly === null ? "" : row("yearly",
+      w.yearly.save === null ? pay.planYearly : `${pay.planYearly} · ${w.yearly.save}`, null,
       fill(pay.billedYearly, { price: w.yearly.price }),
       fill(pay.perMonthShort, { price: w.yearly.pricePerMonth }), band, true),
-    w.monthly === null ? "" : row("monthly", pay.planMonthly, null,
-      fill(pay.perMonthShort, { price: w.monthly.price }), null, w.yearly === null),
+    w.monthly === null ? "" : row("monthly", pay.planMonthly, null, null,
+      fill(pay.perMonthShort, { price: w.monthly.price }), null, o === null && w.yearly === null),
   ].join("\n");
+  // A's price-free line; on C the offer's priced renewal while it is picked, A's line while Monthly is.
+  const note = o === null ? `<p class="note">${escape(pay.renewsPlain)}</p>`
+    : `<p class="note n-y">${escape(fill(pay.renewNoteYearly, { price: o.price }))}</p>
+<p class="note n-m">${escape(pay.renewsPlain)}</p>`;
   return shell(PAGE_COPY.titleOffer, `
 <form class="offer" action="${escape(v.checkoutUrl)}" method="get">
 <img class="heroimg" src="${IMG_URL_DIR}/frenchtoast.webp" alt="${escape(welcomePlateAlt(WELCOME_PLATES["french-toast"], v.lang))}">
@@ -107,9 +108,10 @@ ${x}
 <div class="pwp2" role="radiogroup" aria-label="${escape(PAGE_COPY.titlePlan)}">
 ${rows}
 </div>
-<button class="button primary" type="submit">${escape(pay.continueCta)}</button>
-<p class="note">${escape(pay.renewsPlain)}</p>
+<button class="button primary" type="submit">${escape(o === null ? pay.continueCta : pay.offerClaim)}</button>
+${note}
 ${fine}
 </form>
 `, v.lang);
+  }
 }
