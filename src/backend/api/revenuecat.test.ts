@@ -1136,12 +1136,13 @@ describe("a web purchase is forwarded to AppsFlyer by this webhook, not RevenueC
     try {
       const { userId, token } = await account();
       await store.setWebAttributionConsent(userId, true);
-      const res = await deliver(webTrial(userId));
+      const id = crypto.randomUUID();
+      const res = await deliver({ ...webTrial(userId), id });
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ ok: true, applied: true });
       await settle();
       expect(entitlementActive((await profile(token)).entitlement.expiresAt, Date.now())).toBe(true);
-      expect(error).toHaveBeenCalledWith("[eait] appsflyer web purchase failed: TypeError");
+      expect(error).toHaveBeenCalledWith(`[eait] appsflyer web purchase failed, event ${id} INITIAL_PURCHASE: TypeError`);
     } finally { error.mockRestore(); }
   });
 });

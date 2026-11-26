@@ -1,20 +1,22 @@
 import type { Config } from "../config.ts";
 import type { RevenueCatEventRow, Store } from "../store.ts";
+import { survivorOf } from "./entitlement.ts";
 
 // AppsFlyer web attribution for /start, server to server (ieat-app#3621). Nothing runs in the
 // browser: no AppsFlyer script, no AppsFlyer cookie. The one thing stored there is the visitor's own
-// answer to the /start consent banner, and without an `accept` nothing is sent at all (q93).
+// answer to the /start consent banner, and without an `accept` nothing is sent at all.
 //
-// A web purchase is a RevenueCat Billing purchase, and RevenueCat reports it to AppsFlyer itself
-// ("Web S2S"), naming the buyer by `customer_user_id` = the RevenueCat app user id = our user id.
-// AppsFlyer attributes such an event only to an earlier VISIT by the same user — "If you send an
-// event before a visit, the system classifies it as organic." This file sends that visit, once,
-// when /start mints the account, carrying the ad's click parameters the landing URL arrived with.
+// Two things are sent, both only after Accept. A VISIT, once, when /start mints the account,
+// carrying the ad's click parameters the landing URL arrived with: AppsFlyer attributes a web event
+// only to an earlier visit by the same `customer_user_id` (our user id). And the PURCHASE: our
+// RevenueCat webhook forwards each RevenueCat Billing purchase itself, `forwardWebPurchase`.
 //
-// RevenueCat does NOT forward web purchases to AppsFlyer (Kirill, option A): it cannot honour a
-// visitor's Decline. Our webhook does it instead, `forwardWebPurchase`, and only for an account
-// whose visitor pressed Accept on the /start banner. Turning RevenueCat's own forwarding on as well
-// would double-count every purchase.
+// RevenueCat's own AppsFlyer web routing ("Web S2S") stays OFF: it cannot honour a visitor's
+// Decline. Turning it on as well would also double-count every purchase.
+
+/** The banner's two answers, the one spelling every reader and writer uses. */
+export type ConsentChoice = "accept" | "decline";
+export const isConsentChoice = (v: unknown): v is ConsentChoice => v === "accept" || v === "decline";
 
 /** The click parameters worth carrying from the landing to the visit. Nothing else ever leaves. */
 export const CLICK_PARAMS = [
@@ -37,13 +39,18 @@ export function clickParamsOf(search: URLSearchParams): string {
 
 type WebAttributionConfig = { appsflyerWebS2sToken: string; appsflyerWebAppId: string };
 
+/** Both halves set. Either empty = off: /start sends no visit and the webhook forwards no web purchase. */
+export function webAttributionConfigured(config: WebAttributionConfig): boolean {
+  return config.appsflyerWebS2sToken !== "" && config.appsflyerWebAppId !== "";
+}
+
 /**
- * THE ONE PREDICATE IN FRONT OF EVERY VISIT. Off unless both halves are configured AND the visitor
- * accepted the /start consent banner (Kirill, q93): without consent nothing is kept and nothing is
- * sent, whatever the operator configured.
+ * THE ONE PREDICATE IN FRONT OF EVERY SEND — the /start visit and every forwarded web purchase.
+ * Configured AND the visitor accepted the /start consent banner. A Decline is recorded, and nothing
+ * is sent, whatever the operator configured.
  */
-export function webAttributionAllowed(config: WebAttributionConfig, consented: boolean): boolean {
-  return consented && config.appsflyerWebS2sToken !== "" && config.appsflyerWebAppId !== "";
+export function mayAttribute(config: WebAttributionConfig, consented: boolean): boolean {
+  return consented && webAttributionConfigured(config);
 }
 
 export interface WebVisit {
@@ -52,7 +59,8 @@ export interface WebVisit {
   clickParams: string;
   /** This server's own origin, as the browser reached it. */
   origin: string;
-  ip: string;
+  /** The address the request was observed from (the last X-Forwarded-For hop, else the socket peer), or null. */
+  ip: string | null;
   userAgent: string | null;
   /** The visitor accepted the consent banner. */
   consented: boolean;
@@ -60,14 +68,36 @@ export interface WebVisit {
 
 const TIMEOUT_MS = 3000;
 
+/**
+ * AppsFlyer's answer, logged: on a refusal its status and the start of its body, with the token
+ * blanked should it be echoed; on success the body is only cancelled. Never throws.
+ */
+async function settle(res: Response, label: string, token: string): Promise<void> {
+  if (res.ok) {
+    await res.body?.cancel().catch(() => {});
+    return;
+  }
+  let text = "";
+  try {
+    text = (await res.text()).slice(0, 200).replaceAll(token, "***");
+  } catch { /* the status alone, then */ }
+  console.error(`[eait] ${label}: ${res.status}${text === "" ? "" : ` ${text}`}`);
+}
+
+/** An error's name and code, never its message: a message can echo the request, which carries the token. */
+function errorOf(e: unknown): string {
+  const { name, code } = (e ?? {}) as { name?: unknown; code?: unknown };
+  return `${String(name ?? "error")}${code === undefined ? "" : ` ${String(code)}`}`;
+}
+
 /** Send one visit. Never throws, never blocks longer than its timeout, never logs the token. */
 export async function sendWebVisit(config: WebAttributionConfig, visit: WebVisit, fetchFn: typeof fetch = fetch): Promise<void> {
-  if (!webAttributionAllowed(config, visit.consented) || visit.clickParams === "") return;
+  if (!mayAttribute(config, visit.consented) || visit.clickParams === "") return;
   const body: Record<string, unknown> = {
     user_id: { customer_user_id: visit.userId },
     event_url: `${visit.origin}/start?${visit.clickParams}`,
-    ip: visit.ip,
   };
+  if (visit.ip !== null) body.ip = visit.ip;
   if (visit.userAgent) body.user_agent = visit.userAgent.slice(0, 1024);
   try {
     const res = await fetchFn(
@@ -79,10 +109,9 @@ export async function sendWebVisit(config: WebAttributionConfig, visit: WebVisit
         signal: AbortSignal.timeout(TIMEOUT_MS),
       },
     );
-    if (!res.ok) console.error(`[eait] appsflyer web visit refused: ${res.status}`);
+    await settle(res, `appsflyer web visit refused, user ${visit.userId}`, config.appsflyerWebS2sToken);
   } catch (e) {
-    // The name only: a message can echo the request, and the request carries the token.
-    console.error(`[eait] appsflyer web visit failed: ${(e as Error | null)?.name ?? "error"}`);
+    console.error(`[eait] appsflyer web visit failed, user ${visit.userId}: ${errorOf(e)}`);
   }
 }
 
@@ -93,15 +122,17 @@ export const WEB_BILLING_STORE = "RC_BILLING";
 function webPurchaseEventName(row: RevenueCatEventRow, isTrialConversion: boolean | null): string | null {
   if (row.type === "INITIAL_PURCHASE") return row.periodType === "TRIAL" ? "af_start_trial" : "af_subscribe";
   if (row.type === "RENEWAL") return isTrialConversion === true ? "rc_trial_converted_event" : "rc_renewal_event";
+  if (row.type === "NON_RENEWING_PURCHASE") return "af_purchase";
   return null;
 }
 
 /**
  * Forward one RevenueCat Web Billing purchase to AppsFlyer as an in-app event, only when the
  * account's visitor ACCEPTED the /start consent banner — declined and never asked send nothing —
- * and the environment passes the webhook's own sandbox rule. No ip and no user agent: the request
- * this answers is RevenueCat's server, not the visitor. Never throws; logs a status or an error's
- * name, never the token.
+ * and the environment passes the webhook's own sandbox rule. The account is the survivor a merge
+ * left, as the event log names it. No ip and no user agent: the request this answers is
+ * RevenueCat's server, not the visitor. Never throws; logs RevenueCat's event id and type with a
+ * status or an error's name, never the token.
  */
 export async function forwardWebPurchase(
   deps: { config: Config; store: Store },
@@ -113,19 +144,44 @@ export async function forwardWebPurchase(
   const eventName = webPurchaseEventName(row, isTrialConversion);
   if (eventName === null || row.store !== WEB_BILLING_STORE || row.userId === null) return;
   if (row.environment === "SANDBOX" && !config.revenueCatAcceptSandbox) return;
-  if (!webAttributionAllowed(config, true)) return;
+  if (!webAttributionConfigured(config)) return;
+  const event = `event ${row.id} ${row.type}`;
+  let userId: string;
+  let consented: boolean;
   try {
-    if (!webAttributionAllowed(config, (await deps.store.webAttributionConsentOf(row.userId)) === true)) return;
-    const trialStart = eventName === "af_start_trial";
-    const purchased = row.priceInPurchasedCurrency !== null;
-    const body: Record<string, unknown> = {
-      user_id: { customer_user_id: row.userId },
-      event_name: eventName,
-      event_revenue: trialStart ? 0 : (row.priceInPurchasedCurrency ?? row.price ?? 0),
-      event_revenue_currency: (trialStart || purchased) && row.currency !== null ? row.currency : "USD",
-      af_customer_event_id: row.id,
-      timestamp: Date.parse(row.eventAt),
-    };
+    userId = await survivorOf(deps, row.userId);
+    consented = (await deps.store.webAttributionConsentOf(userId)) === true;
+  } catch (e) {
+    console.error(`[eait] appsflyer web purchase not sent, ${event}: the consent read failed: ${errorOf(e)}`);
+    return;
+  }
+  if (!mayAttribute(config, consented)) return;
+  const trialStart = eventName === "af_start_trial";
+  let revenue: number;
+  let currency: string;
+  if (trialStart) {
+    revenue = 0;
+    currency = row.currency ?? "USD";
+  } else if (row.priceInPurchasedCurrency !== null && row.currency !== null) {
+    revenue = row.priceInPurchasedCurrency;
+    currency = row.currency;
+  } else if (row.price !== null) {
+    revenue = row.price;
+    currency = "USD";
+  } else {
+    console.error(`[eait] appsflyer web purchase skipped, ${event}: no price`);
+    return;
+  }
+  const body: Record<string, unknown> = {
+    user_id: { customer_user_id: userId },
+    event_name: eventName,
+    event_revenue: revenue,
+    event_revenue_currency: currency,
+    af_customer_event_id: row.id,
+  };
+  const at = Date.parse(row.eventAt);
+  if (Number.isFinite(at)) body.timestamp = at;
+  try {
     const res = await fetchFn(
       `https://events.appsflyer.com/v2.0/s2s/inapps/app/web/${encodeURIComponent(config.appsflyerWebAppId)}`,
       {
@@ -135,8 +191,8 @@ export async function forwardWebPurchase(
         signal: AbortSignal.timeout(TIMEOUT_MS),
       },
     );
-    if (!res.ok) console.error(`[eait] appsflyer web purchase refused: ${res.status}`);
+    await settle(res, `appsflyer web purchase refused, ${event}`, config.appsflyerWebS2sToken);
   } catch (e) {
-    console.error(`[eait] appsflyer web purchase failed: ${(e as Error | null)?.name ?? "error"}`);
+    console.error(`[eait] appsflyer web purchase failed, ${event}: ${errorOf(e)}`);
   }
 }

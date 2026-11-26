@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from "bun:test";
-import { clickParamsOf, forwardWebPurchase, sendWebVisit, webAttributionAllowed } from "./appsflyer-web.ts";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { clickParamsOf, forwardWebPurchase, isConsentChoice, mayAttribute, sendWebVisit, webAttributionConfigured } from "./appsflyer-web.ts";
 import { configDefaults, type Config } from "../config.ts";
 import { memoryStore } from "../store.memory.ts";
 import type { RevenueCatEventRow, Store } from "../store.ts";
@@ -31,16 +31,24 @@ describe("clickParamsOf", () => {
   });
 });
 
-describe("webAttributionAllowed", () => {
-  it("is off unless BOTH the token and the web app id are set", () => {
-    expect(webAttributionAllowed({ appsflyerWebS2sToken: "", appsflyerWebAppId: "" }, true)).toBe(false);
-    expect(webAttributionAllowed({ ...ON, appsflyerWebAppId: "" }, true)).toBe(false);
-    expect(webAttributionAllowed({ ...ON, appsflyerWebS2sToken: "" }, true)).toBe(false);
-    expect(webAttributionAllowed(ON, true)).toBe(true);
+describe("webAttributionConfigured and mayAttribute", () => {
+  it("is configured only when BOTH the token and the web app id are set", () => {
+    expect(webAttributionConfigured({ appsflyerWebS2sToken: "", appsflyerWebAppId: "" })).toBe(false);
+    expect(webAttributionConfigured({ ...ON, appsflyerWebAppId: "" })).toBe(false);
+    expect(webAttributionConfigured({ ...ON, appsflyerWebS2sToken: "" })).toBe(false);
+    expect(webAttributionConfigured(ON)).toBe(true);
   });
 
-  it("is off without the visitor's consent, however configured (Kirill, q93)", () => {
-    expect(webAttributionAllowed(ON, false)).toBe(false);
+  it("may attribute only when configured AND the visitor accepted, however configured", () => {
+    expect(mayAttribute(ON, true)).toBe(true);
+    expect(mayAttribute(ON, false)).toBe(false);
+    expect(mayAttribute({ ...ON, appsflyerWebS2sToken: "" }, true)).toBe(false);
+  });
+
+  it("isConsentChoice accepts the two answers and nothing else", () => {
+    expect(isConsentChoice("accept")).toBe(true);
+    expect(isConsentChoice("decline")).toBe(true);
+    for (const v of ["ACCEPT", "", "yes", null, undefined, 1]) expect(isConsentChoice(v)).toBe(false);
   });
 });
 
@@ -59,6 +67,12 @@ describe("sendWebVisit", () => {
     });
   });
 
+  it("omits ip when no address was observed", async () => {
+    const { calls, fetchFn } = recorder();
+    await sendWebVisit(ON, { ...VISIT, ip: null }, fetchFn);
+    expect(JSON.parse(String(calls[0]!.init.body))).not.toHaveProperty("ip");
+  });
+
   it("sends nothing when attribution is off, or the landing carried no click parameters", async () => {
     const { calls, fetchFn } = recorder();
     await sendWebVisit({ ...ON, appsflyerWebS2sToken: "" }, VISIT, fetchFn);
@@ -72,13 +86,24 @@ describe("sendWebVisit", () => {
     const original = console.error;
     console.error = (...a: unknown[]) => { logged.push(a.join(" ")); };
     try {
-      await sendWebVisit(ON, VISIT, recorder(async () => new Response("no", { status: 401 })).fetchFn);
-      await sendWebVisit(ON, VISIT, recorder(async () => { throw new Error("tok_not-a-real-token boom"); }).fetchFn);
+      await sendWebVisit(ON, VISIT, recorder(async () => new Response("bad tok_not-a-real-token", { status: 401 })).fetchFn);
+      await sendWebVisit(ON, VISIT, recorder(async () => {
+        throw Object.assign(new Error("tok_not-a-real-token boom"), { code: "ECONNRESET" });
+      }).fetchFn);
     } finally {
       console.error = original;
     }
-    expect(logged).toHaveLength(2);
-    expect(logged.join("\n")).not.toContain("not-a-real-token");
+    expect(logged).toEqual([
+      "[eait] appsflyer web visit refused, user u-1: 401 bad ***",
+      "[eait] appsflyer web visit failed, user u-1: Error ECONNRESET",
+    ]);
+  });
+
+  it("cancels the body of an accepted answer", async () => {
+    let cancelled = false;
+    const body = new ReadableStream({ cancel() { cancelled = true; } });
+    await sendWebVisit(ON, VISIT, recorder(async () => new Response(body, { status: 202 })).fetchFn);
+    expect(cancelled).toBe(true);
   });
 });
 
@@ -131,11 +156,38 @@ describe("forwardWebPurchase (ieat-app#3621, option A)", () => {
     expect(subscribe).toMatchObject({ event_name: "af_subscribe", event_revenue: 49.99, event_revenue_currency: "EUR" });
     expect((await sent({ ...paid, type: "RENEWAL" }, true))[0].event_name).toBe("rc_trial_converted_event");
     expect((await sent({ ...paid, type: "RENEWAL" }, false))[0].event_name).toBe("rc_renewal_event");
-    // No purchased-currency price: RevenueCat's USD figure, in USD.
+    // No purchased-currency price, or no currency to name it in: RevenueCat's USD figure, in USD.
     expect((await sent({ ...paid, priceInPurchasedCurrency: null }))[0]).toMatchObject({ event_revenue: 54.1, event_revenue_currency: "USD" });
+    expect((await sent({ ...paid, currency: null }))[0]).toMatchObject({ event_revenue: 54.1, event_revenue_currency: "USD" });
+    // A one-off web purchase is a purchase.
+    expect((await sent({ ...paid, type: "NON_RENEWING_PURCHASE" }))[0]).toMatchObject({ event_name: "af_purchase", event_revenue: 49.99 });
     for (const type of ["CANCELLATION", "EXPIRATION", "BILLING_ISSUE", "PRODUCT_CHANGE", "UNCANCELLATION", "TRANSFER"]) {
       expect(await sent({ ...paid, type })).toEqual([]);
     }
+  });
+
+  it("a paid event with no price at all is skipped and logged by its RevenueCat id", async () => {
+    const u = await accountWith(true);
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(await forward(row(u, { periodType: "NORMAL", price: null, priceInPurchasedCurrency: null }))).toEqual([]);
+      expect(error).toHaveBeenCalledWith("[eait] appsflyer web purchase skipped, event rc-evt-1 INITIAL_PURCHASE: no price");
+    } finally { error.mockRestore(); }
+    // A trial start carries no price and is still sent.
+    expect(await forward(row(u, { price: null, priceInPurchasedCurrency: null }))).toHaveLength(1);
+  });
+
+  it("omits a timestamp it cannot parse rather than sending NaN", async () => {
+    const [c] = await forward(row(await accountWith(true), { eventAt: "not a date" }));
+    expect(JSON.parse(String(c!.init.body))).not.toHaveProperty("timestamp");
+  });
+
+  it("reads consent from, and names, the account a merged-away id now lives on", async () => {
+    const survivor = await accountWith(true);
+    const merged = await accountWith(false);
+    await store.mergeUsers(merged, survivor);
+    const [c] = await forward(row(merged));
+    expect(JSON.parse(String(c!.init.body)).user_id).toEqual({ customer_user_id: survivor });
   });
 
   it("a declined account's web purchase sends NOTHING (Kirill)", async () => {
@@ -164,7 +216,7 @@ describe("forwardWebPurchase (ieat-app#3621, option A)", () => {
     expect(await forward(row(u, { environment: "SANDBOX" }), null, { ...config, revenueCatAcceptSandbox: true })).toHaveLength(1);
   });
 
-  it("never throws, and logs only the error's name or the status, never the token", async () => {
+  it("never throws, and logs the event id and type with the status or the error, never the token", async () => {
     const u = await accountWith(true);
     const logged: string[] = [];
     const original = console.error;
@@ -172,15 +224,15 @@ describe("forwardWebPurchase (ieat-app#3621, option A)", () => {
     try {
       await forwardWebPurchase({ config, store }, row(u), null, recorder(async () => new Response("tok_not-a-real-token", { status: 401 })).fetchFn);
       await forwardWebPurchase({ config, store }, row(u), null, recorder(async () => { throw new Error("tok_not-a-real-token boom"); }).fetchFn);
-      const broken = { ...store, webAttributionConsentOf: async () => { throw new Error("db down"); } } as Store;
+      const broken = { ...store, webAttributionConsentOf: async () => { throw Object.assign(new Error("db down"), { code: "57P01" }); } } as Store;
       await forwardWebPurchase({ config, store: broken }, row(u), null, recorder().fetchFn);
     } finally {
       console.error = original;
     }
     expect(logged).toEqual([
-      "[eait] appsflyer web purchase refused: 401",
-      "[eait] appsflyer web purchase failed: Error",
-      "[eait] appsflyer web purchase failed: Error",
+      "[eait] appsflyer web purchase refused, event rc-evt-1 INITIAL_PURCHASE: 401 ***",
+      "[eait] appsflyer web purchase failed, event rc-evt-1 INITIAL_PURCHASE: Error",
+      "[eait] appsflyer web purchase not sent, event rc-evt-1 INITIAL_PURCHASE: the consent read failed: Error 57P01",
     ]);
   });
 });
