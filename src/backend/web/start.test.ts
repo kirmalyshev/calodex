@@ -449,6 +449,17 @@ describe("an ad's click params reach the first answer, with no cookie but the co
     } finally { error.mockRestore(); }
   });
 
+  it("the minted account keeps the banner's answer: accept true, decline false, none nothing", async () => {
+    const consentOf = async (cookie?: string) => {
+      const res = await post("/start/q", { prompt: "goal", answer: "lose" }, cookie);
+      expect(res.status).toBe(303);
+      return store.webAttributionConsentOf(await webUser(cookieFrom(res, "eait_web")));
+    };
+    expect(await consentOf(CONSENTED)).toBe(true);
+    expect(await consentOf("eait_consent=decline")).toBe(false);
+    expect(await consentOf()).toBeNull();
+  });
+
   it("sends nothing on a second answer, once the session exists", async () => {
     router(AF);
     const first = await post("/start/q", { prompt: "goal", answer: "lose" });

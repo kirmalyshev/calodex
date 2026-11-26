@@ -1394,6 +1394,14 @@ async function routeStart(req: Request, url: URL, ctx: StartContext): Promise<Re
         void funnel(ctx.deps, req, fresh, content, open.place, "answer", open.field,
           open.field === undefined ? undefined : (answer.patch as Record<string, unknown>)[open.field]);
         const token = await ctx.store.issueToken(fresh);
+        // The banner's answer, kept on the account so the RevenueCat webhook can honour it when this
+        // account buys on the web. No answer writes nothing. A failed write never fails the answer.
+        const choice = cookies[CONSENT_COOKIE];
+        if (choice === "accept" || choice === "decline") {
+          await ctx.store.setWebAttributionConsent(fresh, choice === "accept").catch((e: unknown) => {
+            console.error(`[eait] start: consent write failed: ${(e as Error | null)?.name ?? "error"}`);
+          });
+        }
         // The account's one AppsFlyer visit, fire-and-forget: it never throws and the 303 never
         // waits on it. `clientAddress` keys IPv6 on its /64; the network address is still an IP.
         void sendWebVisit(ctx.deps.config, {
