@@ -687,6 +687,18 @@ describe("the consent answer reaches the account, and only from this site (ieat-
     expect(await store.webAttributionConsentOf(account)).toBe(true);
   });
 
+  it("a sign-in never turns an account's Decline back into an Accept from an older browser's cookie", async () => {
+    router(AF);
+    const account = await webUser(await signIn("stale-subject"));
+    await store.setWebAttributionConsent(account, false);
+    await signIn("stale-subject", "google", undefined, "eait_consent=accept");
+    expect(await store.webAttributionConsentOf(account)).toBe(false);
+    // An account that never answered does take the browser's Accept.
+    const fresh = await webUser(await signIn("unasked-subject"));
+    await signIn("unasked-subject", "google", undefined, "eait_consent=accept");
+    expect(await store.webAttributionConsentOf(fresh)).toBe(true);
+  });
+
   it("a banner answer whose account write fails sets no cookie, so the banner asks again", async () => {
     router(AF);
     const { session, userId } = await mint("eait_consent=accept");

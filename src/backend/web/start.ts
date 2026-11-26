@@ -213,6 +213,21 @@ function consentBack(raw: unknown, origin: string): string {
   }
 }
 /** Write the banner's answer onto an account. A failure is logged with the account and answered false. */
+/**
+ * This browser's answer onto the account a sign-in landed on. A Decline is always written; an
+ * Accept only onto an account that has never answered — a cookie can be a year old, and a Decline
+ * the account took since, in another browser, must not be undone by it. True when the account
+ * now holds what the cookie says, or keeps a Decline it already had.
+ */
+async function adoptConsent(store: Store, userId: string, consent: ConsentChoice): Promise<boolean> {
+  if (consent === "accept") {
+    const held = await store.webAttributionConsentOf(userId).catch(() => undefined);
+    if (held === undefined) return false;
+    if (held !== null) return true;
+  }
+  return keepConsent(store, userId, consent === "accept");
+}
+
 async function keepConsent(store: Store, userId: string, accepted: boolean): Promise<boolean> {
   try {
     await store.setWebAttributionConsent(userId, accepted);
@@ -1063,12 +1078,14 @@ async function routeStart(
     void trackSignIn(ctx.deps, req, name, userId, result);
     // This browser's banner answer goes onto the account the sign-in landed on, which may be an
     // older one holding an older answer: a Decline given here must not lose to it.
-    if (consent !== null) await keepConsent(ctx.store, result.userId, consent === "accept");
+    const adopted = consent === null || await adoptConsent(ctx.store, result.userId, consent);
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),
       [
         clearCookie(OAUTH_COOKIE, secure),
+        // The account did not take this browser's answer: the banner asks again.
+        ...(adopted ? [] : [clearCookie(CONSENT_COOKIE, secure)]),
         // No Max-Age: a session cookie, gone when the browser closes. The token itself expires on
         // idle time server-side, which is the authority.
         setCookie(SESSION_COOKIE, result.token, { secure }),
@@ -1217,13 +1234,15 @@ async function routeStart(
     }
     void trackSignIn(ctx.deps, req, "email", userId, result);
     // As on the provider callback: this browser's answer onto the account it landed on.
-    if (consent !== null) await keepConsent(ctx.store, result.userId, consent === "accept");
+    const adopted = consent === null || await adoptConsent(ctx.store, result.userId, consent);
     const landed = await ctx.store.getProfile(result.userId);
     return seeOther(
       landed === null ? `${START_PREFIX}/q` : await resumeTo(ctx, result.userId, landed),
       [
         clearCookie(EMAIL_COOKIE, secure),
         clearCookie(EMAIL_CONSENT_COOKIE, secure),
+        // The account did not take this browser's answer: the banner asks again.
+        ...(adopted ? [] : [clearCookie(CONSENT_COOKIE, secure)]),
         // No Max-Age: a session cookie, gone when the browser closes — the same shape the OAuth
         // callback mints.
         setCookie(SESSION_COOKIE, result.token, { secure }),
