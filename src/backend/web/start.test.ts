@@ -9,7 +9,7 @@
 import { prelimCards } from "./page/moment.ts";
 import { frontDoor } from "./page/front-door.ts";
 import { say } from "./page/board.ts";
-import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -375,6 +375,79 @@ describe("the front door", () => {
     expect(html).toContain(DEFAULT_ONBOARDING_CONTENT.welcome.signin);
     expect(html).not.toContain("/start/auth/");
     expect(html).toContain("Calodex");
+  });
+});
+
+describe("an ad's click params reach the first answer, with no cookie (ieat-app#3621)", () => {
+  const AF: Config = { ...CONFIG, appsflyerWebS2sToken: "s2s-token", appsflyerWebAppId: "web-123" };
+  let fetchSpy: ReturnType<typeof spyOn<typeof globalThis, "fetch">> | null = null;
+  const stubFetch = (impl: () => Promise<Response> = async () => new Response(null, { status: 200 })) => {
+    fetchSpy = spyOn(globalThis, "fetch").mockImplementation(impl as unknown as typeof fetch);
+    return fetchSpy;
+  };
+  afterEach(() => { fetchSpy?.mockRestore(); fetchSpy = null; });
+
+  it("the front door links the questions with the allow-listed params only", async () => {
+    const html = await (await get("/start?utm_source=meta&gclid=G&email=x")).text();
+    expect(html).toContain('href="/start/q?utm_source=meta&amp;gclid=G"');
+    expect(html).not.toContain("email=x");
+  });
+
+  it("the front door without params links the questions unchanged", async () => {
+    expect(await (await get("/start")).text()).toContain('href="/start/q"');
+  });
+
+  it("the pre-account question carries them as one hidden input, and a refused answer keeps it", async () => {
+    const html = await (await get("/start/q?utm_source=meta")).text();
+    expect(html).toContain('<input type="hidden" name="landing" value="utm_source=meta">');
+    const retried = await post("/start/q", { prompt: "goal", landing: "utm_source=meta" });
+    expect(retried.status).toBe(200);
+    expect(await retried.text()).toContain('<input type="hidden" name="landing" value="utm_source=meta">');
+  });
+
+  it("the first answer sends ONE visit for the fresh account, and still answers 303 with the session", async () => {
+    router(AF);
+    const spy = stubFetch();
+    const res = await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta&email=x" });
+    expect(res.status).toBe(303);
+    const userId = await webUser(cookieFrom(res, "eait_web"));
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [target, init] = spy.mock.calls[0]! as unknown as [string, RequestInit];
+    expect(target).toBe("https://events.appsflyer.com/v2.0/s2s/visits/app/web/web-123");
+    const body = JSON.parse(String(init.body));
+    expect(body.user_id.customer_user_id).toBe(userId);
+    expect(body.event_url.endsWith("/start?utm_source=meta")).toBe(true);
+  });
+
+  it("sends nothing when attribution is not configured, or the landing is missing or empty", async () => {
+    const spy = stubFetch();
+    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" })).status).toBe(303);
+    router(AF);
+    expect((await post("/start/q", { prompt: "goal", answer: "lose" })).status).toBe(303);
+    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "" })).status).toBe(303);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("still answers 303 with the session when the visit's fetch rejects", async () => {
+    router(AF);
+    stubFetch(async () => { throw new TypeError("network down"); });
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" });
+      expect(res.status).toBe(303);
+      cookieFrom(res, "eait_web");
+    } finally { error.mockRestore(); }
+  });
+
+  it("sends nothing on a second answer, once the session exists", async () => {
+    router(AF);
+    const first = await post("/start/q", { prompt: "goal", answer: "lose" });
+    const session = cookieFrom(first, "eait_web");
+    const spy = stubFetch();
+    const page = await (await get("/start/q", session)).text();
+    const prompt = page.match(/name="prompt" value="([a-z_]+)"/)![1]!;
+    await post("/start/q", { prompt, answer: "female", landing: "utm_source=meta" }, session);
+    expect(spy).not.toHaveBeenCalled();
   });
 });
 

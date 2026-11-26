@@ -55,7 +55,11 @@ export interface QuestionView {
   /** Back's target (#53) — the previous question's `?edit=` link, or the front door for the first. */
   back: string;
   today: Date;
+  /** Pre-account only: the landing's click params (`clickParamsOf`), carried to the first answer (ieat-app#3621). */
+  landing?: string | undefined;
 }
+
+const landingField = (v: QuestionView): string => v.landing ? hidden("landing", v.landing) : "";
 
 /** The page scaffold every question shares: dash → say → (error) → [seg] → form. */
 function page(v: QuestionView, opts: { seg?: string; control: string; foot?: string; echo?: string | null; sub?: string | undefined }): string {
@@ -72,7 +76,7 @@ ${opts.echo ? `<p class="qecho">${escape(opts.echo)}</p>` : ""}
 ${error}
 ${opts.seg ?? ""}
 <form class="qform" method="post" action="${escape(v.action)}" novalidate>
-${hidden("prompt", v.prompt.id)}${hidden("units", v.units)}
+${hidden("prompt", v.prompt.id)}${hidden("units", v.units)}${landingField(v)}
 ${opts.control}
 ${actions}
 ${opts.foot ?? ctaSubmit(v.content.ui.continueLabel)}
@@ -279,7 +283,7 @@ function unitsSeg(v: QuestionView, which: "height" | "weight"): string {
     ? [{ value: "metric", label: spellUnit(v.lang, "cm") }, { value: "imperial", label: spellUnit(v.lang, "ft, in") }]
     : [{ value: "metric", label: spellUnit(v.lang, "kg") }, { value: "imperial", label: spellUnit(v.lang, "lb") }];
   return segToggle(labels, v.units, v.segAction,
-    hidden("from", v.prompt.id) + hidden("draft", v.draft !== null ? String(v.draft) : ""));
+    hidden("from", v.prompt.id) + hidden("draft", v.draft !== null ? String(v.draft) : "") + landingField(v));
 }
 
 /**

@@ -50,6 +50,8 @@ import {
   type EngineDeps,
 } from "../engine/index.ts";
 import { analyticsRequestOf, track } from "../engine/analytics.ts";
+import { clickParamsOf, sendWebVisit } from "../engine/appsflyer-web.ts";
+import { clientAddress } from "../api/ratelimit.ts";
 import { blankProfile, type Store } from "../store.ts";
 import { legalUrls } from "../brand.ts";
 import {
@@ -687,8 +689,11 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // `profile.lang`, which the first answer's account seeds from this same signal.
     const lang = browserLang(req);
     const content = await onboardingContentFor(ctx.deps, userId, webSignals(lang, req));
+    // An ad's click params ride the Start link to the first answer, which sends the visit
+    // (ieat-app#3621) — in the URL and the form, never in a cookie.
+    const landing = clickParamsOf(url.searchParams);
     return html(frontDoor(content, {
-      q: `${START_PREFIX}/q`,
+      q: landing === "" ? `${START_PREFIX}/q` : `${START_PREFIX}/q?${landing}`,
       signup: `${START_PREFIX}/signup`,
     }, lang), 200, { cookies: refCookie });
   }
@@ -1185,13 +1190,15 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         && (openIndex === -1 || i < openIndex) && isAnswered(walk[i]!, profile) ? i : -1;
     };
 
+    // Pre-account only: the ad's click params, carried as a hidden field to the first answer.
+    const landing = userId === null ? clickParamsOf(url.searchParams) : "";
     const askAt = (
       index: number, error: string | null, actions: Action[] = [], draftKg?: number, typed?: string[],
     ) =>
       html(renderQuestion(
         walk, index, profile, content, error, actions, draftKg ?? draft,
         typed ?? (index === openIndex ? undefined : currentAnswer(walk[index]!, profile)),
-        askPath, units, order,
+        askPath, units, order, landing,
       ));
     const ask = (error: string | null, actions: Action[] = [], draftKg?: number) =>
       askAt(openIndex, error, actions, draftKg);
@@ -1275,8 +1282,13 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
       // one: a refused first answer re-renders against the blank profile and leaves no row,
       // which is also why a page view never creates anything.
       if (userId === null) {
+        // Client input, so it goes through the allow-list again: a crafted `email=` is dropped.
+        const posted = form.get("landing");
+        const landing = clickParamsOf(new URLSearchParams(typeof posted === "string" ? posted : ""));
         const open = walk.find((p) => p.field !== undefined);
-        if (open === undefined || form.get("prompt") !== open.id) return seeOther(`${START_PREFIX}/q`);
+        if (open === undefined || form.get("prompt") !== open.id) {
+          return seeOther(landing === "" ? `${START_PREFIX}/q` : `${START_PREFIX}/q?${landing}`);
+        }
         // The under-sixteen confirm can only be offered by a walk that has an account; posted
         // without one it is still honoured — nothing was ever kept, which is what the page says.
         if (form.get("confirm") === "under-age") {
@@ -1291,7 +1303,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
           postedUnits === "metric" || postedUnits === "imperial" ? postedUnits : units, form);
         const retry = (error: string | null, actions: Action[] = []) =>
           html(renderQuestion(walk, walk.indexOf(open), profile, content, error, actions, undefined,
-            typed.length > 0 ? typed : undefined, askPath, units, order));
+            typed.length > 0 ? typed : undefined, askPath, units, order, landing));
         if (answer.kind === "missing") return retry(pageCopyFor(profile.lang).answerRequired);
         if (answer.kind === "ambiguous-age") {
           const age = AMBIGUOUS_AGE(profile.lang, content.refusals);
@@ -1318,6 +1330,12 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         void funnel(ctx.deps, req, fresh, content, open.place, "answer", open.field,
           open.field === undefined ? undefined : (answer.patch as Record<string, unknown>)[open.field]);
         const token = await ctx.store.issueToken(fresh);
+        // The account's one AppsFlyer visit, fire-and-forget: it never throws and the 303 never
+        // waits on it. `clientAddress` keys IPv6 on its /64; the network address is still an IP.
+        void sendWebVisit(ctx.deps.config, {
+          userId: fresh, clickParams: landing, origin: ctx.origin,
+          ip: clientAddress(req).replace(/\/64$/, ""), userAgent: req.headers.get("user-agent"),
+        });
         return seeOther(`${START_PREFIX}/q`, [setCookie(SESSION_COOKIE, token, { secure })]);
       }
 
@@ -1995,6 +2013,7 @@ function renderQuestion(
   action = `${START_PREFIX}/q`,
   units: UnitSystem = "metric",
   order?: readonly string[],
+  landing = "",
 ): string {
   const prompt = walk[index]!;
   const lang = profile.lang;
@@ -2017,6 +2036,7 @@ function renderQuestion(
     back: backBefore(walk, index),
     today: new Date(),
     order,
+    landing,
   });
 }
 
