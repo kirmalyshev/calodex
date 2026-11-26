@@ -8,6 +8,7 @@
 import { describe, expect, it } from "bun:test";
 import { lintCopy } from "../claims.ts";
 import { fill, LANGS_READY } from "../lang.ts";
+import { paywallPercent } from "../paywall.ts";
 import { LANGS, type Lang } from "../types.ts";
 import { PAY_COPY, payCopyFor } from "./pay-copy.ts";
 
@@ -29,6 +30,7 @@ const KEYS = [
   "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
   "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
   "tryCta", "offerSpecialTitle", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
+  "promoBand", "promoFooter",
 ] as const;
 
 describe("PAY_COPY", () => {
@@ -74,6 +76,8 @@ describe("PAY_COPY", () => {
       tryCta: ["{price}"],
       offerTrialNote: ["{days}", "{renewal}"],
       offerVsMonthly: ["{percent}"],
+      promoBand: ["{percent}"],
+      promoFooter: ["{price}", "{regular}"],
     };
     for (const lang of LANGS_READY) {
       const copy = PAY_COPY[lang]!;
@@ -81,6 +85,17 @@ describe("PAY_COPY", () => {
         for (const ph of phs) {
           expect(copy[key as keyof typeof copy], `${lang}.${key}`).toContain(ph);
         }
+      }
+    }
+  });
+
+  it("gives every promo* string exactly English's placeholders, in every language (ieat-app#3605)", () => {
+    // Containment above misses the other direction: a translation that ADDS `{regular}` where the
+    // English has none renders a literal brace the client never fills.
+    const placeholders = (s: string) => [...s.matchAll(/\{\w+\}/g)].map((m) => m[0]).sort();
+    for (const lang of LANGS_READY) {
+      for (const key of ["promoBand", "promoFooter"] as const) {
+        expect(placeholders(PAY_COPY[lang]![key]), `${lang}.${key}`).toEqual(placeholders(PAY_COPY.en[key]));
       }
     }
   });
@@ -188,6 +203,9 @@ describe("PAY_COPY", () => {
     expect(en.restoreLink).toBe("Restore");
     expect(en.termsLink).toBe("Terms");
     expect(en.privacyLink).toBe("Privacy");
+    // pay-cal-a-newyear (ieat-app#3605): A's band and footer while the promotion is live; the board's words.
+    expect(fill(en.promoBand, { percent: paywallPercent(50, "en") }).toUpperCase()).toBe("NEW YEAR \u221250%");
+    expect(fill(en.promoFooter, { price: "€19.99", regular: "€39.99" })).toBe("€19.99 first year, then €39.99/year. Cancel any time.");
   });
 
   it("carries no claim the gate refuses, in any of the eight", () => {
