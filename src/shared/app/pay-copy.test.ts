@@ -30,7 +30,7 @@ const KEYS = [
   "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
   "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
   "tryCta", "offerSpecialTitle", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
-  "promoBand", "promoFooter",
+  "promoBand", "promoFooter", "offerTrialFoot",
 ] as const;
 
 describe("PAY_COPY", () => {
@@ -75,6 +75,7 @@ describe("PAY_COPY", () => {
       tryThenBilled: ["{renewal}", "{date}"],
       tryCta: ["{price}"],
       offerTrialNote: ["{days}", "{renewal}"],
+      offerTrialFoot: ["{days}", "{price}"],
       offerVsMonthly: ["{percent}"],
       promoBand: ["{percent}"],
       promoFooter: ["{price}", "{regular}"],
