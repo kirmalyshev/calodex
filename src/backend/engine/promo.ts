@@ -15,7 +15,8 @@ export function promoWindow(promo: PromoConfig | null, armed: boolean, now: Date
   if (promo === null || !armed) return null;
   const t = now.getTime();
   if (t < Date.parse(promo.from) || t >= Date.parse(promo.until)) return null;
-  return { id: "newyear", percent: promo.percent, trialDays: promo.trialDays, endsAt: promo.until, iosCode: promo.iosCode || null };
+  return { id: "newyear", percent: promo.percent, trialDays: promo.trialDays, endsAt: promo.until, iosCode: promo.iosCode || null,
+    skipTrialStep: promo.skipTrialStep };
 }
 
 /** The live promotion, or null. The switch is read only when one is configured. */

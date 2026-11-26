@@ -18,6 +18,7 @@ const PROMO: PromoConfig = {
   iosCode: "NEWYEAR",
   webCheckoutUrl: "https://pay.rev.cat/ny/{userId}",
   webPrice: 23.99,
+  skipTrialStep: true,
 };
 
 const at = (iso: string) => new Date(iso);
@@ -27,7 +28,7 @@ describe("promoWindow", () => {
 
   it("is the promotion while armed and inside [from, until)", () => {
     expect(promoWindow(PROMO, true, inside)).toEqual({
-      id: "newyear", percent: 40, trialDays: 7, endsAt: "2027-01-08T00:00:00.000Z", iosCode: "NEWYEAR",
+      id: "newyear", percent: 40, trialDays: 7, endsAt: "2027-01-08T00:00:00.000Z", iosCode: "NEWYEAR", skipTrialStep: true,
     });
     // `from` is inclusive.
     expect(promoWindow(PROMO, true, at(PROMO.from))).not.toBeNull();
@@ -45,6 +46,10 @@ describe("promoWindow", () => {
 
   it("is null with no promotion configured", () => {
     expect(promoWindow(null, true, inside)).toBeNull();
+  });
+
+  it("carries the operator's try-for-free-step flag to every client", () => {
+    expect(promoWindow({ ...PROMO, skipTrialStep: false }, true, inside)?.skipTrialStep).toBe(false);
   });
 
   it("sends a null iOS code when none is configured, never an empty string", () => {

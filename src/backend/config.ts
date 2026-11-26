@@ -61,6 +61,11 @@ export interface PromoConfig {
    * and below the regular yearly price.
    */
   webPrice: number;
+  /**
+   * Skip the try-for-free step (B) while the promotion is live (ieat-app#3606): × on the
+   * promotion's plans closes. Default true; `PROMO_NEWYEAR_SKIP_TRIAL_STEP=0`/`false` keeps B.
+   */
+  skipTrialStep: boolean;
 }
 
 export interface Config {
@@ -1521,6 +1526,8 @@ export function promoNewYearFromEnv(yearlyPrice = webPaywallFromEnv().yearlyPric
     iosCode: raw.iosCode,
     webCheckoutUrl: raw.webCheckoutUrl,
     webPrice,
+    // A behaviour flag, not a setting: the env files ship it, so it is outside the "any set" check above.
+    skipTrialStep: !["0", "false"].includes(process.env.EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP ?? ""),
   };
 }
 

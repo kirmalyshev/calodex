@@ -44,7 +44,7 @@ const VARS = [
   "EAIT__BACKEND__WEB_EXIT_OFFER_REGULAR_PRICE", "EAIT__BACKEND__WEB_CURRENCY",
   "EAIT__BACKEND__PROMO_NEWYEAR_FROM", "EAIT__BACKEND__PROMO_NEWYEAR_UNTIL", "EAIT__BACKEND__PROMO_NEWYEAR_PERCENT",
   "EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS", "EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE", "EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL",
-  "EAIT__BACKEND__WEB_PRICE_NEWYEAR",
+  "EAIT__BACKEND__WEB_PRICE_NEWYEAR", "EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP",
   "EAIT__BACKEND__APPLE_SERVICE_ID", "EAIT__BACKEND__APPLE_TEAM_ID", "EAIT__BACKEND__APPLE_KEY_ID",
   "EAIT__BACKEND__APPLE_PRIVATE_KEY",
   "EAIT__BACKEND__TELEGRAM_BOT_TOKEN",
@@ -563,6 +563,7 @@ describe("the New Year promotion", () => {
       iosCode: "NEWYEAR",
       webCheckoutUrl: "https://pay.rev.cat/ny/{userId}",
       webPrice: 23.99,
+      skipTrialStep: true,
     });
   });
 
@@ -616,6 +617,26 @@ describe("the New Year promotion", () => {
     // A price deeper than the band is fine: the band never overstates.
     withRequired({ ...WINDOW, ...SELLS_YEARLY, ...NY_CHECKOUT, EAIT__BACKEND__WEB_PRICE_NEWYEAR: "19.99" });
     expect(loadConfig().promoNewYear?.webPrice).toBe(19.99);
+  });
+
+  // The try-for-free step during the promotion (ieat-app#3606): skipped unless the operator says not.
+  it("skips the try-for-free step by default, and keeps it on 0 or false", () => {
+    withRequired(WINDOW);
+    expect(loadConfig().promoNewYear?.skipTrialStep).toBe(true);
+    for (const v of ["0", "false"]) {
+      clear();
+      withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP: v });
+      expect(loadConfig().promoNewYear?.skipTrialStep).toBe(false);
+      expect(demoConfig().promoNewYear?.skipTrialStep).toBe(false);
+    }
+  });
+
+  it("does not count the trial-step flag as a promotion setting — the env files ship it", () => {
+    for (const v of ["1", "0"]) {
+      withRequired({ EAIT__BACKEND__PROMO_NEWYEAR_SKIP_TRIAL_STEP: v });
+      expect(loadConfig().promoNewYear).toBeNull();
+      clear();
+    }
   });
 
   it("counts the promotion price as a promotion setting", () => {

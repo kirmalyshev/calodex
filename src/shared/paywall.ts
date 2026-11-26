@@ -203,6 +203,12 @@ export interface PaywallPromo {
   endsAt: string;
   /** The App Store offer code to redeem on the phone; null when none is configured. */
   iosCode: string | null;
+  /**
+   * Skip the try-for-free step while this promotion is live (ieat-app#3606): × on the
+   * promotion's plans closes rather than offering the regular trial. The operator's
+   * `PROMO_NEWYEAR_SKIP_TRIAL_STEP`, default true.
+   */
+  skipTrialStep: boolean;
 }
 
 /**
