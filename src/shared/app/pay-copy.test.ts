@@ -30,7 +30,7 @@ const KEYS = [
   "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
   "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
   "tryCta", "offerSpecialTitle", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
-  "promoBand", "promoFooter",
+  "promoBand", "promoFooter", "offerTrialFoot",
 ] as const;
 
 describe("PAY_COPY", () => {
@@ -75,6 +75,7 @@ describe("PAY_COPY", () => {
       tryThenBilled: ["{renewal}", "{date}"],
       tryCta: ["{price}"],
       offerTrialNote: ["{days}", "{renewal}"],
+      offerTrialFoot: ["{days}", "{price}"],
       offerVsMonthly: ["{percent}"],
       promoBand: ["{percent}"],
       promoFooter: ["{price}", "{regular}"],
@@ -89,15 +90,19 @@ describe("PAY_COPY", () => {
     }
   });
 
-  it("gives every promo* string exactly English's placeholders, in every language (ieat-app#3605)", () => {
+  it("gives every promo* string and offerTrialFoot exactly English's placeholders, in every language (ieat-app#3605, #3617)", () => {
     // Containment above misses the other direction: a translation that ADDS `{regular}` where the
     // English has none renders a literal brace the client never fills.
     const placeholders = (s: string) => [...s.matchAll(/\{\w+\}/g)].map((m) => m[0]).sort();
     for (const lang of LANGS_READY) {
-      for (const key of ["promoBand", "promoFooter"] as const) {
+      for (const key of ["promoBand", "promoFooter", "offerTrialFoot"] as const) {
         expect(placeholders(PAY_COPY[lang]![key]), `${lang}.${key}`).toEqual(placeholders(PAY_COPY.en[key]));
       }
     }
+  });
+
+  it("draws C's footer as the book does (pay-cal-c, ieat-app#3617)", () => {
+    expect(PAY_COPY.en.offerTrialFoot.replace("{days}", "3").replace("{price}", "€19.99")).toBe("3 days free, then €19.99/year, renews automatically.");
   });
 
   it("uses natural spoken phrasing in paywall copy (ieat-app#3454)", () => {
