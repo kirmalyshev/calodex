@@ -738,6 +738,8 @@ create table if not exists revenuecat_events (
   acq_keyword                 text
 );
 create index if not exists revenuecat_events_user_idx on revenuecat_events(user_id, event_at);
+-- The promotion code a purchase redeemed (ieat-app#3604), RevenueCat's offer_code; null when none.
+alter table revenuecat_events add column if not exists offer_code text;
 -- Whether the most recently applied grant came from RevenueCat's SANDBOX. Added with its repair in
 -- one step, so the heuristic below runs exactly once, on rows written BEFORE the column existed;
 -- every grant written after that carries its own event's flag.
@@ -1479,7 +1481,7 @@ create table if not exists admin_switches (
 alter table admin_switches drop constraint if exists admin_switches_key_check;
 alter table admin_switches add constraint admin_switches_key_check
   check (key in ('grounding.photo', 'grounding.text', 'prompt.photo-lean', 'onboarding.experiments',
-    'paywall.exit-offer.ios', 'paywall.exit-offer.web', 'voice.input'));
+    'paywall.exit-offer.ios', 'paywall.exit-offer.web', 'voice.input', 'paywall.promo.newyear'));
 
 -- THE ADMIN VALUES (ieat-app#3421): the numeric counterpart of admin_switches — a coefficient is
 -- not a switch, and a boolean row cannot hold one. Append-only and GLOBAL for the same reasons:
@@ -3758,12 +3760,12 @@ export async function postgresStore(
       const rows = await sql`
         insert into revenuecat_events (
           id, user_id, type, product_id, period_type, presented_offering_id, price, currency,
-          price_in_purchased_currency, store, country_code, environment, event_at,
+          price_in_purchased_currency, store, country_code, environment, event_at, offer_code,
           acq_source, acq_campaign, acq_adgroup, acq_keyword)
         values (
           ${e.id}, (select id from users where id = ${e.userId}::uuid), ${e.type}, ${e.productId}, ${e.periodType},
           ${e.presentedOfferingId}, ${e.price}, ${e.currency}, ${e.priceInPurchasedCurrency}, ${e.store},
-          ${e.countryCode}, ${e.environment}, ${new Date(e.eventAt)},
+          ${e.countryCode}, ${e.environment}, ${new Date(e.eventAt)}, ${e.offerCode},
           ${a?.source ?? null}, ${a?.campaign ?? null}, ${a?.adGroup ?? null}, ${a?.keyword ?? null})
         on conflict (id) do nothing
         returning id`;
@@ -3781,7 +3783,7 @@ export async function postgresStore(
           periodType: s(r.period_type), presentedOfferingId: s(r.presented_offering_id), price: n(r.price),
           currency: s(r.currency), priceInPurchasedCurrency: n(r.price_in_purchased_currency), store: s(r.store),
           countryCode: s(r.country_code), environment: s(r.environment),
-          eventAt: new Date(r.event_at as string).toISOString(),
+          eventAt: new Date(r.event_at as string).toISOString(), offerCode: s(r.offer_code),
           acquisition: r.acq_source == null ? null : {
             source: String(r.acq_source), campaign: s(r.acq_campaign), adGroup: s(r.acq_adgroup), keyword: s(r.acq_keyword),
           },

@@ -12,7 +12,7 @@ import { MAX_PROFILE_TEXT,
   ageFrom, isAcceptableWeightKg, isDietTag, isMedicalTag, dateMinus, localDate, migrateActivityLevel, offerMath,
   paywallPrice, perMonth, threadCopyFor, payCopyFor, yearlySave, yearlySaveLine,
   type Lang, type Pace, type PatchProfileRequest, type Profile,
-  type ExitOfferSwitches, type Limits, type ProfileRejected, type ProfileResponse, type WebPaywall,
+  type ExitOfferSwitches, type Limits, type PaywallPromo, type ProfileRejected, type ProfileResponse, type WebPaywall,
   ROUTES,
 } from "@eait/shared";
 import { FILLABLE_FIELDS, MICRO_GOAL_MAX, MIN_AGE, microGoals } from "@eait/shared";
@@ -21,6 +21,7 @@ import type { EngineDeps } from "./deps.ts";
 import { emailSignInEnabled } from "../mail/choose.ts";
 import { evaluateMilestones } from "./milestones.ts";
 import { switchOn } from "./switches.ts";
+import { promoOf } from "./promo.ts";
 import { adminValueOf } from "./values.ts";
 import { dailyPhotoCap, entitlementFor } from "./entitlement.ts";
 import { referralView } from "./referral.ts";
@@ -71,8 +72,13 @@ async function limitsOf(deps: EngineDeps, userId: string, entitled: boolean): Pr
  * The admin's per-platform arming of the decline → offer (ieat-app#3155), read on every response
  * so a flip lands on the next fetch, no deploy. `web` also gates `paywallOf`, so the offer never
  * reaches a client its switch has not armed.
+ *
+ * A LIVE PROMOTION SUPPRESSES BOTH (ieat-app#3604): a decline never meets a second discount while
+ * one is running. Only this answer changes; the stored switches are not written, so the offer is
+ * back on the first response after the promotion ends. `/start/checkout?plan=exit` reads this too.
  */
-async function exitOfferEnabledOf(deps: EngineDeps): Promise<ExitOfferSwitches> {
+export async function exitOfferEnabledOf(deps: EngineDeps, promo: PaywallPromo | null): Promise<ExitOfferSwitches> {
+  if (promo !== null) return { ios: false, web: false };
   return {
     ios: await switchOn(deps, "paywall.exit-offer.ios"),
     web: await switchOn(deps, "paywall.exit-offer.web"),
@@ -89,9 +95,12 @@ async function exitOfferEnabledOf(deps: EngineDeps): Promise<ExitOfferSwitches> 
  * A plan with no configured checkout is null rather than half-offered, and an exit offer whose
  * discount cannot stand — a regular price of nothing, or a saving under one percent — is no offer
  * at all: the decline then goes straight to the app. So is an offer the admin's `web` switch has
- * not armed (ieat-app#3155) — switched off is the same shape as never configured.
+ * not armed (ieat-app#3155) — switched off is the same shape as never configured. The promotion's
+ * checkout is filled only while `promo` — `promoOf`'s answer — is live (ieat-app#3604).
  */
-export function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed: boolean): WebPaywall {
+export function paywallOf(
+  deps: EngineDeps, lang: Lang, userId: string, exitOfferArmed: boolean, promo: PaywallPromo | null,
+): WebPaywall {
   const w = deps.config.webPaywall;
   const url = (template: string) => template.replaceAll("{userId}", encodeURIComponent(userId));
   const price = (n: number) => paywallPrice(n, w.currency, lang);
@@ -122,6 +131,8 @@ export function paywallOf(deps: EngineDeps, lang: Lang, userId: string, exitOffe
       percentOff: math.percentOff,
       perMonth: price(math.perMonth),
     },
+    promoCheckoutUrl: promo === null || !deps.config.promoNewYear?.webCheckoutUrl
+      ? null : url(deps.config.promoNewYear.webCheckoutUrl),
     // The footer's links — the same two the `/start` pages already render, sent so the app's pay
     // surfaces never carry a second copy of where they point.
     termsUrl: legalUrls(deps.config).terms,
@@ -151,7 +162,8 @@ export async function profileView(deps: EngineDeps, userId: string): Promise<Pro
   if (!profile) return null;
   const { targets, basis } = explainTargets(profile);
   const entitlement = await entitlementFor(deps, userId);
-  const exitOfferEnabled = await exitOfferEnabledOf(deps);
+  const promo = await promoOf(deps, new Date());
+  const exitOfferEnabled = await exitOfferEnabledOf(deps, promo);
   return {
     profile, targets, microGoals: microGoals(profile, targets), basis, onboarded: profile.onboarded_at !== null,
     // Computed HERE, in this server's zone — a client that subtracts the year itself is off by
@@ -162,8 +174,9 @@ export async function profileView(deps: EngineDeps, userId: string): Promise<Pro
     limits: await limitsOf(deps, userId, entitlement.active), timezone: deps.config.timezone, entitlement,
     healthConnected: await healthConnected(deps, userId),
     telegramBot: deps.config.telegramBotUsername || null,
-    paywall: paywallOf(deps, profile.lang, userId, exitOfferEnabled.web),
+    paywall: paywallOf(deps, profile.lang, userId, exitOfferEnabled.web, promo),
     exitOfferEnabled,
+    promo,
     coachName: threadCopyFor(profile.lang).coach.name,
     hasLoggedMeal: await hasLoggedMeal(deps, userId),
     voiceInputEnabled: await switchOn(deps, "voice.input"),
@@ -478,7 +491,8 @@ export async function patchProfile(
 
   const { targets, basis } = explainTargets(profile);
   const entitlement = await entitlementFor(deps, userId);
-  const exitOfferEnabled = await exitOfferEnabledOf(deps);
+  const promo = await promoOf(deps, new Date());
+  const exitOfferEnabled = await exitOfferEnabledOf(deps, promo);
   return {
     ok: true,
     view: {
@@ -489,8 +503,9 @@ export async function patchProfile(
       limits: await limitsOf(deps, userId, entitlement.active), timezone: deps.config.timezone, entitlement,
       healthConnected: await healthConnected(deps, userId),
       telegramBot: deps.config.telegramBotUsername || null,
-      paywall: paywallOf(deps, profile.lang, userId, exitOfferEnabled.web),
+      paywall: paywallOf(deps, profile.lang, userId, exitOfferEnabled.web, promo),
       exitOfferEnabled,
+      promo,
       coachName: threadCopyFor(profile.lang).coach.name,
       donate: donateOf(deps.config),
       hasLoggedMeal: await hasLoggedMeal(deps, userId),

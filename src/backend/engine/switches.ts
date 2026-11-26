@@ -25,6 +25,10 @@ export const SWITCH_DEFAULT: Record<SwitchKey, boolean> = {
   // Ships OFF (ieat-app#3494): the mic exists in no composer until the admin arms it, on the phone
   // and the web alike — sent on every ProfileResponse, so a flip needs no deploy and no build.
   "voice.input": false,
+  // Ships OFF (ieat-app#3604): the promotion is live only while this is on AND the server's clock
+  // is inside the operator's configured window. While live it suppresses the exit offer on both
+  // platforms, in the response only — the exit switches themselves are never written.
+  "paywall.promo.newyear": false,
 };
 
 export async function switchOn(deps: EngineDeps, key: SwitchKey): Promise<boolean> {

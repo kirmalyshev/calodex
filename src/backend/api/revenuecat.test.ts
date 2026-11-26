@@ -988,11 +988,19 @@ describe("every delivery is logged", () => {
       id: "evt-1", userId, type: "INITIAL_PURCHASE", productId: "yearly", periodType: "TRIAL",
       presentedOfferingId: "default", price: 0, currency: "EUR", priceInPurchasedCurrency: 0,
       store: "APP_STORE", countryCode: "DE", environment: "PRODUCTION", eventAt: new Date(at).toISOString(),
+      offerCode: null,
       acquisition: { source: "apple_search_ads", campaign: "Brand DE", adGroup: "Exact", keyword: "calorie counter" },
     }]);
     expect(await store.acquisitionOf(userId)).toEqual({
       source: "apple_search_ads", campaign: "Brand DE", adGroup: "Exact", keyword: "calorie counter", via: "revenuecat",
     });
+  });
+
+  // ieat-app#3604 — which promotion code, if any, the purchase redeemed.
+  it("keeps the offer code a purchase redeemed", async () => {
+    const { userId } = await account();
+    await deliver(purchase(userId, { id: "evt-code", offer_code: "NEWYEAR" }));
+    expect((await store.revenueCatEventsOf(userId)).map((r) => r.offerCode)).toEqual(["NEWYEAR"]);
   });
 
   it("logs an event the entitlement logic ignores, and leaves the entitlement exactly as before", async () => {

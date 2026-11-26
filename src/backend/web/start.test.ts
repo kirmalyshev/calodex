@@ -2018,6 +2018,53 @@ describe("the soft offer after the plan", () => {
       .toBe(`https://pay.rev.cat/u/${userId}`);
   });
 
+  // ieat-app#3604 — the New Year promotion's checkout exists only while the promotion is live:
+  // the admin's switch on AND now inside the configured window. Otherwise it is a plan never heard of.
+  const NEWYEAR = {
+    from: new Date(Date.now() - 3_600_000).toISOString(),
+    until: new Date(Date.now() + 3_600_000).toISOString(),
+    percent: 40, trialDays: 0, iosCode: "", webCheckoutUrl: "https://pay.rev.cat/ny/{userId}",
+  };
+  it("routes plan=newyear to the promotion's checkout only while it is live", async () => {
+    router({ ...CONFIG, webPaywall: PAYWALL, promoNewYear: NEWYEAR });
+    const session = await signIn();
+    const userId = await webUser(session);
+    // Configured and inside the dates, but the admin's switch ships off.
+    expect((await get("/start/checkout?plan=newyear", session)).status).toBe(404);
+    await store.setSwitch("paywall.promo.newyear", true, crypto.randomUUID());
+    expect((await get("/start/checkout?plan=newyear", session)).headers.get("location"))
+      .toBe(`https://pay.rev.cat/ny/${userId}`);
+  });
+
+  it("has no plan=newyear route outside the window, nor with no web checkout for it", async () => {
+    const past = { ...NEWYEAR, from: "2020-12-26T00:00:00.000Z", until: "2021-01-08T00:00:00.000Z" };
+    router({ ...CONFIG, webPaywall: PAYWALL, promoNewYear: past });
+    let session = await signIn();
+    await store.setSwitch("paywall.promo.newyear", true, crypto.randomUUID());
+    expect((await get("/start/checkout?plan=newyear", session)).status).toBe(404);
+    router({ ...CONFIG, webPaywall: PAYWALL, promoNewYear: { ...NEWYEAR, webCheckoutUrl: "" } });
+    session = await signIn();
+    await store.setSwitch("paywall.promo.newyear", true, crypto.randomUUID());
+    expect((await get("/start/checkout?plan=newyear", session)).status).toBe(404);
+    router({ ...CONFIG, webPaywall: PAYWALL });
+    session = await signIn();
+    expect((await get("/start/checkout?plan=newyear", session)).status).toBe(404);
+  });
+
+  it("closes plan=exit while the promotion is live, the exit switch untouched", async () => {
+    router({ ...CONFIG, webPaywall: { ...PAYWALL,
+      exitOfferCheckoutUrl: "https://pay.rev.cat/u/{userId}",
+      exitOfferPrice: 23.99 }, promoNewYear: NEWYEAR });
+    const session = await signIn();
+    const userId = await webUser(session);
+    await store.setSwitch("paywall.exit-offer.web", true, crypto.randomUUID());
+    expect((await get("/start/checkout?plan=exit", session)).headers.get("location"))
+      .toBe(`https://pay.rev.cat/u/${userId}`);
+    await store.setSwitch("paywall.promo.newyear", true, crypto.randomUUID());
+    expect((await get("/start/checkout?plan=exit", session)).status).toBe(404);
+    expect(await store.switchEnabled("paywall.exit-offer.web")).toBe(true);
+  });
+
   it("has no route for a plan the host does not sell, and none it never heard of", async () => {
     router({ ...CONFIG, webPaywall: { ...PAYWALL, yearlyCheckoutUrl: "",
       monthlyCheckoutUrl: "https://pay.rev.cat/m/{userId}", monthlyPrice: 4.99 } });

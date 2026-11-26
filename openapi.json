@@ -10242,6 +10242,44 @@
         "additionalProperties": false,
         "description": "One purchasable plan on the web paywall, ready to render: the checkout link with the account's own id already filled into `{userId}` — navigate to it, never template it — and the prices formatted in the account's language and the operator's currency."
       },
+      "PaywallPromo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "newyear",
+            "description": "Which promotion. One today; a second is a new literal here, never a reused id."
+          },
+          "percent": {
+            "type": "number",
+            "description": "Whole percent off, as configured (1–90)."
+          },
+          "trialDays": {
+            "type": "number",
+            "description": "Free days the promotion adds; 0 = none."
+          },
+          "endsAt": {
+            "type": "string",
+            "description": "When it stops being live — an ISO-8601 instant, exclusive."
+          },
+          "iosCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The App Store offer code to redeem on the phone; null when none is configured."
+          }
+        },
+        "required": [
+          "id",
+          "percent",
+          "trialDays",
+          "endsAt",
+          "iosCode"
+        ],
+        "additionalProperties": false,
+        "description": "A time-boxed promotion, as `ProfileResponse.promo` carries it (ieat-app#3604) — present ONLY while it is live: the admin's switch on AND the server's clock inside the operator's configured window. Every figure is the operator's; the client computes none of it."
+      },
       "PendingMealsResponse": {
         "type": "object",
         "properties": {
@@ -10946,6 +10984,17 @@
             "$ref": "#/components/schemas/ExitOfferSwitches",
             "description": "The admin's exit-offer switches, per platform (ieat-app#3155) — `paywall.exit-offer.ios` and `paywall.exit-offer.web` in the admin's switches, read on every response so a flip needs no deploy.\n\nBOTH DEFAULT OFF, and a client draws the decline → offer only when its platform's flag is on AND the offer itself exists: on the web that is `paywall.exitOffer` non-null (already gated by `web` here), on the phone RevenueCat's `exit_offer` offering answering packages. A server that predates the field sends none — read that as off, which is the default anyway."
           },
+          "promo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaywallPromo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The live promotion (ieat-app#3604), or null — the `paywall.promo.newyear` admin switch on AND this server's clock inside the operator's `EAIT__BACKEND__PROMO_NEWYEAR_*` window, read on every response so a flip or the window's end lands on the next fetch, no deploy.\n\nDEFAULT NULL: the switch ships off and nothing is configured. WHILE IT IS LIVE THE EXIT OFFER IS NOT: `exitOfferEnabled` answers false on both platforms (the stored switches are not written) and `paywall.exitOffer` is null, so a decline never meets a second discount. A server that predates the field sends none — read that as null."
+          },
           "coachName": {
             "type": "string",
             "description": "The coach's name in the account's language — `THREAD_COPY`'s `coach.name` — sent here because the browser bundle cannot import the Lingui table that copy lives in (#92 review): Lingui words reach a client only server-sent. Surfaces fill their `{coach}` placeholders with it. A server that predates the field sends none, and a client falls back to the copy's own name."
@@ -10994,6 +11043,7 @@
           "healthConnected",
           "paywall",
           "exitOfferEnabled",
+          "promo",
           "coachName",
           "hasLoggedMeal",
           "voiceInputEnabled",
@@ -11908,6 +11958,13 @@
             ],
             "description": "The offer shown once after the plans are declined — null = a decline goes to the app. The admin's `web` switch un-arms it too (ieat-app#3155): switched off is this same null, the shape of one never configured."
           },
+          "promoCheckoutUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The promotion's web checkout (ieat-app#3604), `{userId}` already filled — navigate to it, never template it. Null outside a live `ProfileResponse.promo`, and while the operator configured no web checkout for it."
+          },
           "termsUrl": {
             "type": "string",
             "description": "The legal footer's Terms href — the operator's `TERMS_URL`, verbatim. \"\" means no terms are published and a client draws no link, the shape `/start`'s own consent line takes."
@@ -11922,6 +11979,7 @@
           "yearly",
           "monthly",
           "exitOffer",
+          "promoCheckoutUrl",
           "termsUrl",
           "privacyUrl"
         ],
