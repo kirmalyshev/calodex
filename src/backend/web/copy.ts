@@ -183,6 +183,16 @@ export interface PageCopy {
   referralAlready: string;
   /** An account that has already bought eait: invite links are for people who have not. */
   referralPaid: string;
+  /**
+   * The consent banner (ieat-app#3621, board ob-welcome-consent): "We use cookies", one sentence
+   * as a template. `{link}` is the verb, which links to the privacy policy's cookie section, so a
+   * language whose verb leads the sentence writes it first rather than leaving a fragment empty.
+   */
+  cookieNotice: string;
+  cookieLink: string;
+  /** The banner's two buttons, Decline first — equal weight, so neither word leans. */
+  cookieDecline: string;
+  cookieAccept: string;
 }
 
 const EN: PageCopy = {
@@ -292,6 +302,10 @@ const EN: PageCopy = {
   referralOwn: "That's your own link. A friend's link goes here.",
   referralAlready: "This account already joined with a friend's link.",
   referralPaid: "Invite links are for new members, and this account has already bought {app_name}.",
+  cookieNotice: "We {link} cookies",
+  cookieLink: "use",
+  cookieDecline: "Decline",
+  cookieAccept: "Accept",
 };
 
 const FR: PageCopy = {
@@ -388,6 +402,10 @@ const FR: PageCopy = {
   referralOwn: "C'est ton propre lien. Ici, c'est le lien d'un ami.",
   referralAlready: "Ce compte a déjà rejoint {app_name} avec le lien d'un ami.",
   referralPaid: "Les liens d'invitation sont pour les nouveaux membres, et ce compte a déjà acheté {app_name}.",
+  cookieNotice: "Nous {link} des cookies",
+  cookieLink: "utilisons",
+  cookieDecline: "Refuser",
+  cookieAccept: "Accepter",
 };
 
 const DE: PageCopy = {
@@ -484,6 +502,10 @@ const DE: PageCopy = {
   referralOwn: "Das ist dein eigener Link. Hier gehört der Link von Freunden hin.",
   referralAlready: "Dieses Konto ist schon über einen Einladungslink beigetreten.",
   referralPaid: "Einladungslinks sind für neue Mitglieder, und dieses Konto hat {app_name} schon gekauft.",
+  cookieNotice: "Wir {link} Cookies",
+  cookieLink: "verwenden",
+  cookieDecline: "Ablehnen",
+  cookieAccept: "Akzeptieren",
 };
 
 const IT: PageCopy = {
@@ -580,6 +602,10 @@ const IT: PageCopy = {
   referralOwn: "Questo è il tuo link. Qui va il link di un amico.",
   referralAlready: "Questo account si è già iscritto con il link di un amico.",
   referralPaid: "I link d'invito sono per i nuovi iscritti, e questo account ha già acquistato {app_name}.",
+  cookieNotice: "{link} i cookie",
+  cookieLink: "Utilizziamo",
+  cookieDecline: "Rifiuta",
+  cookieAccept: "Accetta",
 };
 
 const ES: PageCopy = {
@@ -676,6 +702,10 @@ const ES: PageCopy = {
   referralOwn: "Ese es tu propio enlace. Aquí va el enlace de un amigo.",
   referralAlready: "Esta cuenta ya se unió con el enlace de un amigo.",
   referralPaid: "Los enlaces de invitación son para miembros nuevos, y esta cuenta ya compró {app_name}.",
+  cookieNotice: "{link} cookies",
+  cookieLink: "Usamos",
+  cookieDecline: "Rechazar",
+  cookieAccept: "Aceptar",
 };
 
 const VI: PageCopy = {
@@ -772,6 +802,10 @@ const VI: PageCopy = {
   referralOwn: "Đây là liên kết của chính bạn. Hãy dán liên kết của bạn bè vào đây.",
   referralAlready: "Tài khoản này đã tham gia bằng liên kết của bạn bè.",
   referralPaid: "Liên kết mời dành cho thành viên mới, và tài khoản này đã mua {app_name}.",
+  cookieNotice: "Chúng tôi {link} cookie",
+  cookieLink: "sử dụng",
+  cookieDecline: "Từ chối",
+  cookieAccept: "Chấp nhận",
 };
 
 const ID: PageCopy = {
@@ -868,6 +902,10 @@ const ID: PageCopy = {
   referralOwn: "Itu tautanmu sendiri. Tautan dari teman yang dimasukkan di sini.",
   referralAlready: "Akun ini sudah bergabung lewat tautan dari teman.",
   referralPaid: "Tautan undangan untuk anggota baru, dan akun ini sudah membeli {app_name}.",
+  cookieNotice: "Kami {link} cookie",
+  cookieLink: "menggunakan",
+  cookieDecline: "Tolak",
+  cookieAccept: "Terima",
 };
 
 const RU: PageCopy = {
@@ -964,6 +1002,10 @@ const RU: PageCopy = {
   referralOwn: "Это твоя собственная ссылка. Сюда нужна ссылка друга.",
   referralAlready: "Этот аккаунт уже присоединился по ссылке друга.",
   referralPaid: "Ссылки-приглашения — для новых участников, а покупка {app_name} на этом аккаунте уже есть.",
+  cookieNotice: "Мы {link} файлы cookie",
+  cookieLink: "используем",
+  cookieDecline: "Отклонить",
+  cookieAccept: "Принять",
 };
 
 const SQ: PageCopy = {
@@ -1073,6 +1115,10 @@ const SQ: PageCopy = {
   referralOwn: "Kjo është lidhja jotë. Këtu shkon lidhja e një miku.",
   referralAlready: "Kjo llogari u bashkua më parë me lidhjen e një miku.",
   referralPaid: "Lidhjet e ftesave janë për anëtarë të rinj, dhe kjo llogari e ka blerë tashmë {app_name}.",
+  cookieNotice: "Ne {link} cookies",
+  cookieLink: "përdorim",
+  cookieDecline: "Refuzo",
+  cookieAccept: "Prano",
 };
 
 const BG: PageCopy = {
@@ -1182,6 +1228,10 @@ const BG: PageCopy = {
   referralOwn: "Това е твоят линк. Тук трябва линк от приятел.",
   referralAlready: "Този акаунт вече се е присъединил с линк от приятел.",
   referralPaid: "Линковете-покани са за нови членове, а този акаунт вече е купил {app_name}.",
+  cookieNotice: "{link} бисквитки",
+  cookieLink: "Използваме",
+  cookieDecline: "Отказвам",
+  cookieAccept: "Приемам",
 };
 
 const TE: PageCopy = {
@@ -1291,6 +1341,10 @@ const TE: PageCopy = {
   referralOwn: "ఇది మీ సొంత లింక్. ఇక్కడ స్నేహితుల లింక్ ఇవ్వాలి.",
   referralAlready: "ఈ ఖాతా ఇప్పటికే స్నేహితుల లింక్‌తో చేరింది.",
   referralPaid: "ఆహ్వాన లింక్‌లు కొత్త సభ్యుల కోసం, ఈ ఖాతాతో {app_name} ఇప్పటికే కొనుగోలు చేయబడింది.",
+  cookieNotice: "మేము కుకీలను {link}",
+  cookieLink: "ఉపయోగిస్తాము",
+  cookieDecline: "తిరస్కరించు",
+  cookieAccept: "అంగీకరించు",
 };
 
 const TA: PageCopy = {
@@ -1400,6 +1454,10 @@ const TA: PageCopy = {
   referralOwn: "இது உங்கள் சொந்த இணைப்பு. இங்கே நண்பரின் இணைப்பை இடவும்.",
   referralAlready: "இந்தக் கணக்கு ஏற்கெனவே ஒரு நண்பரின் இணைப்பு மூலம் இணைந்துள்ளது.",
   referralPaid: "அழைப்பு இணைப்புகள் புதிய உறுப்பினர்களுக்கானவை; இந்தக் கணக்கில் ஏற்கெனவே {app_name} வாங்கப்பட்டுள்ளது.",
+  cookieNotice: "நாங்கள் குக்கீகளைப் {link}",
+  cookieLink: "பயன்படுத்துகிறோம்",
+  cookieDecline: "நிராகரி",
+  cookieAccept: "ஏற்றுக்கொள்",
 };
 
 const PA: PageCopy = {
@@ -1509,6 +1567,10 @@ const PA: PageCopy = {
   referralOwn: "ਇਹ ਤੁਹਾਡਾ ਆਪਣਾ ਲਿੰਕ ਹੈ। ਇੱਥੇ ਕਿਸੇ ਦੋਸਤ ਦਾ ਲਿੰਕ ਪਾਓ।",
   referralAlready: "ਇਹ ਅਕਾਊਂਟ ਪਹਿਲਾਂ ਹੀ ਕਿਸੇ ਦੋਸਤ ਦੇ ਲਿੰਕ ਨਾਲ ਜੁੜ ਚੁੱਕਾ ਹੈ।",
   referralPaid: "ਇਨਵਾਈਟ ਲਿੰਕ ਨਵੇਂ ਮੈਂਬਰਾਂ ਲਈ ਹਨ, ਅਤੇ ਇਸ ਅਕਾਊਂਟ ਤੋਂ {app_name} ਪਹਿਲਾਂ ਹੀ ਖ਼ਰੀਦਿਆ ਜਾ ਚੁੱਕਾ ਹੈ।",
+  cookieNotice: "ਅਸੀਂ ਕੂਕੀਜ਼ {link} ਹਾਂ",
+  cookieLink: "ਵਰਤਦੇ",
+  cookieDecline: "ਅਸਵੀਕਾਰ ਕਰੋ",
+  cookieAccept: "ਸਵੀਕਾਰ ਕਰੋ",
 };
 
 const OR: PageCopy = {
@@ -1618,6 +1680,10 @@ const OR: PageCopy = {
   referralOwn: "ଏହା ଆପଣଙ୍କ ନିଜ ଲିଙ୍କ୍। ଏଠାରେ ଜଣେ ବନ୍ଧୁଙ୍କ ଲିଙ୍କ୍ ଦିଅନ୍ତୁ।",
   referralAlready: "ଏହି ଆକାଉଣ୍ଟ ପୂର୍ବରୁ ଜଣେ ବନ୍ଧୁଙ୍କ ଲିଙ୍କ୍ ସହ ଯୋଗ ଦେଇସାରିଛି।",
   referralPaid: "ଇନଭାଇଟ୍ ଲିଙ୍କ୍ ନୂଆ ସଦସ୍ୟଙ୍କ ପାଇଁ, ଏବଂ ଏହି ଆକାଉଣ୍ଟ ପୂର୍ବରୁ {app_name} କିଣିସାରିଛି।",
+  cookieNotice: "ଆମେ କୁକିଜ୍ {link}",
+  cookieLink: "ବ୍ୟବହାର କରୁ",
+  cookieDecline: "ପ୍ରତ୍ୟାଖ୍ୟାନ କରନ୍ତୁ",
+  cookieAccept: "ଗ୍ରହଣ କରନ୍ତୁ",
 };
 
 const MR: PageCopy = {
@@ -1727,6 +1793,10 @@ const MR: PageCopy = {
   referralOwn: "ही तुमचीच लिंक आहे. इथे मित्राची लिंक टाका.",
   referralAlready: "हे अकाउंट आधीच मित्राच्या लिंकने सामील झाले आहे.",
   referralPaid: "आमंत्रण लिंक नवीन सदस्यांसाठी आहेत, आणि या अकाउंटवरून {app_name} आधीच खरेदी केले आहे.",
+  cookieNotice: "आम्ही कुकीज {link}",
+  cookieLink: "वापरतो",
+  cookieDecline: "नाकारा",
+  cookieAccept: "स्वीकारा",
 };
 
 const ML: PageCopy = {
@@ -1836,6 +1906,10 @@ const ML: PageCopy = {
   referralOwn: "അത് നിങ്ങളുടെ സ്വന്തം ലിങ്കാണ്. ഇവിടെ ഒരു സുഹൃത്തിന്റെ ലിങ്കാണ് വേണ്ടത്.",
   referralAlready: "ഈ അക്കൗണ്ട് ഇതിനകം ഒരു സുഹൃത്തിന്റെ ലിങ്ക് വഴി ചേർന്നതാണ്.",
   referralPaid: "ക്ഷണ ലിങ്കുകൾ പുതിയ അംഗങ്ങൾക്കുള്ളതാണ്, ഈ അക്കൗണ്ട് ഇതിനകം {app_name} വാങ്ങിയിട്ടുണ്ട്.",
+  cookieNotice: "ഞങ്ങൾ കുക്കികൾ {link}",
+  cookieLink: "ഉപയോഗിക്കുന്നു",
+  cookieDecline: "നിരസിക്കുക",
+  cookieAccept: "അംഗീകരിക്കുക",
 };
 
 const KN: PageCopy = {
@@ -1945,6 +2019,10 @@ const KN: PageCopy = {
   referralOwn: "ಅದು ನಿಮ್ಮದೇ ಲಿಂಕ್. ಸ್ನೇಹಿತರ ಲಿಂಕ್ ಇಲ್ಲಿ ಹಾಕಿ.",
   referralAlready: "ಈ ಖಾತೆ ಈಗಾಗಲೇ ಸ್ನೇಹಿತರ ಲಿಂಕ್ ಮೂಲಕ ಸೇರಿದೆ.",
   referralPaid: "ಆಹ್ವಾನ ಲಿಂಕ್‌ಗಳು ಹೊಸ ಸದಸ್ಯರಿಗೆ ಮಾತ್ರ, ಮತ್ತು ಈ ಖಾತೆ ಈಗಾಗಲೇ {app_name} ಖರೀದಿಸಿದೆ.",
+  cookieNotice: "ನಾವು ಕುಕೀಗಳನ್ನು {link}",
+  cookieLink: "ಬಳಸುತ್ತೇವೆ",
+  cookieDecline: "ನಿರಾಕರಿಸಿ",
+  cookieAccept: "ಸ್ವೀಕರಿಸಿ",
 };
 
 const GU: PageCopy = {
@@ -2054,6 +2132,10 @@ const GU: PageCopy = {
   referralOwn: "આ તમારી પોતાની લિંક છે. અહીં મિત્રની લિંક નાખો.",
   referralAlready: "આ એકાઉન્ટ પહેલેથી જ મિત્રની લિંકથી જોડાયેલું છે.",
   referralPaid: "આમંત્રણ લિંક નવા સભ્યો માટે છે, અને આ એકાઉન્ટ પરથી {app_name} પહેલેથી ખરીદાઈ ગયું છે.",
+  cookieNotice: "અમે કૂકીઝનો {link} છીએ",
+  cookieLink: "ઉપયોગ કરીએ",
+  cookieDecline: "નકારો",
+  cookieAccept: "સ્વીકારો",
 };
 
 const BN: PageCopy = {
@@ -2163,6 +2245,10 @@ const BN: PageCopy = {
   referralOwn: "এটি আপনার নিজের লিংক। এখানে বন্ধুর লিংক দিন।",
   referralAlready: "এই অ্যাকাউন্ট আগেই বন্ধুর লিংক দিয়ে যোগ দিয়েছে।",
   referralPaid: "আমন্ত্রণ লিংক নতুন সদস্যদের জন্য, আর এই অ্যাকাউন্ট দিয়ে {app_name} আগেই কেনা হয়েছে।",
+  cookieNotice: "আমরা কুকি {link}",
+  cookieLink: "ব্যবহার করি",
+  cookieDecline: "প্রত্যাখ্যান",
+  cookieAccept: "গ্রহণ",
 };
 
 const PT_PT: PageCopy = {
@@ -2272,6 +2358,10 @@ const PT_PT: PageCopy = {
   referralOwn: "Esta é a tua própria ligação. Aqui vai a ligação de um amigo.",
   referralAlready: "Esta conta já aderiu com a ligação de um amigo.",
   referralPaid: "As ligações de convite são para novos membros, e esta conta já comprou o {app_name}.",
+  cookieNotice: "{link} cookies",
+  cookieLink: "Utilizamos",
+  cookieDecline: "Recusar",
+  cookieAccept: "Aceitar",
 };
 
 const MS: PageCopy = {
@@ -2381,6 +2471,10 @@ const MS: PageCopy = {
   referralOwn: "Itu pautan anda sendiri. Pautan rakan dimasukkan di sini.",
   referralAlready: "Akaun ini sudah menyertai dengan pautan rakan.",
   referralPaid: "Pautan jemputan adalah untuk ahli baharu, dan akaun ini sudah membeli {app_name}.",
+  cookieNotice: "Kami {link} kuki",
+  cookieLink: "menggunakan",
+  cookieDecline: "Tolak",
+  cookieAccept: "Terima",
 };
 
 const CA: PageCopy = {
@@ -2490,6 +2584,10 @@ const CA: PageCopy = {
   referralOwn: "Aquest és el teu propi enllaç. Aquí va l'enllaç d'un amic.",
   referralAlready: "Aquest compte ja s'ha unit amb l'enllaç d'un amic.",
   referralPaid: "Els enllaços d'invitació són per a membres nous, i aquest compte ja ha comprat {app_name}.",
+  cookieNotice: "{link} galetes",
+  cookieLink: "Utilitzem",
+  cookieDecline: "Rebutja",
+  cookieAccept: "Accepta",
 };
 
 const SL: PageCopy = {
@@ -2599,6 +2697,10 @@ const SL: PageCopy = {
   referralOwn: "To je tvoja povezava. Sem spada povezava prijatelja.",
   referralAlready: "Ta račun se je že pridružil s prijateljevo povezavo.",
   referralPaid: "Povezave za povabilo so za nove člane, s tem računom pa je {app_name} že kupljen.",
+  cookieNotice: "{link} piškotke",
+  cookieLink: "Uporabljamo",
+  cookieDecline: "Zavrni",
+  cookieAccept: "Sprejmi",
 };
 
 const HR: PageCopy = {
@@ -2708,6 +2810,10 @@ const HR: PageCopy = {
   referralOwn: "To je tvoja poveznica. Ovdje ide poveznica prijatelja.",
   referralAlready: "Ovaj račun već se pridružio preko pozivne poveznice.",
   referralPaid: "Pozivne poveznice su za nove članove, a ovaj račun već je kupio {app_name}.",
+  cookieNotice: "{link} kolačiće",
+  cookieLink: "Koristimo",
+  cookieDecline: "Odbij",
+  cookieAccept: "Prihvati",
 };
 
 const SK: PageCopy = {
@@ -2817,6 +2923,10 @@ const SK: PageCopy = {
   referralOwn: "To je tvoj vlastný odkaz. Sem patrí odkaz od kamaráta.",
   referralAlready: "Tento účet sa už pridal cez odkaz od kamaráta.",
   referralPaid: "Pozvánky sú pre nových členov a tento účet už {app_name} kúpil.",
+  cookieNotice: "{link} súbory cookie",
+  cookieLink: "Používame",
+  cookieDecline: "Odmietnuť",
+  cookieAccept: "Prijať",
 };
 
 const NO: PageCopy = {
@@ -2926,6 +3036,10 @@ const NO: PageCopy = {
   referralOwn: "Det er din egen lenke. En venns lenke skal stå her.",
   referralAlready: "Denne kontoen har allerede blitt med via en venns lenke.",
   referralPaid: "Invitasjonslenker er for nye medlemmer, og denne kontoen har allerede kjøpt {app_name}.",
+  cookieNotice: "Vi {link} informasjonskapsler",
+  cookieLink: "bruker",
+  cookieDecline: "Avslå",
+  cookieAccept: "Godta",
 };
 
 const FI: PageCopy = {
@@ -3035,6 +3149,10 @@ const FI: PageCopy = {
   referralOwn: "Tämä on oma linkkisi. Tähän kuuluu ystävän linkki.",
   referralAlready: "Tällä tilillä on jo liitytty ystävän linkillä.",
   referralPaid: "Kutsulinkit ovat uusille jäsenille, ja tällä tilillä on jo ostettu {app_name}.",
+  cookieNotice: "{link} evästeitä",
+  cookieLink: "Käytämme",
+  cookieDecline: "Hylkää",
+  cookieAccept: "Hyväksy",
 };
 
 const DA: PageCopy = {
@@ -3144,6 +3262,10 @@ const DA: PageCopy = {
   referralOwn: "Det er dit eget link. En vens link skal stå her.",
   referralAlready: "Denne konto er allerede tilmeldt med en vens link.",
   referralPaid: "Invitationslinks er til nye medlemmer, og denne konto har allerede købt {app_name}.",
+  cookieNotice: "Vi {link} cookies",
+  cookieLink: "bruger",
+  cookieDecline: "Afvis",
+  cookieAccept: "Accepter",
 };
 
 const HU: PageCopy = {
@@ -3253,6 +3375,10 @@ const HU: PageCopy = {
   referralOwn: "Ez a saját linked. Ide egy barátod linkje kell.",
   referralAlready: "Ez a fiók már csatlakozott egy barát linkjével.",
   referralPaid: "A meghívólinkek új tagoknak szólnak, és ez a fiók már megvásárolta {az} {app_name}-et.",
+  cookieNotice: "Sütiket {link}",
+  cookieLink: "használunk",
+  cookieDecline: "Elutasítom",
+  cookieAccept: "Elfogadom",
 };
 
 const EL: PageCopy = {
@@ -3362,6 +3488,10 @@ const EL: PageCopy = {
   referralOwn: "Αυτός είναι ο δικός σου σύνδεσμος. Εδώ μπαίνει ο σύνδεσμος ενός φίλου.",
   referralAlready: "Αυτός ο λογαριασμός έχει ήδη γραφτεί με σύνδεσμο φίλου.",
   referralPaid: "Οι σύνδεσμοι πρόσκλησης είναι για νέα μέλη, και αυτός ο λογαριασμός έχει ήδη αγοράσει το {app_name}.",
+  cookieNotice: "{link} cookies",
+  cookieLink: "Χρησιμοποιούμε",
+  cookieDecline: "Απόρριψη",
+  cookieAccept: "Αποδοχή",
 };
 
 const RO: PageCopy = {
@@ -3471,6 +3601,10 @@ const RO: PageCopy = {
   referralOwn: "Acesta e linkul tău. Aici pui linkul unui prieten.",
   referralAlready: "Acest cont s-a alăturat deja cu linkul unui prieten.",
   referralPaid: "Linkurile de invitație sunt pentru membri noi, iar acest cont a cumpărat deja {app_name}.",
+  cookieNotice: "{link} cookie-uri",
+  cookieLink: "Folosim",
+  cookieDecline: "Refuz",
+  cookieAccept: "Accept",
 };
 
 const CS: PageCopy = {
@@ -3580,6 +3714,10 @@ const CS: PageCopy = {
   referralOwn: "To je tvůj vlastní odkaz. Sem patří odkaz kamaráda.",
   referralAlready: "Tento účet se už připojil přes odkaz kamaráda.",
   referralPaid: "Pozvánky jsou pro nové členy a tento účet už {app_name} koupil.",
+  cookieNotice: "{link} soubory cookie",
+  cookieLink: "Používáme",
+  cookieDecline: "Odmítnout",
+  cookieAccept: "Přijmout",
 };
 
 const HI: PageCopy = {
@@ -3689,6 +3827,10 @@ const HI: PageCopy = {
   referralOwn: "यह आपका अपना लिंक है। यहाँ किसी दोस्त का लिंक डालें।",
   referralAlready: "यह अकाउंट पहले ही किसी दोस्त के लिंक से जुड़ चुका है।",
   referralPaid: "इनवाइट लिंक नए सदस्यों के लिए हैं, और इस अकाउंट से {app_name} पहले ही ख़रीदा जा चुका है।",
+  cookieNotice: "हम कुकीज़ का {link} हैं",
+  cookieLink: "उपयोग करते",
+  cookieDecline: "अस्वीकार करें",
+  cookieAccept: "स्वीकार करें",
 };
 
 const TH: PageCopy = {
@@ -3798,6 +3940,10 @@ const TH: PageCopy = {
   referralOwn: "นี่คือลิงก์ของคุณเอง ใส่ลิงก์ของเพื่อนที่นี่",
   referralAlready: "บัญชีนี้เข้าร่วมด้วยลิงก์ของเพื่อนไปแล้ว",
   referralPaid: "ลิงก์คำเชิญมีไว้สำหรับสมาชิกใหม่ และบัญชีนี้ซื้อ {app_name} ไปแล้ว",
+  cookieNotice: "เรา{link}คุกกี้",
+  cookieLink: "ใช้",
+  cookieDecline: "ปฏิเสธ",
+  cookieAccept: "ยอมรับ",
 };
 
 const SV: PageCopy = {
@@ -3907,6 +4053,10 @@ const SV: PageCopy = {
   referralOwn: "Det är din egen länk. En väns länk ska stå här.",
   referralAlready: "Det här kontot har redan gått med via en väns länk.",
   referralPaid: "Inbjudningslänkar är för nya medlemmar, och det här kontot har redan köpt {app_name}.",
+  cookieNotice: "Vi {link} cookies",
+  cookieLink: "använder",
+  cookieDecline: "Avvisa",
+  cookieAccept: "Godkänn",
 };
 
 const UK: PageCopy = {
@@ -4016,6 +4166,10 @@ const UK: PageCopy = {
   referralOwn: "Це твоє власне посилання. Сюди — посилання друга.",
   referralAlready: "Цей акаунт уже приєднався за посиланням друга.",
   referralPaid: "Посилання-запрошення — для нових учасників, а на цьому акаунті вже є покупка {app_name}.",
+  cookieNotice: "Ми {link} файли cookie",
+  cookieLink: "використовуємо",
+  cookieDecline: "Відхилити",
+  cookieAccept: "Прийняти",
 };
 
 const NL: PageCopy = {
@@ -4125,6 +4279,10 @@ const NL: PageCopy = {
   referralOwn: "Dat is je eigen link. Hier hoort de link van een vriend.",
   referralAlready: "Dit account is al aangemeld met de link van een vriend.",
   referralPaid: "Uitnodigingslinks zijn voor nieuwe leden, en dit account heeft {app_name} al gekocht.",
+  cookieNotice: "Wij {link} cookies",
+  cookieLink: "gebruiken",
+  cookieDecline: "Weigeren",
+  cookieAccept: "Accepteren",
 };
 
 const PL: PageCopy = {
@@ -4234,6 +4392,10 @@ const PL: PageCopy = {
   referralOwn: "To twój własny link. Tu wpisz link od znajomych.",
   referralAlready: "To konto już dołączyło przez link od znajomych.",
   referralPaid: "Linki z zaproszeniem są dla nowych osób, a na tym koncie {app_name} już został kupiony.",
+  cookieNotice: "{link} plików cookie",
+  cookieLink: "Używamy",
+  cookieDecline: "Odrzuć",
+  cookieAccept: "Akceptuj",
 };
 
 const TR: PageCopy = {
@@ -4343,6 +4505,10 @@ const TR: PageCopy = {
   referralOwn: "Bu senin kendi bağlantın. Buraya bir arkadaşının bağlantısı gelir.",
   referralAlready: "Bu hesap zaten bir arkadaş bağlantısıyla katıldı.",
   referralPaid: "Davet bağlantıları yeni üyeler içindir ve bu hesap {app_name}'i zaten satın aldı.",
+  cookieNotice: "Çerez {link}",
+  cookieLink: "kullanıyoruz",
+  cookieDecline: "Reddet",
+  cookieAccept: "Kabul et",
 };
 
 const ZH_HANT: PageCopy = {
@@ -4452,6 +4618,10 @@ const ZH_HANT: PageCopy = {
   referralOwn: "這是你自己的連結。這裡要填朋友的連結。",
   referralAlready: "這個帳號已經透過朋友的連結加入過了。",
   referralPaid: "邀請連結僅限新會員使用，而這個帳號已經購買過 {app_name}。",
+  cookieNotice: "我們{link} Cookie",
+  cookieLink: "使用",
+  cookieDecline: "拒絕",
+  cookieAccept: "接受",
 };
 
 const ZH_HANS: PageCopy = {
@@ -4561,6 +4731,10 @@ const ZH_HANS: PageCopy = {
   referralOwn: "这是你自己的链接。这里要填好友的链接。",
   referralAlready: "这个账户已经通过好友链接加入过了。",
   referralPaid: "邀请链接仅限新成员使用，而这个账户已经购买过 {app_name}。",
+  cookieNotice: "我们{link} Cookie",
+  cookieLink: "使用",
+  cookieDecline: "拒绝",
+  cookieAccept: "接受",
 };
 
 const KO: PageCopy = {
@@ -4670,6 +4844,10 @@ const KO: PageCopy = {
   referralOwn: "내 링크예요. 여기에는 친구의 링크를 넣어 주세요.",
   referralAlready: "이 계정은 이미 친구 링크로 가입했어요.",
   referralPaid: "초대 링크는 신규 회원용인데, 이 계정은 이미 {app_name} 구매 내역이 있어요.",
+  cookieNotice: "쿠키를 {link}",
+  cookieLink: "사용합니다",
+  cookieDecline: "거부",
+  cookieAccept: "수락",
 };
 
 const JA: PageCopy = {
@@ -4779,6 +4957,10 @@ const JA: PageCopy = {
   referralOwn: "これはあなた自身のリンクです。ここには友だちのリンクを入力してください。",
   referralAlready: "このアカウントはすでに友だちのリンクで登録済みです。",
   referralPaid: "招待リンクは新規メンバー向けです。このアカウントはすでに{app_name}を購入しています。",
+  cookieNotice: "Cookieを{link}しています",
+  cookieLink: "使用",
+  cookieDecline: "拒否する",
+  cookieAccept: "同意する",
 };
 
 const PT_BR: PageCopy = {
@@ -4888,6 +5070,10 @@ const PT_BR: PageCopy = {
   referralOwn: "Esse é o seu próprio link. Aqui vai o link de um amigo.",
   referralAlready: "Esta conta já entrou com o link de um amigo.",
   referralPaid: "Links de convite são para novos membros, e esta conta já comprou o {app_name}.",
+  cookieNotice: "{link} cookies",
+  cookieLink: "Usamos",
+  cookieDecline: "Recusar",
+  cookieAccept: "Aceitar",
 };
 
 /** Every sentence `/start` writes for itself, keyed by language. */
