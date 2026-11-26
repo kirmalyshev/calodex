@@ -33,17 +33,26 @@ describe("the web pay sheet stays the phone's simple sheet (ieat-app#3465)", () 
     expect(count(b, "pay.renewsPlain")).toBe(1);
     expect(count(b, '"nopay"')).toBe(1); // "No payment due now" alone — the bill line lives in the timeline
   });
-  test("C: no subtitle, one legal note (the offer's renewal), nothing else priced", () => {
+  // Kirill q90 = A (ieat-app#3617, #3630; boards pay-cal-c, pay-cal-c-notrial): C is A with the
+  // offer's values — A's plan rows with the offer on Yearly's, Claim, and A's one note.
+  test("C is A with changed values: the plan rows, Claim, one note; no card of its own", () => {
     const c = part("const showOffer", "let step");
-    expect(c).not.toContain("offerSub");
-    expect(c).not.toContain("offerNote");
-    expect(count(c, "pay.renewNoteYearly")).toBe(1);
-    expect(count(c, "pay.renewsPlain")).toBe(0); // the renewNote IS this screen's one line
+    expect(c).toContain("planPair(w!, pay, COPY.offerPlans, offer)");
+    expect(c).toContain("pay.offerClaim");
+    expect(count(c, "pay.renewNoteYearly")).toBe(1); // the offer's renewal while it is picked
+    expect(count(c, "pay.renewsPlain")).toBe(1); // A's price-free line while Monthly is
+    for (const gone of ["offerSpecialTitle", "offerVsMonthly", "offerPrice", "offerSub", "offerNote", '"offer pop"']) {
+      expect(c, gone).not.toContain(gone);
+    }
+    const pair = part("function planPair", "export function payScreen");
+    expect(pair).toContain("fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })");
+    expect(pair).toContain('el("s", "", was)');
   });
   test("the photo is screen A's, and only A's", () => {
     expect(count(src, "frenchtoast.webp")).toBe(1);
     expect(part("const showTry", "const showOffer")).toContain("dropHero()");
-    expect(part("const showOffer", "let step")).toContain("dropHero()");
+    // C is A, so it carries A's photo: back in the sheet if B took it out.
+    expect(part("const showOffer", "let step")).toContain("sheet.insertBefore(hero, pane)");
   });
   // ieat-app#3505: A's photo takes ALL the free height and the title/plans/CTA sit together at the
   // bottom — the phone's `s.heroFull` with no spacer in the foot. On B (no photo) the timeline
@@ -91,14 +100,11 @@ describe("the web pay sheet is smooth, not corner-y", () => {
   }
 });
 
-// Kirill, 24 Nov 17:27: the special-offer card is Cal AI 12's soft silver gradient.
-describe("the web special-offer card is silver", () => {
-  test("/start/offer: the same token gradient, so dark mode stays readable", () => {
-    expect(/\.offer \.special \{[^}]*linear-gradient\(135deg, var\(--surface\)/.test(shell)).toBe(true);
-    expect(/\.pay \.offer \{[^}]*linear-gradient\(135deg, var\(--surface\)/.test(css)).toBe(true);
-  });
-  test("#/pay: a gradient behind the percent", () => {
-    expect(/\.pay \.offer\s*\{[^}]*linear-gradient\(135deg/.test(css)).toBe(true);
+// C has no card on any surface (ieat-app#3617): it is A with the offer's values.
+describe("no special-offer card is left", () => {
+  test("#/pay and /start/offer carry no card styles", () => {
+    expect(css).not.toMatch(/\.pay \.offer\s*\{/);
+    expect(shell).not.toContain(".offer .special");
   });
 });
 
