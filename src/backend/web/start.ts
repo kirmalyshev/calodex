@@ -186,6 +186,25 @@ const REF_COOKIE = "eait_ref";
  * its own. Only `accept` lets an AppsFlyer web visit leave (`webAttributionAllowed`).
  */
 const CONSENT_COOKIE = "eait_consent";
+const CONSENT_MAX_AGE = 365 * 24 * 60 * 60;
+const CONSENT_PATH = `${START_PREFIX}/consent`;
+
+/**
+ * Where the consent POST sends the visitor back to: a path on THIS origin under `/start`, or the
+ * front door. It is an open-redirect boundary, so the value is resolved the way a browser would
+ * resolve it (`//evil.com`, `/\evil.com` and `/start/../x` included) and only the resolved path and
+ * query are ever written back, never the raw string.
+ */
+function consentBack(raw: unknown, origin: string): string {
+  if (typeof raw !== "string" || raw === "") return START_PREFIX;
+  try {
+    const at = new URL(raw, origin);
+    const under = at.pathname === START_PREFIX || at.pathname.startsWith(`${START_PREFIX}/`);
+    return at.origin === new URL(origin).origin && under ? `${at.pathname}${at.search}` : START_PREFIX;
+  } catch {
+    return START_PREFIX;
+  }
+}
 const REF_MAX_AGE = 7 * 24 * 60 * 60;
 const REFERRAL_PATH = `${START_PREFIX}/referral`;
 const STREAK_PATH = `${START_PREFIX}/streak`;
@@ -712,6 +731,16 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     const asked = form?.get("lang");
     if (typeof asked !== "string" || !(LANGS_READY as readonly string[]).includes(asked)) return seeOther(START_PREFIX);
     return seeOther(START_PREFIX, [setCookie(LANG_COOKIE, asked, { secure, maxAge: LANG_MAX_AGE })]);
+  }
+
+  // THE CONSENT BANNER'S TWO BUTTONS (q93): the answer is kept, then the visitor goes back to the
+  // page they answered on. Any account or none — the record is the browser's, not a person's.
+  if (req.method === "POST" && pathname === CONSENT_PATH) {
+    const form = await req.formData().catch(() => null);
+    const choice = form?.get("choice");
+    const back = consentBack(form?.get("back"), ctx.origin);
+    if (choice !== "accept" && choice !== "decline") return seeOther(back);
+    return seeOther(back, [setCookie(CONSENT_COOKIE, choice, { secure, maxAge: CONSENT_MAX_AGE })]);
   }
 
   // The typeface, on this origin, which is what lets the CSP stay at `font-src 'self'` and load

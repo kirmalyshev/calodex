@@ -461,6 +461,37 @@ describe("an ad's click params reach the first answer, with no cookie but the co
   });
 });
 
+describe("POST /start/consent keeps the banner's answer (ieat-app#3621)", () => {
+  it("records an accept or a decline for a year and sends the visitor back where they were", async () => {
+    for (const choice of ["accept", "decline"]) {
+      const res = await post("/start/consent", { choice, back: "/start?utm_source=meta" });
+      expect(res.status, choice).toBe(303);
+      expect(res.headers.get("location"), choice).toBe("/start?utm_source=meta");
+      const line = res.headers.getSetCookie().find((c) => c.startsWith("eait_consent="));
+      expect(line, choice).toBe(`eait_consent=${choice}; Path=/start; HttpOnly; SameSite=Lax; Secure; Max-Age=31536000`);
+    }
+  });
+
+  it("sends an unsafe or missing back to the front door, never off the site", async () => {
+    for (const back of ["//evil.com", "https://evil.com", "/start/../x", "/\\evil.com", "/startle", "/chat", ""]) {
+      const res = await post("/start/consent", { choice: "accept", back });
+      expect(res.status, back).toBe(303);
+      expect(res.headers.get("location"), back).toBe("/start");
+    }
+    const none = await post("/start/consent", { choice: "accept" });
+    expect(none.headers.get("location")).toBe("/start");
+  });
+
+  it("records nothing for a choice that is neither", async () => {
+    for (const choice of ["yes", "", "ACCEPT"]) {
+      const res = await post("/start/consent", { choice, back: "/start/q" });
+      expect(res.status, choice).toBe(303);
+      expect(res.headers.getSetCookie().filter((c) => c.startsWith("eait_consent=")), choice).toEqual([]);
+    }
+    expect((await post("/start/consent", { back: "/start/q" })).headers.getSetCookie()).toEqual([]);
+  });
+});
+
 describe("the one control script", () => {
   // The inline script's source, cut by string search rather than a tag regex — a regex that
   // filters HTML is the pattern static analysis flags, so there is none here to flag.
