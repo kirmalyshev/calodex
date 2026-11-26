@@ -1119,6 +1119,18 @@ describe("a web purchase is forwarded to AppsFlyer by this webhook, not RevenueC
     expect(JSON.parse(String(init.body))).toMatchObject({ user_id: { customer_user_id: userId }, event_name: "af_start_trial" });
   });
 
+  it("a redelivered event reaches AppsFlyer once: only the first delivery is forwarded", async () => {
+    mount(AF);
+    const spy = stubFetch(async () => new Response(null, { status: 200 }));
+    const { userId } = await account();
+    await store.setWebAttributionConsent(userId, true);
+    const delivery = webTrial(userId);
+    expect((await deliver(delivery)).status).toBe(200);
+    expect((await deliver(delivery)).status).toBe(200);
+    await settle();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   it("a declined account's web purchase reaches nothing", async () => {
     mount(AF);
     const spy = stubFetch(async () => new Response(null, { status: 200 }));

@@ -282,13 +282,16 @@ export async function revenueCatWebhook(
       is_trial_conversion: typeof e?.is_trial_conversion === "boolean" ? e.is_trial_conversion : null,
       cancel_reason: text(e?.cancel_reason),
     };
-    await logRevenueCatEvent(deps, logged, lifecycle).catch((err: unknown) => {
+    const fresh = await logRevenueCatEvent(deps, logged, lifecycle).catch((err: unknown) => {
       const { name, code } = (err ?? {}) as { name?: unknown; code?: unknown };
       console.warn(`[eait] revenuecat: event log write failed, event ${logged.id} ${logged.type}: ${String(name ?? "error")} ${String(code ?? "-")}`);
+      return false;
     });
     // A web purchase reaches AppsFlyer from here, and only on the visitor's Accept (ieat-app#3621).
+    // Only on the event's FIRST delivery, which the log decides: a redelivery is not a second
+    // purchase, and a failed log write is not forwarded either, so its replay is the one sent.
     // Fire-and-forget: it never throws, and the answer below never waits on it.
-    void forwardWebPurchase(deps, logged, lifecycle.is_trial_conversion);
+    if (fresh) void forwardWebPurchase(deps, logged, lifecycle.is_trial_conversion);
   }
   const done = (body: { ok: true; applied: boolean }): Response => json(body);
   const transfer = parseRevenueCatTransfer(body);
