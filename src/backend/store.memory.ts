@@ -1272,7 +1272,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const fromAcq = acquisitions.get(fromUserId);
       if (mergedAcquisitionWins(fromAcq, acquisitions.get(intoUserId))) acquisitions.set(intoUserId, fromAcq);
       acquisitions.delete(fromUserId);
-      // Not carried by a merge, as Postgres does not list the column (ieat-app#3621).
+      // The /start banner's answer fills a gap and never overrides the survivor's own (ieat-app#3621).
+      const fromConsent = webConsent.get(fromUserId);
+      if (fromConsent !== undefined && !webConsent.has(intoUserId)) webConsent.set(intoUserId, fromConsent);
       webConsent.delete(fromUserId);
       for (const e of rcEvents.values()) if (e.userId === fromUserId) e.userId = intoUserId;
       // The merged-away zone and slots were handled above (the zone only fills a gap); what is left

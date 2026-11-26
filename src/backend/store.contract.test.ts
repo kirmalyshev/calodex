@@ -1211,6 +1211,31 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(Object.keys(await s.getProfile(a) ?? {})).not.toContain("web_attribution_consent");
     });
 
+    it("carries the consent answer onto a merge survivor that has none, never over one it has", async () => {
+      const s = await open();
+      const pair = async (from: boolean | null, into: boolean | null) => {
+        const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+        const real = (await s.upsertDeviceUser(device(), "en")).userId;
+        if (from !== null) await s.setWebAttributionConsent(anon, from);
+        if (into !== null) await s.setWebAttributionConsent(real, into);
+        expect(typeof (await s.mergeUsers(anon, real))).toBe("number");
+        return s.webAttributionConsentOf(real);
+      };
+      expect(await pair(true, null)).toBe(true);
+      expect(await pair(false, null)).toBe(false);
+      expect(await pair(true, false)).toBe(false);
+      expect(await pair(false, true)).toBe(true);
+      expect(await pair(null, null)).toBeNull();
+    });
+
+    it("forgets the consent answer with the account", async () => {
+      const s = await open();
+      const gone = (await s.upsertDeviceUser(device(), "en")).userId;
+      await s.setWebAttributionConsent(gone, true);
+      await s.deleteUser(gone);
+      expect(await s.webAttributionConsentOf(gone)).toBeNull();
+    });
+
     // ── Photos ─────────────────────────────────────────────────────────────────────────────
     //
     // The bytes live with the meal and are read by `meal_id AND user_id`, never by a guessable

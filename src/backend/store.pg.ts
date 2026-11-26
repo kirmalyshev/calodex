@@ -714,7 +714,7 @@ alter table users add column if not exists acq_keyword  text;
 alter table users add column if not exists acq_via      text check (acq_via in ('adservices', 'revenuecat'));
 -- The /start consent banner's answer, kept when /start minted the account (ieat-app#3621): null
 -- never asked. The RevenueCat webhook forwards a web purchase to AppsFlyer only on true. Absent from
--- PROFILE_COLUMNS, so no PATCH writes it, and from mergeUsers' column list.
+-- PROFILE_COLUMNS, so no PATCH writes it; mergeUsers carries it onto a survivor that has none.
 alter table users add column if not exists web_attribution_consent boolean;
 -- Every RevenueCat webhook delivery (ieat-app#3196), beside the resolved entitlement on users.
 -- Keyed on RevenueCat's event id, so a redelivery writes nothing. user_id is null for a delivery
@@ -3325,6 +3325,13 @@ export async function postgresStore(
           from users from_u
           where into_u.id = ${intoUserId} and from_u.id = ${fromUserId} and from_u.acq_via is not null
             and (into_u.acq_via is null or (into_u.acq_via = 'revenuecat' and from_u.acq_via = 'adservices'))`;
+        // The /start banner's answer fills a gap and never overrides the survivor's own
+        // (ieat-app#3621). Matches store.memory.ts.
+        await tx`
+          update users into_u set web_attribution_consent = from_u.web_attribution_consent
+          from users from_u
+          where into_u.id = ${intoUserId} and from_u.id = ${fromUserId}
+            and into_u.web_attribution_consent is null and from_u.web_attribution_consent is not null`;
         // Experiment assignments move by the gap rule below: the account that already holds one
         // keeps it, the anonymous session's fills what is missing. An assignment is what makes a
         // variant sticky, and a run split across two ids would assign the same person twice.
