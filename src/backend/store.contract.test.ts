@@ -1194,6 +1194,23 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.putAcquisition(crypto.randomUUID(), ads)).toBe(false);
     });
 
+    it("keeps the /start consent banner's answer per account, null until asked (ieat-app#3621)", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      expect(await s.webAttributionConsentOf(a)).toBeNull();
+      await s.setWebAttributionConsent(a, true);
+      expect(await s.webAttributionConsentOf(a)).toBe(true);
+      await s.setWebAttributionConsent(a, false);
+      expect(await s.webAttributionConsentOf(a)).toBe(false);
+      // Another account's answer is not this one's, and no account is no answer.
+      await s.setWebAttributionConsent(b, true);
+      expect(await s.webAttributionConsentOf(a)).toBe(false);
+      expect(await s.webAttributionConsentOf(crypto.randomUUID())).toBeNull();
+      // It is not on the profile, so no PATCH can write it.
+      expect(Object.keys(await s.getProfile(a) ?? {})).not.toContain("web_attribution_consent");
+    });
+
     // ── Photos ─────────────────────────────────────────────────────────────────────────────
     //
     // The bytes live with the meal and are read by `meal_id AND user_id`, never by a guessable

@@ -236,6 +236,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
   const entitlements = new Map<string, StoredWithClocks>();
   /** `users.acq_*` (ieat-app#3196), a map for the reason `roles` is one. */
   const acquisitions = new Map<string, Acquisition>();
+  /** `users.web_attribution_consent` (ieat-app#3621). */
+  const webConsent = new Map<string, boolean>();
   /** `revenuecat_events`, keyed on RevenueCat's event id as its primary key is. */
   const rcEvents = new Map<string, RevenueCatEventRow>();
   /** `mergeUsers`' rule for `users.acq_*`, in both stores: fill a gap, or replace RevenueCat's with Apple's. */
@@ -563,6 +565,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     staffSet.delete(userId);
     channels.delete(userId);
     acquisitions.delete(userId);
+    webConsent.delete(userId);
     for (const [id, e] of rcEvents) if (e.userId === userId) rcEvents.delete(id);
     // Same again (S8): consent stamps are `users` columns in Postgres and a map here — an account
     // that consented and was deleted keeps neither the record nor the timestamp.
@@ -1269,6 +1272,8 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const fromAcq = acquisitions.get(fromUserId);
       if (mergedAcquisitionWins(fromAcq, acquisitions.get(intoUserId))) acquisitions.set(intoUserId, fromAcq);
       acquisitions.delete(fromUserId);
+      // Not carried by a merge, as Postgres does not list the column (ieat-app#3621).
+      webConsent.delete(fromUserId);
       for (const e of rcEvents.values()) if (e.userId === fromUserId) e.userId = intoUserId;
       // The merged-away zone and slots were handled above (the zone only fills a gap); what is left
       // of it dies with the row, as Postgres drops it.
@@ -1496,6 +1501,14 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (!users.has(userId) || acquisitions.get(userId)?.via === "adservices") return false;
       acquisitions.set(userId, { ...acquisition });
       return true;
+    },
+
+    async webAttributionConsentOf(userId) {
+      return webConsent.get(userId) ?? null;
+    },
+
+    async setWebAttributionConsent(userId, consented) {
+      if (users.has(userId)) webConsent.set(userId, consented);
     },
 
     async putEntitlement(userId, patch) {
