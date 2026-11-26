@@ -242,8 +242,8 @@ body:has(.offer) { background: var(--surface); }
 .offer h1 { text-align: center; }
 /* The offer's three steps (ieat-app#3464), drawn as the in-app pay screen draws them (pay.css.ts):
    A's plan rows — radios, the trial band, billed under the name (3.1.2(c): as heavy as the per-month
-   figure) — B's timeline and C's card. A is script-free: its title follows the checked
-   radio through :has. */
+   figure) — and B's timeline; C is A with the offer's values (ieat-app#3617). A and C are
+   script-free: the title and the note follow the checked radio through :has. */
 .offer h1 { margin: .5rem 0 1rem; }
 .offer .t-m { display: none; }
 .offer:has(input[name=plan][value=monthly]:checked) .t-y { display: none; }
@@ -283,14 +283,6 @@ body:has(.offer) { background: var(--surface); }
   width: 4px; background: var(--accent); }
 .offer .tl li:nth-child(2)::after { background: var(--hair); }
 .offer .nopay { margin: 0 0 .5rem; text-align: center; font-weight: 600; }
-/* C · the special offer card. */
-.offer .special { text-align: center; padding: 24px; margin-bottom: 1.25rem;
-  background: linear-gradient(135deg, var(--surface) 0%, var(--line) 45%, var(--surface) 70%, var(--line) 100%); }
-.offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
-.offer .price { display: flex; justify-content: center; align-items: baseline; gap: 12px; margin-top: 1rem;
-  font-size: 22px; font-weight: 600; }
-.offer .price s { color: var(--muted); font-weight: 500; font-size: 18px; text-decoration-thickness: 2px; }
-.offer .per { margin: 8px 0 0; font-weight: 500; }
 .offer a.button { display: block; text-align: center; text-decoration: none; margin-bottom: .6rem; }
 
 /* The renews line under the CTA — the phone's t12 m / role="micro" note (#3465). */
