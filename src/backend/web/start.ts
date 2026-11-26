@@ -45,7 +45,7 @@ import { checkWebProvider } from "../auth/web-auth-check.ts";
 import {
   cancelPendingMeal, chatHistory, confirmPendingMeal, handleText, hasLoggedMeal, isAnonymous, logPhotoMeal, redeemReferral, referralLink,
   onboardingContentFor, onboardingServedFor, serveOnboarding, mintPairingCode, patchProfile, profileView, recordOnboardingEvents,
-  sendEmailCode, signInWithProvider, switchOn, paywallOf, verifyEmailCode,
+  sendEmailCode, signInWithProvider, paywallOf, exitOfferEnabledOf, promoOf, verifyEmailCode,
   EMAIL_ADDRESS, EMAIL_RESEND_SEC, normalizeEmail, type OnboardingSignals,
   type EngineDeps,
 } from "../engine/index.ts";
@@ -1844,13 +1844,17 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
   // template naming the placeholder twice would otherwise ship the second one literally.
   if (req.method === "GET" && pathname === `${START_PREFIX}/checkout`) {
     const plan = url.searchParams.get("plan");
+    const promo = await promoOf(ctx.deps, new Date());
     const target =
       plan === null ? config.webPaywall.yearlyCheckoutUrl || config.webPaywall.monthlyCheckoutUrl
       : plan === "yearly" ? config.webPaywall.yearlyCheckoutUrl
       : plan === "monthly" ? config.webPaywall.monthlyCheckoutUrl
-      // `exit` is also gated on the admin's web switch (ieat-app#3155): off answers like a plan
-      // the operator never configured — no route.
-      : plan === "exit" ? (await switchOn(ctx.deps, "paywall.exit-offer.web") ? config.webPaywall.exitOfferCheckoutUrl : "")
+      // `exit` is also gated on the admin's web switch (ieat-app#3155), and closed while a
+      // promotion is live (ieat-app#3604) — the same answer the profile sends: off answers like a
+      // plan the operator never configured — no route.
+      : plan === "exit" ? ((await exitOfferEnabledOf(ctx.deps, promo)).web ? config.webPaywall.exitOfferCheckoutUrl : "")
+      // `newyear` exists only while the promotion is live (ieat-app#3604).
+      : plan === "newyear" ? (promo === null ? "" : config.promoNewYear?.webCheckoutUrl ?? "")
       : "";
     if (target === "") return notFound();
     return seeOther(target.replaceAll("{userId}", encodeURIComponent(userId)));
@@ -1870,7 +1874,8 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
     // Everything sellable, priced and linked by the one function the in-app pay screen reads
     // (`ProfileResponse.paywall`), so this page and `#/pay` cannot drift. C is `exitOffer`: null
     // while the admin's web switch is off or no offer is configured (ieat-app#3155).
-    const wp = paywallOf(ctx.deps, profile.lang, userId, await switchOn(ctx.deps, "paywall.exit-offer.web"));
+    const promo = await promoOf(ctx.deps, new Date());
+    const wp = paywallOf(ctx.deps, profile.lang, userId, (await exitOfferEnabledOf(ctx.deps, promo)).web, promo);
     if (wp.yearly === null && wp.monthly === null) return seeOther(closeTo);
     // A → × → B → × → C → × the sign-up (ieat-app#3464): B only while the yearly trial is sold,
     // C only while an offer is armed. A step that is not sold is A, never a page the checkout 404s.

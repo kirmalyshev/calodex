@@ -37,6 +37,26 @@ export interface WebPaywallConfig {
   currency: string;
 }
 
+/**
+ * The New Year promotion's env block, parsed (ieat-app#3604). Null = no promotion configured —
+ * every `EAIT__BACKEND__PROMO_NEWYEAR_*` empty. Configured is not live: the promotion also needs
+ * the admin's `paywall.promo.newyear` switch, and `engine/promo.ts` decides from both and the clock.
+ */
+export interface PromoConfig {
+  /** When it opens — an ISO-8601 instant, normalised to UTC, inclusive. */
+  from: string;
+  /** When it closes — an ISO-8601 instant, normalised to UTC, exclusive. After `from`. */
+  until: string;
+  /** Whole percent off, 1–90. */
+  percent: number;
+  /** Free days it adds; 0 = none. */
+  trialDays: number;
+  /** The App Store offer code; "" = none. */
+  iosCode: string;
+  /** The web checkout template, `{userId}` in it; "" = no web checkout for it. */
+  webCheckoutUrl: string;
+}
+
 export interface Config {
   port: number;
   /** Loopback by default. A process that binds 0.0.0.0 because nobody said otherwise is how a
@@ -236,6 +256,8 @@ export interface Config {
    * nothing switches to "free" because a variable is missing.
    */
   webPaywall: WebPaywallConfig;
+  /** {@link PromoConfig} — the New Year promotion's window, or null when none is configured. */
+  promoNewYear: PromoConfig | null;
 
   /**
    * Sign in with Apple, in a browser (`docs/WEB_ONBOARDING.md`). ALL FOUR OR NONE — with any of
@@ -777,6 +799,7 @@ export function configDefaults(): Config {
       exitOfferRegularPrice: 0,
       currency: "",
     },
+    promoNewYear: null,
     appleServiceId: "",
     appleTeamId: "",
     appleKeyId: "",
@@ -1069,6 +1092,7 @@ export function loadConfig(): Config {
     appleKeyId: process.env.EAIT__BACKEND__APPLE_KEY_ID ?? d.appleKeyId,
     applePrivateKey: applePrivateKeyFromEnv(),
     webPaywall: webPaywallFromEnv(),
+    promoNewYear: promoNewYearFromEnv(),
     revenueCatWebhookToken: revenueCatWebhookTokenFromEnv(),
     revenueCatEntitlementId:
       process.env.EAIT__BACKEND__REVENUECAT_ENTITLEMENT_ID ?? d.revenueCatEntitlementId,
@@ -1322,6 +1346,7 @@ export function demoConfig(): Config {
     androidPackage: process.env.EAIT__BACKEND__ANDROID_PACKAGE ?? configDefaults().androidPackage,
     androidCertFingerprints: list("EAIT__BACKEND__ANDROID_CERT_FINGERPRINTS").map((f) => f.toUpperCase()),
     webPaywall: webPaywallFromEnv(),
+    promoNewYear: promoNewYearFromEnv(),
     // Same argument — "works in demo, untested in production" is the shape of every configuration
     // bug that ships. The privacy link `/start` renders comes off this.
     landingUrl: (process.env.EAIT__BACKEND__LANDING_URL ?? "").replace(/\/$/, ""),
@@ -1368,17 +1393,20 @@ export function demoConfig(): Config {
  * a figure on every plan, so a link that cannot be priced is a paywall with a hole in it, and a
  * number with no currency is one `Intl` cannot write down.
  */
+/** A checkout template as every web checkout variable must be: empty, or naming `{userId}`. */
+function checkoutTemplate(name: string, raw: string | undefined): string {
+  const v = raw ?? "";
+  if (v !== "" && !v.includes("{userId}")) {
+    throw new Error(`[eait] ${name} must contain {userId} — the webhook is the only thing that can grant the entitlement, and app_user_id is how it names the account`);
+  }
+  return v;
+}
+
 export function webPaywallFromEnv(): WebPaywallConfig {
   // The reads are `process.env.NAME` literals at every call site — a name handed to a helper is
   // one the deploy scan in `src/scripts/prod-env.test.ts` cannot see, and a variable the scan
   // cannot see is one that ends up set nowhere.
-  const url = (name: string, raw: string | undefined): string => {
-    const v = raw ?? "";
-    if (v !== "" && !v.includes("{userId}")) {
-      throw new Error(`[eait] ${name} must contain {userId} — the webhook is the only thing that can grant the entitlement, and app_user_id is how it names the account`);
-    }
-    return v;
-  };
+  const url = checkoutTemplate;
   const price = (name: string, raw: string | undefined): number => {
     if (raw === undefined || raw === "") return 0;
     const n = Number(raw);
@@ -1429,6 +1457,46 @@ export function webPaywallFromEnv(): WebPaywallConfig {
   }
   return w;
 }
+/**
+ * The New Year promotion's env block, read and validated at boot (ieat-app#3604).
+ *
+ * ALL EMPTY = no promotion (null). HALF A PROMOTION IS REFUSED, the web paywall's rule: any of the
+ * six set needs the whole window — `FROM`, `UNTIL` after it, and a whole `PERCENT` in 1–90 —
+ * because a window with no end is a discount that never stops, and a code with no window is a
+ * setting that silently does nothing. An instant must name its zone (`Z` or `+01:00`): a bare
+ * date or local time is read in whatever zone the host runs in.
+ */
+export function promoNewYearFromEnv(): PromoConfig | null {
+  const raw = {
+    from: process.env.EAIT__BACKEND__PROMO_NEWYEAR_FROM ?? "",
+    until: process.env.EAIT__BACKEND__PROMO_NEWYEAR_UNTIL ?? "",
+    percent: process.env.EAIT__BACKEND__PROMO_NEWYEAR_PERCENT ?? "",
+    trialDays: process.env.EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS ?? "",
+    iosCode: (process.env.EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE ?? "").trim(),
+    webCheckoutUrl: checkoutTemplate("EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL", process.env.EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL),
+  };
+  if (Object.values(raw).every((v) => v === "")) return null;
+  const instant = (name: string, v: string): string => {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.test(v) || Number.isNaN(Date.parse(v))) {
+      throw new Error(`[eait] ${name} must be an ISO-8601 instant with its zone — e.g. 2026-12-26T00:00:00Z — whenever any EAIT__BACKEND__PROMO_NEWYEAR_* is set, not "${v}"`);
+    }
+    return new Date(v).toISOString();
+  };
+  const from = instant("EAIT__BACKEND__PROMO_NEWYEAR_FROM", raw.from);
+  const until = instant("EAIT__BACKEND__PROMO_NEWYEAR_UNTIL", raw.until);
+  if (until <= from) throw new Error("[eait] EAIT__BACKEND__PROMO_NEWYEAR_UNTIL must be after EAIT__BACKEND__PROMO_NEWYEAR_FROM");
+  const percent = Number(raw.percent);
+  if (raw.percent === "" || !Number.isInteger(percent) || percent < 1 || percent > 90) {
+    throw new Error(`[eait] EAIT__BACKEND__PROMO_NEWYEAR_PERCENT must be a whole number from 1 to 90 when the promotion is configured, not "${raw.percent}"`);
+  }
+  return {
+    from, until, percent,
+    trialDays: int("EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS", 0),
+    iosCode: raw.iosCode,
+    webCheckoutUrl: raw.webCheckoutUrl,
+  };
+}
+
 /**
  * The PKCS#8 guard words, ASSEMBLED rather than spelled out.
  *

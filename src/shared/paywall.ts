@@ -70,6 +70,12 @@ export interface WebPaywall {
    */
   exitOffer: ExitOffer | null;
   /**
+   * The promotion's web checkout (ieat-app#3604), `{userId}` already filled — navigate to it,
+   * never template it. Null outside a live `ProfileResponse.promo`, and while the operator
+   * configured no web checkout for it.
+   */
+  promoCheckoutUrl: string | null;
+  /**
    * The legal footer's Terms href — the operator's `TERMS_URL`, verbatim. "" means no terms are
    * published and a client draws no link, the shape `/start`'s own consent line takes.
    */
@@ -163,6 +169,24 @@ export function offerMath(regularYearly: number, offer: number): OfferMath | nul
 export interface ExitOfferSwitches {
   ios: boolean;
   web: boolean;
+}
+
+/**
+ * A time-boxed promotion, as `ProfileResponse.promo` carries it (ieat-app#3604) — present ONLY
+ * while it is live: the admin's switch on AND the server's clock inside the operator's configured
+ * window. Every figure is the operator's; the client computes none of it.
+ */
+export interface PaywallPromo {
+  /** Which promotion. One today; a second is a new literal here, never a reused id. */
+  id: "newyear";
+  /** Whole percent off, as configured (1–90). */
+  percent: number;
+  /** Free days the promotion adds; 0 = none. */
+  trialDays: number;
+  /** When it stops being live — an ISO-8601 instant, exclusive. */
+  endsAt: string;
+  /** The App Store offer code to redeem on the phone; null when none is configured. */
+  iosCode: string | null;
 }
 
 /**

@@ -20,7 +20,7 @@ import type { BmiRange } from "./scores.ts";
 import { WEIGHT_RANGES, type ChartDay, type WeightRange } from "./ui/charts.ts";
 import type { Entitlement } from "./entitlement.ts";
 import { isMealReminders, type MealReminders } from "./meal-reminders.ts";
-import type { ExitOfferSwitches, WebPaywall } from "./paywall.ts";
+import type { ExitOfferSwitches, PaywallPromo, WebPaywall } from "./paywall.ts";
 import type { ScriptedLineId } from "./chat.ts";
 import type { ChatPromptId } from "./onboarding-chat.ts";
 import type { FoodTargets } from "./types.ts";
@@ -932,6 +932,17 @@ export interface ProfileResponse {
    * that predates the field sends none — read that as off, which is the default anyway.
    */
   exitOfferEnabled: ExitOfferSwitches;
+  /**
+   * The live promotion (ieat-app#3604), or null — the `paywall.promo.newyear` admin switch on AND
+   * this server's clock inside the operator's `EAIT__BACKEND__PROMO_NEWYEAR_*` window, read on
+   * every response so a flip or the window's end lands on the next fetch, no deploy.
+   *
+   * DEFAULT NULL: the switch ships off and nothing is configured. WHILE IT IS LIVE THE EXIT OFFER
+   * IS NOT: `exitOfferEnabled` answers false on both platforms (the stored switches are not
+   * written) and `paywall.exitOffer` is null, so a decline never meets a second discount. A server
+   * that predates the field sends none — read that as null.
+   */
+  promo: PaywallPromo | null;
   /**
    * The coach's name in the account's language — `THREAD_COPY`'s `coach.name` — sent here because
    * the browser bundle cannot import the Lingui table that copy lives in (#92 review): Lingui words

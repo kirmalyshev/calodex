@@ -42,6 +42,8 @@ const VARS = [
   "EAIT__BACKEND__WEB_PRICE_YEARLY", "EAIT__BACKEND__WEB_PRICE_MONTHLY", "EAIT__BACKEND__WEB_TRIAL_DAYS",
   "EAIT__BACKEND__WEB_EXIT_OFFER_URL", "EAIT__BACKEND__WEB_EXIT_OFFER_PRICE",
   "EAIT__BACKEND__WEB_EXIT_OFFER_REGULAR_PRICE", "EAIT__BACKEND__WEB_CURRENCY",
+  "EAIT__BACKEND__PROMO_NEWYEAR_FROM", "EAIT__BACKEND__PROMO_NEWYEAR_UNTIL", "EAIT__BACKEND__PROMO_NEWYEAR_PERCENT",
+  "EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS", "EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE", "EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL",
   "EAIT__BACKEND__APPLE_SERVICE_ID", "EAIT__BACKEND__APPLE_TEAM_ID", "EAIT__BACKEND__APPLE_KEY_ID",
   "EAIT__BACKEND__APPLE_PRIVATE_KEY",
   "EAIT__BACKEND__TELEGRAM_BOT_TOKEN",
@@ -520,6 +522,94 @@ describe("the web onboarding", () => {
       withRequired({ ...SELLS, EAIT__BACKEND__WEB_CHECKOUT_URL: "https://pay.rev.cat/old/{userId}" });
       expect(loadConfig().webPaywall.yearlyCheckoutUrl).toBe("https://pay.rev.cat/y/{userId}");
     });
+  });
+});
+
+// The New Year promotion window (ieat-app#3604): the operator's dates, percent and codes, all
+// empty = no promotion. Half a promotion is refused at boot, like half a web paywall.
+describe("the New Year promotion", () => {
+  const WINDOW = {
+    EAIT__BACKEND__PROMO_NEWYEAR_FROM: "2026-12-26T00:00:00Z",
+    EAIT__BACKEND__PROMO_NEWYEAR_UNTIL: "2027-01-08T00:00:00+01:00",
+    EAIT__BACKEND__PROMO_NEWYEAR_PERCENT: "40",
+  };
+
+  it("is off by default", () => {
+    withRequired();
+    expect(loadConfig().promoNewYear).toBeNull();
+    expect(configDefaults().promoNewYear).toBeNull();
+  });
+
+  it("reads the window, the percent, the trial, the iOS code and the web checkout", () => {
+    withRequired({ ...WINDOW,
+      EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS: "7",
+      EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE: "NEWYEAR",
+      EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL: "https://pay.rev.cat/ny/{userId}" });
+    expect(loadConfig().promoNewYear).toEqual({
+      from: "2026-12-26T00:00:00.000Z",
+      until: "2027-01-07T23:00:00.000Z",
+      percent: 40,
+      trialDays: 7,
+      iosCode: "NEWYEAR",
+      webCheckoutUrl: "https://pay.rev.cat/ny/{userId}",
+    });
+  });
+
+  it("defaults the trial to none and the codes to empty", () => {
+    withRequired(WINDOW);
+    expect(loadConfig().promoNewYear).toMatchObject({ trialDays: 0, iosCode: "", webCheckoutUrl: "" });
+  });
+
+  it("refuses half a window", () => {
+    withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_UNTIL: "" });
+    expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR/);
+    clear();
+    withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_FROM: "" });
+    expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR/);
+  });
+
+  it("refuses any promotion setting without a window", () => {
+    for (const [k, v] of [
+      ["EAIT__BACKEND__PROMO_NEWYEAR_PERCENT", "40"],
+      ["EAIT__BACKEND__PROMO_NEWYEAR_TRIAL_DAYS", "7"],
+      ["EAIT__BACKEND__PROMO_NEWYEAR_IOS_CODE", "NEWYEAR"],
+      ["EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL", "https://pay.rev.cat/ny/{userId}"],
+    ] as const) {
+      withRequired({ [k]: v });
+      expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR_FROM/);
+      clear();
+    }
+  });
+
+  it("refuses a window that ends before it begins, or an instant with no zone", () => {
+    withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_UNTIL: "2026-12-26T00:00:00Z" });
+    expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR_UNTIL/);
+    clear();
+    withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_FROM: "2026-12-26" });
+    expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR_FROM/);
+    clear();
+    withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_UNTIL: "soon" });
+    expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR_UNTIL/);
+  });
+
+  it("refuses a window with no percent, or one outside 1–90", () => {
+    for (const p of ["", "0", "91", "12.5", "forty"]) {
+      withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_PERCENT: p });
+      expect(() => loadConfig()).toThrow(/PROMO_NEWYEAR_PERCENT/);
+      clear();
+    }
+    withRequired({ ...WINDOW, EAIT__BACKEND__PROMO_NEWYEAR_PERCENT: "90" });
+    expect(loadConfig().promoNewYear?.percent).toBe(90);
+  });
+
+  it("refuses a web checkout that cannot name the account", () => {
+    withRequired({ ...WINDOW, EAIT__BACKEND__WEB_CHECKOUT_NEWYEAR_URL: "https://pay.rev.cat/ny" });
+    expect(() => loadConfig()).toThrow(/WEB_CHECKOUT_NEWYEAR_URL/);
+  });
+
+  it("is read by the demo too", () => {
+    withRequired(WINDOW);
+    expect(demoConfig().promoNewYear?.percent).toBe(40);
   });
 });
 

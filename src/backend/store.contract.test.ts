@@ -1105,7 +1105,7 @@ function contract(name: string, make: () => Promise<Store>) {
       id: `rc-${crypto.randomUUID()}`, userId, type: "INITIAL_PURCHASE", productId: "eait_pro_yearly",
       periodType: "TRIAL", presentedOfferingId: "default", price: 0, currency: "EUR",
       priceInPurchasedCurrency: 0, store: "APP_STORE", countryCode: "DE", environment: "PRODUCTION",
-      eventAt: "2026-11-19T10:00:00.000Z",
+      eventAt: "2026-11-19T10:00:00.000Z", offerCode: "NEWYEAR",
       acquisition: { source: "apple_search_ads", campaign: "c1", adGroup: "g1", keyword: "k1" },
       ...over,
     });
@@ -1126,7 +1126,7 @@ function contract(name: string, make: () => Promise<Store>) {
       const s = await open();
       const stranger = crypto.randomUUID();
       expect(await s.recordRevenueCatEvent(rcEvent(stranger))).toBe(true);
-      expect(await s.recordRevenueCatEvent(rcEvent(null, { acquisition: null, price: null, currency: null }))).toBe(true);
+      expect(await s.recordRevenueCatEvent(rcEvent(null, { acquisition: null, price: null, currency: null, offerCode: null }))).toBe(true);
       expect(await s.getProfile(stranger)).toBeNull();
       expect(await s.revenueCatEventsOf(stranger)).toEqual([]);
     });

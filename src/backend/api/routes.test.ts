@@ -414,7 +414,7 @@ describe("profile", () => {
       const view = await viewFor({ ...SELLING,
         yearlyCheckoutUrl: "", monthlyCheckoutUrl: "", exitOfferCheckoutUrl: "" });
       expect(view.paywall).toEqual({ trialDays: 7, yearly: null, monthly: null, exitOffer: null,
-        termsUrl: "", privacyUrl: "" });
+        promoCheckoutUrl: null, termsUrl: "", privacyUrl: "" });
     });
   });
 });

@@ -205,6 +205,7 @@ export function parseRevenueCatLog(body: unknown): RevenueCatEventRow | null {
     countryCode: text(e.country_code),
     environment: text(e.environment),
     eventAt: new Date(at).toISOString(),
+    offerCode: text(e.offer_code),
     acquisition: source === "" ? null : {
       source, campaign: attr("$campaign"), adGroup: attr("$adGroup"), keyword: attr("$keyword"),
     },

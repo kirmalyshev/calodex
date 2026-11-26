@@ -297,6 +297,8 @@ export interface RevenueCatEventRow {
   countryCode: string | null;
   environment: string | null;
   eventAt: string;
+  /** RevenueCat's `offer_code` — the promotion code the purchase redeemed (ieat-app#3604); null when none. */
+  offerCode: string | null;
   /** The `$mediaSource`/`$campaign`/`$adGroup`/`$keyword` subscriber attributes, when sent. */
   acquisition: Omit<Acquisition, "via"> | null;
 }
@@ -591,6 +593,8 @@ export const SWITCH_KEYS = [
   "paywall.exit-offer.ios", "paywall.exit-offer.web",
   // Voice input in the chat composer, both clients behind the one flag (ieat-app#3494).
   "voice.input",
+  // The New Year promotion's kill switch (ieat-app#3604): live only while on AND inside its dates.
+  "paywall.promo.newyear",
 ] as const;
 export type SwitchKey = (typeof SWITCH_KEYS)[number];
 

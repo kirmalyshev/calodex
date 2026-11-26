@@ -3519,11 +3519,13 @@ details.how p { margin-top: 8px; }
   // ── Food database switches (#563) ──────────────────────────────────────────────────────────
 
   var SWITCH_LABELS = { "grounding.photo": "Photo", "grounding.text": "Text", "prompt.photo-lean": "Lean photo prompt",
-    "paywall.exit-offer.ios": "Exit offer (iOS)", "paywall.exit-offer.web": "Exit offer (web)", "voice.input": "Voice input" };
+    "paywall.exit-offer.ios": "Exit offer (iOS)", "paywall.exit-offer.web": "Exit offer (web)", "voice.input": "Voice input",
+    "paywall.promo.newyear": "New Year promotion" };
   var SWITCH_WHAT = { "grounding.photo": "ground photo analyses in the food catalog", "grounding.text": "ground typed meals in the food catalog", "prompt.photo-lean": "answer photos with the lean prompt and schema (default off)",
     "paywall.exit-offer.ios": "show the cheaper yearly after a paywall decline on the phone (default off)",
     "paywall.exit-offer.web": "show the cheaper yearly after a paywall decline in the browser (default off)",
-    "voice.input": "show the microphone in the chat composer (default off)" };
+    "voice.input": "show the microphone in the chat composer (default off)",
+    "paywall.promo.newyear": "kill switch: the promotion shows only while this is on AND now is inside the configured dates (default off)" };
 
   // The actor behind a flip: the address when the account holds one, the id when it does not —
   // and a link either way, opened the way an Accounts row click opens the account.
