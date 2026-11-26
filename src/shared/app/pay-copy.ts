@@ -214,7 +214,7 @@ export interface PayCopy {
   offerClaimTrial: string;
   /** pay-cal-c: the note while the offer carries a trial — `{days}` the offer product's free days off the store, `{renewal}` the offer's `pricePerYear`. */
   offerTrialNote: string;
-  /** C's footer while the store gives the offer's free days (ieat-app#3617): the trial, the renewal price and auto-renew in one line. */
+  /** C's footer while the store gives the offer's free days (ieat-app#3617): the trial, the renewal price and auto-renew in one line. `{price}` is the offer product's own priceString (not `pricePerYear`): the string supplies "/year" itself. */
   offerTrialFoot: string;
   /** pay-cal-c: the line under the offer price — `{percent}` is the offer against twelve months of the monthly plan, computed from the store prices; true only beside the struck 12× monthly figure the client draws. */
   offerVsMonthly: string;
