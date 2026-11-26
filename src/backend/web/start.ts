@@ -180,6 +180,12 @@ const SESSION_COOKIE = "eait_web";
  * Continue on that step.
  */
 const REF_COOKIE = "eait_ref";
+/**
+ * The /start consent banner's answer (Kirill, q93): `accept` or `decline`, the visitor's own choice
+ * and nothing else. A record of a choice is what makes the choice keepable, so it needs no consent of
+ * its own. Only `accept` lets an AppsFlyer web visit leave (`webAttributionAllowed`).
+ */
+const CONSENT_COOKIE = "eait_consent";
 const REF_MAX_AGE = 7 * 24 * 60 * 60;
 const REFERRAL_PATH = `${START_PREFIX}/referral`;
 const STREAK_PATH = `${START_PREFIX}/streak`;
@@ -1335,6 +1341,7 @@ export async function startRoutes(req: Request, url: URL, ctx: StartContext): Pr
         void sendWebVisit(ctx.deps.config, {
           userId: fresh, clickParams: landing, origin: ctx.origin,
           ip: clientAddress(req).replace(/\/64$/, ""), userAgent: req.headers.get("user-agent"),
+          consented: cookies[CONSENT_COOKIE] === "accept",
         });
         return seeOther(`${START_PREFIX}/q`, [setCookie(SESSION_COOKIE, token, { secure })]);
       }

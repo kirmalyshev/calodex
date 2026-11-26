@@ -1,5 +1,6 @@
 // AppsFlyer web attribution for /start, server to server (ieat-app#3621). Nothing runs in the
-// browser and nothing is stored there: no AppsFlyer script, no AppsFlyer cookie, no cookie of ours.
+// browser: no AppsFlyer script, no AppsFlyer cookie. The one thing stored there is the visitor's own
+// answer to the /start consent banner, and without an `accept` nothing is sent at all (q93).
 //
 // A web purchase is a RevenueCat Billing purchase, and RevenueCat reports it to AppsFlyer itself
 // ("Web S2S"), naming the buyer by `customer_user_id` = the RevenueCat app user id = our user id.
@@ -30,11 +31,12 @@ export function clickParamsOf(search: URLSearchParams): string {
 type WebAttributionConfig = { appsflyerWebS2sToken: string; appsflyerWebAppId: string };
 
 /**
- * THE ONE PREDICATE IN FRONT OF EVERY VISIT. Off unless both halves are configured. A consent rule
- * (q93), if one is ever wanted, is an argument here and nowhere else.
+ * THE ONE PREDICATE IN FRONT OF EVERY VISIT. Off unless both halves are configured AND the visitor
+ * accepted the /start consent banner (Kirill, q93): without consent nothing is kept and nothing is
+ * sent, whatever the operator configured.
  */
-export function webAttributionAllowed(config: WebAttributionConfig): boolean {
-  return config.appsflyerWebS2sToken !== "" && config.appsflyerWebAppId !== "";
+export function webAttributionAllowed(config: WebAttributionConfig, consented: boolean): boolean {
+  return consented && config.appsflyerWebS2sToken !== "" && config.appsflyerWebAppId !== "";
 }
 
 export interface WebVisit {
@@ -45,13 +47,15 @@ export interface WebVisit {
   origin: string;
   ip: string;
   userAgent: string | null;
+  /** The visitor accepted the consent banner. */
+  consented: boolean;
 }
 
 const TIMEOUT_MS = 3000;
 
 /** Send one visit. Never throws, never blocks longer than its timeout, never logs the token. */
 export async function sendWebVisit(config: WebAttributionConfig, visit: WebVisit, fetchFn: typeof fetch = fetch): Promise<void> {
-  if (!webAttributionAllowed(config) || visit.clickParams === "") return;
+  if (!webAttributionAllowed(config, visit.consented) || visit.clickParams === "") return;
   const body: Record<string, unknown> = {
     user_id: { customer_user_id: visit.userId },
     event_url: `${visit.origin}/start?${visit.clickParams}`,

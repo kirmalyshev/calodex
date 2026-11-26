@@ -4,7 +4,7 @@ import { clickParamsOf, sendWebVisit, webAttributionAllowed } from "./appsflyer-
 const ON = { appsflyerWebS2sToken: "tok_not-a-real-token", appsflyerWebAppId: "website-eait.fit" };
 const VISIT = {
   userId: "u-1", clickParams: "utm_source=meta&fbclid=abc", origin: "https://api.eait.fit",
-  ip: "203.0.113.7", userAgent: "Mozilla/5.0",
+  ip: "203.0.113.7", userAgent: "Mozilla/5.0", consented: true,
 };
 
 function recorder(response: () => Promise<Response> = async () => new Response(null, { status: 202 })) {
@@ -30,10 +30,14 @@ describe("clickParamsOf", () => {
 
 describe("webAttributionAllowed", () => {
   it("is off unless BOTH the token and the web app id are set", () => {
-    expect(webAttributionAllowed({ appsflyerWebS2sToken: "", appsflyerWebAppId: "" })).toBe(false);
-    expect(webAttributionAllowed({ ...ON, appsflyerWebAppId: "" })).toBe(false);
-    expect(webAttributionAllowed({ ...ON, appsflyerWebS2sToken: "" })).toBe(false);
-    expect(webAttributionAllowed(ON)).toBe(true);
+    expect(webAttributionAllowed({ appsflyerWebS2sToken: "", appsflyerWebAppId: "" }, true)).toBe(false);
+    expect(webAttributionAllowed({ ...ON, appsflyerWebAppId: "" }, true)).toBe(false);
+    expect(webAttributionAllowed({ ...ON, appsflyerWebS2sToken: "" }, true)).toBe(false);
+    expect(webAttributionAllowed(ON, true)).toBe(true);
+  });
+
+  it("is off without the visitor's consent, however configured (Kirill, q93)", () => {
+    expect(webAttributionAllowed(ON, false)).toBe(false);
   });
 });
 
@@ -56,6 +60,7 @@ describe("sendWebVisit", () => {
     const { calls, fetchFn } = recorder();
     await sendWebVisit({ ...ON, appsflyerWebS2sToken: "" }, VISIT, fetchFn);
     await sendWebVisit(ON, { ...VISIT, clickParams: "" }, fetchFn);
+    await sendWebVisit(ON, { ...VISIT, consented: false }, fetchFn);
     expect(calls).toHaveLength(0);
   });
 

@@ -378,7 +378,9 @@ describe("the front door", () => {
   });
 });
 
-describe("an ad's click params reach the first answer, with no cookie (ieat-app#3621)", () => {
+describe("an ad's click params reach the first answer, with no cookie but the consent record (ieat-app#3621)", () => {
+  // The consent banner's record (q93). Only an accepted one lets a visit leave.
+  const CONSENTED = "eait_consent=accept";
   const AF: Config = { ...CONFIG, appsflyerWebS2sToken: "s2s-token", appsflyerWebAppId: "web-123" };
   let fetchSpy: ReturnType<typeof spyOn<typeof globalThis, "fetch">> | null = null;
   const stubFetch = (impl: () => Promise<Response> = async () => new Response(null, { status: 200 })) => {
@@ -408,7 +410,7 @@ describe("an ad's click params reach the first answer, with no cookie (ieat-app#
   it("the first answer sends ONE visit for the fresh account, and still answers 303 with the session", async () => {
     router(AF);
     const spy = stubFetch();
-    const res = await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta&email=x" });
+    const res = await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta&email=x" }, CONSENTED);
     expect(res.status).toBe(303);
     const userId = await webUser(cookieFrom(res, "eait_web"));
     expect(spy).toHaveBeenCalledTimes(1);
@@ -421,10 +423,18 @@ describe("an ad's click params reach the first answer, with no cookie (ieat-app#
 
   it("sends nothing when attribution is not configured, or the landing is missing or empty", async () => {
     const spy = stubFetch();
-    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" })).status).toBe(303);
+    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" }, CONSENTED)).status).toBe(303);
     router(AF);
-    expect((await post("/start/q", { prompt: "goal", answer: "lose" })).status).toBe(303);
-    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "" })).status).toBe(303);
+    expect((await post("/start/q", { prompt: "goal", answer: "lose" }, CONSENTED)).status).toBe(303);
+    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "" }, CONSENTED)).status).toBe(303);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing without the visitor's consent: none given, or declined (Kirill, q93)", async () => {
+    router(AF);
+    const spy = stubFetch();
+    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" })).status).toBe(303);
+    expect((await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" }, "eait_consent=decline")).status).toBe(303);
     expect(spy).not.toHaveBeenCalled();
   });
 
@@ -433,7 +443,7 @@ describe("an ad's click params reach the first answer, with no cookie (ieat-app#
     stubFetch(async () => { throw new TypeError("network down"); });
     const error = spyOn(console, "error").mockImplementation(() => {});
     try {
-      const res = await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" });
+      const res = await post("/start/q", { prompt: "goal", answer: "lose", landing: "utm_source=meta" }, CONSENTED);
       expect(res.status).toBe(303);
       cookieFrom(res, "eait_web");
     } finally { error.mockRestore(); }
@@ -446,7 +456,7 @@ describe("an ad's click params reach the first answer, with no cookie (ieat-app#
     const spy = stubFetch();
     const page = await (await get("/start/q", session)).text();
     const prompt = page.match(/name="prompt" value="([a-z_]+)"/)![1]!;
-    await post("/start/q", { prompt, answer: "female", landing: "utm_source=meta" }, session);
+    await post("/start/q", { prompt, answer: "female", landing: "utm_source=meta" }, `${session}; ${CONSENTED}`);
     expect(spy).not.toHaveBeenCalled();
   });
 });
