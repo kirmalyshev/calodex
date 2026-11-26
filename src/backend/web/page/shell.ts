@@ -242,8 +242,8 @@ body:has(.offer) { background: var(--surface); }
 .offer h1 { text-align: center; }
 /* The offer's three steps (ieat-app#3464), drawn as the in-app pay screen draws them (pay.css.ts):
    A's plan rows — radios, the trial band, billed under the name (3.1.2(c): as heavy as the per-month
-   figure) — B's timeline and C's card. A is script-free: its title follows the checked
-   radio through :has. */
+   figure) — and B's timeline; C is A with the offer's values (ieat-app#3617). A and C are
+   script-free: the title and C's note follow the checked radio through :has. */
 .offer h1 { margin: .5rem 0 1rem; }
 .offer .t-m, .offer .n-m { display: none; }
 .offer:has(input[name=plan][value=monthly]:checked) :is(.t-y, .n-y) { display: none; }

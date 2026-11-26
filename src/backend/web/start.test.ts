@@ -1880,7 +1880,7 @@ describe("the soft offer after the plan", () => {
       const c = await (await get("/start/offer?step=offer", session)).text();
       expect(b).not.toContain('<img class="heroimg"');
       expect(c).toContain('<img class="heroimg"'); // C is A with values (ieat-app#3617): A's photo
-      // C is Cal AI's element count here too: title, card, CTA — no sub-line.
+      // C is A's element count (ieat-app#3617): title, plans, CTA, note — no sub-line.
       expect(c).not.toContain('class="sub"');
       // The price-free renewsPlain under the CTA on A and B, the offer's priced renewal on C —
       // the same lines `#/pay` and the phone carry at the same steps (#3465).
@@ -1923,9 +1923,11 @@ describe("the soft offer after the plan", () => {
       expect(c).toContain('<button class="button primary" type="submit">Claim</button>');
       // The web offer sells no free days: A's unlock title, as on pay-cal-c-notrial.
       expect(c).toContain('<h1 class="t-y">Unlock Calodex to continue</h1>');
+      // Monthly stays a choice on C, unchecked: picking it submits the regular monthly.
+      expect(c).toContain('<input type="radio" name="plan" value="monthly">');
       expect(c).not.toContain('class="wbar"');
-      // The billed figure twice: the card's price and the offer's renewal line under the claim —
-      // the one place the figure repeats, like `#/pay` (#3465).
+      // The billed figure twice: the offer row's billed line and the offer's renewal note — the one
+      // place the figure repeats, like `#/pay` (#3465).
       expect(c.split("23.99").length - 1).toBe(2);
       expect(c).toContain('<form class="offer" action="/start/checkout" method="get">');
       expect(c).not.toContain(userId);
@@ -1950,7 +1952,10 @@ describe("the soft offer after the plan", () => {
       expectSimple(a, "4.99");
       const y = await walk({ ...FULL, monthlyCheckoutUrl: "", monthlyPrice: 0, exitOfferRegularPrice: 39.99 });
       const c = await (await get("/start/offer?step=offer", y.session)).text();
-      expect(c).not.toContain("less than our monthly rate");
+      // No monthly sold: the regular yearly is the struck price, and C has no Monthly row.
+      expect(c).toContain('<input type="radio" name="plan" value="exit" checked>');
+      expect(c).toContain('<small class="billed"><s>€39.99</s> €23.99 billed yearly</small>');
+      expect(c).not.toContain('value="monthly"');
     });
 
     it("skips what is not sold: no trial → A closes to C; switch off → B closes to the sign-up", async () => {
@@ -1963,8 +1968,8 @@ describe("the soft offer after the plan", () => {
       expect(closeOf(b)).toBe("/start/signup");
       // C asked for directly while the switch is off is A, never an offer the checkout would 404.
       const offOffer = await (await get("/start/offer?step=offer", off.session)).text();
-      expect(offOffer).toContain('class="plan2"');
-      expect(offOffer).not.toContain("pay.rev.cat/u/");
+      expect(offOffer).toContain('<input type="radio" name="plan" value="yearly" checked>');
+      expect(offOffer).not.toContain('value="exit"');
     });
   });
 
