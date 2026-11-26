@@ -25,7 +25,6 @@ body:has(.pay) .wtop { display: none; }
 .pay .pcol h1 { margin: 0 0 6px; text-align: center; font-weight: 600; }
 .pay .pcol > p { margin: 0; }
 .pay .pcol > .t12, .pay .pcol > .t13 { text-align: center; }
-.pay .pcol .mid { flex: 1; display: flex; align-items: center; justify-content: center; }
 .pay .paylinks { display: flex; justify-content: center; align-items: center; min-height: 32px; }
 .pay .paylinks a { color: inherit; text-decoration: underline; }
 /* A's plan rows (Cal AI 04, ieat-app#3442): Yearly over Monthly — the trial band on top, the check,
@@ -74,15 +73,4 @@ body:has(.pay) .wtop { display: none; }
 .pay .nopay { display: flex; align-items: center; justify-content: center; gap: 8px;
   font-weight: 600; }
 .pay .nopay .ico { width: 16px; height: 16px; background: var(--ink); }
-/* pay-exit (#451): the offer card the plans swap to on the first decline — the board's own
-   measurements, radii included (16, not --r-card's 12). */
-.pay .offer { background: linear-gradient(135deg, var(--surface) 0%, var(--line) 45%, var(--surface) 70%, var(--line) 100%); border-radius: 16px; box-shadow: var(--shadow);
-  text-align: center; padding: 24px; }
-.pay .offer .off { text-transform: uppercase; font-size: 52px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
-.pay .offer .hr { margin: 18px 0 14px; }
-.pay .offer .price { display: flex; justify-content: center; align-items: baseline; gap: 12px;
-  font-size: 22px; font-weight: 600; }
-.pay .offer .price s { color: var(--muted); font-weight: 500; font-size: 18px;
-  text-decoration-thickness: 2px; }
-.pay .offer .per { margin: 8px 0 0; font-weight: 500; }
 `;

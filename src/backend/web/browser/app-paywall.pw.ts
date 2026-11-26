@@ -226,22 +226,28 @@ test("× walks A → B (try for free) → C (the special offer) → closes (#344
   await expect(page.locator(".pay .t12.m").first()).toHaveText("Renews automatically. Cancel any time.");
   await expect(page.locator(".pay .paylinks a")).toHaveCount(2);
 
-  // C: twelve monthlies struck, the offer per year, the monthly-rate line, Claim to the offer
-  // link — no subtitle, no photo, one legal line at the offer's own price (#3465).
+  // C is A with the offer's values (Kirill q90 = A, ieat-app#3617, #3630; pay-cal-c-notrial): A's
+  // photo and rows, the offer on Yearly's row — its percent in the band, twelve monthlies struck
+  // before the billed price — Claim to the offer link, and A's one note at the offer's own price.
   await page.locator(".pay .x").click();
-  await expect(page.locator(".pay h1")).toHaveText("Your special offer");
-  await expect(page.locator(".pay .hero")).toHaveCount(0);
-  await expect(page.locator(".pay .sub")).toHaveCount(0);
-  const offer = page.locator(".pay .offer");
-  await expect(offer.locator(".off")).toHaveText(/^66% off$/i);
-  await expect(offer.locator(".off")).toHaveCSS("text-transform", "uppercase");
-  await expect(offer.locator("s")).toHaveText("€59.88");
-  await expect(offer).toContainText("€19.99");
-  await expect(offer).toContainText("66% less than our monthly rate!");
+  await expect(page.locator(".pay h1")).toHaveText("Unlock Calodex to continue");
+  await expect(page.locator(".pay h1")).toBeFocused();
+  await expect(page.locator(".pay .hero")).toHaveCount(1);
+  const offerRow = page.locator(".pay .plan2").first();
+  await expect(offerRow.locator(".band")).toHaveText(/^66% off$/i);
+  await expect(offerRow.locator(".nm")).toHaveText("Yearly");
+  await expect(offerRow.locator(".billed s")).toHaveText("€59.88");
+  await expect(offerRow.locator(".billed")).toHaveText("€59.88 €19.99 billed yearly");
   const claim = page.locator(".pay .cta.p").first();
+  await expect(claim).toHaveText("Claim");
   await expect(claim).toHaveAttribute("href", /pay\.example\/u\//);
-  await expect(page.locator(".pay .t13.m").last())
-    .toHaveText("€19.99 a year. Renews automatically. Cancel any time.");
+  const line = page.locator(".pay .pcol > p.t12.m").first();
+  await expect(line).toHaveText("€19.99 a year. Renews automatically. Cancel any time.");
+  // Monthly stays a choice: the regular monthly, the store's own Subscribe, A's price-free line.
+  await page.locator(".pay .plan2").nth(1).click();
+  await expect(claim).toHaveText("Subscribe");
+  await expect(claim).not.toHaveAttribute("href", /pay\.example\/u\//);
+  await expect(line).toHaveText("Renews automatically. Cancel any time.");
 
   // C's × closes to Home.
   await page.locator(".pay .x").click();
@@ -267,14 +273,14 @@ test("A · the billed amount is dark and medium, never lighter than the per-mont
 test("no trial owed: A's × goes straight to C, never through B (#3442)", async ({ page }) => {
   await selling(page, "paywall-notrial", { trialDays: 0 });
   await page.locator(".pay .x").click();
-  await expect(page.locator(".pay h1")).toHaveText("Your special offer");
+  await expect(page.locator(".pay .plan2 .billed s")).toHaveText("€59.88"); // C: the offer row
   await expect(page.locator(".pay h1")).toBeFocused();
 });
 
 test("the offer is drawn once per account: a second visit's × closes (#3442)", async ({ page }) => {
   await selling(page, "paywall-once", { trialDays: 0 });
   await page.locator(".pay .x").click();
-  await expect(page.locator(".pay h1")).toHaveText("Your special offer");
+  await expect(page.locator(".pay .plan2 .billed s")).toHaveText("€59.88"); // C: the offer row
   await page.goto("/#/");
   await page.goto("/#/pay");
   await page.locator(".pay .x").click();

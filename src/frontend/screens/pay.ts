@@ -13,7 +13,7 @@
 
 import { fill } from "../../shared/lang.ts";
 import { WELCOME_PLATES } from "../../shared/onboarding.ts";
-import { paywallPercent, zeroLike, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
+import { paywallPercent, zeroLike, type ExitOffer, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
 import { billedAround, trialBillLine, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
@@ -47,10 +47,13 @@ interface PlanPick { value: "yearly" | "monthly" | "newyear"; plan: PaywallPlan 
     While `promoYearly` is sent (ieat-app#3606, pay-cal-a-newyear) Yearly is the promotion: its
     band, its bare name, the regular price struck before its own, and `/start/checkout?plan=newyear`
     — the same link `/start/offer` submits to. */
-function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string):
+function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: string, offer: ExitOffer | null = null):
     { group: HTMLElement; picked: () => PlanPick | null } | null {
-  const ny = w.yearly !== null ? w.promoYearly : null;
-  const band = ny !== null ? fill(pay.promoBand, { percent: paywallPercent(ny.percent, lang) })
+  // C (ieat-app#3617, #3630): the exit offer takes Yearly's row — its percent in the band, the
+  // regular struck before the billed price. No promotion and no trial on C.
+  const ny = offer === null && w.yearly !== null ? w.promoYearly : null;
+  const band = offer !== null ? fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })
+    : ny !== null ? fill(pay.promoBand, { percent: paywallPercent(ny.percent, lang) })
     : w.trialDays > 0 ? fill(pay.trialBadge, { days: String(w.trialDays) }) : null;
   const row = (value: PlanPick["value"], name: string, billed: (string | HTMLElement)[] | null, perMonth: string,
       trial: string | null, checked: boolean): HTMLElement => {
@@ -78,7 +81,13 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
   const group = el("div", "pwp2");
   group.setAttribute("role", "radiogroup");
   group.setAttribute("aria-label", label);
-  if (w.yearly !== null && ny !== null) {
+  if (offer !== null) {
+    const [before, after] = billedAround(pay);
+    cards.push({ value: "yearly", plan: offer });
+    group.append(row("yearly", pay.planYearly,
+      [before, el("s", "", offer.regularPrice), " ", offer.price, after],
+      fill(pay.perMonthShort, { price: offer.perMonth }), band, true));
+  } else if (w.yearly !== null && ny !== null) {
     const [before, after] = billedAround(pay);
     cards.push({ value: "newyear", plan: { checkoutUrl: "/start/checkout?plan=newyear", price: ny.price } });
     group.append(row("newyear", pay.planYearly,
@@ -94,7 +103,7 @@ function planPair(w: WebPaywall, pay: ReturnType<typeof payCopyFor>, label: stri
   if (w.monthly !== null) {
     cards.push({ value: "monthly", plan: w.monthly });
     group.append(row("monthly", pay.planMonthly, null,
-      fill(pay.perMonthShort, { price: w.monthly.price }), null, w.yearly === null));
+      fill(pay.perMonthShort, { price: w.monthly.price }), null, offer === null && w.yearly === null));
   }
   if (cards.length === 0) return null;
   const picked = (): PlanPick | null => {
@@ -249,28 +258,30 @@ export function payScreen(frame: Frame): HTMLElement {
     focusTitle();
   };
 
-  // C · the special offer (Cal AI 12, web/pay-exit #451): one card — the percent, twelve monthlies
-  // struck through, the offer per year, and the monthly-rate line while a monthly plan is sold —
-  // then the claim and ONE legal line (the renewal at the offer price). No subtitle, no photo.
-  const showOffer = (offer: NonNullable<WebPaywall["exitOffer"]>): void => {
-    dropHero();
-    const card = el("div", "offer pop");
-    card.append(
-      el("div", "off num", fill(pay.offerOff, { percent: paywallPercent(offer.percentOff, lang) })),
-      el("div", "hr"),
-    );
-    const price = el("div", "price num");
-    price.append(el("s", "", offer.regularPrice), el("span", "", fill(pay.offerPrice, { price: offer.price })));
-    card.append(price, el("p", "t13 m num per", w?.monthly != null
-      ? fill(pay.offerVsMonthly, { percent: paywallPercent(offer.percentOff, lang) })
-      : fill(pay.offerPerMonth, { price: offer.perMonth })));
-    const mid = el("div", "mid");
-    mid.append(card);
-    const claim = el("a", "cta p", pay.offerClaim) as HTMLAnchorElement;
-    claim.href = offer.checkoutUrl;
-    claim.addEventListener("click", () => analytics.capture("paywall_offer_step", { step: "claimed" }));
-    const parts: HTMLElement[] = [el("h1", "d d28", pay.offerSpecialTitle), mid, claim,
-      el("p", "t13 m", fill(pay.renewNoteYearly, { price: offer.price }))];
+  // C · the special offer is A with values changed (Kirill q90 = A, ieat-app#3617, #3630; boards
+  // pay-cal-c, pay-cal-c-notrial): A's photo and plan rows with the offer on Yearly's, Claim, and
+  // A's one note carrying the offer's renewal while it is picked. The web offer sells no free days,
+  // so the title is A's unlock title.
+  const showOffer = (offer: ExitOffer): void => {
+    if (!hero.isConnected) sheet.insertBefore(hero, pane);
+    const pair = planPair(w!, pay, COPY.offerPlans, offer)!;
+    const claim = el("a", "cta p") as HTMLAnchorElement;
+    const line = el("p", "t12 m");
+    const sync = (): void => {
+      const sel = pair.picked();
+      if (sel === null) return;
+      const isOffer = sel.plan === offer;
+      claim.href = sel.plan.checkoutUrl;
+      claim.textContent = isOffer ? pay.offerClaim : pay.subscribePhone;
+      line.textContent = isOffer ? fill(pay.renewNoteYearly, { price: offer.price }) : pay.renewsPlain;
+    };
+    pair.group.addEventListener("change", sync);
+    sync();
+    claim.addEventListener("click", () => {
+      if (pair.picked()?.plan === offer) analytics.capture("paywall_offer_step", { step: "claimed" });
+      else analytics.capture("paywall_purchase_started", { plan: "monthly", trial_shown: false, storefront: null });
+    });
+    const parts: HTMLElement[] = [el("h1", "d d22", fill(pay.plansUnlockTitle, {})), pair.group, claim, line];
     const foot = legal();
     if (foot !== null) parts.push(foot);
     col.replaceChildren(...parts);
