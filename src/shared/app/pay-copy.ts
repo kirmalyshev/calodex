@@ -216,23 +216,11 @@ export interface PayCopy {
   offerTrialNote: string;
   /** pay-cal-c: the line under the offer price — `{percent}` is the offer against twelve months of the monthly plan, computed from the store prices; true only beside the struck 12× monthly figure the client draws. */
   offerVsMonthly: string;
-  // ── The New Year promotion card (ieat-app#3605), drawn only while `ProfileResponse.promo` is live.
-  /** pay-promo: the badge over the card. */
-  promoBadge: string;
-  /** pay-promo: the headline — `{percent}` is `paywallPercent(promo.percent, lang)`, sign included. */
-  promoTitle: string;
-  /** pay-promo: `{price}` the promotion's yearly price, `{regular}` the regular yearly price — both display strings, never computed here. */
-  promoBody: string;
-  /** pay-promo: the billing line while `promo.trialDays` is 0 — the offer starts paid. */
-  promoNoTrial: string;
-  /** pay-promo: the billing line only while `promo.trialDays` > 0 — `{days}` is that number, `{price}` the promotion's yearly price. */
-  promoTrial: string;
-  /** pay-promo: when it stops — `{date}` is `promo.endsAt` formatted by the client. */
-  promoEnds: string;
-  /** pay-promo: the CTA — `{percent}` as in `promoTitle`. */
-  promoCta: string;
-  /** pay-promo (phone): under the CTA — `{code}` is `promo.iosCode`; drawn only when it is not null. */
-  promoIosNote: string;
+  // ── The New Year promotion (ieat-app#3605), drawn only while `ProfileResponse.promo` is live: A's plans, two strings changed.
+  /** pay-cal-a-newyear: the Yearly row's band in place of `trialBadge` — `{percent}` is `paywallPercent(promo.percent, lang)`, sign included. */
+  promoBand: string;
+  /** pay-cal-a-newyear: the line under the links in place of `renewsPlain` — `{price}` the promotion's yearly price, `{regular}` the regular yearly price, both display strings. */
+  promoFooter: string;
 }
 
 export const PAY_COPY: Localized<PayCopy> = {
@@ -312,14 +300,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Claim your free trial now",
     offerTrialNote: "{days} days free, then {renewal}. Billed yearly, renews automatically unless cancelled in the App Store.",
     offerVsMonthly: "{percent} less than our monthly rate!",
-    promoBadge: "New Year",
-    promoTitle: "{percent} off your first year",
-    promoBody: "Yearly for {price} instead of {regular}. Renews at {regular} a year.",
-    promoNoTrial: "Paid today. No free days on this offer.",
-    promoTrial: "{days} days free, then {price} for your first year.",
-    promoEnds: "Ends {date}",
-    promoCta: "Get {percent} off",
-    promoIosNote: "Opens the App Store with the code {code} filled in.",
+    promoBand: "New Year −{percent}",
+    promoFooter: "{price} first year, then {regular}/year. Cancel any time.",
 
   },
   fr: {
@@ -398,14 +380,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Profite de ton essai gratuit",
     offerTrialNote: "{days} jours gratuits, puis {renewal}. Facturé chaque année, se renouvelle automatiquement sauf résiliation dans l'App Store.",
     offerVsMonthly: "{percent} de moins que le tarif mensuel !",
-    promoBadge: "Nouvel An",
-    promoTitle: "{percent} de remise sur ta première année",
-    promoBody: "L'annuel à {price} au lieu de {regular}. Se renouvelle à {regular} par an.",
-    promoNoTrial: "Payé aujourd'hui. Pas de jours offerts avec cette offre.",
-    promoTrial: "{days} jours offerts, puis {price} pour ta première année.",
-    promoEnds: "Se termine le {date}",
-    promoCta: "Obtenir {percent} de remise",
-    promoIosNote: "Ouvre l'App Store avec le code {code} déjà saisi.",
+    promoBand: "Nouvel An −{percent}",
+    promoFooter: "{price} la première année, puis {regular}/an. Résiliable à tout moment.",
 
   },
   de: {
@@ -484,14 +460,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Kostenlose Testphase sichern",
     offerTrialNote: "{days} Tage kostenlos, danach {renewal}. Jährliche Abrechnung, verlängert sich automatisch, sofern du nicht im App Store kündigst.",
     offerVsMonthly: "{percent} günstiger als unser Monatspreis!",
-    promoBadge: "Neujahr",
-    promoTitle: "{percent} Rabatt auf dein erstes Jahr",
-    promoBody: "Jährlich für {price} statt {regular}. Verlängert sich zu {regular} im Jahr.",
-    promoNoTrial: "Heute bezahlt. Keine kostenlosen Tage bei diesem Angebot.",
-    promoTrial: "{days} Tage kostenlos, danach {price} für dein erstes Jahr.",
-    promoEnds: "Endet am {date}",
-    promoCta: "{percent} Rabatt sichern",
-    promoIosNote: "Öffnet den App Store, der Code {code} ist schon eingetragen.",
+    promoBand: "Neujahr −{percent}",
+    promoFooter: "{price} im ersten Jahr, danach {regular}/Jahr. Jederzeit kündbar.",
 
   },
   it: {
@@ -570,14 +540,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Attiva la prova gratuita",
     offerTrialNote: "{days} giorni gratis, poi {renewal}. Fatturazione annuale, si rinnova automaticamente salvo disdetta nell'App Store.",
     offerVsMonthly: "{percent} in meno rispetto al mensile!",
-    promoBadge: "Capodanno",
-    promoTitle: "Sconto di {percent} sul tuo primo anno",
-    promoBody: "Annuale a {price} invece di {regular}. Si rinnova a {regular} all'anno.",
-    promoNoTrial: "Pagamento oggi. Nessun giorno gratis con questa offerta.",
-    promoTrial: "{days} giorni gratis, poi {price} per il tuo primo anno.",
-    promoEnds: "Termina il {date}",
-    promoCta: "Ottieni lo sconto di {percent}",
-    promoIosNote: "Apre l'App Store con il codice {code} già inserito.",
+    promoBand: "Capodanno −{percent}",
+    promoFooter: "{price} il primo anno, poi {regular}/anno. Disdici quando vuoi.",
 
   },
   es: {
@@ -656,14 +620,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Consigue tu prueba gratis",
     offerTrialNote: "{days} días gratis, luego {renewal}. Se factura cada año y se renueva automáticamente salvo que canceles en el App Store.",
     offerVsMonthly: "¡{percent} menos que nuestra tarifa mensual!",
-    promoBadge: "Año Nuevo",
-    promoTitle: "{percent} de descuento en tu primer año",
-    promoBody: "Anual por {price} en vez de {regular}. Se renueva a {regular} al año.",
-    promoNoTrial: "Se paga hoy. Esta oferta no incluye días gratis.",
-    promoTrial: "{days} días gratis, luego {price} por tu primer año.",
-    promoEnds: "Termina el {date}",
-    promoCta: "Consigue un {percent} de descuento",
-    promoIosNote: "Abre el App Store con el código {code} ya puesto.",
+    promoBand: "Año Nuevo −{percent}",
+    promoFooter: "{price} el primer año, luego {regular}/año. Cancela cuando quieras.",
 
   },
   vi: {
@@ -742,14 +700,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Nhận bản dùng thử miễn phí",
     offerTrialNote: "{days} ngày miễn phí, sau đó {renewal}. Tính phí hằng năm, tự động gia hạn trừ khi bạn hủy trong App Store.",
     offerVsMonthly: "Rẻ hơn {percent} so với gói tháng!",
-    promoBadge: "Năm Mới",
-    promoTitle: "Giảm {percent} cho năm đầu tiên",
-    promoBody: "Gói năm giá {price} thay vì {regular}. Gia hạn với giá {regular} một năm.",
-    promoNoTrial: "Thanh toán hôm nay. Ưu đãi này không có ngày miễn phí.",
-    promoTrial: "{days} ngày miễn phí, sau đó {price} cho năm đầu tiên.",
-    promoEnds: "Kết thúc vào {date}",
-    promoCta: "Nhận giảm {percent}",
-    promoIosNote: "Mở App Store với mã {code} đã được điền sẵn.",
+    promoBand: "Năm Mới −{percent}",
+    promoFooter: "{price} năm đầu tiên, sau đó {regular}/năm. Hủy bất cứ lúc nào.",
 
   },
   id: {
@@ -828,14 +780,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Klaim uji coba gratismu",
     offerTrialNote: "Gratis {days} hari, lalu {renewal}. Ditagih setahun sekali, diperpanjang otomatis kecuali dibatalkan di App Store.",
     offerVsMonthly: "{percent} lebih murah dari tarif bulanan kami!",
-    promoBadge: "Tahun Baru",
-    promoTitle: "Diskon {percent} untuk tahun pertamamu",
-    promoBody: "Tahunan seharga {price}, bukan {regular}. Diperpanjang seharga {regular} setahun.",
-    promoNoTrial: "Dibayar hari ini. Tidak ada hari gratis untuk penawaran ini.",
-    promoTrial: "Gratis {days} hari, lalu {price} untuk tahun pertamamu.",
-    promoEnds: "Berakhir {date}",
-    promoCta: "Dapatkan diskon {percent}",
-    promoIosNote: "Membuka App Store dengan kode {code} sudah terisi.",
+    promoBand: "Tahun Baru −{percent}",
+    promoFooter: "{price} tahun pertama, lalu {regular}/tahun. Batalkan kapan saja.",
 
   },
   ru: {
@@ -914,14 +860,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Забрать бесплатный триал",
     offerTrialNote: "{days} дн. бесплатно, затем {renewal}. Списывается раз в год, продлевается автоматически, пока не отменишь в App Store.",
     offerVsMonthly: "На {percent} дешевле помесячного тарифа!",
-    promoBadge: "Новый год",
-    promoTitle: "Скидка {percent} на первый год",
-    promoBody: "Годовой за {price} вместо {regular}. Продлевается за {regular} в год.",
-    promoNoTrial: "Оплата сегодня. В этом предложении нет бесплатных дней.",
-    promoTrial: "{days} дн. бесплатно, затем {price} за первый год.",
-    promoEnds: "Действует до {date}",
-    promoCta: "Получить скидку {percent}",
-    promoIosNote: "Откроет App Store с уже введённым кодом {code}.",
+    promoBand: "Новый год −{percent}",
+    promoFooter: "{price} за первый год, затем {regular}/год. Отмена в любой момент.",
 
   },
   sq: {
@@ -1000,14 +940,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Merr provën falas",
     offerTrialNote: "{days} ditë falas, pastaj {renewal}. Faturohet çdo vit, rinovohet automatikisht nëse nuk anulohet në App Store.",
     offerVsMonthly: "{percent} më lirë se tarifa jonë mujore!",
-    promoBadge: "Viti i Ri",
-    promoTitle: "{percent} zbritje për vitin tënd të parë",
-    promoBody: "Vjetore për {price} në vend të {regular}. Rinovohet me {regular} në vit.",
-    promoNoTrial: "Paguhet sot. Kjo ofertë nuk ka ditë falas.",
-    promoTrial: "{days} ditë falas, pastaj {price} për vitin tënd të parë.",
-    promoEnds: "Mbaron më {date}",
-    promoCta: "Merr {percent} zbritje",
-    promoIosNote: "Hap App Store me kodin {code} të plotësuar.",
+    promoBand: "Viti i Ri −{percent}",
+    promoFooter: "{price} viti i parë, pastaj {regular}/vit. Anulo kurdo.",
 
   },
   bg: {
@@ -1086,14 +1020,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Вземи безплатния триал",
     offerTrialNote: "{days} дни безплатно, после {renewal}. Таксува се годишно, подновява се автоматично, освен ако не откажеш в App Store.",
     offerVsMonthly: "с {percent} по-евтино от месечната цена!",
-    promoBadge: "Нова година",
-    promoTitle: "{percent} отстъпка за първата ти година",
-    promoBody: "Годишно за {price} вместо {regular}. Подновява се за {regular} на година.",
-    promoNoTrial: "Плащаш днес. Тази оферта няма безплатни дни.",
-    promoTrial: "{days} дни безплатно, после {price} за първата ти година.",
-    promoEnds: "Изтича на {date}",
-    promoCta: "Вземи {percent} отстъпка",
-    promoIosNote: "Отваря App Store с вече попълнен код {code}.",
+    promoBand: "Нова година −{percent}",
+    promoFooter: "{price} първата година, после {regular}/година. Откажи по всяко време.",
 
   },
   te: {
@@ -1172,14 +1100,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "మీ ఉచిత ట్రయల్ పొందండి",
     offerTrialNote: "{days} రోజులు ఉచితం, తర్వాత {renewal}. ఏడాదికి ఒకసారి బిల్ అవుతుంది, App Storeలో రద్దు చేయకపోతే ఆటోమేటిక్‌గా రెన్యూ అవుతుంది.",
     offerVsMonthly: "మా నెలవారీ రేటు కంటే {percent} తక్కువ!",
-    promoBadge: "కొత్త సంవత్సరం",
-    promoTitle: "మీ మొదటి సంవత్సరానికి {percent} తగ్గింపు",
-    promoBody: "వార్షికం {regular}కి బదులుగా {price}కి. సంవత్సరానికి {regular}కి రెన్యూ అవుతుంది.",
-    promoNoTrial: "ఈరోజే చెల్లింపు. ఈ ఆఫర్‌లో ఉచిత రోజులు లేవు.",
-    promoTrial: "{days} రోజులు ఉచితం, తర్వాత మీ మొదటి సంవత్సరానికి {price}.",
-    promoEnds: "{date}న ముగుస్తుంది",
-    promoCta: "{percent} తగ్గింపు పొందండి",
-    promoIosNote: "{code} కోడ్ నింపి App Store తెరుచుకుంటుంది.",
+    promoBand: "కొత్త సంవత్సరం −{percent}",
+    promoFooter: "మొదటి సంవత్సరం {price}, తర్వాత {regular}/సంవత్సరం. ఎప్పుడైనా రద్దు చేయండి.",
 
   },
   ta: {
@@ -1258,14 +1180,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "உங்கள் இலவச சோதனையைப் பெறுங்கள்",
     offerTrialNote: "{days} நாட்கள் இலவசம், பிறகு {renewal}. ஆண்டுக்கு ஒருமுறை வசூலிக்கப்படும்; App Store-இல் ரத்துசெய்யாவிட்டால் தானாகப் புதுப்பிக்கப்படும்.",
     offerVsMonthly: "எங்கள் மாதாந்திரக் கட்டணத்தை விட {percent} குறைவு!",
-    promoBadge: "புத்தாண்டு",
-    promoTitle: "உங்கள் முதல் ஆண்டுக்கு {percent} தள்ளுபடி",
-    promoBody: "ஆண்டுத் திட்டம் {regular}க்கு பதிலாக {price}. ஆண்டுக்கு {regular} என்ற விலையில் புதுப்பிக்கப்படும்.",
-    promoNoTrial: "இன்றே கட்டணம். இந்தச் சலுகையில் இலவச நாட்கள் இல்லை.",
-    promoTrial: "{days} நாட்கள் இலவசம், பிறகு உங்கள் முதல் ஆண்டுக்கு {price}.",
-    promoEnds: "{date} அன்று முடிகிறது",
-    promoCta: "{percent} தள்ளுபடி பெறுங்கள்",
-    promoIosNote: "{code} குறியீடு நிரப்பப்பட்ட நிலையில் App Store திறக்கும்.",
+    promoBand: "புத்தாண்டு −{percent}",
+    promoFooter: "முதல் ஆண்டு {price}, பிறகு {regular}/ஆண்டு. எப்போது வேண்டுமானாலும் ரத்துசெய்யலாம்.",
 
   },
   pa: {
@@ -1344,14 +1260,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "ਆਪਣਾ ਮੁਫ਼ਤ ਟ੍ਰਾਇਲ ਲਓ",
     offerTrialNote: "{days} ਦਿਨ ਮੁਫ਼ਤ, ਫਿਰ {renewal}। ਸਾਲਾਨਾ ਬਿਲ ਹੁੰਦਾ ਹੈ, App Store ਵਿੱਚ ਰੱਦ ਨਾ ਕਰਨ ਤੱਕ ਆਪਣੇ-ਆਪ ਰੀਨਿਊ ਹੁੰਦਾ ਹੈ।",
     offerVsMonthly: "ਸਾਡੀ ਮਹੀਨਾਵਾਰ ਦਰ ਨਾਲੋਂ {percent} ਘੱਟ!",
-    promoBadge: "ਨਵਾਂ ਸਾਲ",
-    promoTitle: "ਤੁਹਾਡੇ ਪਹਿਲੇ ਸਾਲ 'ਤੇ {percent} ਦੀ ਛੋਟ",
-    promoBody: "ਸਾਲਾਨਾ {regular} ਦੀ ਥਾਂ {price} ਵਿੱਚ। {regular} ਪ੍ਰਤੀ ਸਾਲ 'ਤੇ ਰੀਨਿਊ ਹੁੰਦਾ ਹੈ।",
-    promoNoTrial: "ਅੱਜ ਭੁਗਤਾਨ। ਇਸ ਪੇਸ਼ਕਸ਼ ਵਿੱਚ ਕੋਈ ਮੁਫ਼ਤ ਦਿਨ ਨਹੀਂ।",
-    promoTrial: "{days} ਦਿਨ ਮੁਫ਼ਤ, ਫਿਰ ਤੁਹਾਡੇ ਪਹਿਲੇ ਸਾਲ ਲਈ {price}।",
-    promoEnds: "{date} ਨੂੰ ਖ਼ਤਮ",
-    promoCta: "{percent} ਦੀ ਛੋਟ ਲਓ",
-    promoIosNote: "App Store ਖੁੱਲ੍ਹੇਗਾ, ਕੋਡ {code} ਪਹਿਲਾਂ ਤੋਂ ਭਰਿਆ ਹੋਵੇਗਾ।",
+    promoBand: "ਨਵਾਂ ਸਾਲ −{percent}",
+    promoFooter: "ਪਹਿਲਾ ਸਾਲ {price}, ਫਿਰ {regular}/ਸਾਲ। ਕਦੇ ਵੀ ਰੱਦ ਕਰੋ।",
 
   },
   or: {
@@ -1430,14 +1340,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "ଆପଣଙ୍କ ମାଗଣା ଟ୍ରାଏଲ୍ ନିଅନ୍ତୁ",
     offerTrialNote: "{days} ଦିନ ମାଗଣା, ତାପରେ {renewal}। ବାର୍ଷିକ ବିଲ୍ ହୁଏ, App Storeରେ ବାତିଲ୍ ନକଲେ ନିଜେ ରିନ୍ୟୁ ହୁଏ।",
     offerVsMonthly: "ଆମ ମାସିକ ଦରଠାରୁ {percent} କମ୍!",
-    promoBadge: "ନୂଆ ବର୍ଷ",
-    promoTitle: "ଆପଣଙ୍କ ପ୍ରଥମ ବର୍ଷରେ {percent} ଛାଡ଼",
-    promoBody: "ବାର୍ଷିକ {regular} ବଦଳରେ {price}ରେ। ବର୍ଷକୁ {regular}ରେ ରିନ୍ୟୁ ହୁଏ।",
-    promoNoTrial: "ଆଜି ପେମେଣ୍ଟ। ଏହି ଅଫରରେ କୌଣସି ମାଗଣା ଦିନ ନାହିଁ।",
-    promoTrial: "{days} ଦିନ ମାଗଣା, ତାପରେ ଆପଣଙ୍କ ପ୍ରଥମ ବର୍ଷ ପାଇଁ {price}।",
-    promoEnds: "{date}ରେ ଶେଷ",
-    promoCta: "{percent} ଛାଡ଼ ନିଅନ୍ତୁ",
-    promoIosNote: "କୋଡ୍ {code} ପୂରଣ ହୋଇ App Store ଖୋଲିବ।",
+    promoBand: "ନୂଆ ବର୍ଷ −{percent}",
+    promoFooter: "ପ୍ରଥମ ବର୍ଷ {price}, ତାପରେ {regular}/ବର୍ଷ। ଯେକୌଣସି ସମୟରେ ବାତିଲ୍ କରନ୍ତୁ।",
 
   },
   mr: {
@@ -1516,14 +1420,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "तुमचा मोफत ट्रायल मिळवा",
     offerTrialNote: "{days} दिवस मोफत, नंतर {renewal}. वार्षिक बिल आकारले जाते, App Store मध्ये रद्द न केल्यास आपोआप रिन्यू होते.",
     offerVsMonthly: "आमच्या मासिक दरापेक्षा {percent} कमी!",
-    promoBadge: "नवीन वर्ष",
-    promoTitle: "तुमच्या पहिल्या वर्षावर {percent} सूट",
-    promoBody: "वार्षिक {regular} ऐवजी {price} मध्ये. {regular} प्रति वर्ष दराने रिन्यू होते.",
-    promoNoTrial: "आज पेमेंट. या ऑफरमध्ये मोफत दिवस नाहीत.",
-    promoTrial: "{days} दिवस मोफत, नंतर तुमच्या पहिल्या वर्षासाठी {price}.",
-    promoEnds: "{date} रोजी संपते",
-    promoCta: "{percent} सूट मिळवा",
-    promoIosNote: "{code} कोड भरलेले App Store उघडते.",
+    promoBand: "नवीन वर्ष −{percent}",
+    promoFooter: "पहिले वर्ष {price}, नंतर {regular}/वर्ष. कधीही रद्द करा.",
 
   },
   ml: {
@@ -1602,14 +1500,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "നിങ്ങളുടെ സൗജന്യ ട്രയൽ നേടൂ",
     offerTrialNote: "{days} ദിവസം സൗജന്യം, പിന്നെ {renewal}. വർഷംതോറും ബിൽ ചെയ്യും, App Store-ൽ റദ്ദാക്കിയില്ലെങ്കിൽ സ്വയം പുതുക്കും.",
     offerVsMonthly: "ഞങ്ങളുടെ പ്രതിമാസ നിരക്കിനെക്കാൾ {percent} കുറവ്!",
-    promoBadge: "പുതുവർഷം",
-    promoTitle: "നിങ്ങളുടെ ആദ്യ വർഷത്തിന് {percent} കിഴിവ്",
-    promoBody: "വാർഷികം {regular}-ന് പകരം {price}-ന്. പ്രതിവർഷം {regular}-ന് പുതുക്കും.",
-    promoNoTrial: "ഇന്ന് പണമടയ്ക്കണം. ഈ ഓഫറിൽ സൗജന്യ ദിവസങ്ങളില്ല.",
-    promoTrial: "{days} ദിവസം സൗജന്യം, പിന്നെ ആദ്യ വർഷത്തിന് {price}.",
-    promoEnds: "{date}-ന് അവസാനിക്കും",
-    promoCta: "{percent} കിഴിവ് നേടുക",
-    promoIosNote: "{code} എന്ന കോഡ് പൂരിപ്പിച്ച് App Store തുറക്കും.",
+    promoBand: "പുതുവർഷം −{percent}",
+    promoFooter: "ആദ്യ വർഷം {price}, പിന്നെ {regular}/വർഷം. എപ്പോൾ വേണമെങ്കിലും റദ്ദാക്കാം.",
 
   },
   kn: {
@@ -1688,14 +1580,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "ನಿಮ್ಮ ಉಚಿತ ಟ್ರಯಲ್ ಪಡೆಯಿರಿ",
     offerTrialNote: "{days} ದಿನ ಉಚಿತ, ನಂತರ {renewal}. ವಾರ್ಷಿಕವಾಗಿ ಬಿಲ್ ಆಗುತ್ತದೆ, App Store ನಲ್ಲಿ ರದ್ದುಮಾಡದಿದ್ದರೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ನವೀಕರಿಸಲಾಗುತ್ತದೆ.",
     offerVsMonthly: "ನಮ್ಮ ಮಾಸಿಕ ದರಕ್ಕಿಂತ {percent} ಕಡಿಮೆ!",
-    promoBadge: "ಹೊಸ ವರ್ಷ",
-    promoTitle: "ನಿಮ್ಮ ಮೊದಲ ವರ್ಷಕ್ಕೆ {percent} ರಿಯಾಯಿತಿ",
-    promoBody: "ವಾರ್ಷಿಕ {regular} ಬದಲು {price}ಗೆ. ವರ್ಷಕ್ಕೆ {regular}ಗೆ ನವೀಕರಿಸಲಾಗುತ್ತದೆ.",
-    promoNoTrial: "ಇಂದೇ ಪಾವತಿ. ಈ ಆಫರ್‌ನಲ್ಲಿ ಉಚಿತ ದಿನಗಳಿಲ್ಲ.",
-    promoTrial: "{days} ದಿನ ಉಚಿತ, ನಂತರ ನಿಮ್ಮ ಮೊದಲ ವರ್ಷಕ್ಕೆ {price}.",
-    promoEnds: "{date} ರಂದು ಮುಗಿಯುತ್ತದೆ",
-    promoCta: "{percent} ರಿಯಾಯಿತಿ ಪಡೆಯಿರಿ",
-    promoIosNote: "{code} ಕೋಡ್ ತುಂಬಿದ App Store ತೆರೆಯುತ್ತದೆ.",
+    promoBand: "ಹೊಸ ವರ್ಷ −{percent}",
+    promoFooter: "ಮೊದಲ ವರ್ಷ {price}, ನಂತರ {regular}/ವರ್ಷ. ಯಾವಾಗ ಬೇಕಾದರೂ ರದ್ದುಮಾಡಿ.",
 
   },
   gu: {
@@ -1774,14 +1660,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "તમારું મફત ટ્રાયલ મેળવો",
     offerTrialNote: "{days} દિવસ મફત, પછી {renewal}. વાર્ષિક બિલ થાય છે, App Store માં રદ ન કરો ત્યાં સુધી આપમેળે રિન્યૂ થાય છે.",
     offerVsMonthly: "અમારા માસિક દર કરતાં {percent} ઓછું!",
-    promoBadge: "નવું વર્ષ",
-    promoTitle: "તમારા પ્રથમ વર્ષ પર {percent} છૂટ",
-    promoBody: "વાર્ષિક {regular} ને બદલે {price} માં. {regular} પ્રતિ વર્ષના દરે રિન્યૂ થાય છે.",
-    promoNoTrial: "આજે ચુકવણી. આ ઑફરમાં કોઈ મફત દિવસ નથી.",
-    promoTrial: "{days} દિવસ મફત, પછી તમારા પ્રથમ વર્ષ માટે {price}.",
-    promoEnds: "{date} એ પૂરું થાય છે",
-    promoCta: "{percent} છૂટ મેળવો",
-    promoIosNote: "{code} કોડ ભરેલું App Store ખૂલે છે.",
+    promoBand: "નવું વર્ષ −{percent}",
+    promoFooter: "પ્રથમ વર્ષ {price}, પછી {regular}/વર્ષ. ગમે ત્યારે રદ કરો.",
 
   },
   bn: {
@@ -1860,14 +1740,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "আপনার ফ্রি ট্রায়াল নিন",
     offerTrialNote: "{days} দিন ফ্রি, তারপর {renewal}। বছরে একবার বিল হয়, App Store-এ বাতিল না করলে নিজে থেকে রিনিউ হয়।",
     offerVsMonthly: "আমাদের মাসিক রেটের চেয়ে {percent} কম!",
-    promoBadge: "নববর্ষ",
-    promoTitle: "আপনার প্রথম বছরে {percent} ছাড়",
-    promoBody: "বার্ষিক {regular}-এর বদলে {price}-এ। বছরে {regular}-এ রিনিউ হয়।",
-    promoNoTrial: "আজই পেমেন্ট। এই অফারে কোনো ফ্রি দিন নেই।",
-    promoTrial: "{days} দিন ফ্রি, তারপর আপনার প্রথম বছরের জন্য {price}।",
-    promoEnds: "{date}-এ শেষ",
-    promoCta: "{percent} ছাড় নিন",
-    promoIosNote: "{code} কোড বসানো অবস্থায় App Store খুলবে।",
+    promoBand: "নববর্ষ −{percent}",
+    promoFooter: "প্রথম বছর {price}, তারপর {regular}/বছর। যেকোনো সময় বাতিল করুন।",
 
   },
   "pt-PT": {
@@ -1946,14 +1820,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Aproveitar o teste grátis",
     offerTrialNote: "{days} dias grátis, depois {renewal}. Faturado anualmente, renova automaticamente, a menos que canceles na App Store.",
     offerVsMonthly: "Menos {percent} do que o preço mensal!",
-    promoBadge: "Ano Novo",
-    promoTitle: "{percent} de desconto no teu primeiro ano",
-    promoBody: "Anual por {price} em vez de {regular}. Renova a {regular} por ano.",
-    promoNoTrial: "Pago hoje. Esta oferta não inclui dias grátis.",
-    promoTrial: "{days} dias grátis, depois {price} pelo teu primeiro ano.",
-    promoEnds: "Termina a {date}",
-    promoCta: "Obter {percent} de desconto",
-    promoIosNote: "Abre a App Store com o código {code} já preenchido.",
+    promoBand: "Ano Novo −{percent}",
+    promoFooter: "{price} no primeiro ano, depois {regular}/ano. Cancela quando quiseres.",
   },
 
   ms: {
@@ -2032,14 +1900,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Dapatkan percubaan percuma anda",
     offerTrialNote: "{days} hari percuma, kemudian {renewal}. Dibilkan setiap tahun, diperbaharui secara automatik melainkan dibatalkan di App Store.",
     offerVsMonthly: "{percent} lebih murah daripada kadar bulanan kami!",
-    promoBadge: "Tahun Baru",
-    promoTitle: "Diskaun {percent} untuk tahun pertama anda",
-    promoBody: "Tahunan pada {price} dan bukannya {regular}. Diperbaharui pada {regular} setahun.",
-    promoNoTrial: "Dibayar hari ini. Tiada hari percuma untuk tawaran ini.",
-    promoTrial: "{days} hari percuma, kemudian {price} untuk tahun pertama anda.",
-    promoEnds: "Tamat {date}",
-    promoCta: "Dapatkan diskaun {percent}",
-    promoIosNote: "Membuka App Store dengan kod {code} sudah diisi.",
+    promoBand: "Tahun Baru −{percent}",
+    promoFooter: "{price} tahun pertama, kemudian {regular}/tahun. Batalkan bila-bila masa.",
 
   },
   ca: {
@@ -2118,14 +1980,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Aprofita la prova gratuïta",
     offerTrialNote: "{days} dies gratis, després {renewal}. Es factura cada any i es renova automàticament tret que ho cancel·lis a l'App Store.",
     offerVsMonthly: "{percent} menys que la nostra tarifa mensual!",
-    promoBadge: "Cap d'Any",
-    promoTitle: "{percent} de descompte el teu primer any",
-    promoBody: "Anual per {price} en lloc de {regular}. Es renova a {regular} l'any.",
-    promoNoTrial: "Es paga avui. Aquesta oferta no té dies gratis.",
-    promoTrial: "{days} dies gratis, després {price} pel teu primer any.",
-    promoEnds: "Acaba el {date}",
-    promoCta: "Aconsegueix un {percent} de descompte",
-    promoIosNote: "Obre l'App Store amb el codi {code} ja posat.",
+    promoBand: "Cap d'Any −{percent}",
+    promoFooter: "{price} el primer any, després {regular}/any. Cancel·la quan vulguis.",
 
   },
   sl: {
@@ -2204,14 +2060,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Prevzemi brezplačni trial",
     offerTrialNote: "{days} dni brezplačno, nato {renewal}. Zaračuna se letno, samodejno se podaljša, razen če prekličeš v App Store.",
     offerVsMonthly: "{percent} ceneje kot mesečna cena!",
-    promoBadge: "Novo leto",
-    promoTitle: "{percent} popusta za tvoje prvo leto",
-    promoBody: "Letni za {price} namesto {regular}. Podaljša se po {regular} na leto.",
-    promoNoTrial: "Plačilo danes. Ta ponudba nima brezplačnih dni.",
-    promoTrial: "{days} dni brezplačno, nato {price} za tvoje prvo leto.",
-    promoEnds: "Velja do {date}",
-    promoCta: "Pridobi {percent} popusta",
-    promoIosNote: "Odpre App Store z že vpisano kodo {code}.",
+    promoBand: "Novo leto −{percent}",
+    promoFooter: "{price} prvo leto, nato {regular}/leto. Prekliči kadar koli.",
 
   },
   hr: {
@@ -2290,14 +2140,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Iskoristi besplatni trial",
     offerTrialNote: "{days} dana besplatno, zatim {renewal}. Naplaćuje se godišnje, automatski se produljuje osim ako ne otkažeš u App Storeu.",
     offerVsMonthly: "{percent} jeftinije od mjesečne cijene!",
-    promoBadge: "Nova godina",
-    promoTitle: "{percent} popusta na tvoju prvu godinu",
-    promoBody: "Godišnje za {price} umjesto {regular}. Produljuje se po {regular} godišnje.",
-    promoNoTrial: "Plaća se danas. Ova ponuda nema besplatnih dana.",
-    promoTrial: "{days} dana besplatno, zatim {price} za tvoju prvu godinu.",
-    promoEnds: "Vrijedi do {date}",
-    promoCta: "Uzmi {percent} popusta",
-    promoIosNote: "Otvara App Store s već upisanim kodom {code}.",
+    promoBand: "Nova godina −{percent}",
+    promoFooter: "{price} prve godine, zatim {regular}/godina. Otkaži bilo kada.",
 
   },
   sk: {
@@ -2376,14 +2220,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Získať bezplatný trial",
     offerTrialNote: "{days} dní zadarmo, potom {renewal}. Účtuje sa ročne, automaticky sa obnovuje, pokiaľ ho nezrušíš v App Store.",
     offerVsMonthly: "O {percent} lacnejšie ako mesačný plán!",
-    promoBadge: "Nový rok",
-    promoTitle: "Zľava {percent} na tvoj prvý rok",
-    promoBody: "Ročne za {price} namiesto {regular}. Obnovuje sa za {regular} ročne.",
-    promoNoTrial: "Platíš dnes. Táto ponuka nemá dni zadarmo.",
-    promoTrial: "{days} d. zadarmo, potom {price} za tvoj prvý rok.",
-    promoEnds: "Platí do {date}",
-    promoCta: "Získaj zľavu {percent}",
-    promoIosNote: "Otvorí App Store s už vyplneným kódom {code}.",
+    promoBand: "Nový rok −{percent}",
+    promoFooter: "{price} prvý rok, potom {regular}/rok. Zrušiť môžeš kedykoľvek.",
 
   },
   no: {
@@ -2462,14 +2300,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Hent din gratis trial",
     offerTrialNote: "{days} dager gratis, deretter {renewal}. Faktureres årlig og fornyes automatisk med mindre du sier opp i App Store.",
     offerVsMonthly: "{percent} billigere enn månedsprisen vår!",
-    promoBadge: "Nyttår",
-    promoTitle: "{percent} rabatt på ditt første år",
-    promoBody: "Årlig for {price} i stedet for {regular}. Fornyes til {regular} per år.",
-    promoNoTrial: "Betales i dag. Ingen gratisdager med dette tilbudet.",
-    promoTrial: "{days} dager gratis, deretter {price} for ditt første år.",
-    promoEnds: "Slutter {date}",
-    promoCta: "Få {percent} rabatt",
-    promoIosNote: "Åpner App Store med koden {code} ferdig utfylt.",
+    promoBand: "Nyttår −{percent}",
+    promoFooter: "{price} første år, deretter {regular}/år. Si opp når som helst.",
 
   },
   fi: {
@@ -2548,14 +2380,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Lunasta ilmainen kokeilu",
     offerTrialNote: "{days} päivää ilmaiseksi, sitten {renewal}. Laskutetaan vuosittain ja uusiutuu automaattisesti, ellet peru App Storessa.",
     offerVsMonthly: "{percent} edullisempi kuin kuukausihinta!",
-    promoBadge: "Uusivuosi",
-    promoTitle: "Alennus {percent} ensimmäisestä vuodesta",
-    promoBody: "Vuositilaus hintaan {price} hinnan {regular} sijaan. Uusiutuu hintaan {regular} vuodessa.",
-    promoNoTrial: "Maksetaan tänään. Tähän tarjoukseen ei kuulu ilmaisia päiviä.",
-    promoTrial: "{days} päivää ilmaiseksi, sitten {price} ensimmäisestä vuodesta.",
-    promoEnds: "Päättyy {date}",
-    promoCta: "Hanki {percent} alennus",
-    promoIosNote: "Avaa App Storen, jossa koodi {code} on valmiina.",
+    promoBand: "Uusivuosi −{percent}",
+    promoFooter: "{price} ensimmäinen vuosi, sitten {regular}/vuosi. Peru milloin vain.",
 
   },
   da: {
@@ -2634,14 +2460,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Hent din gratis trial",
     offerTrialNote: "{days} dage gratis, derefter {renewal}. Faktureres årligt og fornyes automatisk, medmindre du annullerer i App Store.",
     offerVsMonthly: "{percent} billigere end vores månedspris!",
-    promoBadge: "Nytår",
-    promoTitle: "{percent} rabat på dit første år",
-    promoBody: "Årligt for {price} i stedet for {regular}. Fornyes til {regular} om året.",
-    promoNoTrial: "Betales i dag. Ingen gratis dage med dette tilbud.",
-    promoTrial: "{days} dage gratis, derefter {price} for dit første år.",
-    promoEnds: "Slutter {date}",
-    promoCta: "Få {percent} rabat",
-    promoIosNote: "Åbner App Store med koden {code} udfyldt.",
+    promoBand: "Nytår −{percent}",
+    promoFooter: "{price} første år, derefter {regular}/år. Annuller når som helst.",
 
   },
   hu: {
@@ -2720,14 +2540,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Ingyenes trial beváltása",
     offerTrialNote: "{days} nap ingyenes, utána {renewal}. Évente számlázzuk, automatikusan megújul, ha nem mondod le az App Store-ban.",
     offerVsMonthly: "{percent} kedvezmény a havi díjhoz képest!",
-    promoBadge: "Újév",
-    promoTitle: "{percent} kedvezmény az első évedre",
-    promoBody: "Éves csomag {price} áron {regular} helyett. {regular} áron újul meg évente.",
-    promoNoTrial: "Ma fizetsz. Ehhez az ajánlathoz nem jár ingyenes nap.",
-    promoTrial: "{days} nap ingyenes, utána {price} az első évedre.",
-    promoEnds: "Vége: {date}",
-    promoCta: "{percent} kedvezményt kérek",
-    promoIosNote: "Megnyitja az App Store-t a kitöltött kóddal: {code}.",
+    promoBand: "Újév −{percent}",
+    promoFooter: "{price} az első évben, utána {regular}/év. Bármikor lemondhatod.",
 
   },
   el: {
@@ -2806,14 +2620,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Απόκτησε τη δωρεάν δοκιμή",
     offerTrialNote: "{days} ημέρες δωρεάν, μετά {renewal}. Χρέωση ετησίως, ανανεώνεται αυτόματα εκτός αν ακυρώσεις στο App Store.",
     offerVsMonthly: "{percent} φθηνότερα από τη μηνιαία χρέωση!",
-    promoBadge: "Πρωτοχρονιά",
-    promoTitle: "{percent} έκπτωση στον πρώτο σου χρόνο",
-    promoBody: "Ετήσια με {price} αντί για {regular}. Ανανεώνεται με {regular} τον χρόνο.",
-    promoNoTrial: "Πληρωμή σήμερα. Η προσφορά αυτή δεν έχει δωρεάν ημέρες.",
-    promoTrial: "{days} ημέρες δωρεάν, μετά {price} για τον πρώτο σου χρόνο.",
-    promoEnds: "Λήγει {date}",
-    promoCta: "Πάρε {percent} έκπτωση",
-    promoIosNote: "Ανοίγει το App Store με τον κωδικό {code} ήδη συμπληρωμένο.",
+    promoBand: "Πρωτοχρονιά −{percent}",
+    promoFooter: "{price} τον πρώτο χρόνο, μετά {regular}/χρόνο. Ακύρωση οποτεδήποτε.",
 
   },
   ro: {
@@ -2892,14 +2700,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Activează proba gratuită",
     offerTrialNote: "{days} zile gratuit, apoi {renewal}. Facturat anual, se reînnoiește automat dacă nu anulezi în App Store.",
     offerVsMonthly: "Cu {percent} mai ieftin decât tariful lunar!",
-    promoBadge: "Anul Nou",
-    promoTitle: "Reducere {percent} la primul tău an",
-    promoBody: "Anual la {price} în loc de {regular}. Se reînnoiește la {regular} pe an.",
-    promoNoTrial: "Plătești azi. Oferta aceasta nu are zile gratuite.",
-    promoTrial: "{days} zile gratuit, apoi {price} pentru primul tău an.",
-    promoEnds: "Se termină pe {date}",
-    promoCta: "Ia reducerea de {percent}",
-    promoIosNote: "Deschide App Store cu codul {code} deja completat.",
+    promoBand: "Anul Nou −{percent}",
+    promoFooter: "{price} primul an, apoi {regular}/an. Anulezi oricând.",
 
   },
   cs: {
@@ -2978,14 +2780,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Vyzvednout bezplatný trial",
     offerTrialNote: "{days} dní zdarma, poté {renewal}. Účtuje se ročně, automaticky se obnovuje, pokud ho nezrušíš v App Store.",
     offerVsMonthly: "O {percent} levnější než měsíční tarif!",
-    promoBadge: "Nový rok",
-    promoTitle: "Sleva {percent} na tvůj první rok",
-    promoBody: "Roční za {price} místo {regular}. Obnovuje se za {regular} ročně.",
-    promoNoTrial: "Platíš dnes. Tahle nabídka nemá dny zdarma.",
-    promoTrial: "{days} d zdarma, poté {price} za tvůj první rok.",
-    promoEnds: "Platí do {date}",
-    promoCta: "Získej slevu {percent}",
-    promoIosNote: "Otevře App Store s už vyplněným kódem {code}.",
+    promoBand: "Nový rok −{percent}",
+    promoFooter: "{price} první rok, poté {regular}/rok. Zrušit můžeš kdykoli.",
 
   },
   hi: {
@@ -3064,14 +2860,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "अपना मुफ़्त ट्रायल पाएँ",
     offerTrialNote: "{days} दिन मुफ़्त, फिर {renewal}। सालाना बिल होता है, App Store में रद्द न करने तक अपने-आप रिन्यू होता है।",
     offerVsMonthly: "हमारे मासिक रेट से {percent} कम!",
-    promoBadge: "नया साल",
-    promoTitle: "आपके पहले साल पर {percent} की छूट",
-    promoBody: "सालाना {regular} की जगह {price} में। {regular} प्रति वर्ष पर रिन्यू होता है।",
-    promoNoTrial: "आज भुगतान। इस ऑफ़र में कोई मुफ़्त दिन नहीं।",
-    promoTrial: "{days} दिन मुफ़्त, फिर आपके पहले साल के लिए {price}।",
-    promoEnds: "{date} को खत्म",
-    promoCta: "{percent} की छूट पाएँ",
-    promoIosNote: "App Store खुलेगा, कोड {code} पहले से भरा होगा।",
+    promoBand: "नया साल −{percent}",
+    promoFooter: "पहला साल {price}, फिर {regular}/साल। कभी भी रद्द करें।",
 
   },
   th: {
@@ -3150,14 +2940,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "รับสิทธิ์ทดลองใช้ฟรี",
     offerTrialNote: "ฟรี {days} วัน จากนั้น {renewal} เรียกเก็บรายปี ต่ออายุอัตโนมัติ เว้นแต่คุณจะยกเลิกใน App Store",
     offerVsMonthly: "ถูกกว่าแพ็กเกจรายเดือน {percent}!",
-    promoBadge: "ปีใหม่",
-    promoTitle: "ลด {percent} สำหรับปีแรก",
-    promoBody: "รายปี {price} แทน {regular} ต่ออายุที่ {regular} ต่อปี",
-    promoNoTrial: "ชำระวันนี้ ข้อเสนอนี้ไม่มีวันใช้ฟรี",
-    promoTrial: "ฟรี {days} วัน จากนั้น {price} สำหรับปีแรก",
-    promoEnds: "สิ้นสุด {date}",
-    promoCta: "รับส่วนลด {percent}",
-    promoIosNote: "เปิด App Store พร้อมกรอกโค้ด {code} ไว้ให้แล้ว",
+    promoBand: "ปีใหม่ −{percent}",
+    promoFooter: "ปีแรก {price} จากนั้น {regular}/ปี ยกเลิกได้ทุกเมื่อ",
 
   },
   sv: {
@@ -3236,14 +3020,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Hämta din gratis trial",
     offerTrialNote: "{days} dagar gratis, sedan {renewal}. Faktureras årligen och förnyas automatiskt om du inte avslutar i App Store.",
     offerVsMonthly: "{percent} billigare än vårt månadspris!",
-    promoBadge: "Nyår",
-    promoTitle: "{percent} rabatt på ditt första år",
-    promoBody: "Årsvis för {price} i stället för {regular}. Förnyas för {regular} per år.",
-    promoNoTrial: "Betalas i dag. Inga gratisdagar med det här erbjudandet.",
-    promoTrial: "{days} dagar gratis, sedan {price} för ditt första år.",
-    promoEnds: "Slutar {date}",
-    promoCta: "Få {percent} rabatt",
-    promoIosNote: "Öppnar App Store med koden {code} ifylld.",
+    promoBand: "Nyår −{percent}",
+    promoFooter: "{price} första året, sedan {regular}/år. Avsluta när du vill.",
 
   },
   uk: {
@@ -3322,14 +3100,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Забрати безкоштовний тріал",
     offerTrialNote: "{days} дн. безкоштовно, потім {renewal}. Списується раз на рік, подовжується автоматично, доки не скасуєш в App Store.",
     offerVsMonthly: "На {percent} дешевше за щомісячний тариф!",
-    promoBadge: "Новий рік",
-    promoTitle: "Знижка {percent} на перший рік",
-    promoBody: "Річна за {price} замість {regular}. Поновлюється за {regular} на рік.",
-    promoNoTrial: "Оплата сьогодні. У цій пропозиції немає безкоштовних днів.",
-    promoTrial: "{days} дн. безкоштовно, потім {price} за перший рік.",
-    promoEnds: "Діє до {date}",
-    promoCta: "Отримати знижку {percent}",
-    promoIosNote: "Відкриє App Store з уже введеним кодом {code}.",
+    promoBand: "Новий рік −{percent}",
+    promoFooter: "{price} за перший рік, потім {regular}/рік. Скасування будь-коли.",
 
   },
   nl: {
@@ -3408,14 +3180,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Claim je gratis trial",
     offerTrialNote: "{days} dagen gratis, daarna {renewal}. Jaarlijks gefactureerd en verlengt automatisch tenzij je opzegt in de App Store.",
     offerVsMonthly: "{percent} goedkoper dan ons maandtarief!",
-    promoBadge: "Nieuwjaar",
-    promoTitle: "{percent} korting op je eerste jaar",
-    promoBody: "Jaarlijks voor {price} in plaats van {regular}. Wordt verlengd voor {regular} per jaar.",
-    promoNoTrial: "Vandaag betaald. Geen gratis dagen bij deze aanbieding.",
-    promoTrial: "{days} dagen gratis, daarna {price} voor je eerste jaar.",
-    promoEnds: "Eindigt {date}",
-    promoCta: "Krijg {percent} korting",
-    promoIosNote: "Opent de App Store met de code {code} al ingevuld.",
+    promoBand: "Nieuwjaar −{percent}",
+    promoFooter: "{price} het eerste jaar, daarna {regular}/jaar. Altijd opzegbaar.",
 
   },
   pl: {
@@ -3494,14 +3260,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Odbierz darmowy trial",
     offerTrialNote: "{days} dni za darmo, potem {renewal}. Rozliczane rocznie, odnawia się automatycznie, o ile nie anulujesz w App Store.",
     offerVsMonthly: "{percent} taniej niż w planie miesięcznym!",
-    promoBadge: "Nowy Rok",
-    promoTitle: "{percent} taniej za pierwszy rok",
-    promoBody: "Plan roczny za {price} zamiast {regular}. Odnawia się za {regular} rocznie.",
-    promoNoTrial: "Płatność dziś. Ta oferta nie ma darmowych dni.",
-    promoTrial: "{days} dni za darmo, potem {price} za pierwszy rok.",
-    promoEnds: "Ważna do {date}",
-    promoCta: "Odbierz zniżkę {percent}",
-    promoIosNote: "Otwiera App Store z wpisanym już kodem {code}.",
+    promoBand: "Nowy Rok −{percent}",
+    promoFooter: "{price} za pierwszy rok, potem {regular}/rok. Anuluj w dowolnej chwili.",
 
   },
   tr: {
@@ -3580,14 +3340,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Ücretsiz denemeni al",
     offerTrialNote: "{days} gün ücretsiz, sonra {renewal}. Yıllık faturalanır, App Store'da iptal etmezsen otomatik yenilenir.",
     offerVsMonthly: "Aylık ücretimizden {percent} daha uygun!",
-    promoBadge: "Yeni Yıl",
-    promoTitle: "İlk yılında {percent} indirim",
-    promoBody: "Yıllık plan {regular} yerine {price}. Yılda {regular} olarak yenilenir.",
-    promoNoTrial: "Bugün ödenir. Bu teklifte ücretsiz gün yok.",
-    promoTrial: "{days} gün ücretsiz, sonra ilk yılın için {price}.",
-    promoEnds: "{date} tarihinde bitiyor",
-    promoCta: "{percent} indirimi al",
-    promoIosNote: "App Store'u {code} kodu girilmiş olarak açar.",
+    promoBand: "Yeni Yıl −{percent}",
+    promoFooter: "İlk yıl {price}, sonra {regular}/yıl. İstediğin zaman iptal et.",
 
   },
   "zh-Hant": {
@@ -3666,14 +3420,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "領取免費試用",
     offerTrialNote: "免費 {days} 天，之後 {renewal}。按年計費，除非在 App Store 取消，否則會自動續訂。",
     offerVsMonthly: "比月費方案省 {percent}！",
-    promoBadge: "新年",
-    promoTitle: "首年省 {percent}",
-    promoBody: "年方案 {price}，原價 {regular}。之後以每年 {regular} 續訂。",
-    promoNoTrial: "今天付款。此優惠不含免費天數。",
-    promoTrial: "免費 {days} 天，之後首年 {price}。",
-    promoEnds: "{date} 結束",
-    promoCta: "立即省 {percent}",
-    promoIosNote: "會開啟 App Store 並自動填入代碼 {code}。",
+    promoBand: "新年 −{percent}",
+    promoFooter: "首年 {price}，之後 {regular}/年。可隨時取消。",
   },
 
   "zh-Hans": {
@@ -3752,14 +3500,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "领取免费试用",
     offerTrialNote: "免费 {days} 天，之后 {renewal}。按年计费，除非在 App Store 取消，否则会自动续订。",
     offerVsMonthly: "比月付方案省 {percent}！",
-    promoBadge: "新年",
-    promoTitle: "首年立减 {percent}",
-    promoBody: "年度方案 {price}，原价 {regular}。之后按每年 {regular} 续订。",
-    promoNoTrial: "今天付款。此优惠不含免费天数。",
-    promoTrial: "免费 {days} 天，之后首年 {price}。",
-    promoEnds: "{date} 结束",
-    promoCta: "立减 {percent}",
-    promoIosNote: "将打开 App Store 并自动填入优惠码 {code}。",
+    promoBand: "新年 −{percent}",
+    promoFooter: "首年 {price}，之后 {regular}/年。随时可取消。",
   },
 
   ko: {
@@ -3838,14 +3580,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "무료 체험 받기",
     offerTrialNote: "{days}일 무료, 이후 {renewal}. 연 단위로 결제되며 App Store에서 취소하지 않으면 자동 갱신돼요.",
     offerVsMonthly: "월간 요금보다 {percent} 저렴해요!",
-    promoBadge: "새해",
-    promoTitle: "첫해 {percent} 할인",
-    promoBody: "연간 요금제 {regular} 대신 {price}. 이후 연 {regular}에 갱신돼요.",
-    promoNoTrial: "오늘 결제돼요. 이 혜택에는 무료 기간이 없어요.",
-    promoTrial: "{days}일 무료, 이후 첫해 {price}.",
-    promoEnds: "{date} 종료",
-    promoCta: "{percent} 할인 받기",
-    promoIosNote: "App Store가 열리며 코드가 자동 입력돼요: {code}",
+    promoBand: "새해 −{percent}",
+    promoFooter: "첫해 {price}, 이후 연 {regular}. 언제든 취소할 수 있어요.",
 
   },
   ja: {
@@ -3924,14 +3660,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "無料トライアルを受け取る",
     offerTrialNote: "{days}日間無料、その後{renewal}。年払いで、App Storeで解約しない限り自動更新されます。",
     offerVsMonthly: "月額プランより{percent}お得！",
-    promoBadge: "新年",
-    promoTitle: "初年度{percent}オフ",
-    promoBody: "年額{regular}のところ{price}。更新後は年額{regular}です。",
-    promoNoTrial: "本日お支払い。このオファーには無料期間はありません。",
-    promoTrial: "{days}日間無料、その後初年度{price}。",
-    promoEnds: "{date}まで",
-    promoCta: "{percent}オフで始める",
-    promoIosNote: "コード{code}が入力された状態でApp Storeが開きます。",
+    promoBand: "新年 −{percent}",
+    promoFooter: "初年度{price}、その後は年額{regular}。いつでも解約できます。",
 
   },
   "pt-BR": {
@@ -4010,14 +3740,8 @@ export const PAY_COPY: Localized<PayCopy> = {
     offerClaimTrial: "Aproveitar o teste grátis",
     offerTrialNote: "{days} dias grátis, depois {renewal}. Cobrado anualmente, renova automaticamente, a menos que você cancele na App Store.",
     offerVsMonthly: "{percent} menos que o plano mensal!",
-    promoBadge: "Ano Novo",
-    promoTitle: "{percent} de desconto no seu primeiro ano",
-    promoBody: "Anual por {price} em vez de {regular}. Renova por {regular} ao ano.",
-    promoNoTrial: "Pago hoje. Esta oferta não tem dias grátis.",
-    promoTrial: "{days} dias grátis, depois {price} no seu primeiro ano.",
-    promoEnds: "Termina em {date}",
-    promoCta: "Ganhe {percent} de desconto",
-    promoIosNote: "Abre a App Store com o código {code} já preenchido.",
+    promoBand: "Ano Novo −{percent}",
+    promoFooter: "{price} no primeiro ano, depois {regular}/ano. Cancele quando quiser.",
   },
 };
 
