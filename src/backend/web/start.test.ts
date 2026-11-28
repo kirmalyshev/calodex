@@ -2470,6 +2470,91 @@ describe("the soft offer after the plan", () => {
       expect(closeOf(c)).toBe("/start/signup");
     });
 
+    // S4 (kirmalyshev-org/calodex_app#3695): Redeem code on web. Board you-subscription / pay-cal-a, the web line of
+    // DIRECTION § the links: no Restore (a web purchase lands by webhook), `Redeem code` then `Terms · Privacy`.
+    describe("redeem code", () => {
+      const spec = { days: null, discountCode: null, percent: null, expiresAt: null, maxRedemptions: null };
+      const freeCode = { ...spec, code: "BLOG30", kind: "free" as const, days: 30 };
+      const tenOff = { ...spec, code: "TEN", kind: "discount" as const, discountCode: "RC_TEN", percent: 10 };
+
+      it("every offer step carries the Redeem code link in its own group before Terms · Privacy, with no Restore", async () => {
+        const { session } = await walk();
+        for (const step of ["plans", "try", "offer"]) {
+          const page = await (await get(`/start/offer?step=${step}`, session)).text();
+          expect(page, step).toContain('<span class="g"><a href="/start/redeem">Redeem code</a></span>');
+          expect(page, step).not.toContain("Restore");
+        }
+      });
+
+      it("the redeem page is a field and a submit, and an unsigned-in visitor never reaches it", async () => {
+        const { session } = await walk();
+        const page = await (await get("/start/redeem", session)).text();
+        expect(page).toContain('<form class="offer" action="/start/redeem" method="post">');
+        expect(page).toContain('name="code"');
+        expect(page).toContain(">Redeem</button>");
+        expect((await get("/start/redeem")).status).not.toBe(200);
+      });
+
+      it("a free code unlocks the account and sends it on, once", async () => {
+        const { session, userId } = await walk();
+        await store.putPromoCode(freeCode);
+        const done = await post("/start/redeem", { code: " blog30" }, session);
+        expect(done.status).toBe(303);
+        expect(done.headers.get("location")).not.toContain("/start/redeem");
+        expect(await store.bonusUntil(userId)).not.toBeNull();
+        const again = await post("/start/redeem", { code: "BLOG30" }, session);
+        expect(again.status).toBe(200);
+        expect(await again.text()).toContain("You&#39;ve already used a code.");
+      });
+
+      it("an unknown or an ended code redraws the field with its sentence and grants nothing", async () => {
+        const { session, userId } = await walk();
+        await store.putPromoCode({ ...freeCode, code: "OLD", expiresAt: "2020-01-01T00:00:00.000Z" });
+        expect(await (await post("/start/redeem", { code: "nope" }, session)).text()).toContain("That code isn&#39;t valid.");
+        expect(await (await post("/start/redeem", { code: "old" }, session)).text()).toContain("This code has ended.");
+        expect(await store.bonusUntil(userId)).toBeNull();
+      });
+
+      it("a discount code names its percent on the redeem page, Continue returns to the plans carrying it, and the checkout appends the RevenueCat code", async () => {
+        const { session, userId } = await walk();
+        await store.putPromoCode(tenOff);
+        const done = await post("/start/redeem", { code: "ten" }, session);
+        const doneHtml = await done.text();
+        expect(done.status).toBe(200);
+        expect(doneHtml).toContain("10% off, applied at checkout.");
+        expect(doneHtml).toContain('<a class="button primary" href="/start/offer?code=TEN">Continue</a>');
+        expect(await store.bonusUntil(userId)).toBeNull();
+        const a = await (await get("/start/offer?code=TEN", session)).text();
+        // A PROMO ADDS NO TEXT to the screen (DIRECTION § Rulings): the sentence lives on the redeem page only.
+        expect(a).not.toContain("applied at checkout");
+        expect(a).toContain('<input type="hidden" name="code" value="TEN">');
+        expect(closeOf(a)).toBe("/start/offer?step=try&code=TEN");
+        const b = await (await get("/start/offer?step=try&code=TEN", session)).text();
+        expect(b).toContain('href="/start/checkout?plan=yearly&amp;code=TEN"');
+        expect((await get("/start/checkout?plan=yearly&code=ten", session)).headers.get("location"))
+          .toBe(`https://pay.rev.cat/eait/${userId}?discount_code=RC_TEN`);
+        expect((await get("/start/checkout?plan=monthly&code=TEN", session)).headers.get("location"))
+          .toBe(`https://pay.rev.cat/m/${userId}?discount_code=RC_TEN`);
+      });
+
+      it("the checkout ignores a code that is unknown, free, or ended: the plain link, never an error", async () => {
+        const { session, userId } = await walk();
+        await store.putPromoCode(freeCode);
+        await store.putPromoCode({ ...tenOff, code: "OLD", expiresAt: "2020-01-01T00:00:00.000Z" });
+        for (const code of ["NOPE", "BLOG30", "OLD", "x y"]) {
+          expect((await get(`/start/checkout?plan=yearly&code=${encodeURIComponent(code)}`, session)).headers.get("location"), code)
+            .toBe(`https://pay.rev.cat/eait/${userId}`);
+        }
+      });
+
+      it("a page that names a code the server does not honour carries nothing", async () => {
+        const { session } = await walk();
+        const a = await (await get("/start/offer?code=NOPE", session)).text();
+        expect(a).not.toContain('name="code"');
+        expect(closeOf(a)).toBe("/start/offer?step=try");
+      });
+    });
+
     it("an unknown ?step is A, and the trial rides yearly only: the monthly note has no trial words", async () => {
       const { session } = await walk();
       const a = await (await get("/start/offer?step=bogus", session)).text();

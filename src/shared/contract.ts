@@ -571,9 +571,8 @@ export const ROUTES = {
   referralRedeem: "/v1/referral/redeem",
   /**
    * POST {@link PromoRedeemRequest} — redeem a campaign code (S4, #3695). A FREE code grants its days
-   * through `bonus_until`, once per account; a DISCOUNT code grants nothing and answers the percent,
-   * and the web checkout then carries it as `?code=` (`/start/checkout`), where the server resolves it
-   * to the host's RevenueCat Web Billing discount. Answers {@link PromoRedeemResponse};
+   * through `bonus_until`, once per account; a DISCOUNT code grants nothing and answers the percent
+   * and the RevenueCat discount code the web checkout carries as `?discount_code=`. Answers {@link PromoRedeemResponse};
    * `promo-unknown` 422, `promo-expired` 410, `promo-exhausted`/`promo-already` 409.
    */
   promoRedeem: "/v1/promo/redeem",
@@ -1041,6 +1040,11 @@ export interface PromoRedeemResponse {
   code: string;
   /** Percent off, for a `discount`; null for a `free` code. */
   percent: number | null;
+  /**
+   * For a `discount`: the RevenueCat Web Billing discount code, which the web app appends to its
+   * checkout link as `?discount_code=` (the server-rendered `/start` flow resolves `code` itself).
+   */
+  discountCode: string | null;
   profile: ProfileResponse;
 }
 

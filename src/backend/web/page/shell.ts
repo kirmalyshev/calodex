@@ -291,6 +291,10 @@ body:has(.offer) { background: var(--surface); }
 /* The offer's foot (#263): the legal links as the boards' centred muted footer. */
 .offer .fine { font-size: .8125rem; color: var(--muted); text-align: center; margin: .35rem 0 0; }
 .offer .fine a { color: inherit; }
+.offer .fine { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4em; }
+.offer .fine .g { white-space: nowrap; }
+.offer .fine.long { flex-direction: column; align-items: center; }
+.offer .fine.long .sep { display: none; }
 .offer .fine a:hover { color: var(--ink); }
 
 /* The plan page (#51). A small label over a figure, the declared marker caps in a row beside it,

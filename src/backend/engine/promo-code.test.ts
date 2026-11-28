@@ -68,7 +68,7 @@ describe("redeemPromo (S4, #3695)", () => {
     await store.putPromoCode({ code: "TEN", ...off });
     for (let i = 0; i < 2; i++) {
       const out = await redeemPromo(deps, userId, "ten");
-      expect(out).toMatchObject({ kind: "discount", code: "TEN", percent: 10 });
+      expect(out).toMatchObject({ kind: "discount", code: "TEN", percent: 10, discountCode: "RC_TEN" });
     }
     expect(await store.bonusUntil(userId)).toBeNull();
   });

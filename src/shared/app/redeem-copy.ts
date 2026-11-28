@@ -23,7 +23,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "That code isn't valid.",
     redeemEnded: "This code has ended.",
     redeemAlready: "You've already used a code.",
-    redeemDiscount: "{percent}% off, applied at checkout.",
+    redeemDiscount: "{percent} off, applied at checkout.",
   },
   fr: {
     redeemField: "Code",
@@ -31,7 +31,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Ce code n'est pas valide.",
     redeemEnded: "Ce code n'est plus valable.",
     redeemAlready: "Vous avez déjà utilisé un code.",
-    redeemDiscount: "{percent} % de réduction, appliqués au paiement.",
+    redeemDiscount: "{percent} de réduction, appliqués au paiement.",
   },
   de: {
     redeemField: "Code",
@@ -39,7 +39,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Dieser Code ist ungültig.",
     redeemEnded: "Dieser Code ist abgelaufen.",
     redeemAlready: "Du hast bereits einen Code eingelöst.",
-    redeemDiscount: "{percent} % Rabatt, beim Bezahlen angewendet.",
+    redeemDiscount: "{percent} Rabatt, beim Bezahlen angewendet.",
   },
   it: {
     redeemField: "Codice",
@@ -47,7 +47,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Questo codice non è valido.",
     redeemEnded: "Questo codice è scaduto.",
     redeemAlready: "Hai già usato un codice.",
-    redeemDiscount: "{percent}% di sconto, applicato al pagamento.",
+    redeemDiscount: "{percent} di sconto, applicato al pagamento.",
   },
   es: {
     redeemField: "Código",
@@ -55,7 +55,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Ese código no es válido.",
     redeemEnded: "Este código ha caducado.",
     redeemAlready: "Ya has usado un código.",
-    redeemDiscount: "{percent} % de descuento, aplicado al pagar.",
+    redeemDiscount: "{percent} de descuento, aplicado al pagar.",
   },
   vi: {
     redeemField: "Mã",
@@ -63,7 +63,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Mã này không hợp lệ.",
     redeemEnded: "Mã này đã hết hạn.",
     redeemAlready: "Bạn đã dùng một mã rồi.",
-    redeemDiscount: "Giảm {percent}%, áp dụng khi thanh toán.",
+    redeemDiscount: "Giảm {percent}, áp dụng khi thanh toán.",
   },
   id: {
     redeemField: "Kode",
@@ -71,7 +71,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Kode itu tidak valid.",
     redeemEnded: "Kode ini sudah berakhir.",
     redeemAlready: "Kamu sudah memakai satu kode.",
-    redeemDiscount: "Diskon {percent}%, diterapkan saat pembayaran.",
+    redeemDiscount: "Diskon {percent}, diterapkan saat pembayaran.",
   },
   ru: {
     redeemField: "Код",
@@ -79,7 +79,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Этот код недействителен.",
     redeemEnded: "Срок действия кода истёк.",
     redeemAlready: "Вы уже использовали код.",
-    redeemDiscount: "Скидка {percent}% применится при оплате.",
+    redeemDiscount: "Скидка {percent} применится при оплате.",
   },
   "pt-BR": {
     redeemField: "Código",
@@ -87,7 +87,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Esse código não é válido.",
     redeemEnded: "Esse código expirou.",
     redeemAlready: "Você já usou um código.",
-    redeemDiscount: "{percent}% de desconto, aplicado no pagamento.",
+    redeemDiscount: "{percent} de desconto, aplicado no pagamento.",
   },
   ja: {
     redeemField: "コード",
@@ -95,7 +95,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "このコードは無効です。",
     redeemEnded: "このコードは終了しました。",
     redeemAlready: "すでにコードを使用済みです。",
-    redeemDiscount: "{percent}%オフがお支払い時に適用されます。",
+    redeemDiscount: "{percent}オフがお支払い時に適用されます。",
   },
   ko: {
     redeemField: "코드",
@@ -103,7 +103,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "유효하지 않은 코드입니다.",
     redeemEnded: "종료된 코드입니다.",
     redeemAlready: "이미 코드를 사용했습니다.",
-    redeemDiscount: "{percent}% 할인이 결제 시 적용됩니다.",
+    redeemDiscount: "{percent} 할인이 결제 시 적용됩니다.",
   },
   "zh-Hans": {
     redeemField: "代码",
@@ -111,7 +111,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "该代码无效。",
     redeemEnded: "该代码已失效。",
     redeemAlready: "你已使用过一个代码。",
-    redeemDiscount: "{percent}% 折扣将在结账时应用。",
+    redeemDiscount: "{percent} 折扣将在结账时应用。",
   },
   "zh-Hant": {
     redeemField: "代碼",
@@ -119,7 +119,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "此代碼無效。",
     redeemEnded: "此代碼已失效。",
     redeemAlready: "你已使用過一個代碼。",
-    redeemDiscount: "{percent}% 折扣將於結帳時套用。",
+    redeemDiscount: "{percent} 折扣將於結帳時套用。",
   },
   tr: {
     redeemField: "Kod",
@@ -127,7 +127,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Bu kod geçerli değil.",
     redeemEnded: "Bu kodun süresi doldu.",
     redeemAlready: "Zaten bir kod kullandın.",
-    redeemDiscount: "%{percent} indirim ödemede uygulanır.",
+    redeemDiscount: "{percent} indirim ödemede uygulanır.",
   },
   pl: {
     redeemField: "Kod",
@@ -135,7 +135,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Ten kod jest nieprawidłowy.",
     redeemEnded: "Ten kod wygasł.",
     redeemAlready: "Kod został już przez Ciebie użyty.",
-    redeemDiscount: "Rabat {percent}% zostanie naliczony przy płatności.",
+    redeemDiscount: "Rabat {percent} zostanie naliczony przy płatności.",
   },
   nl: {
     redeemField: "Code",
@@ -143,7 +143,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Die code is ongeldig.",
     redeemEnded: "Deze code is verlopen.",
     redeemAlready: "Je hebt al een code gebruikt.",
-    redeemDiscount: "{percent}% korting, toegepast bij het afrekenen.",
+    redeemDiscount: "{percent} korting, toegepast bij het afrekenen.",
   },
   uk: {
     redeemField: "Код",
@@ -151,7 +151,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Цей код недійсний.",
     redeemEnded: "Термін дії коду минув.",
     redeemAlready: "Ви вже використали код.",
-    redeemDiscount: "Знижка {percent}% застосується під час оплати.",
+    redeemDiscount: "Знижка {percent} застосується під час оплати.",
   },
   sv: {
     redeemField: "Kod",
@@ -159,7 +159,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Den koden är ogiltig.",
     redeemEnded: "Den här koden har gått ut.",
     redeemAlready: "Du har redan använt en kod.",
-    redeemDiscount: "{percent} % rabatt, tillämpas vid betalning.",
+    redeemDiscount: "{percent} rabatt, tillämpas vid betalning.",
   },
   th: {
     redeemField: "รหัส",
@@ -167,7 +167,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "รหัสนี้ไม่ถูกต้อง",
     redeemEnded: "รหัสนี้หมดอายุแล้ว",
     redeemAlready: "คุณใช้รหัสไปแล้ว",
-    redeemDiscount: "ส่วนลด {percent}% จะถูกใช้ตอนชำระเงิน",
+    redeemDiscount: "ส่วนลด {percent} จะถูกใช้ตอนชำระเงิน",
   },
   hi: {
     redeemField: "कोड",
@@ -175,7 +175,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "यह कोड मान्य नहीं है।",
     redeemEnded: "इस कोड की अवधि समाप्त हो गई है।",
     redeemAlready: "आप पहले ही एक कोड इस्तेमाल कर चुके हैं।",
-    redeemDiscount: "{percent}% की छूट चेकआउट पर लागू होगी।",
+    redeemDiscount: "{percent} की छूट चेकआउट पर लागू होगी।",
   },
   cs: {
     redeemField: "Kód",
@@ -183,7 +183,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Tento kód není platný.",
     redeemEnded: "Platnost tohoto kódu skončila.",
     redeemAlready: "Kód jste už použili.",
-    redeemDiscount: "Sleva {percent} % se uplatní při platbě.",
+    redeemDiscount: "Sleva {percent} se uplatní při platbě.",
   },
   ro: {
     redeemField: "Cod",
@@ -191,7 +191,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Codul acesta nu este valid.",
     redeemEnded: "Acest cod a expirat.",
     redeemAlready: "Ai folosit deja un cod.",
-    redeemDiscount: "Reducere de {percent}%, aplicată la plată.",
+    redeemDiscount: "Reducere de {percent}, aplicată la plată.",
   },
   el: {
     redeemField: "Κωδικός",
@@ -199,7 +199,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Ο κωδικός δεν είναι έγκυρος.",
     redeemEnded: "Ο κωδικός έχει λήξει.",
     redeemAlready: "Έχεις ήδη χρησιμοποιήσει έναν κωδικό.",
-    redeemDiscount: "Έκπτωση {percent}%, που εφαρμόζεται στην πληρωμή.",
+    redeemDiscount: "Έκπτωση {percent}, που εφαρμόζεται στην πληρωμή.",
   },
   hu: {
     redeemField: "Kód",
@@ -207,7 +207,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Ez a kód érvénytelen.",
     redeemEnded: "Ez a kód lejárt.",
     redeemAlready: "Már felhasználtál egy kódot.",
-    redeemDiscount: "{percent}% kedvezmény, fizetéskor érvényesítve.",
+    redeemDiscount: "{percent} kedvezmény, fizetéskor érvényesítve.",
   },
   da: {
     redeemField: "Kode",
@@ -215,7 +215,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Den kode er ugyldig.",
     redeemEnded: "Denne kode er udløbet.",
     redeemAlready: "Du har allerede brugt en kode.",
-    redeemDiscount: "{percent} % rabat, anvendt ved betaling.",
+    redeemDiscount: "{percent} rabat, anvendt ved betaling.",
   },
   fi: {
     redeemField: "Koodi",
@@ -223,7 +223,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Koodi ei kelpaa.",
     redeemEnded: "Tämä koodi on vanhentunut.",
     redeemAlready: "Olet jo käyttänyt koodin.",
-    redeemDiscount: "{percent} % alennus otetaan huomioon maksussa.",
+    redeemDiscount: "{percent} alennus otetaan huomioon maksussa.",
   },
   no: {
     redeemField: "Kode",
@@ -231,7 +231,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Den koden er ugyldig.",
     redeemEnded: "Denne koden har utløpt.",
     redeemAlready: "Du har allerede brukt en kode.",
-    redeemDiscount: "{percent} % rabatt, brukt ved betaling.",
+    redeemDiscount: "{percent} rabatt, brukt ved betaling.",
   },
   sk: {
     redeemField: "Kód",
@@ -239,7 +239,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Tento kód nie je platný.",
     redeemEnded: "Platnosť tohto kódu skončila.",
     redeemAlready: "Kód ste už použili.",
-    redeemDiscount: "Zľava {percent} % sa uplatní pri platbe.",
+    redeemDiscount: "Zľava {percent} sa uplatní pri platbe.",
   },
   hr: {
     redeemField: "Kôd",
@@ -247,7 +247,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Taj kôd nije valjan.",
     redeemEnded: "Ovaj kôd je istekao.",
     redeemAlready: "Već si iskoristio kôd.",
-    redeemDiscount: "Popust od {percent}% primjenjuje se pri plaćanju.",
+    redeemDiscount: "Popust od {percent} primjenjuje se pri plaćanju.",
   },
   sl: {
     redeemField: "Koda",
@@ -255,7 +255,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Ta koda ni veljavna.",
     redeemEnded: "Ta koda je potekla.",
     redeemAlready: "Kodo ste že uporabili.",
-    redeemDiscount: "Popust {percent} % se uporabi pri plačilu.",
+    redeemDiscount: "Popust {percent} se uporabi pri plačilu.",
   },
   ca: {
     redeemField: "Codi",
@@ -263,7 +263,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Aquest codi no és vàlid.",
     redeemEnded: "Aquest codi ha caducat.",
     redeemAlready: "Ja has fet servir un codi.",
-    redeemDiscount: "{percent} % de descompte, aplicat en pagar.",
+    redeemDiscount: "{percent} de descompte, aplicat en pagar.",
   },
   ms: {
     redeemField: "Kod",
@@ -271,7 +271,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Kod itu tidak sah.",
     redeemEnded: "Kod ini telah tamat tempoh.",
     redeemAlready: "Anda sudah menggunakan satu kod.",
-    redeemDiscount: "Diskaun {percent}%, digunakan semasa pembayaran.",
+    redeemDiscount: "Diskaun {percent}, digunakan semasa pembayaran.",
   },
   "pt-PT": {
     redeemField: "Código",
@@ -279,7 +279,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Esse código não é válido.",
     redeemEnded: "Este código expirou.",
     redeemAlready: "Já utilizou um código.",
-    redeemDiscount: "{percent}% de desconto, aplicado no pagamento.",
+    redeemDiscount: "{percent} de desconto, aplicado no pagamento.",
   },
   bn: {
     redeemField: "কোড",
@@ -287,7 +287,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "এই কোডটি বৈধ নয়।",
     redeemEnded: "এই কোডের মেয়াদ শেষ হয়েছে।",
     redeemAlready: "আপনি আগেই একটি কোড ব্যবহার করেছেন।",
-    redeemDiscount: "{percent}% ছাড় চেকআউটে প্রযোজ্য হবে।",
+    redeemDiscount: "{percent} ছাড় চেকআউটে প্রযোজ্য হবে।",
   },
   gu: {
     redeemField: "કોડ",
@@ -295,7 +295,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "આ કોડ માન્ય નથી.",
     redeemEnded: "આ કોડની મુદત પૂરી થઈ ગઈ છે.",
     redeemAlready: "તમે પહેલેથી એક કોડ વાપરી લીધો છે.",
-    redeemDiscount: "{percent}% ની છૂટ ચેકઆઉટ વખતે લાગુ થશે.",
+    redeemDiscount: "{percent} ની છૂટ ચેકઆઉટ વખતે લાગુ થશે.",
   },
   kn: {
     redeemField: "ಕೋಡ್",
@@ -303,7 +303,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "ಈ ಕೋಡ್ ಮಾನ್ಯವಾಗಿಲ್ಲ.",
     redeemEnded: "ಈ ಕೋಡ್‌ನ ಅವಧಿ ಮುಗಿದಿದೆ.",
     redeemAlready: "ನೀವು ಈಗಾಗಲೇ ಒಂದು ಕೋಡ್ ಬಳಸಿದ್ದೀರಿ.",
-    redeemDiscount: "{percent}% ರಿಯಾಯಿತಿ ಚೆಕ್‌ಔಟ್‌ನಲ್ಲಿ ಅನ್ವಯವಾಗುತ್ತದೆ.",
+    redeemDiscount: "{percent} ರಿಯಾಯಿತಿ ಚೆಕ್‌ಔಟ್‌ನಲ್ಲಿ ಅನ್ವಯವಾಗುತ್ತದೆ.",
   },
   ml: {
     redeemField: "കോഡ്",
@@ -311,7 +311,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "ഈ കോഡ് സാധുവല്ല.",
     redeemEnded: "ഈ കോഡിന്റെ കാലാവധി കഴിഞ്ഞു.",
     redeemAlready: "നിങ്ങൾ ഇതിനകം ഒരു കോഡ് ഉപയോഗിച്ചു.",
-    redeemDiscount: "{percent}% കിഴിവ് ചെക്കൗട്ടിൽ ബാധകമാകും.",
+    redeemDiscount: "{percent} കിഴിവ് ചെക്കൗട്ടിൽ ബാധകമാകും.",
   },
   mr: {
     redeemField: "कोड",
@@ -319,7 +319,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "हा कोड वैध नाही.",
     redeemEnded: "या कोडची मुदत संपली आहे.",
     redeemAlready: "तुम्ही आधीच एक कोड वापरला आहे.",
-    redeemDiscount: "{percent}% सूट चेकआउटवेळी लागू होईल.",
+    redeemDiscount: "{percent} सूट चेकआउटवेळी लागू होईल.",
   },
   or: {
     redeemField: "କୋଡ୍",
@@ -327,7 +327,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "ଏହି କୋଡ୍ ବୈଧ ନୁହେଁ।",
     redeemEnded: "ଏହି କୋଡ୍‌ର ମିଆଦ ଶେଷ ହୋଇଯାଇଛି।",
     redeemAlready: "ଆପଣ ପୂର୍ବରୁ ଏକ କୋଡ୍ ବ୍ୟବହାର କରିସାରିଛନ୍ତି।",
-    redeemDiscount: "{percent}% ରିହାତି ଚେକ୍‌ଆଉଟ୍ ସମୟରେ ଲାଗୁ ହେବ।",
+    redeemDiscount: "{percent} ରିହାତି ଚେକ୍‌ଆଉଟ୍ ସମୟରେ ଲାଗୁ ହେବ।",
   },
   pa: {
     redeemField: "ਕੋਡ",
@@ -335,7 +335,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "ਇਹ ਕੋਡ ਜਾਇਜ਼ ਨਹੀਂ ਹੈ।",
     redeemEnded: "ਇਸ ਕੋਡ ਦੀ ਮਿਆਦ ਖ਼ਤਮ ਹੋ ਗਈ ਹੈ।",
     redeemAlready: "ਤੁਸੀਂ ਪਹਿਲਾਂ ਹੀ ਇੱਕ ਕੋਡ ਵਰਤ ਲਿਆ ਹੈ।",
-    redeemDiscount: "{percent}% ਛੋਟ ਚੈੱਕਆਊਟ ਵੇਲੇ ਲਾਗੂ ਹੋਵੇਗੀ।",
+    redeemDiscount: "{percent} ਛੋਟ ਚੈੱਕਆਊਟ ਵੇਲੇ ਲਾਗੂ ਹੋਵੇਗੀ।",
   },
   ta: {
     redeemField: "குறியீடு",
@@ -343,7 +343,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "இந்தக் குறியீடு செல்லாது.",
     redeemEnded: "இந்தக் குறியீட்டின் காலம் முடிந்துவிட்டது.",
     redeemAlready: "நீங்கள் ஏற்கெனவே ஒரு குறியீட்டைப் பயன்படுத்திவிட்டீர்கள்.",
-    redeemDiscount: "{percent}% தள்ளுபடி பணம் செலுத்தும்போது பொருந்தும்.",
+    redeemDiscount: "{percent} தள்ளுபடி பணம் செலுத்தும்போது பொருந்தும்.",
   },
   te: {
     redeemField: "కోడ్",
@@ -351,7 +351,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "ఈ కోడ్ చెల్లదు.",
     redeemEnded: "ఈ కోడ్ గడువు ముగిసింది.",
     redeemAlready: "మీరు ఇప్పటికే ఒక కోడ్ వాడారు.",
-    redeemDiscount: "{percent}% తగ్గింపు చెకౌట్‌లో వర్తిస్తుంది.",
+    redeemDiscount: "{percent} తగ్గింపు చెకౌట్‌లో వర్తిస్తుంది.",
   },
   bg: {
     redeemField: "Код",
@@ -359,7 +359,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Този код не е валиден.",
     redeemEnded: "Този код е изтекъл.",
     redeemAlready: "Вече си използвал код.",
-    redeemDiscount: "Отстъпка от {percent}% при плащането.",
+    redeemDiscount: "Отстъпка от {percent} при плащането.",
   },
   sq: {
     redeemField: "Kodi",
@@ -367,7 +367,7 @@ export const REDEEM_COPY: Localized<RedeemCopy> = {
     redeemUnknown: "Ky kod nuk është i vlefshëm.",
     redeemEnded: "Ky kod ka skaduar.",
     redeemAlready: "Ke përdorur tashmë një kod.",
-    redeemDiscount: "Zbritje {percent}%, e zbatuar gjatë pagesës.",
+    redeemDiscount: "Zbritje {percent}, e zbatuar gjatë pagesës.",
   },
 };
 

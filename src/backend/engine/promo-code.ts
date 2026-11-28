@@ -32,7 +32,8 @@ export async function redeemPromo(deps: EngineDeps, userId: string, input: unkno
     const out = await deps.store.redeemPromoFree(userId, c.code, now);
     if (out !== "ok") return { kind: `promo-${out}` };
   }
-  return { kind: c.kind, code: c.code, percent: c.kind === "discount" ? c.percent : null, profile: (await profileView(deps, userId))! };
+  return { kind: c.kind, code: c.code, percent: c.kind === "discount" ? c.percent : null,
+    discountCode: c.kind === "discount" ? c.discountCode : null, profile: (await profileView(deps, userId))! };
 }
 
 /** The RevenueCat discount code a live DISCOUNT code stands for, or null — what the checkout URL carries. */
