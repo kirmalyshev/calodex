@@ -1293,6 +1293,12 @@ export interface MessageRequest {
  * a meal that blows a medical cap, and the person reading that card declared a medical restriction.
  */
 export interface EditMealRequest {
+  /**
+   * User-given title for the meal (calodex_app#3681). Trimmed server-side and capped at
+   * {@link MAX_MEAL_NAME}; empty string, whitespace-only, or `null` clears it so the meal falls
+   * back to `mealNames(items)`.
+   */
+  name?: string | null;
   items?: MealItem[];
   /**
    * Change what item `index` IS to the catalog row `ref` (a `food_ref` id from `GET /v1/foods`), at
@@ -1349,6 +1355,8 @@ const isFoodSnapshot = (v: unknown): boolean => {
 /** An edit's items are bounded like every other client string: their names reach every later prompt that day. */
 export const MAX_MEAL_ITEMS = 50;
 export const MAX_ITEM_NAME = 120;
+/** The longest user-given title a meal may carry (calodex_app#3681). */
+export const MAX_MEAL_NAME = 120;
 /** A ceiling on any amount an edit carries: it ends up in a verdict and in a stored sentence. */
 export const MAX_MEAL_AMOUNT = 1_000_000;
 const amount = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= MAX_MEAL_AMOUNT;
@@ -1361,6 +1369,7 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
     const v = b[k];
     if (v !== undefined && !amount(v)) return false;
   }
+  if (b.name !== undefined && b.name !== null && (typeof b.name !== "string" || b.name.length > MAX_MEAL_NAME)) return false;
   if (b.servings !== undefined) {
     const n = b.servings;
     if (typeof n !== "number" || !Number.isFinite(n) || n < 0.5 || n > MAX_LABEL_SERVINGS || (n * 2) % 1 !== 0) return false;

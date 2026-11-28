@@ -6421,6 +6421,13 @@
       "EditMealRequest": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "User-given title for the meal (calodex_app#3681). Trimmed server-side and capped at  {@link  MAX_MEAL_NAME } ; empty string, whitespace-only, or `null` clears it so the meal falls back to `mealNames(items)`."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -8121,6 +8128,13 @@
               }
             ],
             "description": "The phone break taken after this meal (ieat-app#2129): how long, and whether it was held to the end. Null until one is recorded; absent on bare rows."
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "User-given title for this meal (calodex_app#3681). Null or absent falls back to `mealNames(items)`."
           },
           "servings": {
             "type": "number",
