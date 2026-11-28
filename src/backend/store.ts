@@ -56,6 +56,16 @@ export type SpendLimit = { over: "day"; max: number } | { over: "lifetime"; floo
 /** `chargeAnalysis`'s answer: the charge's id and whether this call took it, `"cap"` on the limit, `"lost"` on a gone lease. */
 export type ChargeOutcome = { analysisId: string; fresh: boolean } | "cap" | "lost";
 
+/** One user's report about one meal, held for human review. `meal` is null once the meal is gone. */
+export interface MealReport {
+  id: string;
+  userId: string;
+  mealId: string;
+  text: string;
+  createdAt: string;
+  meal: { id: string; date: string; kcal: number; items: MealItem[] } | null;
+}
+
 export interface JobRecord {
   userId: string;
   clientId: string;
@@ -463,7 +473,7 @@ export type VersionedMeal = MealRecord & { version: number };
 export type MealPatch = Partial<
   Pick<MealRecord,
     "name" | "items" | "kcal" | "protein_g" | "carbs_g" | "fat_g" | "satfat_g" | "fiber_g" | "sugar_g" |
-    "sodium_mg" | "verdicts" | "notes" | "corrected" | "date" | "question" | "model" | "confidence" | "focus" | "label" | "servings">
+    "sodium_mg" | "verdicts" | "notes" | "corrected" | "date" | "ts" | "question" | "model" | "confidence" | "focus" | "rating" | "label" | "servings">
 >;
 
 /** One stored photo of a meal. `position` is its order on the plate, 0-based, as uploaded. */
@@ -2223,6 +2233,13 @@ export interface Store {
    * keeps the newest rows, because a question about lately is a question about the near end.
    */
   mealsSince(userId: string, from: string, to: string, limit: number): Promise<MealRecord[]>;
+  /**
+   * Store a report about one of this account's meals. Null when the meal is missing or not theirs;
+   * the report deliberately has no meal foreign key, so deleting the meal does not erase the review.
+   */
+  insertMealReport(userId: string, mealId: string, text: string): Promise<MealReport | null>;
+  /** The admin's review list, newest first, bounded by `limit` (default 200). Unscoped like every admin read. */
+  adminMealReports(limit?: number): Promise<MealReport[]>;
 
   // ── Photos ─────────────────────────────────────────────────────────────────────────────────
   /**

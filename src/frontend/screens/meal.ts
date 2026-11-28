@@ -44,7 +44,7 @@ import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
 import {
   ApiError, api, apiBlob, attachMealPhotos, deleteSavedMeal, listSavedMeals, remainingMealPhotos,
-  renameMeal, saveMeal,
+  rateMeal, renameMeal, saveMeal,
 } from "../api.ts";
 import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
@@ -1257,6 +1257,28 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const correct = kitEl(`<a class="cta s">${esc(mc.webCorrect)}</a>`) as HTMLAnchorElement;
     correct.href = `#/meal/${encodeURIComponent(meal.id)}?fix`;
     sheet.append(correct);
+    // The rating card (calodex_app#3687): only while unrated, gone once a thumb is sent; no follow-up.
+    if (!meal.rating) {
+      const rate = el("div", "mrate");
+      const btns = el("div", "mratebtns");
+      for (const [up, label, glyph] of [[false, mc.rateDown, "👎"], [true, mc.rateUp, "👍"]] as const) {
+        const b = el("button", "mratebtn", glyph) as HTMLButtonElement;
+        b.type = "button";
+        b.setAttribute("aria-label", label);
+        b.addEventListener("click", () => {
+          btns.querySelectorAll("button").forEach((x) => { (x as HTMLButtonElement).disabled = true; });
+          rateMeal(meal.id, up).then(() => rate.remove()).catch((e: unknown) => {
+            console.error("rate meal failed", e);
+            // A meal gone (404) or a rate cap (429) can never succeed on retry: drop the card.
+            if (e instanceof ApiError && (e.status === 404 || e.status === 429)) { rate.remove(); return; }
+            btns.querySelectorAll("button").forEach((x) => { (x as HTMLButtonElement).disabled = false; });
+          });
+        });
+        btns.append(b);
+      }
+      rate.append(el("b", "d d17", mc.rateTitle), btns);
+      sheet.insertBefore(rate, correct);
+    }
     split.append(sheet);
     card.append(split);
     return card;

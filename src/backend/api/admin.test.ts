@@ -2328,3 +2328,38 @@ describe("the recognitions review", () => {
     expect((await admin("GET", "/admin/api/recognitions/1", undefined, "")).status).toBe(401);
   });
 });
+
+
+// calodex_app#3688: a meal report is the user's own prose held for review. The read crosses
+// accounts because the review does; the role gate is the same as every admin read.
+describe("the meal reports review", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  it("lists reports across accounts, newest first, with the meal's label", async () => {
+    const userId = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const mealId = crypto.randomUUID();
+    await store.insertMeal({
+      id: mealId, user_id: userId, ts: "2026-08-01T12:00:00.000Z", date: "2026-08-01",
+      isFood: true, items: [{ name: "Rice", grams: 200 }], kcal: 260, protein_g: 5,
+      carbs_g: 56, fat_g: 1, satfat_g: 0.2, fiber_g: 1, sugar_g: 0.1, sodium_mg: 5,
+      verdicts: {}, healthScore: null, confidence: "high", notes: "", corrected: false, model: "test",
+    });
+    expect(await store.insertMealReport(userId, mealId, "wrong ingredients")).not.toBeNull();
+
+    const res = await admin("GET", "/admin/api/meal-reports");
+    expect(res.status).toBe(200);
+    const { reports } = await res.json() as { reports: { userId: string; mealId: string; text: string; meal: { date: string; kcal: number } | null }[] };
+    const mine = reports.filter((r) => r.userId === userId);
+    expect(mine.length).toBe(1);
+    expect(mine[0]).toMatchObject({ mealId, text: "wrong ingredients", meal: { date: "2026-08-01", kcal: 260 } });
+  });
+
+  it("hides behind the same role: ordinary 404, anonymous 401, writes 404", async () => {
+    const ordinary = await handle(new Request(url("/admin/api/meal-reports"), {
+      headers: { authorization: `Bearer ${await session()}` },
+    }));
+    expect(ordinary.status).toBe(404);
+    expect((await admin("GET", "/admin/api/meal-reports", undefined, "")).status).toBe(401);
+    expect((await admin("POST", "/admin/api/meal-reports", {})).status).toBe(404);
+  });
+});

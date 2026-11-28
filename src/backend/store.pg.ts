@@ -16,7 +16,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { PgBoss, fromBunSql } from "pg-boss";
 import type { FunnelDimension, FunnelDimensions, FunnelFilters, MealReminders, PushKind, SavedMeal, SendKind, SendLogState } from "@eait/shared";
 import type {
-  DayTotals, FoodNutrient, FoodPortion, FoodRef, HealthDay, Lang, MealFocus, MealItem, MealLabel, MealQuestion,
+  DayTotals, FoodNutrient, FoodPortion, FoodRef, HealthDay, Lang, MealFocus, MealItem, MealRating, MealLabel, MealQuestion,
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
@@ -35,7 +35,7 @@ import { type ChatMessage,
   type MealPatch,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type OnboardingExperimentRules, type ScreenTemplateRecord, type OnboardingVariant, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type SendLogRow, type Store, type SwitchFlip, type SwitchKey, type AdminValueKey,
   type ClockedEntitlement, type StoreOptions, type StoredPhoto, type Acquisition, type RevenueCatEventRow,
-  type AdminRecognition, type AdminRecognitionListRow,
+  type AdminRecognition, type AdminRecognitionListRow, type MealReport,
 } from "./store.ts";
 
 /**
@@ -97,6 +97,7 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   tokens: "user_id",
   identities: "user_id",
   meals: "user_id",
+  meal_reports: "user_id",
   meal_photos: "user_id",
   pendings: "user_id",
   pairing_codes: "user_id",
@@ -899,11 +900,26 @@ create table if not exists meals (
   model         text
 );
 create index if not exists meals_user_date_idx on meals(user_id, date);
+
+-- A problem report about a meal (calodex_app#3688). meal_id deliberately carries NO foreign key:
+-- deleting the meal must not erase what its owner sent for review. The account key cascades, because
+-- the report is personal prose and goes with the account.
+create table if not exists meal_reports (
+  id         uuid primary key,
+  user_id    uuid not null references users(id) on delete cascade,
+  meal_id    uuid not null,
+  text       text not null check (char_length(btrim(text)) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+create index if not exists meal_reports_created_idx on meal_reports(created_at desc);
+create index if not exists meal_reports_user_idx on meal_reports(user_id, created_at desc);
 -- The question still open on a meal. Nullable and unread by every query but the row's own read:
 -- a host that predates it has meals nobody was asked about, which is exactly what null means.
 alter table meals add column if not exists question jsonb;
 -- The phone break taken after the meal (ieat-app#2129): {minutes, completed}, null until one is recorded.
 alter table meals add column if not exists focus jsonb;
+-- The thumb on the analysis ("How did Calodex do?"): 'up' | 'down', null until rated; the evals and the admin read it.
+alter table meals add column if not exists rating text check (rating in ('up', 'down'));
 -- Read off a nutrition label (ieat-app#2087): scan provenance. Its servings count remains the
 -- compatible count for a label meal while released servers can write only there (#3677); the meal's
 -- own column mirrors it on new writes. Null on every other meal.
@@ -1890,6 +1906,7 @@ function toMeal(r: MealRow, restrictions: readonly string[]): MealRecord {
     photo_compression: (r.photo_compression === null || r.photo_compression === undefined ? null : num(r.photo_compression)),
     photo_max_edge: (r.photo_max_edge === null || r.photo_max_edge === undefined ? null : num(r.photo_max_edge)),
     focus: json<MealFocus | null>(r.focus, null),
+    rating: (r.rating === "up" || r.rating === "down" ? r.rating : null) as MealRating | null,
     label: json<MealLabel | null>(r.label, null),
     name: (r.name ?? null) as string | null,
     ...(r.servings === null || r.servings === undefined ? {} : { servings: num(r.servings) }),
@@ -1941,8 +1958,8 @@ const NUMBER_COLUMNS = new Set(["servings", "items", "kcal", "protein_g", "carbs
 const MEAL_COLUMNS: Record<string, string> = {
   name: "name", servings: "servings", items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
   satfat_g: "satfat_g", fiber_g: "fiber_g", sugar_g: "sugar_g", sodium_mg: "sodium_mg",
-  verdicts: "verdicts", notes: "notes", corrected: "corrected", date: "date",
-  question: "question", model: "model", confidence: "confidence", focus: "focus", label: "label",
+  verdicts: "verdicts", notes: "notes", corrected: "corrected", date: "date", ts: "ts",
+  question: "question", model: "model", confidence: "confidence", focus: "focus", rating: "rating", label: "label",
 };
 
 /**
@@ -2060,6 +2077,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // ── Cross-user by definition: the admin surface, the funnel.
   hasAdmin: "unscoped",
   adminListUsers: "unscoped",
+  adminMealReports: "unscoped",
   adminMetrics: "unscoped",
   onboardingFunnel: "unscoped",
   // The per-account funnel (#812): the admin's read over every account, like `onboardingFunnel`
@@ -2190,6 +2208,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   mealRemindersOf: 0,
   setMealReminders: 0,
   consentOf: 0,
+  insertMealReport: 0,
   getProfile: 0,
   patchProfile: 0,
   getEntitlement: 0,
@@ -3247,6 +3266,7 @@ export async function postgresStore(
         const moved = await tx`
           update meals set user_id = ${intoUserId} where user_id = ${fromUserId} returning id`;
         await tx`update meal_photos set user_id = ${intoUserId} where user_id = ${fromUserId}`;
+        await tx`update meal_reports set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         await tx`update pendings set user_id = ${intoUserId} where user_id = ${fromUserId}`;
         await tx`
           update pgboss.job set data = jsonb_set(data, '{userId}', to_jsonb(${intoUserId}::text))
@@ -4943,6 +4963,34 @@ export async function postgresStore(
       return rows.map((r: MealRow) => toMeal(r, restrictions));
     },
 
+    async insertMealReport(userId, mealId, text) {
+      if (!UUID.test(mealId)) return null;
+      const id = crypto.randomUUID();
+      const rows = await sql`
+        insert into meal_reports (id, user_id, meal_id, text)
+        select ${id}, ${userId}, ${mealId}, ${text}
+        where exists (select 1 from meals where id = ${mealId} and user_id = ${userId})
+        returning id, user_id, meal_id, text, created_at`;
+      if (rows.length === 0) return null;
+      return mealReportRow(rows[0] as Record<string, unknown>, null);
+    },
+
+    async adminMealReports(limit = 200) {
+      const rows = await sql`
+        select r.id, r.user_id, r.meal_id, r.text, r.created_at,
+          m.id as meal_exists, m.date as meal_date, m.kcal as meal_kcal, m.items as meal_items
+        from meal_reports r
+        left join meals m on m.id = r.meal_id and m.user_id = r.user_id
+        order by r.created_at desc, r.id desc
+        limit ${Math.max(1, Math.min(1000, Math.floor(limit)))}`;
+      return (rows as Record<string, unknown>[]).map((r) => mealReportRow(r, r.meal_exists === null ? null : {
+        id: r.meal_id as string,
+        date: r.meal_date as string,
+        kcal: num(r.meal_kcal),
+        items: (typeof r.meal_items === "string" ? JSON.parse(r.meal_items) : r.meal_items) as MealItem[],
+      }));
+    },
+
     async putPhotos(userId, mealId, input) {
       if (input.length === 0) return;
       await inTx(async (tx) => {
@@ -6423,6 +6471,13 @@ export async function postgresStore(
   await store.refreshFoodIndex();
 
   return store;
+}
+
+function mealReportRow(r: Record<string, unknown>, meal: MealReport["meal"]): MealReport {
+  return {
+    id: r.id as string, userId: r.user_id as string, mealId: r.meal_id as string,
+    text: r.text as string, createdAt: new Date(r.created_at as string | Date).toISOString(), meal,
+  };
 }
 
 function campaignRow(r: Record<string, unknown>): CampaignRow {

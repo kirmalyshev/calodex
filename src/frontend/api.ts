@@ -19,10 +19,11 @@
 //     dependence invisible the day somebody changes it.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
+import type { MealRecord } from "@eait/shared";
 import type {
   AttachPhotosResponse, EditMealRequest, EditMealResponse, ErrorResponse, MilestonesResponse,
   MilestonesSeenRequest, NDJSON, PushConsentRequest, PushConsentResponse, PushOpenRequest,
-  PushTokenRequest, RedateMealRequest, SaveMealRequest, SaveMealResponse, SavedMeal,
+  PushTokenRequest, RateMealRequest, RedateMealRequest, SaveMealRequest, SaveMealResponse, SavedMeal,
   SavedMealsResponse,
 } from "@eait/shared/contract";
 import type { MealLogged, TargetGone } from "../shared/results.ts";
@@ -252,6 +253,10 @@ export const saveMeal = async (mealId: string): Promise<SavedMeal> =>
 /** Rename a logged meal (calodex_app#3681): synchronous PATCH with `{ name }` alone; null clears to derived items. */
 export const renameMeal = (mealId: string, name: string | null): Promise<EditMealResponse> =>
   api<EditMealResponse>(`/meals/${encodeURIComponent(mealId)}`, json("PATCH", { name } satisfies EditMealRequest));
+
+/** Rate a meal's analysis (calodex_app#3687): `up` true is the thumbs-up; the server keeps the last write. */
+export const rateMeal = (mealId: string, up: boolean): Promise<MealRecord> =>
+  api<MealRecord>(`/meals/${encodeURIComponent(mealId)}/rating`, json("POST", { up } satisfies RateMealRequest));
 
 export const deleteSavedMeal = async (id: string): Promise<void> => {
   try {

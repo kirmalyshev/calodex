@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, setSystemTime } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import {
   CHANNEL_HEADER, HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_MEAL_ITEMS, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
-  dateMinus, localDate, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
+  dateMinus, localDate, localTime, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
   type DaysResponse, type MealRecord, type ProfileResponse, type MealProposed, type PendingMealsResponse,
   type ChatEntry, type FoodRef, type MealUpdated, type WeightsResponse,
 } from "@eait/shared";
@@ -78,13 +78,17 @@ const get = (p: string, token?: string) =>
   handle(new Request(url(p), { headers: token ? { authorization: `Bearer ${token}` } : {} }));
 
 /** A meal on the record, bypassing the analysis path — for tests about what HOLDS one. */
-const seedMeal = (userId: string) => store.insertMeal({
-  id: crypto.randomUUID(), user_id: userId, ts: new Date().toISOString(), date: localDate("Europe/Berlin"),
+const seedMeal = async (userId: string) => {
+  const id = crypto.randomUUID();
+  await store.insertMeal({
+  id, user_id: userId, ts: new Date().toISOString(), date: localDate("Europe/Berlin"),
   isFood: true, items: [{ name: "Rice", grams: 200 }, { name: "Chicken", grams: 150 }],
   kcal: 500, protein_g: 40, carbs_g: 56, fat_g: 8, satfat_g: 2, fiber_g: 1, sugar_g: 0.1,
   sodium_mg: 400, verdicts: { weight: "good" }, healthScore: null, confidence: "high", notes: "", corrected: false,
   model: "test",
-});
+  });
+  return { id };
+};
 
 /**
  * Register a device, sign it in with Google, and complete onboarding. Returns the bearer token.
@@ -2842,5 +2846,87 @@ describe("meal-changed over HTTP (ieat-app#2695)", () => {
     const res = await post(ROUTES.messages, { text: "only half of it", focusMealId: logged.mealId }, token);
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ error: "meal-changed" });
+  });
+});
+
+describe("meal reports (calodex_app#3688)", () => {
+  it("stores the report against the caller's meal, trimmed", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const m = await seedMeal(userId);
+    const res = await post(ROUTES.mealReport(m.id), { text: "  wrong ingredients  " }, token);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ reported: true });
+    const rows = await store.adminMealReports();
+    expect(rows.filter((r) => r.userId === userId).map((r) => [r.mealId, r.text])).toEqual([[m.id, "wrong ingredients"]]);
+  });
+
+  it("404s another account's meal id rather than reporting it", async () => {
+    const token = await session();
+    const other = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const m = await seedMeal(other);
+    const res = await post(ROUTES.mealReport(m.id), { text: "not mine" }, token);
+    expect(res.status).toBe(404);
+    expect(await store.adminMealReports()).toEqual([]);
+  });
+
+  it("400s blank, missing and over-long text; 401s anonymous", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const m = await seedMeal(userId);
+    for (const body of [{}, { text: "" }, { text: "   " }, { text: "x".repeat(501) }, { text: 3 }]) {
+      expect((await post(ROUTES.mealReport(m.id), body, token)).status).toBe(400);
+    }
+    expect((await post(ROUTES.mealReport(m.id), { text: "wrong" })).status).toBe(401);
+  });
+});
+
+describe("POST /v1/meals/:id/rating", () => {
+  it("stores the thumb on the meal, the last write wins, and the meal reads it back", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const meal = await seedMeal(userId);
+    expect((await store.getMeal(userId, meal.id))!.rating ?? null).toBeNull();
+
+    const down = await post(ROUTES.mealRating(meal.id), { up: false }, token);
+    expect(down.status).toBe(200);
+    expect(await down.json()).toMatchObject({ id: meal.id, rating: "down" });
+
+    const up = await post(ROUTES.mealRating(meal.id), { up: true }, token);
+    expect(await up.json()).toMatchObject({ id: meal.id, rating: "up" });
+    expect((await store.getMeal(userId, meal.id))!.rating).toBe("up");
+  });
+
+  it("404s another account's meal and rates nothing", async () => {
+    const owner = await session();
+    const ownerId = (await store.userIdForToken(owner))!;
+    const meal = await seedMeal(ownerId);
+    expect((await post(ROUTES.mealRating(meal.id), { up: true }, await session())).status).toBe(404);
+    expect((await store.getMeal(ownerId, meal.id))!.rating ?? null).toBeNull();
+  });
+
+  it("400s a body that is not { up: boolean }, and 401s without a token", async () => {
+    const token = await session();
+    const meal = await seedMeal((await store.userIdForToken(token))!);
+    for (const body of [{}, { up: "yes" }, { up: 1 }, null, [], { up: true, extra: 1 }]) {
+      expect((await post(ROUTES.mealRating(meal.id), body, token)).status).toBe(400);
+    }
+    expect((await post(ROUTES.mealRating(meal.id), { up: true })).status).toBe(401);
+  });
+});
+
+describe("POST /v1/meals/:id/redate with a time (calodex_app#3682)", () => {
+  it("moves the meal to the picked day and time in the server's zone, and 400s a malformed time", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const meal = await seedMeal(userId);
+    const res = await post(ROUTES.mealRedate(meal.id), { dayOffset: 2, time: "07:45" }, token);
+    expect(res.status).toBe(200);
+    const moved = (await store.getMeal(userId, meal.id))!;
+    expect(localTime(CONFIG.timezone, new Date(moved.ts))).toBe("07:45");
+    expect(moved.date).toBe(dateMinus(localDate(CONFIG.timezone), 2));
+    const bad = await post(ROUTES.mealRedate(meal.id), { dayOffset: 0, time: "7:45" }, token);
+    expect(bad.status).toBe(400);
+    expect((await store.getMeal(userId, meal.id))!.ts).toBe(moved.ts);
   });
 });

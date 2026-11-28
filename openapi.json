@@ -2012,6 +2012,89 @@
         ]
       }
     },
+    "/v1/meals/{id}/report": {
+      "post": {
+        "operationId": "post_mealReport",
+        "summary": "Report a problem with one of the caller's meals, for human review. Unbilled; text is trimmed and bounded to 500 characters.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportMealRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportMealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/v1/meals/{id}/focus": {
       "post": {
         "operationId": "post_mealFocus",
@@ -2032,6 +2115,79 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FocusMealRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/v1/meals/{id}/rating": {
+      "post": {
+        "operationId": "post_mealRating",
+        "summary": "Rate the meal's analysis: `up` true is the thumbs-up. One rating per meal, the last write wins. Free for every user.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateMealRequest"
               }
             }
           }
@@ -8114,6 +8270,14 @@
         "additionalProperties": false,
         "description": "The one closed question the model may ask about an estimate, and the taps that answer it.\n\nTwo to four options, because the answer is a chip and a chip row is what a phone can put under a card. `text` is in the user's reply language, like every other sentence the model writes."
       },
+      "MealRating": {
+        "type": "string",
+        "enum": [
+          "up",
+          "down"
+        ],
+        "description": "The thumb on a meal's analysis (\"How did Calodex do?\"). One per meal; a second write replaces the first."
+      },
       "MealRecord": {
         "type": "object",
         "properties": {
@@ -8243,6 +8407,17 @@
               }
             ],
             "description": "The phone break taken after this meal (ieat-app#2129): how long, and whether it was held to the end. Null until one is recorded; absent on bare rows."
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MealRating"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The thumb the eater gave this meal's analysis; null until rated (the app draws the rating card only then), absent on bare rows."
           },
           "name": {
             "type": [
@@ -11374,11 +11549,28 @@
         "additionalProperties": false,
         "description": "What a register or an unregister answers. `registered` is the state AFTER the call."
       },
+      "RateMealRequest": {
+        "type": "object",
+        "properties": {
+          "up": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "up"
+        ],
+        "additionalProperties": false,
+        "description": "`POST /v1/meals/:id/rating` — `up` true is the thumbs-up. A second write replaces the first."
+      },
       "RedateMealRequest": {
         "type": "object",
         "properties": {
           "dayOffset": {
             "type": "number"
+          },
+          "time": {
+            "type": "string",
+            "description": "The time chip's picker (calodex_app#3682): the wall-clock `HH:MM` the meal was eaten at, on the day `dayOffset` names. The server resolves both against the account's timezone and clamps a time still ahead of now to now. Absent keeps the meal's own time; a client never sends an instant."
           }
         },
         "required": [
@@ -11612,6 +11804,32 @@
           }
         ],
         "description": "Why a request produced no meal. Each maps to one user-facing message, but the mapping lives in the surface — `not-onboarded` is a Telegram prompt in the bot and a navigation push here."
+      },
+      "ReportMealRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "description": "`POST /v1/meals/:id/report` — the meal ⋯ menu's \"Report Food\"."
+      },
+      "ReportMealResponse": {
+        "type": "object",
+        "properties": {
+          "reported": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "reported"
+        ],
+        "additionalProperties": false
       },
       "SaveMealRequest": {
         "type": "object",

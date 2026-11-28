@@ -40,6 +40,10 @@ export const mealCss = `
 .msheet .kfig .ico{width:30px;height:30px}
 .msheet .mmeta{margin-top:4px}
 .msheet .cta{margin-top:auto}
+.mrate{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}
+.mratebtns{display:flex;gap:8px}
+.mratebtn{font-size:22px;line-height:1;min-width:48px;min-height:44px;border-radius:14px;border:1px solid var(--line,#ddd);background:none;cursor:pointer}
+.mratebtn:disabled{opacity:.5}
 /* The tile switcher — the meal sheet's own copy of the day card's two-page clip (ieat-app#3676):
    a fixed-width page pair under the finger/trackpad, the boards' 6 px dots under it. */
 .mtiles{touch-action:pan-y;user-select:none}

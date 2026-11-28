@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   CHANNEL_HEADER, DISTRIBUTION_CHANNELS, parseChannel,
   MAX_HEALTH_DAYS_PER_BATCH, MAX_ITEM_NAME, MAX_MEAL_AMOUNT, MAX_MEAL_ITEMS, MAX_MEAL_NAME, healthDayBatches,
-  healthDaysFrom, healthSyncLanded, isEditMealRequest, isPushOpenRequest, isRedateMealRequest, pushOpenFrom, ROUTES, webPushSubscription,
+  healthDaysFrom, healthSyncLanded, isEditMealRequest, isPushOpenRequest, isRedateMealRequest, isReportMealRequest, pushOpenFrom, ROUTES, webPushSubscription,
 } from "./contract.ts";
 import { emptyHealthDay } from "./health.ts";
 
@@ -160,6 +160,26 @@ describe("isRedateMealRequest", () => {
   });
 });
 
+// A report is prose for a human review queue. What reaches the store is trimmed on input, so the
+// validator is the one place the 1..500 rule is enforced before a row exists.
+describe("isReportMealRequest", () => {
+  it("accepts one to five hundred non-space characters", () => {
+    expect(isReportMealRequest({ text: "wrong ingredients" })).toBe(true);
+    expect(isReportMealRequest({ text: " x " })).toBe(true);
+    expect(isReportMealRequest({ text: "x".repeat(500) })).toBe(true);
+  });
+
+  it("refuses blank, over-long and non-string text", () => {
+    expect(isReportMealRequest(null)).toBe(false);
+    expect(isReportMealRequest({})).toBe(false);
+    expect(isReportMealRequest({ text: "" })).toBe(false);
+    expect(isReportMealRequest({ text: "   " })).toBe(false);
+    expect(isReportMealRequest({ text: "x".repeat(501) })).toBe(false);
+    expect(isReportMealRequest({ text: 7 })).toBe(false);
+    expect(isReportMealRequest({ text: ["wrong"] })).toBe(false);
+  });
+});
+
 // The open is reported by the phone about a push it received, so the body is only a shape check:
 // whose id it is gets decided server-side against send_log, never here.
 describe("isPushOpenRequest", () => {
@@ -254,5 +274,14 @@ describe("parseChannel", () => {
     for (const v of ["", "unknown", "AppStore", "TESTFLIGHT", "Dev", " dev", "dev ", "enterprise", null, undefined, 1, ["dev"]]) {
       expect(parseChannel(v)).toBeNull();
     }
+  });
+});
+
+describe("RedateMealRequest time (calodex_app#3682)", () => {
+  it("accepts HH:MM or none, refuses anything else", async () => {
+    const { isRedateMealRequest } = await import("./contract.ts");
+    expect(isRedateMealRequest({ dayOffset: 1 })).toBe(true);
+    expect(isRedateMealRequest({ dayOffset: 0, time: "07:05" })).toBe(true);
+    for (const time of ["7:05", "24:00", "12:60", 1230, null, "12:30:00"]) expect(isRedateMealRequest({ dayOffset: 0, time })).toBe(false);
   });
 });
