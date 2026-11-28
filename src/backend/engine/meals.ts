@@ -13,7 +13,7 @@
 import {
   type DailyTotals, type EditMealItem, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
-  type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
+  type MealCopied, type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
   type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type UnknownFood, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, portionGrams, scaledItem,
   explainTargets, verdictsFromTargets, visibleVerdicts, MAX_MEAL_ITEMS,
 } from "@eait/shared";
@@ -789,6 +789,77 @@ export async function redateMeal(
     await remember(deps, userId, [{ role: "assistant", kind: "meal", mealId: moved.id, event: "redated", speaker: "gabie" }]);
   }
   return { kind: "redated", mealId: moved.id, analysis: toAnalysis(moved), totals, date };
+}
+
+/**
+ * Copy one of the caller's meals as NEW meals onto one or more days (calodex_app#3683). The copy
+ * repeats the composition exactly — items, macros, servings, label and custom name — and nothing
+ * about the copy's judgement is inherited: verdicts and the health score are computed here against
+ * the account's current targets, per copy. Photos do not carry over: they are evidence of the plate
+ * on its own day, not a picture of what was eaten on another one.
+ *
+ * Unbilled because no model runs, but it is still a log: the paywall is `checkFreeLog`, the one
+ * rule. With a `clientId` the whole request goes through `once`, so a replay after a lost answer is
+ * answered with the copies the first request wrote rather than writing a second set.
+ */
+export async function copyMeal(
+  deps: EngineDeps,
+  userId: string,
+  mealId: string,
+  dayOffsets: readonly number[],
+  clientId?: string,
+): Promise<MealCopied | Refusal | TargetGone> {
+  const run = (d: EngineDeps) => copyMealUncached(d, userId, mealId, dayOffsets);
+  return clientId === undefined ? run(deps) : once(deps, userId, clientId, 0, run);
+}
+
+async function copyMealUncached(
+  deps: EngineDeps,
+  userId: string,
+  mealId: string,
+  dayOffsets: readonly number[],
+): Promise<MealCopied | Refusal | TargetGone> {
+  const source = await deps.store.getMeal(userId, mealId);
+  if (!source) return { kind: "target-gone", on: "meal" };
+  const refused = await checkFreeLog(deps, userId);
+  if (refused) return refused;
+  const profile = await deps.store.getProfile(userId);
+  const lang = profile?.lang ?? "en";
+  const zone = deps.config.timezone;
+  const today = localDate(zone);
+  const offsets = [...new Set(dayOffsets)];
+  const meals: MealCopied["meals"] = [];
+
+  for (const offset of offsets) {
+    const date = dateMinus(today, offset);
+    const analysis = {
+      isFood: source.isFood,
+      items: source.items.map((item) => ({ ...item })),
+      kcal: source.kcal, protein_g: source.protein_g, carbs_g: source.carbs_g, fat_g: source.fat_g,
+      satfat_g: source.satfat_g, fiber_g: source.fiber_g, sugar_g: source.sugar_g, sodium_mg: source.sodium_mg,
+      confidence: source.confidence, notes: source.notes,
+      ...(source.label ? { label: { ...source.label } } : {}),
+    };
+    const verdicts = await gatedVerdicts(deps, userId, analysis);
+    const record: MealRecord = {
+      ...analysis,
+      id: crypto.randomUUID(), user_id: userId, ts: new Date().toISOString(), date, verdicts,
+      healthScore: healthScore({ ...analysis, verdicts }, profile?.restrictions ?? []),
+      corrected: false, model: source.model, name: source.name ?? null,
+      ...(source.servings !== undefined ? { servings: source.servings } : {}),
+    };
+    await deps.store.insertMeal(record);
+    const totals = sumTotals(await deps.store.mealsForDate(userId, date));
+    await remember(deps, userId, [{ role: "assistant", kind: "meal", mealId: record.id, event: "logged", speaker: "gabie" }]);
+    meals.push({
+      kind: "logged", mealId: record.id,
+      analysis: { ...analysis, verdicts: record.verdicts, healthScore: record.healthScore },
+      totals, date, hint: hintFor(record),
+      ...verdictWordsFor(record.verdicts, lang),
+    });
+  }
+  await evaluateMilestones(deps, userId);
+  return { kind: "copied", sourceMealId: mealId, meals };
 }
 
 /**
