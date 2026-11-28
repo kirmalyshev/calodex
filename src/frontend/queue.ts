@@ -11,7 +11,7 @@ import type { DayResponse, JobsResponse, MealUpdateKind, MealUpdateBody, MealUpd
 import { ApiError, api, apiBlob, apiStream, signedIn } from "./api.ts";
 import { fillCopy as fill } from "./copy.ts";
 import { blobSrc } from "./kit.ts";
-import { el, lang, names, redrawScreen, refusalWords, photoCompression, photoMaxEdge } from "./shell.ts";
+import { el, lang, maybeLanded, names, redrawScreen, refusalWords, photoCompression, photoMaxEdge } from "./shell.ts";
 import { appliedAt, shrinkPhotos } from "./photo.ts";
 import * as analytics from "./analytics.ts";
 
@@ -436,8 +436,11 @@ export function updateRowEl(job: Job): HTMLElement {
   }
   th.append(glyph("!"));
   const failed = job.state === "failed";
+  // An append is the one edit a blind retry can duplicate (#3678): a lost answer may already be
+  // on the plate, so the row says so and offers no Try again. The meal itself is the check.
+  const append = u.body?.kind === "ingredients" && u.body.edit.add !== undefined;
   mm.append(el("span", "qstep still ink", failed ? U.failedTitle : U.refusedTitle),
-    el("span", "qstep still", failed ? (job.down ? U.reasons.error : u.kind === "note" ? U.failedNote : U.failedBody) : job.words ?? U.failedBody));
+    el("span", "qstep still", failed ? (append ? maybeLanded() : job.down ? U.reasons.error : u.kind === "note" ? U.failedNote : U.failedBody) : job.words ?? U.failedBody));
   const act = el("div", "qact");
   const button = (text: string, on: () => void) => { const b = el("button", "", text); b.addEventListener("click", on); act.append(b); };
   // Edit brings what was sent back in its own field, for a refusal as well as a failure.
@@ -449,7 +452,7 @@ export function updateRowEl(job: Job): HTMLElement {
     const to = u.kind === "note" ? "?fix" : u.grams ? `?item=${u.grams.index}` : "";
     location.hash = `#/meal/${encodeURIComponent(u.mealId)}${to}`;
   };
-  if (failed && u.body !== null) button(homeCopyFor(lang).tryAgain, () => retry(job));
+  if (failed && u.body !== null && !append) button(homeCopyFor(lang).tryAgain, () => retry(job));
   if (u.kind !== "reread" && (failed || u.kind === "note" || u.grams)) button(mealCopyFor(lang).phoneEdit, edit);
   if (failed) button(U.discard, () => { drop(job); redrawScreen(); });
   else button(U.ok, () => { drop(job); redrawScreen(); });

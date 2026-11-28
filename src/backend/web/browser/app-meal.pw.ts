@@ -191,6 +191,23 @@ test("+ Add More opens ingredient search, and a pick appends through the update 
   await expect(page.locator(".ing").last()).toContainText("Banana, raw");
 });
 
+test("a failed ingredient append does not offer a blind retry (#3678)", async ({ inWebApp: page }) => {
+  const { id: _id } = await openMeal(page);
+  await page.route(/\/api\/v1\/meals\/update\/queue/, async (route) => {
+    await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "server-error" }) });
+  });
+  await page.getByRole("button", { name: "+ Add More" }).click();
+  const sheet = page.locator(".fs");
+  await sheet.locator("input").fill("banana");
+  const row = sheet.locator(".fs-row", { hasText: "Banana, raw" }).first();
+  await row.locator("button.fs-add").click();
+
+  const queued = page.locator(".meal.q").first();
+  await expect(queued).toContainText("Couldn't apply your change");
+  await expect(queued).toContainText("may still have gone through");
+  await expect(queued.getByRole("button", { name: "Try again" })).toHaveCount(0);
+});
+
 test("Escape in the ingredient picker closes the picker, not the meal (#3678)", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   const addMore = page.getByRole("button", { name: "+ Add More" });
