@@ -1456,6 +1456,21 @@ describe("editing the answer", () => {
     expect(resized.analysis.items[0]).not.toHaveProperty("kcal_per_100g");
   });
 
+  it("drops the catalog density when a typed-calorie edit renames the row", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, name: "Olive oil, extra virgin", kcal: 300, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    expect(out.analysis.items[0]).toMatchObject({ name: "Olive oil, extra virgin", kcal: 300 });
+    expect(out.analysis.items[0]).not.toHaveProperty("kcal_per_100g");
+  });
+
   it("drops a stale density when calories are typed on an estimate", async () => {
     const userId = await onboard();
     const meal = await logged(userId);
