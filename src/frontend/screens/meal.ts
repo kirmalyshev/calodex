@@ -19,7 +19,7 @@
 // id resolves to the gone state — the server scopes the read, so "another user's meal" and "no
 // meal" are the same answer and the same panel.
 
-import { MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS } from "../../shared/contract.ts";
+import { MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
@@ -37,9 +37,13 @@ import type { ScorePart } from "../../shared/scores.ts";
 import type { MealItem, MealRecord } from "@eait/shared";
 import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
-import { api, apiBlob, deleteSavedMeal, listSavedMeals, saveMeal } from "../api.ts";
+import {
+  ApiError, api, apiBlob, attachMealPhotos, deleteSavedMeal, listSavedMeals, remainingMealPhotos,
+  saveMeal,
+} from "../api.ts";
 import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
+import { appliedAt, shrinkPhotos } from "../photo.ts";
 import {
   enqueueUpdate, inPlace, jobFor, queueJobRow, takeSentGrams, takeSentNote, updateBannerEl,
   updateFor, watchJobs, type Job,
@@ -51,8 +55,8 @@ import {
   verdictListEl,
 } from "../kit.ts";
 import {
-  COPY, DAYS, MEAL, clear, dayPickerButton, dayText, el, findMeal, lang, names, profile,
-  setRedraw, takeTurn, type Frame,
+  COPY, DAYS, MEAL, Said, clear, dayPickerButton, dayText, el, findMeal, lang, names,
+  photoCompression, photoMaxEdge, profile, setRedraw, takeTurn, type Frame,
 } from "../shell.ts";
 import * as analytics from "../analytics.ts";
 
@@ -103,7 +107,43 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   const wrap = el("section", "mdetail");
   const left = el("div", "wcol");
   const right = el("div", "wcol");
-  wrap.append(left, right);
+  // Persistent file input for "Add Photo" in the ⋯ menu (calodex_app#3684): lives directly under
+  // `wrap` so redraws never detach it, and `takeTurn` disables it while a write is in flight.
+  const photoPicker = el("input", "visually-hidden") as HTMLInputElement;
+  photoPicker.type = "file";
+  photoPicker.accept = "image/jpeg,image/png,image/webp";
+  photoPicker.tabIndex = -1;
+  photoPicker.setAttribute("aria-hidden", "true");
+  wrap.append(left, right, photoPicker);
+  let activeMeal: MealRecord | null = null;
+  const maxPhotos = (): number => me?.limits.maxPhotosPerMeal ?? MAX_PHOTOS_PER_MEAL;
+  photoPicker.addEventListener("change", () => {
+    const files = [...(photoPicker.files ?? [])];
+    photoPicker.value = "";
+    const meal = activeMeal;
+    if (!wrap.isConnected || files.length === 0 || meal === null || updateFor(meal.id) !== undefined) return;
+    const limit = maxPhotos();
+    if (files.length > remainingMealPhotos(meal.photos, limit)) {
+      tell(fill(COPY.photosMax, { n: n(limit) }));
+      return;
+    }
+    turn(async () => {
+      const quality = photoCompression();
+      const edge = photoMaxEdge();
+      const shrunk = await shrinkPhotos(files, quality, edge);
+      if (!wrap.isConnected) return;
+      const compress = appliedAt(files, shrunk, quality);
+      const maxEdge = appliedAt(files, shrunk, edge);
+      const maxBytes = me?.limits.maxUploadBytes ?? MAX_UPLOAD_BYTES;
+      if (shrunk.reduce((sum, f) => sum + f.size, 0) > maxBytes) throw new Said(COPY.photoTooLarge);
+      try {
+        await attachMealPhotos(meal.id, shrunk, compress, maxEdge);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 409 && e.body?.error === "target-gone") return;
+        throw e;
+      }
+    });
+  });
   const notice = el("p", "notice");
   notice.setAttribute("role", "alert");
   notice.hidden = true;
@@ -662,6 +702,11 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         }
       })();
     });
+    const leftSlots = remainingMealPhotos(meal.photos, maxPhotos());
+    const addPhoto = item("camera", mc.menuAddPhoto, () => {
+      photoPicker.multiple = leftSlots > 1;
+      photoPicker.click();
+    });
     const reread = item("retry", mc.phoneMenuReread, () => enqueueUpdate(meal, { kind: "reread" }));
     const del = item("trash", mc.deleteCta, () => openOverlay(deleteDialog(meal)));
     del.classList.add("bad");
@@ -671,6 +716,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       // "Correct" is the one fix verb (#1546) — a panel over this detail, not the chat.
       item("pencil", mc.phoneCorrect, () => openPanel(fixPanel(meal))),
       ...(saveAvailable ? [save] : []),
+      // Stored on the meal without analysis or charge (calodex_app#3684); hidden once full.
+      ...(leftSlots > 0 ? [addPhoto] : []),
       // Nothing to re-read without a photo, so a typed meal is not offered it (ieat-app#1225).
       ...((meal.photos ?? 0) > 0 ? [reread] : []),
       item("calendar-back", mc.phoneMenuMoveYesterday, () =>
@@ -1014,7 +1061,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   const draw = async (): Promise<void> => {
     barRow();
     const job = jobFor(id);
-    if (job !== undefined) { await drawQueued(job); return; }
+    if (job !== undefined) { activeMeal = null; await drawQueued(job); return; }
     // The picked day (`?d=`) is the LIST's; the meal resolves on its own day — a pick into a day
     // without it keeps the card (gone is for an id that resolves nowhere).
     const { day, meal } = await findMeal(id, zone, viewing);
@@ -1025,6 +1072,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       found = own.meal;
       ownDay = own.day;
     }
+    activeMeal = found;
     viewing = day.date;
 
     clear(left);

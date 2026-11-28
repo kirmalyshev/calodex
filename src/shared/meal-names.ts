@@ -9,3 +9,13 @@ export const mealNames = (items: readonly { name: string }[]): string => {
   const more = items.length > 2 ? ` +${items.length - 2}` : "";
   return shown.charAt(0).toUpperCase() + shown.slice(1) + more;
 };
+
+/**
+ * What a meal is called: the user's own `name` when set and non-blank, otherwise `mealNames(items)`.
+ * Empty when neither exists; the caller supplies its fallback ("Tap to Name" on the meal sheet, or
+ * the untitled word on a row).
+ */
+export const mealDisplayName = (meal: { name?: string | null; items: readonly { name: string }[] }): string => {
+  const custom = meal.name?.trim();
+  return custom ? custom : mealNames(meal.items);
+};

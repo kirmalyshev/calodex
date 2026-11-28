@@ -910,6 +910,8 @@ alter table meals add column if not exists focus jsonb;
 alter table meals add column if not exists label jsonb;
 -- Servings eaten (ieat-app#3677), nullable because a row never edited is one serving as logged.
 alter table meals add column if not exists servings double precision;
+-- User-given meal title (calodex_app#3681), nullable so absent falls back to mealNames(items).
+alter table meals add column if not exists name text;
 
 -- The photo lives with the meal. user_id is on the row as well as reachable through the meal, so
 -- a read is meal_id AND user_id with no join, and the cascade from users erases it even if a
@@ -1889,6 +1891,7 @@ function toMeal(r: MealRow, restrictions: readonly string[]): MealRecord {
     photo_max_edge: (r.photo_max_edge === null || r.photo_max_edge === undefined ? null : num(r.photo_max_edge)),
     focus: json<MealFocus | null>(r.focus, null),
     label: json<MealLabel | null>(r.label, null),
+    name: (r.name ?? null) as string | null,
     ...(r.servings === null || r.servings === undefined ? {} : { servings: num(r.servings) }),
   };
   return { ...meal, healthScore: healthScore(meal, restrictions) };
@@ -1936,7 +1939,7 @@ const NUMBER_COLUMNS = new Set(["servings", "items", "kcal", "protein_g", "carbs
 
 /** The meal columns an update may write. Same rule, same reason. */
 const MEAL_COLUMNS: Record<string, string> = {
-  servings: "servings", items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
+  name: "name", servings: "servings", items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
   satfat_g: "satfat_g", fiber_g: "fiber_g", sugar_g: "sugar_g", sodium_mg: "sodium_mg",
   verdicts: "verdicts", notes: "notes", corrected: "corrected", date: "date",
   question: "question", model: "model", confidence: "confidence", focus: "focus", label: "label",
@@ -4828,13 +4831,13 @@ export async function postgresStore(
       const rows = await sql`
         insert into meals (id, user_id, ts, date, is_food, items, kcal, protein_g, carbs_g, fat_g,
                            satfat_g, fiber_g, sugar_g, sodium_mg, verdicts, confidence, notes,
-                           corrected, model, question, label, servings, photo_compression, photo_max_edge)
+                           corrected, model, question, label, servings, name, photo_compression, photo_max_edge)
         values (${m.id}, ${m.user_id}, ${m.ts}, ${m.date}, ${m.isFood},
                 ${m.items}, ${m.kcal}, ${m.protein_g}, ${m.carbs_g}, ${m.fat_g},
                 ${m.satfat_g}, ${m.fiber_g}, ${m.sugar_g}, ${m.sodium_mg},
                 ${m.verdicts}, ${m.confidence}, ${m.notes}, ${m.corrected},
                 ${m.model}, ${m.question ?? null}, ${m.label ?? null}, ${m.servings ?? null},
-                ${m.photo_compression ?? null}, ${m.photo_max_edge ?? null})
+                ${m.name ?? null}, ${m.photo_compression ?? null}, ${m.photo_max_edge ?? null})
         on conflict (id) do nothing returning id`;
       return rows.length > 0;
     },

@@ -20,9 +20,9 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 import type {
-  ErrorResponse, MilestonesResponse, MilestonesSeenRequest, NDJSON, PushConsentRequest,
-  PushConsentResponse, PushOpenRequest, PushTokenRequest, RedateMealRequest, SaveMealRequest,
-  SaveMealResponse, SavedMeal, SavedMealsResponse,
+  AttachPhotosResponse, ErrorResponse, MilestonesResponse, MilestonesSeenRequest, NDJSON,
+  PushConsentRequest, PushConsentResponse, PushOpenRequest, PushTokenRequest, RedateMealRequest,
+  SaveMealRequest, SaveMealResponse, SavedMeal, SavedMealsResponse,
 } from "@eait/shared/contract";
 import type { MealLogged, TargetGone } from "../shared/results.ts";
 
@@ -269,4 +269,25 @@ export const logSavedMeal = async (id: string): Promise<MealLogged | TargetGone>
     }
     throw e;
   }
+};
+
+/** How many more photos a meal can hold against the server's `limits.maxPhotosPerMeal`. */
+export const remainingMealPhotos = (held: number | undefined, limit: number): number =>
+  Math.max(0, limit - (held ?? 0));
+
+/**
+ * Attach one or more photos to an existing meal (`POST /v1/meals/:id/photos`, #304, calodex_app#3684):
+ * stored on the meal, never analysed and never charged.
+ */
+export const attachMealPhotos = (
+  mealId: string,
+  photos: readonly File[],
+  compression?: number,
+  maxEdge?: number,
+): Promise<AttachPhotosResponse> => {
+  const form = new FormData();
+  for (const f of photos) form.append("photo", f);
+  if (compression !== undefined) form.append("compression", String(compression));
+  if (maxEdge !== undefined) form.append("maxEdge", String(maxEdge));
+  return api<AttachPhotosResponse>(`/meals/${encodeURIComponent(mealId)}/photos`, { method: "POST", body: form });
 };

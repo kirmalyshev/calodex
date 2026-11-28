@@ -450,6 +450,10 @@ export interface MealRecord extends MealAnalysis {
   /** Set when the meal was read off a nutrition label (ieat-app#2087); null on every other meal. */
   label?: MealLabel | null;
   /**
+   * User-given title for this meal (calodex_app#3681). Null or absent falls back to `mealNames(items)`.
+   */
+  name?: string | null;
+  /**
    * How many servings of this meal were eaten (#3677), by halves. Absent means 1. On a label scan
    * this mirrors `label.servings` while released servers can still write only that field.
    */
