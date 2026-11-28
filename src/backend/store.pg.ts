@@ -2319,6 +2319,7 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
 
   // ── The id arrives inside the record rather than beside it.
   insertMeal: (args) => (args[0] as { user_id: string }).user_id,
+  insertMeals: 0,
   putPending: (args) => (args[0] as { userId: string }).userId,
 };
 
@@ -4886,6 +4887,28 @@ export async function postgresStore(
                 ${m.name ?? null}, ${m.photo_compression ?? null}, ${m.photo_max_edge ?? null})
         on conflict (id) do nothing returning id`;
       return rows.length > 0;
+    },
+
+    async insertMeals(userId, records) {
+      if (records.length === 0) return 0;
+      if (records.some((record) => record.user_id !== userId)) throw new Error("meal user mismatch");
+      // One transaction, no `on conflict`: a duplicate or a database failure rolls every row back,
+      // because a multi-day copy that lands halfway is a set the caller cannot safely retry.
+      return await inTx(async (tx) => {
+        for (const m of records) {
+          await tx`
+            insert into meals (id, user_id, ts, date, is_food, items, kcal, protein_g, carbs_g, fat_g,
+                               satfat_g, fiber_g, sugar_g, sodium_mg, verdicts, confidence, notes,
+                               corrected, model, question, label, servings, name, photo_compression, photo_max_edge)
+            values (${m.id}, ${m.user_id}, ${m.ts}, ${m.date}, ${m.isFood},
+                    ${m.items}, ${m.kcal}, ${m.protein_g}, ${m.carbs_g}, ${m.fat_g},
+                    ${m.satfat_g}, ${m.fiber_g}, ${m.sugar_g}, ${m.sodium_mg},
+                    ${m.verdicts}, ${m.confidence}, ${m.notes}, ${m.corrected},
+                    ${m.model}, ${m.question ?? null}, ${m.label ?? null}, ${m.servings ?? null},
+                    ${m.name ?? null}, ${m.photo_compression ?? null}, ${m.photo_max_edge ?? null})`;
+        }
+        return records.length;
+      });
     },
 
     async getMeals(userId, mealIds) {

@@ -1171,12 +1171,15 @@ export function createRouter(
         // Unbilled, but it writes meals and thread cards: per address, its own counter like the
         // editor beside it. The idempotency key is required because a replayed copy is not
         // naturally idempotent — without it the client's retry is a second set of meals.
-        const wait = limit(req, peer, "meal-copy", deps.config.linesRateLimitPerHour, HOUR);
-        if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
         const body: unknown = await req.json();
         if (!isCopyMealRequest(body)) return json({ error: "bad-copy" }, 400);
         const clientId = turnKey(req) ?? body.clientId;
         if (clientId === undefined) return json({ error: "clientId required" }, 400);
+        // A replay writes nothing, so it must not spend the allowance either — the same exception
+        // the billed turns above already carry.
+        const replay = (await store.getTurn(userId, clientId)) !== null;
+        const wait = replay ? null : limit(req, peer, "meal-copy", deps.config.linesRateLimitPerHour, HOUR);
+        if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
         const result = await copyMeal(deps, userId, decodeURIComponent(copyMatch[1]!), body.dayOffsets, clientId);
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
         return isRefusal(result) ? refusal(result) : json(result);

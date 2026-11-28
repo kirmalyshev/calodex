@@ -48,22 +48,30 @@ describe("copying a meal", () => {
   it("copies the composition once per deduped target day, with verdicts recomputed rather than inherited", async () => {
     const userId = await onboard(["kidneys"]);
     const source = meal(userId, {
-      name: "Weekday lunch", servings: 1.5,
+      name: "Weekday lunch", servings: 1.5, label: { servings: 1.5 },
+      notes: "label scan", confidence: "medium", model: "label-model",
       verdicts: { weight: "good" }, // stale on purpose: the copy must never inherit it
     });
     await store.insertMeal(source);
+    // One target already holds a small meal, so the response's totals prove they are that target
+    // day's totals rather than today's or the copy's own numbers.
+    await store.insertMeal(meal(userId, { date: dateMinus(today(), 1), kcal: 100 }));
 
     const copied = await copyMeal(deps, userId, source.id, [1, -2, 1]);
     if (copied.kind !== "copied") throw new Error(`expected copied, got ${copied.kind}`);
     expect(copied.meals).toHaveLength(2);
 
-    const dates = copied.meals.map((m) => m.date).sort();
-    expect(dates).toEqual([dateMinus(today(), -2), dateMinus(today(), 1)].sort());
+    // Dedupe keeps the request's first occurrence and its order: tomorrow, then two days ago.
+    expect(copied.sourceMealId).toBe(source.id);
+    expect(copied.meals.map((m) => m.date)).toEqual([dateMinus(today(), 1), dateMinus(today(), -2)]);
     for (const copy of copied.meals) {
       const row = (await store.getMeal(userId, copy.mealId))!;
       expect(row.id).not.toBe(source.id);
       expect(row.items).toEqual(source.items);
-      expect(row.kcal).toBe(source.kcal);
+      for (const key of ["isFood", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "confidence", "notes", "label", "model"] as const) {
+        expect(row[key]).toEqual(source[key]);
+      }
+      expect(row.healthScore).not.toBeNull();
       expect(row.name).toBe("Weekday lunch");
       expect(row.servings).toBe(1.5);
       expect(row.corrected).toBe(false);
@@ -72,7 +80,7 @@ describe("copying a meal", () => {
       expect(row.rating ?? null).toBeNull();
       expect(row.verdicts.kidneys).toBe("bad");
       expect(row.verdicts.weight).not.toBeUndefined();
-      expect(copy.totals.kcal).toBeGreaterThanOrEqual(row.kcal);
+      expect(copy.totals.kcal).toBe(row.kcal + (copy.date === dateMinus(today(), 1) ? 100 : 0));
       expect(copy.verdictLabels.length).toBeGreaterThan(0);
     }
     expect(await store.mealsForDate(userId, today())).toHaveLength(1);
@@ -143,6 +151,35 @@ describe("copying a meal", () => {
     expect((await store.mealsForDate(userId, dateMinus(today(), -1))).filter((m) => m.id !== source.id)).toHaveLength(1);
   });
 
+  it("POST /v1/meals/:id/copy maps the paywall refusal instead of answering it as a copy", async () => {
+    const raw = memoryStore();
+    const ungranted = { ...deps, store: raw };
+    const { userId } = await raw.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    await raw.addIdentity(userId, "google", "g-" + userId.slice(0, 8));
+    const out = await patchProfile(ungranted, userId, {
+      goal: "lose", sex: "female", birth_year: 1990, height_cm: 165, weight_kg: 70,
+      target_weight_kg: 65, activity: "some", pace: "steady", country: "de",
+      restrictions: [], complete_onboarding: true,
+    });
+    if (!out || !out.ok) throw new Error("onboarding failed");
+    const source = meal(userId);
+    await raw.insertMeal(source);
+    const token = await raw.issueToken(userId);
+    const handle = createRouter(ungranted, raw, {
+      verify: async () => { throw new Error("unused"); },
+      verifyAppleNotification: async () => { throw new Error("unused"); },
+    });
+
+    const res = await handle(new Request(`http://local${ROUTES.mealCopy(source.id)}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ dayOffsets: [1] }),
+    }));
+    expect(res.status).toBe(402);
+    expect(await res.json()).toEqual({ error: "subscription-required" });
+    expect(await raw.mealsForDate(userId, dateMinus(today(), 1))).toHaveLength(0);
+  });
+
   it("POST /v1/meals/:id/copy validates, scopes, and answers every copy", async () => {
     const userId = await onboard();
     const other = await onboard();
@@ -163,16 +200,28 @@ describe("copying a meal", () => {
     expect((await post(tokA, { dayOffsets: [] })).status).toBe(400);
     expect((await post(tokA, { dayOffsets: [8] })).status).toBe(400);
     expect((await post(tokB, { dayOffsets: [1] })).status).toBe(409);
+    const noKey = await handle(new Request(`http://local${ROUTES.mealCopy(source.id)}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${tokA}`, "content-type": "application/json" },
+      body: JSON.stringify({ dayOffsets: [1] }),
+    }));
+    expect(noKey.status).toBe(400);
 
     const key = crypto.randomUUID();
     // The body's clientId is the same replay key when no header carries one (#2701's shape).
     const bodyKey = crypto.randomUUID();
-    const bodyKeyRes = await handle(new Request(`http://local${ROUTES.mealCopy(source.id)}`, {
+    const bodyKeyReq = () => handle(new Request(`http://local${ROUTES.mealCopy(source.id)}`, {
       method: "POST",
       headers: { authorization: `Bearer ${tokA}`, "content-type": "application/json" },
       body: JSON.stringify({ dayOffsets: [-3], clientId: bodyKey }),
     }));
+    const bodyKeyRes = await bodyKeyReq();
     expect(bodyKeyRes.status).toBe(200);
+    const bodyKeyJson = await bodyKeyRes.json();
+    const bodyKeyReplay = await bodyKeyReq();
+    expect(bodyKeyReplay.status).toBe(200);
+    expect(await bodyKeyReplay.json()).toEqual(bodyKeyJson);
+    expect((await store.mealsForDate(userId, dateMinus(today(), -3))).filter((m) => m.id !== source.id)).toHaveLength(1);
 
     const ok = await post(tokA, { dayOffsets: [1, -1, 1] }, key);
     expect(ok.status).toBe(200);
@@ -182,6 +231,16 @@ describe("copying a meal", () => {
     const replay = await post(tokA, { dayOffsets: [1, -1, 1] }, key);
     expect(replay.status).toBe(200);
     expect(await replay.json()).toEqual(body);
+    // The header is the replay key when both carry one: a different body clientId starts no second turn.
+    const conflict = await handle(new Request(`http://local${ROUTES.mealCopy(source.id)}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${tokA}`, "content-type": "application/json", "idempotency-key": key },
+      body: JSON.stringify({ dayOffsets: [1, -1, 1], clientId: crypto.randomUUID() }),
+    }));
+    expect(conflict.status).toBe(200);
+    expect(await conflict.json()).toEqual(body);
+    expect(body.sourceMealId).toBe(source.id);
+    expect(body.meals.map((m) => m.date)).toEqual([dateMinus(today(), 1), dateMinus(today(), -1)]);
     expect((await store.mealsForDate(userId, dateMinus(today(), 1))).filter((m) => m.id !== source.id)).toHaveLength(1);
   });
 });

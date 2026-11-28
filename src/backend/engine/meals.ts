@@ -830,8 +830,15 @@ async function copyMealUncached(
   const today = localDate(zone);
   const now = Date.now();
   const offsets = [...new Set(dayOffsets)];
-  const meals: MealCopied["meals"] = [];
-  const [hour, minute] = localTime(zone, new Date(source.ts)).split(":").map(Number) as [number, number];
+  // Some ICU builds write midnight as 24:xx even with `hour12: false` (notify's formatter carries
+  // the same guard): on the target date that is hour 0, never an unparseable 24.
+  const [rawHour, minute] = localTime(zone, new Date(source.ts)).split(":").map(Number) as [number, number];
+  const hour = rawHour % 24;
+  const planned: {
+    record: MealRecord;
+    analysis: AnalyzedMeal;
+    totals: ReturnType<typeof sumTotals>;
+  }[] = [];
 
   for (const offset of offsets) {
     const date = dateMinus(today, offset);
@@ -856,17 +863,29 @@ async function copyMealUncached(
       corrected: false, model: source.model, name: source.name ?? null,
       ...(source.servings !== undefined ? { servings: source.servings } : {}),
     };
-    await deps.store.insertMeal(record);
-    const totals = sumTotals(await deps.store.mealsForDate(userId, date));
-    await remember(deps, userId, [{ role: "assistant", kind: "meal", mealId: record.id, event: "logged", speaker: "gabie" }]);
-    meals.push({
-      kind: "logged", mealId: record.id,
-      analysis: { ...analysis, verdicts: record.verdicts, healthScore: record.healthScore },
-      totals, date, hint: hintFor(record),
-      ...verdictWordsFor(record.verdicts, lang),
-    });
+    // Read the target before the atomic write and add the copy virtually: the response is then
+    // complete the moment the batch commits, with no post-commit read able to outrun the turn.
+    const totals = sumTotals([...await deps.store.mealsForDate(userId, date), record]);
+    planned.push({ record, analysis, totals });
   }
-  await evaluateMilestones(deps, userId);
+
+  // The rows are ONE batch: a database failure before commit leaves no copy behind, so a later
+  // request under a new key cannot duplicate the half that landed. The thread and milestones are
+  // deliberately after the commit; both are already best-effort and never make a written meal fail.
+  await deps.store.insertMeals(userId, planned.map((p) => p.record));
+  // Both followers are best-effort by contract and catch their own failures. They are deliberately
+  // not awaited: once the batch has committed, a slow thread write or a milestone scan must not be
+  // able to carry the request past its turn bound and make a completed copy read as unknown.
+  void remember(deps, userId, planned.map((p) => ({
+    role: "assistant", kind: "meal", mealId: p.record.id, event: "logged", speaker: "gabie",
+  })));
+  const meals: MealCopied["meals"] = planned.map(({ record, analysis, totals }) => ({
+    kind: "logged", mealId: record.id,
+    analysis: { ...analysis, verdicts: record.verdicts, healthScore: record.healthScore },
+    totals, date: record.date, hint: hintFor(record),
+    ...verdictWordsFor(record.verdicts, lang),
+  }));
+  void evaluateMilestones(deps, userId);
   return { kind: "copied", sourceMealId: mealId, meals };
 }
 

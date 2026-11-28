@@ -2194,6 +2194,13 @@ export interface Store {
   // ── Meals ──────────────────────────────────────────────────────────────────────────────────
   /** False when a meal with this id already exists — a confirm racing itself; the first one won. */
   insertMeal(record: MealRecord): Promise<boolean>;
+  /**
+   * Several meals of ONE account as ONE atomic write: every row lands or none does. Unlike
+   * `insertMeal`, an id conflict is an error rather than a lost row, because a batch silently
+   * missing one member is a copy the caller believes it made. A record for another user is an
+   * error before anything writes. Returns the rows written.
+   */
+  insertMeals(userId: string, records: MealRecord[]): Promise<number>;
   /** Scoped: another user's meal id resolves to null, not to their row. */
   getMeal(userId: string, mealId: string): Promise<MealRecord | null>;
   /** Scoped, several at once; ids that are not this user's are simply absent. Any order. */
