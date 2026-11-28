@@ -8,8 +8,8 @@
 
 import { execSync } from "node:child_process";
 import type { Page } from "@playwright/test";
-import type { DayResponse } from "@eait/shared/contract";
-import { wholeNumbers } from "@eait/shared";
+import type { DayResponse, ProfileResponse } from "@eait/shared/contract";
+import { LANG_TAG, dateMinus, wholeNumbers } from "@eait/shared";
 import { expect, logMeal, onboardFast, sessionToken, signIn, test } from "./fixtures.ts";
 
 // The review shots (#93's gate). `test-results/` is gitignored; the names carry the sha instead
@@ -621,6 +621,182 @@ test("tapping the meal title renames it, clears back to derived items, and shows
   await page.setViewportSize({ width: 390, height: 844 });
   await shot(page, "tap-to-name-390");
   await page.unroute("**/api/v1/diary/day?*");
+});
+
+
+test("Copy To retries a failed copy under the same key, then writes the picked days (#3683)", async ({ inWebApp: page }) => {
+  const { id, date: serverToday } = await openMeal(page);
+  const token = await sessionToken(page);
+  const profileRes = await page.request.get("/v1/profile", { headers: { authorization: `Bearer ${token}` } });
+  expect(profileRes.status()).toBe(200);
+  const profile = (await profileRes.json()) as ProfileResponse;
+
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator(".copyday")).toHaveCount(profile.limits.mealCopyMaxOffset * 2 + 1);
+  const copy = dialog.getByRole("button", { name: "Copy", exact: true });
+  await expect(copy).toBeDisabled();
+
+  await dialog.locator(".copyday[data-offset=\"1\"]").click();
+  await dialog.locator(".copyday[data-offset=\"-1\"]").click();
+  await expect(copy).toBeEnabled();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await shot(page, "copy-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "copy-390");
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  // The first response fails before the server; the retry of the same selection must be the
+  // same idempotent write, not a second set of meals under a fresh key.
+  let failedOnce = false;
+  await page.route(/\/api\/v1\/meals\/[^/]+\/copy/, async (route) => {
+    if (!failedOnce) {
+      failedOnce = true;
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "boom" }) });
+    } else {
+      await route.continue();
+    }
+  });
+  const bodies: unknown[] = [];
+  page.on("request", (req) => {
+    if (req.method() === "POST" && req.url().includes(`/meals/${id}/copy`)) bodies.push(req.postDataJSON());
+  });
+  await copy.click();
+  await expect(dialog.getByRole("alert")).toHaveText("Couldn’t copy that. Try again.");
+  await expect(copy).toBeEnabled();
+
+  const moved = page.waitForResponse((r) => r.url().includes(`/meals/${id}/copy`) && r.ok());
+  await copy.click();
+  const result = (await (await moved).json()) as {
+    kind: string; sourceMealId: string; meals: { mealId: string; date: string; analysis: { kcal: number } }[];
+  };
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]).toEqual(bodies[1]);
+  expect(bodies[0]).toMatchObject({ dayOffsets: [1, -1], clientId: expect.any(String) });
+  expect(result).toMatchObject({ kind: "copied", sourceMealId: id });
+  expect(result.meals).toHaveLength(2);
+  expect(result.meals.map((m) => m.date).sort()).toEqual([
+    dateMinus(serverToday, -1), dateMinus(serverToday, 1),
+  ].sort());
+  expect(new Set(result.meals.map((m) => m.mealId)).size).toBe(2);
+  await expect(dialog).toHaveCount(0);
+
+  const source = (await day(page)).meals.find((m) => m.id === id)!;
+  for (const copied of result.meals) {
+    const target = (await day(page, copied.date)).meals.find((m) => m.id === copied.mealId);
+    expect(target).toBeDefined();
+    expect(target!.kcal).toBe(source.kcal);
+    expect(target!.items).toEqual(source.items);
+  }
+});
+
+test("Copy To labels the day the server resolves, not the day the screen opened (#3683)", async ({ inWebApp: page }) => {
+  await logMeal(page);
+  const serverToday = (await day(page)).date;
+  const id = (await day(page)).meals[0]!.id;
+  const serverNoon = new Date(`${serverToday}T12:00:00Z`).getTime();
+  await page.clock.install();
+  await page.clock.setSystemTime(new Date(`${dateMinus(serverToday, 1)}T12:00:00Z`));
+  await page.goto(`/#/meal/${id}?d=${serverToday}`);
+  await expect(page.locator(".hsr")).toBeVisible();
+  await page.clock.setSystemTime(new Date(serverNoon));
+
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  const expected = new Intl.DateTimeFormat(LANG_TAG.en, {
+    timeZone: "UTC", weekday: "short", day: "numeric", month: "short",
+  }).format(new Date(`${serverToday}T12:00:00Z`));
+  await expect(dialog.locator(".copyday[data-offset=\"0\"]")).toHaveText(expected);
+});
+
+test("Copy To does not let Escape abandon an in-flight write (#3683)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  await dialog.locator(".copyday[data-offset=\"0\"]").click();
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route(/\/api\/v1\/meals\/[^/]+\/copy/, async (route) => {
+    await gate;
+    await route.continue();
+  });
+  const sent = page.waitForRequest((req) => req.method() === "POST" && req.url().includes(`/meals/${id}/copy`));
+  await dialog.getByRole("button", { name: "Copy", exact: true }).click();
+  await sent;
+  await page.keyboard.press("Escape");
+  try {
+    await expect(page).toHaveURL(/#\/meal\//, { timeout: 1000 });
+    await expect(dialog).toBeVisible({ timeout: 1000 });
+  } finally {
+    release();
+  }
+  await expect(dialog).toHaveCount(0);
+});
+
+test("Copy To keys a retry by its exact selection (#3683)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  const copy = dialog.getByRole("button", { name: "Copy", exact: true });
+  const bodies: { dayOffsets: number[]; clientId: string }[] = [];
+  await page.route(/\/api\/v1\/meals\/[^/]+\/copy/, async (route) => {
+    bodies.push(route.request().postDataJSON() as { dayOffsets: number[]; clientId: string });
+    await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "boom" }) });
+  });
+
+  await dialog.locator(".copyday[data-offset=\"1\"]").click();
+  await copy.click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  await dialog.locator(".copyday[data-offset=\"-1\"]").click();
+  await copy.click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  await dialog.locator(".copyday[data-offset=\"-1\"]").click();
+  await copy.click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+
+  expect(bodies).toHaveLength(3);
+  expect(bodies[0]).toMatchObject({ dayOffsets: [1] });
+  expect(bodies[1]).toMatchObject({ dayOffsets: [1, -1] });
+  expect(bodies[2]).toMatchObject({ dayOffsets: [1] });
+  expect(bodies[1]!.clientId).not.toBe(bodies[0]!.clientId);
+  expect(bodies[2]!.clientId).toBe(bodies[0]!.clientId);
+});
+
+test("Copy To words a refusal and retries it under a fresh key (#3683)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  const copy = dialog.getByRole("button", { name: "Copy", exact: true });
+  await dialog.locator(".copyday[data-offset=\"1\"]").click();
+  const bodies: { clientId: string }[] = [];
+  await page.route(/\/api\/v1\/meals\/[^/]+\/copy/, async (route) => {
+    bodies.push(route.request().postDataJSON() as { clientId: string });
+    await route.fulfill({ status: 402, contentType: "application/json", body: JSON.stringify({ error: "subscription-required" }) });
+  });
+  await copy.click();
+  await expect(dialog.getByRole("alert")).toHaveText("Logging meals needs a subscription. Start your free trial to carry on.");
+  await copy.click();
+  await expect.poll(() => bodies.length).toBe(2);
+  expect(bodies[1]!.clientId).not.toBe(bodies[0]!.clientId);
+});
+
+test("Copy To closes on a gone meal instead of offering a retry (#3683)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  await dialog.locator(".copyday[data-offset=\"0\"]").click();
+  await page.route(/\/api\/v1\/meals\/[^/]+\/copy/, async (route) => {
+    await route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ error: "target-gone", on: "meal" }) });
+  });
+  await dialog.getByRole("button", { name: "Copy", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
 });
 
 test("the menu: re-read recomputes in place, and delete asks first", async ({ inWebApp: page }) => {

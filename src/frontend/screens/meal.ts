@@ -6,7 +6,7 @@
 // verdict dots, and the one fix. From web/meal-delete.html (design-pro, on the issue) the card
 // takes its header row: X on the left, the meal's day and time in the middle, the "…" menu on the
 // right; X or Esc returns to the diary (`#/`), and the menu is the phone's (meal-menu.html): Edit,
-// Re-read the photo, Move to yesterday, Report Food, Delete — which asks first, over the master-detail.
+// Re-read the photo, Move to yesterday, Copy To, Report Food, Delete — which asks first, over the master-detail.
 //
 // THE EDIT IS CAL AI'S LAYOUT, not a chat (#188, Kirill 21:58). "Correct this meal" and the
 // menu's Edit open `web/meal-fix.html` — a PANEL over this detail: one field, an example, Update,
@@ -20,10 +20,10 @@
 // meal" are the same answer and the same panel.
 
 import type { RedateMealRequest } from "../../shared/contract.ts";
-import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_MEAL_REPORT_TEXT, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
+import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_MEAL_REPORT_TEXT, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES, MEAL_COPY_MAX_DAYS, MEAL_COPY_MAX_OFFSET } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, daysBack, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
-import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
+import { LANG_TAG, UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import {
   catalogPortions, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText,
   portionGrams, previewKcal, scaledItem, servingsPreview, nutritionOverrideItem,
@@ -46,7 +46,7 @@ import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
 import {
   ApiError, api, apiBlob, attachMealPhotos, deleteSavedMeal, listSavedMeals, remainingMealPhotos,
-  rateMeal, renameMeal, reportMeal, saveMeal,
+  copyMeal, rateMeal, renameMeal, reportMeal, saveMeal,
 } from "../api.ts";
 import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
@@ -163,24 +163,25 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   // what Esc and a scrim tap close. Focus moves INTO a panel on open and back to whatever opened
   // it on close — a keyboard path has to end where it started.
   let overlay: HTMLElement | null = null;
+  let overlayCanClose: (() => boolean) | null = null;
   let restoreFocus: Element | null = null;
   // The open ⋯ menu's closer (#172): Esc takes it before it takes the screen — a menu up is a
   // popup, not a page, and the order here is overlay → menu → diary.
   let closeMenu: (() => void) | null = null;
   const closeOverlay = (): void => {
-    overlay?.remove(); overlay = null;
+    overlay?.remove(); overlay = null; overlayCanClose = null;
     if (restoreFocus instanceof HTMLElement && restoreFocus.isConnected &&
         restoreFocus.closest("[hidden]") === null) restoreFocus.focus();
     restoreFocus = null;
   };
-  const openOverlay = (node: HTMLElement, focus?: HTMLElement): void => {
+  const openOverlay = (node: HTMLElement, focus?: HTMLElement, canClose?: () => boolean): void => {
     closeOverlay();
     restoreFocus = document.activeElement;
-    wrap.append(node); overlay = node;
+    wrap.append(node); overlay = node; overlayCanClose = canClose ?? null;
     focus?.focus();
   };
-  const openPanel = (p: { node: HTMLElement; focus: HTMLElement }): void => {
-    openOverlay(p.node, p.focus);
+  const openPanel = (p: { node: HTMLElement; focus: HTMLElement; canClose?: () => boolean }): void => {
+    openOverlay(p.node, p.focus, p.canClose);
     // A value put back for the user is edited from its end; the panel may open before the page is attached.
     if (p.focus instanceof HTMLInputElement || p.focus instanceof HTMLTextAreaElement) {
       const field = p.focus;
@@ -201,8 +202,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   document.addEventListener("keydown", function onKey(e) {
     if (!wrap.isConnected) { document.removeEventListener("keydown", onKey); return; }
     if (e.key !== "Escape") return;
-    if (overlay !== null) closeOverlay();
-    else if (closeMenu !== null) closeMenu();
+    if (overlay !== null) {
+      if (overlayCanClose?.() !== false) closeOverlay();
+    } else if (closeMenu !== null) closeMenu();
     else closeToDiary();
   });
 
@@ -415,6 +417,113 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     sync();
     scrim.append(dlg);
     return { node: scrim, focus: field };
+  };
+
+  /**
+   * Copy To (calodex_app#3683): the meal menu's multi-select day sheet. The window and the most
+   * picks one write may carry are the server's `limits`; each exact selection keeps ONE client id,
+   * so a retry of it is the same write while a changed selection is a new one rather than silently
+   * answered with the first selection's outcome.
+   */
+  const copyPanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement; canClose: () => boolean } => {
+    let sending = false;
+    const clientIds = new Map<string, string>();
+    const picked = new Set<number>();
+    const maxOffset = me?.limits.mealCopyMaxOffset ?? MEAL_COPY_MAX_OFFSET;
+    const maxDays = me?.limits.mealCopyMaxDays ?? MEAL_COPY_MAX_DAYS;
+    // The offsets resolve against the server's today when Copy is pressed, so the labels are the
+    // day as it is when this sheet opens — not the day a long-lived meal screen first rendered.
+    const panelToday = localDate(zone);
+    const dayFmt = new Intl.DateTimeFormat(LANG_TAG[lang], {
+      timeZone: "UTC", weekday: "short", day: "numeric", month: "short",
+    });
+
+    const scrim = el("div", "mscrim");
+    scrim.addEventListener("click", (e) => { if (e.target === scrim && !sending) closeOverlay(); });
+    const dlg = el("form", "card mfix rise") as HTMLFormElement;
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    dlg.setAttribute("aria-label", mc.copySheetTitle);
+
+    const days = el("div", "copydays");
+    const buttons: HTMLButtonElement[] = [];
+    for (let offset = maxOffset; offset >= -maxOffset; offset--) {
+      const date = dateMinus(panelToday, offset);
+      const b = el("button", `copyday${offset === 0 ? " now" : ""}`) as HTMLButtonElement;
+      b.type = "button";
+      b.dataset.offset = `${offset}`;
+      b.setAttribute("aria-pressed", "false");
+      b.textContent = dayFmt.format(new Date(`${date}T12:00:00Z`));
+      b.addEventListener("click", () => {
+        if (sending) return;
+        if (picked.has(offset)) picked.delete(offset);
+        else if (picked.size < maxDays) picked.add(offset);
+        b.setAttribute("aria-pressed", `${picked.has(offset)}`);
+        b.classList.toggle("on", picked.has(offset));
+        sync();
+      });
+      buttons.push(b);
+      days.append(b);
+    }
+
+    const error = el("p", "nmerr", mc.copyFailed);
+    error.setAttribute("role", "alert");
+    error.hidden = true;
+    const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
+    cancel.type = "button";
+    cancel.addEventListener("click", () => { if (!sending) closeOverlay(); });
+    const copy = el("button", "cta p", mc.copyCta) as HTMLButtonElement;
+    copy.type = "submit";
+    const sync = (): void => {
+      copy.disabled = sending || picked.size === 0;
+      cancel.disabled = sending;
+      for (const b of buttons) {
+        const offset = Number(b.dataset.offset);
+        b.disabled = sending || (!picked.has(offset) && picked.size >= maxDays);
+      }
+    };
+    dlg.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (sending || picked.size === 0) return;
+      sending = true;
+      error.hidden = true;
+      sync();
+      const dayOffsets = [...picked].sort((a, b) => b - a);
+      const fingerprint = dayOffsets.join(",");
+      let clientId = clientIds.get(fingerprint);
+      if (clientId === undefined) {
+        clientId = crypto.randomUUID();
+        clientIds.set(fingerprint, clientId);
+      }
+      try {
+        await copyMeal(meal.id, dayOffsets, clientId);
+        if (scrim.isConnected) closeOverlay();
+        // A copy onto the day behind the sheet is only visible after the server is re-read.
+        void draw().catch(() => {});
+      } catch (err) {
+        if (!scrim.isConnected) return;
+        if (err instanceof ApiError && err.status === 409 && err.body?.error === "target-gone") {
+          closeOverlay();
+          await draw();
+          return;
+        }
+        if (err instanceof ApiError && err.status < 500 && typeof err.body?.error === "string") {
+          clientIds.delete(fingerprint);
+        }
+        sending = false;
+        error.textContent = keptWords(err, mc.copyFailed);
+        error.hidden = false;
+        sync();
+        copy.focus();
+      }
+    });
+
+    const actions = el("div", "row svactions");
+    actions.append(cancel, copy);
+    dlg.append(el("b", "d d22", mc.copySheetTitle), days, error, actions);
+    sync();
+    scrim.append(dlg);
+    return { node: scrim, focus: buttons[0]!, canClose: () => !sending };
   };
 
   /**
@@ -1152,6 +1261,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       photoPicker.click();
     });
     const reread = item("retry", mc.phoneMenuReread, () => enqueueUpdate(meal, { kind: "reread" }));
+    const copyTo = item("calendar", mc.menuCopyTo, () => openPanel(copyPanel(meal)));
     const report = item("alert-circle", mc.menuReport, () => openPanel(reportPanel(meal)));
     const del = item("trash", mc.deleteCta, () => openOverlay(deleteDialog(meal)));
     del.classList.add("bad");
@@ -1177,6 +1287,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
           // The meal left this day: follow it there rather than draw the day without it.
           location.hash = `#/meal/${encodeURIComponent(meal.id)}?d=${out.date}`;
         })),
+      copyTo,
       report,
       del,
     );

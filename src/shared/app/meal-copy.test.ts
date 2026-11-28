@@ -17,7 +17,7 @@ const KEYS = [
   "deleteTitle", "deleteBody", "deleteCta", "cancelCta",
   "webCorrect", "webLoggedPhoto",
   "phoneCorrect", "phoneDone", "phoneEdit",
-  "menuAddPhoto", "phoneMenuReread", "phoneMenuMoveYesterday", "menuReport",
+  "menuAddPhoto", "phoneMenuReread", "phoneMenuMoveYesterday", "menuCopyTo", "copySheetTitle", "copyCta", "copyFailed", "menuReport",
   "reportTitle", "reportCount", "reportCta",
   "phoneCorrectTitle", "phoneSheetMeal", "phoneThisMeal", "phoneSaveRecheck",
   "phoneKeypadBackspace",
@@ -88,6 +88,15 @@ describe("MEAL_COPY", () => {
     }
   });
 
+  it("keeps the Copy To words in their own language", () => {
+    expect(mealCopyFor("ko" as Lang).menuCopyTo).toBe("다른 날짜로 복사");
+    expect(mealCopyFor("ko" as Lang).copySheetTitle).toBe("복사할 날짜를 선택하세요");
+    expect(mealCopyFor("ko" as Lang).copyCta).toBe("복사");
+    expect(mealCopyFor("pt-BR" as Lang).menuCopyTo).toBe("Copiar para");
+    expect(mealCopyFor("pt-BR" as Lang).copySheetTitle).toBe("Escolha os dias para copiar");
+    expect(mealCopyFor("pt-BR" as Lang).copyCta).toBe("Copiar");
+  });
+
   it("draws the boards' words in English", () => {
     const en = mealCopyFor("en" as Lang);
     // The meal's meta line says when, never "from a photo": the photo is on the screen (#3041).
@@ -98,6 +107,10 @@ describe("MEAL_COPY", () => {
     expect(en.menuAddPhoto).toBe("Add Photo");
     expect(en.phoneMenuReread).toBe("Re-read the photo");
     expect(en.phoneMenuMoveYesterday).toBe("Move to yesterday");
+    expect(en.menuCopyTo).toBe("Copy To");
+    expect(en.copySheetTitle).toBe("Choose the days to copy to");
+    expect(en.copyCta).toBe("Copy");
+    expect(en.copyFailed).toBe("Couldn’t copy that. Try again.");
     expect(en.menuReport).toBe("Report Food");
     expect(en.reportTitle).toBe("What's the issue with this food log?");
     expect(en.reportCount).toBe("{n}/500");
