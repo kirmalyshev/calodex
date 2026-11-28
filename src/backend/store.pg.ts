@@ -607,8 +607,8 @@ create table if not exists referral_grants (
   event_at    timestamptz not null,
   days        integer not null
 );
--- Campaign codes (S4, #3695): made by the operator, never by an account, so nobody's rows. A `free` code
--- grants `days` through users.bonus_until; a `discount` names the RevenueCat Web Billing discount code
+-- Campaign codes (S4, #3695): made by the operator, never by an account, so nobody's rows. A free code
+-- grants days through users.bonus_until; a discount names the RevenueCat Web Billing discount code
 -- the web checkout carries. The code is stored upper-case.
 create table if not exists promo_codes (
   code          text primary key,
