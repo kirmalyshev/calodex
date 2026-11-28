@@ -678,3 +678,19 @@ test("Add Photo from the ⋯ menu stores the photo without analysis or charge an
   await expect(page.locator(".mpopup").getByText("Re-read the photo")).toBeVisible();
   await expect(page.locator(".mpopup").getByText("Add Photo")).toHaveCount(0);
 });
+
+test("the rating card asks once, posts the thumb, and is gone for good (calodex_app#3687)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const card = page.locator(".mrate");
+  await expect(card).toContainText("How did Calodex do?");
+  await expect(card.getByRole("button")).toHaveCount(2);
+  const posted = page.waitForRequest((r) => r.url().endsWith(`/meals/${id}/rating`) && r.method() === "POST");
+  await card.getByRole("button", { name: "Good", exact: true }).click();
+  expect((await posted).postDataJSON()).toEqual({ up: true });
+  await expect(card).toHaveCount(0);
+  // The server keeps it, so a reload draws no card and the record carries the thumb.
+  await page.reload();
+  await expect(page.locator(".hsr")).toBeVisible();
+  await expect(page.locator(".mrate")).toHaveCount(0);
+  expect((await day(page)).meals.find((m) => m.id === id)!.rating).toBe("up");
+});
