@@ -11,7 +11,7 @@ import type { Store } from "../store.ts";
 import { fakePush } from "../push/fake.ts";
 import { logMail } from "../mail/log.ts";
 import { createRouter } from "../api/routes.ts";
-import { confirmPendingMeal, editMeal, handleText, logSavedMeal, patchProfile, saveMealFromLog, type EngineDeps } from "./index.ts";
+import { applyCorrection, confirmPendingMeal, editMeal, handleText, logSavedMeal, patchProfile, reanalyzeMeal, saveMealFromLog, type EngineDeps } from "./index.ts";
 
 const CONFIG: Config = {
   ...configDefaults(), port: 0, databaseUrl: "memory://test",
@@ -157,6 +157,27 @@ describe("renaming a meal", () => {
     expect(m.kcal).toBe(777);
     expect(m.corrected).toBe(true);
     expect(m.question).toBeNull();
+  });
+
+  it("keeps the user's custom name across a Fix correction and a photo re-analysis", async () => {
+    const { userId, mealId } = await loggedMeal();
+    await store.putPhotos(userId, mealId, [{ mime: "image/jpeg", bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2]) }]);
+    await editMeal(deps, userId, mealId, { name: "Sunday brunch" });
+
+    // Natural-language Fix (`applyCorrection`) replaces items and numbers, but preserves `name`.
+    const fix = await applyCorrection(deps, userId, mealId, {
+      isFood: true,
+      items: [{ name: "Poached eggs", grams: 120, kcal: 170, protein_g: 14, carbs_g: 1, fat_g: 11 }],
+      kcal: 170, protein_g: 14, carbs_g: 1, fat_g: 11, satfat_g: 3, fiber_g: 0, sugar_g: 1, sodium_mg: 180,
+      confidence: "high", notes: "",
+    });
+    if (fix.kind !== "updated") throw new Error(`expected updated, got ${fix.kind}`);
+    expect((await store.getMeal(userId, mealId))!.name).toBe("Sunday brunch");
+
+    // Re-reading the stored photo (`reanalyzeMeal`) also preserves `name`.
+    const reread = await reanalyzeMeal(deps, userId, mealId);
+    if (reread.kind !== "updated") throw new Error(`expected updated, got ${reread.kind}`);
+    expect((await store.getMeal(userId, mealId))!.name).toBe("Sunday brunch");
   });
 
   it("carries a custom name when saving and re-logging a saved meal, and leaves unnamed saved meals null", async () => {

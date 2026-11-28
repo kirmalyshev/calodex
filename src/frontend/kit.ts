@@ -23,7 +23,7 @@ import {
 import { fill } from "../shared/lang.ts";
 import { brandSvg } from "../shared/ui/icons.ts";
 import { payCopyFor } from "../shared/app/pay-copy.ts";
-import { lang, names } from "./shell.ts";
+import { lang, mealTitle } from "./shell.ts";
 
 /**
  * Blob bytes → a data URL. `URL.createObjectURL` is never the answer on this page: `img-src`
@@ -192,7 +192,7 @@ export function mealRowEl(
 ): Element {
   const spec: MealRowSpec = {
     id: meal.id,
-    name: names(meal.items),
+    name: mealTitle(meal),
     time: o.time,
     kcal: meal.kcal,
     grams: { protein: meal.protein_g, carbs: meal.carbs_g, fat: meal.fat_g },

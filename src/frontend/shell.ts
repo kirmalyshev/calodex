@@ -33,7 +33,7 @@ import { keptState, outcomeUnknown } from "../shared/results.ts";
 import { LANG_TAG, UNIT_KCAL, kcalNumbers, narrowLang, wholeNumbers } from "../shared/lang.ts";
 import { DIARY_RANGE_MAX_DAYS, PHOTO_COMPRESSION_DEFAULT, PHOTO_MAX_EDGE_DEFAULT } from "../shared/contract.ts";
 import { localDate, windowStart } from "../shared/dates.ts";
-import { mealNames } from "../shared/meal-names.ts";
+import { mealDisplayName, mealNames } from "../shared/meal-names.ts";
 import type { Lang } from "../shared/types.ts";
 import type { MealAnalysis, MealProposed, MealRecord } from "@eait/shared";
 import { currentBrand } from "../shared/brand.ts";
@@ -762,6 +762,10 @@ export function keptWords(err: unknown, kept: string): string {
 /** What a meal is called on one line — `mealNames`, or the untitled word. */
 export const names = (items: readonly { name: string }[]): string => mealNames(items) || COPY.meal;
 
+/** A stored meal's display title — its custom `name` when set, otherwise `mealNames(items)` or the untitled word. */
+export const mealTitle = (meal: { name?: string | null; items: readonly { name: string }[] }): string =>
+  mealDisplayName(meal) || COPY.meal;
+
 /**
  * One meal by id, wherever the diary window holds it — today first, then the logged days behind
  * it newest-first (#93's focus handoff; a meal is correctable for the whole window, not just
@@ -792,7 +796,7 @@ export function mealLine(meal: MealRecord | null): string {
   // Null once the meal is deleted, and the id outlives it deliberately — so the thread says
   // something rather than rendering an empty bubble.
   if (meal === null) return COPY.mealGone;
-  return fill(chatScreenCopyFor(lang).mealLine, { name: names(meal.items), kcal: kcal(meal.kcal) });
+  return fill(chatScreenCopyFor(lang).mealLine, { name: mealTitle(meal), kcal: kcal(meal.kcal) });
 }
 
 /** What a turn kept for later says, once, under the composer (#708). No cause: offline and an edge are both this. */

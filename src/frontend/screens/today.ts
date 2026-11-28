@@ -38,7 +38,7 @@ import { failureOf, outbox } from "../outbox.ts";
 import { ROW_DELETE_WIDTH, clampRowSwipe, shouldOpenRowSwipe } from "../row-swipe.ts";
 import {
   DAYS, MEAL, PENDING, clear, composerRow, dayPickerButton, dayText, el, firstMealDue, flush, heldProposal, kcal, kept,
-  keptLineEl, keptNotice, lang, names, profile, proposalCard, refusalWords, sendOrKeep, setHeldProposal, setRedraw,
+  keptLineEl, keptNotice, lang, mealTitle, profile, proposalCard, refusalWords, sendOrKeep, setHeldProposal, setRedraw,
   takeCarried, takeTurn, type Frame,
 } from "../shell.ts";
 
@@ -833,7 +833,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
       const row = el("a", "hsp") as HTMLAnchorElement;
       row.href = `#/meal/${encodeURIComponent(meal.id)}?d=${encodeURIComponent(viewing)}&score`;
       const name = el("span", "mn");
-      name.append(document.createTextNode(names(meal.items)), el("small", "", kcal(meal.kcal)));
+      name.append(document.createTextNode(mealTitle(meal)), el("small", "", kcal(meal.kcal)));
       const pts = el("span", "pts", fill(SC.outOf, { n: n(meal.healthScore!.score) }));
       const chev = el("i", "chev");
       chev.append(kitEl(ico("chevron-right")));
@@ -1211,7 +1211,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     const del = el("button", "drow-del") as HTMLButtonElement;
     del.type = "button";
     del.title = DEL;
-    const mealName = names(meal.items);
+    const mealName = mealTitle(meal);
     del.setAttribute("aria-label", mealName ? `${DEL}: ${mealName}` : DEL);
     del.append(kitEl(ico("trash")), el("span", "drow-del-lbl", DEL));
     del.addEventListener("click", (e) => {

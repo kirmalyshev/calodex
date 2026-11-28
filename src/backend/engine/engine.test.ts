@@ -1842,6 +1842,24 @@ describe("an ingredient edit through the update queue (ieat-app#3678)", () => {
     expect(stored.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 30 });
     await drainJobs(deps, 1000);
   });
+
+  it("names the meal by its own custom name, not its ingredients", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    await editMeal(deps, userId, meal.mealId, { name: "Sunday brunch" });
+    await store.putPushToken(userId, "ExponentPushToken[t-name]", "ios");
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId, edit: { add: { ref: oliveOil.id, grams: 30 } },
+    });
+    await settle(userId, clientId);
+    await drainJobs(deps, 1000);
+    const sent = (deps.push as ReturnType<typeof fakePush>).sent;
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.title).toContain("Sunday brunch");
+  });
 });
 
 describe("chat", () => {

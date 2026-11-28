@@ -11,7 +11,7 @@ import type { DayResponse, JobsResponse, MealUpdateKind, MealUpdateBody, MealUpd
 import { ApiError, api, apiBlob, apiStream, signedIn } from "./api.ts";
 import { fillCopy as fill } from "./copy.ts";
 import { blobSrc } from "./kit.ts";
-import { el, lang, maybeLanded, names, redrawScreen, refusalWords, photoCompression, photoMaxEdge } from "./shell.ts";
+import { el, lang, mealTitle, maybeLanded, names, redrawScreen, refusalWords, photoCompression, photoMaxEdge } from "./shell.ts";
 import { appliedAt, shrinkPhotos } from "./photo.ts";
 import * as analytics from "./analytics.ts";
 
@@ -116,7 +116,7 @@ export function enqueueUpdate(meal: MealRecord, body: MealUpdateBody, grams?: { 
   const job: Job = {
     id: crypto.randomUUID(), photos: [], compress: undefined, maxEdge: undefined, thumb: "", capturedAt: new Date().toISOString(),
     step: 1, line: null, items: [], state: "reading", words: null, mealId: null, kcal: null, flyFrom: null,
-    update: { kind: body.kind, mealId: meal.id, steps: MEAL_UPDATE_STEPS[body.kind], body, name: names(meal.items), kcal: meal.kcal, ...(grams ? { grams } : {}) },
+    update: { kind: body.kind, mealId: meal.id, steps: MEAL_UPDATE_STEPS[body.kind], body, name: mealTitle(meal), kcal: meal.kcal, ...(grams ? { grams } : {}) },
   };
   jobs = [job, ...jobs];
   analytics.capture("meal_update_submitted", { update_kind: body.kind, has_meal_context: true, submitted_from_chat: false });
@@ -163,7 +163,7 @@ export function inPlace(meal: MealRecord, plain: () => Element): HTMLElement {
     if (!slot.isConnected && shown !== null) { views.delete(draw); return; }
     const job = updateFor(meal.id);
     // A restored job learns its meal's name, kcal and photo from the row it stands in.
-    if (job?.update?.name === "") { Object.assign(job.update, { name: names(meal.items), kcal: meal.kcal }); thumbOf(job, meal); }
+    if (job?.update?.name === "") { Object.assign(job.update, { name: mealTitle(meal), kcal: meal.kcal }); thumbOf(job, meal); }
     if (job === undefined && shown === "plain") return;
     slot.replaceChildren(job !== undefined ? updateRowEl(job) : plain());
     shown = job !== undefined ? "job" : "plain";

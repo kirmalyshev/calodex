@@ -373,6 +373,87 @@ test("the servings chip opens Number of Servings on any meal, and Update sends s
   await expect(correct.getByText("Servings", { exact: true })).toHaveCount(0);
 });
 
+test("tapping the meal title renames it, clears back to derived items, and shows Tap to Name when unnamed (#3681)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const titleBtn = page.locator(".mtitle");
+  await expect(titleBtn).toBeVisible();
+  const derived = (await titleBtn.textContent())!.trim();
+  expect(derived.length).toBeGreaterThan(0);
+
+  // Tapping the title opens the rename dialog with Update disabled until changed.
+  await titleBtn.click();
+  const dialog = page.getByRole("dialog", { name: "Name meal" });
+  await expect(dialog).toBeVisible();
+  const input = dialog.locator(".nmfield");
+  await expect(input).toHaveValue("");
+  await expect(input).toHaveAttribute("placeholder", derived);
+  const update = dialog.getByRole("button", { name: "Update" });
+  await expect(update).toBeDisabled();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await shot(page, "rename-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "rename-390");
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  // Saving sends PATCH /v1/meals/:id with `{ name }` alone and updates both detail and diary list.
+  await input.fill("  Post-workout bowl  ");
+  await expect(update).toBeEnabled();
+  const sent = page.waitForRequest((r) => r.method() === "PATCH" && r.url().endsWith(`/v1/meals/${id}`));
+  await update.click();
+  expect((await sent).postDataJSON()).toEqual({ name: "Post-workout bowl" });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".mtitle")).toHaveText("Post-workout bowl");
+  await expect(page.locator(".mlist .meal").first()).toContainText("Post-workout bowl");
+
+  // Reloading keeps the custom name from the server.
+  await page.reload();
+  await expect(page.locator(".mtitle")).toHaveText("Post-workout bowl");
+
+  // Clearing the input and saving sends `{ name: null }` and restores the derived title.
+  await page.locator(".mtitle").click();
+  const dialog2 = page.getByRole("dialog", { name: "Name meal" });
+  const input2 = dialog2.locator(".nmfield");
+  await expect(input2).toHaveValue("Post-workout bowl");
+  await input2.fill("");
+  const clearSent = page.waitForRequest((r) => r.method() === "PATCH" && r.url().endsWith(`/v1/meals/${id}`));
+  await dialog2.getByRole("button", { name: "Update" }).click();
+  expect((await clearSent).postDataJSON()).toEqual({ name: null });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".mtitle")).toHaveText(derived);
+
+  // A failed save keeps the typed value in the field and shows an alert error.
+  await page.route(`**/api/v1/meals/${id}`, (route) =>
+    route.request().method() === "PATCH"
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "boom" }) })
+      : route.continue(),
+  );
+  await page.locator(".mtitle").click();
+  const dialogErr = page.getByRole("dialog", { name: "Name meal" });
+  await dialogErr.locator(".nmfield").fill("Keep me");
+  await dialogErr.getByRole("button", { name: "Update" }).click();
+  await expect(dialogErr.getByRole("alert")).toBeVisible();
+  await expect(dialogErr.locator(".nmfield")).toHaveValue("Keep me");
+  await dialogErr.getByRole("button", { name: "Cancel" }).click();
+  await page.unroute(`**/api/v1/meals/${id}`);
+
+  // An unnamed meal with no items shows "Tap to Name".
+  await page.route("**/api/v1/diary/day?*", async (route) => {
+    const res = await route.fetch();
+    const json = (await res.json()) as DayResponse;
+    if (Array.isArray(json.meals)) {
+      for (const m of json.meals) {
+        if (m.id === id) { m.name = null; m.items = []; }
+      }
+    }
+    await route.fulfill({ response: res, json });
+  });
+  await page.reload();
+  await expect(page.locator(".mtitle")).toHaveText("Tap to Name");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "tap-to-name-390");
+  await page.unroute("**/api/v1/diary/day?*");
+});
+
 test("the menu: re-read recomputes in place, and delete asks first", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   await page.locator(".mdetail .ib").last().click();

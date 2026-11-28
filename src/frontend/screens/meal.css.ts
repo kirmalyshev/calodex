@@ -61,7 +61,7 @@ export const mealCss = `
 .msteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 .msteps .now{color:var(--ink);font-weight:600}.msteps .done{color:var(--muted)}
 .mbar{display:block;height:4px;border-radius:2px;background:var(--accent);transition:width 600ms ease-out}
-.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn,.mdet.updating .ingadd,.mdet.updating .svchip{pointer-events:none}
+.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn,.mdet.updating .ingadd,.mdet.updating .svchip,.mdet.updating .mtitle{pointer-events:none}
 
 /* The "…" menu — popped under its trigger, the phone menu's items in order, delete last and bad. */
 .mwrap{position:relative}
@@ -114,6 +114,19 @@ export const mealCss = `
   color:var(--ink)}
 .fixfield::placeholder{color:var(--faint)}
 .fixex{padding:14px 16px;background:var(--hair);box-shadow:none;font-size:15px;line-height:1.45}
+
+/* The tappable meal title beside the servings chip, and its rename dialog (calodex_app#3681). */
+.card button.mtitle{display:inline-block;max-width:100%;min-height:44px;padding:6px 0;margin:0;border:0;
+  background:none;box-shadow:none;border-radius:var(--r-ctl);font-family:var(--display);font-size:22px;
+  line-height:1.15;font-weight:700;letter-spacing:-0.015em;color:var(--ink);text-align:left;cursor:pointer}
+.card button.mtitle.unnamed{color:var(--muted)}
+.card button.mtitle:hover{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
+.card button.mtitle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nmfield{width:100%;min-height:48px;padding:12px 14px;border:0;border-radius:var(--r-card);
+  background:var(--surface);box-shadow:0 0 0 1.5px var(--line);font:inherit;font-size:16px;color:var(--ink)}
+.nmfield:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
+.nmfield::placeholder{color:var(--faint)}
+.nmerr{margin:0;color:var(--bad)}
 
 /* The servings chip beside the meal name, and the stepper it opens (#3677). */
 .mtitlerow{align-items:center;gap:8px;flex-wrap:wrap}

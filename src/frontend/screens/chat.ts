@@ -35,7 +35,7 @@ import {
   COPY, MESSAGES, dayPickerButton, PENDING, Said, UNKNOWN, clear, composerRow, el, flush,
   failBadge, heldProposal, kept, keptLineEl, keptNotice, lang, lastThreadEntries, findMeal, mealLine, outstandingTurn,
   MEAL_PHOTOS, proposalCard, profile, refusalWords, sendOrKeep, setHeldProposal, setLastThread, photoCompression, photoMaxEdge,
-  setRedraw, smallCta, takeCarried, takeTurn, timeFmt, names, type Frame,
+  setRedraw, smallCta, takeCarried, takeTurn, timeFmt, mealTitle, type Frame,
 } from "../shell.ts";
 import { attachMic } from "../voice.ts";
 
@@ -393,7 +393,7 @@ export async function chatScreen(frame: Frame): Promise<HTMLElement> {
     const card = el("div", "card");
     const head = el("div", "row between");
     // A typed meal's bubble already says it in her words; the name is drawn under a photo only.
-    head.append(el("b", "", named ? names(meal.items) : ""));
+    head.append(el("b", "", named ? mealTitle(meal) : ""));
     const num = el("span", "num");
     num.append(el("b", "d d22", kcalNumbers(lang)(meal.kcal)), el("span", "m t12", `${UNIT_KCAL[lang]}`));
     head.append(num);

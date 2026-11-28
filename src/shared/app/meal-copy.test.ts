@@ -21,6 +21,7 @@ const KEYS = [
   "phoneCorrectTitle", "phoneSheetMeal", "phoneThisMeal", "phoneSaveRecheck",
   "phoneKeypadBackspace",
   "phoneFixMeal", "phoneFixExampleLead", "phoneFixExample", "phoneUpdate",
+  "tapToName", "renameTitle", "renameLabel", "renameFailed",
   "phoneIngredientTitle", "phoneAmount", "phoneRemoveIngredient", "phoneWasAmount",
   "phoneGrams", "phoneMealMove",
   "phoneGoneTitle", "phoneGoneBody", "phoneGoneBack",
@@ -56,6 +57,7 @@ describe("MEAL_COPY", () => {
       phoneSheetMeal: ["{meal}", "{time}"],
       phoneWasAmount: ["{amount}"],
       phoneFixMeal: ["{name}", "{kcal}", "{time}"],
+      renameLabel: ["{name}"],
       phoneGrams: ["{n}"],
       phoneMealMove: ["{from}", "{to}"],
       changeItem: ["{item}", "{before}", "{after}", "{unit}"],
@@ -115,6 +117,9 @@ describe("MEAL_COPY", () => {
     expect(en.phoneFixExampleLead).toBe("For example:");
     expect(en.phoneFixExample).toBe("the rice was about 200g, and there was no sauce.");
     expect(en.phoneUpdate).toBe("Update");
+    expect(en.tapToName).toBe("Tap to Name");
+    expect(en.renameTitle).toBe("Name meal");
+    expect(en.renameLabel).toBe("Rename meal: {name}");
     expect(en.phoneIngredientTitle).toBe("Edit ingredient");
     expect(en.phoneAmount).toBe("Amount");
     expect(en.phoneRemoveIngredient).toBe("Remove ingredient");
