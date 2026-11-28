@@ -904,8 +904,11 @@ create index if not exists meals_user_date_idx on meals(user_id, date);
 alter table meals add column if not exists question jsonb;
 -- The phone break taken after the meal (ieat-app#2129): {minutes, completed}, null until one is recorded.
 alter table meals add column if not exists focus jsonb;
--- Read off a nutrition label (ieat-app#2087): {servings}. Null on every other meal.
+-- Read off a nutrition label (ieat-app#2087): scan provenance, and the legacy servings count on rows
+-- stored before servings became a column of the meal itself (#3677). Null on every other meal.
 alter table meals add column if not exists label jsonb;
+-- Servings eaten (ieat-app#3677), nullable because a row never edited is one serving as logged.
+alter table meals add column if not exists servings double precision;
 
 -- The photo lives with the meal. user_id is on the row as well as reachable through the meal, so
 -- a read is meal_id AND user_id with no join, and the cascade from users erases it even if a
@@ -1885,6 +1888,7 @@ function toMeal(r: MealRow, restrictions: readonly string[]): MealRecord {
     photo_max_edge: (r.photo_max_edge === null || r.photo_max_edge === undefined ? null : num(r.photo_max_edge)),
     focus: json<MealFocus | null>(r.focus, null),
     label: json<MealLabel | null>(r.label, null),
+    ...(r.servings === null || r.servings === undefined ? {} : { servings: num(r.servings) }),
   };
   return { ...meal, healthScore: healthScore(meal, restrictions) };
 }
@@ -1927,11 +1931,11 @@ const PROFILE_COLUMNS = [
 ] as const;
 
 /** The columns whose write moves `meals.version` (#2695): the numbers and what describes them. A write touching any of these invalidates a read taken before it. Must match `NUMBER_KEYS` in `store.memory.ts`. */
-const NUMBER_COLUMNS = new Set(["items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
+const NUMBER_COLUMNS = new Set(["servings", "items", "kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg", "verdicts", "notes", "corrected", "model", "confidence"]);
 
 /** The meal columns an update may write. Same rule, same reason. */
 const MEAL_COLUMNS: Record<string, string> = {
-  items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
+  servings: "servings", items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
   satfat_g: "satfat_g", fiber_g: "fiber_g", sugar_g: "sugar_g", sodium_mg: "sodium_mg",
   verdicts: "verdicts", notes: "notes", corrected: "corrected", date: "date",
   question: "question", model: "model", confidence: "confidence", focus: "focus", label: "label",
@@ -4823,12 +4827,12 @@ export async function postgresStore(
       const rows = await sql`
         insert into meals (id, user_id, ts, date, is_food, items, kcal, protein_g, carbs_g, fat_g,
                            satfat_g, fiber_g, sugar_g, sodium_mg, verdicts, confidence, notes,
-                           corrected, model, question, label, photo_compression, photo_max_edge)
+                           corrected, model, question, label, servings, photo_compression, photo_max_edge)
         values (${m.id}, ${m.user_id}, ${m.ts}, ${m.date}, ${m.isFood},
                 ${m.items}, ${m.kcal}, ${m.protein_g}, ${m.carbs_g}, ${m.fat_g},
                 ${m.satfat_g}, ${m.fiber_g}, ${m.sugar_g}, ${m.sodium_mg},
                 ${m.verdicts}, ${m.confidence}, ${m.notes}, ${m.corrected},
-                ${m.model}, ${m.question ?? null}, ${m.label ?? null},
+                ${m.model}, ${m.question ?? null}, ${m.label ?? null}, ${m.servings ?? null},
                 ${m.photo_compression ?? null}, ${m.photo_max_edge ?? null})
         on conflict (id) do nothing returning id`;
       return rows.length > 0;

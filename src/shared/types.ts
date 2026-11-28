@@ -399,9 +399,8 @@ export interface MealQuestion {
 }
 
 /**
- * A meal read off a nutrition label (ieat-app#2087). `servings` multiplies what the panel printed:
- * the meal's totals are ALWAYS `per serving × servings`, so the per-serving figures are derived
- * (`total / servings`), never stored beside the totals where they could disagree. Default 1, by halves.
+ * A meal read off a nutrition label (ieat-app#2087). `servings` is the count rows carried before
+ * servings moved to the meal itself (#3677); new writes keep it as scan provenance, not as the count.
  */
 export interface MealLabel {
   servings: number;
@@ -448,6 +447,11 @@ export interface MealRecord extends MealAnalysis {
   focus?: MealFocus | null;
   /** Set when the meal was read off a nutrition label (ieat-app#2087); null on every other meal. */
   label?: MealLabel | null;
+  /**
+   * How many servings of this meal were eaten (#3677), by halves. Absent means 1 — or, on a label
+   * scan stored before this field existed, the scan's legacy `label.servings`.
+   */
+  servings?: number;
   /**
    * The row's own verdict line — "calories high · saturated fat high", `verdictInlineText` in the
    * account's language, joined server-side and empty when every verdict is on plan. Optional: the

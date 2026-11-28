@@ -13,6 +13,8 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({})).toBe(true);
     expect(isEditMealRequest({ kcal: 320, protein_g: 0 })).toBe(true);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50 }] })).toBe(true);
+    expect(isEditMealRequest({ servings: 2 })).toBe(true);
+    expect(isEditMealRequest({ servings: 0.5 })).toBe(true);
   });
 
 
@@ -32,6 +34,9 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, kcal_per_100g: -1 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, name_en: 7 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, name_en: "egg", kcal: 78, kcal_per_100g: 155 }] })).toBe(true);
+    expect(isEditMealRequest({ servings: 0.25 })).toBe(false);
+    expect(isEditMealRequest({ servings: 21 })).toBe(false);
+    expect(isEditMealRequest({ servings: 2, kcal: 320 })).toBe(false);
     expect(isEditMealRequest(null)).toBe(false);
     // Bounded like every other client string: an item's name reaches every later prompt that day.
     expect(isEditMealRequest({ items: Array.from({ length: MAX_MEAL_ITEMS + 1 }, () => ({ name: "egg", grams: 1 })) })).toBe(false);
