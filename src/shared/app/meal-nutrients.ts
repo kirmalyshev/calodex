@@ -76,9 +76,9 @@ export const mealNutrientTiles = (
   const g = spellUnit(lang, "g");
   const mg = spellUnit(lang, "mg");
   return [
-    { key: "fiber", icon: "fibre", value: `${n(meal.fiber_g)} ${g}`, label: copy.fiber },
-    { key: "sugar", icon: "sugar", value: `${n(meal.sugar_g)} ${g}`, label: copy.sugar },
-    { key: "sodium", icon: "salt", value: `${n(meal.sodium_mg)} ${mg}`, label: copy.sodium },
-    { key: "satfat", icon: "satfat", value: `${n(meal.satfat_g)} ${g}`, label: copy.satfat },
+    { key: "fiber", icon: "fibre", value: `${n(meal.fiber_g)}${g}`, label: copy.fiber },
+    { key: "sugar", icon: "sugar", value: `${n(meal.sugar_g)}${g}`, label: copy.sugar },
+    { key: "sodium", icon: "salt", value: `${n(meal.sodium_mg)}${mg}`, label: copy.sodium },
+    { key: "satfat", icon: "satfat", value: `${n(meal.satfat_g)}${g}`, label: copy.satfat },
   ];
 };

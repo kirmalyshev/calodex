@@ -668,9 +668,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const tileTrack = el("div", "mtiletrack");
     const macroPage = el("div", "mtilepage mcards");
     for (const [macro, value, label] of [
-      ["protein", `${n(meal.protein_g)} ${spellUnit(lang, "g")}`, mc.macroProtein],
-      ["carbs", `${n(meal.carbs_g)} ${spellUnit(lang, "g")}`, mc.macroCarbs],
-      ["fat", `${n(meal.fat_g)} ${spellUnit(lang, "g")}`, mc.macroFat],
+      ["protein", `${n(meal.protein_g)}${spellUnit(lang, "g")}`, mc.macroProtein],
+      ["carbs", `${n(meal.carbs_g)}${spellUnit(lang, "g")}`, mc.macroCarbs],
+      ["fat", `${n(meal.fat_g)}${spellUnit(lang, "g")}`, mc.macroFat],
     ] as const) {
       macroPage.append(mcardEl({ macro, value, label, centred: true }));
     }
@@ -742,6 +742,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     tiles.addEventListener("pointerup", endTileDrag);
     tiles.addEventListener("pointercancel", () => {
       tileDrag = null;
+      swallowTileClick = false;
       tileTrack.style.transition = "";
       tileTrack.style.transform = tilePage === 1 ? "translateX(-100%)" : "";
     });

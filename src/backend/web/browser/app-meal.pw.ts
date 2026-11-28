@@ -77,10 +77,10 @@ test("the meal opens: photo, kcal, macro tiles, ingredients, verdicts, score", a
   await expect(micro).toContainText("Sodium");
   await expect(micro).toContainText("Sat fat");
   const whole = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
-  await expect(micro).toContainText(`${whole.format(record.fiber_g)} g`);
-  await expect(micro).toContainText(`${whole.format(record.sugar_g)} g`);
-  await expect(micro).toContainText(`${whole.format(record.sodium_mg)} mg`);
-  await expect(micro).toContainText(`${whole.format(record.satfat_g)} g`);
+  await expect(micro).toContainText(`${whole.format(record.fiber_g)}g`);
+  await expect(micro).toContainText(`${whole.format(record.sugar_g)}g`);
+  await expect(micro).toContainText(`${whole.format(record.sodium_mg)}mg`);
+  await expect(micro).toContainText(`${whole.format(record.satfat_g)}g`);
   // The arrow key on a focused dot is the same page turn, back to the macros.
   await page.keyboard.press("ArrowLeft");
   await expect(macros).toHaveAttribute("aria-hidden", "false");

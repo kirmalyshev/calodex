@@ -13,16 +13,16 @@ const meal = {
 describe("mealNutrientTiles", () => {
   it("draws the four figures in the meal-sheet order, with the board's English words", () => {
     expect(mealNutrientTiles(meal, "en")).toEqual([
-      { key: "fiber", icon: "fibre", value: "1 g", label: "Fiber" },
-      { key: "sugar", icon: "sugar", value: "2 g", label: "Sugar" },
-      { key: "sodium", icon: "salt", value: "319 mg", label: "Sodium" },
-      { key: "satfat", icon: "satfat", value: "6 g", label: "Sat fat" },
+      { key: "fiber", icon: "fibre", value: "1g", label: "Fiber" },
+      { key: "sugar", icon: "sugar", value: "2g", label: "Sugar" },
+      { key: "sodium", icon: "salt", value: "319mg", label: "Sodium" },
+      { key: "satfat", icon: "satfat", value: "6g", label: "Sat fat" },
     ]);
   });
 
   it("formats through the reader's locale and keeps sodium in milligrams", () => {
     const tiles = mealNutrientTiles({ ...meal, sodium_mg: 1234.4 }, "ru");
-    expect(tiles.map((t) => t.value)).toEqual(["1 г", "2 г", "1 234 мг", "6 г"]);
+    expect(tiles.map((t) => t.value)).toEqual(["1г", "2г", "1 234мг", "6г"]);
   });
 
   it("has the four tile labels in every shipped language", () => {
