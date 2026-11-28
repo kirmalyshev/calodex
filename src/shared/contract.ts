@@ -4,6 +4,7 @@
 // stale; here, renaming a field breaks `bun run typecheck` in the app and the backend in the same
 // command. Nothing in this file may import from `backend` or `src/mobile`.
 
+import type { FoodPortion } from "./foods.ts";
 import type {
   ActivityLevel, Barrier, CountedBefore, DailyTotals, DayTotals, Goal, Lang, MealItem,
   MealRecord, Pace, Profile, Sex, Situation, Struggle, StreakGoal, Units,
@@ -454,6 +455,11 @@ export const ROUTES = {
    * only whether that is done.
    */
   attribution: "/v1/attribution",
+  /**
+   * GET, admin bearer — aggregate offer-code redemption stats ({@link PromoStatsResponse}).
+   * Operator-only, but named here because the fleet's promo CLI is a client of it.
+   */
+  adminPromoStats: "/admin/api/promo-stats",
   /**
    * GET — the tips-and-offers consent (`PushConsentResponse`); POST — set it (`PushConsentRequest`).
    * Offers default OFF; `notifications` (default ON) silences every push for the account.
@@ -1374,7 +1380,7 @@ export const MAX_SNAPSHOT_ATTRIBUTION = 500;
 /** Bounds on the named servings a snapshot echoes: catalog data, but still client-supplied JSON at this boundary. */
 export const MAX_SNAPSHOT_PORTIONS = 40;
 export const MAX_PORTION_LABEL = 80;
-const isFoodPortion = (v: unknown): boolean => {
+const isFoodPortion = (v: unknown): v is FoodPortion => {
   if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
   const p = v as Record<string, unknown>;
   return Object.keys(p).every((k) => k === "label" || k === "grams")
@@ -1402,7 +1408,7 @@ export const MAX_ITEM_NAME = 120;
 export const MAX_MEAL_NAME = 120;
 /** A ceiling on any amount an edit carries: it ends up in a verdict and in a stored sentence. */
 export const MAX_MEAL_AMOUNT = 1_000_000;
-const amount = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= MAX_MEAL_AMOUNT;
+const amount = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= MAX_MEAL_AMOUNT;
 
 /** A body is a cast, not a validation: the numbers here end up in a verdict and in a stored sentence. */
 export function isEditMealRequest(body: unknown): body is EditMealRequest {
@@ -1457,7 +1463,7 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
       // A measurement is a pair: the catalog portion and how many of it. Grams stay the truth;
       // this pair only says how those grams are shown, so both halves or neither may be sent.
       if ((item.portion === undefined) !== (item.portion_count === undefined)) return false;
-      if (item.portion !== undefined && (!isFoodPortion(item.portion) || !amount(item.portion_count) || item.portion_count === 0)) return false;
+      if (item.portion !== undefined && (!isFoodPortion(item.portion) || !amount(item.portion_count) || item.portion_count === 0 || item.portion.grams * item.portion_count > MAX_MEAL_AMOUNT)) return false;
       for (const k of ITEM_NUMBERS) if (item[k] !== undefined && !amount(item[k])) return false;
     }
   }
@@ -2439,4 +2445,23 @@ export const ATTRIBUTION_STATUS = { resolved: 200, pending: 202, invalid: 422, u
 export type AttributionStatus = keyof typeof ATTRIBUTION_STATUS;
 export interface AttributionResponse {
   status: AttributionStatus;
+}
+
+/** One offer code's aggregate footprint. Counts only — never the accounts behind them. */
+export interface PromoCodeStats {
+  offerCode: string;
+  /** Distinct accounts with a coded event in the window. */
+  redeemed: number;
+  /** Of those, entitled now by the engine's one `entitlementFor` rule — subscription, lifetime, referral bonus or an explicit comp. */
+  active: number;
+  /** Of those, with a priced RENEWAL or priced INITIAL_PURCHASE at/after their first coded event. */
+  paid: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+/** `GET /admin/api/promo-stats`. `days` is the trailing 24-hour window the server read; `sandbox=1` reads RevenueCat's sandbox cohort instead of production. */
+export interface PromoStatsResponse {
+  days: number;
+  codes: PromoCodeStats[];
 }

@@ -99,7 +99,7 @@ export const mealCss = `
 
 /* The Cal-AI panels (#188) — the fix sheet and the ingredient editor on the shared scrim, the
    boards' 480px card: 18/22 padding, 14px between the rows. */
-.mfix,.ming{width:480px;max-width:calc(100vw - 32px);padding:18px 22px 22px;margin:0;
+.mfix,.ming{width:480px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;padding:18px 22px 22px;margin:0;
   display:flex;flex-direction:column;gap:14px}
 .mfix .card,.ming .card{margin:0}
 .fixtitle{gap:10px;align-items:center}
@@ -142,6 +142,19 @@ export const mealCss = `
   text-align:left;border-radius:var(--r-ctl)}
 button.ingbtn:hover .ing{background:var(--bg)}
 button.ingbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* The measurement chips and the servings count on the ingredient editor (calodex_app#3679) —
+   the "Measurement" label over a wrap of pills, the picked one accented; the count row mirrors
+   the amount row and reuses its pill. */
+.ingmeasure{display:flex;flex-direction:column;gap:8px}
+.ingchips{display:flex;flex-wrap:wrap;gap:8px}
+.card button.ingchip{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:18px;
+  background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.card button.ingchip.on{background:var(--accent-tint);box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--ink)}
+.card button.ingchip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ingserv .amtpill{padding:6px 10px;gap:6px;cursor:text}
+.ingserv .amtunit{white-space:nowrap}
+.ingserv[hidden],.row[hidden]{display:none}
 
 /* The ingredient editor's rows: the label 600, the amount pill an editable figure. */
 .ming .amlab{font-weight:600}

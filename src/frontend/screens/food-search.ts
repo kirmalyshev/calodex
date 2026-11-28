@@ -331,17 +331,19 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     const fail = el("div", "fs-fail");
     fail.setAttribute("role", "alert");
     fail.hidden = true;
+    const name = f.names[o.lang] ?? (o.lang === "de" ? f.name_de : o.lang === "en" ? f.name_en : null) ?? f.name;
     txt.append(
-      el("b", "", f.names[o.lang] ?? (o.lang === "de" ? f.name_de : o.lang === "en" ? f.name_en : null) ?? f.name),
+      el("b", "", name),
       el("div", "fs-sub", fill(c.serving, { label: ch.label ?? c.hundredGrams, kcal: num(ch.kcal) })),
       fail,
     );
     const add = el("button", "fs-add") as HTMLButtonElement;
     add.type = "button";
-    const name = f.name;
     const face = (done: boolean): void => {
       add.classList.toggle("fs-done", done);
-      add.setAttribute("aria-label", fill(done ? c.logged : c.log, { name }));
+      // Pick mode is one append to the meal behind the sheet, so the accessible name is the food
+      // itself rather than the logging verb; logging mode keeps its explicit Log/Logged template.
+      add.setAttribute("aria-label", o.onPick !== undefined ? name : fill(done ? c.logged : c.log, { name }));
       add.replaceChildren(el("i", `ico i-${done ? "check" : "plus"}`));
     };
     face(false);

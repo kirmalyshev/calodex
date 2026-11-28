@@ -23,7 +23,11 @@ import { MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYT
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
-import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem, servingsPreview } from "../../shared/meal-edit.ts";
+import {
+  catalogPortions, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText,
+  portionGrams, previewKcal, scaledItem, servingsPreview,
+} from "../../shared/meal-edit.ts";
+import { initialPortionIndex, measuredItem } from "../measurement.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
 import { mealAddCopyFor } from "../../shared/app/meal-add-copy.ts";
@@ -514,7 +518,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const sent = takeSentGrams(meal.id, index);
     grams.value = sent ?? `${item.grams}`;
     grams.setAttribute("aria-label", mc.phoneAmount);
-    const size = (): void => { grams.style.width = `${Math.max(2, grams.value.length)}ch`; };
+    const size = (field: HTMLInputElement = grams): void => { field.style.width = `${Math.max(2, field.value.length)}ch`; };
     size();
     const pill = el("label", "amtpill");
     pill.append(grams, document.createTextNode(`${spellUnit(lang, "g")}`), kitEl(ico("pencil")));
@@ -592,7 +596,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       const g = Number.parseFloat(grams.value.replace(",", "."));
       return Number.isFinite(g) && g >= 0 ? g : null;
     };
-    grams.addEventListener("input", () => {
+    const onGramsInput = (): void => {
       size();
       const g = gramsNow();
       // Every item at 0g is no meal (ieat-app#1224); the bin is the way to take the last one off.
@@ -604,7 +608,81 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       kcalNow.textContent = scaled?.kcal !== undefined ? kn(scaled.kcal)
         : item.kcal !== undefined ? kn(item.kcal) : "";
       drawMove();
-    });
+      // A portion stays the measurement while grams move under it — the count answers, unless
+      // the count's own field is the one being typed in (it is what moved the grams).
+      if (portionIndex !== null && countField !== null && document.activeElement !== countField && g !== null) {
+        countField.value = portionCountText(lang, portionCountFor({ grams: g }, portions[portionIndex]!));
+        size(countField);
+      }
+    };
+    grams.addEventListener("input", onGramsInput);
+
+    // Measurement (calodex_app#3679): the chips a catalog-grounded item offers — the localized
+    // grams symbol first, then each portion label — and, under them, the servings count the pick
+    // measures in. GRAMS REMAIN THE TRUTH: picking a portion derives its count from the grams
+    // typed, typing a count moves the grams (`portionGrams`), and Done writes `itemAtPortion` or
+    // `itemAtGrams`. An item with no catalog portions never draws any of this — the editor stays
+    // exactly grams-only.
+    const portions = catalogPortions(item);
+    let portionIndex = initialPortionIndex(item);
+    let countField: HTMLInputElement | null = null;
+    if (portions.length > 0) {
+      const block = el("div", "ingmeasure");
+      block.append(el("span", "amlab", mc.phoneMeasurement));
+      const chips = el("div", "ingchips");
+      const servingRow = el("div", "row between ingserv");
+      countField = el("input", "amtin num") as HTMLInputElement;
+      countField.type = "text";
+      countField.inputMode = "decimal";
+      countField.value = portionCountText(lang,
+        item.portion_count ?? portionCountFor({ grams: item.grams }, portions[portionIndex ?? 0]!));
+      countField.setAttribute("aria-label", mc.servingsTitle);
+      size(countField);
+      const countPill = el("label", "amtpill");
+      const countUnit = el("span", "amtunit", portionIndex === null ? "" : portions[portionIndex]!.label);
+      countPill.append(countField, countUnit, kitEl(ico("pencil")));
+      servingRow.append(el("span", "amlab", mc.servingsTitle), countPill);
+      const chipEls: HTMLButtonElement[] = [];
+      const syncChips = (): void => {
+        chipEls.forEach((c, i) => {
+          const on = i === 0 ? portionIndex === null : portionIndex === i - 1;
+          c.classList.toggle("on", on);
+          c.setAttribute("aria-pressed", `${on}`);
+        });
+        servingRow.hidden = portionIndex === null;
+        amountRow.hidden = portionIndex !== null;
+        countUnit.textContent = portionIndex === null ? "" : portions[portionIndex]!.label;
+      };
+      const pick = (idx: number | null): void => {
+        portionIndex = idx;
+        // The pick changes the MEASUREMENT, not the amount: the count is what the grams typed
+        // already stand for in the portion picked.
+        if (idx !== null && countField !== null) {
+          countField.value = portionCountText(lang, portionCountFor({ grams: gramsNow() ?? item.grams }, portions[idx]!));
+          size(countField);
+        }
+        syncChips();
+      };
+      const chip = (label: string, idx: number | null): HTMLButtonElement => {
+        const c = el("button", "ingchip", label) as HTMLButtonElement;
+        c.type = "button";
+        c.addEventListener("click", () => pick(idx));
+        chipEls.push(c);
+        return c;
+      };
+      chips.append(chip(spellUnit(lang, "g"), null), ...portions.map((p, i) => chip(p.label, i)));
+      countField.addEventListener("input", () => {
+        if (portionIndex === null || countField === null) return;
+        size(countField);
+        const c = Number.parseFloat(countField.value.replace(",", "."));
+        if (!Number.isFinite(c) || c < 0) return;
+        grams.value = `${portionGrams(portions[portionIndex]!, c)}`;
+        onGramsInput();
+      });
+      block.append(chips, servingRow);
+      amountRow.before(block);
+      syncChips();
+    }
     drawMove();
 
     // Both writes end in the same PATCH: items only — the server derives the totals, and the
@@ -619,15 +697,24 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     done.type = "button";
     done.addEventListener("click", () => {
       const g = gramsNow();
+      // A catalog item measured in a portion writes `itemAtPortion` (portion + count stored, grams
+      // derived); the grams chip writes `itemAtGrams`, dropping the measurement. Without catalog
+      // portions the write is exactly what it was — a plain rescale.
+      const edited = (it: MealItem): MealItem => {
+        if (portions.length === 0) return scaledItem(it, g!);
+        const raw = countField === null ? Number.NaN : Number.parseFloat(countField.value.replace(",", "."));
+        const count = Number.isFinite(raw) && raw > 0 ? raw : null;
+        return measuredItem(it, portionIndex, count, g!);
+      };
       applyItems(g === null ? [...meal.items]
-        : meal.items.map((it, i) => (i === index ? scaledItem(it, g) : it)), grams.value);
+        : meal.items.map((it, i) => (i === index ? edited(it) : it)), grams.value);
     });
     bin.addEventListener("click", () => applyItems(meal.items.filter((_, i) => i !== index)));
     // Grams put back after a failed save draw their preview like typed ones.
     if (grams.value !== `${item.grams}`) grams.dispatchEvent(new Event("input"));
     dlg.append(done);
     scrim.append(dlg);
-    return { node: scrim, focus: grams };
+    return { node: scrim, focus: (portionIndex !== null ? countField : null) ?? grams };
   };
 
   // Save / remove from saved (#907, calodex_app#3685): `savedId` is the saved row made from THIS
@@ -925,7 +1012,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     }
     const ingHead = el("div", "inghead");
     ingHead.append(el("span", "lab", ac.ingredients));
-    if (meal.items.length < MAX_MEAL_ITEMS) {
+    if (!updating && meal.items.length < MAX_MEAL_ITEMS) {
       const addMore = el("button", "ingadd", ac.addMore) as HTMLButtonElement;
       addMore.type = "button";
       addMore.addEventListener("click", () => openAddPicker(meal));

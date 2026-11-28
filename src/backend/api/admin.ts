@@ -42,10 +42,10 @@
 
 import {
   CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, DEFAULT_ORDER, ENTITLEMENT_STATES, REMOVABLE_PLACES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
-  SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, parseChannel, screenIsOptional, type Lang,
+  SCREEN_OPTIONS, ROUTES, isCalendarDate, narrowLang, optionLabelIsData, parseChannel, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
-  adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
+  adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts, promoStats,
   adminRecognitions, adminRecognition,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
   onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder, setOnboardingExperiment,
@@ -715,6 +715,11 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     // `days` stays a count for this one — "30 days" is 30 calendar rows, not 30×24h.
     const ask = rangeParam(url, { defaultDays: 30, maxDays: 400 });
     return json(await adminMetrics(deps, "days" in ask ? ask : { ...ask }));
+  }
+
+  if (req.method === "GET" && pathname === ROUTES.adminPromoStats) {
+    const rawDays = url.searchParams.get("days");
+    return json(await promoStats(deps, rawDays === null ? Number.NaN : Number(rawDays), url.searchParams.get("sandbox") === "1"));
   }
 
   // ── Per-account grant (ieat-app#2364: no default sample) ─────────────────────────────────────────────────────────────────────

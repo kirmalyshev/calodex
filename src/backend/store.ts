@@ -304,6 +304,18 @@ export interface RevenueCatEventRow {
 }
 
 /**
+ * One redeemed account inside one offer code's trailing-window cohort. Internal to the backend:
+ * the admin response aggregates these rows and never serializes `userId`.
+ */
+export interface PromoStatsAccountRow {
+  offerCode: string;
+  userId: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  paid: boolean;
+}
+
+/**
  * One event's effect: set the subscription's end, or set/clear the lifetime unlock, never both.
  *
  * Undefined means LEAVE ALONE, and that is the whole point. A monthly renewal says nothing about a
@@ -1651,6 +1663,14 @@ export interface Store {
   recordRevenueCatEvent(row: RevenueCatEventRow): Promise<boolean>;
   /** This account's logged deliveries, oldest event first. */
   revenueCatEventsOf(userId: string): Promise<RevenueCatEventRow[]>;
+  /**
+   * Promo-code conversion input, INTERNAL per (offer code, account) rather than an aggregate:
+   * the engine — not a second store-side copy of the tier rule — decides which accounts are active.
+   * `paid` is a priced RENEWAL or INITIAL_PURCHASE in the same RevenueCat environment at/after the
+   * account's first event carrying that code. Only events in `environment` participate in the
+   * cohort, the first-coded anchor and the payment proof.
+   */
+  promoStats(since: Date, environment: "PRODUCTION" | "SANDBOX"): Promise<PromoStatsAccountRow[]>;
   /** Where this account came from, or null when nothing has said. */
   acquisitionOf(userId: string): Promise<Acquisition | null>;
   /**

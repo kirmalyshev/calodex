@@ -171,6 +171,7 @@ test("+ Add More opens ingredient search, and a pick appends through the update 
   await sheet.locator("input").fill("banana");
   const row = sheet.locator(".fs-row", { hasText: "Banana, raw" }).first();
   await expect(row).toBeVisible();
+  await expect(row.locator("button.fs-add")).toHaveAttribute("aria-label", "Banana, raw");
   const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
   await row.locator("button.fs-add").click();
   const body = (await sent).postDataJSON() as { edit?: { add?: { ref?: string; grams?: number } }; kind?: string; mealId?: string; clientId?: string };
@@ -189,6 +190,25 @@ test("+ Add More opens ingredient search, and a pick appends through the update 
   expect(after.items.at(-1)).toMatchObject({ name: "Banana, raw", grams: 118 });
   expect(after.kcal).toBeGreaterThan(before.kcal);
   await expect(page.locator(".ing").last()).toContainText("Banana, raw");
+});
+
+test("+ Add More is unavailable while another update on the meal is open (#3678)", async ({ inWebApp: page }) => {
+  await openMeal(page);
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => { release = resolve; });
+  await page.route(/\/api\/v1\/meals\/update\/queue/, async (route) => {
+    await hold;
+    await route.continue();
+  });
+  const addMore = page.getByRole("button", { name: "+ Add More" });
+  await addMore.click();
+  const sheet = page.locator(".fs");
+  await sheet.locator("input").fill("banana");
+  const row = sheet.locator(".fs-row", { hasText: "Banana, raw" }).first();
+  await row.locator("button.fs-add").click();
+  await expect(addMore).toHaveCount(0);
+  release();
+  await expect(addMore).toBeVisible();
 });
 
 test("a failed ingredient append does not offer a blind retry (#3678)", async ({ inWebApp: page }) => {
@@ -238,6 +258,74 @@ test("+ Add More is absent when the meal already holds the server's item cap (#3
   await expect(page.locator(".ingbtn")).toHaveCount(50);
   await expect(page.getByText("Ingredients", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "+ Add More" })).toHaveCount(0);
+});
+
+test("a catalog ingredient measures in a named portion, and Done sends portion, count and grams (#3679)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const token = await sessionToken(page);
+  const add = await page.request.patch(`/v1/meals/${id}`, {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+    data: { add: { ref: "usda-foundation:demo-banana", grams: 118 } },
+  });
+  expect(add.status(), await add.text()).toBe(200);
+  await page.goto(`/#/meal/${id}`);
+  await page.reload();
+  await expect(page.locator(".ingbtn").last()).toContainText("Banana, raw");
+  await page.locator(".ingbtn").last().click();
+
+  const dialog = page.getByRole("dialog", { name: "Edit ingredient" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Measurement", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "g", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const medium = dialog.getByRole("button", { name: "1 medium", exact: true });
+  await expect(medium).toBeVisible();
+  await medium.click();
+  await expect(medium).toHaveAttribute("aria-pressed", "true");
+  // The portioned state has ONE amount control, as the board and phone draw it: the grams row is
+  // hidden and Number of Servings is the measurement.
+  await expect(dialog.locator(".ingserv")).toBeVisible();
+  await expect(dialog.locator(".amlab", { hasText: "Amount" })).toBeHidden();
+  const count = dialog.locator(".ingserv input");
+  await expect(count).toHaveValue("1");
+  await count.fill("2");
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await shot(page, "ingredient-portion-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "ingredient-portion-390");
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
+  await dialog.getByRole("button", { name: "Done" }).click();
+  const body = (await sent).postDataJSON() as { edit?: { items?: Array<Record<string, unknown>> } };
+  const banana = body.edit?.items?.at(-1);
+  expect(banana).toMatchObject({
+    name: "Banana, raw", grams: 236,
+    portion: { label: "1 medium", grams: 118 }, portion_count: 2,
+  });
+});
+
+test("a zero portion count falls back to grams rather than sending portion_count zero (#3679)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const token = await sessionToken(page);
+  const add = await page.request.patch(`/v1/meals/${id}`, {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+    data: { add: { ref: "usda-foundation:demo-banana", grams: 118 } },
+  });
+  expect(add.status(), await add.text()).toBe(200);
+  await page.goto(`/#/meal/${id}`);
+  await page.reload();
+  await page.locator(".ingbtn").last().click();
+  const dialog = page.getByRole("dialog", { name: "Edit ingredient" });
+  await dialog.getByRole("button", { name: "1 medium", exact: true }).click();
+  await dialog.locator(".ingserv input").fill("0");
+
+  const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
+  await dialog.getByRole("button", { name: "Done" }).click();
+  const body = (await sent).postDataJSON() as { edit?: { items?: Array<Record<string, unknown>> } };
+  const banana = body.edit?.items?.at(-1);
+  expect(banana?.grams).toBe(0);
+  expect(banana).not.toHaveProperty("portion");
+  expect(banana).not.toHaveProperty("portion_count");
 });
 
 test("the servings chip opens Number of Servings on any meal, and Update sends servings alone (#3677)", async ({ inWebApp: page }) => {
