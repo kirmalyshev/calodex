@@ -2337,6 +2337,8 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.getMealVersioned(u, m.id))!.version).toBe(v0);
       expect(await s.updateMealIfVersion(u, m.id, { kcal: 5 }, v0)).toMatchObject({ kcal: 5 });
       expect((await s.getMealVersioned(u, m.id))!.version).toBe(v0 + 1);
+      expect(await s.updateMealIfVersion(u, m.id, { servings: 1.5 }, v0 + 1)).toMatchObject({ servings: 1.5 });
+      expect((await s.getMealVersioned(u, m.id))!.version).toBe(v0 + 2);
     });
 
     it("answers a conflict for an empty patch at a stale version, and null for a malformed id (#2695)", async () => {

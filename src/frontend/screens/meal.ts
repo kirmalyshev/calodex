@@ -22,7 +22,7 @@
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
-import { mealEditParams, mealEditRequest, previewKcal, scaledItem } from "../../shared/meal-edit.ts";
+import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem } from "../../shared/meal-edit.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { ingredientSourceCard } from "../../shared/app/ingredient-source.ts";
 import { updateCopyFor } from "../../shared/app/update-copy.ts";
@@ -283,7 +283,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       // numbers are `stored / stored servings × n` — shown only; Update sends `{ servings }` ALONE
       // and the server scales, recomputes the verdicts and the day (none drawn here: they would
       // describe a total that is not stored yet).
-      const stored = meal.label.servings;
+      const stored = mealServings(meal);
       const per = (v: number): number => v / stored;
       const macros = (k: number): string => fill(mc.servingsMacros, {
         protein: fill(mc.phoneGrams, { n: n(Math.round(per(meal.protein_g) * k)) }),

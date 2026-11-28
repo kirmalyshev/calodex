@@ -1310,15 +1310,15 @@ export interface EditMealRequest {
   sugar_g?: number;
   sodium_mg?: number;
   /**
-   * How many servings of a label-scanned meal were eaten (ieat-app#2087), by halves up to
-   * {@link MAX_LABEL_SERVINGS}. The server scales every item and total by `servings / stored` and
-   * recomputes the verdicts; per-serving figures are `total / servings`, never sent. Refused on a
-   * meal with no `label`, and sent ALONE — an edit that also carries items or totals is malformed.
+   * How many servings of a meal were eaten (ieat-app#2087, any meal since #3677; 1 = as logged),
+   * by halves up to {@link MAX_LABEL_SERVINGS}. The server scales every item and total by
+   * `servings / stored` and recomputes the verdicts; per-serving figures are `total / servings`,
+   * never sent. Sent ALONE — an edit that also carries items or totals is malformed.
    */
   servings?: number;
 }
 
-/** The most servings a label meal may be logged as; a step is one half. */
+/** The most servings a meal may be logged as; a step is one half. The constant keeps its first release's name. */
 export const MAX_LABEL_SERVINGS = 20;
 
 const EDIT_NUMBERS = ["kcal", "protein_g", "carbs_g", "fat_g", "satfat_g", "fiber_g", "sugar_g", "sodium_mg"] as const;

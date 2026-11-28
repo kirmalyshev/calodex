@@ -6470,7 +6470,7 @@
           },
           "servings": {
             "type": "number",
-            "description": "How many servings of a label-scanned meal were eaten (ieat-app#2087), by halves up to  {@link  MAX_LABEL_SERVINGS } . The server scales every item and total by `servings / stored` and recomputes the verdicts; per-serving figures are `total / servings`, never sent. Refused on a meal with no `label`, and sent ALONE — an edit that also carries items or totals is malformed."
+            "description": "How many servings of a meal were eaten (ieat-app#2087, any meal since #3677; 1 = as logged), by halves up to  {@link  MAX_LABEL_SERVINGS } . The server scales every item and total by `servings / stored` and recomputes the verdicts; per-serving figures are `total / servings`, never sent. Sent ALONE — an edit that also carries items or totals is malformed."
           }
         },
         "additionalProperties": false,
@@ -7743,7 +7743,7 @@
                 "type": "null"
               }
             ],
-            "description": "Set when the numbers were read off a nutrition label (ieat-app#2087): `servings` is how many of the printed serving this meal is. Absent on every other meal. Per-serving figures are `total / servings`, derived by the client and never stored beside the totals."
+            "description": "Set when the numbers were read off a nutrition label (ieat-app#2087). On such a meal `label.servings` is the compatible count while released servers can still write it (#3677); the meal's own `servings` mirrors it on new writes. Absent on every other meal. Per-serving figures are `total / servings`, derived by the client and never stored beside the totals."
           }
         },
         "required": [
@@ -7871,7 +7871,7 @@
           "servings"
         ],
         "additionalProperties": false,
-        "description": "A meal read off a nutrition label (ieat-app#2087). `servings` multiplies what the panel printed: the meal's totals are ALWAYS `per serving × servings`, so the per-serving figures are derived (`total / servings`), never stored beside the totals where they could disagree. Default 1, by halves."
+        "description": "A meal read off a nutrition label (ieat-app#2087). `servings` is this meal's count while released servers can still write it (#3677 rolling compatibility); the meal's own column mirrors it on new writes, and on rows stored before that column existed it is the legacy count."
       },
       "MealLogged": {
         "type": "object",
@@ -8121,6 +8121,10 @@
               }
             ],
             "description": "The phone break taken after this meal (ieat-app#2129): how long, and whether it was held to the end. Null until one is recorded; absent on bare rows."
+          },
+          "servings": {
+            "type": "number",
+            "description": "How many servings of this meal were eaten (#3677), by halves. Absent means 1. On a label scan this mirrors `label.servings` while released servers can still write only that field."
           },
           "verdictInline": {
             "type": "string",

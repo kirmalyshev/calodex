@@ -451,7 +451,7 @@ export type VersionedMeal = MealRecord & { version: number };
 export type MealPatch = Partial<
   Pick<MealRecord,
     "items" | "kcal" | "protein_g" | "carbs_g" | "fat_g" | "satfat_g" | "fiber_g" | "sugar_g" |
-    "sodium_mg" | "verdicts" | "notes" | "corrected" | "date" | "question" | "model" | "confidence" | "focus" | "label">
+    "sodium_mg" | "verdicts" | "notes" | "corrected" | "date" | "question" | "model" | "confidence" | "focus" | "label" | "servings">
 >;
 
 /** One stored photo of a meal. `position` is its order on the plate, 0-based, as uploaded. */

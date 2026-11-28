@@ -13,9 +13,29 @@
 //     either way, so nothing a client sends can paint over them.
 
 import type { EditMealRequest } from "./contract.ts";
-import type { MealAnalysis, MealItem } from "./types.ts";
+import type { MealAnalysis, MealItem, MealRecord } from "./types.ts";
+
+/** The servings a meal row stands for. A label scan's count comes first while released servers still write only there; then the meal's own count, then one as logged. */
+export function mealServings(meal: Pick<MealRecord, "servings" | "label">): number {
+  return meal.label?.servings ?? meal.servings ?? 1;
+}
 
 const tenth = (n: number): number => Math.round(n * 10) / 10;
+
+/**
+ * The figures a servings edit would make, for the stepper's preview only (#3677): the stored
+ * totals divided by the stored count and multiplied by the shown count, rounded as display. The
+ * write is `{ servings }` alone — this is never sent.
+ */
+export function servingsPreview(
+  meal: Pick<MealRecord, "kcal" | "protein_g" | "carbs_g" | "fat_g" | "servings" | "label">,
+  servings: number,
+): { kcal: number; protein_g: number; carbs_g: number; fat_g: number } {
+  const stored = mealServings(meal);
+  const scale = (v: number): number => Math.round((v / stored) * servings);
+  return { kcal: scale(meal.kcal), protein_g: scale(meal.protein_g), carbs_g: scale(meal.carbs_g), fat_g: scale(meal.fat_g) };
+}
+
 const whole = (n: number): number => Math.round(n);
 
 /**
