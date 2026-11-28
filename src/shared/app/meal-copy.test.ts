@@ -17,7 +17,7 @@ const KEYS = [
   "deleteTitle", "deleteBody", "deleteCta", "cancelCta",
   "webCorrect", "webLoggedPhoto",
   "phoneCorrect", "phoneDone", "phoneEdit",
-  "menuAddPhoto", "phoneMenuReread", "phoneMenuMoveYesterday", "menuCopyTo", "copySheetTitle", "copyCta", "menuReport",
+  "menuAddPhoto", "phoneMenuReread", "phoneMenuMoveYesterday", "menuCopyTo", "copySheetTitle", "copyCta", "copyFailed", "menuReport",
   "reportTitle", "reportCount", "reportCta",
   "phoneCorrectTitle", "phoneSheetMeal", "phoneThisMeal", "phoneSaveRecheck",
   "phoneKeypadBackspace",
@@ -110,6 +110,7 @@ describe("MEAL_COPY", () => {
     expect(en.menuCopyTo).toBe("Copy To");
     expect(en.copySheetTitle).toBe("Choose the days to copy to");
     expect(en.copyCta).toBe("Copy");
+    expect(en.copyFailed).toBe("Couldn’t copy that. Try again.");
     expect(en.menuReport).toBe("Report Food");
     expect(en.reportTitle).toBe("What's the issue with this food log?");
     expect(en.reportCount).toBe("{n}/500");
