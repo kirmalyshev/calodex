@@ -518,7 +518,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const sent = takeSentGrams(meal.id, index);
     grams.value = sent ?? `${item.grams}`;
     grams.setAttribute("aria-label", mc.phoneAmount);
-    const size = (): void => { grams.style.width = `${Math.max(2, grams.value.length)}ch`; };
+    const size = (field: HTMLInputElement = grams): void => { field.style.width = `${Math.max(2, field.value.length)}ch`; };
     size();
     const pill = el("label", "amtpill");
     pill.append(grams, document.createTextNode(`${spellUnit(lang, "g")}`), kitEl(ico("pencil")));
@@ -612,6 +612,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       // the count's own field is the one being typed in (it is what moved the grams).
       if (portionIndex !== null && countField !== null && document.activeElement !== countField && g !== null) {
         countField.value = portionCountText(lang, portionCountFor({ grams: g }, portions[portionIndex]!));
+        size(countField);
       }
     };
     grams.addEventListener("input", onGramsInput);
@@ -636,8 +637,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       countField.value = portionCountText(lang,
         item.portion_count ?? portionCountFor({ grams: item.grams }, portions[portionIndex ?? 0]!));
       countField.setAttribute("aria-label", mc.servingsTitle);
+      size(countField);
       const countPill = el("label", "amtpill");
-      const countUnit = el("span", "", portionIndex === null ? "" : portions[portionIndex]!.label);
+      const countUnit = el("span", "amtunit", portionIndex === null ? "" : portions[portionIndex]!.label);
       countPill.append(countField, countUnit, kitEl(ico("pencil")));
       servingRow.append(el("span", "amlab", mc.servingsTitle), countPill);
       const chipEls: HTMLButtonElement[] = [];
@@ -657,6 +659,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         // already stand for in the portion picked.
         if (idx !== null && countField !== null) {
           countField.value = portionCountText(lang, portionCountFor({ grams: gramsNow() ?? item.grams }, portions[idx]!));
+          size(countField);
         }
         syncChips();
       };
@@ -670,6 +673,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       chips.append(chip(spellUnit(lang, "g"), null), ...portions.map((p, i) => chip(p.label, i)));
       countField.addEventListener("input", () => {
         if (portionIndex === null || countField === null) return;
+        size(countField);
         const c = Number.parseFloat(countField.value.replace(",", "."));
         if (!Number.isFinite(c) || c < 0) return;
         grams.value = `${portionGrams(portions[portionIndex]!, c)}`;
