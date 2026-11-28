@@ -145,14 +145,54 @@ button.hsc { cursor: pointer; }
 .home { display: flex; flex-direction: column; gap: 16px; }
 .hsec { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
 .dlist { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow);
-  padding: 4px 16px; }
-/* Inside the card's own 4 px the rows keep their 12 px — the kit's first/last padding
-   collapse would clip them otherwise (the boards' dlist .meal set). */
+  padding: 0 16px; overflow: hidden; }
+/* Inside the card the rows keep their 12 px, with 16 px on the outer edges so a swiped
+   Delete action fills flush to the card's rounded corners without a 4 px white band. */
 .dlist .meal, .dlist .meal:first-child, .dlist .meal:last-child { padding: 12px 0; }
+.dlist .queue:not(:empty) .meal:first-child { padding-top: 16px; }
+.dlist .queue:not(:empty):last-child .meal:last-child { padding-bottom: 16px; }
 /* The queue box is a child of the list: empty it collapses, and the first meal under it
    draws no separator over nothing. */
 .dlist .queue:empty { display: none; }
 .dlist .queue:empty + .meal { border-top: 0; }
+
+/* Home row delete (#3686): narrow / touch swipes left to reveal the 84 px red Delete action
+   (matching iOS); fine-pointer desktop reveals a quiet trash button on hover or focus. */
+.drow { position: relative; margin: 0 -16px; border-top: 1px solid var(--hair); overflow: hidden;
+  touch-action: pan-y; }
+.dlist > .uslot:first-child .drow, .dlist > .queue:empty + .uslot .drow { border-top: 0; }
+.drow > .meal, .drow > .meal:first-child, .drow > .meal:last-child {
+  border-top: 0; padding: 12px 16px; flex: 1; min-width: 0;
+  position: relative; z-index: 1; background: var(--surface);
+  transition: transform .22s var(--ease); }
+.dlist > .uslot:first-child .drow > .meal,
+.dlist > .queue:empty + .uslot .drow > .meal { padding-top: 16px; }
+.dlist > .uslot:last-child .drow > .meal { padding-bottom: 16px; }
+.drow.open > .meal, .drow:has(.drow-del:focus-visible) > .meal { transform: translateX(-84px); }
+.drow-del { position: absolute; top: 0; right: 0; bottom: 0; width: 84px; border: 0; margin: 0;
+  padding: 0; background: var(--bad); color: var(--accent-ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.drow-del .ico { width: 18px; height: 18px; }
+.drow-del:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .drow { display: flex; align-items: center; padding-right: 16px; touch-action: auto; }
+  .drow > .meal, .drow > .meal:first-child, .drow > .meal:last-child {
+    position: static; z-index: auto; transition: none; padding-right: 0; }
+  .drow.open > .meal, .drow:has(.drow-del:focus-visible) > .meal { transform: none; }
+  .drow-del { position: static; width: 0; height: 36px; flex: 0 0 0; overflow: hidden; opacity: 0;
+    border-radius: var(--r-ctl); background: transparent; color: var(--muted);
+    transition: width .16s var(--ease), flex-basis .16s var(--ease), margin-left .16s var(--ease),
+      opacity .16s var(--ease), background .15s ease, color .15s ease; }
+  .drow-del-lbl { display: none; }
+  .drow:hover .drow-del, .drow:focus-within .drow-del {
+    width: 36px; flex-basis: 36px; margin-left: 8px; opacity: 1; }
+  .drow-del:hover, .drow-del:focus-visible { background: var(--bad-tint); color: var(--bad); }
+  .drow-del:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drow > .meal, .drow-del { transition: none; }
+}
 .hnote { margin-top: 12px; padding: 0 4px; font-size: 13px; line-height: 18px; color: var(--muted); }
 /* The ends-tomorrow trial card — the boards' .trial (web-pay-reminder), a link that heads the
    diary column the day before a live trial ends, into Profile's subscription row. */
