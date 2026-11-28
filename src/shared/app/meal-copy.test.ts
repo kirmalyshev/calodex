@@ -17,7 +17,8 @@ const KEYS = [
   "deleteTitle", "deleteBody", "deleteCta", "cancelCta",
   "webCorrect", "webLoggedPhoto",
   "phoneCorrect", "phoneDone", "phoneEdit",
-  "menuAddPhoto", "phoneMenuReread", "phoneMenuMoveYesterday",
+  "menuAddPhoto", "phoneMenuReread", "phoneMenuMoveYesterday", "menuReport",
+  "reportTitle", "reportCount", "reportCta",
   "phoneCorrectTitle", "phoneSheetMeal", "phoneThisMeal", "phoneSaveRecheck",
   "phoneKeypadBackspace",
   "phoneFixMeal", "phoneFixExampleLead", "phoneFixExample", "phoneUpdate",
@@ -62,6 +63,7 @@ describe("MEAL_COPY", () => {
       renameLabel: ["{name}"],
       phoneGrams: ["{n}"],
       phoneMealMove: ["{from}", "{to}"],
+      reportCount: ["{n}"],
       changeItem: ["{item}", "{before}", "{after}", "{unit}"],
       changeTotal: ["{kcalBefore}", "{kcalAfter}", "{kcal}"],
       changeWithItems: ["{items}", "{total}"],
@@ -96,6 +98,10 @@ describe("MEAL_COPY", () => {
     expect(en.menuAddPhoto).toBe("Add Photo");
     expect(en.phoneMenuReread).toBe("Re-read the photo");
     expect(en.phoneMenuMoveYesterday).toBe("Move to yesterday");
+    expect(en.menuReport).toBe("Report Food");
+    expect(en.reportTitle).toBe("What's the issue with this food log?");
+    expect(en.reportCount).toBe("{n}/500");
+    expect(en.reportCta).toBe("Report");
     expect(en.correctOpener).toBe("I read {items}. Tell me what I got wrong.");
     expect(en.composeHint).toBe("Say what was wrong");
     expect(en.deleteTitle).toBe("Delete this meal?");

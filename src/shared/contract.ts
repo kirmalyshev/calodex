@@ -15,7 +15,7 @@ import type { FirstVerdictArm, OnboardingContent, OnboardingEvent } from "./onbo
 import type { ServedScreens } from "./screen-template.ts";
 import type { AnalyticsServerContext } from "./analytics.ts";
 import type { TargetBasis } from "./targets.ts";
-import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, MealItemsFull, UnknownFood, LogPhotoResult, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
+import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, MealCopied, MealItemsFull, UnknownFood, LogPhotoResult, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
 import type { BmiRange } from "./scores.ts";
 import { WEIGHT_RANGES, type ChartDay, type WeightRange } from "./ui/charts.ts";
@@ -177,6 +177,13 @@ export interface Limits {
    * neither the label nor the footer may claim the second when it only knows the first.
    */
   diaryWindowDays: number;
+  /**
+   * The meal-copy picker's enforced window on either side of today. Sent for the same reason as
+   * `diaryWindowDays`: a client must not offer days the route will then refuse as `bad-copy`.
+   */
+  mealCopyMaxOffset: number;
+  /** The most offsets one copy request may carry, today included; duplicates are deduped server-side. */
+  mealCopyMaxDays: number;
   /**
    * The server's budget for ONE model call, in ms — `EAIT__BACKEND__LLM_TIMEOUT_MS` as this server
    * is actually running it.
@@ -493,6 +500,15 @@ export const ROUTES = {
    * bounded by the chat re-date's own `MAX_DAY_OFFSET` — and the same answer: `MealRedated | TargetGone`.
    */
   mealRedate: (id: string) => `/v1/meals/${encodeURIComponent(id)}/redate`,
+  /**
+   * POST — copy the meal as NEW meals onto the days `dayOffsets` names ({@link CopyMealRequest};
+   * calodex_app#3683), positive offsets back and negative ones forward, within the picker's
+   * last-seven/next-seven window. Unbilled, one write per deduped day, verdicts recomputed
+   * server-side for every copy. Requires the `idempotency-key` header or body `clientId`: a replay
+   * is answered from the first write, never copied again. Answers {@link CopyMealResponse}; another account's meal
+   * is `target-gone` (409).
+   */
+  mealCopy: (id: string) => `/v1/meals/${encodeURIComponent(id)}/copy`,
   /**
    * POST — record the phone break taken after this meal ({@link FocusMealRequest}; ieat-app#2129).
    * Answers the meal, or 404 when it is not the caller's. Free for every user: no entitlement, no cap.
@@ -1518,6 +1534,33 @@ export function isRedateMealRequest(body: unknown): body is RedateMealRequest {
 
 export type RedateMealResponse = MealRedated | TargetGone;
 
+/** The copy picker's whole window: seven days back, today, and seven forward. */
+export const MEAL_COPY_MAX_OFFSET = 7;
+export const MEAL_COPY_MAX_DAYS = MEAL_COPY_MAX_OFFSET * 2 + 1;
+
+/**
+ * `POST /v1/meals/:id/copy` — offsets, never dates: a client cannot aim a copy anywhere on the
+ * calendar, and a replay's key travels in the `idempotency-key` header like every writing turn.
+ * Duplicates are deduped by the engine rather than refused — a multi-select picker can produce
+ * them without meaning anything by it.
+ */
+export interface CopyMealRequest {
+  dayOffsets: number[];
+  /** The replay key, as for every logging turn. The `idempotency-key` header wins when both are sent. */
+  clientId?: string;
+}
+
+export function isCopyMealRequest(body: unknown): body is CopyMealRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const b = body as Record<string, unknown>;
+  return Array.isArray(b.dayOffsets)
+    && b.dayOffsets.length >= 1
+    && b.dayOffsets.length <= MEAL_COPY_MAX_DAYS
+    && b.dayOffsets.every((n) => Number.isInteger(n) && Math.abs(n as number) <= MEAL_COPY_MAX_OFFSET)
+    && (b.clientId === undefined || (typeof b.clientId === "string" && b.clientId !== "" && b.clientId.length <= MAX_CLIENT_ID));
+}
+
+export type CopyMealResponse = MealCopied;
 /** One report's prose bound. The counter on the sheet counts the same characters the server accepts. */
 export const MAX_MEAL_REPORT_TEXT = 500;
 

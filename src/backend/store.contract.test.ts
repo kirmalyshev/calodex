@@ -1944,6 +1944,31 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.getMeal(u, m.id))!.kcal).toBe(260);
     });
 
+    it("inserts a meal batch atomically: one conflicting id rolls every row back", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const first = meal(u);
+      const second = meal(u);
+      expect(await s.insertMeals(u, [first, second])).toBe(2);
+      expect((await s.getMeal(u, first.id))?.id).toBe(first.id);
+      expect((await s.getMeal(u, second.id))?.id).toBe(second.id);
+
+      const third = meal(u);
+      await expect(s.insertMeals(u, [third, { ...first, kcal: 1 }])).rejects.toThrow();
+      // The conflict was second, so `third` committing would prove the batch was not atomic.
+      expect(await s.getMeal(u, third.id)).toBeNull();
+      expect((await s.getMeal(u, first.id))!.kcal).toBe(260);
+
+      const dup = meal(u);
+      await expect(s.insertMeals(u, [dup, { ...dup, kcal: 1 }])).rejects.toThrow();
+      expect(await s.getMeal(u, dup.id)).toBeNull();
+
+      const foreign = meal((await s.upsertDeviceUser(device(), "en")).userId);
+      const beforeForeign = meal(u);
+      await expect(s.insertMeals(u, [beforeForeign, foreign])).rejects.toThrow();
+      expect(await s.getMeal(u, beforeForeign.id)).toBeNull();
+    });
+
     it("scopes a meal read to its owner", async () => {
       const s = await open();
       const a = (await s.upsertDeviceUser(device(), "en")).userId;

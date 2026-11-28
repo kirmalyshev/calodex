@@ -15,7 +15,7 @@
 //    encoder cannot drift.
 
 import {
-  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, PHOTO_MAX_EDGE_MAX, PHOTO_MAX_EDGE_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRateMealRequest, isRedateMealRequest, isReportMealRequest, isSaveMealRequest, parseNumbersLogRequest,
+  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, PHOTO_MAX_EDGE_MAX, PHOTO_MAX_EDGE_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isCopyMealRequest, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRateMealRequest, isRedateMealRequest, isReportMealRequest, isSaveMealRequest, parseNumbersLogRequest,
   type AuthDeviceRequest, type AuthDeviceResponse, type AuthEmailCodeRequest, type AuthEmailVerifyRequest, type AuthProviderRequest,
   type AppendLinesRequest, type AppendLinesResponse, type AuthProviderResponse, type IdentitiesResponse, type Lang, type RedateMealResponse, type SaveMealResponse, type SavedMealsResponse,
   type UnlinkResponse, type EditMealResult,
@@ -42,7 +42,7 @@ import {
   EMAIL_ADDRESS, normalizeEmail,
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
   attachPhotos, attributeInstall, recordPushOpen, recordPushDelivered, pushConsent, setPushConsent,
-  reanalyzeMeal, redateMeal, focusMeal, rateMeal, reportMeal, logSavedMeal, saveMealFromLog, followPhotoJob, listJobs, photoJob, queuePhoto, queueMealUpdate, removePhotoJob,
+  reanalyzeMeal, redateMeal, copyMeal, focusMeal, rateMeal, reportMeal, logSavedMeal, saveMealFromLog, followPhotoJob, listJobs, photoJob, queuePhoto, queueMealUpdate, removePhotoJob,
   foodSearch, productByBarcode, redeemReferral, shareReferral,
 } from "../engine/index.ts";
 import { analyticsRequestOf } from "../engine/analytics.ts";
@@ -116,6 +116,7 @@ export const STREAM_KEEPALIVE_MS = 5_000;
 
 const REANALYZE_PATH = /^\/v1\/meals\/([^/]+)\/reanalyze$/;
 const REDATE_PATH = /^\/v1\/meals\/([^/]+)\/redate$/;
+const COPY_PATH = /^\/v1\/meals\/([^/]+)\/copy$/;
 const FOCUS_PATH = /^\/v1\/meals\/([^/]+)\/focus$/;
 const REPORT_PATH = /^\/v1\/meals\/([^/]+)\/report$/;
 const RATING_PATH = /^\/v1\/meals\/([^/]+)\/rating$/;
@@ -1164,6 +1165,25 @@ export function createRouter(
         return result.kind === "target-gone"
           ? json({ error: "target-gone", on: result.on }, 409)
           : json(result satisfies RedateMealResponse);
+      }
+
+      const copyMatch = COPY_PATH.exec(pathname);
+      if (req.method === "POST" && copyMatch) {
+        // Unbilled, but it writes meals and thread cards: per address, its own counter like the
+        // editor beside it. The idempotency key is required because a replayed copy is not
+        // naturally idempotent — without it the client's retry is a second set of meals.
+        const body: unknown = await req.json();
+        if (!isCopyMealRequest(body)) return json({ error: "bad-copy" }, 400);
+        const clientId = turnKey(req) ?? body.clientId;
+        if (clientId === undefined) return json({ error: "clientId required" }, 400);
+        // A replay writes nothing, so it must not spend the allowance either — the same exception
+        // the billed turns above already carry.
+        const replay = (await store.getTurn(userId, clientId)) !== null;
+        const wait = replay ? null : limit(req, peer, "meal-copy", deps.config.linesRateLimitPerHour, HOUR);
+        if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
+        const result = await copyMeal(deps, userId, decodeURIComponent(copyMatch[1]!), body.dayOffsets, clientId);
+        if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
+        return isRefusal(result) ? refusal(result) : json(result);
       }
 
       const reportMatch = REPORT_PATH.exec(pathname);

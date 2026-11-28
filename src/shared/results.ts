@@ -204,7 +204,7 @@ export interface MealUpdated {
  */
 export interface TargetGone {
   kind: "target-gone";
-  on: "correction" | "redate" | "saved-meal";
+  on: "correction" | "redate" | "saved-meal" | "meal";
 }
 
 export interface MealRedated {
@@ -233,6 +233,16 @@ export type HandleTextResult =
   | MealRedated
   | TargetGone
   | Refusal;
+
+/**
+ * The meals created by one copy request, in the request's deduped offset order. Each entry
+ * carries the totals of ITS OWN target date — a copy onto yesterday or tomorrow is not today's meal.
+ */
+export interface MealCopied {
+  kind: "copied";
+  sourceMealId: string;
+  meals: MealLogged[];
+}
 
 export type ConfirmMealResult = MealLogged | { kind: "expired" } | Refusal;
 

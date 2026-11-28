@@ -2012,6 +2012,178 @@
         ]
       }
     },
+    "/v1/meals/{id}/copy": {
+      "post": {
+        "operationId": "post_mealCopy",
+        "summary": "Copy the meal as NEW meals onto one or more days, positive offsets back and negative ones forward. Verdicts are recomputed for every copy; unbilled, but refused once no free log or entitlement is left.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "description": "Required here or as body `clientId`: the key makes a retried copy replay rather than write a second set of meals.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyMealRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyMealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not onboarded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Target gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/v1/meals/{id}/report": {
       "post": {
         "operationId": "post_mealReport",
@@ -6156,6 +6328,29 @@
           }
         ]
       },
+      "CopyMealRequest": {
+        "type": "object",
+        "properties": {
+          "dayOffsets": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The replay key, as for every logging turn. The `idempotency-key` header wins when both are sent."
+          }
+        },
+        "required": [
+          "dayOffsets"
+        ],
+        "additionalProperties": false,
+        "description": "`POST /v1/meals/:id/copy` — offsets, never dates: a client cannot aim a copy anywhere on the calendar, and a replay's key travels in the `idempotency-key` header like every writing turn. Duplicates are deduped by the engine rather than refused — a multi-select picker can produce them without meaning anything by it."
+      },
+      "CopyMealResponse": {
+        "$ref": "#/components/schemas/MealCopied"
+      },
       "CountForms": {
         "type": "object",
         "properties": {
@@ -7872,6 +8067,14 @@
             "type": "number",
             "description": "How many days back the diary can be asked about, counting today.\n\nIT BOUNDS THE MARKS, NOT THE DAYS. The date picker draws a month at a time and marks the days that have meals on them; the marks come from `GET /v1/diary/week`, which refuses a window wider than this. `GET /v1/diary/day` refuses nothing — it validates the shape of a date and no more — so a day outside this window is still perfectly viewable, and the picker still offers it. What the picker cannot do out there is say whether it has meals on it.\n\nSent rather than compiled in, because that boundary is where the app is most tempted to invent: a month drawn with no dots is indistinguishable from a month nobody ate in, and neither the label nor the footer may claim the second when it only knows the first."
           },
+          "mealCopyMaxOffset": {
+            "type": "number",
+            "description": "The meal-copy picker's enforced window on either side of today. Sent for the same reason as `diaryWindowDays`: a client must not offer days the route will then refuse as `bad-copy`."
+          },
+          "mealCopyMaxDays": {
+            "type": "number",
+            "description": "The most offsets one copy request may carry, today included; duplicates are deduped server-side."
+          },
           "modelCallTimeoutMs": {
             "type": "number",
             "description": "The server's budget for ONE model call, in ms — `EAIT__BACKEND__LLM_TIMEOUT_MS` as this server is actually running it.\n\nSENT, BECAUSE IT IS ENV-CONFIGURED. It differs between environments and production sets it explicitly, so an app that computed its wait from a number compiled into its binary is the second copy this interface exists to abolish — and the failure is silent in the worst direction: the phone abandons a turn the server is still running and still billing, with no error on either side.\n\nTHE PER-CALL NUMBER RATHER THAN A WAIT, because how many budgets a turn spends depends on the ROUTE and only the client knows which one it is about to call. `clientModelTimeoutMs` turns it into a wait with `PHOTO_MODEL_CALLS` or `TEXT_MODEL_CALLS`; `DEFAULT_MODEL_TIMEOUT_MS` is the fallback for a client with no profile yet, exactly as `maxPhotosPerMeal` is."
@@ -7896,6 +8099,8 @@
           "subscriptionRequired",
           "identityOwed",
           "diaryWindowDays",
+          "mealCopyMaxOffset",
+          "mealCopyMaxDays",
           "modelCallTimeoutMs",
           "emailSignIn",
           "photoCompression",
@@ -8030,6 +8235,31 @@
         ],
         "additionalProperties": false,
         "description": "The analyzer's validated output for one photo. No photo path — the bytes live in `meal_photos`, reached by meal id."
+      },
+      "MealCopied": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "copied"
+          },
+          "sourceMealId": {
+            "type": "string"
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MealLogged"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "sourceMealId",
+          "meals"
+        ],
+        "additionalProperties": false,
+        "description": "The meals created by one copy request, in the request's deduped offset order. Each entry carries the totals of ITS OWN target date — a copy onto yesterday or tomorrow is not today's meal."
       },
       "MealFocus": {
         "type": "object",
@@ -12213,7 +12443,8 @@
             "enum": [
               "correction",
               "redate",
-              "saved-meal"
+              "saved-meal",
+              "meal"
             ]
           }
         },

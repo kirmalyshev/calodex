@@ -3,7 +3,7 @@
 // The board is master-detail: the day's meals stay in a column on the left while the card on the
 // right carries the photo, the kcal, the three macro tiles, the ingredients with their own kcal,
 // the computed score row, the verdict dots and the one fix — "Correct this meal", which opens the
-// conversation. The "…" menu holds Edit, Re-read the photo, Move to yesterday and Delete, which
+// conversation. The "…" menu holds Edit, Re-read the photo, Move to yesterday, Report Food and Delete, which
 // asks first. A deleted, moved-away or FOREIGN id reads as gone, never as somebody else's meal.
 
 import { execSync } from "node:child_process";
@@ -673,6 +673,42 @@ test("the menu: re-read recomputes in place, and delete asks first", async ({ in
   await dialog.getByRole("button", { name: "Delete this meal" }).click();
   await expect(page).toHaveURL(/#\/$/);
   expect((await day(page)).meals).toHaveLength(0);
+});
+
+test("Report Food opens the issue sheet, counts characters, cancels cleanly, and posts the report", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".mdetail .ib").last().click();
+  await expect(page.locator(".mpopup").getByText("Report Food")).toBeVisible();
+  await page.locator(".mpopup").getByText("Report Food").click();
+  const dialog = page.getByRole("dialog", { name: "What's the issue with this food log?" });
+  await expect(dialog).toBeVisible();
+  const field = dialog.locator("textarea");
+  await expect(field).toBeFocused();
+  await expect(dialog.getByText("0/500")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Report" })).toBeDisabled();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await shot(page, "report-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "report-390");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await field.fill("draft");
+  await expect(dialog.getByText("5/500")).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
+
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Report Food").click();
+  await expect(field).toHaveValue("");
+  await expect(dialog.getByText("0/500")).toBeVisible();
+  await field.fill("x".repeat(501));
+  await expect(field).toHaveValue("x".repeat(500));
+  await expect(dialog.getByText("500/500")).toBeVisible();
+  await field.fill("wrong ingredients");
+  await expect(dialog.getByText("17/500")).toBeVisible();
+  const posted = page.waitForRequest((r) => r.url().endsWith(`/meals/${id}/report`) && r.method() === "POST");
+  await dialog.getByRole("button", { name: "Report" }).click();
+  expect((await posted).postDataJSON()).toEqual({ text: "wrong ingredients" });
+  await expect(dialog).toHaveCount(0);
 });
 
 test("Move to yesterday puts the meal on yesterday's diary", async ({ inWebApp: page }) => {
