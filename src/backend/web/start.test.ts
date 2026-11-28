@@ -2551,6 +2551,15 @@ describe("the soft offer after the plan", () => {
         }
       });
 
+      it("over the sign-in allowance a code is refused with the too-many page, never dropped to a full-price link", async () => {
+        const { session } = await walk();
+        await store.putPromoCode(tenOff);
+        let last = 200;
+        for (let i = 0; i < 400 && last !== 429; i++) last = (await get("/start/checkout?plan=yearly&code=TEN", session)).status;
+        expect(last).toBe(429);
+        expect((await get("/start/offer?code=TEN", session)).status).toBe(429);
+      });
+
       it("a page that names a code the server does not honour carries nothing", async () => {
         const { session } = await walk();
         const a = await (await get("/start/offer?code=NOPE", session)).text();

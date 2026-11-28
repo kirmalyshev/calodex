@@ -135,14 +135,21 @@ export function payScreen(frame: Frame): HTMLElement {
   analytics.capture("paywall_opened", { blocked, source: blocked ? "blocked" : "settings" });
   const sold = () => {
     const sel = plans?.picked() ?? null;
-    return { plan: sel?.value ?? "monthly", trial_shown: sel?.value === "yearly" && (w?.trialDays ?? 0) > 0, storefront: null };
+    return { plan: sel?.value ?? "monthly", trial_shown: sel?.value === "yearly" && (w?.trialDays ?? 0) > 0 && discount === null, storefront: null };
   };
 
   // A redeemed DISCOUNT code (S4, #3695): RevenueCat's own code, appended to every checkout link below.
-  let discount: string | null = null;
-  const buy = (href: string): string =>
-    discount === null ? href : `${href}${href.includes("?") ? "&" : "?"}discount_code=${encodeURIComponent(discount)}`;
+  let discount: { code: string; rc: string | null } | null = null;
+  // A link through `/start/checkout` (the promotion and the no-config fallback) names OUR code and the server maps it;
+  // a direct RevenueCat link takes RevenueCat's own `discount_code`.
+  const buy = (href: string): string => {
+    if (discount === null) return href;
+    const via = href.startsWith("/start/checkout");
+    const value = via ? discount.code : discount.rc;
+    return value === null ? href : `${href}${href.includes("?") ? "&" : "?"}${via ? "code" : "discount_code"}=${encodeURIComponent(value)}`;
+  };
   let relink = (): void => { /* set where the plans exist */ };
+  let toPlans = (): void => { /* set once A is built */ };
 
   // The × over the photo, top-left like the phone's CloseButton.
   const close = el("a", "ib x") as HTMLAnchorElement;
@@ -171,6 +178,7 @@ export function payScreen(frame: Frame): HTMLElement {
     col.append(kitEl(payPlansMarkup(
       [{ value: "monthly", name: pay.planMonthly, checked: true }], COPY.offerPlans)));
     go.href = "/start/checkout";
+    relink = () => { go.href = buy("/start/checkout"); };
     // No paywall config means nothing about a trial is known — Continue, not a promise of one.
     title.textContent = fill(pay.plansUnlockTitle, {});
     go.textContent = pay.continueCta;
@@ -206,11 +214,14 @@ export function payScreen(frame: Frame): HTMLElement {
   // here by webhook). Terms and Privacy only where the operator publishes them (`WebPaywall` carries
   // "" for a link it does not have). Both states of the column draw it, so it is built on demand.
   const redeemWords = redeemCopyFor(lang);
+  // The field's state outlives the sheet's steps: a code redeemed on B returns to A, whose own foot shows it.
+  let lastStatus = "";
+  let redeemOpen = false;
   let restoreBand: { row: HTMLElement; text: string | null } | null = null;
   const legal = (): HTMLElement => {
     const foot = el("p", "t12 m paylinks");
     const form = el("form", "redeem") as HTMLFormElement;
-    form.hidden = true;
+    form.hidden = !redeemOpen;
     const field = el("input", "") as HTMLInputElement;
     field.type = "text";
     field.name = "code";
@@ -222,13 +233,13 @@ export function payScreen(frame: Frame): HTMLElement {
     field.placeholder = redeemWords.redeemField;
     const submit = el("button", "cta s", redeemWords.redeemSubmit) as HTMLButtonElement;
     submit.type = "submit";
-    const status = el("p", "t12 m");
+    const status = el("p", "t12 m", lastStatus);
     status.setAttribute("role", "status");
     form.append(field, submit, status);
     form.addEventListener("submit", (ev) => {
       ev.preventDefault();
       submit.disabled = true;
-      status.textContent = "";
+      status.textContent = lastStatus = "";
       void redeemPromoCode(field.value).then((out) => {
         if (out.kind === "free") {
           // Entitled through `bonus_until`: Home reads the profile afresh and the sheet is gone.
@@ -236,10 +247,12 @@ export function payScreen(frame: Frame): HTMLElement {
           location.reload();
           return;
         }
-        discount = out.discountCode;
-        status.textContent = fill(redeemWords.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) });
+        discount = { code: out.code, rc: out.discountCode };
+        status.textContent = lastStatus = fill(redeemWords.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) });
+        // B and C promise a trial or a fixed offer a discount overrides: back to A, which draws the code's values.
+        toPlans();
         // The sheet is C's values without the trial: the percent in Yearly's band, never "N days free".
-        const yearly = col.querySelector<HTMLElement>(".pwp2 .plan2:has(input:not([value=monthly]))");
+        const yearly = col.querySelector<HTMLElement>(".pwp2 .plan2:has(input[value=yearly])");
         if (yearly !== null) {
           const had = yearly.querySelector<HTMLElement>(".band");
           if (restoreBand === null) restoreBand = { row: yearly, text: had?.textContent ?? null };
@@ -258,7 +271,7 @@ export function payScreen(frame: Frame): HTMLElement {
         relink();
         if (!(err instanceof ApiError)) return;
         const kind = err.body?.error;
-        status.textContent = kind === "promo-already" ? redeemWords.redeemAlready
+        status.textContent = lastStatus = kind === "promo-already" ? redeemWords.redeemAlready
           : kind === "promo-unknown" ? redeemWords.redeemUnknown
           : kind === "promo-expired" || kind === "promo-exhausted" ? redeemWords.redeemEnded : "";
       }).finally(() => { submit.disabled = false; });
@@ -268,6 +281,7 @@ export function payScreen(frame: Frame): HTMLElement {
     redeemLink.setAttribute("role", "button");
     redeemLink.addEventListener("click", (ev) => {
       ev.preventDefault();
+      redeemOpen = form.hidden !== false;
       form.hidden = !form.hidden;
       if (!form.hidden) field.focus();
     });
@@ -299,6 +313,7 @@ export function payScreen(frame: Frame): HTMLElement {
     return wrap;
   };
   col.append(legal());
+  const plansNodes = [...col.children];
 
   // A step swap replaces the whole column: focus would fall to <body>, so the screen reader would
   // stay silent on the new screen. The new h1 takes it (tabindex -1: focusable, not a tab stop).
@@ -377,6 +392,14 @@ export function payScreen(frame: Frame): HTMLElement {
   // trial is sold; C once per account (`offered` this mount, the stored flag across visits) and only
   // while the server sent an offer, which it does only while the admin's web switch is on.
   let step: "plans" | "try" | "offer" = "plans";
+  toPlans = (): void => {
+    if (step === "plans") return;
+    step = "plans";
+    if (!hero.isConnected) sheet.insertBefore(hero, pane);
+    plansNodes[plansNodes.length - 1] = legal();
+    col.replaceChildren(...plansNodes);
+    focusTitle();
+  };
   close.addEventListener("click", (ev) => {
     const offer = w?.exitOffer ?? null;
     const uid = frame.me?.profile.user_id;

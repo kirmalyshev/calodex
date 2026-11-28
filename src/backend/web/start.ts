@@ -2056,7 +2056,10 @@ async function routeStart(
     // A live discount code (S4, #3695) becomes RevenueCat's own `discount_code`; anything else is the plain link.
     // Asking is guessing, so the code is read only inside the sign-in allowance (over it: the plain link).
     const asked = url.searchParams.get("code");
-    const discount = asked === null || ctx.limitAuth() !== null ? null : await checkoutDiscount(ctx.deps, asked);
+    const wait = asked === null ? null : ctx.limitAuth();
+    // Over the allowance the code is refused, never silently dropped: a page said "10% off" and a plain link would charge full price.
+    if (wait !== null) return tooManyAttempts(wait, profile.lang);
+    const discount = asked === null ? null : await checkoutDiscount(ctx.deps, asked);
     if (discount === null) return seeOther(link);
     const out = new URL(link);
     out.searchParams.set("discount_code", discount.discountCode);
@@ -2089,7 +2092,7 @@ async function routeStart(
         return seeOther(await isAnonymous(ctx.deps, userId) ? `${START_PREFIX}/signup` : await resumeTo(ctx, userId, profile));
       }
       if (out.kind === "discount") {
-        return page(value, { ok: true, text: fill(words.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) }) }, `${START_PREFIX}/offer?code=${out.code}`);
+        return page(value, { ok: true, text: fill(words.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) }) }, `${START_PREFIX}/offer?code=${encodeURIComponent(out.code)}`);
       }
       return page(value, { ok: false, text: out.kind === "promo-already" ? words.redeemAlready
         : out.kind === "promo-unknown" ? words.redeemUnknown : words.redeemEnded });
@@ -2121,7 +2124,9 @@ async function routeStart(
     // A discount code rides the steps only while the server still honours it (S4, #3695). It overrides a
     // trial at checkout, so with one held the plans draw the percent and no trial, and B is skipped.
     const asCode = normalizePromoCode(url.searchParams.get("code"));
-    const held = asCode !== null && ctx.limitAuth() === null ? await checkoutDiscount(ctx.deps, asCode) : null;
+    const wait = asCode === null ? null : ctx.limitAuth();
+    if (wait !== null) return tooManyAttempts(wait, profile.lang);
+    const held = asCode === null ? null : await checkoutDiscount(ctx.deps, asCode);
     const code = held === null ? null : asCode;
     const hasCode = code !== null;
     const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 && !skipTry && !hasCode ? ["try" as const] : []),
