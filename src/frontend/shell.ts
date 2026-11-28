@@ -305,7 +305,8 @@ export function takeTurn(
   // went that way: filled while the first send's failure was still being handled, wiped, and the
   // Send it unlocked read an empty field). `select` costs nothing and is first-meal's sweep already.
   const controls = [...wrap.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement>("input, button, select, textarea"),
-    ...(also?.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement>("input, button, select, textarea") ?? [])];
+    ...(also?.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement>("input, button, select, textarea") ?? [])]
+    .filter((c) => !c.disabled);
   for (const c of controls) c.disabled = true;
   tell(null);
   // To this screen while it is up; carried to the next one when it has been rebuilt meanwhile.
@@ -739,7 +740,7 @@ export function refusalWords(err: unknown): string {
   if (code === "cap-exceeded") return said(`cap-${String(err.body?.scope)}`) ?? words["cap-unknown"]!;
   // `POST /v1/meals/:id/photos` answers `too-many-photos` with the server's own limit (#304, calodex_app#3684).
   if (code === "too-many-photos") {
-    const limit = typeof err.body?.limit === "number" ? err.body.limit : null;
+    const limit = typeof err.body?.limit === "number" && Number.isFinite(err.body.limit) ? err.body.limit : null;
     return limit !== null
       ? fill(COPY.photosMax, { n: wholeNumbers(lang)(limit) })
       : said("too many photos") ?? COPY.somethingWrong;

@@ -110,7 +110,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   photoPicker.type = "file";
   photoPicker.accept = "image/jpeg,image/png,image/webp";
   photoPicker.tabIndex = -1;
-  photoPicker.setAttribute("aria-label", mc.menuAddPhoto);
+  photoPicker.setAttribute("aria-hidden", "true");
   wrap.append(left, right, photoPicker);
   let activeMeal: MealRecord | null = null;
   const maxPhotos = (): number => me?.limits.maxPhotosPerMeal ?? MAX_PHOTOS_PER_MEAL;
@@ -118,7 +118,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const files = [...(photoPicker.files ?? [])];
     photoPicker.value = "";
     const meal = activeMeal;
-    if (files.length === 0 || meal === null) return;
+    if (!wrap.isConnected || files.length === 0 || meal === null || updateFor(meal.id) !== undefined) return;
     const limit = maxPhotos();
     if (files.length > remainingMealPhotos(meal.photos, limit)) {
       tell(fill(COPY.photosMax, { n: n(limit) }));
@@ -128,6 +128,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       const quality = photoCompression();
       const edge = photoMaxEdge();
       const shrunk = await shrinkPhotos(files, quality, edge);
+      if (!wrap.isConnected) return;
       const compress = appliedAt(files, shrunk, quality);
       const maxEdge = appliedAt(files, shrunk, edge);
       const maxBytes = me?.limits.maxUploadBytes ?? MAX_UPLOAD_BYTES;

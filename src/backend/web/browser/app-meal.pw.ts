@@ -316,7 +316,7 @@ test("Add Photo from the ⋯ menu stores the photo without analysis or charge an
   // Track every POST so we prove no billed analysis or correction job is triggered.
   const posts: string[] = [];
   page.on("request", (req) => {
-    if (req.method() === "POST" && req.url().includes("/api/v1/meals")) {
+    if (req.method() === "POST" && req.url().includes("/api/v1/")) {
       posts.push(new URL(req.url()).pathname);
     }
   });
@@ -388,7 +388,7 @@ test("Add Photo from the ⋯ menu stores the photo without analysis or charge an
   expect((await day(page)).meals.find((m) => m.id === meal.id)!.photos).toBe(1);
 
   // Filling up to maxPhotosPerMeal (4) hides Add Photo from the ⋯ menu.
-  await page.locator(".mdetail .ib").last().click();
+  await page.getByRole("button", { name: "Meal actions" }).click();
   const [fillChooser] = await Promise.all([
     page.waitForEvent("filechooser"),
     page.locator(".mpopup").getByText("Add Photo").click(),
@@ -396,12 +396,18 @@ test("Add Photo from the ⋯ menu stores the photo without analysis or charge an
   const filled = page.waitForResponse(
     (r) => r.url().endsWith(`/v1/meals/${meal.id}/photos`) && r.request().method() === "POST" && r.status() === 200,
   );
+  const redrawn = page.waitForResponse(
+    (r) => r.url().includes("/v1/diary/day") && r.request().method() === "GET" && r.status() === 200,
+  );
   await fillChooser.setFiles([
     "src/backend/web/browser/fixture-meal.png",
     "src/backend/web/browser/fixture-meal.png",
     "src/backend/web/browser/fixture-meal.png",
   ]);
   expect(((await (await filled).json()) as { photos: number }).photos).toBe(4);
-  await page.locator(".mdetail .ib").last().click();
+  await redrawn;
+  await page.getByRole("button", { name: "Meal actions" }).click();
+  await expect(page.locator(".mpopup")).toBeVisible();
+  await expect(page.locator(".mpopup").getByText("Re-read the photo")).toBeVisible();
   await expect(page.locator(".mpopup").getByText("Add Photo")).toHaveCount(0);
 });

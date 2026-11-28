@@ -31,7 +31,7 @@ beforeEach(async () => {
   calls = [];
 });
 
-afterEach(() => { globalThis.fetch = realFetch; });
+afterEach(() => { globalThis.fetch = realFetch; forget(); });
 
 describe("attachMealPhotos (POST /api/v1/meals/:id/photos)", () => {
   it("uploads photos as multipart FormData without calling any analysis route", async () => {
@@ -69,7 +69,10 @@ describe("attachMealPhotos (POST /api/v1/meals/:id/photos)", () => {
     });
 
     answer = () => json({ error: "unsupported-image" }, 415);
-    await expect(attachMealPhotos("m-1", [f])).rejects.toBeInstanceOf(ApiError);
+    await expect(attachMealPhotos("m-1", [f])).rejects.toMatchObject({
+      status: 415,
+      body: { error: "unsupported-image" },
+    });
 
     answer = () => json({ error: "target-gone", on: "correction" }, 409);
     await expect(attachMealPhotos("m-1", [f])).rejects.toMatchObject({
@@ -97,6 +100,6 @@ describe("refusalWords for too-many-photos", () => {
 
   it("falls back cleanly when limit is absent", () => {
     const err = new ApiError(400, { error: "too-many-photos" }, "POST /meals/1/photos: 400");
-    expect(refusalWords(err)).not.toBe("Something went wrong. Try again.");
+    expect(refusalWords(err)).toBe("That is more angles than one meal can have.");
   });
 });
