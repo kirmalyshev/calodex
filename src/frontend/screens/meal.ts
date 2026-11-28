@@ -19,16 +19,18 @@
 // id resolves to the gone state — the server scopes the read, so "another user's meal" and "no
 // meal" are the same answer and the same panel.
 
+import { MAX_LABEL_SERVINGS } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
-import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem } from "../../shared/meal-edit.ts";
+import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem, servingsPreview } from "../../shared/meal-edit.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
 import { ingredientSourceCard } from "../../shared/app/ingredient-source.ts";
 import { updateCopyFor } from "../../shared/app/update-copy.ts";
 import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
 import { homeCopyFor } from "../../shared/app/home-copy.ts";
+import { mealNutrientTiles } from "../../shared/app/meal-nutrients.ts";
 import { scoreFactorLabel, scoresAppCopy } from "../../shared/app/scores-copy.ts";
 import type { ScorePart } from "../../shared/scores.ts";
 import type { MealItem, MealRecord } from "@eait/shared";
@@ -244,6 +246,77 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   };
 
   /**
+   * Number of Servings (#3677): the stepper any meal carries, reached from the chip beside its
+   * name. The figures are `stored / stored servings × n` — shown only; Update sends `{ servings }`
+   * ALONE and the server scales, recomputes the verdicts and the day.
+   */
+  const servingsPanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement } => {
+    const scrim = el("div", "mscrim");
+    scrim.addEventListener("click", (e) => { if (e.target === scrim) closeOverlay(); });
+    const dlg = el("div", "card mfix rise");
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    dlg.setAttribute("aria-label", mc.servingsTitle);
+    const title = el("b", "d d22", mc.servingsTitle);
+    const stored = mealServings(meal);
+    const macros = (k: number): string => {
+      const shown = servingsPreview(meal, k);
+      return fill(mc.servingsMacros, {
+        protein: fill(mc.phoneGrams, { n: n(shown.protein_g) }),
+        carbs: fill(mc.phoneGrams, { n: n(shown.carbs_g) }),
+        fat: fill(mc.phoneGrams, { n: n(shown.fat_g) }),
+      });
+    };
+    const kcalOf = (k: number): string => `${kn(servingsPreview(meal, k).kcal)}${UNIT_KCAL[lang]}`;
+    let servings = stored;
+    const count = el("b", "num svnum", num(servings));
+    count.setAttribute("aria-live", "polite");
+    const totals = el("b", "num d d28");
+    const totalMacros = el("span", "t13 m");
+    const update = el("button", "cta p", mc.phoneUpdate) as HTMLButtonElement;
+    update.type = "button";
+    const sync = (): void => {
+      count.textContent = num(servings);
+      totals.textContent = kcalOf(servings);
+      totalMacros.textContent = macros(servings);
+      update.disabled = servings === stored;
+    };
+    const stepper = (label: string, glyph: string, by: number): HTMLButtonElement => {
+      const b = el("button", "svbtn", glyph) as HTMLButtonElement;
+      b.type = "button";
+      b.setAttribute("aria-label", label);
+      b.addEventListener("click", () => {
+        servings = Math.min(MAX_LABEL_SERVINGS, Math.max(0.5, Math.round((servings + by) * 2) / 2));
+        sync();
+      });
+      return b;
+    };
+    const fewer = stepper(mc.servingsFewer, "−", -0.5);
+    const more = stepper(mc.servingsMore, "+", 0.5);
+    const row = el("div", "row svrow");
+    row.append(el("span", "svlab", mc.servingsLabel), fewer, count, more);
+    const sum = el("div", "row svtotals");
+    sum.setAttribute("aria-live", "polite");
+    sum.append(totals, totalMacros);
+    const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
+    cancel.type = "button";
+    cancel.addEventListener("click", closeOverlay);
+    update.addEventListener("click", () => {
+      enqueueUpdate(meal, { kind: "ingredients", edit: { servings } });
+      closeOverlay();
+      location.hash = cameFrom;
+    });
+    const actions = el("div", "row svactions");
+    actions.append(cancel, update);
+    sync();
+    dlg.append(title,
+      el("span", "t13 m", fill(mc.servingsPerServing, { kcal: kcalOf(1), macros: macros(1) })),
+      row, sum, actions);
+    scrim.append(dlg);
+    return { node: scrim, focus: more };
+  };
+
+  /**
    * `web/meal-fix.html` (#188): X, the sparkle and "Correct this meal", the meal named beside its
    * thumb, the one field ("Say what was wrong" — `composeHint`), the example card, Update. Update
    * sends the sentence as the correction turn — `focusMealId`, the contract unchanged — and the
@@ -279,68 +352,6 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       fill(mc.phoneFixMeal, {
         name: names(meal.items), kcal: `${kn(meal.kcal)}${UNIT_KCAL[lang]}`, time: mealTime(meal),
       })));
-    if (meal.label) {
-      // A LABEL MEAL'S CORRECTION IS ITS SERVINGS (ieat-app#2087, `phone/pw1-label-servings.html`):
-      // per serving as the panel printed it, the stepper (by halves), the totals those make. The
-      // numbers are `stored / stored servings × n` — shown only; Update sends `{ servings }` ALONE
-      // and the server scales, recomputes the verdicts and the day (none drawn here: they would
-      // describe a total that is not stored yet).
-      const stored = mealServings(meal);
-      const per = (v: number): number => v / stored;
-      const macros = (k: number): string => fill(mc.servingsMacros, {
-        protein: fill(mc.phoneGrams, { n: n(Math.round(per(meal.protein_g) * k)) }),
-        carbs: fill(mc.phoneGrams, { n: n(Math.round(per(meal.carbs_g) * k)) }),
-        fat: fill(mc.phoneGrams, { n: n(Math.round(per(meal.fat_g) * k)) }),
-      });
-      const kcalOf = (k: number): string => `${kn(Math.round(per(meal.kcal) * k))}${UNIT_KCAL[lang]}`;
-      // The contract's `MAX_LABEL_SERVINGS`, spelled here because the bundle may not value-import it;
-      // the server refuses above it, so a drift is a refused Update, never a wrong number.
-      const MAX_SERVINGS = 20;
-      let servings = stored;
-      const count = el("b", "num svnum", num(servings));
-      const totals = el("b", "num d d28");
-      const totalMacros = el("span", "t13 m");
-      const update = el("button", "cta p", mc.phoneUpdate) as HTMLButtonElement;
-      update.type = "button";
-      const sync = (): void => {
-        count.textContent = num(servings);
-        totals.textContent = kcalOf(servings);
-        totalMacros.textContent = macros(servings);
-        update.disabled = servings === stored;
-      };
-      const stepper = (label: string, glyph: string, by: number): HTMLButtonElement => {
-        const b = el("button", "svbtn", glyph) as HTMLButtonElement;
-        b.type = "button";
-        b.setAttribute("aria-label", label);
-        b.addEventListener("click", () => {
-          servings = Math.min(MAX_SERVINGS, Math.max(0.5, servings + by));
-          sync();
-        });
-        return b;
-      };
-      const fewer = stepper(mc.servingsFewer, "−", -0.5);
-      const more = stepper(mc.servingsMore, "+", 0.5);
-      const row = el("div", "row svrow");
-      row.append(el("span", "svlab", mc.servingsLabel), fewer, count, more);
-      const sum = el("div", "row svtotals");
-      sum.append(totals, totalMacros);
-      const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
-      cancel.type = "button";
-      cancel.addEventListener("click", closeOverlay);
-      update.addEventListener("click", () => {
-        enqueueUpdate(meal, { kind: "ingredients", edit: { servings } });
-        closeOverlay();
-        location.hash = cameFrom;
-      });
-      const actions = el("div", "row svactions");
-      actions.append(cancel, update);
-      sync();
-      dlg.append(title, named,
-        el("span", "t13 m", fill(mc.servingsPerServing, { kcal: kcalOf(1), macros: macros(1) })),
-        row, sum, actions);
-      scrim.append(dlg);
-      return { node: scrim, focus: more };
-    }
     const field = el("textarea", "fixfield") as HTMLTextAreaElement;
     field.placeholder = mc.composeHint;
     field.value = takeSentNote(meal.id);
@@ -687,6 +698,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     return box;
   };
 
+  // The tile page survives a redraw: an edit landing or a queued update must not yank a reader
+  // off page 2 (the day card carries its page across draws for the same reason).
+  let tilePage = 0 as 0 | 1;
+
   const detailCard = (meal: MealRecord, day: DayResponse): HTMLElement => {
     const updating = updateFor(meal.id) !== undefined;
     const card = el("div", `card mdet${updating ? " updating" : ""}`);
@@ -702,17 +717,127 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     ctl.append(close, menuButton(meal));
     sheet.append(ctl);
     if (updating) sheet.append(updateBannerEl(meal.id));
-    sheet.append(kitEl(`<div class="row between"><div><b class="d d22">${esc(names(meal.items))}</b>` +
-      `<div class="t13 m mmeta">${esc(meta(meal))}</div></div>` +
-      `<span class="row kfig"><i class="ico i-kcal"></i><b class="d d28 num">${esc(kn(meal.kcal))}</b></span></div>`));
-    const tiles = el("div", "mcards");
+    const head = el("div", "row between");
+    const titleBox = el("div", "");
+    const titleRow = el("div", "row mtitlerow");
+    titleRow.append(el("b", "d d22", names(meal.items)));
+    const chip = el("button", "svchip") as HTMLButtonElement;
+    chip.type = "button";
+    chip.setAttribute("aria-label", fill(mc.servingsChipLabel, { n: num(mealServings(meal)) }));
+    chip.disabled = updating;
+    chip.append(document.createTextNode(num(mealServings(meal))), kitEl(ico("pencil")));
+    chip.addEventListener("click", () => openPanel(servingsPanel(meal)));
+    titleRow.append(chip);
+    titleBox.append(titleRow, el("div", "t13 m mmeta", meta(meal)));
+    const kfig = el("span", "row kfig");
+    kfig.append(kitEl(ico("kcal")), el("b", "d d28 num", kn(meal.kcal)));
+    head.append(titleBox, kfig);
+    sheet.append(head);
+    // The tiles page like the day's figures: macros first, the meal's fibre · sugar · sodium ·
+    // saturated fat on page 2 (ieat-app#3676), with the boards' two dots underneath.
+    const tiles = el("div", "mtiles");
+    const tileTrack = el("div", "mtiletrack");
+    const macroPage = el("div", "mtilepage mcards");
     for (const [macro, value, label] of [
       ["protein", `${n(meal.protein_g)}${spellUnit(lang, "g")}`, mc.macroProtein],
       ["carbs", `${n(meal.carbs_g)}${spellUnit(lang, "g")}`, mc.macroCarbs],
       ["fat", `${n(meal.fat_g)}${spellUnit(lang, "g")}`, mc.macroFat],
     ] as const) {
-      tiles.append(mcardEl({ macro, value, label, centred: true }));
+      macroPage.append(mcardEl({ macro, value, label, centred: true }));
     }
+    const nutrientPage = el("div", "mtilepage mcards p2");
+    for (const tile of mealNutrientTiles(meal, lang)) {
+      // The satfat literal is split only for the typechecker: the kit's flat-card union does not
+      // distribute the four-icon union across `tile.icon`.
+      const card = tile.icon === "satfat"
+        ? mcardEl({ macro: "satfat", value: tile.value, label: tile.label, centred: true })
+        : mcardEl({ macro: tile.icon, value: tile.value, label: tile.label, centred: true });
+      nutrientPage.append(card);
+    }
+    tileTrack.append(macroPage, nutrientPage);
+    const tileClip = el("div", "mtileclip");
+    tileClip.append(tileTrack);
+    const tileDotEls: HTMLButtonElement[] = [];
+    const showTilePage = (to: 0 | 1): void => {
+      tilePage = to;
+      tileTrack.style.transition = "";
+      tileTrack.style.transform = to === 1 ? "translateX(-100%)" : "";
+      macroPage.setAttribute("aria-hidden", String(to !== 0));
+      nutrientPage.setAttribute("aria-hidden", String(to !== 1));
+      macroPage.toggleAttribute("inert", to !== 0);
+      nutrientPage.toggleAttribute("inert", to !== 1);
+      for (const [i, d] of tileDotEls.entries()) {
+        d.classList.toggle("on", i === to);
+        d.setAttribute("aria-current", i === to ? "true" : "false");
+      }
+    };
+    const tileDots = el("div", "dots");
+    for (const i of [0, 1] as const) {
+      const d = el("button", "dot") as HTMLButtonElement;
+      d.type = "button";
+      d.setAttribute("aria-label", fill(hc.webPage, { n: n(i + 1), total: n(2) }));
+      d.append(el("i", ""));
+      d.addEventListener("click", () => { if (i !== tilePage) showTilePage(i); });
+      tileDotEls.push(d);
+      tileDots.append(d);
+    }
+    tiles.append(tileClip, tileDots);
+    // Pan under the finger, the trackpad, or ←/→; a drag past 40 px commits the page.
+    let tileDrag: { x: number; id: number; moved: boolean } | null = null;
+    let swallowTileClick = false;
+    tiles.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      tileDrag = { x: e.clientX, id: e.pointerId, moved: false };
+    });
+    tiles.addEventListener("pointermove", (e) => {
+      if (tileDrag === null || e.pointerId !== tileDrag.id) return;
+      const dx = e.clientX - tileDrag.x;
+      if (!tileDrag.moved && Math.abs(dx) > 8) {
+        tileDrag.moved = true;
+        swallowTileClick = true;
+        try { tiles.setPointerCapture(e.pointerId); } catch { /* the pointer is gone */ }
+      }
+      if (tileDrag.moved) {
+        // Past the end there is no third page to reveal; the track stops at the edge.
+        const clamped = tilePage === 0 ? Math.min(dx, 0) : Math.max(dx, 0);
+        tileTrack.style.transition = "none";
+        tileTrack.style.transform = `translateX(calc(${-tilePage * 100}% + ${clamped}px))`;
+      }
+    });
+    const endTileDrag = (e: PointerEvent): void => {
+      if (tileDrag === null || e.pointerId !== tileDrag.id) return;
+      const { x, moved } = tileDrag;
+      tileDrag = null;
+      tileTrack.style.transition = "";
+      if (!moved) return;
+      const dx = tilePage === 0 ? Math.min(e.clientX - x, 0) : Math.max(e.clientX - x, 0);
+      if (Math.abs(dx) >= 40) showTilePage(dx < 0 ? 1 : 0);
+      else tileTrack.style.transform = tilePage === 1 ? "translateX(-100%)" : "";
+    };
+    tiles.addEventListener("pointerup", endTileDrag);
+    tiles.addEventListener("pointercancel", () => {
+      tileDrag = null;
+      swallowTileClick = false;
+      tileTrack.style.transition = "";
+      tileTrack.style.transform = tilePage === 1 ? "translateX(-100%)" : "";
+    });
+    tiles.addEventListener("click", (e) => {
+      if (swallowTileClick) { e.preventDefault(); e.stopPropagation(); swallowTileClick = false; }
+    }, true);
+    let tileWheelAt = 0;
+    tiles.addEventListener("wheel", (e) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      const to = e.deltaX > 0 ? 1 : 0;
+      if (to === tilePage) return;
+      e.preventDefault();
+      if (e.timeStamp - tileWheelAt > 260) showTilePage(to);
+      tileWheelAt = e.timeStamp;
+    }, { passive: false });
+    tiles.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") { e.preventDefault(); showTilePage(1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); showTilePage(0); }
+    });
+    showTilePage(tilePage);
     sheet.append(tiles);
     // The health score is the SERVER'S (`MealRecord.healthScore`, S10): drawn, never computed here.
     if (meal.healthScore !== null) {

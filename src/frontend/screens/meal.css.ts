@@ -40,12 +40,28 @@ export const mealCss = `
 .msheet .kfig .ico{width:30px;height:30px}
 .msheet .mmeta{margin-top:4px}
 .msheet .cta{margin-top:auto}
+/* The tile switcher — the meal sheet's own copy of the day card's two-page clip (ieat-app#3676):
+   a fixed-width page pair under the finger/trackpad, the boards' 6 px dots under it. */
+.mtiles{touch-action:pan-y;user-select:none}
+.mtileclip{overflow:hidden;padding:8px 2px;margin:-8px -2px}
+.mtiletrack{display:flex;transition:transform .28s var(--ease)}
+.mtilepage{width:100%;flex:0 0 100%;min-width:0;box-sizing:border-box}
+.mtilepage.p2{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mtilepage.p2 .mcard{padding-left:10px;padding-right:10px}
+.mtilepage.p2 .mcard b{font-size:16px;white-space:nowrap}
+.mtilepage.p2 .mcard small{font-size:11px}
+.mtiles .dots{display:flex;justify-content:center;gap:12px;padding:10px 0 2px}
+.mtiles .dots button{width:6px;height:6px;border:0;background:none;padding:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.mtiles .dots button::after{content:"";position:absolute;inset:-9px}
+.mtiles .dots i{width:6px;height:6px;border-radius:3px;background:var(--line);pointer-events:none}
+.mtiles .dots button.on i{background:var(--ink)}
+.mtiles .dots button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .mupd:empty{display:none}
 .mupd{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:12px;background:var(--accent-tint)}
 .msteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 .msteps .now{color:var(--ink);font-weight:600}.msteps .done{color:var(--muted)}
 .mbar{display:block;height:4px;border-radius:2px;background:var(--accent);transition:width 600ms ease-out}
-.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn{pointer-events:none}
+.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn,.mdet.updating .svchip{pointer-events:none}
 
 /* The "…" menu — popped under its trigger, the phone menu's items in order, delete last and bad. */
 .mwrap{position:relative}
@@ -99,13 +115,17 @@ export const mealCss = `
 .fixfield::placeholder{color:var(--faint)}
 .fixex{padding:14px 16px;background:var(--hair);box-shadow:none;font-size:15px;line-height:1.45}
 
-/* A label meal's servings stepper (ieat-app#2087): the row, two round buttons, the figure between. */
+/* The servings chip beside the meal name, and the stepper it opens (#3677). */
+.mtitlerow{align-items:center;gap:8px;flex-wrap:wrap}
+.card button.svchip{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 10px;border-radius:22px;
+  background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.svchip .ico{width:12px;height:12px;background:var(--muted)}
 .svrow{align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
 .svlab{flex:1;font-size:16px}
-.card button.svbtn{width:36px;height:36px;min-height:0;padding:0;border-radius:50%;background:none;
+.card button.svbtn{width:44px;height:44px;min-height:0;padding:0;border-radius:50%;background:none;
   box-shadow:inset 0 0 0 1.5px var(--line);font-size:20px;font-weight:400;color:var(--ink);cursor:pointer}
 .svnum{min-width:28px;text-align:center;font-size:18px}
-.svtotals{align-items:baseline;gap:14px;flex-wrap:wrap}
+.svtotals{flex-direction:column;align-items:flex-start;gap:4px}
 .svactions{gap:10px}
 .svactions .cta{flex:1}
 
