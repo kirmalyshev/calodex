@@ -7296,6 +7296,9 @@ if (PG_URL) {
         "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
         // ieat-app#2788: the same admin read as the arm funnel above it, counted per place.
         "onboardingExperimentPlaces", "onboardingFunnel",
+        // S4 (#3695): campaign codes belong to no account, and a free redemption also writes the
+        // redeeming account's bonus_until in the same statement, like redeemReferral.
+        "promoCode",
         // ieat-app#3693: promo stats are the admin's cross-account cohort read. Its rows are
         // internal account keys for the engine; the API answer erases them into counts.
         "promoStats",
@@ -7305,7 +7308,7 @@ if (PG_URL) {
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "recordRevenueCatEvent", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPromoCode", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "recordRevenueCatEvent", "redeemPromoFree", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",
