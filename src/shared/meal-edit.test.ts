@@ -4,7 +4,7 @@
 // and the meal's totals are the SERVER's job on an items-only patch (`editMeal` derives them).
 
 import { describe, expect, it } from "bun:test";
-import { catalogPortions, itemAtGrams, itemAtPortion, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText, portionGrams, scaledItem, servingsPreview } from "./meal-edit.ts";
+import { catalogPortions, itemAtGrams, itemAtPortion, mealEditParams, mealEditRequest, mealServings, nutritionOverrideItem, portionCountFor, portionCountText, portionGrams, scaledItem, servingsPreview } from "./meal-edit.ts";
 import type { MealItem } from "./types.ts";
 
 const rice = (over: Partial<MealItem> = {}): MealItem => ({
@@ -74,6 +74,39 @@ describe("named portions on one ingredient", () => {
     expect(plain.grams).toBe(180);
     expect(plain).not.toHaveProperty("portion");
     expect(plain).not.toHaveProperty("portion_count");
+  });
+});
+
+describe("nutritionOverrideItem — typed nutrition keeps write provenance but displays detached", () => {
+  const food = { name: "Rice", source: "usda-sr" as const, attribution: [], portions: [{ label: "cup", grams: 150 }], per100: { kcal: 130, protein_g: 2.7, carbs_g: 28, fat_g: 0.3, satfat_g: 0.1, fiber_g: 0.4, sugar_g: 0.1, sodium_mg: 1 } };
+  const catalog = rice({ ref: "usda-sr:rice", food, portion: food.portions[0], portion_count: 1, typed: true, role: "cooking-fat" });
+
+  it("keeps provenance on the write and detaches the display", () => {
+    const out = nutritionOverrideItem(catalog, { kcal: 250, protein_g: 4, carbs_g: 50, fat_g: 1 });
+    expect(out).not.toBeNull();
+    expect(out!.write).toMatchObject({ ref: "usda-sr:rice", portion: food.portions[0], portion_count: 1, nutrition_override: true, kcal: 250, typed: true, role: "cooking-fat" });
+    expect(out!.display).toMatchObject({ kcal: 250, protein_g: 4, carbs_g: 50, fat_g: 1, typed: true, role: "cooking-fat" });
+    expect(out!.display).not.toHaveProperty("ref");
+    expect(out!.display).not.toHaveProperty("food");
+    expect(out!.display).not.toHaveProperty("portion");
+    expect(out!.display).not.toHaveProperty("nutrition_override");
+  });
+
+  it("drops a display density that no longer makes the typed calories", () => {
+    const out = nutritionOverrideItem(catalog, { kcal: 250, protein_g: 4, carbs_g: 50, fat_g: 1 });
+    expect(out!.display).not.toHaveProperty("kcal_per_100g");
+    const consistent = nutritionOverrideItem(catalog, { kcal: 195, protein_g: 4, carbs_g: 50, fat_g: 1 });
+    expect(consistent!.display.kcal_per_100g).toBe(130);
+  });
+
+  it("returns null until all four core nutrients are present", () => {
+    expect(nutritionOverrideItem(catalog, { kcal: 250, protein_g: 4, carbs_g: 50, fat_g: undefined as never })).toBeNull();
+  });
+
+  it("feeds mealEditRequest with the provenance-preserving write", () => {
+    const out = nutritionOverrideItem(catalog, { kcal: 250, protein_g: 4, carbs_g: 50, fat_g: 1 });
+    const req = mealEditRequest({ items: [catalog] }, [out!.write]);
+    expect(req?.items?.[0]).toMatchObject({ ref: "usda-sr:rice", nutrition_override: true, kcal: 250 });
   });
 });
 

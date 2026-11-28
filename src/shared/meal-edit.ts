@@ -12,7 +12,7 @@
 //     of that rule. Verdicts are recomputed server-side off the user's caps after every write
 //     either way, so nothing a client sends can paint over them.
 
-import type { EditMealRequest } from "./contract.ts";
+import type { EditMealItem, EditMealRequest } from "./contract.ts";
 import { LANG_TAG } from "./lang.ts";
 import type { Lang } from "./types.ts";
 import type { FoodPortion } from "./foods.ts";
@@ -91,6 +91,34 @@ export function itemAtPortion(item: MealItem, portion: FoodPortion, count: numbe
 export function itemAtGrams(item: MealItem, grams: number): MealItem {
   const { portion: _portion, portion_count: _count, ...rest } = scaledItem(item, grams);
   return rest;
+}
+
+/**
+ * The figures typing an ingredient's calories and macros sends (#3680). `write` keeps every
+ * provenance field the item already carries — ref/food/portion are provenance, not truth — so the
+ * server's detach rule can judge exactly what the edit grounded itself in. `display` is what the
+ * saved item will BECOME: provenance dropped, the typed total made coherent as an estimate by the
+ * same density/grams rule the engine applies. `null` until all four core nutrients are present —
+ * the server refuses a partial override.
+ */
+export function nutritionOverrideItem(
+  base: MealItem,
+  nutrition: Pick<MealItem, "kcal" | "protein_g" | "carbs_g" | "fat_g">,
+): { write: EditMealItem; display: MealItem } | null {
+  const fields = [nutrition.kcal, nutrition.protein_g, nutrition.carbs_g, nutrition.fat_g];
+  if (fields.some((v) => v === undefined || !Number.isFinite(v))) return null;
+  const write: EditMealItem = { ...base, ...nutrition, nutrition_override: true };
+  const display: MealItem = { ...write };
+  delete display.ref;
+  delete display.food;
+  delete display.portion;
+  delete display.portion_count;
+  delete (display as Partial<EditMealItem>).nutrition_override;
+  if (display.grams > 0 && display.kcal_per_100g !== undefined) {
+    const consistent = Math.abs((display.kcal_per_100g * display.grams) / 100 - nutrition.kcal) < 0.5;
+    if (!consistent) delete display.kcal_per_100g;
+  }
+  return { write, display };
 }
 
 const ITEM_TOTALS = ["kcal", "protein_g", "carbs_g", "fat_g"] as const;
