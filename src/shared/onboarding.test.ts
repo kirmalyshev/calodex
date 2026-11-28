@@ -8,7 +8,7 @@
 import { describe, expect, it } from "bun:test";
 import { branded } from "./brand.ts";
 import {
-  DEFAULT_ONBOARDING_CONTENT, ONBOARDING_INTERSTITIALS, ONBOARDING_PLACES, ONBOARDING_SCREENS,
+  DASH_PLACES, DEFAULT_ONBOARDING_CONTENT, ONBOARDING_INTERSTITIALS, ONBOARDING_PLACES, ONBOARDING_SCREENS,
   ONBOARDING_STEPS,
   KCAL_FLOOR, COUNTRY_CODES, countryFlag, countryFromRegion, countryLabel, countryOptions, resolveCountry,
   suggestionFirst, LANGS, type CountryCode,
@@ -1070,5 +1070,16 @@ describe("the first-verdict arms (ieat-app#3165)", () => {
     expect(isFirstVerdictArm("own-meal")).toBe(true);
     expect(isFirstVerdictArm("free-week")).toBe(false);
     expect(isFirstVerdictArm(undefined)).toBe(false);
+  });
+});
+
+describe("the paywall's B and C steps are their own funnel places (ieat-app#3719)", () => {
+  it("sit right after `paywall`, are interstitials, and are not progress-dash segments", () => {
+    const i = ONBOARDING_PLACES.indexOf("paywall");
+    expect(ONBOARDING_PLACES.slice(i, i + 3)).toEqual(["paywall", "paywall_try", "paywall_offer"]);
+    for (const p of ["paywall_try", "paywall_offer"] as const) {
+      expect(ONBOARDING_INTERSTITIALS).toContain(p);
+      expect(DASH_PLACES).not.toContain(p);
+    }
   });
 });

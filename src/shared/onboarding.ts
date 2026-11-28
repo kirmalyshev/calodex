@@ -116,6 +116,8 @@ export type OnboardingScreenId = (typeof ONBOARDING_SCREENS)[number];
  * (the mid-journey plan: burn versus the number the answers produce) sit between the questions
  * that feed them. They read the profile and write nothing; their words are code in
  * `onboarding-chat-copy.ts`, never admin copy, because one of them carries a health number.
+ * `paywall_try` and `paywall_offer` are the plans sheet's B (try for free) and C (exit offer) steps
+ * (ieat-app#3719): their own places, so the funnel shows who saw which screen, not three views of `paywall`.
  * `paywall` is the plans
  * sheet straight after the plan (ieat-app#3136): recorded by the app when the sheet stands in the
  * run's path, with its result as the answer — without it the funnel's last screen after a decline
@@ -133,7 +135,7 @@ export type OnboardingScreenId = (typeof ONBOARDING_SCREENS)[number];
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
 export const ONBOARDING_INTERSTITIALS = [
-  "welcome", "baseline", "prelim", "summary", "signup", "paywall", "referral", "health",
+  "welcome", "baseline", "prelim", "summary", "signup", "paywall", "paywall_try", "paywall_offer", "referral", "health",
 ] as const;
 export type OnboardingInterstitial = (typeof ONBOARDING_INTERSTITIALS)[number];
 
@@ -148,7 +150,7 @@ export type OnboardingInterstitial = (typeof ONBOARDING_INTERSTITIALS)[number];
  */
 export const ONBOARDING_PLACES = [
   "welcome", "goal", "sex", "age", "height", "weight", "activity", "baseline", "target",
-  "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "paywall", "signup", "country", "referral", "health", "streak",
+  "pace", "prelim", "counted", "barrier", "situation", "diet", "medical", "summary", "paywall", "paywall_try", "paywall_offer", "signup", "country", "referral", "health", "streak",
 ] as const;
 export type OnboardingPlace = OnboardingScreenId | OnboardingInterstitial;
 
@@ -156,13 +158,13 @@ export type OnboardingPlace = OnboardingScreenId | OnboardingInterstitial;
  * The progress dash's segments — the places between the welcome and the plan, in the DEFAULT walk
  * order (`onboarding/*` boards, fourteen `<i>` each). An arm's dash is `dashPlaces(order)`.
  *
- * The welcome is before the count; `signup`, `paywall`, `country`, `referral`, `health` and
+ * The welcome is before the count; `signup`, `paywall`, `paywall_try`, `paywall_offer`, `country`, `referral`, `health` and
  * `streak` sit past it (the phone asks the streak goal after the first verdict, the web after
- * the plan). So the bar is `ONBOARDING_PLACES` minus those seven, and
+ * the plan). So the bar is `ONBOARDING_PLACES` minus those nine, and
  * `summary` — the plan — is the last segment lit.
  */
 export const DASH_PLACES: readonly OnboardingPlace[] = ONBOARDING_PLACES.filter(
-  (p) => !["welcome", "signup", "paywall", "country", "referral", "health", "streak"].includes(p),
+  (p) => !["welcome", "signup", "paywall", "paywall_try", "paywall_offer", "country", "referral", "health", "streak"].includes(p),
 );
 
 /** The dash position of a place, or -1 for a place that is not a segment (the welcome et al.). */
