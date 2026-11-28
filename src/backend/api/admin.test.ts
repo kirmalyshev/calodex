@@ -1486,6 +1486,19 @@ describe("promo stats", () => {
     expect(((await (await admin("GET", "/admin/api/promo-stats?days=nonsense")).json()) as { days: number }).days).toBe(30);
   });
 
+
+  it("keeps sandbox redemptions out of production numbers and reads them only with sandbox=1", async () => {
+    const userId = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    await store.recordRevenueCatEvent(rcEvent(userId, { offerCode: "ADMINPROMO-PROD" }));
+    await store.recordRevenueCatEvent(rcEvent(userId, { offerCode: "ADMINPROMO-SANDBOX", environment: "SANDBOX" }));
+
+    const prod = await (await admin("GET", "/admin/api/promo-stats")).json() as { codes: { offerCode: string }[] };
+    expect(prod.codes.map((c) => c.offerCode)).toContain("ADMINPROMO-PROD");
+    expect(prod.codes.map((c) => c.offerCode)).not.toContain("ADMINPROMO-SANDBOX");
+    const sandbox = await (await admin("GET", "/admin/api/promo-stats?sandbox=1")).json() as { codes: { offerCode: string }[] };
+    expect(sandbox.codes.map((c) => c.offerCode)).toEqual(["ADMINPROMO-SANDBOX"]);
+  });
+
   it("is a read behind the same role as the rest of the admin", async () => {
     for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
       expect((await admin(method, "/admin/api/promo-stats", {})).status).toBe(404);

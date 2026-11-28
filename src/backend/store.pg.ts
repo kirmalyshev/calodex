@@ -3811,21 +3811,24 @@ export async function postgresStore(
       });
     },
 
-    async promoStats(since) {
-      const at = new Date(now());
+    async promoStats(since, environment) {
       // `cohort` is the window and decides first/last seen; `first_coded` is deliberately over the
       // whole log, because a renewal in the window can carry the code of a redemption before it.
       // The paid answer is conversion after THAT first coded event, not after the window opened.
+      // All three read ONE RevenueCat environment: sandbox proof events never enter production's
+      // numbers, and the optional sandbox read is its own cohort rather than a mixture.
       const rows = await sql`
         with cohort as (
-          select offer_code, user_id, min(event_at) as first_seen, max(event_at) as last_seen
-            from revenuecat_events
-           where offer_code is not null and user_id is not null and event_at >= ${since}
-           group by offer_code, user_id
+          select e.offer_code, e.user_id, min(e.event_at) as first_seen, max(e.event_at) as last_seen
+            from revenuecat_events e
+            join users u on u.id = e.user_id
+           where e.offer_code is not null and e.user_id is not null
+             and e.environment = ${environment} and e.event_at >= ${since}
+           group by e.offer_code, e.user_id
         ), first_coded as (
           select offer_code, user_id, min(event_at) as first_at
             from revenuecat_events
-           where offer_code is not null and user_id is not null
+           where offer_code is not null and user_id is not null and environment = ${environment}
            group by offer_code, user_id
         ), converted as (
           select distinct c.offer_code, c.user_id
@@ -3833,33 +3836,19 @@ export async function postgresStore(
             join first_coded f on f.offer_code = c.offer_code and f.user_id = c.user_id
            where exists (
              select 1 from revenuecat_events p
-              where p.user_id = c.user_id and p.type in ('RENEWAL', 'INITIAL_PURCHASE')
+              where p.user_id = c.user_id and p.environment = ${environment}
+                and p.type in ('RENEWAL', 'INITIAL_PURCHASE')
                 and p.price > 0 and p.event_at >= f.first_at
            )
         )
-        select c.offer_code,
-               count(*) as redeemed,
-               count(*) filter (
-                 where (case
-                          when u.referral_banked_days > 0 and u.entitlement_expires_at is not null
-                          then greatest(u.bonus_until, u.entitlement_expires_at) + make_interval(days => u.referral_banked_days)
-                          else u.bonus_until
-                        end) > ${at}
-                    or u.entitlement_lifetime_product_id is not null
-                    or u.entitlement_expires_at > ${at}
-               ) as active,
-               count(p.user_id) as paid,
-               min(c.first_seen) as first_seen_at,
-               max(c.last_seen) as last_seen_at
+        select c.offer_code, c.user_id, c.first_seen, c.last_seen, (p.user_id is not null) as paid
           from cohort c
-          join users u on u.id = c.user_id
           left join converted p on p.offer_code = c.offer_code and p.user_id = c.user_id
-         group by c.offer_code
-         order by c.offer_code`;
+         order by c.offer_code, c.user_id`;
       return rows.map((r: Record<string, unknown>) => ({
-        offerCode: String(r.offer_code), redeemed: num(r.redeemed), active: num(r.active), paid: num(r.paid),
-        firstSeenAt: new Date(r.first_seen_at as string).toISOString(),
-        lastSeenAt: new Date(r.last_seen_at as string).toISOString(),
+        offerCode: String(r.offer_code), userId: String(r.user_id), paid: r.paid === true,
+        firstSeenAt: new Date(r.first_seen as string).toISOString(),
+        lastSeenAt: new Date(r.last_seen as string).toISOString(),
       }));
     },
 

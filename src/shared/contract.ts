@@ -2378,15 +2378,15 @@ export interface PromoCodeStats {
   offerCode: string;
   /** Distinct accounts with a coded event in the window. */
   redeemed: number;
-  /** Of those, entitlement live now by `entitlementLive` — subscription, lifetime or referral bonus. */
+  /** Of those, entitled now by the engine's one `entitlementFor` rule — subscription, lifetime, referral bonus or an explicit comp. */
   active: number;
-  /** Of those, with a RENEWAL or priced INITIAL_PURCHASE at/after their first coded event. */
+  /** Of those, with a priced RENEWAL or priced INITIAL_PURCHASE at/after their first coded event. */
   paid: number;
   firstSeenAt: string;
   lastSeenAt: string;
 }
 
-/** `GET /admin/api/promo-stats`. `days` is the trailing 24-hour window the server read. */
+/** `GET /admin/api/promo-stats`. `days` is the trailing 24-hour window the server read; `sandbox=1` reads RevenueCat's sandbox cohort instead of production. */
 export interface PromoStatsResponse {
   days: number;
   codes: PromoCodeStats[];

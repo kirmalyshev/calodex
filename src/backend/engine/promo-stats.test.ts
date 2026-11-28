@@ -36,6 +36,33 @@ describe("promoStats", () => {
     expect(view.codes[0]).toMatchObject({ redeemed: 1, active: 0, paid: 0 });
   });
 
+
+  it("computes active through entitlementFor, not a store-side copy of the rule", async () => {
+    const { store, deps } = setup();
+    const userId = await account(store);
+    const at = new Date().toISOString();
+    await store.recordRevenueCatEvent(event(userId, "LIVECODE", at));
+    await store.putEntitlement(userId, {
+      expiresAt: new Date(Date.now() + 86_400_000).toISOString(), productId: "eait_pro_yearly", eventAt: at,
+    });
+
+    const view = await promoStats(deps, 30);
+    expect(view.codes).toMatchObject([{ offerCode: "LIVECODE", redeemed: 1, active: 1, paid: 0 }]);
+    expect(JSON.stringify(view)).not.toContain(userId);
+  });
+
+  it("reads PRODUCTION by default and SANDBOX only when asked", async () => {
+    const { store, deps } = setup();
+    const prod = await account(store);
+    const sand = await account(store);
+    const at = new Date().toISOString();
+    await store.recordRevenueCatEvent(event(prod, "PRODCODE", at));
+    await store.recordRevenueCatEvent({ ...event(sand, "SANDBOXCODE", at), environment: "SANDBOX" });
+
+    expect((await promoStats(deps, 30)).codes.map((c) => c.offerCode)).toEqual(["PRODCODE"]);
+    expect((await promoStats(deps, 30, true)).codes.map((c) => c.offerCode)).toEqual(["SANDBOXCODE"]);
+  });
+
   it("answers no rows when no coded event is in the window", async () => {
     const { deps } = setup();
     expect(await promoStats(deps, 30)).toEqual({ days: 30, codes: [] });

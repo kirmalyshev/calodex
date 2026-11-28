@@ -91,13 +91,6 @@ const RANGE_MIN_MS = Date.UTC(2000, 0, 1), RANGE_MAX_MS = Date.UTC(2100, 0, 1);
 // endpoint takes, so an enormous ask reads as all time rather than resolving before the epoch.
 const OPEN_RANGE_MAX_DAYS = 400;
 
-function daysParam(url: URL, defaultDays: number, maxDays: number): number {
-  const raw = Number(url.searchParams.get("days") ?? defaultDays);
-  return Number.isFinite(raw)
-    ? Math.min(maxDays, Math.max(1, Math.round(raw)))
-    : defaultDays;
-}
-
 function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number } | null): RangeAsk {
   const f = url.searchParams.get("from"), t = url.searchParams.get("to");
   // A bound outside 2000–2100 reads as open too: Postgres refuses a timestamp before 4713 BC and
@@ -725,7 +718,8 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   }
 
   if (req.method === "GET" && pathname === ROUTES.adminPromoStats) {
-    return json(await promoStats(deps, daysParam(url, 30, 400)));
+    const rawDays = url.searchParams.get("days");
+    return json(await promoStats(deps, rawDays === null ? Number.NaN : Number(rawDays), url.searchParams.get("sandbox") === "1"));
   }
 
   // ── Per-account grant (ieat-app#2364: no default sample) ─────────────────────────────────────────────────────────────────────

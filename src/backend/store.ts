@@ -16,7 +16,7 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow, PromoCodeStats } from "@eait/shared";
+  OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
 import type { ArmScreens, FunnelDimensions, FunnelFilters, MealItem, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
@@ -301,6 +301,18 @@ export interface RevenueCatEventRow {
   offerCode: string | null;
   /** The `$mediaSource`/`$campaign`/`$adGroup`/`$keyword` subscriber attributes, when sent. */
   acquisition: Omit<Acquisition, "via"> | null;
+}
+
+/**
+ * One redeemed account inside one offer code's trailing-window cohort. Internal to the backend:
+ * the admin response aggregates these rows and never serializes `userId`.
+ */
+export interface PromoStatsAccountRow {
+  offerCode: string;
+  userId: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  paid: boolean;
 }
 
 /**
@@ -1652,11 +1664,13 @@ export interface Store {
   /** This account's logged deliveries, oldest event first. */
   revenueCatEventsOf(userId: string): Promise<RevenueCatEventRow[]>;
   /**
-   * Promo-code conversion, grouped by `offerCode` over the coded events since `since` — aggregates
-   * only. `active` is evaluated at the store's clock by the one entitlement rule; `paid` is a
-   * RENEWAL or priced INITIAL_PURCHASE at/after the account's first event carrying that code.
+   * Promo-code conversion input, INTERNAL per (offer code, account) rather than an aggregate:
+   * the engine — not a second store-side copy of the tier rule — decides which accounts are active.
+   * `paid` is a priced RENEWAL or INITIAL_PURCHASE in the same RevenueCat environment at/after the
+   * account's first event carrying that code. Only events in `environment` participate in the
+   * cohort, the first-coded anchor and the payment proof.
    */
-  promoStats(since: Date): Promise<PromoCodeStats[]>;
+  promoStats(since: Date, environment: "PRODUCTION" | "SANDBOX"): Promise<PromoStatsAccountRow[]>;
   /** Where this account came from, or null when nothing has said. */
   acquisitionOf(userId: string): Promise<Acquisition | null>;
   /**

@@ -37,6 +37,11 @@ import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, ONBOARDIN
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { hashToken } from "./auth/tokens.ts";
 import { memoryStore } from "./store.memory.ts";
+import { configDefaults } from "./config.ts";
+import { demoPorts } from "./llm/demo.ts";
+import { logMail } from "./mail/log.ts";
+import { fakePush } from "./push/fake.ts";
+import { promoStats as promoStatsEngine, type EngineDeps } from "./engine/index.ts";
 import { RLS_TABLES, SCOPE, postgresStore } from "./store.pg.ts";
 import { SWITCH_KEYS, type CampaignRow, type LlmCall, type RecognitionWrite, type RevenueCatEventRow, type Store, type StoreOptions } from "./store.ts";
 
@@ -1151,7 +1156,7 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.acquisitionOf(real)).toEqual(asa);
     });
 
-    it("aggregates promo-code stats over the event log, distinct per account and naming nobody", async () => {
+    it("builds promo-code cohort rows over the event log, distinct per account", async () => {
       const s = await open();
       const now = Date.now();
       const day = 86_400_000;
@@ -1208,23 +1213,51 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.recordRevenueCatEvent(rcEvent(live, { offerCode: null, eventAt: stamp(1), price: 0 }));
 
       // This suite shares one store, and other fixtures log NEWYEAR at a fixed date — and Postgres
-      // keeps rows across runs besides. The contract is the rows OUR codes produce, in order.
-      const rows = (await s.promoStats(new Date(now - 30 * day)))
+      // keeps rows across runs besides. The store's rows are INTERNAL per (code, account); the
+      // engine owns entitlement aggregation. Here the contract is the cohort, conversion and window
+      // shape those rows carry, regrouped so account order does not matter.
+      const rows = (await s.promoStats(new Date(now - 30 * day), "PRODUCTION"))
         .filter((r) => r.offerCode === alpha || r.offerCode === beta);
-      expect(rows).toEqual([
-        {
-          offerCode: alpha, redeemed: 4, active: 3, paid: 2,
-          firstSeenAt: stamp(4), lastSeenAt: stamp(1),
-        },
-        {
-          offerCode: beta, redeemed: 1, active: 0, paid: 0,
-          firstSeenAt: stamp(1), lastSeenAt: stamp(1),
-        },
+      const grouped = new Map<string, { redeemed: number; paid: number; firstSeenAt: string; lastSeenAt: string }>();
+      for (const r of rows) {
+        const g = grouped.get(r.offerCode) ?? { redeemed: 0, paid: 0, firstSeenAt: r.firstSeenAt, lastSeenAt: r.lastSeenAt };
+        g.redeemed += 1;
+        if (r.paid) g.paid += 1;
+        if (r.firstSeenAt < g.firstSeenAt) g.firstSeenAt = r.firstSeenAt;
+        if (r.lastSeenAt > g.lastSeenAt) g.lastSeenAt = r.lastSeenAt;
+        grouped.set(r.offerCode, g);
+      }
+      expect(grouped.get(alpha)).toEqual({ redeemed: 4, paid: 2, firstSeenAt: stamp(4), lastSeenAt: stamp(1) });
+      expect(grouped.get(beta)).toEqual({ redeemed: 1, paid: 0, firstSeenAt: stamp(1), lastSeenAt: stamp(1) });
+      expect(new Set(rows.filter((r) => r.offerCode === alpha).map((r) => r.userId))).toEqual(new Set([live, lapsed, bonus, banked]));
+
+      // The public counts stay an ENGINE assertion over these rows: the store names accounts
+      // internally, while `promoStats` resolves each one's live tier through `entitlementFor` and
+      // then erases the ids. Live subscription, referral week and banked referral all count active.
+      const deps: EngineDeps = { store: s, config: configDefaults(), llm: demoPorts(), push: fakePush(), mail: logMail() };
+      const view = (await promoStatsEngine(deps, 30)).codes.filter((r) => r.offerCode === alpha || r.offerCode === beta);
+      expect(view).toEqual([
+        { offerCode: alpha, redeemed: 4, active: 3, paid: 2, firstSeenAt: stamp(4), lastSeenAt: stamp(1) },
+        { offerCode: beta, redeemed: 1, active: 0, paid: 0, firstSeenAt: stamp(1), lastSeenAt: stamp(1) },
       ]);
-      expect(JSON.stringify(rows)).not.toContain(live);
-      expect(JSON.stringify(rows)).not.toContain(lapsed);
-      expect(JSON.stringify(rows)).not.toContain(bonus);
-      expect(JSON.stringify(rows)).not.toContain(banked);
+      expect(JSON.stringify(view)).not.toContain(live);
+      expect(JSON.stringify(view)).not.toContain(lapsed);
+      expect(JSON.stringify(view)).not.toContain(bonus);
+      expect(JSON.stringify(view)).not.toContain(banked);
+    });
+
+
+    it("reads PRODUCTION coded events by default and SANDBOX only when asked", async () => {
+      const s = await open();
+      const userId = (await s.upsertDeviceUser(device(), "en")).userId;
+      const code = `PROMO-SANDBOX-${RUN}`;
+      const at = new Date().toISOString();
+      await s.recordRevenueCatEvent(rcEvent(userId, { offerCode: code, eventAt: at, environment: "SANDBOX" }));
+      await s.recordRevenueCatEvent(rcEvent(userId, { offerCode: null, type: "RENEWAL", eventAt: at, price: 9.99, environment: "SANDBOX" }));
+
+      expect((await s.promoStats(new Date(Date.now() - 86_400_000), "PRODUCTION")).filter((r) => r.offerCode === code)).toEqual([]);
+      const sandboxRows = (await s.promoStats(new Date(Date.now() - 86_400_000), "SANDBOX")).filter((r) => r.offerCode === code);
+      expect(sandboxRows).toMatchObject([{ offerCode: code, userId, paid: true, firstSeenAt: at, lastSeenAt: at }]);
     });
 
     it("a merge keeps the surviving account's AdServices answer, and fills a gap or a RevenueCat one", async () => {

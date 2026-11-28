@@ -5,7 +5,7 @@
 // resolves to null" is proving something about the engine rather than about a mock's mood.
 
 import type { AppId, DistributionChannel, MealReminders, ScreenTemplateDraft } from "@eait/shared";
-import { FOOD_SOURCE_IDS, FUNNEL_DIMENSIONS, ONBOARDING_PLACES, effectiveAcqSource, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, entitlementLive, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
+import { FOOD_SOURCE_IDS, FUNNEL_DIMENSIONS, ONBOARDING_PLACES, effectiveAcqSource, REFERRAL_ALPHABET, REFERRAL_CODE_LENGTH, dateMinus, referralBonusEnd, healthScore, localDate, migrateActivityLevel, pushSenderOf, signsIn } from "@eait/shared";
 import type {
   DayTotals, FoodRef, HealthDay, Lang, MealRecord, NotificationCopySet, OffProduct,
   FunnelDimensions, FunnelFilters, OnboardingContentSet, OnboardingEvent,
@@ -1496,13 +1496,13 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .sort((a, b) => a.eventAt.localeCompare(b.eventAt)).map((e) => ({ ...e }));
     },
 
-    async promoStats(since) {
+    async promoStats(since, environment) {
       const sinceMs = since.getTime();
       type CohortRow = { key: string; offerCode: string; userId: string; firstMs: number; lastMs: number };
       const cohort = new Map<string, CohortRow>();
       const firstCoded = new Map<string, number>();
       for (const e of rcEvents.values()) {
-        if (e.offerCode === null || e.userId === null || !users.has(e.userId)) continue;
+        if (e.environment !== environment || e.offerCode === null || e.userId === null || !users.has(e.userId)) continue;
         const at = Date.parse(e.eventAt);
         if (!Number.isFinite(at)) continue;
         const key = `${e.offerCode}\n${e.userId}`;
@@ -1514,35 +1514,21 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         cohort.set(key, row);
       }
 
-      const byCode = new Map<string, {
-        offerCode: string; redeemed: number; active: number; paid: number; firstMs: number; lastMs: number;
-      }>();
-      for (const row of cohort.values()) {
-        const firstAt = firstCoded.get(row.key)!;
-        const paid = [...rcEvents.values()].some((e) =>
-          e.userId === row.userId && (e.type === "RENEWAL" || e.type === "INITIAL_PURCHASE")
-          && e.price !== null && e.price > 0 && Date.parse(e.eventAt) >= firstAt);
-        const stored = entitlements.get(row.userId) ?? null;
-        const bonusEnd = referralBonusEnd(
-          bonusUntil.get(row.userId) ?? null, bankedDays.get(row.userId) ?? 0, stored?.expiresAt,
-        );
-        const active = entitlementLive(stored, now(), bonusEnd);
-        const out = byCode.get(row.offerCode) ?? {
-          offerCode: row.offerCode, redeemed: 0, active: 0, paid: 0, firstMs: row.firstMs, lastMs: row.lastMs,
-        };
-        out.redeemed += 1;
-        if (active) out.active += 1;
-        if (paid) out.paid += 1;
-        out.firstMs = Math.min(out.firstMs, row.firstMs);
-        out.lastMs = Math.max(out.lastMs, row.lastMs);
-        byCode.set(row.offerCode, out);
-      }
-      return [...byCode.values()]
-        .sort((a, b) => a.offerCode < b.offerCode ? -1 : a.offerCode > b.offerCode ? 1 : 0)
-        .map((r) => ({
-          offerCode: r.offerCode, redeemed: r.redeemed, active: r.active, paid: r.paid,
-          firstSeenAt: new Date(r.firstMs).toISOString(), lastSeenAt: new Date(r.lastMs).toISOString(),
-        }));
+      return [...cohort.values()]
+        .sort((a, b) => a.offerCode === b.offerCode
+          ? a.userId.localeCompare(b.userId)
+          : a.offerCode.localeCompare(b.offerCode))
+        .map((row) => {
+          const firstAt = firstCoded.get(row.key)!;
+          const paid = [...rcEvents.values()].some((e) =>
+            e.environment === environment && e.userId === row.userId
+            && (e.type === "RENEWAL" || e.type === "INITIAL_PURCHASE")
+            && e.price !== null && e.price > 0 && Date.parse(e.eventAt) >= firstAt);
+          return {
+            offerCode: row.offerCode, userId: row.userId, paid,
+            firstSeenAt: new Date(row.firstMs).toISOString(), lastSeenAt: new Date(row.lastMs).toISOString(),
+          };
+        });
     },
 
     async acquisitionOf(userId) {
