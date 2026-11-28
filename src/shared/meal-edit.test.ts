@@ -4,7 +4,7 @@
 // and the meal's totals are the SERVER's job on an items-only patch (`editMeal` derives them).
 
 import { describe, expect, it } from "bun:test";
-import { mealEditParams, mealEditRequest, scaledItem } from "./meal-edit.ts";
+import { mealEditParams, mealEditRequest, mealServings, scaledItem, servingsPreview } from "./meal-edit.ts";
 import type { MealItem } from "./types.ts";
 
 const rice = (over: Partial<MealItem> = {}): MealItem => ({
@@ -50,6 +50,25 @@ describe("mealEditRequest — the PATCH body is items, or null when nothing move
   });
   it("sends the shortened list on a removal", () => {
     expect(mealEditRequest(MEAL, [salmon, broccoli])).toEqual({ items: [salmon, broccoli] });
+  });
+});
+
+describe("servings on any meal (#3677)", () => {
+  const plate = { kcal: 600, protein_g: 30, carbs_g: 60, fat_g: 20 };
+
+  it("reads one serving as logged, the meal's own count first, and a legacy label count after it", () => {
+    expect(mealServings({})).toBe(1);
+    expect(mealServings({ label: { servings: 2 } })).toBe(2);
+    expect(mealServings({ servings: 3, label: { servings: 2 } })).toBe(3);
+  });
+
+  it("previews the figures at a new count from the stored count, rounded for display", () => {
+    expect(servingsPreview({ ...plate, servings: 2 }, 1)).toEqual({ kcal: 300, protein_g: 15, carbs_g: 30, fat_g: 10 });
+    expect(servingsPreview(plate, 2)).toEqual({ kcal: 1200, protein_g: 60, carbs_g: 120, fat_g: 40 });
+  });
+
+  it("falls back to a label scan's legacy count when the meal has none of its own", () => {
+    expect(servingsPreview({ ...plate, label: { servings: 2 } }, 3).kcal).toBe(900);
   });
 });
 
