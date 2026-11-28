@@ -373,6 +373,29 @@ test("the servings chip opens Number of Servings on any meal, and Update sends s
   await expect(correct.getByText("Servings", { exact: true })).toHaveCount(0);
 });
 
+test("the time chip changes the meal's day and time, sending an offset and HH:MM, never a date (#3682)", async ({ inWebApp: page }) => {
+  const { id, date } = await openMeal(page);
+  await page.locator(".mwhen").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  const save = dialog.locator(".cta.p");
+  await expect(save).toBeDisabled();
+  // Today back to the server's 7-day window, and nothing ahead of today.
+  await expect(dialog.locator("select option")).toHaveCount(8);
+  await dialog.locator("select").selectOption("2");
+  await dialog.locator("input[type=time]").fill("07:45");
+  await expect(save).toBeEnabled();
+  const sent = page.waitForRequest((r) => r.url().endsWith(`/v1/meals/${id}/redate`) && r.method() === "POST");
+  const moved = page.waitForResponse((r) => r.url().endsWith(`/v1/meals/${id}/redate`) && r.ok());
+  await save.click();
+  expect((await sent).postDataJSON()).toEqual({ dayOffset: 2, time: "07:45" });
+  const result = (await (await moved).json()) as { kind: string; date?: string };
+  expect(result.kind).toBe("redated");
+  expect(result.date).not.toBe(date);
+  await expect(page).toHaveURL(new RegExp(`#\\/meal\\/${id}\\?d=${result.date}`));
+  await expect(page.locator(".mwhen")).toContainText("07:45");
+});
+
 test("tapping the meal title renames it, clears back to derived items, and shows Tap to Name when unnamed (#3681)", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   const titleBtn = page.locator(".mtitle");
@@ -677,4 +700,35 @@ test("Add Photo from the ⋯ menu stores the photo without analysis or charge an
   await expect(page.locator(".mpopup")).toBeVisible();
   await expect(page.locator(".mpopup").getByText("Re-read the photo")).toBeVisible();
   await expect(page.locator(".mpopup").getByText("Add Photo")).toHaveCount(0);
+});
+
+test("the rating card asks once, posts the thumb, and is gone for good (calodex_app#3687)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const card = page.locator(".mrate");
+  await expect(card).toContainText("How did Calodex do?");
+  await expect(card.getByRole("button")).toHaveCount(2);
+  const posted = page.waitForRequest((r) => r.url().endsWith(`/meals/${id}/rating`) && r.method() === "POST");
+  await card.getByRole("button", { name: "Not good" }).click();
+  expect((await posted).postDataJSON()).toEqual({ up: false });
+  await expect(card).toHaveCount(0);
+  // The server keeps it, so a reload draws no card and the record carries the thumb.
+  await page.reload();
+  await expect(page.locator(".hsr")).toBeVisible();
+  await expect(page.locator(".mrate")).toHaveCount(0);
+  expect((await day(page)).meals.find((m) => m.id === id)!.rating).toBe("down");
+});
+
+test("the thumbs-up posts up:true, and a failed rating keeps the card with live buttons", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const card = page.locator(".mrate");
+  await page.route("**/meals/*/rating", (r) => r.fulfill({ status: 500, contentType: "application/json", body: "{}" }));
+  await card.getByRole("button", { name: "Good", exact: true }).click();
+  await expect(card.getByRole("button").first()).toBeEnabled();
+  await expect(card).toBeVisible();
+  expect((await day(page)).meals.find((m) => m.id === id)!.rating ?? null).toBeNull();
+  await page.unroute("**/meals/*/rating");
+  const posted = page.waitForRequest((r) => r.url().endsWith(`/meals/${id}/rating`) && r.method() === "POST");
+  await card.getByRole("button", { name: "Good", exact: true }).click();
+  expect((await posted).postDataJSON()).toEqual({ up: true });
+  await expect(card).toHaveCount(0);
 });

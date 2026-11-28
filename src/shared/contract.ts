@@ -514,6 +514,8 @@ export const ROUTES = {
    * Answers the meal, or 404 when it is not the caller's. Free for every user: no entitlement, no cap.
    */
   mealFocus: (id: string) => `/v1/meals/${encodeURIComponent(id)}/focus`,
+  /** `POST` — report a problem with this meal, for human review ({@link ReportMealRequest}). */
+  mealReport: (id: string) => `/v1/meals/${encodeURIComponent(id)}/report`,
   /**
    * POST `{ up }` ({@link RateMealRequest}) — the thumb on this meal's analysis. One per meal, the last write wins.
    * Answers the meal, or 404 when it is not the caller's. Free for every user: no entitlement, no cap.
@@ -1501,6 +1503,9 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
  */
 export type EditMealResponse = MealUpdated;
 
+/** How many days back a meal can be moved (the chat re-date's bound and the day picker's): the server clamps to it. */
+export const MAX_DAY_OFFSET = 7;
+
 /**
  * `POST /v1/meals/:id/redate` — "Move to yesterday", as an offset: `1` is yesterday, `0` a no-op,
  * and the bound is the chat re-date's own (`MAX_DAY_OFFSET`), clamped in the engine rather
@@ -1512,11 +1517,18 @@ export type EditMealResponse = MealUpdated;
  */
 export interface RedateMealRequest {
   dayOffset: number;
+  /**
+   * The time chip's picker (calodex_app#3682): the wall-clock `HH:MM` the meal was eaten at, on the
+   * day `dayOffset` names. The server resolves both against the account's timezone and clamps a
+   * time still ahead of now to now. Absent keeps the meal's own time; a client never sends an instant.
+   */
+  time?: string;
 }
 
 export function isRedateMealRequest(body: unknown): body is RedateMealRequest {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
   const b = body as Record<string, unknown>;
+  if (b.time !== undefined && (typeof b.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(b.time))) return false;
   return typeof b.dayOffset === "number" && Number.isFinite(b.dayOffset);
 }
 
@@ -1549,6 +1561,23 @@ export function isCopyMealRequest(body: unknown): body is CopyMealRequest {
 }
 
 export type CopyMealResponse = MealCopied;
+/** One report's prose bound. The counter on the sheet counts the same characters the server accepts. */
+export const MAX_MEAL_REPORT_TEXT = 500;
+
+/** `POST /v1/meals/:id/report` — the meal ⋯ menu's "Report Food". */
+export interface ReportMealRequest {
+  text: string;
+}
+
+export function isReportMealRequest(body: unknown): body is ReportMealRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const text = (body as Record<string, unknown>).text;
+  return typeof text === "string" && text.trim().length >= 1 && text.trim().length <= MAX_MEAL_REPORT_TEXT;
+}
+
+export interface ReportMealResponse {
+  reported: true;
+}
 
 /** `POST /v1/meals/:id/focus` — a second write replaces the first. */
 export interface FocusMealRequest {

@@ -779,10 +779,17 @@ export async function redateMeal(
   // yesterday" still means the day it was typed. `thread` is the route's only — the chat path's
   // `keep` writes the redated card under the user's words itself, so a second write here would
   // land two cards for one move.
-  opts: { thread?: boolean; at?: Date } = {},
+  // `time` is the wall clock `HH:MM` the eater picked (calodex_app#3682): resolved HERE against the
+  // account's zone and day, never a client instant. A malformed one is ignored (the day still
+  // moves); one still ahead of now is clamped to now, so a meal is never in the future.
+  opts: { thread?: boolean; at?: Date; time?: string } = {},
 ): Promise<MealRedated | TargetGone> {
-  const date = dateMinus(localDate(deps.config.timezone, opts.at), clampDayOffset(dayOffset));
-  const moved = await deps.store.updateMeal(userId, mealId, { date });
+  const zone = deps.config.timezone;
+  const now = opts.at ?? new Date();
+  const date = dateMinus(localDate(zone, now), clampDayOffset(dayOffset));
+  const hm = opts.time === undefined ? null : /^([01]\d|2[0-3]):([0-5]\d)$/.exec(opts.time);
+  const ts = hm ? new Date(Math.min(instantOf(zone, date, { hour: Number(hm[1]), minute: Number(hm[2]) }), now.getTime())).toISOString() : undefined;
+  const moved = await deps.store.updateMeal(userId, mealId, ts ? { date, ts } : { date });
   if (!moved) return { kind: "target-gone", on: "redate" };
   await evaluateMilestones(deps, userId);
   const totals = sumTotals(await deps.store.mealsForDate(userId, date));
@@ -887,6 +894,14 @@ async function copyMealUncached(
   }));
   void evaluateMilestones(deps, userId);
   return { kind: "copied", sourceMealId: mealId, meals };
+}
+
+/** Record the menu's "Report Food" against one of the caller's meals. No model, no charge, no thread write. */
+export async function reportMeal(
+  deps: EngineDeps, userId: string, mealId: string, text: string,
+): Promise<{ reported: true } | null> {
+  const row = await deps.store.insertMealReport(userId, mealId, text.trim());
+  return row === null ? null : { reported: true };
 }
 
 /**

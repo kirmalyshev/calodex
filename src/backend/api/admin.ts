@@ -684,6 +684,10 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
   // the meal it made, as the meal stands now. UNSCOPED like every admin read — the role is the
   // authority here, and the list answers across accounts because that is what a model review asks.
   // The photo still goes through the scoped per-meal route below, on the account the row names.
+  if (req.method === "GET" && pathname === "/admin/api/meal-reports") {
+    return json({ reports: await deps.store.adminMealReports() });
+  }
+
   const recs = pathname.match(/^\/admin\/api\/recognitions(?:\/(\d{1,12}))?$/);
   if (recs && req.method === "GET") {
     if (recs[1] !== undefined) {

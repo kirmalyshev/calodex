@@ -19,9 +19,10 @@
 // id resolves to the gone state — the server scopes the read, so "another user's meal" and "no
 // meal" are the same answer and the same panel.
 
-import { MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
+import type { RedateMealRequest } from "../../shared/contract.ts";
+import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
-import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
+import { dateMinus, daysBack, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import {
   catalogPortions, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText,
@@ -44,7 +45,7 @@ import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
 import {
   ApiError, api, apiBlob, attachMealPhotos, deleteSavedMeal, listSavedMeals, remainingMealPhotos,
-  renameMeal, saveMeal,
+  rateMeal, renameMeal, saveMeal,
 } from "../api.ts";
 import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
@@ -365,6 +366,94 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     sync();
     scrim.append(dlg);
     return { node: scrim, focus: input };
+  };
+
+  /**
+   * The time chip's picker (calodex_app#3682): a day inside the server's back window (`MAX_DAY_OFFSET`,
+   * no future days) and a time of day. It sends `{ dayOffset, time }` — an offset from the server's
+   * today and a wall-clock `HH:MM` — and the server resolves both in the account's zone. Never a date or an instant.
+   */
+  const whenPanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement } => {
+    let saving = false;
+    const scrim = el("div", "mscrim");
+    scrim.addEventListener("click", (e) => { if (e.target === scrim && !saving) closeOverlay(); });
+    const dlg = el("form", "card mfix rise") as HTMLFormElement;
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    const title = meta(meal);
+    dlg.setAttribute("aria-label", title);
+    // The server resolves the offset against ITS today, so the options are offsets from today as it
+    // is NOW, not the day this screen was opened (a sheet left open past midnight would be a day off).
+    const now = localDate(zone);
+    const label = (off: number): string => (off === 0 ? COPY.today : off === 1 ? COPY.yesterday : dateText(dateMinus(now, off)));
+    const day = el("select", "nmfield") as HTMLSelectElement;
+    day.setAttribute("aria-label", mc.whenDay);
+    // The chip is disabled for a meal older than the window, so `current` is always an option here.
+    const current = daysBack(now, meal.date);
+    for (let off = 0; off <= MAX_DAY_OFFSET; off++) {
+      const o = el("option", "", label(off)) as HTMLOptionElement;
+      o.value = String(off);
+      day.append(o);
+    }
+    day.value = String(current);
+    const time = el("input", "nmfield") as HTMLInputElement;
+    time.type = "time";
+    time.required = true;
+    time.value = mealTime(meal);
+    time.setAttribute("aria-label", mc.whenTime);
+    const errEl = el("p", "t13 nmerr");
+    errEl.setAttribute("role", "alert");
+    errEl.hidden = true;
+    const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
+    cancel.type = "button";
+    cancel.addEventListener("click", () => { if (!saving) closeOverlay(); });
+    const save = el("button", "cta p", mc.phoneUpdate) as HTMLButtonElement;
+    save.type = "submit";
+    const sync = (): void => {
+      save.disabled = saving || time.value === "" || (day.value === String(current) && time.value === mealTime(meal));
+      cancel.disabled = saving;
+      day.disabled = saving;
+      time.disabled = saving;
+    };
+    for (const f of [day, time]) f.addEventListener("input", () => { errEl.hidden = true; sync(); });
+    dlg.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (saving || time.value === "") return;
+      saving = true;
+      errEl.hidden = true;
+      sync();
+      try {
+        const out = await api<MealRedated>(`${MEAL(meal.id)}/redate`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ dayOffset: Number(day.value), time: time.value } satisfies RedateMealRequest),
+        });
+        if (!scrim.isConnected) return;
+        closeOverlay();
+        // The meal may have left this day: follow it there, as the menu's "Move to yesterday" does.
+        location.hash = `#/meal/${encodeURIComponent(meal.id)}?d=${out.date}`;
+        await draw();
+      } catch (err) {
+        if (!scrim.isConnected) return;
+        if (err instanceof ApiError && err.status === 409 && err.body?.error === "target-gone") {
+          closeOverlay();
+          await draw();
+          return;
+        }
+        saving = false;
+        sync();
+        errEl.textContent = keptWords(err, cc.tryAgain);
+        errEl.hidden = false;
+        day.focus();
+      }
+    });
+    const actions = el("div", "row svactions");
+    actions.append(cancel, save);
+    dlg.append(el("b", "d d22", title), day, time, errEl, actions);
+    sync();
+    scrim.append(dlg);
+    // The select takes focus: `openPanel` puts a caret at the end of an input, which a time input refuses.
+    return { node: scrim, focus: day };
   };
 
   /**
@@ -970,7 +1059,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     chip.append(document.createTextNode(num(mealServings(meal))), kitEl(ico("pencil")));
     chip.addEventListener("click", () => openPanel(servingsPanel(meal)));
     titleRow.append(chip);
-    titleBox.append(titleRow, el("div", "t13 m mmeta", meta(meal)));
+    // The time chip (calodex_app#3682): the day and time under the name, tapped to change them.
+    const when = el("button", "mwhen t13", meta(meal)) as HTMLButtonElement;
+    when.type = "button";
+    // Older than the server's back window the picker could only clamp it, so the chip is plain text.
+    when.disabled = updating || daysBack(localDate(zone), meal.date) > MAX_DAY_OFFSET;
+    when.addEventListener("click", () => openPanel(whenPanel(meal)));
+    titleBox.append(titleRow, when);
     const kfig = el("span", "row kfig");
     kfig.append(kitEl(ico("kcal")), el("b", "d d28 num", kn(meal.kcal)));
     head.append(titleBox, kfig);
@@ -1119,6 +1214,28 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const correct = kitEl(`<a class="cta s">${esc(mc.webCorrect)}</a>`) as HTMLAnchorElement;
     correct.href = `#/meal/${encodeURIComponent(meal.id)}?fix`;
     sheet.append(correct);
+    // The rating card (calodex_app#3687): only while unrated, gone once a thumb is sent; no follow-up.
+    if (!meal.rating) {
+      const rate = el("div", "mrate");
+      const btns = el("div", "mratebtns");
+      for (const [up, label, glyph] of [[false, mc.rateDown, "👎"], [true, mc.rateUp, "👍"]] as const) {
+        const b = el("button", "mratebtn", glyph) as HTMLButtonElement;
+        b.type = "button";
+        b.setAttribute("aria-label", label);
+        b.addEventListener("click", () => {
+          btns.querySelectorAll("button").forEach((x) => { (x as HTMLButtonElement).disabled = true; });
+          rateMeal(meal.id, up).then(() => rate.remove()).catch((e: unknown) => {
+            console.error("rate meal failed", e);
+            // A meal gone (404) or a rate cap (429) can never succeed on retry: drop the card.
+            if (e instanceof ApiError && (e.status === 404 || e.status === 429)) { rate.remove(); return; }
+            btns.querySelectorAll("button").forEach((x) => { (x as HTMLButtonElement).disabled = false; });
+          });
+        });
+        btns.append(b);
+      }
+      rate.append(el("b", "d d17", mc.rateTitle), btns);
+      sheet.insertBefore(rate, correct);
+    }
     split.append(sheet);
     card.append(split);
     return card;

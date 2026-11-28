@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, setSystemTime } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import {
   CHANNEL_HEADER, HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_MEAL_ITEMS, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
-  dateMinus, localDate, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
+  dateMinus, localDate, localTime, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
   type DaysResponse, type MealRecord, type ProfileResponse, type MealProposed, type PendingMealsResponse,
   type ChatEntry, type FoodRef, type MealUpdated, type WeightsResponse,
 } from "@eait/shared";
@@ -2849,6 +2849,38 @@ describe("meal-changed over HTTP (ieat-app#2695)", () => {
   });
 });
 
+describe("meal reports (calodex_app#3688)", () => {
+  it("stores the report against the caller's meal, trimmed", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const m = await seedMeal(userId);
+    const res = await post(ROUTES.mealReport(m.id), { text: "  wrong ingredients  " }, token);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ reported: true });
+    const rows = await store.adminMealReports();
+    expect(rows.filter((r) => r.userId === userId).map((r) => [r.mealId, r.text])).toEqual([[m.id, "wrong ingredients"]]);
+  });
+
+  it("404s another account's meal id rather than reporting it", async () => {
+    const token = await session();
+    const other = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const m = await seedMeal(other);
+    const res = await post(ROUTES.mealReport(m.id), { text: "not mine" }, token);
+    expect(res.status).toBe(404);
+    expect(await store.adminMealReports()).toEqual([]);
+  });
+
+  it("400s blank, missing and over-long text; 401s anonymous", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const m = await seedMeal(userId);
+    for (const body of [{}, { text: "" }, { text: "   " }, { text: "x".repeat(501) }, { text: 3 }]) {
+      expect((await post(ROUTES.mealReport(m.id), body, token)).status).toBe(400);
+    }
+    expect((await post(ROUTES.mealReport(m.id), { text: "wrong" })).status).toBe(401);
+  });
+});
+
 describe("POST /v1/meals/:id/rating", () => {
   it("stores the thumb on the meal, the last write wins, and the meal reads it back", async () => {
     const token = await session();
@@ -2880,5 +2912,21 @@ describe("POST /v1/meals/:id/rating", () => {
       expect((await post(ROUTES.mealRating(meal.id), body, token)).status).toBe(400);
     }
     expect((await post(ROUTES.mealRating(meal.id), { up: true })).status).toBe(401);
+  });
+});
+
+describe("POST /v1/meals/:id/redate with a time (calodex_app#3682)", () => {
+  it("moves the meal to the picked day and time in the server's zone, and 400s a malformed time", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const meal = await seedMeal(userId);
+    const res = await post(ROUTES.mealRedate(meal.id), { dayOffset: 2, time: "07:45" }, token);
+    expect(res.status).toBe(200);
+    const moved = (await store.getMeal(userId, meal.id))!;
+    expect(localTime(CONFIG.timezone, new Date(moved.ts))).toBe("07:45");
+    expect(moved.date).toBe(dateMinus(localDate(CONFIG.timezone), 2));
+    const bad = await post(ROUTES.mealRedate(meal.id), { dayOffset: 0, time: "7:45" }, token);
+    expect(bad.status).toBe(400);
+    expect((await store.getMeal(userId, meal.id))!.ts).toBe(moved.ts);
   });
 });

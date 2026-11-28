@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   forgivingStreak,
-  dateMinus, dateMinusMonths, isCalendarDate, localDate, localTime, monthGrid,
+  dateMinus, dateMinusMonths, daysBack, isCalendarDate, localDate, localTime, monthGrid,
   monthOf, monthShift, weekStart, windowStart, zonedMidnight,
 } from "./dates.ts";
 import { HEALTH_RETENTION_DAYS } from "./contract.ts";
@@ -209,5 +209,15 @@ describe("forgivingStreak", () => {
   test("nothing logged is a streak of zero that has not ended", () => {
     const r = read();
     expect([r.streak, r.longest, r.state]).toEqual([0, 0, "holding"]);
+  });
+});
+
+describe("daysBack — the time chip's day offset (calodex_app#3682)", () => {
+  test("0 today, 1 yesterday, across a month and a DST change, never negative", () => {
+    expect(daysBack("2026-11-28", "2026-11-28")).toBe(0);
+    expect(daysBack("2026-11-28", "2026-11-27")).toBe(1);
+    expect(daysBack("2026-03-02", "2026-02-23")).toBe(7);
+    expect(daysBack("2026-11-02", "2026-10-24")).toBe(9);
+    expect(daysBack("2026-11-28", "2026-12-01")).toBe(0);
   });
 });

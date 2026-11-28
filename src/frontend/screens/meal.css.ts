@@ -40,6 +40,10 @@ export const mealCss = `
 .msheet .kfig .ico{width:30px;height:30px}
 .msheet .mmeta{margin-top:4px}
 .msheet .cta{margin-top:auto}
+.mrate{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}
+.mratebtns{display:flex;gap:8px}
+.mratebtn{font-size:22px;line-height:1;min-width:48px;min-height:44px;border-radius:14px;border:1px solid var(--line,#ddd);background:none;cursor:pointer}
+.mratebtn:disabled{opacity:.5}
 /* The tile switcher — the meal sheet's own copy of the day card's two-page clip (ieat-app#3676):
    a fixed-width page pair under the finger/trackpad, the boards' 6 px dots under it. */
 .mtiles{touch-action:pan-y;user-select:none}
@@ -127,6 +131,12 @@ export const mealCss = `
 .nmfield:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .nmfield::placeholder{color:var(--faint)}
 .nmerr{margin:0;color:var(--bad)}
+select.nmfield{appearance:none;-webkit-appearance:none}
+/* The time chip under the meal name (calodex_app#3682). */
+.card button.mwhen{margin-top:4px;min-height:44px;padding:0;background:none;border:0;font:inherit;font-size:13px;color:var(--muted);text-align:left;cursor:pointer}
+.card button.mwhen:hover{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
+.card button.mwhen:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mdet.updating .mwhen{pointer-events:none}
 
 /* The servings chip beside the meal name, and the stepper it opens (#3677). */
 .mtitlerow{align-items:center;gap:8px;flex-wrap:wrap}

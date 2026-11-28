@@ -1996,6 +1996,47 @@ describe("editing the answer", () => {
     expect(back.date).toBe(meal.date);
   });
 
+  it("a time moves the meal inside the account's day and keeps the day totals right (calodex_app#3682)", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const zone = deps.config.timezone;
+    const day = dateMinus(meal.date, 2);
+    const out = await redateMeal(deps, userId, meal.mealId, 2, { time: "07:45" });
+    if (out.kind !== "redated") throw new Error("expected redated");
+    expect(out.date).toBe(day);
+    const moved = (await store.getMeal(userId, meal.mealId))!;
+    expect(moved.date).toBe(day);
+    // The server resolved the wall time in the account's zone; the client sent no instant.
+    expect(localDate(zone, new Date(moved.ts))).toBe(day);
+    expect(localTime(zone, new Date(moved.ts))).toBe("07:45");
+    expect(moved.kcal).toBe(meal.analysis.kcal);
+    expect(moved.corrected).toBe(false);
+  });
+
+  it("a time alone moves today's meal, and a time still ahead of now is clamped to now", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const zone = deps.config.timezone;
+    const early = await redateMeal(deps, userId, meal.mealId, 0, { time: "00:00" });
+    if (early.kind !== "redated") throw new Error("expected redated");
+    expect(localTime(zone, new Date((await store.getMeal(userId, meal.mealId))!.ts))).toBe("00:00");
+    const at = new Date();
+    const late = await redateMeal(deps, userId, meal.mealId, 0, { time: "23:59", at });
+    if (late.kind !== "redated") throw new Error("expected redated");
+    const ts = Date.parse((await store.getMeal(userId, meal.mealId))!.ts);
+    expect(ts).toBeLessThanOrEqual(at.getTime());
+    expect(late.date).toBe(localDate(deps.config.timezone, at));
+  });
+
+  it("a malformed time is ignored: the day moves, the instant stays", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const before = (await store.getMeal(userId, meal.mealId))!.ts;
+    const out = await redateMeal(deps, userId, meal.mealId, 1, { time: "25:99" });
+    if (out.kind !== "redated") throw new Error("expected redated");
+    expect((await store.getMeal(userId, meal.mealId))!.ts).toBe(before);
+  });
+
   it("a move reaches only the caller's meal — another account's id is the same not-found", async () => {
     const a = await onboard();
     const b = await onboard();
