@@ -131,6 +131,7 @@ describe("the servings editor", () => {
     expect(src).toContain("const servingsPanel = (meal: MealRecord)");
     expect(src).toContain("const chip = el(\"button\", \"svchip\")");
     expect(src).toContain("chip.addEventListener(\"click\", () => openPanel(servingsPanel(meal)))");
+    expect(src).toContain("mc.servingsChipLabel");
     expect(src).toContain("const stored = mealServings(meal)");
     expect(src).not.toContain("const stored = meal.label.servings");
     expect(src).not.toContain("A LABEL MEAL'S CORRECTION IS ITS SERVINGS");

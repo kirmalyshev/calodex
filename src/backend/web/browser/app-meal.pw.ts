@@ -109,7 +109,7 @@ test("the servings chip opens Number of Servings on any meal, and Update sends s
 
   // The chip sits beside the meal's name on every meal — not only a label scan — and opens the
   // servings panel itself, rather than the Correct form.
-  const chip = page.getByRole("button", { name: "Number of Servings" });
+  const chip = page.getByRole("button", { name: "Number of Servings: 1" });
   await expect(chip).toBeVisible();
   await chip.click();
   const dialog = page.getByRole("dialog", { name: "Number of Servings" });
