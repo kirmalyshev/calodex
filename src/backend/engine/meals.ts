@@ -583,13 +583,14 @@ export async function editMeal(
   // client's estimate, as every edited item is. The totals below derive from the RECONCILED
   // items, so a recomputed row moves the header with it.
   const reconciled = patch.items === undefined ? undefined
-    : opts.serverItems === true ? patch.items : reconcileRefs(patch.items, existing.items);
+    : opts.serverItems === true ? { items: patch.items, microItems: patch.items } : reconcileRefs(patch.items, existing.items);
 
   // A swap (ieat-app#2192): the item becomes a catalog row at ITS OWN grams — `grams × per100`
   // from the row, provenance ours, no model. The row is read here, never taken from the client.
-  let items = reconciled;
+  let items = reconciled?.items;
+  let microItems = reconciled?.microItems;
   if (request.swap !== undefined) {
-    const base = reconciled ?? existing.items;
+    const base = items ?? existing.items;
     const target = base[request.swap.index];
     if (target === undefined) return { kind: "target-gone", on: "correction" };
     const resolved = await catalogItem(deps, userId, request.swap.ref, target.grams);
@@ -597,21 +598,25 @@ export async function editMeal(
     if (resolved === "unknown-food") return { kind: "unknown-food" };
     const swapped: MealItem = { ...resolved.item, ...(target.role !== undefined ? { role: target.role } : {}) };
     items = base.map((it, i) => (i === request.swap!.index ? swapped : it));
+    microItems = (microItems ?? existing.items).map((it, i) => (i === request.swap!.index ? swapped : it));
   }
 
   // An append (ieat-app#3678): the same catalog resolution as a swap, at the grams the client
   // asked for, added after every item edit above. Provenance is ours because the row is read here.
   let addedItem: MealItem | undefined;
   let itemsBeforeAdd: readonly MealItem[] | undefined;
+  let microItemsBeforeAdd: readonly MealItem[] | undefined;
   let editedBeforeAdd = false;
   if (request.add !== undefined) {
     itemsBeforeAdd = items ?? existing.items;
+    microItemsBeforeAdd = microItems ?? existing.items;
     editedBeforeAdd = items !== undefined;
     const resolved = await catalogItem(deps, userId, request.add.ref, request.add.grams);
     if (resolved === "bad-grams" || resolved === "unknown-food") return { kind: "unknown-food" };
     if (itemsBeforeAdd.length >= MAX_MEAL_ITEMS) return { kind: "meal-items-full", limit: MAX_MEAL_ITEMS };
     addedItem = resolved.item;
     items = [...itemsBeforeAdd, addedItem];
+    microItems = [...microItemsBeforeAdd, addedItem];
   }
 
   // When a patch replaces the items but says nothing about a total, the total is DERIVED from the
@@ -629,6 +634,7 @@ export async function editMeal(
   // are kept exactly — then add the catalog row's own mass. Deriving from the final list instead
   // would drop the append whenever an older item carries no nutrient numbers.
   const derivationItems = addedItem === undefined ? items : editedBeforeAdd ? itemsBeforeAdd : undefined;
+  const microDerivationItems = addedItem === undefined ? microItems : editedBeforeAdd ? microItemsBeforeAdd : undefined;
   const baseKcal = derivationItems !== undefined && derivationItems.every((i) => i.kcal !== undefined)
     ? derivationItems.reduce((s, i) => s + (i.kcal ?? 0), 0)
     : existing.kcal;
@@ -650,16 +656,21 @@ export async function editMeal(
   // #566: satfat, fibre, sugar and sodium come from the catalog per nutrient when every reconciled
   // item carries it; otherwise the pre-append plate scales as before and the append adds what its
   // row knows. A micro the row does not carry is zero here, as `mealFromFood` already treats it.
-  const micros = derivationItems === undefined ? {} : catalogMicros(derivationItems);
+  const micros = microDerivationItems === undefined ? {} : catalogMicros(microDerivationItems);
   const addedMicros = addedItem === undefined ? {} : catalogMicros([addedItem]);
   const tenth = (n: number): number => Math.round(n * 10) / 10;
   const nutritionOverride = patch.items?.some((i) => i.nutrition_override === true) === true;
+  // Reorders are not physical, but a positional gram mismatch is a physical edit in every client
+  // this API serves; when in doubt the fallback keeps #196's scaling rather than a stale micro.
+  const physicalEdit = derivationItems !== undefined && (request.swap !== undefined
+    || derivationItems.length !== existing.items.length
+    || derivationItems.some((item, ix) => item.grams !== existing.items[ix]?.grams));
   const scaled = (sent: number | undefined, kept: number, micro: keyof typeof addedMicros): number => {
     if (sent !== undefined) return sent;
     // A nutrition overwrite is not an amount change: scaling the plate's micros by its calorie
     // ratio would invent saturated fat, fibre, sugar and sodium nobody ate. Those move with grams
-    // edits, whose ratio is physical; a typed-nutrition edit keeps the stored figure instead.
-    const base = derivationItems === undefined ? kept : micros[micro] ?? (nutritionOverride ? kept : scale(kept));
+    // edits, whose ratio is physical; a typed-nutrition edit by itself keeps the stored figure.
+    const base = derivationItems === undefined ? kept : micros[micro] ?? (nutritionOverride && !physicalEdit ? kept : scale(kept));
     return addedItem === undefined ? base : tenth(base + (addedMicros[micro] ?? 0));
   };
   const merged = atN ? (({ servings: _s, ...rest }) => rest)(atN) : {
@@ -851,7 +862,9 @@ function portionCorrections(before: readonly MealItem[], after: readonly MealIte
  * `ref` cannot be honoured either; every other `ref` (unknown, renamed, or invented by a
  * client) is dropped along with `food`, leaving the item an estimate.
  */
-function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): MealItem[] {
+type ReconciledItems = { items: MealItem[]; microItems: MealItem[] };
+
+function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): ReconciledItems {
   const provenance = new Map<string, MealItem[]>();
   for (const s of stored) {
     if (s.ref === undefined || s.food === undefined) continue;
@@ -879,7 +892,27 @@ function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): MealI
     claimedTyped.add(chosen.index);
     return true;
   };
-  return sent.map((raw, ix) => {
+  // The catalog answer a row would have without its nutrition override. The override itself is
+  // nutritional, not physical: a grams change in the same patch still moves saturated fat, fibre,
+  // sugar and sodium, and this shadow keeps the density available after the returned row detaches.
+  const cataloged = (raw: EditMealItem, food: NonNullable<MealItem["food"]>): MealItem => {
+    const { nutrition_override: _override, ...plainRaw } = raw;
+    const out = recomputeFromSnapshot(plainRaw, food);
+    // A measurement is catalog data, not a claim: it survives only as one of the portions on the
+    // stored snapshot of the row it names. Anything else would print a unit the catalog never had.
+    if (out.portion !== undefined) {
+      const known = food.portions?.some((p) => p.label === out.portion?.label && p.grams === out.portion.grams) === true;
+      if (!known || out.portion_count === undefined || out.portion_count <= 0) {
+        const { portion: _portion, portion_count: _count, ...plain } = out;
+        return plain;
+      }
+      // The pair is the measurement, and grams remain its truth. A client that sends them in
+      // disagreement is not a third opinion: recompute grams from the portion before nutrition.
+      return recomputeFromSnapshot({ ...plainRaw, grams: portionGrams(out.portion, out.portion_count) }, food);
+    }
+    return out;
+  };
+  const rows = sent.map((raw, ix) => {
     const { typed: _typed, ...rest } = raw;
     const i: EditMealItem = typedMatch(raw, ix) ? { ...rest, typed: true } : rest;
     const candidates = i.ref === undefined ? undefined : provenance.get(`${i.ref} ${i.name}`);
@@ -900,28 +933,19 @@ function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): MealI
       // density; a later grams edit then scales proportionally from what the user typed.
       const densityKcal = estimate.kcal_per_100g === undefined ? undefined : Math.round(estimate.kcal_per_100g * estimate.grams / 100);
       if (estimate.kcal !== undefined && densityKcal !== undefined && Math.abs(estimate.kcal - densityKcal) > 1e-9) delete estimate.kcal_per_100g;
-      return estimate;
+      const { nutrition_override: _no, ...shadowRaw } = i;
+      const micro = s?.food === undefined ? estimate : cataloged(shadowRaw, s.food);
+      return { item: estimate, micro };
     }
     if (s?.food === undefined) {
       const { ref: _ref, food: _food, portion: _portion, portion_count: _count, ...estimate } = i;
-      return estimate;
+      return { item: estimate, micro: estimate };
     }
     claimedRefs.add(s);
-    const out = recomputeFromSnapshot(i, s.food);
-    // A measurement is catalog data, not a claim: it survives only as one of the portions on the
-    // stored snapshot of the row it names. Anything else would print a unit the catalog never had.
-    if (out.portion !== undefined) {
-      const known = s.food.portions?.some((p) => p.label === out.portion?.label && p.grams === out.portion.grams) === true;
-      if (!known || out.portion_count === undefined || out.portion_count <= 0) {
-        const { portion: _portion, portion_count: _count, ...plain } = out;
-        return plain;
-      }
-      // The pair is the measurement, and grams remain its truth. A client that sends them in
-      // disagreement is not a third opinion: recompute grams from the portion before nutrition.
-      return recomputeFromSnapshot({ ...i, grams: portionGrams(out.portion, out.portion_count) }, s.food);
-    }
-    return out;
+    const out = cataloged(i, s.food);
+    return { item: out, micro: out };
   });
+  return { items: rows.map((r) => r.item), microItems: rows.map((r) => r.micro) };
 }
 
 /**

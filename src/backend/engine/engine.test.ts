@@ -1508,6 +1508,53 @@ describe("editing the answer", () => {
     expect(out.analysis.sodium_mg).toBe(before.sodium_mg);
   });
 
+  it("moves catalog micros with a grams edit in the same patch as a nutrition override", async () => {
+    await store.putFoodRefs([oliveOil, rice]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const first = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: rice.id, grams: 100 } });
+    if (first.kind !== "updated") throw new Error(`expected updated, got ${first.kind}`);
+    const second = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
+    if (second.kind !== "updated") throw new Error(`expected updated, got ${second.kind}`);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    expect(before.satfat_g).toBe(4.3);
+    const editedOil = { ...before.items[1]!, kcal: 300, nutrition_override: true as const };
+    const doubledRice = { ...before.items[0]!, grams: 200, kcal: 260, protein_g: 5.4, carbs_g: 56, fat_g: 0.6 };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [doubledRice, editedOil] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[1]).toMatchObject({ kcal: 300 });
+    expect(out.analysis.items[1]).not.toHaveProperty("ref");
+    expect(out.analysis.satfat_g).toBe(4.4);
+    expect(out.analysis.fiber_g).toBe(0.8);
+    expect(out.analysis.sugar_g).toBe(0.2);
+    expect(out.analysis.sodium_mg).toBe(2.6);
+  });
+
+  it("resumes kcal-ratio micro scaling when the same patch also moves grams on estimate rows", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = meal.analysis.items;
+    const overridden = { ...stored[0]!, kcal: (stored[0]!.kcal ?? 0) + 100, nutrition_override: true as const };
+    const doubled = {
+      ...stored[1]!, grams: stored[1]!.grams * 2, kcal: (stored[1]!.kcal ?? 0) * 2,
+      protein_g: stored[1]!.protein_g !== undefined ? stored[1]!.protein_g * 2 : undefined,
+      carbs_g: stored[1]!.carbs_g !== undefined ? stored[1]!.carbs_g * 2 : undefined,
+      fat_g: stored[1]!.fat_g !== undefined ? stored[1]!.fat_g * 2 : undefined,
+    };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [overridden, doubled, ...stored.slice(2)] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const ratio = out.analysis.kcal / meal.analysis.kcal;
+    expect(ratio).toBeGreaterThan(1);
+    for (const f of ["satfat_g", "fiber_g", "sugar_g", "sodium_mg"] as const) {
+      expect(out.analysis[f], f).toBeCloseTo(meal.analysis[f] * ratio, 1);
+      expect(out.analysis[f], f).not.toBe(meal.analysis[f]);
+    }
+  });
+
   it("keeps typed provenance on its own row when a batch prepends another", async () => {
     const userId = await onboard();
     const loggedNumbers = await logNumbersMeal(deps, userId, { name: "shake", kcal: 400, protein_g: 30, fat_g: 10, carbs_g: 40 });
