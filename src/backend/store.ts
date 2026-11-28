@@ -380,6 +380,26 @@ export interface ReferralRow {
  */
 export type RedeemOutcome = "ok" | "unknown" | "own" | "already" | "paid";
 
+/**
+ * A campaign code (S4, #3695), made server-side — by `eait-promo` later, by `putPromoCode` now. `free`
+ * grants `days` through `bonus_until`; `discount` names the RevenueCat Web Billing discount code
+ * (`discountCode`) the checkout URL carries and the `percent` it is worth. `expiresAt`/`maxRedemptions`
+ * null = no end / no cap. `redeemed` counts free redemptions only: a discount is applied at checkout, not here.
+ */
+export interface PromoCode {
+  code: string;
+  kind: "free" | "discount";
+  days: number | null;
+  discountCode: string | null;
+  percent: number | null;
+  expiresAt: string | null;
+  maxRedemptions: number | null;
+  redeemed: number;
+}
+
+/** What redeeming a free code did. Only `ok` wrote anything. */
+export type PromoRedeemOutcome = "ok" | "expired" | "exhausted" | "already";
+
 /** Why the friend's-link step refused a code — every refusal, counted for the admin. */
 export type ReferralRefusal = Exclude<RedeemOutcome, "ok">;
 
@@ -1728,6 +1748,16 @@ export interface Store {
    * what `grantReferralWeek` compares a payment's time against.
    */
   redeemReferral(userId: string, code: string, days: number): Promise<RedeemOutcome>;
+  /** A campaign code by its (upper-case) text, or null. */
+  promoCode(code: string): Promise<PromoCode | null>;
+  /** Create or replace a campaign code; `redeemed` is kept on a replace. */
+  putPromoCode(c: Omit<PromoCode, "redeemed">): Promise<void>;
+  /**
+   * Redeem a FREE code for this account: one guarded write that checks the end date and the cap,
+   * records the redemption (one per account, ever — the primary key) and moves `bonus_until` to
+   * `greatest(now, bonus_until) + days`, together. Racing redemptions of the last slot apply one.
+   */
+  redeemPromoFree(userId: string, code: string, nowMs: number): Promise<PromoRedeemOutcome>;
   /**
    * The referrer's reward for `referredId`'s first paid period: record the grant (once per friend,
    * ever — the insert is `on conflict do nothing`; only a payment at or after `referred_at`, compared

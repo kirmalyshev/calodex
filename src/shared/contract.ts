@@ -94,6 +94,14 @@ export const REFUSAL_STATUS = {
    * yet, so nothing is stored and nobody's week moves.
    */
   "referral-paid": 409,
+  /** A promo code (S4, #3695): the code matches nothing, or is not a code at all. Nothing stored. */
+  "promo-unknown": 422,
+  /** The code's end date has passed. Nothing stored. */
+  "promo-expired": 410,
+  /** The code's redemption cap is spent. Nothing stored. */
+  "promo-exhausted": 409,
+  /** This account already redeemed a free code: one per account, ever. Nothing stored. */
+  "promo-already": 409,
 } as const;
 export type RefusalKind = keyof typeof REFUSAL_STATUS;
 
@@ -561,6 +569,14 @@ export const ROUTES = {
    * webhook grants it, at the friend's first paid period.
    */
   referralRedeem: "/v1/referral/redeem",
+  /**
+   * POST {@link PromoRedeemRequest} — redeem a campaign code (S4, #3695). A FREE code grants its days
+   * through `bonus_until`, once per account; a DISCOUNT code grants nothing and answers the percent,
+   * and the web checkout then carries it as `?code=` (`/start/checkout`), where the server resolves it
+   * to the host's RevenueCat Web Billing discount. Answers {@link PromoRedeemResponse};
+   * `promo-unknown` 422, `promo-expired` 410, `promo-exhausted`/`promo-already` 409.
+   */
+  promoRedeem: "/v1/promo/redeem",
   /** POST {@link ReferralSharedRequest} — count one share of the caller's link. Answers 204. */
   referralShared: "/v1/referral/shared",
   account: "/v1/account",
@@ -1011,6 +1027,21 @@ export interface ReferralView {
 /** `POST /v1/referral/redeem`. `code` is the pasted link or the typed code — `normalizeReferralCode` reads either. */
 export interface ReferralRedeemRequest {
   code: string;
+}
+
+/** `POST /v1/promo/redeem`. `code` is what the person typed; the server trims and upper-cases it. */
+export interface PromoRedeemRequest {
+  code: string;
+}
+
+/** The answer to a redeemed code: `free` already live in `profile`; `discount` is applied at checkout as `?code=`. */
+export interface PromoRedeemResponse {
+  kind: "free" | "discount";
+  /** The normalised code — what `/start/checkout?code=` takes for a `discount`. */
+  code: string;
+  /** Percent off, for a `discount`; null for a `free` code. */
+  percent: number | null;
+  profile: ProfileResponse;
 }
 
 /** `POST /v1/referral/shared`. `via` is the channel's short label — `messages`, `whatsapp`, `copy` — 1–32 of `a-z0-9_.-`. */

@@ -126,6 +126,8 @@ export const RLS_TABLES: Readonly<Record<string, string>> = {
   referral_events: "referrer_id",
   // A refund is the friend's own row.
   referral_refunds: "referred_id",
+  // A free campaign code's redemption is the account's own row; `promo_codes` is nobody's.
+  promo_redemptions: "user_id",
   // A merged-away id belongs to the account that absorbed it (#2694); read and written unscoped.
   merged_users: "into_id",
 };
@@ -605,6 +607,25 @@ create table if not exists referral_grants (
   event_at    timestamptz not null,
   days        integer not null
 );
+-- Campaign codes (S4, #3695): made by the operator, never by an account, so nobody's rows. A `free` code
+-- grants `days` through users.bonus_until; a `discount` names the RevenueCat Web Billing discount code
+-- the web checkout carries. The code is stored upper-case.
+create table if not exists promo_codes (
+  code          text primary key,
+  kind          text not null check (kind in ('free', 'discount')),
+  days          integer check (days > 0),
+  discount_code text,
+  percent       integer check (percent between 1 and 100),
+  expires_at    timestamptz,
+  max_redemptions integer check (max_redemptions > 0)
+);
+-- One FREE redemption per account, ever: the primary key. Deleted with the account.
+create table if not exists promo_redemptions (
+  user_id     uuid primary key references users(id) on delete cascade,
+  code        text not null references promo_codes(code),
+  redeemed_at timestamptz not null
+);
+create index if not exists promo_redemptions_code_idx on promo_redemptions (code);
 create index if not exists referral_grants_referrer_idx on referral_grants (referrer_id);
 -- The store transaction that earned the reward, so only ITS refund takes it back; and when that
 -- happened. A revoked row stays: the primary key is what keeps that friend from earning it again.
@@ -2145,6 +2166,11 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // Redeeming looks the referrer up by code; the grant writes the referrer's week from a webhook
   // delivery; the stats count the friends' rows. Each still names the account it acts for.
   redeemReferral: "unscoped",
+  // Campaign codes (S4, #3695): the table is nobody's and the redemption also writes the account's
+  // `bonus_until` in the same statement, so both are unscoped and each names the account it acts for.
+  promoCode: "unscoped",
+  putPromoCode: "unscoped",
+  redeemPromoFree: "unscoped",
   grantReferralWeek: "unscoped",
   // Its refund, from the same webhook: the referrer's row again.
   revokeReferralWeek: "unscoped",
@@ -3494,6 +3520,53 @@ export async function postgresStore(
       if (String(owner[0].id) === userId) return "own";
       const me = await sql`select referred_by is not null as referred from users where id = ${userId}`;
       return me[0]?.referred === false ? "paid" : "already";
+    },
+
+    async promoCode(code) {
+      const rows = await sql`
+        select c.*, (select count(*)::int from promo_redemptions r where r.code = c.code) as redeemed
+        from promo_codes c where c.code = ${code}`;
+      const r = rows[0] as Record<string, unknown> | undefined;
+      if (r === undefined) return null;
+      return {
+        code: String(r.code), kind: r.kind as "free" | "discount",
+        days: r.days === null ? null : num(r.days), discountCode: r.discount_code === null ? null : String(r.discount_code),
+        percent: r.percent === null ? null : num(r.percent),
+        expiresAt: r.expires_at === null ? null : new Date(r.expires_at as string).toISOString(),
+        maxRedemptions: r.max_redemptions === null ? null : num(r.max_redemptions), redeemed: num(r.redeemed),
+      };
+    },
+
+    async putPromoCode(c) {
+      await sql`
+        insert into promo_codes (code, kind, days, discount_code, percent, expires_at, max_redemptions)
+        values (${c.code}, ${c.kind}, ${c.days}, ${c.discountCode}, ${c.percent}, ${c.expiresAt}::timestamptz, ${c.maxRedemptions})
+        on conflict (code) do update set kind = excluded.kind, days = excluded.days, discount_code = excluded.discount_code,
+          percent = excluded.percent, expires_at = excluded.expires_at, max_redemptions = excluded.max_redemptions`;
+    },
+
+    async redeemPromoFree(userId, code, nowMs) {
+      const at = new Date(nowMs);
+      // The code row is locked for the rest of the statement's transaction so the cap is counted
+      // against a stable table: two redemptions of the last slot serialise, and one applies.
+      const rows = await sql`select kind, days, expires_at, max_redemptions from promo_codes where code = ${code} for update`;
+      const c = rows[0] as { kind: string; days: unknown; expires_at: unknown; max_redemptions: unknown } | undefined;
+      if (c === undefined || c.kind !== "free") return "already";
+      if (c.expires_at !== null && new Date(c.expires_at as string).getTime() <= nowMs) return "expired";
+      const done = await sql`select 1 from promo_redemptions where user_id = ${userId}`;
+      if (done.length > 0) return "already";
+      if (c.max_redemptions !== null) {
+        const n = await sql`select count(*)::int as n from promo_redemptions where code = ${code}`;
+        if (num((n[0] as { n: unknown }).n) >= num(c.max_redemptions)) return "exhausted";
+      }
+      const ins = await sql`
+        insert into promo_redemptions (user_id, code, redeemed_at) values (${userId}, ${code}, ${at}::timestamptz)
+        on conflict do nothing returning user_id`;
+      if (ins.length === 0) return "already";
+      await sql`
+        update users set bonus_until = greatest(${at}::timestamptz, bonus_until) + make_interval(days => ${num(c.days)}::int)
+        where id = ${userId}`;
+      return "ok";
     },
 
     async grantReferralWeek(referredId, eventAt, days, transactionId, originalTransactionId) {
