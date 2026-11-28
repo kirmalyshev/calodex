@@ -729,6 +729,7 @@ test("Copy To does not let Escape abandon an in-flight write (#3683)", async ({ 
   await sent;
   await page.keyboard.press("Escape");
   try {
+    await expect(page).toHaveURL(/#\/meal\//, { timeout: 1000 });
     await expect(dialog).toBeVisible({ timeout: 1000 });
   } finally {
     release();
@@ -764,6 +765,25 @@ test("Copy To keys a retry by its exact selection (#3683)", async ({ inWebApp: p
   expect(bodies[2]).toMatchObject({ dayOffsets: [1] });
   expect(bodies[1]!.clientId).not.toBe(bodies[0]!.clientId);
   expect(bodies[2]!.clientId).toBe(bodies[0]!.clientId);
+});
+
+test("Copy To words a refusal and retries it under a fresh key (#3683)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  const copy = dialog.getByRole("button", { name: "Copy", exact: true });
+  await dialog.locator(".copyday[data-offset=\"1\"]").click();
+  const bodies: { clientId: string }[] = [];
+  await page.route(/\/api\/v1\/meals\/[^/]+\/copy/, async (route) => {
+    bodies.push(route.request().postDataJSON() as { clientId: string });
+    await route.fulfill({ status: 402, contentType: "application/json", body: JSON.stringify({ error: "subscription-required" }) });
+  });
+  await copy.click();
+  await expect(dialog.getByRole("alert")).toHaveText("Logging meals needs a subscription. Start your free trial to carry on.");
+  await copy.click();
+  await expect.poll(() => bodies.length).toBe(2);
+  expect(bodies[1]!.clientId).not.toBe(bodies[0]!.clientId);
 });
 
 test("Copy To closes on a gone meal instead of offering a retry (#3683)", async ({ inWebApp: page }) => {

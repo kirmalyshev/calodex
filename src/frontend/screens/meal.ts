@@ -202,8 +202,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   document.addEventListener("keydown", function onKey(e) {
     if (!wrap.isConnected) { document.removeEventListener("keydown", onKey); return; }
     if (e.key !== "Escape") return;
-    if (overlay !== null && overlayCanClose?.() !== false) closeOverlay();
-    else if (closeMenu !== null) closeMenu();
+    if (overlay !== null) {
+      if (overlayCanClose?.() !== false) closeOverlay();
+    } else if (closeMenu !== null) closeMenu();
     else closeToDiary();
   });
 
@@ -487,14 +488,14 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       sending = true;
       error.hidden = true;
       sync();
+      const dayOffsets = [...picked].sort((a, b) => b - a);
+      const fingerprint = dayOffsets.join(",");
+      let clientId = clientIds.get(fingerprint);
+      if (clientId === undefined) {
+        clientId = crypto.randomUUID();
+        clientIds.set(fingerprint, clientId);
+      }
       try {
-        const dayOffsets = [...picked].sort((a, b) => b - a);
-        const fingerprint = dayOffsets.join(",");
-        let clientId = clientIds.get(fingerprint);
-        if (clientId === undefined) {
-          clientId = crypto.randomUUID();
-          clientIds.set(fingerprint, clientId);
-        }
         await copyMeal(meal.id, dayOffsets, clientId);
         if (scrim.isConnected) closeOverlay();
         // A copy onto the day behind the sheet is only visible after the server is re-read.
@@ -506,7 +507,11 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
           await draw();
           return;
         }
+        if (err instanceof ApiError && err.status < 500 && typeof err.body?.error === "string") {
+          clientIds.delete(fingerprint);
+        }
         sending = false;
+        error.textContent = keptWords(err, mc.copyFailed);
         error.hidden = false;
         sync();
         copy.focus();
