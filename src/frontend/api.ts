@@ -20,9 +20,10 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 import type {
-  AttachPhotosResponse, ErrorResponse, MilestonesResponse, MilestonesSeenRequest, NDJSON,
-  PushConsentRequest, PushConsentResponse, PushOpenRequest, PushTokenRequest, RedateMealRequest,
-  SaveMealRequest, SaveMealResponse, SavedMeal, SavedMealsResponse,
+  AttachPhotosResponse, EditMealRequest, EditMealResponse, ErrorResponse, MilestonesResponse,
+  MilestonesSeenRequest, NDJSON, PushConsentRequest, PushConsentResponse, PushOpenRequest,
+  PushTokenRequest, RedateMealRequest, SaveMealRequest, SaveMealResponse, SavedMeal,
+  SavedMealsResponse,
 } from "@eait/shared/contract";
 import type { MealLogged, TargetGone } from "../shared/results.ts";
 
@@ -247,6 +248,10 @@ export const listSavedMeals = async (): Promise<SavedMeal[]> =>
 
 export const saveMeal = async (mealId: string): Promise<SavedMeal> =>
   (await api<SaveMealResponse>("/saved-meals", json("POST", { mealId } satisfies SaveMealRequest))).meal;
+
+/** Rename a logged meal (calodex_app#3681): synchronous PATCH with `{ name }` alone; null clears to derived items. */
+export const renameMeal = (mealId: string, name: string | null): Promise<EditMealResponse> =>
+  api<EditMealResponse>(`/meals/${encodeURIComponent(mealId)}`, json("PATCH", { name } satisfies EditMealRequest));
 
 export const deleteSavedMeal = async (id: string): Promise<void> => {
   try {

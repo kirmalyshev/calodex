@@ -141,3 +141,20 @@ describe("the servings editor", () => {
     expect(src).not.toContain("A LABEL MEAL'S CORRECTION IS ITS SERVINGS");
   });
 });
+
+describe("the meal rename editor", () => {
+  it("opens from the tappable meal title, shows Tap to Name when unnamed, and uses mealDisplayName across surfaces (#3681)", () => {
+    const meal = code("screens/meal.ts");
+    expect(meal).toContain("const namePanel = (meal: MealRecord)");
+    expect(meal).toContain("mealDisplayName(meal)");
+    expect(meal).toContain("mc.tapToName");
+    expect(meal).toContain("mc.renameLabel");
+    expect(meal).toContain("MAX_MEAL_NAME");
+    expect(meal).toContain("titleBtn.disabled = updating");
+    expect(meal).toContain("renameMeal(meal.id");
+    expect(code("kit.ts")).toContain("mealTitle(meal)");
+    expect(code("screens/today.ts")).toContain("mealTitle(meal)");
+    expect(code("screens/chat.ts")).toContain("mealTitle(meal)");
+    expect(code("shell.ts")).toContain("mealDisplayName(meal)");
+  });
+});

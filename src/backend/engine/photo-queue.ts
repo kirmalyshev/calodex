@@ -160,7 +160,7 @@ const HANDLERS: Record<JobKind, JobHandler> = {
       return {
         result,
         land: async (d) => {
-          if (result.kind === "updated" && was && await d.store.claimPush(userId, clientId)) await pushUpdated(d, userId, result, was.kcal);
+          if (result.kind === "updated" && was && await d.store.claimPush(userId, clientId)) await pushUpdated(d, userId, result, was.kcal, was.name);
         },
       };
     },
@@ -463,7 +463,7 @@ async function pushCounted(deps: EngineDeps, userId: string, logged: MealLogged)
 }
 
 /** The one push for an update: "Salmon, rice, greens updated · 480kcal (was 540kcal)". A tap opens the meal. */
-async function pushUpdated(deps: EngineDeps, userId: string, updated: MealUpdated, wasKcal: number): Promise<void> {
+async function pushUpdated(deps: EngineDeps, userId: string, updated: MealUpdated, wasKcal: number, customName?: string | null): Promise<void> {
   try {
     const devices = await pushDevices(deps, userId);
     const profile = await deps.store.getProfile(userId);
@@ -471,7 +471,7 @@ async function pushUpdated(deps: EngineDeps, userId: string, updated: MealUpdate
     const whole = kcalNumbers(profile.lang);
     const unit = UNIT_KCAL[profile.lang];
     const title = fill(updateCopyFor(profile.lang).push, {
-      names: updated.analysis.items.map((i) => i.name).slice(0, 2).join(", "),
+      names: customName?.trim() || updated.analysis.items.map((i) => i.name).slice(0, 2).join(", "),
       kcal: `${whole(updated.analysis.kcal)}${unit}`, was: `${whole(wasKcal)}${unit}`,
     });
     await sendLogged(

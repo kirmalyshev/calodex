@@ -19,11 +19,12 @@
 // id resolves to the gone state — the server scopes the read, so "another user's meal" and "no
 // meal" are the same answer and the same panel.
 
-import { MAX_LABEL_SERVINGS, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
+import { MAX_LABEL_SERVINGS, MAX_MEAL_NAME, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem, servingsPreview } from "../../shared/meal-edit.ts";
+import { mealDisplayName, mealNames } from "../../shared/meal-names.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
 import { ingredientSourceCard } from "../../shared/app/ingredient-source.ts";
@@ -38,7 +39,7 @@ import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
 import {
   ApiError, api, apiBlob, attachMealPhotos, deleteSavedMeal, listSavedMeals, remainingMealPhotos,
-  saveMeal,
+  renameMeal, saveMeal,
 } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { appliedAt, shrinkPhotos } from "../photo.ts";
@@ -53,7 +54,7 @@ import {
   verdictListEl,
 } from "../kit.ts";
 import {
-  COPY, DAYS, MEAL, Said, clear, dayPickerButton, dayText, el, findMeal, lang, names,
+  COPY, DAYS, MEAL, Said, clear, dayPickerButton, dayText, el, findMeal, keptWords, lang, mealTitle, names,
   photoCompression, photoMaxEdge, profile, setRedraw, takeTurn, type Frame,
 } from "../shell.ts";
 import * as analytics from "../analytics.ts";
@@ -286,6 +287,80 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   };
 
   /**
+   * Rename a meal (calodex_app#3681): tapping the meal title opens this dialog. Clearing the field
+   * sends `{ name: null }` so the meal falls back to `mealNames(items)` (or "Tap to Name" when
+   * itemless). Synchronous PATCH — touches no numbers and keeps the typed text on any failure.
+   */
+  const namePanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement } => {
+    let saving = false;
+    const scrim = el("div", "mscrim");
+    scrim.addEventListener("click", (e) => { if (e.target === scrim && !saving) closeOverlay(); });
+    const dlg = el("form", "card mfix rise") as HTMLFormElement;
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    dlg.setAttribute("aria-label", mc.renameTitle);
+    const stored = meal.name?.trim() ?? "";
+    const input = el("input", "nmfield") as HTMLInputElement;
+    input.type = "text";
+    input.maxLength = MAX_MEAL_NAME;
+    input.value = stored;
+    input.placeholder = mealNames(meal.items) || mc.tapToName;
+    input.setAttribute("aria-label", mc.renameTitle);
+    const errEl = el("p", "t13 nmerr");
+    errEl.setAttribute("role", "alert");
+    errEl.hidden = true;
+    const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
+    cancel.type = "button";
+    cancel.addEventListener("click", () => { if (!saving) closeOverlay(); });
+    const save = el("button", "cta p", mc.phoneUpdate) as HTMLButtonElement;
+    save.type = "submit";
+    const sync = (): void => {
+      save.disabled = saving || input.value.trim() === stored;
+      cancel.disabled = saving;
+      input.disabled = saving;
+    };
+    input.addEventListener("input", () => {
+      if (!errEl.hidden) { errEl.hidden = true; errEl.textContent = ""; }
+      sync();
+    });
+    dlg.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (saving) return;
+      const next = input.value.trim();
+      if (next === stored) return;
+      saving = true;
+      errEl.hidden = true;
+      errEl.textContent = "";
+      sync();
+      try {
+        await renameMeal(meal.id, next.length > 0 ? next : null);
+        if (!scrim.isConnected) return;
+        closeOverlay();
+        await draw();
+        (right.querySelector(".mtitle") as HTMLElement | null)?.focus();
+      } catch (err) {
+        if (!scrim.isConnected) return;
+        if (err instanceof ApiError && err.status === 409 && err.body?.error === "target-gone") {
+          closeOverlay();
+          await draw();
+          return;
+        }
+        saving = false;
+        sync();
+        errEl.textContent = keptWords(err, mc.renameFailed);
+        errEl.hidden = false;
+        input.focus();
+      }
+    });
+    const actions = el("div", "row svactions");
+    actions.append(cancel, save);
+    dlg.append(el("b", "d d22", mc.renameTitle), input, errEl, actions);
+    sync();
+    scrim.append(dlg);
+    return { node: scrim, focus: input };
+  };
+
+  /**
    * Number of Servings (#3677): the stepper any meal carries, reached from the chip beside its
    * name. The figures are `stored / stored servings × n` — shown only; Update sends `{ servings }`
    * ALONE and the server scales, recomputes the verdicts and the day.
@@ -390,7 +465,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     named.append(thumb, el("span", "t13 m",
       // `phoneFixMeal` — "{name} · {kcal} · {time}", the {kcal} spelled with its unit.
       fill(mc.phoneFixMeal, {
-        name: names(meal.items), kcal: `${kn(meal.kcal)}${UNIT_KCAL[lang]}`, time: mealTime(meal),
+        name: mealTitle(meal), kcal: `${kn(meal.kcal)}${UNIT_KCAL[lang]}`, time: mealTime(meal),
       })));
     const field = el("textarea", "fixfield") as HTMLTextAreaElement;
     field.placeholder = mc.composeHint;
@@ -443,7 +518,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const swapBox = el("div", "ingswap");
     swapBox.hidden = true;
     dlg.append(head, nameBtn, swapBox,
-      el("span", "t13 m", fill(mc.phoneSheetMeal, { meal: names(meal.items), time: mealTime(meal) })));
+      el("span", "t13 m", fill(mc.phoneSheetMeal, { meal: mealTitle(meal), time: mealTime(meal) })));
     nameBtn.addEventListener("click", () => {
       if (!swapBox.hidden) { swapBox.hidden = true; return; }
       swapBox.hidden = false;
@@ -737,7 +812,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       box.append(kitEl(ico("chat")));
       return box;
     }
-    const box = photoHeroEl({ alt: names(meal.items) }) as HTMLElement;
+    const box = photoHeroEl({ alt: mealTitle(meal) }) as HTMLElement;
     const img = box.querySelector("img")!;
     void photoUrl(meal.id, 0).then((src) => {
       if (!box.isConnected) return;
@@ -775,7 +850,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const head = el("div", "row between");
     const titleBox = el("div", "");
     const titleRow = el("div", "row mtitlerow");
-    titleRow.append(el("b", "d d22", names(meal.items)));
+    const display = mealDisplayName(meal);
+    const titleBtn = el("button", `mtitle${display ? "" : " unnamed"}`, display || mc.tapToName) as HTMLButtonElement;
+    titleBtn.type = "button";
+    if (display) titleBtn.setAttribute("aria-label", fill(mc.renameLabel, { name: display }));
+    titleBtn.disabled = updating;
+    titleBtn.addEventListener("click", () => openPanel(namePanel(meal)));
+    titleRow.append(titleBtn);
     const chip = el("button", "svchip") as HTMLButtonElement;
     chip.type = "button";
     chip.setAttribute("aria-label", fill(mc.servingsChipLabel, { n: num(mealServings(meal)) }));
