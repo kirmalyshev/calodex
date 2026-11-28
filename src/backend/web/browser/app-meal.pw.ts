@@ -194,6 +194,7 @@ test("the menu: re-read recomputes in place, and delete asks first", async ({ in
   await shot(page, "menu");
   await expect(menu.getByText("Correct")).toBeVisible();
   await expect(menu.getByText("Save meal")).toBeVisible();
+  await expect(menu.getByText("Add Photo")).toBeVisible();
   await expect(menu.getByText("Re-read the photo")).toBeVisible();
   await expect(menu.getByText("Move to yesterday")).toBeVisible();
   await expect(menu.getByText("Delete this meal")).toBeVisible();
@@ -290,4 +291,123 @@ test("reduced motion: the detail is at its end state with nothing running", asyn
     .map((e) => getComputedStyle(e).opacity + ":" + getComputedStyle(e).transform)`);
   expect(states.length).toBeGreaterThan(0);
   for (const s of states) expect(s).toBe("1:none");
+});
+
+test("Add Photo from the ⋯ menu stores the photo without analysis or charge and shows it in the hero (#3684)", async ({ inWebApp: page }) => {
+  const token = await sessionToken(page);
+  const created = await page.request.post("/v1/meals/numbers", {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    data: { name: "Oatmeal & banana", kcal: 340, protein_g: 12, carbs_g: 58, fat_g: 6 },
+  });
+  expect(created.status(), await created.text()).toBe(200);
+  const beforeDay = await day(page);
+  const meal = beforeDay.meals[0]!;
+  expect(meal.photos ?? 0).toBe(0);
+
+  await page.goto(`/#/meal/${meal.id}`);
+  await expect(page.locator(".hero.mnoimg")).toBeVisible();
+
+  // Before attaching: Add Photo is offered; Re-read is not (nothing stored yet).
+  await page.locator(".mdetail .ib").last().click();
+  const menu = page.locator(".mpopup");
+  await expect(menu.getByText("Add Photo")).toBeVisible();
+  await expect(menu.getByText("Re-read the photo")).toHaveCount(0);
+
+  // Track every POST so we prove no billed analysis or correction job is triggered.
+  const posts: string[] = [];
+  page.on("request", (req) => {
+    if (req.method() === "POST" && req.url().includes("/api/v1/")) {
+      posts.push(new URL(req.url()).pathname);
+    }
+  });
+
+  const [chooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    menu.getByText("Add Photo").click(),
+  ]);
+  const attached = page.waitForResponse(
+    (r) => r.url().endsWith(`/v1/meals/${meal.id}/photos`) && r.request().method() === "POST" && r.status() === 200,
+  );
+  await chooser.setFiles("src/backend/web/browser/fixture-meal.png");
+  const body = (await (await attached).json()) as { mealId: string; photos: number };
+  expect(body).toEqual({ mealId: meal.id, photos: 1 });
+
+  // Hero replaces the placeholder with the uploaded image, and the diary row thumbnail updates too.
+  const heroImg = page.locator(".mdet .hero:not(.mnoimg) img");
+  await expect(heroImg).toBeVisible();
+  await expect(heroImg).toHaveAttribute("src", /^data:image\//);
+  await expect.poll(() => heroImg.evaluate((img) => (img as unknown as { naturalWidth: number }).naturalWidth)).toBeGreaterThan(0);
+  await expect(page.locator(".mlist .meal.sel img")).toHaveAttribute("src", /^data:image\//);
+
+  // Stored only: no analysis route called, macros/kcal/verdicts untouched.
+  expect(posts).toEqual([`/api/v1/meals/${meal.id}/photos`]);
+  const afterMeal = (await day(page)).meals.find((m) => m.id === meal.id)!;
+  expect(afterMeal.photos).toBe(1);
+  expect(afterMeal.kcal).toBe(meal.kcal);
+  expect(afterMeal.protein_g).toBe(meal.protein_g);
+  expect(afterMeal.carbs_g).toBe(meal.carbs_g);
+  expect(afterMeal.fat_g).toBe(meal.fat_g);
+  expect(afterMeal.verdictLabels).toEqual(meal.verdictLabels);
+
+  // Now that the meal holds a photo, Re-read the photo also appears in the ⋯ menu.
+  await page.locator(".mdetail .ib").last().click();
+  await expect(page.locator(".mpopup").getByText("Add Photo")).toBeVisible();
+  await expect(page.locator(".mpopup").getByText("Re-read the photo")).toBeVisible();
+
+  // Picking more photos than remaining slots alerts locally without sending a request.
+  const postsBeforeLimit = posts.length;
+  const [tooManyChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.locator(".mpopup").getByText("Add Photo").click(),
+  ]);
+  await tooManyChooser.setFiles([
+    "src/backend/web/browser/fixture-meal.png",
+    "src/backend/web/browser/fixture-meal.png",
+    "src/backend/web/browser/fixture-meal.png",
+    "src/backend/web/browser/fixture-meal.png",
+  ]);
+  await expect(page.locator(".notice[role='alert']")).toContainText("One meal takes up to 4 photos.");
+  expect(posts.length).toBe(postsBeforeLimit);
+
+  // An unsupported file answers 415 and shows the refusal notice without changing the meal.
+  await page.locator(".mdetail .ib").last().click();
+  const [badChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.locator(".mpopup").getByText("Add Photo").click(),
+  ]);
+  const rejected = page.waitForResponse(
+    (r) => r.url().endsWith(`/v1/meals/${meal.id}/photos`) && r.request().method() === "POST" && r.status() === 415,
+  );
+  await badChooser.setFiles({
+    name: "not-a-photo.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("not an image"),
+  });
+  await rejected;
+  await expect(page.locator(".notice[role='alert']")).toContainText("JPEG, PNG or WebP");
+  expect((await day(page)).meals.find((m) => m.id === meal.id)!.photos).toBe(1);
+
+  // Filling up to maxPhotosPerMeal (4) hides Add Photo from the ⋯ menu.
+  await page.getByRole("button", { name: "Meal actions" }).click();
+  const [fillChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.locator(".mpopup").getByText("Add Photo").click(),
+  ]);
+  const filled = page.waitForResponse(
+    (r) => r.url().endsWith(`/v1/meals/${meal.id}/photos`) && r.request().method() === "POST" && r.status() === 200,
+  );
+  const redrawn = page.waitForResponse(
+    (r) => r.url().includes("/v1/diary/day") && r.request().method() === "GET" && r.status() === 200,
+  );
+  await fillChooser.setFiles([
+    "src/backend/web/browser/fixture-meal.png",
+    "src/backend/web/browser/fixture-meal.png",
+    "src/backend/web/browser/fixture-meal.png",
+  ]);
+  expect(((await (await filled).json()) as { photos: number }).photos).toBe(4);
+  await redrawn;
+  await page.getByRole("button", { name: "Meal actions" }).click();
+  await expect(page.locator(".mpopup")).toBeVisible();
+  await expect(page.locator(".mpopup").getByText("Re-read the photo")).toBeVisible();
+  await expect(page.locator(".mpopup").getByText("Add Photo")).toHaveCount(0);
 });
