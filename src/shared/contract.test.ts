@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   CHANNEL_HEADER, DISTRIBUTION_CHANNELS, parseChannel,
-  MAX_HEALTH_DAYS_PER_BATCH, MAX_ITEM_NAME, MAX_MEAL_AMOUNT, MAX_MEAL_ITEMS, healthDayBatches,
+  MAX_HEALTH_DAYS_PER_BATCH, MAX_ITEM_NAME, MAX_MEAL_AMOUNT, MAX_MEAL_ITEMS, MAX_MEAL_NAME, healthDayBatches,
   healthDaysFrom, healthSyncLanded, isEditMealRequest, isPushOpenRequest, isRedateMealRequest, pushOpenFrom, ROUTES, webPushSubscription,
 } from "./contract.ts";
 import { emptyHealthDay } from "./health.ts";
@@ -15,11 +15,20 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50 }] })).toBe(true);
     expect(isEditMealRequest({ servings: 2 })).toBe(true);
     expect(isEditMealRequest({ servings: 0.5 })).toBe(true);
+    expect(isEditMealRequest({ name: "Breakfast bowl" })).toBe(true);
+    expect(isEditMealRequest({ name: "" })).toBe(true);
+    expect(isEditMealRequest({ name: null })).toBe(true);
+    expect(isEditMealRequest({ name: "x".repeat(MAX_MEAL_NAME) })).toBe(true);
+    expect(isEditMealRequest({ name: "Lunch", kcal: 420 })).toBe(true);
     expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: 30 } })).toBe(true);
   });
 
 
   it("refuses anything that is not a number where a number belongs", () => {
+    expect(isEditMealRequest({ name: "x".repeat(MAX_MEAL_NAME + 1) })).toBe(false);
+    expect(isEditMealRequest({ name: 42 })).toBe(false);
+    expect(isEditMealRequest({ name: ["a"] })).toBe(false);
+    expect(isEditMealRequest({ servings: 2, name: "Lunch" })).toBe(false);
     expect(isEditMealRequest({ kcal: "abc" })).toBe(false);
     expect(isEditMealRequest({ sodium_mg: Number.NaN })).toBe(false);
     expect(isEditMealRequest({ fat_g: -1 })).toBe(false);
