@@ -9,6 +9,7 @@
 import { execSync } from "node:child_process";
 import type { Page } from "@playwright/test";
 import type { DayResponse } from "@eait/shared/contract";
+import { wholeNumbers } from "@eait/shared";
 import { expect, logMeal, onboardFast, sessionToken, signIn, test } from "./fixtures.ts";
 
 // The review shots (#93's gate). `test-results/` is gitignored; the names carry the sha instead
@@ -56,8 +57,46 @@ test("the meal opens: photo, kcal, macro tiles, ingredients, verdicts, score", a
     await expect(dots.nth(i)).toHaveText(v.label);
     await expect(dots.nth(i)).toHaveClass(new RegExp(`\\bv ${v.tone}\\b`));
   }
-  // The macro tiles name their macros; the ingredient rows carry grams and their own kcal.
-  await expect(page.locator(".mcards .mcard")).toHaveCount(3);
+  // Page 1 is the macro trio; page 2 is the meal's four nutrient figures (ieat-app#3676). The
+  // click is proven by the pager's own state — both pages are in the DOM, so their text alone
+  // would pass even if the page never turned.
+  const macros = page.locator(".mtilepage").first();
+  const micro = page.locator(".mtilepage").nth(1);
+  await expect(macros.locator(".mcard")).toHaveCount(3);
+  await expect(micro.locator(".mcard")).toHaveCount(4);
+  await expect(macros).toHaveAttribute("aria-hidden", "false");
+  await expect(micro).toHaveAttribute("aria-hidden", "true");
+  await expect(page.getByRole("button", { name: "Page 1 of 2" })).toHaveAttribute("aria-current", "true");
+  await page.getByRole("button", { name: "Page 2 of 2" }).click();
+  await expect(macros).toHaveAttribute("aria-hidden", "true");
+  await expect(macros).toHaveAttribute("inert", "");
+  await expect(micro).toHaveAttribute("aria-hidden", "false");
+  await expect(page.getByRole("button", { name: "Page 2 of 2" })).toHaveAttribute("aria-current", "true");
+  await expect(page.locator(".mtiletrack")).not.toHaveCSS("transform", "none");
+  // The page itself lands under the clip: a wrong distance still has a transform and both pages'
+  // text in the DOM, so state alone cannot catch a misaligned track.
+  const xGap = async (what: "micro" | "macro") => {
+    const tilesBox = await page.locator(".mtiles").boundingBox();
+    const box = await (what === "micro" ? micro : macros).boundingBox();
+    if (tilesBox === null || box === null) return 9999;
+    const want = what === "micro" ? tilesBox.x : tilesBox.x - tilesBox.width;
+    return Math.abs(box.x - want);
+  };
+  await expect.poll(() => xGap("micro"), { timeout: 2000 }).toBeLessThan(1);
+  await expect.poll(() => xGap("macro"), { timeout: 2000 }).toBeLessThan(1);
+  await expect(micro).toContainText("Fibre");
+  await expect(micro).toContainText("Sugar");
+  await expect(micro).toContainText("Sodium");
+  await expect(micro).toContainText("Saturated fat");
+  const whole = wholeNumbers("en");
+  await expect(micro).toContainText(`${whole(record.fiber_g)}g`);
+  await expect(micro).toContainText(`${whole(record.sugar_g)}g`);
+  await expect(micro).toContainText(`${whole(record.sodium_mg)}mg`);
+  await expect(micro).toContainText(`${whole(record.satfat_g)}g`);
+  // The arrow key on a focused dot is the same page turn, back to the macros.
+  await page.keyboard.press("ArrowLeft");
+  await expect(macros).toHaveAttribute("aria-hidden", "false");
+  await expect(page.getByRole("button", { name: "Page 1 of 2" })).toHaveAttribute("aria-current", "true");
   await expect(page.locator(".ing").first()).toBeVisible();
   await expect(page.locator(".ing").first()).toContainText("g");
   await expect(page.locator(".ing b").first()).toBeVisible();
@@ -197,7 +236,7 @@ test("an id that was never a meal reads gone the same way", async ({ inWebApp: p
 test("reduced motion: the detail is at its end state with nothing running", async ({ inWebApp: page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openMeal(page);
-  await expect(page.locator(".mcards .mcard")).toHaveCount(3);
+  await expect(page.locator(".mtilepage").first().locator(".mcard")).toHaveCount(3);
   expect(await page.evaluate<number>("document.getAnimations().length")).toBe(0);
   // And the drawn elements sit AT that end state — getAnimations() == 0 alone can't tell an
   // opacity:0 that never ran from a card that is up (#152).

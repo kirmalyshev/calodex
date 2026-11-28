@@ -40,6 +40,22 @@ export const mealCss = `
 .msheet .kfig .ico{width:30px;height:30px}
 .msheet .mmeta{margin-top:4px}
 .msheet .cta{margin-top:auto}
+/* The tile switcher — the meal sheet's own copy of the day card's two-page clip (ieat-app#3676):
+   a fixed-width page pair under the finger/trackpad, the boards' 6 px dots under it. */
+.mtiles{touch-action:pan-y;user-select:none}
+.mtileclip{overflow:hidden;padding:8px 2px;margin:-8px -2px}
+.mtiletrack{display:flex;transition:transform .28s var(--ease)}
+.mtilepage{width:100%;flex:0 0 100%;min-width:0;box-sizing:border-box}
+.mtilepage.p2{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mtilepage.p2 .mcard{padding-left:10px;padding-right:10px}
+.mtilepage.p2 .mcard b{font-size:16px;white-space:nowrap}
+.mtilepage.p2 .mcard small{font-size:11px}
+.mtiles .dots{display:flex;justify-content:center;gap:12px;padding:10px 0 2px}
+.mtiles .dots button{width:6px;height:6px;border:0;background:none;padding:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.mtiles .dots button::after{content:"";position:absolute;inset:-9px}
+.mtiles .dots i{width:6px;height:6px;border-radius:3px;background:var(--line);pointer-events:none}
+.mtiles .dots button.on i{background:var(--ink)}
+.mtiles .dots button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .mupd:empty{display:none}
 .mupd{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:12px;background:var(--accent-tint)}
 .msteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
