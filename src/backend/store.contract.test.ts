@@ -2305,6 +2305,44 @@ function contract(name: string, make: () => Promise<Store>) {
       expect(await s.adminRecognition(rowId)).toBeNull();
     });
 
+    it("stores a meal report only for its owner's meal, keeps it through meal delete, and lists it for admin", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const mine = meal(a); const theirs = meal(b);
+      await s.insertMeal(mine); await s.insertMeal(theirs);
+
+      expect(await s.insertMealReport(a, mine.id, "wrong ingredients")).toMatchObject({ userId: a, mealId: mine.id, text: "wrong ingredients" });
+      expect(await s.insertMealReport(a, theirs.id, "not mine")).toBeNull();
+      expect(await s.insertMealReport(a, crypto.randomUUID(), "missing")).toBeNull();
+      const rows = (await s.adminMealReports()).filter((r) => r.userId === a);
+      expect(rows.length).toBe(1);
+      expect(rows[0]).toMatchObject({ mealId: mine.id, text: "wrong ingredients", meal: { id: mine.id, kcal: 260 } });
+
+      await s.deleteMeal(a, mine.id);
+      const after = (await s.adminMealReports()).filter((r) => r.userId === a);
+      expect(after.length).toBe(1);
+      expect(after[0]!.meal).toBeNull();
+    });
+
+    it("moves meal reports on merge and erases them with the account", async () => {
+      const s = await open();
+      const anon = (await s.upsertDeviceUser(device(), "en")).userId;
+      const real = (await s.upsertDeviceUser(device(), "en")).userId;
+      const m = meal(anon);
+      await s.insertMeal(m);
+      await s.insertMealReport(anon, m.id, "wrong ingredients");
+      await s.mergeUsers(anon, real);
+      expect((await s.adminMealReports()).filter((r) => r.userId === real).length).toBe(1);
+
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const m2 = meal(u);
+      await s.insertMeal(m2);
+      const row = await s.insertMealReport(u, m2.id, "wrong ingredients");
+      await s.deleteUser(u);
+      expect((await s.adminMealReports()).filter((r) => r.id === row?.id)).toEqual([]);
+    });
+
     // #708. A billed turn is claimed by the phone's id for it before anything runs, so a request
     // that reached the server and lost its answer is replayed from what it settled, never re-run.
     it("claims a turn once per account and hands back what it settled", async () => {
@@ -7235,7 +7273,7 @@ if (PG_URL) {
         .map(([name]) => name)
         .sort();
       expect(unscoped).toEqual([
-        "adminListUsers", "adminMetrics",
+        "adminListUsers", "adminMealReports", "adminMetrics",
         // #812: the per-account onboarding flow — the admin's own cross-account read, like the
         // funnel above it; staff exclusion is the method's job, the route names the account.
         "adminOnboardingFlow",
