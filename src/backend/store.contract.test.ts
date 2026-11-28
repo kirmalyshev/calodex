@@ -1957,6 +1957,20 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.getMeal(a, m.id))!.kcal).toBe(260);
     });
 
+    it("stores one rating per meal, the last write wins, and only for the owner", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const m = meal(a);
+      await s.insertMeal(m);
+      expect((await s.getMeal(a, m.id))!.rating ?? null).toBeNull();
+      expect((await s.updateMeal(a, m.id, { rating: "down" }))!.rating).toBe("down");
+      expect((await s.updateMeal(a, m.id, { rating: "up" }))!.rating).toBe("up");
+      expect((await s.getMeal(a, m.id))!.rating).toBe("up");
+      expect(await s.updateMeal(b, m.id, { rating: "down" })).toBeNull();
+      expect((await s.getMeal(a, m.id))!.rating).toBe("up");
+    });
+
     it("computes the health score at read, and recomputes it after an edit (#118)", async () => {
       const s = await open();
       const u = (await s.upsertDeviceUser(device(), "en")).userId;
@@ -2480,6 +2494,8 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.insertMeal(m);
       const v0 = (await s.getMealVersioned(u, m.id))!.version;
       await s.updateMeal(u, m.id, { date: "2026-07-01" });
+      await s.updateMeal(u, m.id, { ts: "2026-07-01T05:45:00.000Z" });
+      expect(new Date((await s.getMeal(u, m.id))!.ts).toISOString()).toBe("2026-07-01T05:45:00.000Z");
       await s.updateMeal(u, m.id, { question: null });
       expect((await s.getMealVersioned(u, m.id))!.version).toBe(v0);
       expect(await s.updateMealIfVersion(u, m.id, { kcal: 5 }, v0)).toMatchObject({ kcal: 5 });

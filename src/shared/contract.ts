@@ -501,6 +501,11 @@ export const ROUTES = {
   /** `POST` — report a problem with this meal, for human review ({@link ReportMealRequest}). */
   mealReport: (id: string) => `/v1/meals/${encodeURIComponent(id)}/report`,
   /**
+   * POST `{ up }` ({@link RateMealRequest}) — the thumb on this meal's analysis. One per meal, the last write wins.
+   * Answers the meal, or 404 when it is not the caller's. Free for every user: no entitlement, no cap.
+   */
+  mealRating: (id: string) => `/v1/meals/${encodeURIComponent(id)}/rating`,
+  /**
    * GET — the caller's saved meals, newest first. POST `{ mealId }` ({@link SaveMealRequest}) —
    * bookmark a meal already logged by this account as a named composition, idempotent per source
    * meal. Both unbilled.
@@ -1493,11 +1498,18 @@ export type EditMealResponse = MealUpdated;
  */
 export interface RedateMealRequest {
   dayOffset: number;
+  /**
+   * The time chip's picker (calodex_app#3682): the wall-clock `HH:MM` the meal was eaten at, on the
+   * day `dayOffset` names. The server resolves both against the account's timezone and clamps a
+   * time still ahead of now to now. Absent keeps the meal's own time; a client never sends an instant.
+   */
+  time?: string;
 }
 
 export function isRedateMealRequest(body: unknown): body is RedateMealRequest {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
   const b = body as Record<string, unknown>;
+  if (b.time !== undefined && (typeof b.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(b.time))) return false;
   return typeof b.dayOffset === "number" && Number.isFinite(b.dayOffset);
 }
 
@@ -1531,6 +1543,17 @@ export function isFocusMealRequest(body: unknown): body is FocusMealRequest {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
   const b = body as Record<string, unknown>;
   return FOCUS_MINUTES.some((m) => m === b.minutes) && typeof b.completed === "boolean";
+}
+
+/** `POST /v1/meals/:id/rating` — `up` true is the thumbs-up. A second write replaces the first. */
+export interface RateMealRequest {
+  up: boolean;
+}
+
+export function isRateMealRequest(body: unknown): body is RateMealRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const b = body as Record<string, unknown>;
+  return typeof b.up === "boolean" && Object.keys(b).length === 1;
 }
 
 /**

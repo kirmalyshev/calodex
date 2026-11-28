@@ -21,7 +21,7 @@ const KEYS = [
   "phoneCorrectTitle", "phoneSheetMeal", "phoneThisMeal", "phoneSaveRecheck",
   "phoneKeypadBackspace",
   "phoneFixMeal", "phoneFixExampleLead", "phoneFixExample", "phoneUpdate",
-  "tapToName", "renameTitle", "renameLabel", "renameFailed",
+  "tapToName", "renameTitle", "renameLabel", "renameFailed", "rateTitle", "rateUp", "rateDown",
   "phoneIngredientTitle", "phoneAmount", "phoneRemoveIngredient", "phoneWasAmount",
   "phoneGrams", "phoneMealMove",
   "phoneGoneTitle", "phoneGoneBody", "phoneGoneBack",
