@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { OUTCOME_UNKNOWN } from "../../shared/contract.ts";
-import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_MEAL_ITEMS, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
+import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_MEAL_ITEMS, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scaledItem, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { LeanSchema, widen } from "../llm/lean.ts";
@@ -1441,13 +1441,35 @@ describe("editing the answer", () => {
     if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
 
     const item = out.analysis.items[0]!;
-    expect(item).toMatchObject({ grams: 30, kcal: 300, fat_g: 30, kcal_per_100g: 1000 });
+    expect(item).toMatchObject({ grams: 30, kcal: 300, fat_g: 30 });
+    expect(item).not.toHaveProperty("kcal_per_100g");
     expect(item).not.toHaveProperty("ref");
     expect(item).not.toHaveProperty("food");
     expect(item).not.toHaveProperty("portion");
     expect(item).not.toHaveProperty("portion_count");
     expect(item).not.toHaveProperty("nutrition_override");
     expect(out.analysis.kcal).toBe(300);
+
+    const resized = await editMeal(deps, userId, meal.mealId, { items: [scaledItem(item, 60)] });
+    if (resized.kind !== "updated") throw new Error(`expected updated, got ${resized.kind}`);
+    expect(resized.analysis.items[0]).toMatchObject({ grams: 60, kcal: 600 });
+    expect(resized.analysis.items[0]).not.toHaveProperty("kcal_per_100g");
+  });
+
+  it("drops a stale density when calories are typed on an estimate", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const before = stored.items[0]!;
+    expect(before.kcal_per_100g).toBeGreaterThan(0);
+    const edited = { ...before, kcal: before.kcal! + 100, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited, ...stored.items.slice(1)] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const item = out.analysis.items[0]!;
+    expect(item.kcal).toBe(before.kcal! + 100);
+    expect(item).not.toHaveProperty("kcal_per_100g");
   });
 
   it("detaches a catalog item whose macro was typed, without moving calories off the catalog", async () => {

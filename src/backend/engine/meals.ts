@@ -861,16 +861,17 @@ function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): MealI
     const s = i.ref === undefined ? undefined : provenance.get(`${i.ref} ${i.name}`);
     // The explicit escape (calodex_app#3680): the client marks a row whose nutrition the user
     // typed. That row becomes an estimate — provenance and the catalog measurement go with the
-    // ref — and a kcal the catalog does not make is the density a later grams edit scales by.
+    // ref. A typed kcal also drops the catalog density: with none stored, a later grams edit scales
+    // proportionally from the typed figure, which cannot write an unbounded derived density (#562).
     // The flag itself is intent, never stored. Without it a catalog row's numbers are echoes and
     // are recomputed, because a stale client cannot tell a typed figure apart from one it simply
     // failed to rescale.
     if (i.nutrition_override === true) {
       const { ref: _ref, food: _food, portion: _portion, portion_count: _count, nutrition_override: _override, ...estimate } = i;
-      const catalogKcal = s?.food === undefined ? undefined : Math.round(s.food.per100.kcal * i.grams / 100);
-      const typedKcal = estimate.kcal !== undefined && catalogKcal !== undefined && Math.abs(estimate.kcal - catalogKcal) > 1e-9;
-      if (typedKcal && estimate.grams > 0) estimate.kcal_per_100g = estimate.kcal! * 100 / estimate.grams;
-      else if (typedKcal) delete estimate.kcal_per_100g;
+      const expectedKcal = s?.food !== undefined ? Math.round(s.food.per100.kcal * i.grams / 100)
+        : was?.kcal === undefined ? undefined : scaledItem(was, i.grams).kcal;
+      const typedKcal = estimate.kcal !== undefined && expectedKcal !== undefined && Math.abs(estimate.kcal - expectedKcal) > 1e-9;
+      if (typedKcal) delete estimate.kcal_per_100g;
       return estimate;
     }
     if (s?.food === undefined) {

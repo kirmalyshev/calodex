@@ -48,6 +48,10 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, name_en: "egg", kcal: 78, kcal_per_100g: 155 }] })).toBe(true);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, kcal: 78, nutrition_override: true }] })).toBe(true);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, kcal: 78, nutrition_override: false }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, kcal: 78, typed: true }] })).toBe(true);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, kcal: 78, typed: false }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, nutrition_override: true }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, protein_g: 0, nutrition_override: true }] })).toBe(true);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 50 } }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion_count: 2 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 50 }, portion_count: 0 }] })).toBe(false);

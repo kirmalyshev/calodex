@@ -6503,7 +6503,7 @@
           "grams",
           "name"
         ],
-        "description": "One item in a manual edit. `nutrition_override` is WRITE-ONLY (calodex_app#3680): the user typed this row's nutrition, so the server stores it as an estimate and drops its catalog `ref`, snapshot and portion. It is never stored or returned; the absence of `ref` is what a client reads afterwards."
+        "description": "One item in a manual edit. `nutrition_override` is WRITE-ONLY (calodex_app#3680): the user typed this row's nutrition, so the server stores it as an estimate and drops its catalog `ref`, snapshot and portion. It is never stored on the meal or returned in meal items; the absence of `ref` is what a client reads afterwards. Send it again when nutrition is typed on a row that already detached."
       },
       "EditMealRequest": {
         "type": "object",
@@ -6520,7 +6520,7 @@
             "items": {
               "$ref": "#/components/schemas/EditMealItem"
             },
-            "description": "The resulting ingredient list. On a catalog-backed row the four nutrient figures are normally the server's catalog echo and stay catalog-exact when grams move. When the user types one, the client marks that row `nutrition_override: true` (calodex_app#3680). The row then detaches: `ref`, the read-only `food` snapshot and any catalog `portion` are dropped, the typed figures are stored as an estimate, and a typed kcal becomes the density later grams edits scale by. Without the mark every number on a catalog row is treated as an echo and recomputed — a stale client cannot detach a row by sending old numbers beside new grams."
+            "description": "The resulting ingredient list. On a catalog-backed row the four nutrient figures are normally the server's catalog echo and stay catalog-exact when grams move. When the user types one, the client marks that row `nutrition_override: true` (calodex_app#3680). The row then detaches: `ref`, the read-only `food` snapshot and any catalog `portion` are dropped and the typed figures are stored as an estimate. When typed calories replace the calories the row would scale to, the stale density is dropped too, so a later grams edit scales proportionally from the typed figure. Without the mark every number on a catalog row is treated as an echo and recomputed — a stale client cannot detach a row by sending old numbers beside new grams."
           },
           "swap": {
             "type": "object",
