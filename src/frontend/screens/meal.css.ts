@@ -106,6 +106,7 @@ export const mealCss = `
 .mfix,.ming{width:480px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;padding:18px 22px 22px;margin:0;
   display:flex;flex-direction:column;gap:14px}
 .ming{position:relative}
+.ming>*{flex-shrink:0}
 .mfix .card,.ming .card{margin:0}
 .fixtitle{gap:10px;align-items:center}
 .fixtitle .ico{width:28px;height:28px}
