@@ -26,7 +26,7 @@ import type { ChatPromptId } from "./onboarding-chat.ts";
 import type { FoodTargets } from "./types.ts";
 import type { MicroGoals } from "./micro-goals.ts";
 import type { StreakMark, StreakRead } from "./dates.ts";
-import { SNAPSHOT_MICROS, type FoodAttribution, type FoodRef, type OffProduct } from "./foods.ts";
+import { FOOD_LOG_MAX_GRAMS, SNAPSHOT_MICROS, type FoodAttribution, type FoodRef, type OffProduct } from "./foods.ts";
 
 /** Bumped when a change is not backwards compatible. Shipped apps outlive the server they were built against. */
 export const API_VERSION = "v1";
@@ -1306,8 +1306,12 @@ export interface EditMealRequest {
   /**
    * Append the catalog row `ref` at `grams`, with no model in between (ieat-app#3678). The server
    * reads the row's nutrition itself; a client cannot send the appended item's nutrient numbers.
+   * Grams carry the food log's ceiling ({@link FOOD_LOG_MAX_GRAMS}), not the edit body's looser one.
    * A row missing or too incomplete to ground is `unknown-food`. Applied after `items` and `swap`,
-   * to the end of the resulting list.
+   * to the end of the resulting list. A synchronous PATCH carrying `add` must carry
+   * {@link IDEMPOTENCY_KEY}: appending is not an overwrite, and the key is what makes a retried
+   * gesture replay rather than append a second row. The queued update route already requires its
+   * `clientId` for the same reason.
    */
   add?: { ref: string; grams: number };
   kcal?: number;
@@ -1387,11 +1391,12 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
     if (typeof a !== "object" || a === null || Array.isArray(a)) return false;
     if (Object.keys(a).some((k) => k !== "ref" && k !== "grams")) return false;
     if (typeof a.ref !== "string" || a.ref.length === 0 || a.ref.length > MAX_ITEM_NAME) return false;
-    if (!amount(a.grams) || a.grams === 0) return false;
+    if (!amount(a.grams) || a.grams === 0 || (a.grams as number) > FOOD_LOG_MAX_GRAMS) return false;
   }
   if (b.items !== undefined) {
     if (!Array.isArray(b.items) || b.items.length > MAX_MEAL_ITEMS) return false;
     // Every item at 0g is no meal: it saved a 0kcal meal that still counted (ieat-app#1224).
+    // An empty list stays legal — with `add` it is how a plate is replaced by the catalog row alone.
     if (b.items.length > 0 && b.items.every((i) => (i as { grams?: unknown })?.grams === 0)) return false;
     for (const i of b.items as unknown[]) {
       if (typeof i !== "object" || i === null) return false;

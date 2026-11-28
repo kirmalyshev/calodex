@@ -9,7 +9,7 @@
 //
 // Every `ROUTES` key appears here or in `UNDOCUMENTED` with a reason, and the test says so.
 
-import { REFUSAL_STATUS, ROUTES } from "./contract.ts";
+import { IDEMPOTENCY_KEY, REFUSAL_STATUS, ROUTES } from "./contract.ts";
 
 export type Method = "GET" | "POST" | "PATCH" | "DELETE";
 
@@ -32,6 +32,8 @@ export interface Endpoint {
   request?: RequestBody;
   /** Query parameters, name → description. */
   query?: Record<string, string>;
+  /** Optional headers, name → description. Conditional requirements are said in the description. */
+  headers?: Record<string, string>;
   /** Status → body. Refusals from `REFUSAL_STATUS` are added by `refuses`, not listed here. */
   responses: Record<number, ResponseBody>;
   /** Answers every kind in `REFUSAL_STATUS` as `ErrorResponse`, at its status. */
@@ -132,6 +134,7 @@ export const API: readonly Endpoint[] = [
     responses: { 200: "JobsResponse", 400: ERROR } },
   { route: "meal", method: "PATCH", path: "/v1/meals/{id}", auth: "bearer",
     summary: "The manual edit. Verdicts are recomputed, never accepted.",
+    headers: { [IDEMPOTENCY_KEY]: "Required when the edit carries `add`: the key makes a retried append replay rather than add a second row." },
     request: { json: "EditMealRequest" }, responses: { 200: "EditMealResponse", 400: ERROR, 404: ERROR, 409: ERROR, 429: ERROR } },
   { route: "meal", method: "DELETE", path: "/v1/meals/{id}", auth: "bearer",
     summary: "Delete the meal, its photos and cards, and the user line that carried it.",

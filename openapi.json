@@ -1385,6 +1385,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "description": "Required when the edit carries `add`: the key makes a retried append replay rather than add a second row.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -6469,7 +6478,7 @@
               "grams"
             ],
             "additionalProperties": false,
-            "description": "Append the catalog row `ref` at `grams`, with no model in between (ieat-app#3678). The server reads the row's nutrition itself; a client cannot send the appended item's nutrient numbers. A row missing or too incomplete to ground is `unknown-food`. Applied after `items` and `swap`, to the end of the resulting list."
+            "description": "Append the catalog row `ref` at `grams`, with no model in between (ieat-app#3678). The server reads the row's nutrition itself; a client cannot send the appended item's nutrient numbers. Grams carry the food log's ceiling ( {@link  FOOD_LOG_MAX_GRAMS } ), not the edit body's looser one. A row missing or too incomplete to ground is `unknown-food`. Applied after `items` and `swap`, to the end of the resulting list. A synchronous PATCH carrying `add` must carry  {@link  IDEMPOTENCY_KEY } : appending is not an overwrite, and the key is what makes a retried gesture replay rather than append a second row. The queued update route already requires its `clientId` for the same reason."
           },
           "kcal": {
             "type": "number"

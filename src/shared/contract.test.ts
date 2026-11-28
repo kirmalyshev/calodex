@@ -28,6 +28,7 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ items: [{ name: "egg", grams: MAX_MEAL_AMOUNT + 1 }] })).toBe(false);
     expect(isEditMealRequest({ kcal: MAX_MEAL_AMOUNT })).toBe(true);
     expect(isEditMealRequest({ items: "egg" })).toBe(false);
+    expect(isEditMealRequest({ items: [] })).toBe(true);
     expect(isEditMealRequest({ items: [{ grams: 50 }] })).toBe(false);
     // An item's own numbers render on the card and rescale on edit: the same rule as the totals.
     expect(isEditMealRequest({ items: [{ name: "egg", grams: -50 }] })).toBe(false);
@@ -46,9 +47,18 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: 0 } })).toBe(false);
     expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: Number.NaN } })).toBe(false);
     expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: MAX_MEAL_AMOUNT + 1 } })).toBe(false);
+    expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: 5001 } })).toBe(false);
+    expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: 5000 } })).toBe(true);
     expect(isEditMealRequest({ add: { ref: "", grams: 30 } })).toBe(false);
+    expect(isEditMealRequest({ add: { grams: 30 } })).toBe(false);
+    expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil" } })).toBe(false);
+    expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: -1 } })).toBe(false);
+    expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: "30" } })).toBe(false);
+    expect(isEditMealRequest({ add: null })).toBe(false);
+    expect(isEditMealRequest({ add: [] })).toBe(false);
     expect(isEditMealRequest({ add: { ref: "x".repeat(MAX_ITEM_NAME + 1), grams: 30 } })).toBe(false);
     expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: 30, junk: true } })).toBe(false);
+    expect(isEditMealRequest({ add: { ref: "usda-sr:olive-oil", grams: 30, kcal: 265 } })).toBe(false);
     expect(isEditMealRequest(null)).toBe(false);
     // Bounded like every other client string: an item's name reaches every later prompt that day.
     expect(isEditMealRequest({ items: Array.from({ length: MAX_MEAL_ITEMS + 1 }, () => ({ name: "egg", grams: 1 })) })).toBe(false);

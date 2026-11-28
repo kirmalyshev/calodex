@@ -60,10 +60,10 @@ const post = (p: string, body: unknown, token?: string) =>
     body: JSON.stringify(body),
   }));
 
-const patch = (p: string, body: unknown, token: string) =>
+const patch = (p: string, body: unknown, token: string, headers: Record<string, string> = {}) =>
   handle(new Request(url(p), {
     method: "PATCH",
-    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}`, ...headers },
     body: JSON.stringify(body),
   }));
 
@@ -2699,7 +2699,7 @@ describe("ingredient appends over HTTP (ieat-app#3678)", () => {
     const token = await session();
     await store.putFoodRefs([oliveOil]);
     const logged = await (await handle(photoRequest(token))).json() as MealLogged;
-    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token);
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token, { [IDEMPOTENCY_KEY]: crypto.randomUUID() });
     expect(res.status).toBe(200);
     const out = await res.json() as MealUpdated;
     expect(out.kind).toBe("updated");
@@ -2709,7 +2709,7 @@ describe("ingredient appends over HTTP (ieat-app#3678)", () => {
   it("answers unknown-food when the appended catalog row does not exist", async () => {
     const token = await session();
     const logged = await (await handle(photoRequest(token))).json() as MealLogged;
-    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: "usda-sr:missing", grams: 30 } }, token);
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: "usda-sr:missing", grams: 30 } }, token, { [IDEMPOTENCY_KEY]: crypto.randomUUID() });
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "unknown-food" });
   });
@@ -2718,9 +2718,50 @@ describe("ingredient appends over HTTP (ieat-app#3678)", () => {
     const token = await session();
     await store.putFoodRefs([{ ...oliveOil, id: "usda-sr:incomplete", fat_g_per_100g: null }]);
     const logged = await (await handle(photoRequest(token))).json() as MealLogged;
-    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: "usda-sr:incomplete", grams: 30 } }, token);
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: "usda-sr:incomplete", grams: 30 } }, token, { [IDEMPOTENCY_KEY]: crypto.randomUUID() });
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "unknown-food" });
+  });
+
+  it("requires an idempotency key for a synchronous append", async () => {
+    const token = await session();
+    await store.putFoodRefs([oliveOil]);
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "clientId required" });
+  });
+
+  it("replays a synchronous append under its key rather than appending it twice", async () => {
+    const token = await session();
+    await store.putFoodRefs([oliveOil]);
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const key = crypto.randomUUID();
+    const body = { add: { ref: oliveOil.id, grams: 30 } };
+    const first = await patch(ROUTES.meal(logged.mealId), body, token, { [IDEMPOTENCY_KEY]: key });
+    const second = await patch(ROUTES.meal(logged.mealId), body, token, { [IDEMPOTENCY_KEY]: key });
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    const a = await first.json() as MealUpdated;
+    const b = await second.json() as MealUpdated;
+    expect(b).toEqual(a);
+    expect(b.analysis.items.filter((i) => i.ref === oliveOil.id)).toHaveLength(1);
+  });
+
+  it("claims concurrent sends of one append once", async () => {
+    const token = await session();
+    await store.putFoodRefs([oliveOil]);
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const key = crypto.randomUUID();
+    const body = { add: { ref: oliveOil.id, grams: 30 } };
+    const [first, second] = await Promise.all([
+      patch(ROUTES.meal(logged.mealId), body, token, { [IDEMPOTENCY_KEY]: key }),
+      patch(ROUTES.meal(logged.mealId), body, token, { [IDEMPOTENCY_KEY]: key }),
+    ]);
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    const out = await second.json() as MealUpdated;
+    expect(out.analysis.items.filter((i) => i.ref === oliveOil.id)).toHaveLength(1);
   });
 
   it("answers the meal-items cap rather than a successful edit", async () => {
@@ -2732,9 +2773,40 @@ describe("ingredient appends over HTTP (ieat-app#3678)", () => {
     }, token);
     expect(fill.status).toBe(200);
 
-    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token);
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token, { [IDEMPOTENCY_KEY]: crypto.randomUUID() });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: "meal-items-full", limit: MAX_MEAL_ITEMS });
+  });
+});
+
+describe("ingredient appends through the update queue over HTTP (ieat-app#3678)", () => {
+  const oliveOil: FoodRef = {
+    id: "usda-sr:olive-oil", source: "usda-sr", name: "Olive oil", name_de: "Olivenöl", name_en: "Olive oil",
+    names: {}, category: null, kcal_per_100g: 884, protein_g_per_100g: 0, carbs_g_per_100g: 0, fat_g_per_100g: 100,
+    satfat_g_per_100g: 14, fiber_g_per_100g: 0, sugar_g_per_100g: 0, sodium_mg_per_100g: 2,
+    nutrients: {}, portions: [], source_url: null, attribution: [],
+  };
+
+  it("accepts a valid nested append as a queued ingredient edit", async () => {
+    const token = await session();
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const clientId = crypto.randomUUID();
+    const res = await post(ROUTES.mealUpdateQueue, {
+      kind: "ingredients", mealId: logged.mealId, clientId, edit: { add: { ref: oliveOil.id, grams: 30 } },
+    }, token);
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual({ kind: "queued", jobId: clientId });
+  });
+
+  it("rejects a nested append that smuggles client nutrition", async () => {
+    const token = await session();
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const res = await post(ROUTES.mealUpdateQueue, {
+      kind: "ingredients", mealId: logged.mealId, clientId: crypto.randomUUID(),
+      edit: { add: { ref: oliveOil.id, grams: 30, kcal: 265 } },
+    }, token);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "bad-update" });
   });
 });
 

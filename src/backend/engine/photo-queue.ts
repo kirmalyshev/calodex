@@ -99,7 +99,9 @@ const HANDLERS: Record<JobKind, JobHandler> = {
     },
   },
   "meal-update": {
-    version: 1,
+    // Version 2 because an ingredient append is a shape version-1 workers would ignore rather than
+    // refuse, answering success for an edit they never applied.
+    version: 2,
     // One change at a time per account (#1347): a meal-sent note's meal is only known mid-run,
     // so the group is the account — a second update waits wherever its meal turns out to be.
     grouped: true,
@@ -307,7 +309,10 @@ export async function queueMealUpdate(
   // The whole ACCOUNT is the group (#1347), not the meal: a chat-sent note's meal is named by the
   // router mid-run, so no enqueue-time meal key can hold it — and only one group an account has
   // also stops that job from running beside a bound update on the meal it resolves to.
-  const job = { clientId: input.clientId, kind: "meal-update", requestVersion: HANDLERS["meal-update"].version,
+  // Only the append needs the new worker: overwrite jobs stay claimable by version 1 through a
+  // rolling deploy, while version-1 workers must never meet an `add` they would silently drop.
+  const requestVersion = input.kind === "ingredients" && input.edit.add !== undefined ? HANDLERS["meal-update"].version : 1;
+  const job = { clientId: input.clientId, kind: "meal-update", requestVersion,
     request: input, step: 1, photos: [], group: userId };
   if (await deps.store.enqueueJob(userId, job)) wake();
   return { kind: "queued", jobId: input.clientId };
