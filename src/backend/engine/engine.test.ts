@@ -1428,6 +1428,61 @@ describe("editing the answer", () => {
     expect(out.analysis.kcal).toBe(265);
   });
 
+  it("detaches a catalog item whose calories were typed, so the typed number sticks", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, kcal: 300, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const item = out.analysis.items[0]!;
+    expect(item).toMatchObject({ grams: 30, kcal: 300, fat_g: 30, kcal_per_100g: 1000 });
+    expect(item).not.toHaveProperty("ref");
+    expect(item).not.toHaveProperty("food");
+    expect(item).not.toHaveProperty("portion");
+    expect(item).not.toHaveProperty("portion_count");
+    expect(item).not.toHaveProperty("nutrition_override");
+    expect(out.analysis.kcal).toBe(300);
+  });
+
+  it("detaches a catalog item whose macro was typed, without moving calories off the catalog", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, protein_g: 2, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const item = out.analysis.items[0]!;
+    expect(item).toMatchObject({ grams: 30, kcal: 265, protein_g: 2, kcal_per_100g: 884 });
+    expect(item).not.toHaveProperty("ref");
+    expect(out.analysis.protein_g).toBe(2);
+    expect(out.analysis.kcal).toBe(265);
+  });
+
+  it("recomputes a mismatched catalog nutrient that carries no override mark", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [{ ...stored.items[0]!, kcal: 300 }] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    // The mark is the intent. Without it this is a stale or badly scaled echo, never a detach.
+    expect(out.analysis.items[0]).toMatchObject({ ref: oliveOil.id, kcal: 265, kcal_per_100g: 884 });
+  });
+
   it("stores a catalog measurement on the item and keeps it catalog-bound", async () => {
     await store.putFoodRefs([oliveOil]);
     const userId = await onboard();
@@ -1793,6 +1848,20 @@ describe("an ingredient edit through the update queue (ieat-app#3678)", () => {
       kind: "ingredients", mealId: meal.mealId, clientId: overwriteId, edit: { kcal: 500 },
     });
     expect(await store.getJob(userId, overwriteId)).toMatchObject({ requestVersion: 1 });
+  });
+
+  it("versions a typed-nutrient edit beyond what a catalog-recomputing worker may claim", async () => {
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    const clientId = crypto.randomUUID();
+    await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId,
+      edit: { items: [{ name: "Olive oil", grams: 30, kcal: 300, nutrition_override: true }] },
+    });
+    expect(await store.getJob(userId, clientId)).toMatchObject({ requestVersion: 4 });
+    expect(await store.claimJob("old", [{ kind: "meal-update", version: 3, grouped: true }], 30_000)).toBeNull();
+    expect((await store.claimJob("new", [{ kind: "meal-update", version: 4, grouped: true }], 30_000))?.clientId).toBe(clientId);
+    await store.releaseJobs("new");
   });
 
   it("settles a dead worker's append as worker-lost rather than running it twice", async () => {

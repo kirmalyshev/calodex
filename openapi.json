@@ -6437,6 +6437,74 @@
         ],
         "description": "`PATCH /v1/messages/:id` (#608): the same progress, then one of these last. `bad-request` is a line that cannot be edited (text, or not the caller's kind); `too-many` is the photo bound the server counts against what is already stored."
       },
+      "EditMealItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "nutrition_override": {
+            "type": "boolean",
+            "const": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name, in the user's language. This is what renders on the meal card."
+          },
+          "grams": {
+            "type": "number"
+          },
+          "name_en": {
+            "type": "string",
+            "description": "Canonical English key the repertoire and the portion priors group by — never displayed."
+          },
+          "kcal": {
+            "type": "number"
+          },
+          "protein_g": {
+            "type": "number"
+          },
+          "carbs_g": {
+            "type": "number"
+          },
+          "fat_g": {
+            "type": "number"
+          },
+          "kcal_per_100g": {
+            "type": "number",
+            "description": "The item's density — what a substitution rescales by when the user edits grams."
+          },
+          "role": {
+            "type": "string",
+            "const": "cooking-fat",
+            "description": "Fat the dish was cooked or dressed with, listed as its own row rather than folded into another item's numbers — so the user can see it, and take it off. Absent on plain food, and on every row stored before this existed."
+          },
+          "typed": {
+            "type": "boolean",
+            "const": true,
+            "description": "The item came from numbers the user typed (#2088): its `grams` is a storage unit, not a weight anybody measured, so no surface may show it. Set by the server only."
+          },
+          "portion": {
+            "$ref": "#/components/schemas/FoodPortion",
+            "description": "The catalog measurement the user chose for this item — \"large\", \"tbsp\", \"slice\" — copied from the row `ref` names. Grams remain the truth: `grams` is `portion.grams × portion_count`, and this pair is how that amount is shown. Absent on a plain grams entry and on every row stored before portions existed."
+          },
+          "portion_count": {
+            "type": "number",
+            "description": "How many of `portion` the grams stand for. Meaningless without `portion`, and invalid without it at the boundary."
+          },
+          "ref": {
+            "type": "string",
+            "description": "A `food_ref` id (\"ciqual:20346\") — the catalog row the item's numbers were grounded against (#562). Absent = an estimate: the model's own, or a row whose nutrient figures the user typed (calodex_app#3680), because they are no longer the catalog's."
+          },
+          "food": {
+            "$ref": "#/components/schemas/FoodSnapshot",
+            "description": "READ-ONLY snapshot of the row `ref` names, written by the server when it grounds. Ignored on every write — the server re-derives it from the STORED meal, never from what a client sent."
+          }
+        },
+        "required": [
+          "grams",
+          "name"
+        ],
+        "description": "One item in a manual edit. `nutrition_override` is WRITE-ONLY (calodex_app#3680): the user typed this row's nutrition, so the server stores it as an estimate and drops its catalog `ref`, snapshot and portion. It is never stored or returned; the absence of `ref` is what a client reads afterwards."
+      },
       "EditMealRequest": {
         "type": "object",
         "properties": {
@@ -6450,8 +6518,9 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MealItem"
-            }
+              "$ref": "#/components/schemas/EditMealItem"
+            },
+            "description": "The resulting ingredient list. On a catalog-backed row the four nutrient figures are normally the server's catalog echo and stay catalog-exact when grams move. When the user types one, the client marks that row `nutrition_override: true` (calodex_app#3680). The row then detaches: `ref`, the read-only `food` snapshot and any catalog `portion` are dropped, the typed figures are stored as an estimate, and a typed kcal becomes the density later grams edits scale by. Without the mark every number on a catalog row is treated as an echo and recomputed — a stale client cannot detach a row by sending old numbers beside new grams."
           },
           "swap": {
             "type": "object",
@@ -7881,7 +7950,7 @@
           },
           "ref": {
             "type": "string",
-            "description": "A `food_ref` id (\"ciqual:20346\") — the catalog row the item's numbers were grounded against (#562). Absent = the model's own estimate."
+            "description": "A `food_ref` id (\"ciqual:20346\") — the catalog row the item's numbers were grounded against (#562). Absent = an estimate: the model's own, or a row whose nutrient figures the user typed (calodex_app#3680), because they are no longer the catalog's."
           },
           "food": {
             "$ref": "#/components/schemas/FoodSnapshot",

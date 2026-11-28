@@ -11,7 +11,7 @@
 //     verdict can never describe numbers that have since changed.
 
 import {
-  type DailyTotals, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
+  type DailyTotals, type EditMealItem, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
   type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
   type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type UnknownFood, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, portionGrams, scaledItem,
@@ -847,7 +847,7 @@ function portionCorrections(before: readonly MealItem[], after: readonly MealIte
  * `ref` cannot be honoured either; every other `ref` (unknown, renamed, or invented by a
  * client) is dropped along with `food`, leaving the item an estimate.
  */
-function reconcileRefs(sent: MealItem[], stored: readonly MealItem[]): MealItem[] {
+function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): MealItem[] {
   const provenance = new Map<string, MealItem>();
   for (const s of stored) {
     if (s.ref !== undefined && s.food !== undefined) provenance.set(`${s.ref} ${s.name}`, s);
@@ -857,8 +857,22 @@ function reconcileRefs(sent: MealItem[], stored: readonly MealItem[]): MealItem[
   return sent.map((raw, ix) => {
     const { typed: _typed, ...rest } = raw;
     const was = stored[ix];
-    const i: MealItem = was?.typed && raw.grams === was.grams ? { ...rest, typed: true } : rest;
+    const i: EditMealItem = was?.typed && raw.grams === was.grams ? { ...rest, typed: true } : rest;
     const s = i.ref === undefined ? undefined : provenance.get(`${i.ref} ${i.name}`);
+    // The explicit escape (calodex_app#3680): the client marks a row whose nutrition the user
+    // typed. That row becomes an estimate — provenance and the catalog measurement go with the
+    // ref — and a kcal the catalog does not make is the density a later grams edit scales by.
+    // The flag itself is intent, never stored. Without it a catalog row's numbers are echoes and
+    // are recomputed, because a stale client cannot tell a typed figure apart from one it simply
+    // failed to rescale.
+    if (i.nutrition_override === true) {
+      const { ref: _ref, food: _food, portion: _portion, portion_count: _count, nutrition_override: _override, ...estimate } = i;
+      const catalogKcal = s?.food === undefined ? undefined : Math.round(s.food.per100.kcal * i.grams / 100);
+      const typedKcal = estimate.kcal !== undefined && catalogKcal !== undefined && Math.abs(estimate.kcal - catalogKcal) > 1e-9;
+      if (typedKcal && estimate.grams > 0) estimate.kcal_per_100g = estimate.kcal! * 100 / estimate.grams;
+      else if (typedKcal) delete estimate.kcal_per_100g;
+      return estimate;
+    }
     if (s?.food === undefined) {
       const { ref: _ref, food: _food, portion: _portion, portion_count: _count, ...estimate } = i;
       return estimate;
