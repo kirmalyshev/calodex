@@ -45,7 +45,7 @@ export const mealCss = `
 .msteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 .msteps .now{color:var(--ink);font-weight:600}.msteps .done{color:var(--muted)}
 .mbar{display:block;height:4px;border-radius:2px;background:var(--accent);transition:width 600ms ease-out}
-.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn{pointer-events:none}
+.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn,.mdet.updating .svchip{pointer-events:none}
 
 /* The "…" menu — popped under its trigger, the phone menu's items in order, delete last and bad. */
 .mwrap{position:relative}
@@ -99,13 +99,17 @@ export const mealCss = `
 .fixfield::placeholder{color:var(--faint)}
 .fixex{padding:14px 16px;background:var(--hair);box-shadow:none;font-size:15px;line-height:1.45}
 
-/* A label meal's servings stepper (ieat-app#2087): the row, two round buttons, the figure between. */
+/* The servings chip beside the meal name, and the stepper it opens (#3677). */
+.mtitlerow{align-items:center;gap:8px;flex-wrap:wrap}
+.card button.svchip{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 10px;border-radius:22px;
+  background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.svchip .ico{width:12px;height:12px;background:var(--muted)}
 .svrow{align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
 .svlab{flex:1;font-size:16px}
-.card button.svbtn{width:36px;height:36px;min-height:0;padding:0;border-radius:50%;background:none;
+.card button.svbtn{width:44px;height:44px;min-height:0;padding:0;border-radius:50%;background:none;
   box-shadow:inset 0 0 0 1.5px var(--line);font-size:20px;font-weight:400;color:var(--ink);cursor:pointer}
 .svnum{min-width:28px;text-align:center;font-size:18px}
-.svtotals{align-items:baseline;gap:14px;flex-wrap:wrap}
+.svtotals{flex-direction:column;align-items:flex-start;gap:4px}
 .svactions{gap:10px}
 .svactions .cta{flex:1}
 
