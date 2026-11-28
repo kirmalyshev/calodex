@@ -497,8 +497,8 @@ export const ROUTES = {
    * POST — copy the meal as NEW meals onto the days `dayOffsets` names ({@link CopyMealRequest};
    * calodex_app#3683), positive offsets back and negative ones forward, within the picker's
    * last-seven/next-seven window. Unbilled, one write per deduped day, verdicts recomputed
-   * server-side for every copy. Requires the `idempotency-key` header: a replay is answered from
-   * the first write, never copied again. Answers {@link CopyMealResponse}; another account's meal
+   * server-side for every copy. Requires the `idempotency-key` header or body `clientId`: a replay
+   * is answered from the first write, never copied again. Answers {@link CopyMealResponse}; another account's meal
    * is `target-gone` (409).
    */
   mealCopy: (id: string) => `/v1/meals/${encodeURIComponent(id)}/copy`,

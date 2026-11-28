@@ -2029,7 +2029,7 @@
             "name": "idempotency-key",
             "in": "header",
             "required": false,
-            "description": "Required: the key makes a retried copy replay rather than write a second set of meals.",
+            "description": "Required here or as body `clientId`: the key makes a retried copy replay rather than write a second set of meals.",
             "schema": {
               "type": "string"
             }

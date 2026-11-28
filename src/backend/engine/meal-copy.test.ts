@@ -69,6 +69,7 @@ describe("copying a meal", () => {
       expect(row.corrected).toBe(false);
       expect(row.question ?? null).toBeNull();
       expect(row.photos ?? 0).toBe(0);
+      expect(row.rating ?? null).toBeNull();
       expect(row.verdicts.kidneys).toBe("bad");
       expect(row.verdicts.weight).not.toBeUndefined();
       expect(copy.totals.kcal).toBeGreaterThanOrEqual(row.kcal);
@@ -87,6 +88,25 @@ describe("copying a meal", () => {
     expect(copied.kind).toBe("target-gone");
     expect(await store.mealsForDate(other, dateMinus(today(), 1))).toHaveLength(0);
     expect(await store.getMeal(owner, source.id)).not.toBeNull();
+  });
+
+  it("is a log behind the same paywall rule, not a free way around it", async () => {
+    const raw = memoryStore();
+    const ungranted = { ...deps, store: raw };
+    const { userId } = await raw.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en");
+    await raw.addIdentity(userId, "google", "g-" + userId.slice(0, 8));
+    const out = await patchProfile(ungranted, userId, {
+      goal: "lose", sex: "female", birth_year: 1990, height_cm: 165, weight_kg: 70,
+      target_weight_kg: 65, activity: "some", pace: "steady", country: "de",
+      restrictions: [], complete_onboarding: true,
+    });
+    if (!out || !out.ok) throw new Error("onboarding failed");
+    const source = meal(userId);
+    await raw.insertMeal(source);
+
+    const copied = await copyMeal(ungranted, userId, source.id, [1]);
+    expect(copied.kind).toBe("subscription-required");
+    expect(await raw.mealsForDate(userId, dateMinus(today(), 1))).toHaveLength(0);
   });
 
   it("answers a replay under the same client id from the first write, never a second set of copies", async () => {

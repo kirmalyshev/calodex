@@ -155,7 +155,7 @@ export const API: readonly Endpoint[] = [
     responses: { 200: "MealRedated", 400: ERROR, 409: ERROR } },
   { route: "mealCopy", method: "POST", path: "/v1/meals/{id}/copy", auth: "bearer",
     summary: "Copy the meal as NEW meals onto one or more days, positive offsets back and negative ones forward. Verdicts are recomputed for every copy; unbilled, but refused once no free log or entitlement is left.",
-    headers: { [IDEMPOTENCY_KEY]: "Required: the key makes a retried copy replay rather than write a second set of meals." },
+    headers: { [IDEMPOTENCY_KEY]: "Required here or as body `clientId`: the key makes a retried copy replay rather than write a second set of meals." },
     request: { json: "CopyMealRequest" },
     responses: { 200: "CopyMealResponse", 400: ERROR, 409: ERROR, 429: ERROR }, refuses: true },
   { route: "mealFocus", method: "POST", path: "/v1/meals/{id}/focus", auth: "bearer",
