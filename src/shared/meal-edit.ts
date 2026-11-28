@@ -115,7 +115,7 @@ export function nutritionOverrideItem(
   delete display.portion_count;
   delete (display as Partial<EditMealItem>).nutrition_override;
   if (display.grams > 0 && display.kcal_per_100g !== undefined) {
-    const consistent = Math.abs((display.kcal_per_100g * display.grams) / 100 - nutrition.kcal) < 0.5;
+    const consistent = Math.abs((display.kcal_per_100g * display.grams) / 100 - nutrition.kcal!) < 0.5;
     if (!consistent) delete display.kcal_per_100g;
   }
   return { write, display };
