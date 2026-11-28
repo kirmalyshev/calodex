@@ -26,7 +26,7 @@ const KEYS = [
   "goalCtaPhone", "subscribePhone", "seePlansPhone", "declinedNotePhone",
   "trialEnds", "trialEndsNote", "trialEndsCancel", "renewsLabelPhone",
   "lapsedTitlePhone",
-  "closeLabel", "restoreLink", "termsLink", "privacyLink",
+  "closeLabel", "restoreLink", "redeemLink", "termsLink", "privacyLink",
   "plansTrialTitle", "plansUnlockTitle", "planSave", "billedYearly", "perMonthShort",
   "tryTitle", "tryToday", "tryDay", "tryRemind", "tryBill", "tryThenBilled", "noPaymentDue",
   "tryCta", "offerSpecialTitle", "offerClaimTrial", "offerTrialNote", "offerVsMonthly",
@@ -206,11 +206,21 @@ describe("PAY_COPY", () => {
     // every modal board's chrome and the legal footer
     expect(en.closeLabel).toBe("Close");
     expect(en.restoreLink).toBe("Restore");
+    expect(en.redeemLink).toBe("Redeem code");
     expect(en.termsLink).toBe("Terms");
     expect(en.privacyLink).toBe("Privacy");
     // pay-cal-a-newyear (ieat-app#3605): A's band and footer while the promotion is live; the board's words.
     expect(fill(en.promoBand, { percent: paywallPercent(50, "en") }).toUpperCase()).toBe("NEW YEAR \u221250%");
     expect(fill(en.promoFooter, { price: "€19.99", regular: "€39.99" })).toBe("€19.99 first year, then €39.99/year. Cancel any time.");
+  });
+
+  it("names the redeem-code foot link in the ruled languages (ieat-app#3694)", () => {
+    expect(PAY_COPY.en.redeemLink).toBe("Redeem code");
+    expect(PAY_COPY.de!.redeemLink).toBe("Code einlösen");
+    expect(PAY_COPY.ru!.redeemLink).toBe("Ввести промокод");
+    for (const lang of LANGS_READY) {
+      expect(PAY_COPY[lang]!.redeemLink, lang).toBeTruthy();
+    }
   });
 
   it("carries no claim the gate refuses, in any of the eight", () => {
