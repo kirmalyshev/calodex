@@ -52,6 +52,8 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "", grams: 50 }, portion_count: 2 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 0 }, portion_count: 2 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 50, junk: true }, portion_count: 2 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 5000 }, portion_count: 201 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 5000 }, portion_count: 200 }] })).toBe(true);
     expect(isEditMealRequest({ servings: 20 })).toBe(true);
     expect(isEditMealRequest({ servings: 0 })).toBe(false);
     expect(isEditMealRequest({ servings: -0.5 })).toBe(false);
