@@ -618,7 +618,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         item.portion_count ?? portionCountFor({ grams: item.grams }, portions[portionIndex ?? 0]!));
       countField.setAttribute("aria-label", mc.servingsTitle);
       const countPill = el("label", "amtpill");
-      countPill.append(countField);
+      const countUnit = el("span", "", portionIndex === null ? "" : portions[portionIndex]!.label);
+      countPill.append(countField, countUnit, kitEl(ico("pencil")));
       servingRow.append(el("span", "amlab", mc.servingsTitle), countPill);
       const chipEls: HTMLButtonElement[] = [];
       const syncChips = (): void => {
@@ -628,6 +629,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
           c.setAttribute("aria-pressed", `${on}`);
         });
         servingRow.hidden = portionIndex === null;
+        amountRow.hidden = portionIndex !== null;
+        countUnit.textContent = portionIndex === null ? "" : portions[portionIndex]!.label;
       };
       const pick = (idx: number | null): void => {
         portionIndex = idx;
