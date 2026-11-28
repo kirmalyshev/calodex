@@ -904,8 +904,9 @@ create index if not exists meals_user_date_idx on meals(user_id, date);
 alter table meals add column if not exists question jsonb;
 -- The phone break taken after the meal (ieat-app#2129): {minutes, completed}, null until one is recorded.
 alter table meals add column if not exists focus jsonb;
--- Read off a nutrition label (ieat-app#2087): scan provenance, and the legacy servings count on rows
--- stored before servings became a column of the meal itself (#3677). Null on every other meal.
+-- Read off a nutrition label (ieat-app#2087): scan provenance. Its servings count remains the
+-- compatible count for a label meal while released servers can write only there (#3677); the meal's
+-- own column mirrors it on new writes. Null on every other meal.
 alter table meals add column if not exists label jsonb;
 -- Servings eaten (ieat-app#3677), nullable because a row never edited is one serving as logged.
 alter table meals add column if not exists servings double precision;

@@ -62,15 +62,53 @@ describe("servings on a meal that is not a label scan", () => {
 
   it("keeps a nutrition-label meal marked as a label, and scales from the label count stored before this field existed", async () => {
     const { userId, mealId } = await loggedMeal();
-    await store.updateMeal(userId, mealId, { label: { servings: 2 } });
+    await store.updateMeal(userId, mealId, {
+      label: { servings: 2 },
+      items: [{ name: "Rice", grams: 100, kcal: 100, protein_g: 10, carbs_g: 20, fat_g: 5 }],
+      kcal: 100, protein_g: 10, carbs_g: 20, fat_g: 5,
+    });
     const before = (await store.getMeal(userId, mealId))!;
 
     const three = await editMeal(deps, userId, mealId, { servings: 3 });
     if (three.kind !== "updated") throw new Error("expected updated");
     const m = (await store.getMeal(userId, mealId))!;
     expect(m.servings).toBe(3);
-    expect(m.label?.servings).toBe(2);
-    expect(m.kcal).toBe(Math.round(before.kcal * 1.5));
+    expect(m.label?.servings).toBe(3);
+    expect(m.kcal).toBe(150);
+  });
+
+  it("reads a label scan's count first, so a write from a released server cannot diverge from the meal column", async () => {
+    const { userId, mealId } = await loggedMeal();
+    // The mixed-deploy state: the meal column says one count, while a released server — which
+    // knows only `label.servings` — has since written another. The count it wrote is the count
+    // the totals actually represent.
+    await store.updateMeal(userId, mealId, { label: { servings: 2 }, servings: 3 });
+    const before = (await store.getMeal(userId, mealId))!;
+
+    const four = await editMeal(deps, userId, mealId, { servings: 4 });
+    if (four.kind !== "updated") throw new Error("expected updated");
+    const m = (await store.getMeal(userId, mealId))!;
+    expect(m.kcal).toBe(Math.round(before.kcal * 2));
+    expect(m.servings).toBe(4);
+    expect(m.label?.servings).toBe(4);
+  });
+
+  it("keeps a density-backed item consistent with itself, and the meal total as its items' sum", async () => {
+    const { userId, mealId } = await loggedMeal();
+    const items = [{
+      name: "Rice", name_en: "rice", grams: 101, kcal: 101, kcal_per_100g: 100,
+      protein_g: 2.1, carbs_g: 22.2, fat_g: 0.3,
+    }];
+    await store.updateMeal(userId, mealId, { items, kcal: 101, protein_g: 2.1, carbs_g: 22.2, fat_g: 0.3 });
+
+    const half = await editMeal(deps, userId, mealId, { servings: 0.5 });
+    if (half.kind !== "updated") throw new Error("expected updated");
+    const m = (await store.getMeal(userId, mealId))!;
+    expect(m.items[0]).toMatchObject({ grams: 50.5, kcal: 51, kcal_per_100g: 100 });
+    expect(m.kcal).toBe(51);
+    expect(m.items[0]!.protein_g).toBe(m.protein_g);
+    expect(m.items[0]!.carbs_g).toBe(m.carbs_g);
+    expect(m.items[0]!.fat_g).toBe(m.fat_g);
   });
 
   it("refuses another user's meal", async () => {

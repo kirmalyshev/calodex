@@ -56,10 +56,12 @@ describe("mealEditRequest — the PATCH body is items, or null when nothing move
 describe("servings on any meal (#3677)", () => {
   const plate = { kcal: 600, protein_g: 30, carbs_g: 60, fat_g: 20 };
 
-  it("reads one serving as logged, the meal's own count first, and a legacy label count after it", () => {
+  it("reads one serving as logged, a label scan's compatible count first, and the meal's own count after it", () => {
     expect(mealServings({})).toBe(1);
     expect(mealServings({ label: { servings: 2 } })).toBe(2);
-    expect(mealServings({ servings: 3, label: { servings: 2 } })).toBe(3);
+    // A released server knows only `label.servings`; while one can still write, that count wins
+    // over a top-level count it could not update (#3677 rolling-deploy compatibility).
+    expect(mealServings({ servings: 3, label: { servings: 2 } })).toBe(2);
   });
 
   it("previews the figures at a new count from the stored count, rounded for display", () => {

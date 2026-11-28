@@ -15,9 +15,9 @@
 import type { EditMealRequest } from "./contract.ts";
 import type { MealAnalysis, MealItem, MealRecord } from "./types.ts";
 
-/** The servings a meal row stands for: its own count, a legacy label scan's, or one as logged. */
+/** The servings a meal row stands for. A label scan's count comes first while released servers still write only there; then the meal's own count, then one as logged. */
 export function mealServings(meal: Pick<MealRecord, "servings" | "label">): number {
-  return meal.servings ?? meal.label?.servings ?? 1;
+  return meal.label?.servings ?? meal.servings ?? 1;
 }
 
 const tenth = (n: number): number => Math.round(n * 10) / 10;

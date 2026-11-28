@@ -380,9 +380,10 @@ export interface MealAnalysis {
   confidence: string;
   notes: string;
   /**
-   * Set when the numbers were read off a nutrition label (ieat-app#2087): `servings` is how many of
-   * the printed serving this meal is. Absent on every other meal. Per-serving figures are
-   * `total / servings`, derived by the client and never stored beside the totals.
+   * Set when the numbers were read off a nutrition label (ieat-app#2087). On such a meal
+   * `label.servings` is the compatible count while released servers can still write it (#3677);
+   * the meal's own `servings` mirrors it on new writes. Absent on every other meal. Per-serving
+   * figures are `total / servings`, derived by the client and never stored beside the totals.
    */
   label?: MealLabel | null;
 }
@@ -399,8 +400,9 @@ export interface MealQuestion {
 }
 
 /**
- * A meal read off a nutrition label (ieat-app#2087). `servings` is the count rows carried before
- * servings moved to the meal itself (#3677); new writes keep it as scan provenance, not as the count.
+ * A meal read off a nutrition label (ieat-app#2087). `servings` is this meal's count while
+ * released servers can still write it (#3677 rolling compatibility); the meal's own column mirrors
+ * it on new writes, and on rows stored before that column existed it is the legacy count.
  */
 export interface MealLabel {
   servings: number;
@@ -448,8 +450,8 @@ export interface MealRecord extends MealAnalysis {
   /** Set when the meal was read off a nutrition label (ieat-app#2087); null on every other meal. */
   label?: MealLabel | null;
   /**
-   * How many servings of this meal were eaten (#3677), by halves. Absent means 1 — or, on a label
-   * scan stored before this field existed, the scan's legacy `label.servings`.
+   * How many servings of this meal were eaten (#3677), by halves. Absent means 1. On a label scan
+   * this mirrors `label.servings` while released servers can still write only that field.
    */
   servings?: number;
   /**

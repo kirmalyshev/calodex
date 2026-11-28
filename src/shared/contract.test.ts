@@ -34,6 +34,11 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, kcal_per_100g: -1 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, name_en: 7 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, name_en: "egg", kcal: 78, kcal_per_100g: 155 }] })).toBe(true);
+    expect(isEditMealRequest({ servings: 20 })).toBe(true);
+    expect(isEditMealRequest({ servings: 0 })).toBe(false);
+    expect(isEditMealRequest({ servings: -0.5 })).toBe(false);
+    expect(isEditMealRequest({ servings: Number.NaN })).toBe(false);
+    expect(isEditMealRequest({ servings: Number.POSITIVE_INFINITY })).toBe(false);
     expect(isEditMealRequest({ servings: 0.25 })).toBe(false);
     expect(isEditMealRequest({ servings: 21 })).toBe(false);
     expect(isEditMealRequest({ servings: 2, kcal: 320 })).toBe(false);

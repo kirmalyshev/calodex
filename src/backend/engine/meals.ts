@@ -14,7 +14,7 @@ import {
   type DailyTotals, type EditMealRequest, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
   type MealRedated, type MealUpdated, type PhotoEvent,
-  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_SAVED_MEALS, mealNames, mealServings,
+  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_SAVED_MEALS, mealNames, mealServings, scaledItem,
   explainTargets, verdictsFromTargets, visibleVerdicts,
 } from "@eait/shared";
 import {
@@ -459,23 +459,34 @@ async function mayAsk(
  */
 /**
  * A meal at a new serving count (#3677): every item's grams and numbers and every total scaled by
- * `servings / stored`. A row with no count yet is at 1 serving, except a label scan stored before
- * this field existed, whose legacy count is `label.servings`. The count is the meal's own: writing
- * it into `label` would mark an ordinary meal as a nutrition-label scan.
+ * `servings / stored`. A row with no count yet is at 1 serving. A label scan reads
+ * `label.servings` first while released servers can still write only there; the write below
+ * mirrors the new count into both fields. On every other meal the count is the meal column.
  */
 function atServings(meal: MealRecord, servings: number) {
   const f = servings / mealServings(meal);
   const r1 = (n: number) => Math.round(n * 10) / 10;
+  if (f === 1) {
+    return {
+      items: meal.items,
+      kcal: meal.kcal, protein_g: meal.protein_g, carbs_g: meal.carbs_g, fat_g: meal.fat_g,
+      satfat_g: meal.satfat_g, fiber_g: meal.fiber_g, sugar_g: meal.sugar_g, sodium_mg: meal.sodium_mg,
+      servings,
+    };
+  }
+  // Items first, through the one density rule (`scaledItem`); then the meal's macros are their sum
+  // whenever every row carries them. A row that does not report a field makes the total unknowable
+  // rather than zero, so that total scales as a whole — never a sum with a silent share missing.
+  const items = meal.items.map((it) => scaledItem(it, r1(it.grams * f)));
+  const macro = <K extends "kcal" | "protein_g" | "carbs_g" | "fat_g">(field: K, round: (n: number) => number): number => {
+    const sum = items.length > 0 && items.every((it) => it[field] !== undefined)
+      ? items.reduce((s, it) => s + (it[field] ?? 0), 0)
+      : meal[field] * f;
+    return round(sum);
+  };
   return {
-    items: meal.items.map((it) => ({
-      ...it,
-      grams: r1(it.grams * f),
-      ...(it.kcal !== undefined ? { kcal: r1(it.kcal * f) } : {}),
-      ...(it.protein_g !== undefined ? { protein_g: r1(it.protein_g * f) } : {}),
-      ...(it.carbs_g !== undefined ? { carbs_g: r1(it.carbs_g * f) } : {}),
-      ...(it.fat_g !== undefined ? { fat_g: r1(it.fat_g * f) } : {}),
-    })),
-    kcal: Math.round(meal.kcal * f), protein_g: r1(meal.protein_g * f), carbs_g: r1(meal.carbs_g * f), fat_g: r1(meal.fat_g * f),
+    items,
+    kcal: macro("kcal", Math.round), protein_g: macro("protein_g", r1), carbs_g: macro("carbs_g", r1), fat_g: macro("fat_g", r1),
     satfat_g: r1(meal.satfat_g * f), fiber_g: r1(meal.fiber_g * f), sugar_g: r1(meal.sugar_g * f), sodium_mg: Math.round(meal.sodium_mg * f),
     servings,
   };
@@ -582,7 +593,12 @@ export async function editMeal(
   const updated = await deps.store.updateMealIfVersion(userId, mealId, {
     ...merged,
     verdicts: await gatedVerdicts(deps, userId, merged),
-    ...(atN ? { servings: atN.servings } : {}),
+    ...(atN ? {
+      servings: atN.servings,
+      // Released servers still read and write a label meal's count here. Mirror it or a mixed
+      // deploy scales the next write from the count the row had before this one (#3677).
+      ...(existing.label ? { label: { ...existing.label, servings: atN.servings } } : {}),
+    } : {}),
     corrected: true,
     // One question per meal, asked once. Cleared by the write that answers it — and by a manual
     // edit too, which is the same write: once the user has changed the numbers themselves, the
