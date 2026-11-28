@@ -257,11 +257,11 @@ export const deleteSavedMeal = async (id: string): Promise<void> => {
   }
 };
 
-export const logSavedMeal = async (id: string, dayOffset: number): Promise<MealLogged | TargetGone> => {
+export const logSavedMeal = async (id: string): Promise<MealLogged | TargetGone> => {
   try {
     return await api<MealLogged>(
       `/saved-meals/${encodeURIComponent(id)}/log`,
-      json("POST", { dayOffset } satisfies RedateMealRequest),
+      json("POST", { dayOffset: 0 } satisfies RedateMealRequest),
     );
   } catch (e) {
     if (e instanceof ApiError && e.status === 409 && e.body?.error === "target-gone") {

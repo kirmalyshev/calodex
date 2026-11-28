@@ -575,16 +575,23 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   // meal (`source_meal_id`). Unbilled; a failure puts a note on the meal screen and leaves state alone.
   let savedId: string | null = null;
   let saveBusy = false;
+  let saveReady = false;
+  let saveAvailable = true;
   let saveBtn: HTMLButtonElement | null = null;
   let saveLabel: Text | null = null;
   const syncSaveItem = (): void => {
     if (saveLabel !== null) saveLabel.data = savedId !== null ? sm.menuRemove : sm.menuSave;
-    if (saveBtn !== null) saveBtn.disabled = saveBusy;
+    if (saveBtn !== null) saveBtn.disabled = saveBusy || !saveReady;
   };
   void listSavedMeals().then((all) => {
     savedId = all.find((m) => m.source_meal_id === id)?.id ?? null;
+    saveReady = true;
     syncSaveItem();
-  }).catch(() => {});
+  }).catch(() => {
+    // Without the list we cannot know whether this meal is already saved: no guessing menu item.
+    saveAvailable = false;
+    saveBtn?.remove();
+  });
 
   const menuButton = (meal: MealRecord): HTMLElement => {
     const box = el("div", "mwrap");
@@ -609,7 +616,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     save.type = "button";
     const label = document.createTextNode(savedId !== null ? sm.menuRemove : sm.menuSave);
     save.append(kitEl(ico("bookmark")), label);
-    save.disabled = saveBusy;
+    save.disabled = saveBusy || !saveReady;
     saveBtn = save;
     saveLabel = label;
     save.addEventListener("click", () => {
@@ -624,11 +631,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
           if (was !== null) {
             await deleteSavedMeal(was);
             savedId = null;
+            tell(sm.removeDone);
           } else {
             savedId = (await saveMeal(meal.id)).id;
+            tell(sm.section);
           }
         } catch {
-          tell(sm.saveFailed);
+          tell(was !== null ? sm.removeFailed : sm.saveFailed);
         } finally {
           saveBusy = false;
           syncSaveItem();
@@ -643,7 +652,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     else popup.append(
       // "Correct" is the one fix verb (#1546) — a panel over this detail, not the chat.
       item("pencil", mc.phoneCorrect, () => openPanel(fixPanel(meal))),
-      save,
+      ...(saveAvailable ? [save] : []),
       // Nothing to re-read without a photo, so a typed meal is not offered it (ieat-app#1225).
       ...((meal.photos ?? 0) > 0 ? [reread] : []),
       item("calendar-back", mc.phoneMenuMoveYesterday, () =>

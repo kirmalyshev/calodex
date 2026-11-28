@@ -44,6 +44,7 @@ test("meal ⋯ menu saves and unsaves a meal, persists across reload, and leaves
   await expect(menu).toBeVisible();
   await expect(menu.locator(".mi").nth(0)).toHaveText("Correct");
   await expect(menu.locator(".mi").nth(1)).toHaveText("Save meal");
+  await expect(menu.locator(".mi").nth(1)).toBeEnabled();
 
   const savedRes = page.waitForResponse((r) => r.url().endsWith("/v1/saved-meals") && r.request().method() === "POST" && r.ok());
   await menu.getByText("Save meal").click();
@@ -85,6 +86,7 @@ test("empty food search shows saved meals, one-tap + re-logs onto today, and des
   await page.goto(`/#/meal/${meal.id}`);
   await expect(page.locator(".hsr")).toBeVisible();
   await page.locator(".mdetail .ib").last().click();
+  await expect(page.locator(".mpopup").getByText("Save meal")).toBeEnabled();
   const savedRes = page.waitForResponse((r) => r.url().endsWith("/v1/saved-meals") && r.request().method() === "POST" && r.ok());
   await page.locator(".mpopup").getByText("Save meal").click();
   await savedRes;
@@ -146,4 +148,100 @@ test("narrow 390px: swipe left on a saved meal reveals Remove and removes it", a
   await delRes;
   await expect(page.locator(".fs-srow")).toHaveCount(0);
   await expect(page.locator(".fs-empty")).toBeVisible();
+});
+
+async function saveMealByApi(page: Page, mealId: string): Promise<void> {
+  const res = await page.request.post("/v1/saved-meals", {
+    headers: { authorization: `Bearer ${await sessionToken(page)}` },
+    data: { mealId },
+  });
+  expect(res.status()).toBe(200);
+}
+
+test("a re-log in flight cannot be tapped twice when the rows redraw", async ({ inWebApp: page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logMeal(page);
+  await logMeal(page);
+  const meals = (await day(page)).meals;
+  expect(meals.length).toBeGreaterThanOrEqual(2);
+  await saveMealByApi(page, meals[0]!.id);
+  await saveMealByApi(page, meals[1]!.id);
+
+  let posts = 0;
+  await page.route(/\/api\/v1\/saved-meals\/[^/]+\/log$/, async (route) => {
+    posts += 1;
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await route.continue();
+  });
+  await openFoodSearch(page);
+  await expect(page.locator(".fs-srow")).toHaveCount(2);
+  const first = page.locator(".fs-srow").first();
+  await first.locator("button.fs-add").click();
+  await expect(first.locator("button.fs-add")).toBeDisabled();
+
+  // Removing the other row redraws the list mid-flight; the rebuilt first row is still in-flight.
+  const second = page.locator(".fs-srow").nth(1);
+  await second.hover();
+  await second.locator("button.fs-srem").click();
+  const rebuilt = page.locator(".fs-srow").first();
+  await expect(rebuilt.locator("button.fs-add")).toBeDisabled();
+  await rebuilt.locator("button.fs-add").click({ force: true }).catch(() => {});
+  await page.waitForTimeout(500);
+  expect(posts).toBe(1);
+});
+
+test("a failed re-log alerts in place, and target-gone drops the saved row", async ({ inWebApp: page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logMeal(page);
+  const meal = (await day(page)).meals[0]!;
+  await saveMealByApi(page, meal.id);
+  await openFoodSearch(page);
+  const row = page.locator(".fs-srow").first();
+  await expect(row).toBeVisible();
+
+  await page.route(/\/api\/v1\/saved-meals\/[^/]+\/log$/, async (route) => {
+    await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "server-error" }) });
+  });
+  await row.locator("button.fs-add").click();
+  await expect(row.locator(".fs-fail[role=alert]")).toContainText("Couldn't log that. Click +");
+  await expect(row.locator("button.fs-add")).not.toBeDisabled();
+  await page.unroute(/\/api\/v1\/saved-meals\/[^/]+\/log$/);
+
+  await page.route(/\/api\/v1\/saved-meals\/[^/]+\/log$/, async (route) => {
+    await route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ error: "target-gone", on: "saved-meal" }) });
+  });
+  await row.locator("button.fs-add").click();
+  await expect(page.locator(".fs-srow")).toHaveCount(0);
+});
+
+test("a failed remove restores its row with an alert, and the keyboard reaches Remove", async ({ inWebApp: page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logMeal(page);
+  const meal = (await day(page)).meals[0]!;
+  await saveMealByApi(page, meal.id);
+
+  await page.route(/\/api\/v1\/saved-meals\/[^/]+$/, async (route) => {
+    if (route.request().method() === "DELETE") {
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "server-error" }) });
+    } else await route.continue();
+  });
+  await openFoodSearch(page);
+  const row = page.locator(".fs-srow").first();
+  await row.hover();
+  await row.locator("button.fs-srem").click();
+  await expect(page.locator(".fs-srow")).toHaveCount(1);
+  await expect(page.locator(".fs-srow .fs-fail[role=alert]")).toHaveText("Couldn't remove that. Try again.");
+  await page.unroute(/\/api\/v1\/saved-meals\/[^/]+$/);
+
+  // Keyboard: field → Cancel → + → Remove; Enter removes without a mouse.
+  await page.locator(".fs-field").focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(page.locator(".fs-srem")).toBeFocused();
+  const del = page.waitForResponse((r) => r.url().includes("/v1/saved-meals/") && r.request().method() === "DELETE" && r.ok());
+  await page.keyboard.press("Enter");
+  await del;
+  await expect(page.locator(".fs-srow")).toHaveCount(0);
+  await expect(page.locator(".fs-field")).toBeFocused();
 });

@@ -2,7 +2,7 @@
 // sheet (560 px dialog on desktop) — the field, Cancel (Done once something was logged), "Logging
 // to today · N kcal left", her saved meals while the field is empty, and the catalog's rows with
 // a round + plus "Ask in Chat" and "Enter numbers" once she types. One tap logs a catalog food's
-// serving or re-logs a saved meal (`POST /v1/saved-meals/:id/log { dayOffset }`); the sheet stays
+// serving or re-logs a saved meal onto today (`POST /v1/saved-meals/:id/log { dayOffset: 0 }`); the sheet stays
 // open. Nothing is estimated here: the server reads the numbers and computes verdicts after the write.
 
 import type { FoodSearchResponse, SavedMeal } from "@eait/shared/contract";
@@ -23,8 +23,6 @@ export interface FoodSearchOpts {
   lang: Lang;
   /** kcal left on the target day, or null when the day could not be read — the line is left out. */
   left: number | null;
-  /** Days before today to re-log a saved meal onto (0 = today). Sent as an offset, never a date. */
-  dayOffset?: number;
   /** Her words go to the composer, as a typed meal does today. */
   onTell: (q: string) => void;
   /** "Enter numbers": the typed-numbers sheet, the query as its name. */
@@ -43,11 +41,13 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
   const sc = savedMealsCopyFor(o.lang);
   const num = wholeNumbers(o.lang);
   const kn = kcalNumbers(o.lang);
-  const dayOffset = o.dayOffset ?? 0;
   let left = o.left;
   let seq = 0;
   let savedMeals: SavedMeal[] | null = null;
   const savedLogged = new Set<string>();
+  const inflight = new Set<string>();
+  const removeFailedIds = new Set<string>();
+  let hot = -1;
   const photoCache = new Map<string, Promise<string | null>>();
 
   const sheet = el("div", "fs");
@@ -102,13 +102,15 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     const idx = savedMeals.findIndex((x) => x.id === m.id);
     if (idx < 0) return;
     closeOpenSwipe();
+    removeFailedIds.delete(m.id);
     savedMeals = savedMeals.filter((x) => x.id !== m.id);
-    if (field.value.trim() === "") renderSaved();
+    if (field.value.trim() === "") { renderSaved(); field.focus(); }
     void deleteSavedMeal(m.id).catch(() => {
       if (savedMeals === null || savedMeals.some((x) => x.id === m.id)) return;
       const next = [...savedMeals];
       next.splice(Math.min(idx, next.length), 0, m);
       savedMeals = next;
+      removeFailedIds.add(m.id);
       if (field.value.trim() === "") renderSaved();
     });
   };
@@ -131,7 +133,9 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
 
     const txt = el("div", "fs-txt");
     const fail = el("div", "fs-fail");
-    fail.hidden = true;
+    fail.setAttribute("role", "alert");
+    fail.hidden = !removeFailedIds.has(m.id);
+    if (removeFailedIds.has(m.id)) fail.textContent = sc.removeFailed;
     txt.append(
       el("b", "", m.name),
       el("div", "fs-sub", `${kn(m.kcal)} ${UNIT_KCAL[o.lang]}`),
@@ -144,15 +148,21 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     const face = (done: boolean): void => {
       add.classList.toggle("fs-done", done);
       add.setAttribute("aria-label", fill(done ? sc.loggedLabel : sc.logLabel, { name: m.name }));
+      add.setAttribute("aria-disabled", String(done || inflight.has(m.id)));
+      add.disabled = done || inflight.has(m.id);
       add.replaceChildren(el("i", `ico i-${done ? "check" : "plus"}`));
     };
     face(savedLogged.has(m.id));
     let busy = false;
     add.addEventListener("click", async () => {
-      if (busy || add.classList.contains("fs-done")) return;
-      busy = true; fail.hidden = true;
+      if (busy || inflight.has(m.id) || add.classList.contains("fs-done")) return;
+      busy = true;
+      inflight.add(m.id);
+      add.disabled = true;
+      add.setAttribute("aria-disabled", "true");
+      fail.hidden = true;
       try {
-        const res = await logSavedMeal(m.id, dayOffset);
+        const res = await logSavedMeal(m.id);
         if (res.kind === "target-gone") {
           savedMeals = savedMeals?.filter((x) => x.id !== m.id) ?? savedMeals;
           if (field.value.trim() === "") renderSaved();
@@ -167,7 +177,14 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
         const code = e instanceof ApiError ? e.body?.error : undefined;
         fail.textContent = code !== undefined && Object.hasOwn(COPY.refusals, code) ? COPY.refusals[code]! : c.logFailedWeb;
         fail.hidden = false;
-      } finally { busy = false; }
+      } finally {
+        busy = false;
+        inflight.delete(m.id);
+        if (!add.classList.contains("fs-done") && add.isConnected) {
+          add.disabled = false;
+          add.setAttribute("aria-disabled", "false");
+        }
+      }
     });
 
     row.append(tile, txt, add);
@@ -235,6 +252,7 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
 
   const renderSaved = (): void => {
     closeOpenSwipe();
+    hot = -1;
     const nodes: HTMLElement[] = [el("div", "lab fs-sec", sc.section)];
     if (savedMeals !== null) {
       if (savedMeals.length === 0) nodes.push(el("p", "fs-empty", sc.empty));
@@ -274,6 +292,7 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     const row = el("div", "fs-row");
     const txt = el("div", "fs-txt");
     const fail = el("div", "fs-fail");
+    fail.setAttribute("role", "alert");
     fail.hidden = true;
     txt.append(
       el("b", "", f.names[o.lang] ?? (o.lang === "de" ? f.name_de : o.lang === "en" ? f.name_en : null) ?? f.name),
@@ -292,7 +311,10 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     let busy = false;
     add.addEventListener("click", async () => {
       if (busy || add.classList.contains("fs-done")) return;
-      busy = true; fail.hidden = true;
+      busy = true;
+      add.disabled = true;
+      add.setAttribute("aria-disabled", "true");
+      fail.hidden = true;
       try {
         await api("/foods/log", {
           method: "POST",
@@ -308,7 +330,13 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
         const code = e instanceof ApiError ? e.body?.error : undefined;
         fail.textContent = code !== undefined && Object.hasOwn(COPY.refusals, code) ? COPY.refusals[code]! : c.logFailedWeb;
         fail.hidden = false;
-      } finally { busy = false; }
+      } finally {
+        busy = false;
+        if (!add.classList.contains("fs-done") && add.isConnected) {
+          add.disabled = false;
+          add.setAttribute("aria-disabled", "false");
+        }
+      }
     });
     row.append(txt, add);
     return row;
@@ -355,7 +383,6 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
   });
   // ↑/↓ move a highlight over the rows (saved rows, or catalog rows then "Tell"); Return picks it.
   // With nothing highlighted and text typed, Return is the board's "Tell" — her words go to Chat.
-  let hot = -1;
   const rowsNow = (): HTMLElement[] => [...body.querySelectorAll<HTMLElement>(".fs-row")];
   const paintHot = (): void => {
     rowsNow().forEach((r, i) => r.classList.toggle("fs-hot", i === hot));
@@ -369,7 +396,8 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
       const pick = hot >= 0 ? rows[hot] : undefined;
       if (pick !== undefined) {
         e.preventDefault();
-        pick.querySelector<HTMLElement>(".fs-add")?.click() ?? pick.click();
+        const add = pick.querySelector<HTMLElement>(".fs-add");
+        if (add !== null) add.click(); else pick.click();
       } else if (field.value.trim() !== "") {
         e.preventDefault();
         o.onClose();

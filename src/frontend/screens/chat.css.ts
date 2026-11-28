@@ -306,13 +306,12 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
   .fs-srow > .fs-saved { flex: 1; min-width: 0; position: static; z-index: auto; transition: none; }
   .fs-srow.open > .fs-saved, .fs-srow:has(.fs-srem:focus-visible) > .fs-saved { transform: none; }
   .fs-srem { position: static; width: 0; height: 32px; flex: 0 0 0; overflow: hidden; opacity: 0;
-    border-radius: var(--r-ctl); background: transparent; color: var(--muted);
+    border-radius: var(--r-ctl); background: var(--bad-tint); color: var(--bad);
     transition: width .16s var(--ease), flex-basis .16s var(--ease), margin-left .16s var(--ease),
       opacity .16s var(--ease), background .15s ease, color .15s ease; }
   .fs-srem .ico { display: block; }
   .fs-srem-lbl { display: none; }
   .fs-srow:hover .fs-srem, .fs-srow:focus-within .fs-srem { width: 32px; flex-basis: 32px; margin-left: 6px; opacity: 1; }
-  .fs-srem:hover, .fs-srem:focus-visible { background: var(--bad-tint); color: var(--bad); }
   .fs-srem:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {

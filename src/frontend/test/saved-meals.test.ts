@@ -79,7 +79,7 @@ describe("saved-meals web API helpers", () => {
     await expect(deleteSavedMeal("sv-err")).rejects.toBeInstanceOf(ApiError);
   });
 
-  it("logs a saved meal with dayOffset and maps 409 target-gone to a TargetGone result", async () => {
+  it("logs a saved meal onto today and maps 409 target-gone to a TargetGone result", async () => {
     const logged: MealLogged = {
       kind: "logged", mealId: "m-new",
       analysis: {
@@ -92,7 +92,7 @@ describe("saved-meals web API helpers", () => {
       verdictLabels: [], verdictHeadline: "",
     };
     answer = () => json(logged);
-    expect(await logSavedMeal("sv-1", 0)).toEqual(logged);
+    expect(await logSavedMeal("sv-1")).toEqual(logged);
     expect(calls[0]).toEqual({
       url: "/api/v1/saved-meals/sv-1/log",
       method: "POST",
@@ -100,10 +100,10 @@ describe("saved-meals web API helpers", () => {
     });
 
     answer = () => json({ error: "target-gone", on: "saved-meal" }, 409);
-    expect(await logSavedMeal("sv-gone", 0)).toEqual({ kind: "target-gone", on: "saved-meal" });
+    expect(await logSavedMeal("sv-gone")).toEqual({ kind: "target-gone", on: "saved-meal" });
 
     answer = () => json({ error: "subscription-required" }, 402);
-    await expect(logSavedMeal("sv-1", 0)).rejects.toBeInstanceOf(ApiError);
+    await expect(logSavedMeal("sv-1")).rejects.toBeInstanceOf(ApiError);
   });
 });
 
