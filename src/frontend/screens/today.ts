@@ -1120,6 +1120,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
   //    then the meal screen's existing confirm dialog and `DELETE /v1/meals/:id`. ──────────
   let openRow: HTMLElement | null = null;
   let deleteEl: HTMLElement | null = null;
+  let deleteRestoreFocus: Element | null = null;
   const closeOpenRow = (): void => {
     if (openRow === null) return;
     openRow.classList.remove("open");
@@ -1127,12 +1128,21 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     if (fg !== null) { fg.style.transition = ""; fg.style.transform = ""; }
     openRow = null;
   };
-  const closeDelete = (): void => { deleteEl?.remove(); deleteEl = null; };
+  const closeDelete = (): void => {
+    window.removeEventListener("hashchange", closeDelete);
+    deleteEl?.remove();
+    deleteEl = null;
+    if (deleteRestoreFocus instanceof HTMLElement && deleteRestoreFocus.isConnected &&
+        deleteRestoreFocus.closest("[hidden]") === null) deleteRestoreFocus.focus();
+    deleteRestoreFocus = null;
+  };
   const openDelete = (meal: MealRecord): void => {
     closeOpenRow();
     closeDelete();
+    deleteRestoreFocus = document.activeElement;
     const scrim = el("div", "mscrim hard");
     deleteEl = scrim;
+    window.addEventListener("hashchange", closeDelete, { once: true });
     scrim.addEventListener("click", (e) => { if (e.target === scrim) closeDelete(); });
     const dlg = el("div", "card rise mdel");
     dlg.setAttribute("role", "dialog");
@@ -1146,6 +1156,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     confirm.type = "button";
     cancel.addEventListener("click", closeDelete);
     confirm.addEventListener("click", () => {
+      deleteRestoreFocus = null;
       closeDelete();
       turn(async () => {
         try {
@@ -1197,7 +1208,8 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     const del = el("button", "drow-del") as HTMLButtonElement;
     del.type = "button";
     del.title = DEL;
-    del.setAttribute("aria-label", `${DEL}: ${names(meal.items)}`);
+    const mealName = names(meal.items);
+    del.setAttribute("aria-label", mealName ? `${DEL}: ${mealName}` : DEL);
     del.append(kitEl(ico("trash")), el("span", "drow-del-lbl", DEL));
     del.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1210,6 +1222,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     let swallow = false;
     const isSwipeMode = (): boolean => getComputedStyle(del).position === "absolute";
     box.addEventListener("pointerdown", (e) => {
+      swallow = false;
       if (e.button !== 0 || !isSwipeMode()) return;
       if ((e.target as HTMLElement | null)?.closest(".drow-del") !== null) return;
       drag = { x: e.clientX, y: e.clientY, id: e.pointerId, wasOpen: box.classList.contains("open"), moved: false };
@@ -1236,6 +1249,8 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
       row.style.transition = "";
       row.style.transform = "";
       if (!moved) return;
+      if (!commit) { swallow = false; }
+      else { setTimeout(() => { swallow = false; }, 0); }
       const open = commit && shouldOpenRowSwipe(wasOpen, dx);
       if (open) {
         if (openRow !== null && openRow !== box) closeOpenRow();
