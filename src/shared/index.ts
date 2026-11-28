@@ -75,6 +75,7 @@ export * from "./app/micro-goals-copy.ts";
 export * from "./app/shell-copy.ts";
 export * from "./app/food-search-copy.ts";
 export * from "./app/saved-meals-copy.ts";
+export * from "./app/meal-add-copy.ts";
 export * from "./app/numbers-copy.ts";
 export * from "./app/average-copy.ts";
 export * from "./app/goal-copy.ts";

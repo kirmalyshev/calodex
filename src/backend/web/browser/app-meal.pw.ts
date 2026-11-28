@@ -142,6 +142,104 @@ test("Correct opens the meal's fix panel — the Cal-AI sheet, not a chat (#188)
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
+test("+ Add More opens ingredient search, and a pick appends through the update queue (#3678)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const before = (await day(page)).meals.find((m) => m.id === id)!;
+
+  // Apple is one of the board's suggestions; answer that one catalog lookup with the demo
+  // banana row, so the empty state is proven to draw what the catalog returns.
+  const token = await sessionToken(page);
+  const banana = await page.request.get("/v1/foods?q=banana", { headers: { authorization: `Bearer ${token}` } });
+  expect(banana.status()).toBe(200);
+  await page.route(/\/api\/v1\/foods\?q=apple/, async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: await banana.text() });
+  });
+
+  // The Cal AI row sits in the Ingredients header, not inside the ⋯ menu.
+  const addMore = page.getByRole("button", { name: "+ Add More" });
+  await expect(addMore).toBeVisible();
+  await addMore.click();
+
+  // Pick mode reuses the food search, worded for an ingredient and carrying no meal logging line.
+  const sheet = page.locator(".fs");
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator("input")).toHaveAttribute("placeholder", "Search for an ingredient");
+  await expect(sheet.getByText("Suggestions", { exact: true })).toBeVisible();
+  await expect(sheet.locator(".fs-line")).toHaveCount(0);
+  await expect(sheet.locator(".fs-body .fs-row", { hasText: "Banana, raw" })).toBeVisible();
+
+  await sheet.locator("input").fill("banana");
+  const row = sheet.locator(".fs-row", { hasText: "Banana, raw" }).first();
+  await expect(row).toBeVisible();
+  const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
+  await row.locator("button.fs-add").click();
+  const body = (await sent).postDataJSON() as { edit?: { add?: { ref?: string; grams?: number } }; kind?: string; mealId?: string; clientId?: string };
+  expect(body).toMatchObject({ kind: "ingredients", mealId: id });
+  expect(body.clientId).toEqual(expect.any(String));
+  expect(body.edit?.add).toEqual({ ref: "usda-foundation:demo-banana", grams: 118 });
+  await expect(sheet).toHaveCount(0);
+
+  // The queued append settles server-side: the detail redraws with the new row, and the total
+  // rises by the catalog serving rather than by anything the client computed.
+  await expect.poll(async () => {
+    const meal = (await day(page)).meals.find((m) => m.id === id);
+    return meal?.items.length ?? 0;
+  }).toBe(before.items.length + 1);
+  const after = (await day(page)).meals.find((m) => m.id === id)!;
+  expect(after.items.at(-1)).toMatchObject({ name: "Banana, raw", grams: 118 });
+  expect(after.kcal).toBeGreaterThan(before.kcal);
+  await expect(page.locator(".ing").last()).toContainText("Banana, raw");
+});
+
+test("a failed ingredient append does not offer a blind retry (#3678)", async ({ inWebApp: page }) => {
+  const { id: _id } = await openMeal(page);
+  await page.route(/\/api\/v1\/meals\/update\/queue/, async (route) => {
+    await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "server-error" }) });
+  });
+  await page.getByRole("button", { name: "+ Add More" }).click();
+  const sheet = page.locator(".fs");
+  await sheet.locator("input").fill("banana");
+  const row = sheet.locator(".fs-row", { hasText: "Banana, raw" }).first();
+  await row.locator("button.fs-add").click();
+
+  const queued = page.locator(".meal.q").first();
+  await expect(queued).toContainText("Couldn't apply your change");
+  await expect(queued).toContainText("may still have gone through");
+  await expect(queued.getByRole("button", { name: "Try again" })).toHaveCount(0);
+});
+
+test("Escape in the ingredient picker closes the picker, not the meal (#3678)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const addMore = page.getByRole("button", { name: "+ Add More" });
+  await addMore.click();
+  const sheet = page.locator(".fs");
+  await expect(sheet).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+  expect(page.url()).toContain(`/#/meal/${id}`);
+  await expect(addMore).toBeVisible();
+  await expect(addMore).toBeFocused();
+});
+
+test("+ Add More is absent when the meal already holds the server's item cap (#3678)", async ({ inWebApp: page }) => {
+  await logMeal(page);
+  const token = await sessionToken(page);
+  const d = await day(page);
+  const id = d.meals[0]!.id;
+  const items = Array.from({ length: 50 }, (_, i) => ({ name: `item ${i + 1}`, grams: 10, kcal: 20 }));
+  const res = await page.request.patch(`/v1/meals/${id}`, {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    data: { items },
+  });
+  expect(res.status()).toBe(200);
+
+  await page.goto(`/#/meal/${id}`);
+  await expect(page.locator(".ingbtn")).toHaveCount(50);
+  await expect(page.getByText("Ingredients", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "+ Add More" })).toHaveCount(0);
+});
+
 test("the servings chip opens Number of Servings on any meal, and Update sends servings alone (#3677)", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   const before = (await day(page)).meals.find((m) => m.id === id)!;
