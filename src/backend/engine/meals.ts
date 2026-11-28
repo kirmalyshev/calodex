@@ -14,7 +14,7 @@ import {
   type DailyTotals, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
   type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
-  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type UnknownFood, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, scaledItem,
+  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type UnknownFood, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, portionGrams, scaledItem,
   explainTargets, verdictsFromTargets, visibleVerdicts, MAX_MEAL_ITEMS,
 } from "@eait/shared";
 import {
@@ -872,6 +872,9 @@ function reconcileRefs(sent: MealItem[], stored: readonly MealItem[]): MealItem[
         const { portion: _portion, portion_count: _count, ...plain } = out;
         return plain;
       }
+      // The pair is the measurement, and grams remain its truth. A client that sends them in
+      // disagreement is not a third opinion: recompute grams from the portion before nutrition.
+      return recomputeFromSnapshot({ ...i, grams: portionGrams(out.portion, out.portion_count) }, s.food);
     }
     return out;
   });

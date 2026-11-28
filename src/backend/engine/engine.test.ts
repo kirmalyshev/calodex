@@ -1444,6 +1444,12 @@ describe("editing the answer", () => {
     if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
     expect(out.analysis.items[0]).toMatchObject({ grams: 27, kcal: 239, portion, portion_count: 2 });
 
+    const lying = await editMeal(deps, userId, meal.mealId, {
+      items: [{ ...item, grams: 50, portion, portion_count: 2 }],
+    });
+    if (lying.kind !== "updated") throw new Error(`expected updated, got ${lying.kind}`);
+    expect(lying.analysis.items[0]).toMatchObject({ grams: 27, kcal: 239, portion, portion_count: 2 });
+
     const invented = await editMeal(deps, userId, meal.mealId, {
       items: [{ ...item, portion: { label: "bucket", grams: 900 }, portion_count: 1 }],
     });
