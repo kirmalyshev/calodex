@@ -153,9 +153,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   const notice = el("p", "notice");
   notice.setAttribute("role", "alert");
   notice.hidden = true;
-  const tell = (words: string | null): void => {
+  const tell = (words: string | null, good = false): void => {
     notice.textContent = words ?? "";
     notice.hidden = words === null;
+    notice.classList.toggle("good", good);
   };
 
   // One overlay at a time — the delete dialog, the score breakdown, a fix panel. `overlay` is
@@ -381,6 +382,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     field.maxLength = MAX_MEAL_REPORT_TEXT;
     field.setAttribute("aria-label", mc.reportTitle);
     const count = el("p", "t13 m reportcount");
+    count.setAttribute("aria-live", "polite");
+    const errEl = el("p", "t13 nmerr");
+    errEl.setAttribute("role", "alert");
+    errEl.hidden = true;
     const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
     cancel.type = "button";
     cancel.addEventListener("click", () => { if (!sending) closeOverlay(); });
@@ -392,25 +397,30 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       cancel.disabled = sending;
       field.disabled = sending;
     };
-    field.addEventListener("input", sync);
+    field.addEventListener("input", () => { errEl.hidden = true; sync(); });
     dlg.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (sending || field.value.trim().length === 0) return;
       sending = true;
+      errEl.hidden = true;
       sync();
       try {
-        await reportMeal(meal.id, field.value);
-        if (scrim.isConnected) closeOverlay();
-      } catch {
+        await reportMeal(meal.id, field.value.trim());
+        if (!scrim.isConnected) return;
+        closeOverlay();
+        tell(COPY.sent, true);
+      } catch (err) {
         if (!scrim.isConnected) return;
         sending = false;
         sync();
+        errEl.textContent = keptWords(err, cc.tryAgain);
+        errEl.hidden = false;
         field.focus();
       }
     });
     const actions = el("div", "row svactions");
     actions.append(cancel, send);
-    dlg.append(el("b", "d d22", mc.reportTitle), field, count, actions);
+    dlg.append(el("b", "d d22", mc.reportTitle), field, count, errEl, actions);
     sync();
     scrim.append(dlg);
     return { node: scrim, focus: field };

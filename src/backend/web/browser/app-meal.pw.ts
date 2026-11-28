@@ -565,6 +565,25 @@ test("Report Food opens the issue sheet, counts characters, cancels cleanly, and
   await expect(dialog).toHaveCount(0);
 });
 
+test("a failed report keeps the draft and words it, and a sent one confirms itself", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Report Food").click();
+  const dialog = page.getByRole("dialog", { name: "What's the issue with this food log?" });
+  const field = dialog.locator("textarea");
+  await field.fill("wrong ingredients");
+  await page.route(`**/v1/meals/${id}/report`, (route) =>
+    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "server" }) }));
+  await dialog.getByRole("button", { name: "Report" }).click();
+  await expect(dialog.getByText("Try again")).toBeVisible();
+  await expect(field).toHaveValue("wrong ingredients");
+  await expect(dialog.getByRole("button", { name: "Report" })).toBeEnabled();
+  await page.unroute(`**/v1/meals/${id}/report`);
+  await dialog.getByRole("button", { name: "Report" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".mdetail .notice")).toHaveText("Sent");
+});
+
 test("Move to yesterday puts the meal on yesterday's diary", async ({ inWebApp: page }) => {
   const { id, date } = await openMeal(page);
   await page.locator(".mdetail .ib").last().click();

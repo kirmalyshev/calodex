@@ -143,6 +143,7 @@ h2 { font-size: 17px; }
 
 .error, .notice { color: var(--bad); }
 .notice { margin: 1rem 0 0; }
+.notice.good { color: var(--good); }
 
 /* pro.css's type helpers and the hairline — the boards' own class names, so a screen transcribes
    a board without re-measuring a type step. */
