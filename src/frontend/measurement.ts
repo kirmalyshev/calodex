@@ -42,5 +42,9 @@ export function measuredItem(
 ): MealItem {
   const portion = portionIndex === null ? undefined : catalogPortions(item)[portionIndex];
   if (portion === undefined) return itemAtGrams(item, grams);
-  return itemAtPortion(item, portion, count ?? portionCountFor({ grams }, portion));
+  const effective = count ?? portionCountFor({ grams }, portion);
+  // Zero is grams, never a stored "0 portions": the contract has no zero count, and an empty
+  // measurement is the grams chip's answer rather than an invalid write.
+  if (effective <= 0) return itemAtGrams(item, grams);
+  return itemAtPortion(item, portion, effective);
 }

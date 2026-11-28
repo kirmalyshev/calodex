@@ -714,7 +714,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     if (grams.value !== `${item.grams}`) grams.dispatchEvent(new Event("input"));
     dlg.append(done);
     scrim.append(dlg);
-    return { node: scrim, focus: grams };
+    return { node: scrim, focus: (portionIndex !== null ? countField : null) ?? grams };
   };
 
   // Save / remove from saved (#907, calodex_app#3685): `savedId` is the saved row made from THIS

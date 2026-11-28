@@ -78,6 +78,14 @@ describe("measuredItem — what Done writes", () => {
     expect(out.portion_count).toBe(2);
   });
 
+  it("a zero count answers in grams rather than writing portion_count zero", () => {
+    const item = catalogItem({ portion: SLICE, portion_count: 2 });
+    const out = measuredItem(item, 0, 0, 0);
+    expect(out.grams).toBe(0);
+    expect(out.portion).toBeUndefined();
+    expect(out.portion_count).toBeUndefined();
+  });
+
   it("the grams chip drops the measurement even when the item stored one", () => {
     const item = catalogItem({ portion: SLICE, portion_count: 2 });
     const out = measuredItem(item, null, 2, 100);

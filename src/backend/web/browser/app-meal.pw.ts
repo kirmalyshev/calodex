@@ -284,6 +284,30 @@ test("a catalog ingredient measures in a named portion, and Done sends portion, 
   });
 });
 
+test("a zero portion count falls back to grams rather than sending portion_count zero (#3679)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const token = await sessionToken(page);
+  const add = await page.request.patch(`/v1/meals/${id}`, {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+    data: { add: { ref: "usda-foundation:demo-banana", grams: 118 } },
+  });
+  expect(add.status(), await add.text()).toBe(200);
+  await page.goto(`/#/meal/${id}`);
+  await page.reload();
+  await page.locator(".ingbtn").last().click();
+  const dialog = page.getByRole("dialog", { name: "Edit ingredient" });
+  await dialog.getByRole("button", { name: "1 medium", exact: true }).click();
+  await dialog.locator(".ingserv input").fill("0");
+
+  const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
+  await dialog.getByRole("button", { name: "Done" }).click();
+  const body = (await sent).postDataJSON() as { edit?: { items?: Array<Record<string, unknown>> } };
+  const banana = body.edit?.items?.at(-1);
+  expect(banana?.grams).toBe(0);
+  expect(banana).not.toHaveProperty("portion");
+  expect(banana).not.toHaveProperty("portion_count");
+});
+
 test("the servings chip opens Number of Servings on any meal, and Update sends servings alone (#3677)", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   const before = (await day(page)).meals.find((m) => m.id === id)!;
