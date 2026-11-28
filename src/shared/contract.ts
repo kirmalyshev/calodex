@@ -1515,9 +1515,9 @@ export function isRedateMealRequest(body: unknown): body is RedateMealRequest {
 
 export type RedateMealResponse = MealRedated | TargetGone;
 
-/** The copy picker's whole window: seven days back and seven forward, today excluded. */
+/** The copy picker's whole window: seven days back, today, and seven forward. */
 export const MEAL_COPY_MAX_OFFSET = 7;
-export const MEAL_COPY_MAX_DAYS = MEAL_COPY_MAX_OFFSET * 2;
+export const MEAL_COPY_MAX_DAYS = MEAL_COPY_MAX_OFFSET * 2 + 1;
 
 /**
  * `POST /v1/meals/:id/copy` — offsets, never dates: a client cannot aim a copy anywhere on the
@@ -1537,7 +1537,7 @@ export function isCopyMealRequest(body: unknown): body is CopyMealRequest {
   return Array.isArray(b.dayOffsets)
     && b.dayOffsets.length >= 1
     && b.dayOffsets.length <= MEAL_COPY_MAX_DAYS
-    && b.dayOffsets.every((n) => Number.isInteger(n) && n !== 0 && Math.abs(n as number) <= MEAL_COPY_MAX_OFFSET)
+    && b.dayOffsets.every((n) => Number.isInteger(n) && Math.abs(n as number) <= MEAL_COPY_MAX_OFFSET)
     && (b.clientId === undefined || (typeof b.clientId === "string" && b.clientId !== "" && b.clientId.length <= MAX_CLIENT_ID));
 }
 

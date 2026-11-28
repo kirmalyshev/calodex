@@ -1,8 +1,8 @@
 // Copy a meal onto one or more days (calodex_app#3683): one write path, exact composition,
 // verdicts recomputed server-side, per-user scoping, and one replayed request never copies twice.
 
-import { beforeEach, describe, expect, it } from "bun:test";
-import { dateMinus, localDate, ROUTES, type CopyMealResponse, type MealRecord } from "@eait/shared";
+import { beforeEach, describe, expect, it, setSystemTime } from "bun:test";
+import { dateMinus, localDate, localTime, ROUTES, type CopyMealResponse, type MealRecord } from "@eait/shared";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
@@ -76,6 +76,26 @@ describe("copying a meal", () => {
       expect(copy.verdictLabels.length).toBeGreaterThan(0);
     }
     expect(await store.mealsForDate(userId, today())).toHaveLength(1);
+  });
+
+  it("keeps the source meal's time of day on every target date, clamped only when copying ahead of now on today", async () => {
+    setSystemTime(new Date("2026-05-12T10:00:00.000Z")); // 12:00 in the fixture's Europe/Berlin zone
+    try {
+      const userId = await onboard();
+      const source = meal(userId, { ts: "2026-05-12T11:30:00.000Z" }); // 13:30 local, still ahead of now today
+      await store.insertMeal(source);
+
+      const copied = await copyMeal(deps, userId, source.id, [1, -1, 0]);
+      if (copied.kind !== "copied") throw new Error(`expected copied, got ${copied.kind}`);
+      expect(copied.meals).toHaveLength(3);
+      const rows = await Promise.all(copied.meals.map((m) => store.getMeal(userId, m.mealId)));
+      const byDate = new Map(rows.map((r) => [r!.date, r!]));
+      expect(localTime(CONFIG.timezone, new Date(byDate.get(dateMinus(today(), 1))!.ts))).toBe("13:30");
+      expect(localTime(CONFIG.timezone, new Date(byDate.get(dateMinus(today(), -1))!.ts))).toBe("13:30");
+      expect(byDate.get(today())!.ts).toBe("2026-05-12T10:00:00.000Z");
+    } finally {
+      setSystemTime();
+    }
   });
 
   it("refuses another user's meal and writes nothing", async () => {

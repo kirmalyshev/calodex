@@ -38,6 +38,7 @@ import { itemScanner } from "../llm/partial.ts";
 import { eatenAt, once } from "./turns.ts";
 import { isAnonymous } from "./identity.ts";
 import { evaluateMilestones } from "./milestones.ts";
+import { instantOf } from "./notify.ts";
 
 /** Images arrive as thunks so nothing is READ until the caps have passed. */
 export interface LogPhotoInput {
@@ -827,11 +828,18 @@ async function copyMealUncached(
   const lang = profile?.lang ?? "en";
   const zone = deps.config.timezone;
   const today = localDate(zone);
+  const now = Date.now();
   const offsets = [...new Set(dayOffsets)];
   const meals: MealCopied["meals"] = [];
+  const [hour, minute] = localTime(zone, new Date(source.ts)).split(":").map(Number) as [number, number];
 
   for (const offset of offsets) {
     const date = dateMinus(today, offset);
+    const at = instantOf(zone, date, { hour, minute });
+    // The copy is the same meal at the same time of day on its target date. Only a copy onto
+    // today is clamped to now; a future day keeps the source time, or the copy would pile onto
+    // the present instant instead of the meal's own slot.
+    const ts = new Date(date === today ? Math.min(at, now) : at).toISOString();
     const analysis = {
       isFood: source.isFood,
       items: source.items.map((item) => ({ ...item })),
@@ -843,7 +851,7 @@ async function copyMealUncached(
     const verdicts = await gatedVerdicts(deps, userId, analysis);
     const record: MealRecord = {
       ...analysis,
-      id: crypto.randomUUID(), user_id: userId, ts: new Date().toISOString(), date, verdicts,
+      id: crypto.randomUUID(), user_id: userId, ts, date, verdicts,
       healthScore: healthScore({ ...analysis, verdicts }, profile?.restrictions ?? []),
       corrected: false, model: source.model, name: source.name ?? null,
       ...(source.servings !== undefined ? { servings: source.servings } : {}),
