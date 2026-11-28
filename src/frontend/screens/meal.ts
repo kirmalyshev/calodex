@@ -6,7 +6,7 @@
 // verdict dots, and the one fix. From web/meal-delete.html (design-pro, on the issue) the card
 // takes its header row: X on the left, the meal's day and time in the middle, the "…" menu on the
 // right; X or Esc returns to the diary (`#/`), and the menu is the phone's (meal-menu.html): Edit,
-// Re-read the photo, Move to yesterday, Delete — which asks first, over the master-detail.
+// Re-read the photo, Move to yesterday, Report Food, Delete — which asks first, over the master-detail.
 //
 // THE EDIT IS CAL AI'S LAYOUT, not a chat (#188, Kirill 21:58). "Correct this meal" and the
 // menu's Edit open `web/meal-fix.html` — a PANEL over this detail: one field, an example, Update,
@@ -20,7 +20,7 @@
 // meal" are the same answer and the same panel.
 
 import type { RedateMealRequest } from "../../shared/contract.ts";
-import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
+import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_MEAL_REPORT_TEXT, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, daysBack, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
@@ -45,7 +45,7 @@ import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
 import {
   ApiError, api, apiBlob, attachMealPhotos, deleteSavedMeal, listSavedMeals, remainingMealPhotos,
-  rateMeal, renameMeal, saveMeal,
+  rateMeal, renameMeal, reportMeal, saveMeal,
 } from "../api.ts";
 import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
@@ -366,6 +366,54 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     sync();
     scrim.append(dlg);
     return { node: scrim, focus: input };
+  };
+
+  /** Report Food (calodex_app#3688): the ⋯ menu's review sheet. A failure keeps the draft and its buttons live, like the rating card. */
+  const reportPanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement } => {
+    let sending = false;
+    const scrim = el("div", "mscrim");
+    scrim.addEventListener("click", (e) => { if (e.target === scrim && !sending) closeOverlay(); });
+    const dlg = el("form", "card mfix rise") as HTMLFormElement;
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    dlg.setAttribute("aria-label", mc.reportTitle);
+    const field = el("textarea", "fixfield") as HTMLTextAreaElement;
+    field.maxLength = MAX_MEAL_REPORT_TEXT;
+    field.setAttribute("aria-label", mc.reportTitle);
+    const count = el("p", "t13 m reportcount");
+    const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
+    cancel.type = "button";
+    cancel.addEventListener("click", () => { if (!sending) closeOverlay(); });
+    const send = el("button", "cta p", mc.reportCta) as HTMLButtonElement;
+    send.type = "submit";
+    const sync = (): void => {
+      count.textContent = fill(mc.reportCount, { n: n(field.value.length) });
+      send.disabled = sending || field.value.trim().length === 0;
+      cancel.disabled = sending;
+      field.disabled = sending;
+    };
+    field.addEventListener("input", sync);
+    dlg.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (sending || field.value.trim().length === 0) return;
+      sending = true;
+      sync();
+      try {
+        await reportMeal(meal.id, field.value);
+        if (scrim.isConnected) closeOverlay();
+      } catch {
+        if (!scrim.isConnected) return;
+        sending = false;
+        sync();
+        field.focus();
+      }
+    });
+    const actions = el("div", "row svactions");
+    actions.append(cancel, send);
+    dlg.append(el("b", "d d22", mc.reportTitle), field, count, actions);
+    sync();
+    scrim.append(dlg);
+    return { node: scrim, focus: field };
   };
 
   /**
@@ -959,6 +1007,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       photoPicker.click();
     });
     const reread = item("retry", mc.phoneMenuReread, () => enqueueUpdate(meal, { kind: "reread" }));
+    const report = item("alert-circle", mc.menuReport, () => openPanel(reportPanel(meal)));
     const del = item("trash", mc.deleteCta, () => openOverlay(deleteDialog(meal)));
     del.classList.add("bad");
     // While the meal updates the one action left is Delete, which stops it (#1347).
@@ -983,6 +1032,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
           // The meal left this day: follow it there rather than draw the day without it.
           location.hash = `#/meal/${encodeURIComponent(meal.id)}?d=${out.date}`;
         })),
+      report,
       del,
     );
     btn.addEventListener("click", (e) => {
