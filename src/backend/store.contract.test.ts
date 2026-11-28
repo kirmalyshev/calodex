@@ -1957,6 +1957,20 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.getMeal(a, m.id))!.kcal).toBe(260);
     });
 
+    it("stores one rating per meal, the last write wins, and only for the owner", async () => {
+      const s = await open();
+      const a = (await s.upsertDeviceUser(device(), "en")).userId;
+      const b = (await s.upsertDeviceUser(device(), "en")).userId;
+      const m = meal(a);
+      await s.insertMeal(m);
+      expect((await s.getMeal(a, m.id))!.rating ?? null).toBeNull();
+      expect((await s.updateMeal(a, m.id, { rating: "down" }))!.rating).toBe("down");
+      expect((await s.updateMeal(a, m.id, { rating: "up" }))!.rating).toBe("up");
+      expect((await s.getMeal(a, m.id))!.rating).toBe("up");
+      expect(await s.updateMeal(b, m.id, { rating: "down" })).toBeNull();
+      expect((await s.getMeal(a, m.id))!.rating).toBe("up");
+    });
+
     it("computes the health score at read, and recomputes it after an edit (#118)", async () => {
       const s = await open();
       const u = (await s.upsertDeviceUser(device(), "en")).userId;

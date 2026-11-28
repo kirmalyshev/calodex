@@ -499,6 +499,11 @@ export const ROUTES = {
    */
   mealFocus: (id: string) => `/v1/meals/${encodeURIComponent(id)}/focus`,
   /**
+   * POST `{ up }` ({@link RateMealRequest}) — the thumb on this meal's analysis. One per meal, the last write wins.
+   * Answers the meal, or 404 when it is not the caller's. Free for every user: no entitlement, no cap.
+   */
+  mealRating: (id: string) => `/v1/meals/${encodeURIComponent(id)}/rating`,
+  /**
    * GET — the caller's saved meals, newest first. POST `{ mealId }` ({@link SaveMealRequest}) —
    * bookmark a meal already logged by this account as a named composition, idempotent per source
    * meal. Both unbilled.
@@ -1511,6 +1516,17 @@ export function isFocusMealRequest(body: unknown): body is FocusMealRequest {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
   const b = body as Record<string, unknown>;
   return FOCUS_MINUTES.some((m) => m === b.minutes) && typeof b.completed === "boolean";
+}
+
+/** `POST /v1/meals/:id/rating` — `up` true is the thumbs-up. A second write replaces the first. */
+export interface RateMealRequest {
+  up: boolean;
+}
+
+export function isRateMealRequest(body: unknown): body is RateMealRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const b = body as Record<string, unknown>;
+  return typeof b.up === "boolean" && Object.keys(b).length === 1;
 }
 
 /**

@@ -16,7 +16,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { PgBoss, fromBunSql } from "pg-boss";
 import type { FunnelDimension, FunnelDimensions, FunnelFilters, MealReminders, PushKind, SavedMeal, SendKind, SendLogState } from "@eait/shared";
 import type {
-  DayTotals, FoodNutrient, FoodPortion, FoodRef, HealthDay, Lang, MealFocus, MealItem, MealLabel, MealQuestion,
+  DayTotals, FoodNutrient, FoodPortion, FoodRef, HealthDay, Lang, MealFocus, MealItem, MealRating, MealLabel, MealQuestion,
   MealRecord, MealVerdicts, NotificationCopySet, OffProduct,
   Barrier, CountedBefore, OnboardingContentSet, Profile, Provider, PushTemplateRow, Situation, Struggle, StreakGoal,
 } from "@eait/shared";
@@ -904,6 +904,8 @@ create index if not exists meals_user_date_idx on meals(user_id, date);
 alter table meals add column if not exists question jsonb;
 -- The phone break taken after the meal (ieat-app#2129): {minutes, completed}, null until one is recorded.
 alter table meals add column if not exists focus jsonb;
+-- The thumb on the analysis ("How did Calodex do?"): 'up' | 'down', null until rated; the evals and the admin read it.
+alter table meals add column if not exists rating text check (rating in ('up', 'down'));
 -- Read off a nutrition label (ieat-app#2087): scan provenance. Its servings count remains the
 -- compatible count for a label meal while released servers can write only there (#3677); the meal's
 -- own column mirrors it on new writes. Null on every other meal.
@@ -1890,6 +1892,7 @@ function toMeal(r: MealRow, restrictions: readonly string[]): MealRecord {
     photo_compression: (r.photo_compression === null || r.photo_compression === undefined ? null : num(r.photo_compression)),
     photo_max_edge: (r.photo_max_edge === null || r.photo_max_edge === undefined ? null : num(r.photo_max_edge)),
     focus: json<MealFocus | null>(r.focus, null),
+    rating: (r.rating === "up" || r.rating === "down" ? r.rating : null) as MealRating | null,
     label: json<MealLabel | null>(r.label, null),
     name: (r.name ?? null) as string | null,
     ...(r.servings === null || r.servings === undefined ? {} : { servings: num(r.servings) }),
@@ -1942,7 +1945,7 @@ const MEAL_COLUMNS: Record<string, string> = {
   name: "name", servings: "servings", items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
   satfat_g: "satfat_g", fiber_g: "fiber_g", sugar_g: "sugar_g", sodium_mg: "sodium_mg",
   verdicts: "verdicts", notes: "notes", corrected: "corrected", date: "date",
-  question: "question", model: "model", confidence: "confidence", focus: "focus", label: "label",
+  question: "question", model: "model", confidence: "confidence", focus: "focus", rating: "rating", label: "label",
 };
 
 /**
