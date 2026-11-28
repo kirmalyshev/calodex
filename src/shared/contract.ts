@@ -455,6 +455,11 @@ export const ROUTES = {
    */
   attribution: "/v1/attribution",
   /**
+   * GET, admin bearer — aggregate offer-code redemption stats ({@link PromoStatsResponse}).
+   * Operator-only, but named here because the fleet's promo CLI is a client of it.
+   */
+  adminPromoStats: "/admin/api/promo-stats",
+  /**
    * GET — the tips-and-offers consent (`PushConsentResponse`); POST — set it (`PushConsentRequest`).
    * Offers default OFF; `notifications` (default ON) silences every push for the account.
    */
@@ -2366,4 +2371,23 @@ export const ATTRIBUTION_STATUS = { resolved: 200, pending: 202, invalid: 422, u
 export type AttributionStatus = keyof typeof ATTRIBUTION_STATUS;
 export interface AttributionResponse {
   status: AttributionStatus;
+}
+
+/** One offer code's aggregate footprint. Counts only — never the accounts behind them. */
+export interface PromoCodeStats {
+  offerCode: string;
+  /** Distinct accounts with a coded event in the window. */
+  redeemed: number;
+  /** Of those, entitlement live now by `entitlementLive` — subscription, lifetime or referral bonus. */
+  active: number;
+  /** Of those, with a RENEWAL or priced INITIAL_PURCHASE at/after their first coded event. */
+  paid: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+/** `GET /admin/api/promo-stats`. `days` is the trailing 24-hour window the server read. */
+export interface PromoStatsResponse {
+  days: number;
+  codes: PromoCodeStats[];
 }

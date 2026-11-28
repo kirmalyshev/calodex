@@ -18,7 +18,7 @@ import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, NOTIFICAT
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { memoryStore } from "../store.memory.ts";
-import { SWITCH_KEYS, type Store, type StoreOptions } from "../store.ts";
+import { SWITCH_KEYS, type RevenueCatEventRow, type Store, type StoreOptions } from "../store.ts";
 import type { EngineDeps } from "../engine/index.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
 import { createRouter } from "./routes.ts";
@@ -1445,6 +1445,53 @@ describe("the numbers past the funnel", () => {
   it("gives an ordinary signed-in user a 404", async () => {
     // An aggregate is still a query over other people's rows.
     const res = await handle(new Request(url("/admin/api/metrics"), {
+      headers: { authorization: `Bearer ${await session()}` },
+    }));
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("promo stats", () => {
+  beforeEach(async () => { await mountWithAdmin(); });
+
+  const rcEvent = (userId: string, over: Partial<RevenueCatEventRow> = {}): RevenueCatEventRow => ({
+    id: `rc-${crypto.randomUUID()}`, userId, type: "INITIAL_PURCHASE", productId: "eait_pro_yearly",
+    periodType: "TRIAL", presentedOfferingId: "default", price: 0, currency: "EUR",
+    priceInPurchasedCurrency: 0, store: "APP_STORE", countryCode: "DE", environment: "PRODUCTION",
+    eventAt: new Date().toISOString(), offerCode: "ADMINPROMO", acquisition: null,
+    ...over,
+  });
+
+  it("answers aggregates only, inside the requested trailing window", async () => {
+    const userId = (await store.upsertDeviceUser(crypto.randomUUID() + crypto.randomUUID(), "en")).userId;
+    const day = 86_400_000;
+    await store.recordRevenueCatEvent(rcEvent(userId, { eventAt: new Date(Date.now() - 2 * day).toISOString() }));
+    await store.recordRevenueCatEvent(rcEvent(userId, {
+      offerCode: "ADMINPROMO-OLD", eventAt: new Date(Date.now() - 40 * day).toISOString(),
+    }));
+
+    const body = await (await admin("GET", "/admin/api/promo-stats?days=30")).json() as {
+      days: number;
+      codes: { offerCode: string; redeemed: number; active: number; paid: number; firstSeenAt: string; lastSeenAt: string }[];
+    };
+    expect(body.days).toBe(30);
+    expect(body.codes).toHaveLength(1);
+    expect(body.codes[0]).toMatchObject({ offerCode: "ADMINPROMO", redeemed: 1, active: 0, paid: 0 });
+    expect(JSON.stringify(body)).not.toContain(userId);
+  });
+
+  it("uses a 30-day default and clamps the window rather than refusing it", async () => {
+    expect(((await (await admin("GET", "/admin/api/promo-stats")).json()) as { days: number }).days).toBe(30);
+    expect(((await (await admin("GET", "/admin/api/promo-stats?days=99999")).json()) as { days: number }).days).toBe(400);
+    expect(((await (await admin("GET", "/admin/api/promo-stats?days=nonsense")).json()) as { days: number }).days).toBe(30);
+  });
+
+  it("is a read behind the same role as the rest of the admin", async () => {
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
+      expect((await admin(method, "/admin/api/promo-stats", {})).status).toBe(404);
+    }
+    expect((await admin("GET", "/admin/api/promo-stats", undefined, "")).status).toBe(401);
+    const res = await handle(new Request(url("/admin/api/promo-stats"), {
       headers: { authorization: `Bearer ${await session()}` },
     }));
     expect(res.status).toBe(404);

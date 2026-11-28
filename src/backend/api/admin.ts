@@ -42,10 +42,10 @@
 
 import {
   CAMPAIGN_STATUSES, CAMPAIGN_VARIANTS, DEFAULT_ORDER, ENTITLEMENT_STATES, REMOVABLE_PLACES, SINCE_LOG_BANDS, STREAK_BANDS, LANGS, LANG_LABEL, NOTIFICATION_IDS, NOTIFICATION_PLACEHOLDERS, ONBOARDING_SCREENS, SCREEN_FIELDS,
-  SCREEN_OPTIONS, isCalendarDate, narrowLang, optionLabelIsData, parseChannel, screenIsOptional, type Lang,
+  SCREEN_OPTIONS, ROUTES, isCalendarDate, narrowLang, optionLabelIsData, parseChannel, screenIsOptional, type Lang,
 } from "@eait/shared";
 import {
-  adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts,
+  adminMetrics, adminRangeOf, adminSwitches, adminUserChat, adminUserDiary, adminUsers, adminUserSummary, adminWindowEcho, livePrompts, promoStats,
   adminRecognitions, adminRecognition,
   addOnboardingVariant, createOnboardingExperiment, onboardingContent,
   onboardingExperiments, saveOnboardingVariant, saveOnboardingVariantFirstVerdict, saveOnboardingVariantOrder, setOnboardingExperiment,
@@ -90,6 +90,13 @@ const RANGE_MIN_MS = Date.UTC(2000, 0, 1), RANGE_MAX_MS = Date.UTC(2100, 0, 1);
 // `days` on an endpoint that defaults unbounded still clamps: to the widest bound any time-based
 // endpoint takes, so an enormous ask reads as all time rather than resolving before the epoch.
 const OPEN_RANGE_MAX_DAYS = 400;
+
+function daysParam(url: URL, defaultDays: number, maxDays: number): number {
+  const raw = Number(url.searchParams.get("days") ?? defaultDays);
+  return Number.isFinite(raw)
+    ? Math.min(maxDays, Math.max(1, Math.round(raw)))
+    : defaultDays;
+}
 
 function rangeParam(url: URL, bounds: { defaultDays: number; maxDays: number } | null): RangeAsk {
   const f = url.searchParams.get("from"), t = url.searchParams.get("to");
@@ -715,6 +722,10 @@ async function behindTheRole(req: Request, url: URL, deps: EngineDeps, adminId: 
     // `days` stays a count for this one — "30 days" is 30 calendar rows, not 30×24h.
     const ask = rangeParam(url, { defaultDays: 30, maxDays: 400 });
     return json(await adminMetrics(deps, "days" in ask ? ask : { ...ask }));
+  }
+
+  if (req.method === "GET" && pathname === ROUTES.adminPromoStats) {
+    return json(await promoStats(deps, daysParam(url, 30, 400)));
   }
 
   // ── Per-account grant (ieat-app#2364: no default sample) ─────────────────────────────────────────────────────────────────────

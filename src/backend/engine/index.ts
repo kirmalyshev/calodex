@@ -39,6 +39,7 @@ export { recordPushOpen, recordPushDelivered, pushOpenView, pushRecentView, admi
 export { pushConsent, setPushConsent, pushOffersAllowed, pushDevices } from "./push-consent.ts";
 export { profileView, patchProfile, paywallOf, exitOfferEnabledOf, hasLoggedMeal, type PatchOutcome } from "./profile.ts";
 export { promoOf, promoWindow } from "./promo.ts";
+export { promoStats } from "./promo-stats.ts";
 export {
   isLinkPreview, openInvite, redeemReferral, referralAdminView, referralLink, referralRewardDays, referralView, shareReferral,
   type RedeemRefusal, type ReferralAdminView,

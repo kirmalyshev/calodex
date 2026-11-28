@@ -16,7 +16,7 @@ import type { PromptSource } from "./llm/prompt.ts";
 import type {
   DayTotals, HealthDay, Lang, MealAnalysis, MealRecord, NotificationCopy, NotificationCopySet,
   OnboardingContent, OnboardingContentSet,
-  OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow } from "@eait/shared";
+  OnboardingEvent, OnboardingEventContext, OnboardingPlace, FirstVerdictArm, Profile, Provider, ChatEvent, ChatSpeaker, PushTemplateRow, PromoCodeStats } from "@eait/shared";
 import type { FoodRef, MealReminders, OffProduct, SavedMeal } from "@eait/shared";
 import type { ArmScreens, FunnelDimensions, FunnelFilters, MealItem, ScreenTemplate, ScreenTemplateDraft, TemplateSlot } from "@eait/shared";
 import type { RouteResult } from "./llm/port.ts";
@@ -1651,6 +1651,12 @@ export interface Store {
   recordRevenueCatEvent(row: RevenueCatEventRow): Promise<boolean>;
   /** This account's logged deliveries, oldest event first. */
   revenueCatEventsOf(userId: string): Promise<RevenueCatEventRow[]>;
+  /**
+   * Promo-code conversion, grouped by `offerCode` over the coded events since `since` — aggregates
+   * only. `active` is evaluated at the store's clock by the one entitlement rule; `paid` is a
+   * RENEWAL or priced INITIAL_PURCHASE at/after the account's first event carrying that code.
+   */
+  promoStats(since: Date): Promise<PromoCodeStats[]>;
   /** Where this account came from, or null when nothing has said. */
   acquisitionOf(userId: string): Promise<Acquisition | null>;
   /**

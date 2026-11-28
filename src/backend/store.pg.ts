@@ -2192,6 +2192,8 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // anonymous id), which no declared user could write. Insert-only, behind the webhook's secret.
   recordRevenueCatEvent: "unscoped",
   revenueCatEventsOf: 0,
+  // A cross-account aggregate by definition; its result rows carry counts, never user ids.
+  promoStats: "unscoped",
   acquisitionOf: 0,
   // From the app's own token, or from the webhook naming the account as `putEntitlement` does.
   putAcquisition: 0,
@@ -3807,6 +3809,58 @@ export async function postgresStore(
           },
         };
       });
+    },
+
+    async promoStats(since) {
+      const at = new Date(now());
+      // `cohort` is the window and decides first/last seen; `first_coded` is deliberately over the
+      // whole log, because a renewal in the window can carry the code of a redemption before it.
+      // The paid answer is conversion after THAT first coded event, not after the window opened.
+      const rows = await sql`
+        with cohort as (
+          select offer_code, user_id, min(event_at) as first_seen, max(event_at) as last_seen
+            from revenuecat_events
+           where offer_code is not null and user_id is not null and event_at >= ${since}
+           group by offer_code, user_id
+        ), first_coded as (
+          select offer_code, user_id, min(event_at) as first_at
+            from revenuecat_events
+           where offer_code is not null and user_id is not null
+           group by offer_code, user_id
+        ), converted as (
+          select distinct c.offer_code, c.user_id
+            from cohort c
+            join first_coded f on f.offer_code = c.offer_code and f.user_id = c.user_id
+           where exists (
+             select 1 from revenuecat_events p
+              where p.user_id = c.user_id and p.type in ('RENEWAL', 'INITIAL_PURCHASE')
+                and p.price > 0 and p.event_at >= f.first_at
+           )
+        )
+        select c.offer_code,
+               count(*) as redeemed,
+               count(*) filter (
+                 where (case
+                          when u.referral_banked_days > 0 and u.entitlement_expires_at is not null
+                          then greatest(u.bonus_until, u.entitlement_expires_at) + make_interval(days => u.referral_banked_days)
+                          else u.bonus_until
+                        end) > ${at}
+                    or u.entitlement_lifetime_product_id is not null
+                    or u.entitlement_expires_at > ${at}
+               ) as active,
+               count(p.user_id) as paid,
+               min(c.first_seen) as first_seen_at,
+               max(c.last_seen) as last_seen_at
+          from cohort c
+          join users u on u.id = c.user_id
+          left join converted p on p.offer_code = c.offer_code and p.user_id = c.user_id
+         group by c.offer_code
+         order by c.offer_code`;
+      return rows.map((r: Record<string, unknown>) => ({
+        offerCode: String(r.offer_code), redeemed: num(r.redeemed), active: num(r.active), paid: num(r.paid),
+        firstSeenAt: new Date(r.first_seen_at as string).toISOString(),
+        lastSeenAt: new Date(r.last_seen_at as string).toISOString(),
+      }));
     },
 
     async acquisitionOf(userId) {
