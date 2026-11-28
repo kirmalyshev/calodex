@@ -727,8 +727,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         try { tiles.setPointerCapture(e.pointerId); } catch { /* the pointer is gone */ }
       }
       if (tileDrag.moved) {
+        // Past the end there is no third page to reveal; the track stops at the edge.
+        const clamped = tilePage === 0 ? Math.min(dx, 0) : Math.max(dx, 0);
         tileTrack.style.transition = "none";
-        tileTrack.style.transform = `translateX(calc(${-tilePage * 100}% + ${dx}px))`;
+        tileTrack.style.transform = `translateX(calc(${-tilePage * 100}% + ${clamped}px))`;
       }
     });
     const endTileDrag = (e: PointerEvent): void => {
@@ -737,7 +739,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       tileDrag = null;
       tileTrack.style.transition = "";
       if (!moved) return;
-      const dx = e.clientX - x;
+      const dx = tilePage === 0 ? Math.min(e.clientX - x, 0) : Math.max(e.clientX - x, 0);
       if (Math.abs(dx) >= 40) showTilePage(dx < 0 ? 1 : 0);
       else tileTrack.style.transform = tilePage === 1 ? "translateX(-100%)" : "";
     };
@@ -754,8 +756,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     let tileWheelAt = 0;
     tiles.addEventListener("wheel", (e) => {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      const to = e.deltaX > 0 ? 1 : 0;
+      if (to === tilePage) return;
       e.preventDefault();
-      if (e.timeStamp - tileWheelAt > 260) showTilePage(e.deltaX > 0 ? 1 : 0);
+      if (e.timeStamp - tileWheelAt > 260) showTilePage(to);
       tileWheelAt = e.timeStamp;
     }, { passive: false });
     tiles.addEventListener("keydown", (e) => {

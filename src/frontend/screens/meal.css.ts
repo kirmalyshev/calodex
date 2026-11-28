@@ -43,9 +43,9 @@ export const mealCss = `
 /* The tile switcher — the meal sheet's own copy of the day card's two-page clip (ieat-app#3676):
    a fixed-width page pair under the finger/trackpad, the boards' 6 px dots under it. */
 .mtiles{touch-action:pan-y;user-select:none}
-.mtileclip{overflow:hidden}
+.mtileclip{overflow:hidden;padding:8px 2px;margin:-8px -2px}
 .mtiletrack{display:flex;transition:transform .28s var(--ease)}
-.mtilepage{width:100%;flex:0 0 100%;min-width:0;box-sizing:border-box;padding:8px 2px;margin:-8px 0}
+.mtilepage{width:100%;flex:0 0 100%;min-width:0;box-sizing:border-box}
 .mtilepage.p2{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .mtilepage.p2 .mcard{padding-left:10px;padding-right:10px}
 .mtilepage.p2 .mcard b{font-size:16px;white-space:nowrap}

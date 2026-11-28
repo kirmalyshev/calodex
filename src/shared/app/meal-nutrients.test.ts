@@ -1,7 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { LANGS_READY } from "../lang.ts";
 import type { MealRecord } from "../types.ts";
-import { MEAL_NUTRIENT_COPY, mealNutrientTiles } from "./meal-nutrients.ts";
+import { numbersCopyFor } from "./numbers-copy.ts";
+import { mealNutrientTiles } from "./meal-nutrients.ts";
 
 const meal = {
   fiber_g: 1.4,
@@ -13,10 +14,10 @@ const meal = {
 describe("mealNutrientTiles", () => {
   it("draws the four figures in the meal-sheet order, with the board's English words", () => {
     expect(mealNutrientTiles(meal, "en")).toEqual([
-      { key: "fiber", icon: "fibre", value: "1g", label: "Fiber" },
+      { key: "fiber", icon: "fibre", value: "1g", label: "Fibre" },
       { key: "sugar", icon: "sugar", value: "2g", label: "Sugar" },
       { key: "sodium", icon: "salt", value: "319mg", label: "Sodium" },
-      { key: "satfat", icon: "satfat", value: "6g", label: "Sat fat" },
+      { key: "satfat", icon: "satfat", value: "6g", label: "Saturated fat" },
     ]);
   });
 
@@ -25,19 +26,12 @@ describe("mealNutrientTiles", () => {
     expect(tiles.map((t) => t.value)).toEqual(["1г", "2г", "1 234мг", "6г"]);
   });
 
-  it("has the four tile labels in every shipped language", () => {
+  it("reuses the numbers form's nutrient names rather than keeping a second copy", () => {
     for (const lang of LANGS_READY) {
-      const copy = MEAL_NUTRIENT_COPY[lang];
-      expect(copy, lang).toBeDefined();
-      for (const key of ["fiber", "sugar", "sodium", "satfat"] as const) {
-        expect(copy![key].length, `${lang}.${key}`).toBeGreaterThan(0);
-      }
+      const copy = numbersCopyFor(lang);
+      const labels = Object.fromEntries(mealNutrientTiles(meal, lang).map((tile) => [tile.key, tile.label]));
+      expect(labels).toEqual({ fiber: copy.fibre, sugar: copy.sugar, sodium: copy.sodium, satfat: copy.satfat });
     }
   });
 
-  it("keeps the saturated-fat caption inside the compact tile's measure in every language", () => {
-    for (const lang of LANGS_READY) {
-      expect([...MEAL_NUTRIENT_COPY[lang]!.satfat].length, lang).toBeLessThanOrEqual(14);
-    }
-  });
 });

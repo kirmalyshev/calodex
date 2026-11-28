@@ -9,6 +9,7 @@
 import { execSync } from "node:child_process";
 import type { Page } from "@playwright/test";
 import type { DayResponse } from "@eait/shared/contract";
+import { wholeNumbers } from "@eait/shared";
 import { expect, logMeal, onboardFast, sessionToken, signIn, test } from "./fixtures.ts";
 
 // The review shots (#93's gate). `test-results/` is gitignored; the names carry the sha instead
@@ -75,23 +76,23 @@ test("the meal opens: photo, kcal, macro tiles, ingredients, verdicts, score", a
   // The page itself lands under the clip: a wrong distance still has a transform and both pages'
   // text in the DOM, so state alone cannot catch a misaligned track.
   const xGap = async (what: "micro" | "macro") => {
-    const clipBox = await page.locator(".mtileclip").boundingBox();
+    const tilesBox = await page.locator(".mtiles").boundingBox();
     const box = await (what === "micro" ? micro : macros).boundingBox();
-    if (clipBox === null || box === null) return 9999;
-    const want = what === "micro" ? clipBox.x : clipBox.x - clipBox.width;
+    if (tilesBox === null || box === null) return 9999;
+    const want = what === "micro" ? tilesBox.x : tilesBox.x - tilesBox.width;
     return Math.abs(box.x - want);
   };
   await expect.poll(() => xGap("micro"), { timeout: 2000 }).toBeLessThan(1);
   await expect.poll(() => xGap("macro"), { timeout: 2000 }).toBeLessThan(1);
-  await expect(micro).toContainText("Fiber");
+  await expect(micro).toContainText("Fibre");
   await expect(micro).toContainText("Sugar");
   await expect(micro).toContainText("Sodium");
-  await expect(micro).toContainText("Sat fat");
-  const whole = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
-  await expect(micro).toContainText(`${whole.format(record.fiber_g)}g`);
-  await expect(micro).toContainText(`${whole.format(record.sugar_g)}g`);
-  await expect(micro).toContainText(`${whole.format(record.sodium_mg)}mg`);
-  await expect(micro).toContainText(`${whole.format(record.satfat_g)}g`);
+  await expect(micro).toContainText("Saturated fat");
+  const whole = wholeNumbers("en");
+  await expect(micro).toContainText(`${whole(record.fiber_g)}g`);
+  await expect(micro).toContainText(`${whole(record.sugar_g)}g`);
+  await expect(micro).toContainText(`${whole(record.sodium_mg)}mg`);
+  await expect(micro).toContainText(`${whole(record.satfat_g)}g`);
   // The arrow key on a focused dot is the same page turn, back to the macros.
   await page.keyboard.press("ArrowLeft");
   await expect(macros).toHaveAttribute("aria-hidden", "false");
