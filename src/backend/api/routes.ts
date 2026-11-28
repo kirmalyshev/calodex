@@ -1159,7 +1159,7 @@ export function createRouter(
         if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
         const body: unknown = await req.json();
         if (!isRedateMealRequest(body)) return json({ error: "bad-edit" }, 400);
-        const result = await redateMeal(deps, userId, decodeURIComponent(redateMatch[1]!), body.dayOffset, { thread: true });
+        const result = await redateMeal(deps, userId, decodeURIComponent(redateMatch[1]!), body.dayOffset, { thread: true, ...(body.time === undefined ? {} : { time: body.time }) });
         return result.kind === "target-gone"
           ? json({ error: "target-gone", on: result.on }, 409)
           : json(result satisfies RedateMealResponse);
