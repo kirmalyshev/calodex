@@ -388,7 +388,8 @@ export function firstMealScreen(me: ProfileResponse): HTMLElement {
           body: JSON.stringify(edit),
         });
         analytics.capture("meal_edited", { items_edited: "items" in edit });
-        // The contract's 200 here is only the updated meal; every other outcome is an error status.
+        // "target-gone" and the refusals are statuses; a JSON body here is the updated meal.
+        if (r.kind !== "updated") throw new ApiError(200, { error: r.kind }, `edit: ${r.kind}`);
         // The WHOLE card is rebuilt from the server's answer; nothing of the old one survives.
         openVerdict(r.analysis, r.mealId, r);
       });
