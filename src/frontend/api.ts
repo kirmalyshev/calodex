@@ -24,6 +24,7 @@ import type {
   AttachPhotosResponse, EditMealRequest, EditMealResponse, ErrorResponse, MilestonesResponse,
   MilestonesSeenRequest, NDJSON, PushConsentRequest, PushConsentResponse, PushOpenRequest,
   PushTokenRequest, RateMealRequest, RedateMealRequest, ReportMealRequest, ReportMealResponse, SaveMealRequest, SaveMealResponse, SavedMeal,
+  CopyMealRequest, CopyMealResponse,
   SavedMealsResponse,
 } from "@eait/shared/contract";
 import type { MealLogged, TargetGone } from "../shared/results.ts";
@@ -261,6 +262,10 @@ export const rateMeal = (mealId: string, up: boolean): Promise<MealRecord> =>
 /** Report a problem with a meal for human review (calodex_app#3688). */
 export const reportMeal = (mealId: string, text: string): Promise<ReportMealResponse> =>
   api<ReportMealResponse>(`/meals/${encodeURIComponent(mealId)}/report`, json("POST", { text } satisfies ReportMealRequest));
+
+/** Copy a meal onto one or more days, under the one idempotency key the sheet keeps across retries (calodex_app#3683). */
+export const copyMeal = (mealId: string, dayOffsets: number[], clientId: string): Promise<CopyMealResponse> =>
+  api<CopyMealResponse>(`/meals/${encodeURIComponent(mealId)}/copy`, json("POST", { dayOffsets, clientId } satisfies CopyMealRequest));
 
 export const deleteSavedMeal = async (id: string): Promise<void> => {
   try {
