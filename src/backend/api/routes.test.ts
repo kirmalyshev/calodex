@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, setSystemTime } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import {
-  CHANNEL_HEADER, HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
+  CHANNEL_HEADER, HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_MEAL_ITEMS, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
   dateMinus, localDate, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
   type DaysResponse, type MealRecord, type ProfileResponse, type MealProposed, type PendingMealsResponse,
-  type ChatEntry, type WeightsResponse,
+  type ChatEntry, type FoodRef, type WeightsResponse,
 } from "@eait/shared";
 import { DEFAULT_MEAL_REMINDERS } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
@@ -2684,6 +2684,37 @@ describe("store-review sign-in (eait#713)", () => {
     const res = await r.verify("someone@example.com", r.sent[0]!.code);
     expect(res.status).toBe(200);
     expect(await r.active(((await res.json()) as { token: string }).token)).toBe(false);
+  });
+});
+
+describe("ingredient appends over HTTP (ieat-app#3678)", () => {
+  const oliveOil: FoodRef = {
+    id: "usda-sr:olive-oil", source: "usda-sr", name: "Olive oil", name_de: "Olivenöl", name_en: "Olive oil",
+    names: {}, category: null, kcal_per_100g: 884, protein_g_per_100g: 0, carbs_g_per_100g: 0, fat_g_per_100g: 100,
+    satfat_g_per_100g: 14, fiber_g_per_100g: 0, sugar_g_per_100g: 0, sodium_mg_per_100g: 2,
+    nutrients: {}, portions: [], source_url: null, attribution: [],
+  };
+
+  it("answers unknown-food when the appended catalog row does not exist", async () => {
+    const token = await session();
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: "usda-sr:missing", grams: 30 } }, token);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "unknown-food" });
+  });
+
+  it("answers the meal-items cap rather than a successful edit", async () => {
+    const token = await session();
+    await store.putFoodRefs([oliveOil]);
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const fill = await patch(ROUTES.meal(logged.mealId), {
+      items: Array.from({ length: MAX_MEAL_ITEMS }, (_, i) => ({ name: `item ${i}`, grams: 10, kcal: 20 })),
+    }, token);
+    expect(fill.status).toBe(200);
+
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "too-many-items", limit: MAX_MEAL_ITEMS });
   });
 });
 

@@ -6494,6 +6494,9 @@
         "description": "`PATCH /v1/meals/:id` — the manual edit. The other half of \"you can edit the LLM's answer\", alongside the natural-language path through `/v1/messages`.\n\nThe client sends the numbers it wants stored. It does NOT send `verdicts`, and the field does not exist on this type: verdicts are recomputed server-side from the user's caps after every edit (`verdictsFromTargets` → `visibleVerdicts`). A client that could set them could paint \"good\" over a meal that blows a medical cap, and the person reading that card declared a medical restriction."
       },
       "EditMealResponse": {
+        "$ref": "#/components/schemas/EditMealResult"
+      },
+      "EditMealResult": {
         "anyOf": [
           {
             "$ref": "#/components/schemas/MealUpdated"
@@ -6503,6 +6506,9 @@
           },
           {
             "$ref": "#/components/schemas/MealChanged"
+          },
+          {
+            "$ref": "#/components/schemas/MealItemsFull"
           }
         ]
       },
@@ -7877,6 +7883,24 @@
         "additionalProperties": false,
         "description": "One food on the plate.\n\nThe optional fields are written `?: T | undefined` rather than `?: T` on purpose, despite `exactOptionalPropertyTypes`. An item crosses two JSON boundaries — the analyzer's response and this API's — and \"absent\" and \"present but undefined\" are the same value on the far side of both. Claiming the stricter type is what forces a cast at the parser, and a cast at the parser is how a missing field reached a phone once already. Every consumer here already tests `!== undefined`."
       },
+      "MealItemsFull": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "too-many"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "limit"
+        ],
+        "additionalProperties": false,
+        "description": "A catalog ingredient would put the meal past `MAX_MEAL_ITEMS` (ieat-app#3678). Not a refusal: the account is fine, the edit is not."
+      },
       "MealLabel": {
         "type": "object",
         "properties": {
@@ -8262,6 +8286,9 @@
         "anyOf": [
           {
             "$ref": "#/components/schemas/HandleTextResult"
+          },
+          {
+            "$ref": "#/components/schemas/MealItemsFull"
           },
           {
             "$ref": "#/components/schemas/OutcomeUnknown"

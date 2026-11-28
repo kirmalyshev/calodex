@@ -11,11 +11,11 @@
 //     verdict can never describe numbers that have since changed.
 
 import {
-  type DailyTotals, type EditMealRequest, type LogPhotoResult, type MealAnalysis, type MealHint,
+  type DailyTotals, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
-  type MealRedated, type MealUpdated, type PhotoEvent,
+  type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
   type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_SAVED_MEALS, mealNames, mealServings, scaledItem,
-  explainTargets, verdictsFromTargets, visibleVerdicts,
+  explainTargets, verdictsFromTargets, visibleVerdicts, MAX_MEAL_ITEMS,
 } from "@eait/shared";
 import {
   FOOD_LOG_DEFAULT_GRAMS, FOOD_LOG_MAX_GRAMS, LANG_TAG, type NumbersLogRequest, PHOTO_MODEL_CALLS, UNIT_KCAL, VERDICT_DIMENSIONS, dateMinus, healthScore, localDate, localTime,
@@ -87,6 +87,11 @@ export function sumTotals(meals: readonly MealRecord[]): DailyTotals {
  */
 function hintFor(analysis: AnalyzedMeal): MealHint {
   return analysis.confidence === "low" ? "lowConfidence" : "correction";
+}
+
+/** The catalog row's name in the account's language, falling back to the row's own primary name. */
+function catalogName(food: FoodRef, lang: Lang): string {
+  return (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
 }
 
 /**
@@ -511,7 +516,7 @@ export async function editMeal(
   // them against the stored meal would strip the provenance of every new or renamed item. Set by
   // `applyCorrection` only; the PATCH route and the meal-update job never do.
   opts: { thread?: boolean; measure?: boolean; serverItems?: boolean; attempt?: number; readVersion?: number } = {},
-): Promise<MealUpdated | TargetGone | MealChanged> {
+): Promise<EditMealResult> {
   const existing = await deps.store.getMealVersioned(userId, mealId);
   // Scoped read: another user's meal id resolves to null here, indistinguishable from a deleted one.
   if (!existing) return { kind: "target-gone", on: "correction" };
@@ -540,7 +545,7 @@ export async function editMeal(
     const target = base[request.swap.index];
     const food = target === undefined ? null : await deps.store.foodById(request.swap.ref);
     const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
-    const name = food === null ? "" : (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
+    const name = food === null ? "" : catalogName(food, lang);
     const grounded = target === undefined || food === null || !(target.grams > 0) ? null : mealFromFood(food, target.grams, name)?.items[0];
     if (!grounded || target === undefined) return { kind: "target-gone", on: "correction" };
     const swapped: MealItem = { ...grounded, ...(target.role !== undefined ? { role: target.role } : {}) };
@@ -551,9 +556,10 @@ export async function editMeal(
   // asked for, added after every item edit above. Provenance is ours because the row is read here.
   if (request.add !== undefined) {
     const base = items ?? existing.items;
+    if (base.length >= MAX_MEAL_ITEMS) return { kind: "too-many", limit: MAX_MEAL_ITEMS };
     const food = await deps.store.foodById(request.add.ref);
     const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
-    const name = food === null ? "" : (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
+    const name = food === null ? "" : catalogName(food, lang);
     const grounded = food === null || !(request.add.grams > 0) ? null : mealFromFood(food, request.add.grams, name)?.items[0];
     if (!grounded) return { kind: "target-gone", on: "correction" };
     items = [...base, grounded];
@@ -870,6 +876,9 @@ export async function applyCorrection(
     fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g, sodium_mg: analysis.sodium_mg,
     // These items are the server's own grounded analysis, so their ref/food are kept, not audited.
   }, { thread: false, measure: false, serverItems: true, ...(readVersion !== undefined ? { readVersion } : {}) });
+  // A correction never carries `add`, so the item cap is unreachable here; the type cannot see the
+  // request literal, and the failure mode of swallowing it would be a correction reported as lost.
+  if (res.kind === "too-many") throw new Error("a correction cannot append an ingredient");
   return res.kind === "updated" ? { ...res, via: "nl" } : res;
 }
 
@@ -1282,7 +1291,7 @@ export async function logFoodMeal(
     const grams = Math.round(input.grams ?? FOOD_LOG_DEFAULT_GRAMS);
     if (!food || !(grams > 0) || grams > FOOD_LOG_MAX_GRAMS) return { kind: "unknown-food" } as const;
     const lang = profile.lang;
-    const name = (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
+    const name = catalogName(food, lang);
     const analysis = mealFromFood(food, grams, name);
     if (!analysis) return { kind: "unknown-food" } as const;
 

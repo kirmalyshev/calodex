@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { OUTCOME_UNKNOWN } from "../../shared/contract.ts";
-import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
+import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_MEAL_ITEMS, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { LeanSchema, widen } from "../llm/lean.ts";
@@ -1302,6 +1302,19 @@ describe("editing the answer", () => {
     }
     expect((await store.getMeal(userId, meal.mealId))!.items).toHaveLength(before.items.length);
     expect((await store.getMeal(userId, meal.mealId))!.kcal).toBe(before.kcal);
+  });
+
+  it("refuses an add that would pass the meal-items cap", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const fifty = Array.from({ length: MAX_MEAL_ITEMS }, (_, i) => ({ name: `item ${i}`, grams: 10, kcal: 20 }));
+    const filled = await editMeal(deps, userId, meal.mealId, { items: fifty });
+    if (filled.kind !== "updated") throw new Error(`expected updated, got ${filled.kind}`);
+
+    const out = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
+    expect(out).toEqual({ kind: "too-many", limit: MAX_MEAL_ITEMS });
+    expect((await store.getMeal(userId, meal.mealId))!.items).toHaveLength(MAX_MEAL_ITEMS);
   });
 
   it("cannot add an ingredient to another user's meal", async () => {

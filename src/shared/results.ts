@@ -218,6 +218,11 @@ export interface MealRedated {
 /** A write refused because the meal's numbers changed under it (ieat-app#2695). A member of `Refusal`: its status comes from `REFUSAL_STATUS` (409) and `streamEnd`/`isRefusal` carry it with no special case. */
 export type MealChanged = Extract<Refusal, { kind: "meal-changed" }>;
 
+/** A catalog ingredient would put the meal past `MAX_MEAL_ITEMS` (ieat-app#3678). Not a refusal: the account is fine, the edit is not. */
+export interface MealItemsFull { kind: "too-many"; limit: number }
+
+export type EditMealResult = MealUpdated | TargetGone | MealChanged | MealItemsFull;
+
 export type HandleTextResult =
   | Answered
   | MealProposed

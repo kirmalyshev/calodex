@@ -14,7 +14,7 @@ import type { FirstVerdictArm, OnboardingContent, OnboardingEvent } from "./onbo
 import type { ServedScreens } from "./screen-template.ts";
 import type { AnalyticsServerContext } from "./analytics.ts";
 import type { TargetBasis } from "./targets.ts";
-import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
+import type { ChatSpeaker, ConfirmMealResult, EditMealResult, HandleTextResult, MealItemsFull, LogPhotoResult, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
 import type { BmiRange } from "./scores.ts";
 import { WEIGHT_RANGES, type ChartDay, type WeightRange } from "./ui/charts.ts";
@@ -1410,7 +1410,7 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
   return true;
 }
 
-export type EditMealResponse = MealUpdated | TargetGone | MealChanged;
+export type EditMealResponse = EditMealResult;
 
 /**
  * `POST /v1/meals/:id/redate` — "Move to yesterday", as an offset: `1` is yesterday, `0` a no-op,
@@ -2197,7 +2197,7 @@ export type MealUpdateRequest =
   | ({ mealId: string; clientId: string; capturedAt?: string } & MealUpdateBody)
   | { kind: "note"; text: string; clientId: string; capturedAt?: string };
 /** A queued update's last line: what the same change answers when it is not queued. */
-export type MealUpdateLast = HandleTextResult | OutcomeUnknown;
+export type MealUpdateLast = HandleTextResult | MealItemsFull | OutcomeUnknown;
 
 /** The body is a cast, not a validation: it ends in a stored sentence and a verdict. */
 export function isMealUpdateRequest(body: unknown): body is MealUpdateRequest {
