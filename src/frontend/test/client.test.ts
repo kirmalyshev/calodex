@@ -123,3 +123,12 @@ describe("the first-meal screen's served words", () => {
     expect(src).not.toMatch(/await api<OnboardingContentResponse>/);
   });
 });
+
+
+describe("a label meal's servings editor", () => {
+  it("starts from the meal's current servings, not the scan's frozen provenance (#3677)", () => {
+    const src = code("screens/meal.ts");
+    expect(src).toContain("const stored = mealServings(meal)");
+    expect(src).not.toContain("const stored = meal.label.servings");
+  });
+});
