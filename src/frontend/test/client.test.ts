@@ -125,10 +125,19 @@ describe("the first-meal screen's served words", () => {
 });
 
 
-describe("a label meal's servings editor", () => {
-  it("starts from the meal's current servings, not the scan's frozen provenance (#3677)", () => {
+describe("the servings editor", () => {
+  it("is its own panel on every meal, opened by the chip beside the title (#3677)", () => {
     const src = code("screens/meal.ts");
+    expect(src).toContain("const servingsPanel = (meal: MealRecord)");
+    expect(src).toContain("const chip = el(\"button\", \"svchip\")");
+    expect(src).toContain("chip.addEventListener(\"click\", () => openPanel(servingsPanel(meal)))");
+    expect(src).toContain("mc.servingsChipLabel");
+    expect(src).toContain("MAX_LABEL_SERVINGS");
+    expect(src).toContain('count.setAttribute("aria-live", "polite")');
+    expect(src).toContain('sum.setAttribute("aria-live", "polite")');
+    expect(src).toContain("chip.disabled = updating");
     expect(src).toContain("const stored = mealServings(meal)");
     expect(src).not.toContain("const stored = meal.label.servings");
+    expect(src).not.toContain("A LABEL MEAL'S CORRECTION IS ITS SERVINGS");
   });
 });

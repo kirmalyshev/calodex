@@ -142,6 +142,51 @@ test("Correct opens the meal's fix panel — the Cal-AI sheet, not a chat (#188)
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
+test("the servings chip opens Number of Servings on any meal, and Update sends servings alone (#3677)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const before = (await day(page)).meals.find((m) => m.id === id)!;
+
+  // The chip sits beside the meal's name on every meal — not only a label scan — and opens the
+  // servings panel itself, rather than the Correct form.
+  const chip = page.getByRole("button", { name: "Number of Servings: 1" });
+  await expect(chip).toBeVisible();
+  await chip.click();
+  const dialog = page.getByRole("dialog", { name: "Number of Servings" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Per serving:", { exact: false })).toBeVisible();
+  await expect(dialog.locator(".svnum")).toHaveText("1");
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await shot(page, "servings-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "servings-390");
+  const update = dialog.getByRole("button", { name: "Update" });
+  await expect(update).toBeDisabled();
+
+  // Half steps preview the multiplied total without writing anything.
+  await dialog.getByRole("button", { name: "More" }).click();
+  await expect(dialog.locator(".svnum")).toHaveText("1.5");
+  await expect(dialog.locator(".svtotals")).toContainText(`${Math.round(before.kcal * 1.5)}`);
+  await expect(update).toBeEnabled();
+  expect((await day(page)).meals.find((m) => m.id === id)!.kcal).toBe(before.kcal);
+
+  // The write is the servings field alone: items, totals and verdicts stay server-computed.
+  const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
+  await update.click();
+  const body = (await sent).postDataJSON() as { edit?: Record<string, unknown> };
+  expect(body).toMatchObject({ kind: "ingredients", mealId: id });
+  expect(body.edit).toEqual({ servings: 1.5 });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  // Correct remains the sentence form; it does not swallow the servings editor. The write itself
+  // closed back to the diary, so reopen the meal before opening it.
+  await page.goto(`/#/meal/${id}`);
+  await expect(page.locator(".hsr")).toBeVisible();
+  await page.getByRole("link", { name: "Correct this meal" }).click();
+  const correct = page.getByRole("dialog", { name: "Correct this meal" });
+  await expect(correct).toBeVisible();
+  await expect(correct.getByText("Servings", { exact: true })).toHaveCount(0);
+});
+
 test("the menu: re-read recomputes in place, and delete asks first", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   await page.locator(".mdetail .ib").last().click();
