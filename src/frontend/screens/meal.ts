@@ -26,9 +26,10 @@ import { dateMinus, daysBack, isCalendarDate, localDate, localTime, weekStart } 
 import { LANG_TAG, UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import {
   catalogPortions, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText,
-  portionGrams, previewKcal, scaledItem, servingsPreview,
+  portionGrams, previewKcal, scaledItem, servingsPreview, nutritionOverrideItem,
 } from "../../shared/meal-edit.ts";
 import { initialPortionIndex, measuredItem } from "../measurement.ts";
+import { dayBudget } from "../../shared/budget.ts";
 import { mealDisplayName, mealNames } from "../../shared/meal-names.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
@@ -51,7 +52,7 @@ import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { appliedAt, shrinkPhotos } from "../photo.ts";
 import {
-  enqueueUpdate, inPlace, jobFor, queueJobRow, takeSentGrams, takeSentNote, updateBannerEl,
+  enqueueUpdate, inPlace, jobFor, queueJobRow, takeSentDraft, takeSentNote, updateBannerEl,
   updateFor, watchJobs, type Job,
 } from "../queue.ts";
 import { esc, ico, tagx } from "../../shared/ui/kit.ts";
@@ -743,7 +744,11 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
    * verdicts. The bin PATCHes the item off the meal at once; Done PATCHes the grams —
    * `mealEditRequest` sends `{ items }` alone and a Done that moved nothing writes nothing.
    */
-  const ingredientPanel = (meal: MealRecord, index: number): { node: HTMLElement; focus: HTMLElement } => {
+  // The nested nutrition editor's "Out of {n} left today" is TODAY's remaining budget through the
+  // shared arithmetic (#3680) — never the meal's own day, which the words do not name, and never a
+  // client subtraction. draw() refreshes it before any panel can open; null hides the line.
+  let nutBudgetLeft: number | null = null;
+  const ingredientPanel = (meal: MealRecord, index: number, day: DayResponse): { node: HTMLElement; focus: HTMLElement } => {
     const item = meal.items[index]!;
     const scrim = el("div", "mscrim");
     scrim.addEventListener("click", (e) => { if (e.target === scrim) closeOverlay(); });
@@ -814,8 +819,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const grams = el("input", "amtin num") as HTMLInputElement;
     grams.type = "text";
     grams.inputMode = "decimal";
-    const sent = takeSentGrams(meal.id, index);
-    grams.value = sent ?? `${item.grams}`;
+    const sent = takeSentDraft(meal.id, index);
+    grams.value = sent?.grams ?? `${item.grams}`;
     grams.setAttribute("aria-label", mc.phoneAmount);
     const size = (field: HTMLInputElement = grams): void => { field.style.width = `${Math.max(2, field.value.length)}ch`; };
     size();
@@ -830,12 +835,14 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       fill(mc.phoneWasAmount, { amount: fill(mc.phoneGrams, { n: n(item.grams) }) }));
     wasG.hidden = true;
     dlg.append(amountRow, wasG);
-    if (sent !== null) dlg.append(el("span", "t13 m", fill(mc.phoneIngredientKept, { grams: fill(mc.phoneGrams, { n: sent }) })));
+    if (item.typed) { amountRow.hidden = true; wasG.hidden = true; }
+    if (sent?.grams !== undefined) dlg.append(el("span", "t13 m", fill(mc.phoneIngredientKept, { grams: fill(mc.phoneGrams, { n: sent.grams }) })));
 
     // Calories, live off the item's own density; "was" keeps the figure the edit started from. An
     // item that reports no kcal draws no card — the preview has nothing to scale.
     const kcalNow = el("b", "d d28 num", item.kcal !== undefined ? kn(item.kcal) : "");
     let wasK: HTMLElement | null = null;
+    let kcalOpen: HTMLButtonElement | null = null;
     if (item.kcal !== undefined) {
       const kcalLeft = el("div", "");
       const kcalRow = el("div", "row ingkrow");
@@ -843,9 +850,15 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       kcalLeft.append(el("span", "t12 m", cc.macroLabels.kcal), kcalRow);
       wasK = el("span", "t13 m num", fill(mc.phoneWasAmount, { amount: `${kn(item.kcal)}` }));
       wasK.hidden = true;
-      const kcalCard = el("div", "card row between ingkcal");
-      kcalCard.append(kcalLeft, wasK);
-      dlg.append(kcalCard);
+      const kcalRight = el("div", "row ingkright");
+      kcalRight.append(wasK, kitEl(ico("chevron-right")));
+      kcalOpen = el("button", "card ingkcal") as HTMLButtonElement;
+      kcalOpen.type = "button";
+      kcalOpen.setAttribute("aria-label", mc.phoneEditNutrition);
+      const kcalContent = el("div", "row between");
+      kcalContent.append(kcalLeft, kcalRight);
+      kcalOpen.append(kcalContent);
+      dlg.append(kcalOpen);
     }
 
     // Where the numbers come from (ieat-app #1954): the item's own `ref`/`food`, drawn as stored —
@@ -880,7 +893,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const mealRow = el("div", "row between");
     const mealMove = el("span", "num");
     const drawMove = (): void => {
-      const preview = previewKcal(meal, index, gramsNow() ?? 0);
+      const typed = stagedNutrition?.kcal;
+      const preview = typed !== undefined && item.kcal !== undefined
+        ? { meal: meal.kcal + (typed - item.kcal) }
+        : previewKcal(meal, index, gramsNow() ?? 0);
       mealMove.textContent = fill(mc.phoneMealMove, {
         from: kn(meal.kcal), to: kn(preview?.meal ?? meal.kcal),
       });
@@ -904,7 +920,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       wasG.hidden = !edited;
       if (wasK !== null) wasK.hidden = !edited;
       const scaled = g === null ? null : scaledItem(item, g);
-      kcalNow.textContent = scaled?.kcal !== undefined ? kn(scaled.kcal)
+      kcalNow.textContent = stagedNutrition?.kcal !== undefined ? kn(stagedNutrition.kcal)
+        : scaled?.kcal !== undefined ? kn(scaled.kcal)
         : item.kcal !== undefined ? kn(item.kcal) : "";
       drawMove();
       // A portion stays the measurement while grams move under it — the count answers, unless
@@ -922,11 +939,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     // typed, typing a count moves the grams (`portionGrams`), and Done writes `itemAtPortion` or
     // `itemAtGrams`. An item with no catalog portions never draws any of this — the editor stays
     // exactly grams-only.
-    const portions = catalogPortions(item);
+    const portions = item.typed ? [] : catalogPortions(item);
     let portionIndex = initialPortionIndex(item);
     let countField: HTMLInputElement | null = null;
+    let measureBlock: HTMLElement | null = null;
     if (portions.length > 0) {
       const block = el("div", "ingmeasure");
+      measureBlock = block;
       block.append(el("span", "amlab", mc.phoneMeasurement));
       const chips = el("div", "ingchips");
       const servingRow = el("div", "row between ingserv");
@@ -982,6 +1001,126 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       amountRow.before(block);
       syncChips();
     }
+
+    type NutritionField = "kcal" | "protein_g" | "carbs_g" | "fat_g";
+    let stagedNutrition: Pick<MealItem, NutritionField> | null = null;
+
+    /** The item the amount editor would write right now, before any typed nutrition is applied. */
+    const amountEdited = (base: MealItem): MealItem => {
+      const g = gramsNow();
+      if (g === null) return base;
+      if (portions.length === 0) return scaledItem(base, g);
+      const raw = countField === null ? Number.NaN : Number.parseFloat(countField.value.replace(",", "."));
+      const count = Number.isFinite(raw) && raw > 0 ? raw : null;
+      return measuredItem(base, portionIndex, count, g);
+    };
+
+    const syncStagedChrome = (): void => {
+      const staged = stagedNutrition !== null;
+      srcCard.hidden = staged;
+      if (measureBlock !== null) measureBlock.hidden = staged;
+      if (!item.typed) amountRow.hidden = staged || portionIndex !== null;
+      if (wasK !== null) wasK.hidden = staged || gramsNow() === item.grams;
+      kcalNow.textContent = stagedNutrition?.kcal !== undefined ? kn(stagedNutrition.kcal)
+        : item.kcal !== undefined ? kn(item.kcal) : "";
+      drawMove();
+    };
+
+    // Typed calories and macros (#3680): the calorie card opens Cal AI's second page inside this
+    // same dialog. Nothing is sent here — Done stages all four core figures, and the ingredient
+    // editor's own Done is still the write.
+    const nutPage = el("div", "ingnut");
+    nutPage.hidden = true;
+    const nutBack = iconButton("chevron-left", mc.phoneIngredientTitle);
+    const nutHead = el("div", "row between");
+    const nutSpacer = el("span", "ib");
+    nutSpacer.setAttribute("aria-hidden", "true");
+    nutSpacer.style.visibility = "hidden";
+    nutHead.append(nutBack, el("span", "d d17", mc.phoneEditNutrition), nutSpacer);
+    const budget = el("p", "t13 m ingbudget");
+    if (nutBudgetLeft !== null) budget.textContent = fill(mc.phoneNutritionLeftToday, { n: kn(nutBudgetLeft) });
+    else budget.hidden = true;
+    const nutFields = el("div", "card ingnutfields");
+    const nutInputs = {} as Record<NutritionField, HTMLInputElement>;
+    const nutSpecs = [
+      ["kcal", cc.macroLabels.kcal, UNIT_KCAL[lang]],
+      ["protein_g", cc.macroLabels.protein, spellUnit(lang, "g")],
+      ["carbs_g", cc.macroLabels.carbs, spellUnit(lang, "g")],
+      ["fat_g", cc.macroLabels.fat, spellUnit(lang, "g")],
+    ] as const;
+    for (const [key, label, unit] of nutSpecs) {
+      const row = el("label", "row between ingnutrow");
+      const input = el("input", "amtin num") as HTMLInputElement;
+      input.type = "text";
+      input.inputMode = "decimal";
+      input.setAttribute("aria-label", label);
+      nutInputs[key] = input;
+      const figure = el("span", "amtpill ingnutpill");
+      figure.append(input, el("span", "amtunit", unit));
+      row.append(el("span", "amlab", label), figure);
+      nutFields.append(row);
+    }
+    const nutActions = el("div", "row ingnutactions");
+    const nutRevert = el("button", "cta s", mc.phoneRevert) as HTMLButtonElement;
+    nutRevert.type = "button";
+    const nutDone = el("button", "cta p", mc.phoneDone) as HTMLButtonElement;
+    nutDone.type = "button";
+    nutActions.append(nutRevert, nutDone);
+    nutPage.append(nutHead, budget, nutFields, nutActions);
+    dlg.append(nutPage);
+
+    const nutrientValue = (input: HTMLInputElement): number | null => {
+      if (input.value.trim() === "") return null;
+      const value = Number.parseFloat(input.value.replace(",", "."));
+      return Number.isFinite(value) && value >= 0 ? value : null;
+    };
+    const readNutrition = (): Pick<MealItem, NutritionField> | null => {
+      const draft = {
+        kcal: nutrientValue(nutInputs.kcal),
+        protein_g: nutrientValue(nutInputs.protein_g),
+        carbs_g: nutrientValue(nutInputs.carbs_g),
+        fat_g: nutrientValue(nutInputs.fat_g),
+      };
+      return Object.values(draft).every((v) => v !== null) ? draft as Pick<MealItem, NutritionField> : null;
+    };
+    const syncNutritionDone = (): void => { nutDone.disabled = readNutrition() === null; };
+    for (const input of Object.values(nutInputs)) input.addEventListener("input", syncNutritionDone);
+    const nutritionOpen = (open: boolean): void => {
+      nutPage.hidden = !open;
+      dlg.setAttribute("aria-label", open ? mc.phoneEditNutrition : mc.phoneIngredientTitle);
+      for (const child of Array.from(dlg.children)) {
+        if (child !== nutPage) child.toggleAttribute("inert", open);
+      }
+    };
+    const closeNutrition = (): void => nutritionOpen(false);
+    nutBack.addEventListener("click", () => { closeNutrition(); kcalOpen?.focus(); });
+    nutRevert.addEventListener("click", () => {
+      stagedNutrition = null;
+      closeNutrition();
+      syncStagedChrome();
+      onGramsInput();
+      kcalOpen?.focus();
+    });
+    nutDone.addEventListener("click", () => {
+      stagedNutrition = readNutrition();
+      if (stagedNutrition === null) return;
+      closeNutrition();
+      syncStagedChrome();
+      kcalOpen?.focus();
+    });
+    kcalOpen?.addEventListener("click", () => {
+      const base = amountEdited(item);
+      const seed = stagedNutrition ?? base;
+      nutInputs.kcal.value = seed.kcal === undefined ? "" : `${seed.kcal}`;
+      nutInputs.protein_g.value = seed.protein_g === undefined ? "" : `${seed.protein_g}`;
+      nutInputs.carbs_g.value = seed.carbs_g === undefined ? "" : `${seed.carbs_g}`;
+      nutInputs.fat_g.value = seed.fat_g === undefined ? "" : `${seed.fat_g}`;
+      syncNutritionDone();
+      nutritionOpen(true);
+      nutInputs.kcal.focus();
+      nutInputs.kcal.select();
+    });
+
     drawMove();
 
     // Both writes end in the same PATCH: items only — the server derives the totals, and the
@@ -989,7 +1128,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const applyItems = (items: MealItem[], typed?: string): void => {
       const req = mealEditRequest(meal, items);
       if (req === null) { closeOverlay(); return; }
-      enqueueUpdate(meal, { kind: "ingredients", edit: req }, typed === undefined ? undefined : { index, value: typed });
+      const staged = stagedNutrition;
+      const nutrition = staged === null ? undefined : Object.fromEntries(nutSpecs.map(([key]) => [key, String(staged[key])])) as Partial<Record<"kcal" | "protein_g" | "carbs_g" | "fat_g", string>>;
+      enqueueUpdate(meal, { kind: "ingredients", edit: req }, { index, ...(typed === undefined ? {} : { grams: typed }), ...(nutrition === undefined ? {} : { nutrition }) });
       closeOverlay();
     };
     const done = el("button", "cta p", mc.phoneDone) as HTMLButtonElement;
@@ -1000,20 +1141,24 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       // derived); the grams chip writes `itemAtGrams`, dropping the measurement. Without catalog
       // portions the write is exactly what it was — a plain rescale.
       const edited = (it: MealItem): MealItem => {
-        if (portions.length === 0) return scaledItem(it, g!);
-        const raw = countField === null ? Number.NaN : Number.parseFloat(countField.value.replace(",", "."));
-        const count = Number.isFinite(raw) && raw > 0 ? raw : null;
-        return measuredItem(it, portionIndex, count, g!);
+        const base = g === null ? it : amountEdited(it);
+        if (stagedNutrition === null) return base;
+        return nutritionOverrideItem(base, stagedNutrition)?.write ?? base;
       };
-      applyItems(g === null ? [...meal.items]
-        : meal.items.map((it, i) => (i === index ? edited(it) : it)), grams.value);
+      applyItems(meal.items.map((it, i) => (i === index ? edited(it) : it)), grams.value);
     });
     bin.addEventListener("click", () => applyItems(meal.items.filter((_, i) => i !== index)));
+    // Typed nutrition put back after a failed save is staged again, exactly as its Done left it.
+    if (sent?.nutrition !== undefined) {
+      for (const [key] of nutSpecs) nutInputs[key].value = sent.nutrition[key] ?? "";
+      stagedNutrition = readNutrition();
+      syncStagedChrome();
+    }
     // Grams put back after a failed save draw their preview like typed ones.
     if (grams.value !== `${item.grams}`) grams.dispatchEvent(new Event("input"));
     dlg.append(done);
     scrim.append(dlg);
-    return { node: scrim, focus: (portionIndex !== null ? countField : null) ?? grams };
+    return { node: scrim, focus: (portionIndex !== null ? countField : null) ?? (item.typed ? kcalOpen : null) ?? grams };
   };
 
   // Save / remove from saved (#907, calodex_app#3685): `savedId` is the saved row made from THIS
@@ -1339,13 +1484,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       // the board's row verbatim, the control around it rather than inside it.
       const row = el("button", "ingbtn") as HTMLButtonElement;
       row.type = "button";
-      // A typed item's grams is a storage unit nobody weighed (#2088): no weight shown, no editor.
+      // A typed item's grams is a storage unit nobody weighed (#2088): no weight shown; its editor
+      // still opens, with only the nutrition card to edit (#3680).
       row.append(ingredientEl({
         name: item.name, ...(item.typed ? {} : { amount: fill(mc.phoneGrams, { n: n(item.grams) }) }),
         ...(item.kcal !== undefined ? { kcal: kn(item.kcal) } : {}),
       }));
-      if (item.typed) row.disabled = true;
-      else row.addEventListener("click", () => openPanel(ingredientPanel(meal, i)));
+      row.addEventListener("click", () => openPanel(ingredientPanel(meal, i, day)));
       sheet.append(row);
     });
     const verdicts = verdictListEl((meal.verdictLabels ?? []).map((v) => ({ tone: v.tone, words: v.label })));
@@ -1498,6 +1643,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     }
     activeMeal = found;
     viewing = day.date;
+    const budgetDay = ownDay.date === today ? ownDay : day.date === today ? day
+      : await api<DayResponse>(`/diary/day?date=${today}`).catch(() => null);
+    const budgetNow = budgetDay === null ? null : dayBudget(budgetDay, today, me?.profile.goal ?? null);
+    nutBudgetLeft = budgetNow === null ? null : budgetNow.state === "left" ? budgetNow.kcal : 0;
 
     clear(left);
     left.append(el("span", "lab", dateText(day.date)));
@@ -1525,7 +1674,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       history.replaceState(null, "", `#/meal/${encodeURIComponent(id)}?d=${viewing}`);
       if (p === "fix") openPanel(fixPanel(found));
       else if (p === "score") { if (found.healthScore !== null) openOverlay(scoreOverlay(found, ownDay)); }
-      else if (p < found.items.length) openPanel(ingredientPanel(found, p));
+      else if (p < found.items.length) openPanel(ingredientPanel(found, p, ownDay));
     }
   };
 

@@ -27,8 +27,8 @@ interface Update {
   body: MealUpdateBody | null;
   name: string;
   kcal: number;
-  /** The grams typed for one ingredient, so a failed save can bring them back. */
-  grams?: { index: number; value: string };
+  /** What one ingredient editor held, so a failed save can bring it back. */
+  draft?: { index: number; grams?: string; nutrition?: Partial<Record<"kcal" | "protein_g" | "carbs_g" | "fat_g", string>> };
 }
 
 
@@ -112,11 +112,11 @@ const drop = (job: Job) => {
 };
 
 /** A change to a logged meal joins the queue (#1347); its row stays where the meal is. */
-export function enqueueUpdate(meal: MealRecord, body: MealUpdateBody, grams?: { index: number; value: string }): void {
+export function enqueueUpdate(meal: MealRecord, body: MealUpdateBody, draft?: { index: number; grams?: string; nutrition?: Partial<Record<"kcal" | "protein_g" | "carbs_g" | "fat_g", string>> }): void {
   const job: Job = {
     id: crypto.randomUUID(), photos: [], compress: undefined, maxEdge: undefined, thumb: "", capturedAt: new Date().toISOString(),
     step: 1, line: null, items: [], state: "reading", words: null, mealId: null, kcal: null, flyFrom: null,
-    update: { kind: body.kind, mealId: meal.id, steps: MEAL_UPDATE_STEPS[body.kind], body, name: mealTitle(meal), kcal: meal.kcal, ...(grams ? { grams } : {}) },
+    update: { kind: body.kind, mealId: meal.id, steps: MEAL_UPDATE_STEPS[body.kind], body, name: mealTitle(meal), kcal: meal.kcal, ...(draft ? { draft } : {}) },
   };
   jobs = [job, ...jobs];
   analytics.capture("meal_update_submitted", { update_kind: body.kind, has_meal_context: true, submitted_from_chat: false });
@@ -195,12 +195,19 @@ export function updateBannerEl(mealId: string): HTMLElement {
   return box;
 }
 
-// What a failed correction sent: the fix panel or the grams editor opens with it in the field, once (no lost input).
-let sentGrams: { mealId: string; index: number; value: string } | null = null;
-export function takeSentGrams(mealId: string, index: number): string | null {
-  const value = sentGrams?.mealId === mealId && sentGrams.index === index ? sentGrams.value : null;
-  sentGrams = null;
-  return value;
+// What a failed correction sent: the fix panel or the ingredient editor opens with it in the
+// field, once (no lost input).
+export interface IngredientDraft {
+  index: number;
+  grams?: string;
+  nutrition?: Partial<Record<"kcal" | "protein_g" | "carbs_g" | "fat_g", string>>;
+}
+let sentDraft: (IngredientDraft & { mealId: string }) | null = null;
+export function takeSentDraft(mealId: string, index: number): IngredientDraft | null {
+  if (sentDraft?.mealId !== mealId || sentDraft.index !== index) return null;
+  const { mealId: _mealId, ...draft } = sentDraft;
+  sentDraft = null;
+  return draft;
 }
 let sentNote: { mealId: string; text: string } | null = null;
 export function takeSentNote(mealId: string): string {
@@ -447,13 +454,13 @@ export function updateRowEl(job: Job): HTMLElement {
   const edit = (): void => {
     if (u.mealId === null) { drop(job); return; }
     if (u.body?.kind === "note") sentNote = { mealId: u.mealId, text: u.body.text };
-    if (u.grams) sentGrams = { mealId: u.mealId, ...u.grams };
+    if (u.draft) sentDraft = { mealId: u.mealId, ...u.draft };
     drop(job);
-    const to = u.kind === "note" ? "?fix" : u.grams ? `?item=${u.grams.index}` : "";
+    const to = u.kind === "note" ? "?fix" : u.draft ? `?item=${u.draft.index}` : "";
     location.hash = `#/meal/${encodeURIComponent(u.mealId)}${to}`;
   };
   if (failed && u.body !== null && !append) button(homeCopyFor(lang).tryAgain, () => retry(job));
-  if (u.kind !== "reread" && (failed || u.kind === "note" || u.grams)) button(mealCopyFor(lang).phoneEdit, edit);
+  if (u.kind !== "reread" && (failed || u.kind === "note" || u.draft)) button(mealCopyFor(lang).phoneEdit, edit);
   if (failed) button(U.discard, () => { drop(job); redrawScreen(); });
   else button(U.ok, () => { drop(job); redrawScreen(); });
   mm.append(act);

@@ -304,6 +304,152 @@ test("a catalog ingredient measures in a named portion, and Done sends portion, 
   });
 });
 
+test("typing a catalog ingredient's calories and macros sends nutrition_override with provenance (#3680)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const token = await sessionToken(page);
+  const add = await page.request.patch(`/v1/meals/${id}`, {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+    data: { add: { ref: "usda-foundation:demo-banana", grams: 118 } },
+  });
+  expect(add.status(), await add.text()).toBe(200);
+  await page.goto(`/#/meal/${id}`);
+  await page.reload();
+  await page.locator(".ingbtn").last().click();
+
+  const editor = page.locator(".ming");
+  await expect(editor).toBeVisible();
+  // Measure it as 1 × 1 medium first, so the write proves the portion provenance survives to the server.
+  await editor.getByRole("button", { name: "1 medium", exact: true }).click();
+  await editor.getByRole("button", { name: "Edit Calories" }).click();
+  const nutrition = editor.locator(".ingnut");
+  await expect(nutrition).toBeVisible();
+  await expect(editor).toHaveAttribute("aria-label", "Edit Calories");
+  await expect(nutrition).toContainText("Out of");
+  await expect(nutrition).toContainText("left today");
+  const kcal = nutrition.locator(".ingnutrow").nth(0).locator("input");
+  const protein = nutrition.locator(".ingnutrow").nth(1).locator("input");
+  const carbs = nutrition.locator(".ingnutrow").nth(2).locator("input");
+  const fat = nutrition.locator(".ingnutrow").nth(3).locator("input");
+  await expect(kcal).not.toHaveValue("");
+  await expect(protein).not.toHaveValue("");
+  await expect(carbs).not.toHaveValue("");
+  await expect(fat).not.toHaveValue("");
+  await kcal.fill("300");
+  await protein.fill("3");
+  await carbs.fill("10");
+  await fat.fill("1");
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await shot(page, "ingredient-nutrition-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "ingredient-nutrition-390");
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await nutrition.getByRole("button", { name: "Done" }).click();
+
+  // Staging is visible but writes nothing yet: the catalog measurement and source no longer apply.
+  await expect(nutrition).toBeHidden();
+  await expect(editor.locator(".ingmeasure")).toBeHidden();
+  await expect(editor.locator(".ingsrc")).toBeHidden();
+  await expect(editor.locator(".ingkcal")).toContainText("300");
+
+  const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
+  await editor.locator(":scope > .cta").click();
+  const body = (await sent).postDataJSON() as { edit?: { items?: Array<Record<string, unknown>> } };
+  const banana = body.edit?.items?.at(-1);
+  expect(banana).toMatchObject({
+    ref: "usda-foundation:demo-banana", kcal: 300, protein_g: 3, carbs_g: 10, fat_g: 1,
+    nutrition_override: true, portion: { label: "1 medium", grams: 118 }, portion_count: 1,
+  });
+  expect(banana?.food).toBeDefined();
+
+  // The server owns the detach: what lands is an estimate with the typed figures, no catalog truth.
+  await expect.poll(async () => (await day(page)).meals.find((m) => m.id === id)?.items.at(-1)?.kcal).toBe(300);
+  const saved = (await day(page)).meals.find((m) => m.id === id)!.items.at(-1)!;
+  expect(saved).toMatchObject({ kcal: 300, protein_g: 3, carbs_g: 10, fat_g: 1 });
+  expect(saved).not.toHaveProperty("ref");
+  expect(saved).not.toHaveProperty("food");
+  expect(saved).not.toHaveProperty("portion");
+  expect(saved).not.toHaveProperty("portion_count");
+  expect(saved).not.toHaveProperty("nutrition_override");
+});
+
+test("Revert abandons a staged typed-nutrition draft before the ingredient save (#3680)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const token = await sessionToken(page);
+  const add = await page.request.patch(`/v1/meals/${id}`, {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+    data: { add: { ref: "usda-foundation:demo-banana", grams: 118 } },
+  });
+  expect(add.status(), await add.text()).toBe(200);
+  await page.goto(`/#/meal/${id}`);
+  await page.reload();
+  await page.locator(".ingbtn").last().click();
+  const editor = page.locator(".ming");
+  await editor.getByRole("button", { name: "Edit Calories" }).click();
+  const nutrition = editor.locator(".ingnut");
+  await nutrition.locator(".ingnutrow").first().locator("input").fill("300");
+  await nutrition.getByRole("button", { name: "Done" }).click();
+  await expect(editor.locator(".ingmeasure")).toBeHidden();
+  // Typed figures are absolute: while they are staged there is no amount to scale them by, on any measurement.
+  await expect(editor.locator(".amlab", { hasText: "Amount" })).toBeHidden();
+
+  await editor.getByRole("button", { name: "Edit Calories" }).click();
+  await nutrition.getByRole("button", { name: "Revert" }).click();
+  await expect(editor.locator(".ingmeasure")).toBeVisible();
+  await expect(editor.locator(".ingsrc")).toBeVisible();
+  await expect(editor.locator(".amlab", { hasText: "Amount" })).toBeVisible();
+  await expect(editor.locator(".ingkcal")).not.toContainText("300");
+});
+
+test("a typed ingredient row opens the nutrition editor without a grams editor (#3680)", async ({ inWebApp: page }) => {
+  const token = await sessionToken(page);
+  const created = await page.request.post("/v1/meals/numbers", {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    data: { name: "Oatmeal", kcal: 340, protein_g: 12, carbs_g: 58, fat_g: 6 },
+  });
+  expect(created.status(), await created.text()).toBe(200);
+  const meal = (await day(page)).meals[0]!;
+  expect(meal.items[0]?.typed).toBe(true);
+  await page.goto(`/#/meal/${meal.id}`);
+  await page.locator(".ingbtn").first().click();
+
+  const editor = page.locator(".ming");
+  await expect(editor).toBeVisible();
+  await expect(editor.locator(".amlab", { hasText: "Amount" })).toBeHidden();
+  await expect(editor.locator(".ingmeasure")).toHaveCount(0);
+  await editor.getByRole("button", { name: "Edit Calories" }).click();
+  await expect(editor.locator(".ingnut")).toBeVisible();
+});
+
+test("a failed typed-nutrition save reopens with the typed draft (#3680)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  await page.locator(".ingbtn").first().click();
+  const editor = page.locator(".ming");
+  await editor.getByRole("button", { name: "Edit Calories" }).click();
+  const nutrition = editor.locator(".ingnut");
+  await nutrition.locator(".ingnutrow").nth(0).locator("input").fill("300");
+  await nutrition.locator(".ingnutrow").nth(1).locator("input").fill("3");
+  await nutrition.locator(".ingnutrow").nth(2).locator("input").fill("10");
+  await nutrition.locator(".ingnutrow").nth(3).locator("input").fill("1");
+  await nutrition.getByRole("button", { name: "Done" }).click();
+  await page.route(/\/api\/v1\/meals\/update\/queue/, async (route) => {
+    await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "server-error" }) });
+  });
+  await editor.locator(":scope > .cta").click();
+
+  const queued = page.locator(".meal.q").first();
+  await expect(queued).toContainText("Couldn't apply your change");
+  await queued.getByRole("button", { name: "Edit" }).click();
+  const reopened = page.locator(".ming");
+  await expect(reopened).toBeVisible();
+  await expect(reopened.locator(".ingkcal")).toContainText("300");
+  await reopened.getByRole("button", { name: "Edit Calories" }).click();
+  const restored = reopened.locator(".ingnut");
+  await expect(restored.locator(".ingnutrow").nth(0).locator("input")).toHaveValue("300");
+  await expect(restored.locator(".ingnutrow").nth(1).locator("input")).toHaveValue("3");
+  await expect(restored.locator(".ingnutrow").nth(2).locator("input")).toHaveValue("10");
+  await expect(restored.locator(".ingnutrow").nth(3).locator("input")).toHaveValue("1");
+});
+
 test("a zero portion count falls back to grams rather than sending portion_count zero (#3679)", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   const token = await sessionToken(page);

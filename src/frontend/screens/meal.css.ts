@@ -105,6 +105,8 @@ export const mealCss = `
    boards' 480px card: 18/22 padding, 14px between the rows. */
 .mfix,.ming{width:480px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;padding:18px 22px 22px;margin:0;
   display:flex;flex-direction:column;gap:14px}
+.ming{position:relative}
+.ming>*{flex-shrink:0}
 .mfix .card,.ming .card{margin:0}
 .fixtitle{gap:10px;align-items:center}
 .fixtitle .ico{width:28px;height:28px}
@@ -187,7 +189,7 @@ button.ingbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .card button.ingchip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .ingserv .amtpill{padding:6px 10px;gap:6px;cursor:text}
 .ingserv .amtunit{white-space:nowrap}
-.ingserv[hidden],.row[hidden]{display:none}
+.ingserv[hidden],.row[hidden],.ingmeasure[hidden],.ingsrc[hidden]{display:none}
 
 /* The ingredient editor's rows: the label 600, the amount pill an editable figure. */
 .ming .amlab{font-weight:600}
@@ -200,6 +202,23 @@ button.ingbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .amtpill:focus-within{box-shadow:0 0 0 2px var(--accent)}
 .ingwas{align-self:flex-end;margin-top:-6px}
 .ingkcal{padding:16px 18px}
+.card button.ingkcal{display:block;width:100%;min-height:0;border:0;margin:0 0 14px;padding:16px 18px;background:var(--surface);box-shadow:var(--shadow);
+  font:inherit;color:inherit;cursor:pointer;text-align:left;border-radius:var(--r-card)}
+.card button.ingkcal:hover{background:var(--bg)}
+.card button.ingkcal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ingkright{gap:8px;align-items:center;color:var(--muted)}
+.ingkright .ico{width:16px;height:16px;background:var(--muted)}
+.ingnut{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;gap:14px;padding:18px 22px 22px;
+  background:var(--surface);border-radius:var(--r-card);overflow:auto}
+.ingnut[hidden]{display:none}
+.ingbudget{margin:0}
+.ingnutfields{padding:6px 16px;display:flex;flex-direction:column}
+.ingnutrow{padding:10px 0;cursor:text}
+.ingnutrow+.ingnutrow{border-top:1px solid var(--hair)}
+.ingnutpill{padding:6px 10px;gap:5px;box-shadow:none;background:var(--bg)}
+.ingnutpill input{max-width:8ch}
+.ingnutactions{gap:10px}
+.ingnutactions .cta{flex:1}
 .ingname{background:none;border:0;padding:0;text-align:left;color:inherit;cursor:pointer}
 .ingswap{display:flex;flex-direction:column;gap:8px;margin:8px 0}
 .ingswaplist{display:flex;flex-direction:column;border-radius:12px;background:var(--card,#fff);padding:0 12px}
