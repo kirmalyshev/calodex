@@ -19,7 +19,7 @@
 // id resolves to the gone state — the server scopes the read, so "another user's meal" and "no
 // meal" are the same answer and the same panel.
 
-import { MAX_LABEL_SERVINGS } from "../../shared/contract.ts";
+import { MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
@@ -878,10 +878,12 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     }
     const ingHead = el("div", "inghead");
     ingHead.append(el("span", "lab", ac.ingredients));
-    const addMore = el("button", "ingadd", ac.addMore) as HTMLButtonElement;
-    addMore.type = "button";
-    addMore.addEventListener("click", () => openAddPicker(meal));
-    ingHead.append(addMore);
+    if (meal.items.length < MAX_MEAL_ITEMS) {
+      const addMore = el("button", "ingadd", ac.addMore) as HTMLButtonElement;
+      addMore.type = "button";
+      addMore.addEventListener("click", () => openAddPicker(meal));
+      ingHead.append(addMore);
+    }
     sheet.append(ingHead);
     meal.items.forEach((item, i) => {
       // Each row opens its own editor (#188): the kit's `ing` markup wrapped in a button —

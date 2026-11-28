@@ -191,6 +191,24 @@ test("+ Add More opens ingredient search, and a pick appends through the update 
   await expect(page.locator(".ing").last()).toContainText("Banana, raw");
 });
 
+test("+ Add More is absent when the meal already holds the server's item cap (#3678)", async ({ inWebApp: page }) => {
+  await logMeal(page);
+  const token = await sessionToken(page);
+  const d = await day(page);
+  const id = d.meals[0]!.id;
+  const items = Array.from({ length: 50 }, (_, i) => ({ name: `item ${i + 1}`, grams: 10, kcal: 20 }));
+  const res = await page.request.patch(`/v1/meals/${id}`, {
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    data: { items },
+  });
+  expect(res.status()).toBe(200);
+
+  await page.goto(`/#/meal/${id}`);
+  await expect(page.locator(".ingbtn")).toHaveCount(50);
+  await expect(page.getByText("Ingredients", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "+ Add More" })).toHaveCount(0);
+});
+
 test("the servings chip opens Number of Servings on any meal, and Update sends servings alone (#3677)", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   const before = (await day(page)).meals.find((m) => m.id === id)!;
