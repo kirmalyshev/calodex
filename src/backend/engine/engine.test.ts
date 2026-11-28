@@ -1555,6 +1555,68 @@ describe("editing the answer", () => {
     }
   });
 
+  it("keeps a catalog-known zero micro visible to medical verdicts after an override", async () => {
+    const zeroMicros: FoodRef = { ...oliveOil, id: "usda-sr:zero-micros", sodium_mg_per_100g: 0, satfat_g_per_100g: 0 };
+    await store.putFoodRefs([zeroMicros]);
+    const userId = await onboard({ restrictions: ["ldl", "kidneys"] });
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: zeroMicros.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    expect(replaced.analysis.satfat_g).toBe(0);
+    expect(replaced.analysis.verdicts.ldl).toBe("good");
+    expect(replaced.analysis.verdicts.kidneys).toBe("good");
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, kcal: 300, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.satfat_g).toBe(0);
+    expect(out.analysis.sodium_mg).toBe(0);
+    expect(out.analysis.verdicts.ldl).toBe("good");
+    expect(out.analysis.verdicts.kidneys).toBe("good");
+  });
+
+  it("derives override micros at the stored grams, not a detached portion echo", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = {
+      ...stored.items[0]!, grams: 200, kcal: 300,
+      portion: { label: "tbsp", grams: 13.5 }, portion_count: 1,
+      nutrition_override: true as const,
+    };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[0]).toMatchObject({ grams: 200, kcal: 300 });
+    expect(out.analysis.items[0]).not.toHaveProperty("portion");
+    expect(out.analysis.satfat_g).toBe(28);
+    expect(out.analysis.sodium_mg).toBe(4);
+  });
+
+  it("does not rescale micros when an override batch only reorders rows", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = meal.analysis.items;
+    expect(stored[0]!.grams).not.toBe(stored[1]!.grams);
+    const edited = { ...stored[0]!, kcal: (stored[0]!.kcal ?? 0) + 100, nutrition_override: true as const };
+    const reordered = [stored[1]!, edited, ...stored.slice(2)];
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: reordered });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.kcal).toBe(meal.analysis.kcal + 100);
+    expect(out.analysis.satfat_g).toBe(meal.analysis.satfat_g);
+    expect(out.analysis.fiber_g).toBe(meal.analysis.fiber_g);
+    expect(out.analysis.sugar_g).toBe(meal.analysis.sugar_g);
+    expect(out.analysis.sodium_mg).toBe(meal.analysis.sodium_mg);
+  });
+
   it("keeps typed provenance on its own row when a batch prepends another", async () => {
     const userId = await onboard();
     const loggedNumbers = await logNumbersMeal(deps, userId, { name: "shake", kcal: 400, protein_g: 30, fat_g: 10, carbs_g: 40 });

@@ -113,7 +113,7 @@ async function catalogItem(deps: EngineDeps, userId: string, ref: string, grams:
  */
 export async function gatedVerdicts(deps: EngineDeps, userId: string, a: {
   kcal: number; satfat_g: number; sodium_mg: number; items?: readonly MealItem[];
-}) {
+}, evidenceItems?: readonly MealItem[]) {
   const profile = await deps.store.getProfile(userId);
   if (!profile) return {};
   const { targets } = explainTargets(profile);
@@ -122,7 +122,7 @@ export async function gatedVerdicts(deps: EngineDeps, userId: string, a: {
   const verdicts = visibleVerdicts(verdictsFromTargets(a, targets), profile.restrictions);
   // A model 0 on a nutrient the catalog did not supply is "unknown", not "none": judging it
   // paints "on plan" over a figure nobody has.
-  const known = catalogMicros(a.items ?? []);
+  const known = catalogMicros(evidenceItems ?? a.items ?? []);
   if (!(a.satfat_g > 0) && known.satfat_g === undefined) delete verdicts.ldl;
   if (!(a.sodium_mg > 0) && known.sodium_mg === undefined) delete verdicts.kidneys;
   return verdicts;
@@ -660,11 +660,14 @@ export async function editMeal(
   const addedMicros = addedItem === undefined ? {} : catalogMicros([addedItem]);
   const tenth = (n: number): number => Math.round(n * 10) / 10;
   const nutritionOverride = patch.items?.some((i) => i.nutrition_override === true) === true;
-  // Reorders are not physical, but a positional gram mismatch is a physical edit in every client
-  // this API serves; when in doubt the fallback keeps #196's scaling rather than a stale micro.
-  const physicalEdit = derivationItems !== undefined && (request.swap !== undefined
-    || derivationItems.length !== existing.items.length
-    || derivationItems.some((item, ix) => item.grams !== existing.items[ix]?.grams));
+  // Reordering rows is not physical. Items carry no ids, so the fallback reads the grams as a
+  // multiset: a moved amount, an insertion and a deletion change it, a reorder does not.
+  const sameAmounts = derivationItems !== undefined && derivationItems.length === existing.items.length && (() => {
+    const before = existing.items.map((item) => item.grams).sort((a, b) => a - b);
+    const after = derivationItems.map((item) => item.grams).sort((a, b) => a - b);
+    return after.every((grams, ix) => grams === before[ix]);
+  })();
+  const physicalEdit = derivationItems !== undefined && (request.swap !== undefined || !sameAmounts);
   const scaled = (sent: number | undefined, kept: number, micro: keyof typeof addedMicros): number => {
     if (sent !== undefined) return sent;
     // A nutrition overwrite is not an amount change: scaling the plate's micros by its calorie
@@ -689,7 +692,7 @@ export async function editMeal(
   // here would let the stale edit through.
   const updated = await deps.store.updateMealIfVersion(userId, mealId, {
     ...merged,
-    verdicts: await gatedVerdicts(deps, userId, merged),
+    verdicts: await gatedVerdicts(deps, userId, merged, microItems),
     ...(request.name !== undefined ? { name: normalizeMealName(request.name) } : {}),
     ...(atN ? {
       servings: atN.servings,
@@ -933,7 +936,9 @@ function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): Recon
       // density; a later grams edit then scales proportionally from what the user typed.
       const densityKcal = estimate.kcal_per_100g === undefined ? undefined : Math.round(estimate.kcal_per_100g * estimate.grams / 100);
       if (estimate.kcal !== undefined && densityKcal !== undefined && Math.abs(estimate.kcal - densityKcal) > 1e-9) delete estimate.kcal_per_100g;
-      const { nutrition_override: _no, ...shadowRaw } = i;
+      // The stored estimate keeps the raw grams and drops the measurement, so its shadow does
+      // the same: a portion echo must never size the micros off a different mass (#3680).
+      const { nutrition_override: _no, portion: _shadowPortion, portion_count: _shadowCount, ...shadowRaw } = i;
       const micro = s?.food === undefined ? estimate : cataloged(shadowRaw, s.food);
       return { item: estimate, micro };
     }
