@@ -2567,6 +2567,30 @@ function contract(name: string, make: () => Promise<Store>) {
       expect((await s.getMeal(u, plain.id))!.question).toBeNull();
     });
 
+    it("stores a nullable custom meal name, updates it, and clears it with null (#3681)", async () => {
+      const s = await open();
+      const u = (await s.upsertDeviceUser(device(), "en")).userId;
+      const other = (await s.upsertDeviceUser(device(), "en")).userId;
+      const plain = meal(u);
+      await s.insertMeal(plain);
+      expect((await s.getMeal(u, plain.id))!.name).toBeNull();
+
+      const named = meal(u, { name: "Sunday pancakes" });
+      await s.insertMeal(named);
+      expect((await s.getMeal(u, named.id))!.name).toBe("Sunday pancakes");
+
+      expect((await s.updateMeal(u, plain.id, { name: "Quick lunch" }))!.name).toBe("Quick lunch");
+      expect((await s.getMeal(u, plain.id))!.name).toBe("Quick lunch");
+      // Updating another field preserves the custom name.
+      expect((await s.updateMeal(u, plain.id, { kcal: 420 }))!.name).toBe("Quick lunch");
+      // Another user cannot rename it.
+      expect(await s.updateMeal(other, plain.id, { name: "Stolen" })).toBeNull();
+      expect((await s.getMeal(u, plain.id))!.name).toBe("Quick lunch");
+      // Explicit null clears it back to null.
+      expect((await s.updateMeal(u, plain.id, { name: null }))!.name).toBeNull();
+      expect((await s.getMeal(u, plain.id))!.name).toBeNull();
+    });
+
     it("sums a day and a window per user", async () => {
       const s = await open();
       const u = (await s.upsertDeviceUser(device(), "en")).userId;

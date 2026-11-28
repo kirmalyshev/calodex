@@ -2336,7 +2336,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (meals.has(record.id)) return false;
       // `?? null` so a meal nobody was asked a question about reads back the same shape it does out
       // of Postgres, where an unwritten jsonb column is null and never an absent key.
-      meals.set(record.id, clone({ ...record, question: record.question ?? null, photo_compression: record.photo_compression ?? null, photo_max_edge: record.photo_max_edge ?? null }));
+      meals.set(record.id, clone({ ...record, name: record.name ?? null, question: record.question ?? null, photo_compression: record.photo_compression ?? null, photo_max_edge: record.photo_max_edge ?? null }));
       mealLoggedAt.set(record.id, new Date().toISOString());
       return true;
     },
