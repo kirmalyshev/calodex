@@ -1496,11 +1496,18 @@ export type EditMealResponse = MealUpdated;
  */
 export interface RedateMealRequest {
   dayOffset: number;
+  /**
+   * The time chip's picker (calodex_app#3682): the wall-clock `HH:MM` the meal was eaten at, on the
+   * day `dayOffset` names. The server resolves both against the account's timezone and clamps a
+   * time still ahead of now to now. Absent keeps the meal's own time; a client never sends an instant.
+   */
+  time?: string;
 }
 
 export function isRedateMealRequest(body: unknown): body is RedateMealRequest {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
   const b = body as Record<string, unknown>;
+  if (b.time !== undefined && (typeof b.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(b.time))) return false;
   return typeof b.dayOffset === "number" && Number.isFinite(b.dayOffset);
 }
 

@@ -256,3 +256,12 @@ describe("parseChannel", () => {
     }
   });
 });
+
+describe("RedateMealRequest time (calodex_app#3682)", () => {
+  it("accepts HH:MM or none, refuses anything else", async () => {
+    const { isRedateMealRequest } = await import("./contract.ts");
+    expect(isRedateMealRequest({ dayOffset: 1 })).toBe(true);
+    expect(isRedateMealRequest({ dayOffset: 0, time: "07:05" })).toBe(true);
+    for (const time of ["7:05", "24:00", "12:60", 1230, null, "12:30:00"]) expect(isRedateMealRequest({ dayOffset: 0, time })).toBe(false);
+  });
+});

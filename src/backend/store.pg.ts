@@ -1944,7 +1944,7 @@ const NUMBER_COLUMNS = new Set(["servings", "items", "kcal", "protein_g", "carbs
 const MEAL_COLUMNS: Record<string, string> = {
   name: "name", servings: "servings", items: "items", kcal: "kcal", protein_g: "protein_g", carbs_g: "carbs_g", fat_g: "fat_g",
   satfat_g: "satfat_g", fiber_g: "fiber_g", sugar_g: "sugar_g", sodium_mg: "sodium_mg",
-  verdicts: "verdicts", notes: "notes", corrected: "corrected", date: "date",
+  verdicts: "verdicts", notes: "notes", corrected: "corrected", date: "date", ts: "ts",
   question: "question", model: "model", confidence: "confidence", focus: "focus", rating: "rating", label: "label",
 };
 

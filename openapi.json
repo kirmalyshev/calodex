@@ -11484,6 +11484,10 @@
         "properties": {
           "dayOffset": {
             "type": "number"
+          },
+          "time": {
+            "description": "The time chip's picker (calodex_app#3682): the wall-clock `HH:MM` the meal was eaten at, on the day `dayOffset` names. The server resolves both against the account's timezone and clamps a time still ahead of now to now. Absent keeps the meal's own time; a client never sends an instant.",
+            "type": "string"
           }
         },
         "required": [
