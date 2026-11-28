@@ -13,7 +13,7 @@
 import {
   type DailyTotals, type EditMealItem, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
-  type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
+  type MealCopied, type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
   type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type UnknownFood, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, portionGrams, scaledItem,
   explainTargets, verdictsFromTargets, visibleVerdicts, MAX_MEAL_ITEMS,
 } from "@eait/shared";
@@ -800,10 +800,102 @@ export async function redateMeal(
 }
 
 /**
- * `POST /v1/meals/:id/focus` — record the phone break (ieat-app#2129). Replaces any earlier record.
- * Null when the meal is not the caller's (the store scopes `id AND user_id`). Free for every user:
- * nothing here reads the entitlement.
+ * Copy one of the caller's meals as NEW meals onto one or more days (calodex_app#3683). The copy
+ * repeats the composition exactly — items, macros, servings, label and custom name — and nothing
+ * about the copy's judgement is inherited: verdicts and the health score are computed here against
+ * the account's current targets, per copy. Photos do not carry over: they are evidence of the plate
+ * on its own day, not a picture of what was eaten on another one.
+ *
+ * Unbilled because no model runs, but it is still a log: the paywall is `checkFreeLog`, the one
+ * rule. With a `clientId` the whole request goes through `once`, so a replay after a lost answer is
+ * answered with the copies the first request wrote rather than writing a second set.
  */
+export async function copyMeal(
+  deps: EngineDeps,
+  userId: string,
+  mealId: string,
+  dayOffsets: readonly number[],
+  clientId?: string,
+): Promise<MealCopied | Refusal | TargetGone> {
+  const run = (d: EngineDeps) => copyMealUncached(d, userId, mealId, dayOffsets);
+  return clientId === undefined ? run(deps) : once(deps, userId, clientId, 0, run);
+}
+
+async function copyMealUncached(
+  deps: EngineDeps,
+  userId: string,
+  mealId: string,
+  dayOffsets: readonly number[],
+): Promise<MealCopied | Refusal | TargetGone> {
+  const source = await deps.store.getMeal(userId, mealId);
+  if (!source) return { kind: "target-gone", on: "meal" };
+  const refused = await checkFreeLog(deps, userId);
+  if (refused) return refused;
+  const profile = await deps.store.getProfile(userId);
+  const lang = profile?.lang ?? "en";
+  const zone = deps.config.timezone;
+  const today = localDate(zone);
+  const now = Date.now();
+  const offsets = [...new Set(dayOffsets)];
+  // Some ICU builds write midnight as 24:xx even with `hour12: false` (notify's formatter carries
+  // the same guard): on the target date that is hour 0, never an unparseable 24.
+  const [rawHour, minute] = localTime(zone, new Date(source.ts)).split(":").map(Number) as [number, number];
+  const hour = rawHour % 24;
+  const planned: {
+    record: MealRecord;
+    analysis: AnalyzedMeal;
+    totals: ReturnType<typeof sumTotals>;
+  }[] = [];
+
+  for (const offset of offsets) {
+    const date = dateMinus(today, offset);
+    const at = instantOf(zone, date, { hour, minute });
+    // The copy is the same meal at the same time of day on its target date. Only a copy onto
+    // today is clamped to now; a future day keeps the source time, or the copy would pile onto
+    // the present instant instead of the meal's own slot.
+    const ts = new Date(date === today ? Math.min(at, now) : at).toISOString();
+    const analysis = {
+      isFood: source.isFood,
+      items: source.items.map((item) => ({ ...item })),
+      kcal: source.kcal, protein_g: source.protein_g, carbs_g: source.carbs_g, fat_g: source.fat_g,
+      satfat_g: source.satfat_g, fiber_g: source.fiber_g, sugar_g: source.sugar_g, sodium_mg: source.sodium_mg,
+      confidence: source.confidence, notes: source.notes,
+      ...(source.label ? { label: { ...source.label } } : {}),
+    };
+    const verdicts = await gatedVerdicts(deps, userId, analysis);
+    const record: MealRecord = {
+      ...analysis,
+      id: crypto.randomUUID(), user_id: userId, ts, date, verdicts,
+      healthScore: healthScore({ ...analysis, verdicts }, profile?.restrictions ?? []),
+      corrected: false, model: source.model, name: source.name ?? null,
+      ...(source.servings !== undefined ? { servings: source.servings } : {}),
+    };
+    // Read the target before the atomic write and add the copy virtually: the response is then
+    // complete the moment the batch commits, with no post-commit read able to outrun the turn.
+    const totals = sumTotals([...await deps.store.mealsForDate(userId, date), record]);
+    planned.push({ record, analysis, totals });
+  }
+
+  // The rows are ONE batch: a database failure before commit leaves no copy behind, so a later
+  // request under a new key cannot duplicate the half that landed. The thread and milestones are
+  // deliberately after the commit; both are already best-effort and never make a written meal fail.
+  await deps.store.insertMeals(userId, planned.map((p) => p.record));
+  // Both followers are best-effort by contract and catch their own failures. They are deliberately
+  // not awaited: once the batch has committed, a slow thread write or a milestone scan must not be
+  // able to carry the request past its turn bound and make a completed copy read as unknown.
+  void remember(deps, userId, planned.map((p) => ({
+    role: "assistant", kind: "meal", mealId: p.record.id, event: "logged", speaker: "gabie",
+  })));
+  const meals: MealCopied["meals"] = planned.map(({ record, analysis, totals }) => ({
+    kind: "logged", mealId: record.id,
+    analysis: { ...analysis, verdicts: record.verdicts, healthScore: record.healthScore },
+    totals, date: record.date, hint: hintFor(record),
+    ...verdictWordsFor(record.verdicts, lang),
+  }));
+  void evaluateMilestones(deps, userId);
+  return { kind: "copied", sourceMealId: mealId, meals };
+}
+
 /** Record the menu's "Report Food" against one of the caller's meals. No model, no charge, no thread write. */
 export async function reportMeal(
   deps: EngineDeps, userId: string, mealId: string, text: string,
@@ -812,6 +904,11 @@ export async function reportMeal(
   return row === null ? null : { reported: true };
 }
 
+/**
+ * `POST /v1/meals/:id/focus` — record the phone break (ieat-app#2129). Replaces any earlier record.
+ * Null when the meal is not the caller's (the store scopes `id AND user_id`). Free for every user:
+ * nothing here reads the entitlement.
+ */
 export async function focusMeal(
   deps: EngineDeps,
   userId: string,

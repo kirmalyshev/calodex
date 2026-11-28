@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   CHANNEL_HEADER, DISTRIBUTION_CHANNELS, parseChannel,
   MAX_HEALTH_DAYS_PER_BATCH, MAX_ITEM_NAME, MAX_MEAL_AMOUNT, MAX_MEAL_ITEMS, MAX_MEAL_NAME, healthDayBatches,
-  healthDaysFrom, healthSyncLanded, isEditMealRequest, isPushOpenRequest, isRedateMealRequest, isReportMealRequest, pushOpenFrom, ROUTES, webPushSubscription,
+  healthDaysFrom, healthSyncLanded, isCopyMealRequest, isEditMealRequest, isPushOpenRequest, isRedateMealRequest, isReportMealRequest, pushOpenFrom, ROUTES, webPushSubscription,
 } from "./contract.ts";
 import { emptyHealthDay } from "./health.ts";
 
@@ -157,6 +157,30 @@ describe("isRedateMealRequest", () => {
     expect(isRedateMealRequest({ dayOffset: Number.NaN })).toBe(false);
     expect(isRedateMealRequest({})).toBe(false);
     expect(isRedateMealRequest("2026-09-26")).toBe(false);
+  });
+});
+
+describe("isCopyMealRequest", () => {
+  it("accepts one or more whole-day offsets inside the picker's last-seven/next-seven window", () => {
+    expect(isCopyMealRequest({ dayOffsets: [1] })).toBe(true);
+    expect(isCopyMealRequest({ dayOffsets: [-7, -1, 0, 1, 7] })).toBe(true);
+    expect(isCopyMealRequest({ dayOffsets: Array(15).fill(1) })).toBe(true);
+    expect(isCopyMealRequest({ dayOffsets: [1, 1, 2] })).toBe(true); // dedupe is the engine's, not a 400
+    expect(isCopyMealRequest({ dayOffsets: [1], clientId: "turn-1" })).toBe(true);
+  });
+
+  it("refuses an empty, out-of-window, fractional, non-numeric, oversized, or absent list", () => {
+    expect(isCopyMealRequest({ dayOffsets: [] })).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: [8] })).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: [-8] })).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: [1.5] })).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: ["tomorrow"] })).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: null })).toBe(false);
+    expect(isCopyMealRequest({})).toBe(false);
+    expect(isCopyMealRequest(null)).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: Array(16).fill(1) })).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: [1], clientId: "" })).toBe(false);
+    expect(isCopyMealRequest({ dayOffsets: [1], clientId: "x".repeat(65) })).toBe(false);
   });
 });
 

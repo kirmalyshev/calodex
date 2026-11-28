@@ -13,7 +13,7 @@ import { MAX_PROFILE_TEXT,
   paywallPrice, perMonth, threadCopyFor, payCopyFor, yearlySave, yearlySaveLine,
   type Lang, type Pace, type PatchProfileRequest, type Profile,
   type ExitOfferSwitches, type Limits, type PaywallPromo, type ProfileRejected, type ProfileResponse, type WebPaywall,
-  ROUTES,
+  MEAL_COPY_MAX_DAYS, MEAL_COPY_MAX_OFFSET, ROUTES,
 } from "@eait/shared";
 import { FILLABLE_FIELDS, MICRO_GOAL_MAX, MIN_AGE, microGoals } from "@eait/shared";
 import type { ProfilePatch } from "../store.ts";
@@ -54,6 +54,9 @@ async function limitsOf(deps: EngineDeps, userId: string, entitled: boolean): Pr
     // The SAME bound `/v1/diary/week` refuses with. It governs which days can be MARKED, not which
     // can be opened: `/v1/diary/day` answers for any date, and the picker offers every past one.
     diaryWindowDays: MAX_WINDOW_DAYS,
+    // The copy picker's window, exactly as `isCopyMealRequest` enforces it.
+    mealCopyMaxOffset: MEAL_COPY_MAX_OFFSET,
+    mealCopyMaxDays: MEAL_COPY_MAX_DAYS,
     // THE RUNNING SERVER'S PER-CALL BUDGET, not the one the app was compiled against.
     // `EAIT__BACKEND__LLM_TIMEOUT_MS` is set explicitly in production, so this is the only channel
     // by which a phone can learn it — and it is sent PER CALL because how many budgets a turn

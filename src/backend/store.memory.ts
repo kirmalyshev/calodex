@@ -2381,6 +2381,19 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       return true;
     },
 
+    async insertMeals(userId, records) {
+      // Check ownership and every id before the first write: the batch is all-or-nothing like the
+      // Postgres transaction it mirrors. JavaScript's single turn then makes the writes atomic by construction.
+      if (records.some((record) => record.user_id !== userId)) throw new Error("meal user mismatch");
+      if (new Set(records.map((record) => record.id)).size !== records.length
+        || records.some((record) => meals.has(record.id))) throw new Error("meal id conflict");
+      for (const record of records) {
+        meals.set(record.id, clone({ ...record, name: record.name ?? null, question: record.question ?? null, photo_compression: record.photo_compression ?? null, photo_max_edge: record.photo_max_edge ?? null }));
+        mealLoggedAt.set(record.id, new Date().toISOString());
+      }
+      return records.length;
+    },
+
     async getMeals(userId, mealIds) {
       const want = new Set(mealIds);
       return [...meals.values()].filter((m) => m.user_id === userId && want.has(m.id)).map((m) => scored(clone(m)));
