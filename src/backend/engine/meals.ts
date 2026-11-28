@@ -14,7 +14,7 @@ import {
   type DailyTotals, type EditMealRequest, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
   type MealRedated, type MealUpdated, type PhotoEvent,
-  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_SAVED_MEALS, mealNames, mealServings, scaledItem,
+  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, scaledItem,
   explainTargets, verdictsFromTargets, visibleVerdicts,
 } from "@eait/shared";
 import {
@@ -492,6 +492,13 @@ function atServings(meal: MealRecord, servings: number) {
   };
 }
 
+/** Normalize a user-given meal title (calodex_app#3681): single-line, trimmed, capped; empty clears to null. */
+function normalizeMealName(raw: string | null): string | null {
+  if (raw === null) return null;
+  const trimmed = raw.replace(/[\r\n\t]+/g, " ").trim().slice(0, MAX_MEAL_NAME).trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export async function editMeal(
   deps: EngineDeps,
   userId: string,
@@ -588,23 +595,29 @@ export async function editMeal(
     sodium_mg: scaled(patch.sodium_mg, existing.sodium_mg, micros.sodium_mg),
   };
 
+  const nameOnly = request.name !== undefined
+    && Object.entries(request).every(([k, v]) => k === "name" || v === undefined);
+
   // A caller that computed its edit from an earlier read holds the write to THAT version; a refetch
   // here would let the stale edit through.
   const updated = await deps.store.updateMealIfVersion(userId, mealId, {
     ...merged,
     verdicts: await gatedVerdicts(deps, userId, merged),
+    ...(request.name !== undefined ? { name: normalizeMealName(request.name) } : {}),
     ...(atN ? {
       servings: atN.servings,
       // Released servers still read and write a label meal's count here. Mirror it or a mixed
       // deploy scales the next write from the count the row had before this one (#3677).
       ...(existing.label ? { label: { ...existing.label, servings: atN.servings } } : {}),
     } : {}),
-    corrected: true,
-    // One question per meal, asked once. Cleared by the write that answers it — and by a manual
-    // edit too, which is the same write: once the user has changed the numbers themselves, the
-    // question is about a plate that no longer exists, and the next `GET /day` would offer the
-    // chips again over an answer already given.
-    question: null,
+    ...(nameOnly ? {} : {
+      corrected: true,
+      // One question per meal, asked once. Cleared by the write that answers it — and by a manual
+      // edit too, which is the same write: once the user has changed the numbers themselves, the
+      // question is about a plate that no longer exists, and the next `GET /day` would offer the
+      // chips again over an answer already given.
+      question: null,
+    }),
   }, opts.readVersion ?? existing.version);
   // Another write landed between our read and ours (#2695). A pinned edit (`opts.readVersion`) cannot
   // be re-merged without becoming last-write-wins, so it returns `meal-changed` on the first
@@ -1380,7 +1393,7 @@ export async function saveMealFromLog(
   if (!m || !m.isFood || m.items.length === 0) return { kind: "target-gone", on: "saved-meal" };
   if ((await deps.store.listSavedMeals(userId)).length >= MAX_SAVED_MEALS) return { kind: "full", limit: MAX_SAVED_MEALS };
   const meal = await deps.store.saveMeal(userId, {
-    id: crypto.randomUUID(), source_meal_id: m.id, name: mealNames(m.items) || "—", items: m.items,
+    id: crypto.randomUUID(), source_meal_id: m.id, name: mealDisplayName(m) || "—", items: m.items,
     kcal: m.kcal, protein_g: m.protein_g, carbs_g: m.carbs_g, fat_g: m.fat_g,
     satfat_g: m.satfat_g, fiber_g: m.fiber_g, sugar_g: m.sugar_g, sodium_mg: m.sodium_mg,
   });
@@ -1416,11 +1429,13 @@ export async function logSavedMeal(
     confidence: "high", notes: "",
   };
   const verdicts = await gatedVerdicts(deps, userId, analysis);
+  const customName = saved.name && saved.name !== "—" && saved.name !== mealNames(saved.items)
+    ? normalizeMealName(saved.name) : null;
   const record: MealRecord = {
     ...analysis,
     id: crypto.randomUUID(), user_id: userId, ts: new Date().toISOString(), date, verdicts,
     healthScore: healthScore({ ...analysis, verdicts }, profile?.restrictions ?? []),
-    corrected: false, model: null,
+    corrected: false, model: null, name: customName,
   };
   await deps.store.insertMeal(record);
   await evaluateMilestones(deps, userId);
