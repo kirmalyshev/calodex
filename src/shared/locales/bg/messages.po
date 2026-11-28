@@ -449,6 +449,11 @@ msgstr "Този код не е верен. Провери най-новия и�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Този код не е валиден."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Това не се върна. Опитай пак."
 
@@ -549,6 +554,16 @@ msgstr "Този акаунт още не е вписан — влез с Apple 
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Този код е изтекъл."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Този код е изтекъл."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Това е новият {app_name}. Оброците и снимките ти се пазят в {app_name} акаунта ти: влез в уеб и натисни Свържи Telegram в плана си."
 
@@ -611,6 +626,11 @@ msgstr "С какво по-леко да заменя вечерята?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Как лесно да ям повече днес?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Вече си използвал код."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

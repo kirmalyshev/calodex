@@ -449,6 +449,11 @@ msgstr "ସେହି କୋଡ୍ ଠିକ୍ ନୁହେଁ। {app_name} ର
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "ଏହି କୋଡ୍ ବୈଧ ନୁହେଁ।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "ତାହା ଫେରି ଆସିଲା ନାହିଁ। ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"
 
@@ -549,6 +554,16 @@ msgstr "ଏହି ଆକାଉଣ୍ଟ ଏପର୍ଯ୍ୟନ୍ତ ସାଇ
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "ଏହି କୋଡ୍‌ର ମିଆଦ ଶେଷ ହୋଇଯାଇଛି।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "ଏହି କୋଡ୍‌ର ମିଆଦ ଶେଷ ହୋଇଯାଇଛି।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "ଏହା ନୂଆ {app_name}। ଆପଣଙ୍କ ଭୋଜନ ଓ ଫଟୋ ଆପଣଙ୍କ {app_name} ଆକାଉଣ୍ଟରେ ରଖାଯାଏ: ୱେବ୍‌ରେ ସାଇନ୍ ଇନ୍ କରି ଆପଣଙ୍କ ପ୍ଲାନ୍‌ରେ “Telegram ସଂଯୋଗ କରନ୍ତୁ” ଦବାନ୍ତୁ।"
 
@@ -611,6 +626,11 @@ msgstr "ରାତ୍ରି ଭୋଜନ ପାଇଁ ଏକ ହାଲୁକା �
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "ଆଜି ଅଧିକ ଖାଇବାର ସହଜ ଉପାୟ କ’ଣ?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "ଆପଣ ପୂର୍ବରୁ ଏକ କୋଡ୍ ବ୍ୟବହାର କରିସାରିଛନ୍ତି।"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

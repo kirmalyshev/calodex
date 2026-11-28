@@ -455,6 +455,11 @@ msgstr "Код не тот. Посмотри последнее письмо о�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Этот код недействителен."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Ответ не пришёл. Попробуй ещё раз."
 
@@ -555,6 +560,16 @@ msgstr "В этот аккаунт ещё не вошли — войди чер�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Срок действия кода истёк."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Срок действия кода истёк."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Это новый {app_name}. Твои приёмы пищи и фотографии хранятся в аккаунте {app_name}: войди на сайте и нажми «Подключить Telegram» на странице плана."
 
@@ -617,6 +632,11 @@ msgstr "Как сделать ужин полегче?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Какой простой способ съесть сегодня больше?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Вы уже использовали код."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

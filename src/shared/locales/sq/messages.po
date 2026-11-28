@@ -449,6 +449,11 @@ msgstr "Ai kod s'është i saktë. Kontrollo emailin më të ri nga {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Ky kod nuk është i vlefshëm."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Ajo s'u kthye. Provo sërish."
 
@@ -549,6 +554,16 @@ msgstr "Kjo llogari s'është e hapur ende — hyr me Apple ose Google në ueb, 
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Ky kod ka skaduar."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Ky kod ka skaduar."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Ky është {app_name} i ri. Vaktet dhe fotot e tua ruhen në llogarinë tënde {app_name}: hyr në ueb dhe shtyp Lidh Telegram te plani yt."
 
@@ -611,6 +626,11 @@ msgstr "Me çfarë më të lehtë ta zëvendësoj darkën?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Si të ha më shumë lehtë sot?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Ke përdorur tashmë një kod."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

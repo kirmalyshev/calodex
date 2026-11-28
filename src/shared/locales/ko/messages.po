@@ -449,6 +449,11 @@ msgstr "코드가 맞지 않아요. {app_name}에서 온 최신 이메일을 확
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "유효하지 않은 코드입니다."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "결과가 돌아오지 않았어요. 다시 시도해 주세요."
 
@@ -549,6 +554,16 @@ msgstr "이 계정은 아직 로그인되지 않았어요. 웹에서 Apple 또�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "종료된 코드입니다."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "종료된 코드입니다."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "새로워진 {app_name}이에요. 식사와 사진은 {app_name} 계정에 보관돼요. 웹에서 로그인한 뒤 플랜 화면에서 Telegram 연결을 누르세요."
 
@@ -611,6 +626,11 @@ msgstr "저녁을 더 가볍게 바꾸려면 뭐가 좋을까요?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "오늘 더 많이 먹을 수 있는 쉬운 방법이 뭐예요?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "이미 코드를 사용했습니다."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

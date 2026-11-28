@@ -449,6 +449,11 @@ msgstr "அந்தக் குறியீடு சரியில்லை.
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "இந்தக் குறியீடு செல்லாது."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "அதற்குப் பதில் வரவில்லை. மீண்டும் முயலுங்கள்."
 
@@ -549,6 +554,16 @@ msgstr "இந்தக் கணக்கில் இன்னும் உள
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "இந்தக் குறியீட்டின் காலம் முடிந்துவிட்டது."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "இந்தக் குறியீட்டின் காலம் முடிந்துவிட்டது."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "இது புதிய {app_name}. உங்கள் உணவுகளும் புகைப்படங்களும் உங்கள் {app_name} கணக்கில் உள்ளன: இணையத்தில் உள்நுழைந்து, உங்கள் திட்டத்தில் Telegram-ஐ இணை என்பதை அழுத்துங்கள்."
 
@@ -611,6 +626,11 @@ msgstr "இரவு உணவுக்கு இலகுவான மாற்
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "இன்று அதிகம் சாப்பிட எளிய வழி என்ன?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "நீங்கள் ஏற்கெனவே ஒரு குறியீட்டைப் பயன்படுத்திவிட்டீர்கள்."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

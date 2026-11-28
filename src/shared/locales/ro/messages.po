@@ -449,6 +449,11 @@ msgstr "Codul nu e corect. Verifică cel mai recent e-mail de la {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Codul acesta nu este valid."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "N-a venit niciun răspuns. Încearcă din nou."
 
@@ -549,6 +554,16 @@ msgstr "Acest cont nu e încă autentificat — conectează-te cu Apple sau Goog
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Acest cod a expirat."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Acest cod a expirat."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Acesta e noul {app_name}. Mesele și fotografiile tale sunt păstrate în contul tău {app_name}: conectează-te pe web și apasă Conectează Telegram pe planul tău."
 
@@ -611,6 +626,11 @@ msgstr "Ce variantă mai ușoară am la cină?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Care e o cale simplă să mănânci mai mult azi?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Ai folosit deja un cod."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -449,6 +449,11 @@ msgstr "そのコードは正しくありません。{app_name}からの最新�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "このコードは無効です。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "結果が返ってきませんでした。もう一度お試しください。"
 
@@ -549,6 +554,16 @@ msgstr "このアカウントはまだサインインしていません。Webで
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "このコードは終了しました。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "このコードは終了しました。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "新しい{app_name}です。食事と写真は{app_name}アカウントに保存されます。Webでサインインし、プランの画面で「Telegramと連携」を押してください。"
 
@@ -611,6 +626,11 @@ msgstr "夕食を軽くするなら何に置き換えればいいですか？"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "今日、手軽にもっと食べられる方法はありますか？"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "すでにコードを使用済みです。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -455,6 +455,11 @@ msgstr "That code isn't right. Check the newest email from {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "That code isn't valid."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "That did not come back. Try it again."
 
@@ -555,6 +560,16 @@ msgstr "This account is not signed in yet — sign in with Apple or Google on th
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "This code has been used up."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "This code has ended."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "This is the new {app_name}. Your meals and photos are kept in your {app_name} account: sign in on the web and press Connect Telegram on your plan."
 
@@ -617,6 +632,11 @@ msgstr "What's a lighter swap for dinner?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "What's an easy way to eat more today?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "You've already used a code."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

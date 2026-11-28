@@ -449,6 +449,11 @@ msgstr "รหัสไม่ถูกต้อง เช็กอีเมล�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "รหัสนี้ไม่ถูกต้อง"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "ไม่ได้รับผลกลับมา ลองอีกครั้ง"
 
@@ -549,6 +554,16 @@ msgstr "บัญชีนี้ยังไม่ได้ลงชื่อเ
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "รหัสนี้หมดอายุแล้ว"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "รหัสนี้หมดอายุแล้ว"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "นี่คือ {app_name} ใหม่ มื้ออาหารและรูปของคุณเก็บไว้ในบัญชี {app_name}: ลงชื่อเข้าใช้บนเว็บแล้วกด เชื่อมต่อ Telegram ในแผนของคุณ"
 
@@ -611,6 +626,11 @@ msgstr "มื้อเย็นมีอะไรเบาๆ ให้เป�
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "มีวิธีง่าย ๆ อะไรให้กินเพิ่มได้บ้างในวันนี้?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "คุณใช้รหัสไปแล้ว"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

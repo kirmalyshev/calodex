@@ -449,6 +449,11 @@ msgstr "Ez a kód nem jó. Nézd meg {az} {app_name} legutóbbi e-mailjét."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Ez a kód érvénytelen."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Erre nem jött válasz. Próbáld újra."
 
@@ -549,6 +554,16 @@ msgstr "Ez a fiók még nincs bejelentkezve — jelentkezz be Apple-lel vagy Goo
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Ez a kód lejárt."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Ez a kód lejárt."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Ez az új {app_name}. Az étkezéseid és fotóid {az} {app_name}-fiókodban vannak: jelentkezz be a weben, és a terveden nyomd meg a Telegram összekapcsolása gombot."
 
@@ -611,6 +626,11 @@ msgstr "Mi lehet egy könnyebb alternatíva vacsorára?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Hogyan ehetnél ma egyszerűen többet?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Már felhasználtál egy kódot."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

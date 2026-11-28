@@ -449,6 +449,11 @@ msgstr "Αυτός ο κωδικός δεν είναι σωστός. Έλεγξ�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Ο κωδικός δεν είναι έγκυρος."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Δεν ήρθε απάντηση. Δοκίμασε ξανά."
 
@@ -549,6 +554,16 @@ msgstr "Αυτός ο λογαριασμός δεν έχει συνδεθεί α
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Ο κωδικός έχει λήξει."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Ο κωδικός έχει λήξει."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Αυτό είναι το νέο {app_name}. Τα γεύματα και οι φωτογραφίες σου φυλάσσονται στον λογαριασμό σου {app_name}: συνδέσου στο web και πάτα Σύνδεση Telegram στο πλάνο σου."
 
@@ -611,6 +626,11 @@ msgstr "Τι πιο ελαφρύ να φάω για βραδινό;"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Ποιος είναι ένας εύκολος τρόπος να φας περισσότερο σήμερα;"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Έχεις ήδη χρησιμοποιήσει έναν κωδικό."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

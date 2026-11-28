@@ -449,6 +449,11 @@ msgstr "Den koden stemmer ikke. Sjekk den nyeste e-posten fra {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Den koden er ugyldig."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Det kom ikke noe svar. Prøv igjen."
 
@@ -549,6 +554,16 @@ msgstr "Denne kontoen er ikke pålogget ennå — logg på med Apple eller Googl
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Denne koden har utløpt."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Denne koden har utløpt."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Dette er den nye {app_name}. Måltidene og bildene dine ligger i {app_name}-kontoen din: logg på via nettet og trykk Koble til Telegram på planen din."
 
@@ -611,6 +626,11 @@ msgstr "Hva er et lettere alternativ til middag?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Hva er en enkel måte å spise mer på i dag?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Du har allerede brukt en kode."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

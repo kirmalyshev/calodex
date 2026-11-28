@@ -449,6 +449,11 @@ msgstr "Kod itu tidak betul. Semak e-mel terbaharu daripada {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Kod itu tidak sah."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Tiada jawapan diterima. Cuba sekali lagi."
 
@@ -549,6 +554,16 @@ msgstr "Akaun ini belum didaftar masuk — daftar masuk dengan Apple atau Google
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Kod ini telah tamat tempoh."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Kod ini telah tamat tempoh."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Ini {app_name} yang baharu. Hidangan dan foto anda tersimpan dalam akaun {app_name} anda: daftar masuk di web dan tekan Sambungkan Telegram pada pelan anda."
 
@@ -611,6 +626,11 @@ msgstr "Apa pilihan lebih ringan untuk makan malam?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Apa cara mudah untuk makan lebih banyak hari ini?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Anda sudah menggunakan satu kod."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

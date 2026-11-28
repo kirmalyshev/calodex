@@ -455,6 +455,11 @@ msgstr "Il codice non è giusto. Controlla l'ultima email di {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Questo codice non è valido."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Nessuna risposta. Riprova."
 
@@ -555,6 +560,16 @@ msgstr "Questo account non è ancora collegato — accedi con Apple o Google sul
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Questo codice è scaduto."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Questo codice è scaduto."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Questo è il nuovo {app_name}. I tuoi pasti e le tue foto stanno nel tuo account {app_name}: accedi sul web e premi Collega Telegram dal tuo piano."
 
@@ -617,6 +632,11 @@ msgstr "Un'alternativa più leggera per cena?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Qual è un modo semplice per mangiare di più oggi?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Hai già usato un codice."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -449,6 +449,11 @@ msgstr "验证码不对。查看 {app_name} 发来的最新邮件。"
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "该代码无效。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "没有收到结果。再试一次。"
 
@@ -549,6 +554,16 @@ msgstr "此账户尚未登录——请先在网页上通过 Apple 或 Google 登
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "该代码已失效。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "该代码已失效。"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "这是全新的 {app_name}。你的餐食和照片保存在你的 {app_name} 账户中：请在网页上登录，并在你的计划页面点击“连接 Telegram”。"
 
@@ -611,6 +626,11 @@ msgstr "晚餐有什么更清淡的替代？"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "今天想多吃点，有什么简单的方法？"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "你已使用过一个代码。"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

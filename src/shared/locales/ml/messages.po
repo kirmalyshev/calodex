@@ -449,6 +449,11 @@ msgstr "ആ കോഡ് ശരിയല്ല. {app_name}-ൽ നിന്ന�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "ഈ കോഡ് സാധുവല്ല."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "അതിന് മറുപടി വന്നില്ല. വീണ്ടും ശ്രമിക്കൂ."
 
@@ -549,6 +554,16 @@ msgstr "ഈ അക്കൗണ്ടിൽ ഇതുവരെ സൈൻ ഇൻ �
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "ഈ കോഡിന്റെ കാലാവധി കഴിഞ്ഞു."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "ഈ കോഡിന്റെ കാലാവധി കഴിഞ്ഞു."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "ഇതാണ് പുതിയ {app_name}. നിങ്ങളുടെ ഭക്ഷണങ്ങളും ഫോട്ടോകളും നിങ്ങളുടെ {app_name} അക്കൗണ്ടിലുണ്ട്: വെബിൽ സൈൻ ഇൻ ചെയ്ത് നിങ്ങളുടെ പ്ലാനിൽ Telegram കണക്റ്റ് ചെയ്യുക അമർത്തൂ."
 
@@ -611,6 +626,11 @@ msgstr "അത്താഴത്തിന് ലഘുവായ ഒരു പക
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "ഇന്ന് കൂടുതൽ കഴിക്കാനുള്ള എളുപ്പവഴി ഏതാണ്?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "നിങ്ങൾ ഇതിനകം ഒരു കോഡ് ഉപയോഗിച്ചു."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
