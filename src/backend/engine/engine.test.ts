@@ -1212,7 +1212,7 @@ const oliveOil: FoodRef = {
   id: "usda-sr:olive-oil", source: "usda-sr", name: "Olive oil", name_de: "Olivenöl", name_en: "Olive oil",
   names: {}, category: null, kcal_per_100g: 884, protein_g_per_100g: 0, carbs_g_per_100g: 0, fat_g_per_100g: 100,
   satfat_g_per_100g: 14, fiber_g_per_100g: 0, sugar_g_per_100g: 0, sodium_mg_per_100g: 2,
-  nutrients: {}, portions: [], source_url: null, attribution: [],
+  nutrients: {}, portions: [{ label: "tbsp", grams: 13.5 }], source_url: null, attribution: [],
 };
 
 const rice: FoodRef = {
@@ -1426,6 +1426,45 @@ describe("editing the answer", () => {
     expect(out.analysis.items).toHaveLength(1);
     expect(out.analysis.items[0]).toMatchObject({ ref: oliveOil.id, grams: 30, kcal: 265 });
     expect(out.analysis.kcal).toBe(265);
+  });
+
+  it("stores a catalog measurement on the item and keeps it catalog-bound", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const swapped = await editMeal(deps, userId, meal.mealId, { swap: { index: 0, ref: oliveOil.id } });
+    if (swapped.kind !== "updated") throw new Error(`expected updated, got ${swapped.kind}`);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    const portion = { label: "tbsp", grams: 13.5 };
+    const item = {
+      ...before.items[0]!,
+      grams: 27, portion, portion_count: 2,
+    };
+    const out = await editMeal(deps, userId, meal.mealId, { items: [item] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    expect(out.analysis.items[0]).toMatchObject({ grams: 27, kcal: 239, portion, portion_count: 2 });
+
+    const lying = await editMeal(deps, userId, meal.mealId, {
+      items: [{ ...item, grams: 50, portion, portion_count: 2 }],
+    });
+    if (lying.kind !== "updated") throw new Error(`expected updated, got ${lying.kind}`);
+    expect(lying.analysis.items[0]).toMatchObject({ grams: 27, kcal: 239, portion, portion_count: 2 });
+
+    const invented = await editMeal(deps, userId, meal.mealId, {
+      items: [{ ...item, portion: { label: "bucket", grams: 900 }, portion_count: 1 }],
+    });
+    if (invented.kind !== "updated") throw new Error(`expected updated, got ${invented.kind}`);
+    expect(invented.analysis.items[0]).not.toHaveProperty("portion");
+    expect(invented.analysis.items[0]).not.toHaveProperty("portion_count");
+  });
+
+  it("copies the catalog row's portions into the snapshot a swap writes", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const out = await editMeal(deps, userId, meal.mealId, { swap: { index: 0, ref: oliveOil.id } });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    expect(out.analysis.items[0]?.food?.portions).toEqual([{ label: "tbsp", grams: 13.5 }]);
   });
 
   it("applies items, then a swap, then an append — each with its own nutrition", async () => {
@@ -1737,16 +1776,16 @@ describe("an ingredient edit through the update queue (ieat-app#3678)", () => {
     await drainJobs(deps, 1000);
   });
 
-  it("versions an append job beyond what an old worker may claim", async () => {
+  it("versions an append or portion job beyond what an old worker may claim", async () => {
     const userId = await onboard();
     const meal = await queuedMeal(userId);
     const clientId = crypto.randomUUID();
     await queueMealUpdate(deps, userId, {
       kind: "ingredients", mealId: meal.mealId, clientId, edit: { add: { ref: oliveOil.id, grams: 30 } },
     });
-    expect(await store.getJob(userId, clientId)).toMatchObject({ requestVersion: 2 });
+    expect(await store.getJob(userId, clientId)).toMatchObject({ requestVersion: 3 });
     expect(await store.claimJob("old", [{ kind: "meal-update", version: 1, grouped: true }], 30_000)).toBeNull();
-    expect((await store.claimJob("new", [{ kind: "meal-update", version: 2, grouped: true }], 30_000))?.clientId).toBe(clientId);
+    expect((await store.claimJob("new", [{ kind: "meal-update", version: 3, grouped: true }], 30_000))?.clientId).toBe(clientId);
     await store.releaseJobs("new");
 
     const overwriteId = crypto.randomUUID();
@@ -1765,7 +1804,7 @@ describe("an ingredient edit through the update queue (ieat-app#3678)", () => {
     await queueMealUpdate(deps, userId, {
       kind: "ingredients", mealId: meal.mealId, clientId, edit: { add: { ref: oliveOil.id, grams: 30 } },
     });
-    const registry = [{ kind: "meal-update", version: 2, grouped: true }];
+    const registry = [{ kind: "meal-update", version: 3, grouped: true }];
     expect((await store.claimJob("dead", registry, 30_000))?.clientId).toBe(clientId);
     // The dead attempt may have written before it died. What may not happen is a second append.
     const first = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
@@ -1802,6 +1841,24 @@ describe("an ingredient edit through the update queue (ieat-app#3678)", () => {
     expect(stored.items[0]).toMatchObject({ ref: oliveOil.id, grams: before.items[0]!.grams });
     expect(stored.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 30 });
     await drainJobs(deps, 1000);
+  });
+
+  it("names the meal by its own custom name, not its ingredients", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    await editMeal(deps, userId, meal.mealId, { name: "Sunday brunch" });
+    await store.putPushToken(userId, "ExponentPushToken[t-name]", "ios");
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId, edit: { add: { ref: oliveOil.id, grams: 30 } },
+    });
+    await settle(userId, clientId);
+    await drainJobs(deps, 1000);
+    const sent = (deps.push as ReturnType<typeof fakePush>).sent;
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.title).toContain("Sunday brunch");
   });
 });
 
@@ -3512,7 +3569,7 @@ describe("a note job that names no meal (#1347)", () => {
     const bound = crypto.randomUUID(), unbound = crypto.randomUUID();
     await queueMealUpdate(deps, userId, { kind: "note", mealId: res.mealId, text: "half that", clientId: bound });
     await queueMealUpdate(deps, userId, { kind: "note", text: "half that", clientId: unbound });
-    const registry = [{ kind: "meal-update", version: 2, grouped: true }];
+    const registry = [{ kind: "meal-update", version: 3, grouped: true }];
     expect((await store.claimJob("w1", registry, 30_000))?.clientId).toBe(bound);
     // The send's target is the router's to name — its group can't be a meal nobody has named,
     // so it waits where a bound update on that same meal would wait (#1347).

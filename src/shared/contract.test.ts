@@ -13,6 +13,7 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({})).toBe(true);
     expect(isEditMealRequest({ kcal: 320, protein_g: 0 })).toBe(true);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50 }] })).toBe(true);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 50 }, portion_count: 2 }] })).toBe(true);
     expect(isEditMealRequest({ servings: 2 })).toBe(true);
     expect(isEditMealRequest({ servings: 0.5 })).toBe(true);
     expect(isEditMealRequest({ name: "Breakfast bowl" })).toBe(true);
@@ -45,6 +46,14 @@ describe("isEditMealRequest", () => {
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, kcal_per_100g: -1 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, name_en: 7 }] })).toBe(false);
     expect(isEditMealRequest({ items: [{ name: "egg", grams: 50, name_en: "egg", kcal: 78, kcal_per_100g: 155 }] })).toBe(true);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 50 } }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion_count: 2 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 50 }, portion_count: 0 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "", grams: 50 }, portion_count: 2 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 0 }, portion_count: 2 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 50, junk: true }, portion_count: 2 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 5000 }, portion_count: 201 }] })).toBe(false);
+    expect(isEditMealRequest({ items: [{ name: "egg", grams: 100, portion: { label: "large", grams: 5000 }, portion_count: 200 }] })).toBe(true);
     expect(isEditMealRequest({ servings: 20 })).toBe(true);
     expect(isEditMealRequest({ servings: 0 })).toBe(false);
     expect(isEditMealRequest({ servings: -0.5 })).toBe(false);

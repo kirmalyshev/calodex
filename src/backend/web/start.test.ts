@@ -31,7 +31,7 @@ import type { EngineDeps } from "../engine/index.ts";
 import { REVENUECAT_WEBHOOK_PATH } from "../api/revenuecat.ts";
 import { AuthError, type Verifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
-import { chatHistory, day, handleText, isAnonymous, linkTelegram, saveOnboardingContent } from "../engine/index.ts";
+import { chatHistory, day, editMeal, handleText, isAnonymous, linkTelegram, saveOnboardingContent } from "../engine/index.ts";
 import { createRouter } from "../api/routes.ts";
 import { fakeAnalytics } from "../analytics/fake.ts";
 import { fakePush } from "../push/fake.ts";
@@ -2872,6 +2872,16 @@ describe("chat on the web: saying something", () => {
     const thread = await (await get("/start/chat", session)).text();
     expect(thread).toContain("kcal");
     expect(thread).not.toContain(PAGE_COPY.chatConfirm);
+  });
+
+  it("titles the thread card with the meal's own name once it has one", async () => {
+    const { session, userId } = await onboarded();
+    const to = (await post("/start/chat/say", { text: "two boiled eggs and a slice of rye bread" }, session)).headers.get("location")!;
+    const pendingId = new URL(to, "https://api.eait.fit").searchParams.get("pending")!;
+    await post("/start/chat/confirm", { pendingId }, session);
+    const meal = (await day(deps, userId))!.meals[0]!;
+    await editMeal(deps, userId, meal.id, { name: "Sunday brunch" });
+    expect(await (await get("/start/chat", session)).text()).toContain("Sunday brunch");
   });
 
   it("drops a proposal that is cancelled, and logs nothing", async () => {

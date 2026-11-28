@@ -37,6 +37,7 @@ import {
   type Profile, type Situation, type StreakGoal, type UnitSystem,
 } from "@eait/shared";
 import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
+import { mealDisplayName } from "../../shared/meal-names.ts";
 import { AuthError, type IdentityVerifier } from "../auth/verify.ts";
 import { BROWSER_SESSION_TTL_MS } from "../auth/tokens.ts";
 import { emailSignInEnabled } from "../mail/choose.ts";
@@ -1859,7 +1860,7 @@ async function routeStart(
       const pending = held === null ? null : await ctx.store.getPending(userId, held);
       const proposal: ChatProposal | null = pending === null ? null : {
         pendingId: pending.id,
-        title: pending.analysis.items.map((i) => i.name).join(", ") || pageCopyFor(profile.lang).chatAMeal,
+        title: mealDisplayName({ items: pending.analysis.items }) || pageCopyFor(profile.lang).chatAMeal,
         kcal: Math.round(pending.analysis.kcal),
         proteinG: Math.round(pending.analysis.protein_g),
       };
@@ -2148,7 +2149,7 @@ function threadLine(e: ChatEntry, lang: Lang): ChatLine {
   return {
     kind: "card",
     card: {
-      title: meal.items.map((i) => i.name).join(", ") || pageCopyFor(lang).chatAMeal,
+      title: mealDisplayName(meal) || pageCopyFor(lang).chatAMeal,
       kcal: Math.round(meal.kcal),
       proteinG: Math.round(meal.protein_g),
       verdicts: renderableVerdicts(meal.verdicts).map((d) => verdictPillLabel(d, meal.verdicts[d]!, lang)),

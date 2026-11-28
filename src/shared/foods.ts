@@ -149,6 +149,8 @@ export interface FoodSnapshot {
     & { [K in typeof SNAPSHOT_MICROS[number]]?: number };
   /** The row's own attribution texts, verbatim; `[]` for CC0. */
   attribution: string[];
+  /** The row's named servings, copied with the snapshot so an edit can measure in them. Absent on rows stored before portions existed. */
+  portions?: FoodPortion[];
 }
 
 /**

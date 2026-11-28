@@ -2200,6 +2200,8 @@ export const SCOPE: Readonly<Record<string, Scoping>> = {
   // anonymous id), which no declared user could write. Insert-only, behind the webhook's secret.
   recordRevenueCatEvent: "unscoped",
   revenueCatEventsOf: 0,
+  // A cross-account aggregate by definition; its result rows carry counts, never user ids.
+  promoStats: "unscoped",
   acquisitionOf: 0,
   // From the app's own token, or from the webhook naming the account as `putEntitlement` does.
   putAcquisition: 0,
@@ -3815,6 +3817,47 @@ export async function postgresStore(
           },
         };
       });
+    },
+
+    async promoStats(since, environment) {
+      // `cohort` is the window and decides first/last seen; `first_coded` is deliberately over the
+      // whole log, because a renewal in the window can carry the code of a redemption before it.
+      // The paid answer is conversion after THAT first coded event, not after the window opened.
+      // All three read ONE RevenueCat environment: sandbox proof events never enter production's
+      // numbers, and the optional sandbox read is its own cohort rather than a mixture.
+      const rows = await sql`
+        with cohort as (
+          select e.offer_code, e.user_id, min(e.event_at) as first_seen, max(e.event_at) as last_seen
+            from revenuecat_events e
+            join users u on u.id = e.user_id
+           where e.offer_code is not null and e.user_id is not null
+             and e.environment = ${environment} and e.event_at >= ${since}
+           group by e.offer_code, e.user_id
+        ), first_coded as (
+          select offer_code, user_id, min(event_at) as first_at
+            from revenuecat_events
+           where offer_code is not null and user_id is not null and environment = ${environment}
+           group by offer_code, user_id
+        ), converted as (
+          select distinct c.offer_code, c.user_id
+            from cohort c
+            join first_coded f on f.offer_code = c.offer_code and f.user_id = c.user_id
+           where exists (
+             select 1 from revenuecat_events p
+              where p.user_id = c.user_id and p.environment = ${environment}
+                and p.type in ('RENEWAL', 'INITIAL_PURCHASE')
+                and p.price > 0 and p.event_at >= f.first_at
+           )
+        )
+        select c.offer_code, c.user_id, c.first_seen, c.last_seen, (p.user_id is not null) as paid
+          from cohort c
+          left join converted p on p.offer_code = c.offer_code and p.user_id = c.user_id
+         order by c.offer_code, c.user_id`;
+      return rows.map((r: Record<string, unknown>) => ({
+        offerCode: String(r.offer_code), userId: String(r.user_id), paid: r.paid === true,
+        firstSeenAt: new Date(r.first_seen as string).toISOString(),
+        lastSeenAt: new Date(r.last_seen as string).toISOString(),
+      }));
     },
 
     async acquisitionOf(userId) {

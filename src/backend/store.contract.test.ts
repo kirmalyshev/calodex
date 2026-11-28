@@ -37,6 +37,11 @@ import { DEFAULT_NOTIFICATION_COPY, DEFAULT_ONBOARDING_CONTENT, LANGS, ONBOARDIN
 import { PROMPT_DEFAULTS, PROMPT_KEYS } from "./llm/prompt.ts";
 import { hashToken } from "./auth/tokens.ts";
 import { memoryStore } from "./store.memory.ts";
+import { configDefaults } from "./config.ts";
+import { demoPorts } from "./llm/demo.ts";
+import { logMail } from "./mail/log.ts";
+import { fakePush } from "./push/fake.ts";
+import { promoStats as promoStatsEngine, type EngineDeps } from "./engine/index.ts";
 import { RLS_TABLES, SCOPE, postgresStore } from "./store.pg.ts";
 import { SWITCH_KEYS, type CampaignRow, type LlmCall, type RecognitionWrite, type RevenueCatEventRow, type Store, type StoreOptions } from "./store.ts";
 
@@ -1149,6 +1154,110 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.mergeUsers(anon, real);
       expect(await s.revenueCatEventsOf(real)).toEqual([{ ...e, userId: real }]);
       expect(await s.acquisitionOf(real)).toEqual(asa);
+    });
+
+    it("builds promo-code cohort rows over the event log, distinct per account", async () => {
+      const s = await open();
+      const now = Date.now();
+      const day = 86_400_000;
+      const stamp = (daysAgo: number) => new Date(now - daysAgo * day).toISOString();
+      const alpha = `PROMO-A-${RUN}`, beta = `PROMO-B-${RUN}`;
+      const account = async () => (await s.upsertDeviceUser(device(), "en")).userId;
+
+      const live = await account();
+      await s.putEntitlement(live, {
+        expiresAt: new Date(now + 20 * day).toISOString(), productId: "eait_pro_yearly", eventAt: stamp(2),
+      });
+      const lapsed = await account();
+      await s.putEntitlement(lapsed, {
+        expiresAt: stamp(1), productId: "eait_pro_yearly", eventAt: stamp(3),
+      });
+      const bonus = await account();
+      const referrer = await account();
+      expect(await s.redeemReferral(bonus, (await s.referralOf(referrer))!.code, 7)).toBe("ok");
+      // The banked half of the same rule: this referrer's reward waited behind a live subscription,
+      // and the subscription has since lapsed inside it. Raw `bonus_until` is null for them; only
+      // `referralBonusEnd` over the bank keeps them active.
+      const banked = await account();
+      const bankedFriend = await account();
+      expect(await s.redeemReferral(bankedFriend, (await s.referralOf(banked))!.code, 7)).toBe("ok");
+      await s.putEntitlement(banked, {
+        expiresAt: new Date(now + day).toISOString(), productId: "eait_pro_yearly", eventAt: stamp(10),
+      });
+      expect(await s.grantReferralWeek(bankedFriend, new Date().toISOString(), 7, `tx-${RUN}`, `orig-${RUN}`)).toBe(true);
+      await s.putEntitlement(banked, {
+        expiresAt: new Date(now - 2 * day).toISOString(), productId: "eait_pro_yearly", eventAt: stamp(1),
+      });
+      const oldOnly = await account();
+      const betaOnly = await account();
+
+      // Three redeemers of ALPHA, four coded rows: the renewal carrying the same code does not
+      // redeem its account twice. `paid` is any priced event at or after the account's FIRST coded
+      // event — the discounted initial purchase counts on the spot, the earlier payment of the
+      // referral-bonus account does not.
+      await s.recordRevenueCatEvent(rcEvent(live, { offerCode: alpha, eventAt: stamp(4), price: 0 }));
+      await s.recordRevenueCatEvent(rcEvent(live, { offerCode: null, type: "RENEWAL", eventAt: stamp(2), price: 9.99 }));
+      await s.recordRevenueCatEvent(rcEvent(live, { offerCode: alpha, type: "RENEWAL", eventAt: stamp(1), price: 9.99 }));
+      await s.recordRevenueCatEvent(rcEvent(lapsed, { offerCode: alpha, eventAt: stamp(3), price: 4.99 }));
+      await s.recordRevenueCatEvent(rcEvent(bonus, { offerCode: null, eventAt: stamp(5), price: 9.99 }));
+      await s.recordRevenueCatEvent(rcEvent(bonus, { offerCode: alpha, eventAt: stamp(2), price: 0 }));
+      await s.recordRevenueCatEvent(rcEvent(banked, { offerCode: null, eventAt: stamp(6), price: 9.99 }));
+      await s.recordRevenueCatEvent(rcEvent(banked, { offerCode: alpha, eventAt: stamp(2), price: 0 }));
+      await s.recordRevenueCatEvent(rcEvent(oldOnly, { offerCode: alpha, eventAt: stamp(40), price: 0 }));
+      await s.recordRevenueCatEvent(rcEvent(betaOnly, { offerCode: beta, eventAt: stamp(1), price: 0 }));
+      // A priced PRODUCT_CHANGE is a payment, but it is not the start of a paid period: the spec
+      // counts a RENEWAL, or the priced INITIAL_PURCHASE a discount code itself is.
+      await s.recordRevenueCatEvent(rcEvent(betaOnly, { offerCode: null, type: "PRODUCT_CHANGE", eventAt: stamp(0.5), price: 19.99 }));
+      await s.recordRevenueCatEvent(rcEvent(null, { offerCode: alpha, eventAt: stamp(1) }));
+      await s.recordRevenueCatEvent(rcEvent(crypto.randomUUID(), { offerCode: alpha, eventAt: stamp(1) }));
+      await s.recordRevenueCatEvent(rcEvent(live, { offerCode: null, eventAt: stamp(1), price: 0 }));
+
+      // This suite shares one store, and other fixtures log NEWYEAR at a fixed date — and Postgres
+      // keeps rows across runs besides. The store's rows are INTERNAL per (code, account); the
+      // engine owns entitlement aggregation. Here the contract is the cohort, conversion and window
+      // shape those rows carry, regrouped so account order does not matter.
+      const rows = (await s.promoStats(new Date(now - 30 * day), "PRODUCTION"))
+        .filter((r) => r.offerCode === alpha || r.offerCode === beta);
+      const grouped = new Map<string, { redeemed: number; paid: number; firstSeenAt: string; lastSeenAt: string }>();
+      for (const r of rows) {
+        const g = grouped.get(r.offerCode) ?? { redeemed: 0, paid: 0, firstSeenAt: r.firstSeenAt, lastSeenAt: r.lastSeenAt };
+        g.redeemed += 1;
+        if (r.paid) g.paid += 1;
+        if (r.firstSeenAt < g.firstSeenAt) g.firstSeenAt = r.firstSeenAt;
+        if (r.lastSeenAt > g.lastSeenAt) g.lastSeenAt = r.lastSeenAt;
+        grouped.set(r.offerCode, g);
+      }
+      expect(grouped.get(alpha)).toEqual({ redeemed: 4, paid: 2, firstSeenAt: stamp(4), lastSeenAt: stamp(1) });
+      expect(grouped.get(beta)).toEqual({ redeemed: 1, paid: 0, firstSeenAt: stamp(1), lastSeenAt: stamp(1) });
+      expect(new Set(rows.filter((r) => r.offerCode === alpha).map((r) => r.userId))).toEqual(new Set([live, lapsed, bonus, banked]));
+
+      // The public counts stay an ENGINE assertion over these rows: the store names accounts
+      // internally, while `promoStats` resolves each one's live tier through `entitlementFor` and
+      // then erases the ids. Live subscription, referral week and banked referral all count active.
+      const deps: EngineDeps = { store: s, config: configDefaults(), llm: demoPorts(), push: fakePush(), mail: logMail() };
+      const view = (await promoStatsEngine(deps, 30)).codes.filter((r) => r.offerCode === alpha || r.offerCode === beta);
+      expect(view).toEqual([
+        { offerCode: alpha, redeemed: 4, active: 3, paid: 2, firstSeenAt: stamp(4), lastSeenAt: stamp(1) },
+        { offerCode: beta, redeemed: 1, active: 0, paid: 0, firstSeenAt: stamp(1), lastSeenAt: stamp(1) },
+      ]);
+      expect(JSON.stringify(view)).not.toContain(live);
+      expect(JSON.stringify(view)).not.toContain(lapsed);
+      expect(JSON.stringify(view)).not.toContain(bonus);
+      expect(JSON.stringify(view)).not.toContain(banked);
+    });
+
+
+    it("reads PRODUCTION coded events by default and SANDBOX only when asked", async () => {
+      const s = await open();
+      const userId = (await s.upsertDeviceUser(device(), "en")).userId;
+      const code = `PROMO-SANDBOX-${RUN}`;
+      const at = new Date().toISOString();
+      await s.recordRevenueCatEvent(rcEvent(userId, { offerCode: code, eventAt: at, environment: "SANDBOX" }));
+      await s.recordRevenueCatEvent(rcEvent(userId, { offerCode: null, type: "RENEWAL", eventAt: at, price: 9.99, environment: "SANDBOX" }));
+
+      expect((await s.promoStats(new Date(Date.now() - 86_400_000), "PRODUCTION")).filter((r) => r.offerCode === code)).toEqual([]);
+      const sandboxRows = (await s.promoStats(new Date(Date.now() - 86_400_000), "SANDBOX")).filter((r) => r.offerCode === code);
+      expect(sandboxRows).toMatchObject([{ offerCode: code, userId, paid: true, firstSeenAt: at, lastSeenAt: at }]);
     });
 
     it("a merge keeps the surviving account's AdServices answer, and fills a gap or a RevenueCat one", async () => {
@@ -7137,6 +7246,9 @@ if (PG_URL) {
         "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
         // ieat-app#2788: the same admin read as the arm funnel above it, counted per place.
         "onboardingExperimentPlaces", "onboardingFunnel",
+        // ieat-app#3693: promo stats are the admin's cross-account cohort read. Its rows are
+        // internal account keys for the engine; the API answer erases them into counts.
+        "promoStats",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
         // email_codes belongs to no account — the address is the subject of a future identity,

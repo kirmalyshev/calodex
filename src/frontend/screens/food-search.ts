@@ -9,6 +9,7 @@ import type { FoodSearchResponse, SavedMeal } from "@eait/shared/contract";
 import type { FoodRef } from "@eait/shared";
 import { numbersCopyFor } from "../../shared/app/numbers-copy.ts";
 import { foodLogChoice, foodSearchCopyFor, isLoggableFood } from "../../shared/app/food-search-copy.ts";
+import { mealAddCopyFor } from "../../shared/app/meal-add-copy.ts";
 import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
 import { UNIT_KCAL, kcalNumbers, wholeNumbers } from "../../shared/lang.ts";
 import type { Lang } from "../../shared/types.ts";
@@ -30,6 +31,11 @@ export interface FoodSearchOpts {
   onClose: () => void;
   /** A meal landed: the chat's own thread and today's totals are stale. */
   onLogged: () => void;
+  /**
+   * Pick mode (#3678): choose one catalog row for something else rather than log a meal. The sheet
+   * keeps the search and its rows, drops the logging line / Chat / typed numbers, and closes on the pick.
+   */
+  onPick?: ((ref: string, grams: number) => void) | undefined;
 }
 
 const DEBOUNCE_MS = 250;
@@ -37,6 +43,8 @@ const SAVED_REMOVE_WIDTH = 88;
 
 export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
   const c = foodSearchCopyFor(o.lang);
+  const ac = mealAddCopyFor(o.lang);
+  const picking = o.onPick !== undefined;
   const nc = numbersCopyFor(o.lang);
   const sc = savedMealsCopyFor(o.lang);
   const num = wholeNumbers(o.lang);
@@ -56,8 +64,8 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
   const head = el("div", "fs-head");
   const field = el("input", "fs-field") as HTMLInputElement;
   field.type = "search";
-  field.placeholder = c.placeholder;
-  field.setAttribute("aria-label", c.placeholder);
+  field.placeholder = picking ? ac.searchPlaceholder : c.placeholder;
+  field.setAttribute("aria-label", field.placeholder);
   field.autocomplete = "off";
   const close = el("button", "fs-close", c.cancel) as HTMLButtonElement;
   close.type = "button";
@@ -66,7 +74,7 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
   const line = el("p", "fs-line");
   const body = el("div", "fs-body");
   const source = el("p", "fs-source");
-  sheet.append(head, line, body, source);
+  sheet.append(head, ...(picking ? [] : [line]), body, source);
 
   const drawLine = (): void => {
     line.textContent = left === null ? "" : fill(c.logging, { day: c.today, left: num(Math.max(0, left)) });
@@ -250,8 +258,37 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     return box;
   };
 
+  let suggested: FoodRef[] = [];
+  let suggestedSource = "";
+  const renderSuggestions = (): void => {
+    hot = -1;
+    body.replaceChildren(el("div", "lab fs-sec", ac.suggestions), ...suggested.map(foodRow));
+    source.textContent = suggestedSource;
+  };
+
+  // The board's empty state is three ordinary ingredients. They are catalog searches, not literals:
+  // what renders is the row the catalog actually has, in her language, with its own serving and
+  // attribution — and a catalog gap is an absent suggestion, never an invented food.
+  const SUGGEST = ["banana", "apple", "almonds"] as const;
+  const loadSuggestions = (): void => {
+    void Promise.all(SUGGEST.map(async (q) => {
+      const r = await api<FoodSearchResponse>(`/foods?q=${encodeURIComponent(q)}&limit=3`).catch(() => null);
+      return r === null ? null : { food: r.foods.filter(isLoggableFood)[0], attributions: r.attributions };
+    })).then((found) => {
+      const seen = new Set<string>();
+      suggested = found.flatMap((r) => {
+        if (r?.food === undefined || seen.has(r.food.id)) return [];
+        seen.add(r.food.id);
+        return [r.food];
+      });
+      suggestedSource = [...new Set(found.flatMap((r) => r?.attributions.map((a) => a.citation) ?? []))].join(" · ");
+      if (field.value.trim() === "") renderSuggestions();
+    });
+  };
+
   const renderSaved = (): void => {
     closeOpenSwipe();
+    if (picking) { renderSuggestions(); return; }
     hot = -1;
     const nodes: HTMLElement[] = [el("div", "lab fs-sec", sc.section)];
     if (savedMeals !== null) {
@@ -294,22 +331,29 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     const fail = el("div", "fs-fail");
     fail.setAttribute("role", "alert");
     fail.hidden = true;
+    const name = f.names[o.lang] ?? (o.lang === "de" ? f.name_de : o.lang === "en" ? f.name_en : null) ?? f.name;
     txt.append(
-      el("b", "", f.names[o.lang] ?? (o.lang === "de" ? f.name_de : o.lang === "en" ? f.name_en : null) ?? f.name),
+      el("b", "", name),
       el("div", "fs-sub", fill(c.serving, { label: ch.label ?? c.hundredGrams, kcal: num(ch.kcal) })),
       fail,
     );
     const add = el("button", "fs-add") as HTMLButtonElement;
     add.type = "button";
-    const name = f.name;
     const face = (done: boolean): void => {
       add.classList.toggle("fs-done", done);
-      add.setAttribute("aria-label", fill(done ? c.logged : c.log, { name }));
+      // Pick mode is one append to the meal behind the sheet, so the accessible name is the food
+      // itself rather than the logging verb; logging mode keeps its explicit Log/Logged template.
+      add.setAttribute("aria-label", o.onPick !== undefined ? name : fill(done ? c.logged : c.log, { name }));
       add.replaceChildren(el("i", `ico i-${done ? "check" : "plus"}`));
     };
     face(false);
     let busy = false;
     add.addEventListener("click", async () => {
+      if (o.onPick !== undefined) {
+        o.onPick(f.id, ch.grams);
+        o.onClose();
+        return;
+      }
       if (busy || add.classList.contains("fs-done")) return;
       busy = true;
       add.disabled = true;
@@ -352,8 +396,7 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
       const rows = r.foods.filter(isLoggableFood);
       body.replaceChildren(
         ...(rows.length === 0 ? [el("p", "fs-none", fill(c.noMatch, { q }))] : rows.map(foodRow)),
-        tellRow(q),
-        numbersRow(q),
+        ...(picking ? [] : [tellRow(q), numbersRow(q)]),
       );
       source.textContent = rows.length === 0 ? "" : r.attributions.map((a) => a.citation).join(" · ");
     } catch {
@@ -368,9 +411,10 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     }
   };
 
-  // Load saved meals on open so the empty search screen shows them immediately (#907).
+  // Load the empty state on open: saved meals when logging (#907), ingredient suggestions when picking (#3678).
   renderSaved();
-  void listSavedMeals().then(
+  if (picking) loadSuggestions();
+  else void listSavedMeals().then(
     (meals) => { savedMeals = meals; if (field.value.trim() === "") renderSaved(); },
     () => { savedMeals = []; if (field.value.trim() === "") renderSaved(); },
   );
@@ -398,13 +442,17 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
         e.preventDefault();
         const add = pick.querySelector<HTMLElement>(".fs-add");
         if (add !== null) add.click(); else pick.click();
-      } else if (field.value.trim() !== "") {
+      } else if (!picking && field.value.trim() !== "") {
         e.preventDefault();
         o.onClose();
         o.onTell(field.value.trim());
       }
     }
     if (e.key === "Escape") {
+      // This sheet closes itself; a meal screen underneath must not see the same keypress as
+      // its own "back to the diary" (#3678).
+      e.preventDefault();
+      e.stopPropagation();
       if (openSwipe !== null) closeOpenSwipe();
       else o.onClose();
     }
