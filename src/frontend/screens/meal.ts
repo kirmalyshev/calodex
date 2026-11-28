@@ -684,6 +684,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       nutrientPage.append(card);
     }
     tileTrack.append(macroPage, nutrientPage);
+    const tileClip = el("div", "mtileclip");
+    tileClip.append(tileTrack);
     const tileDotEls: HTMLButtonElement[] = [];
     const showTilePage = (to: 0 | 1): void => {
       tilePage = to;
@@ -708,7 +710,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       tileDotEls.push(d);
       tileDots.append(d);
     }
-    tiles.append(tileTrack, tileDots);
+    tiles.append(tileClip, tileDots);
     // Pan under the finger, the trackpad, or ←/→; a drag past 40 px commits the page.
     let tileDrag: { x: number; id: number; moved: boolean } | null = null;
     let swallowTileClick = false;

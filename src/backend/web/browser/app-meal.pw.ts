@@ -72,6 +72,17 @@ test("the meal opens: photo, kcal, macro tiles, ingredients, verdicts, score", a
   await expect(micro).toHaveAttribute("aria-hidden", "false");
   await expect(page.getByRole("button", { name: "Page 2 of 2" })).toHaveAttribute("aria-current", "true");
   await expect(page.locator(".mtiletrack")).not.toHaveCSS("transform", "none");
+  // The page itself lands under the clip: a wrong distance still has a transform and both pages'
+  // text in the DOM, so state alone cannot catch a misaligned track.
+  const xGap = async (what: "micro" | "macro") => {
+    const clipBox = await page.locator(".mtileclip").boundingBox();
+    const box = await (what === "micro" ? micro : macros).boundingBox();
+    if (clipBox === null || box === null) return 9999;
+    const want = what === "micro" ? clipBox.x : clipBox.x - clipBox.width;
+    return Math.abs(box.x - want);
+  };
+  await expect.poll(() => xGap("micro"), { timeout: 2000 }).toBeLessThan(1);
+  await expect.poll(() => xGap("macro"), { timeout: 2000 }).toBeLessThan(1);
   await expect(micro).toContainText("Fiber");
   await expect(micro).toContainText("Sugar");
   await expect(micro).toContainText("Sodium");
