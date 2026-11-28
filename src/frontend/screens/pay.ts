@@ -183,7 +183,8 @@ export function payScreen(frame: Frame): HTMLElement {
       // The trial is on yearly only: the trial words ride while yearly is picked; a plan that
       // sells no trial takes the store's own Subscribe (the phone's subscribePhone). The New Year
       // promotion is the board's Continue, no trial, and its own footer (pay-cal-a-newyear).
-      const days = sel.value === "yearly" ? w.trialDays : 0;
+      // A discount overrides the trial at checkout (RevenueCat), so the sheet stops promising one.
+      const days = sel.value === "yearly" && discount === null ? w.trialDays : 0;
       const ny = sel.value === "newyear" && w.yearly !== null ? w.promoYearly : null;
       title.textContent = days > 0 ? fill(pay.plansTrialTitle, { days: String(days) }) : fill(pay.plansUnlockTitle, {});
       go.textContent = days > 0 || ny !== null ? pay.continueCta : pay.subscribePhone;
@@ -226,6 +227,7 @@ export function payScreen(frame: Frame): HTMLElement {
     form.addEventListener("submit", (ev) => {
       ev.preventDefault();
       submit.disabled = true;
+      status.textContent = "";
       void redeemPromoCode(field.value).then((out) => {
         if (out.kind === "free") {
           // Entitled through `bonus_until`: Home reads the profile afresh and the sheet is gone.
@@ -235,12 +237,22 @@ export function payScreen(frame: Frame): HTMLElement {
         }
         discount = out.discountCode;
         status.textContent = fill(redeemWords.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) });
+        // The sheet is C's values without the trial: the percent in Yearly's band, never "N days free".
+        const yearly = col.querySelector<HTMLElement>(".pwp2 .plan2");
+        if (yearly !== null) {
+          const band = yearly.querySelector<HTMLElement>(".band") ?? yearly.insertBefore(el("div", "band"), yearly.firstChild!.nextSibling);
+          band.textContent = fill(pay.offerOff, { percent: paywallPercent(out.percent ?? 0, lang) });
+        }
         relink();
       }).catch((err: unknown) => {
-        if (!(err instanceof ApiError)) throw err;
+        // A refusal drops a discount held from an earlier code, so the links never carry what the status disowns.
+        discount = null;
+        relink();
+        if (!(err instanceof ApiError)) return;
         const kind = err.body?.error;
         status.textContent = kind === "promo-already" ? redeemWords.redeemAlready
-          : kind === "promo-unknown" ? redeemWords.redeemUnknown : redeemWords.redeemEnded;
+          : kind === "promo-unknown" ? redeemWords.redeemUnknown
+          : kind === "promo-expired" || kind === "promo-exhausted" ? redeemWords.redeemEnded : "";
       }).finally(() => { submit.disabled = false; });
     });
     const redeemLink = el("a", "", pay.redeemLink) as HTMLAnchorElement;
@@ -361,7 +373,7 @@ export function payScreen(frame: Frame): HTMLElement {
     const offer = w?.exitOffer ?? null;
     const uid = frame.me?.profile.user_id;
     // While the promotion is drawn and `skipTrialStep` (ieat-app#3606), no B: × on its A closes.
-    const skipTry = frame.me?.promo?.skipTrialStep === true && w?.promoYearly != null;
+    const skipTry = discount !== null || (frame.me?.promo?.skipTrialStep === true && w?.promoYearly != null);
     if (step === "plans" && w?.yearly != null && w.trialDays > 0 && !skipTry) {
       ev.preventDefault();
       step = "try";

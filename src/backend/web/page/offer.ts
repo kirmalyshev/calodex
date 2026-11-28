@@ -26,6 +26,8 @@ export interface OfferView {
   termsHref: string | null;
   /** A discount code the server honours (S4, #3695), carried through the steps as `code`; null when none. */
   code?: string | null;
+  /** The held code's percent off: the band draws it and the plans promise no trial. */
+  codePercent?: number | null;
   /** Where × goes: the next step, or after the last one the flow's own next place. */
   closeHref: string;
   /** The host's zone, for the day billing starts. */
@@ -80,9 +82,10 @@ ${cta(withCode(`${v.checkoutUrl}?plan=yearly`), zero === null ? pay.continueCta 
     // The New Year promotion (ieat-app#3606, pay-cal-a-newyear) swaps values only: no trial, its
     // band, the regular yearly price struck before its own, its footer, and yearly buys plan=newyear.
     const ny = o === null && w.yearly !== null ? w.promoYearly : null;
-    const days = o === null && w.yearly !== null && ny === null ? w.trialDays : 0;
+    const days = o === null && w.yearly !== null && ny === null && code === null ? w.trialDays : 0;
     const band = o !== null ? fill(pay.offerOff, { percent: paywallPercent(o.percentOff, v.lang) })
       : ny !== null ? fill(pay.promoBand, { percent: paywallPercent(ny.percent, v.lang) })
+      : code !== null && v.codePercent != null ? fill(pay.offerOff, { percent: paywallPercent(v.codePercent, v.lang) })
       : days > 0 ? fill(pay.trialBadge, { days: String(days) }) : null;
     const row = (value: "yearly" | "monthly" | "newyear" | "exit", name: string, billed: string | null, perMonth: string,
         trial: string | null, checked: boolean): string => `<label class="plan2">

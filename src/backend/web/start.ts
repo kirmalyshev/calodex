@@ -2054,10 +2054,12 @@ async function routeStart(
     if (target === "") return notFound();
     const link = target.replaceAll("{userId}", encodeURIComponent(userId));
     // A live discount code (S4, #3695) becomes RevenueCat's own `discount_code`; anything else is the plain link.
-    const discount = await checkoutDiscount(ctx.deps, url.searchParams.get("code"));
+    // Asking is guessing, so the code is read only inside the sign-in allowance (over it: the plain link).
+    const asked = url.searchParams.get("code");
+    const discount = asked === null || ctx.limitAuth() !== null ? null : await checkoutDiscount(ctx.deps, asked);
     if (discount === null) return seeOther(link);
     const out = new URL(link);
-    out.searchParams.set("discount_code", discount);
+    out.searchParams.set("discount_code", discount.discountCode);
     return seeOther(out.toString());
   }
 
@@ -2116,17 +2118,20 @@ async function routeStart(
     // C only while an offer is armed. A step that is not sold is A, never a page the checkout 404s.
     // While the promotion is drawn and `skipTrialStep` (ieat-app#3606), no B: × on its A closes.
     const skipTry = promo?.skipTrialStep === true && wp.promoYearly !== null;
-    const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 && !skipTry ? ["try" as const] : []),
+    // A discount code rides the steps only while the server still honours it (S4, #3695). It overrides a
+    // trial at checkout, so with one held the plans draw the percent and no trial, and B is skipped.
+    const asCode = normalizePromoCode(url.searchParams.get("code"));
+    const held = asCode !== null && ctx.limitAuth() === null ? await checkoutDiscount(ctx.deps, asCode) : null;
+    const code = held === null ? null : asCode;
+    const hasCode = code !== null;
+    const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 && !skipTry && !hasCode ? ["try" as const] : []),
       ...(wp.exitOffer !== null ? ["offer" as const] : [])];
     const asked = url.searchParams.get("step");
     const step = chain.find((s) => s === asked) ?? "plans";
     const next = chain[chain.indexOf(step) + 1];
-    // A discount code rides the steps only while the server still honours it (S4, #3695).
-    const asCode = normalizePromoCode(url.searchParams.get("code"));
-    const code = asCode !== null && await checkoutDiscount(ctx.deps, asCode) !== null ? asCode : null;
     const withCode = (href: string): string => (code === null ? href : `${href}${href.includes("?") ? "&" : "?"}code=${code}`);
     return html(offer({
-      step, paywall: wp, code,
+      step, paywall: wp, code, codePercent: held?.percent ?? null,
       checkoutUrl: `${START_PREFIX}/checkout`,
       privacyHref: legalUrls(config).privacy || null,
       termsHref: legalUrls(config).terms || null,

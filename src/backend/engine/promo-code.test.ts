@@ -86,7 +86,7 @@ describe("checkoutDiscount", () => {
     await store.putPromoCode({ code: "TEN", ...off });
     await store.putPromoCode({ code: "FREE", ...free });
     await store.putPromoCode({ code: "OLD", ...off, expiresAt: new Date(Date.now() - 1000).toISOString() });
-    expect(await checkoutDiscount(deps, "ten")).toBe("RC_TEN");
+    expect(await checkoutDiscount(deps, "ten")).toEqual({ discountCode: "RC_TEN", percent: 10 });
     for (const c of ["FREE", "OLD", "NOPE", null, "x y"]) expect(await checkoutDiscount(deps, c)).toBeNull();
   });
 });

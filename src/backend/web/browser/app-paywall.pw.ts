@@ -323,6 +323,10 @@ test("Redeem code · a discount appends discount_code to the checkout, a refusal
   await form.locator("button").click();
   await expect(form.locator("p")).toHaveText("10% off, applied at checkout.");
   await expect(page.locator(".pay .cta.p")).toHaveAttribute("href", /pay\.example\/y\/[^?]+\?discount_code=RC_TEN$/);
+  // A discount overrides the trial at checkout: the sheet promises none (C's values, percent in the band).
+  await expect(page.locator(".pay .plan2 .band").first()).toHaveText("10% off");
+  await expect(page.locator(".pay h1")).toHaveText("Unlock Calodex to continue");
+  await expect(page.locator(".pay")).not.toContainText(/free trial|days free/i);
   await page.locator(".pay .plan2", { hasText: "Monthly" }).click();
   await expect(page.locator(".pay .cta.p")).toHaveAttribute("href", /pay\.example\/m\/[^?]+\?discount_code=RC_TEN$/);
 });

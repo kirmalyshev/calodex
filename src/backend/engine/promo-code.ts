@@ -36,9 +36,10 @@ export async function redeemPromo(deps: EngineDeps, userId: string, input: unkno
     discountCode: c.kind === "discount" ? c.discountCode : null, profile: (await profileView(deps, userId))! };
 }
 
-/** The RevenueCat discount code a live DISCOUNT code stands for, or null — what the checkout URL carries. */
-export async function checkoutDiscount(deps: EngineDeps, input: unknown): Promise<string | null> {
+/** The RevenueCat discount code a live DISCOUNT code stands for, and its percent, or null — what the checkout URL carries. */
+export async function checkoutDiscount(deps: EngineDeps, input: unknown): Promise<{ discountCode: string; percent: number } | null> {
   const code = normalizePromoCode(input);
   const c = code === null ? null : await deps.store.promoCode(code);
-  return c !== null && c.kind === "discount" && c.discountCode !== null && live(c, Date.now()) ? c.discountCode : null;
+  return c !== null && c.kind === "discount" && c.discountCode !== null && c.percent !== null && live(c, Date.now())
+    ? { discountCode: c.discountCode, percent: c.percent } : null;
 }

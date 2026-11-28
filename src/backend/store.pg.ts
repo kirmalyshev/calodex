@@ -617,7 +617,8 @@ create table if not exists promo_codes (
   discount_code text,
   percent       integer check (percent between 1 and 100),
   expires_at    timestamptz,
-  max_redemptions integer check (max_redemptions > 0)
+  max_redemptions integer check (max_redemptions > 0),
+  check (kind <> 'free' or days is not null)
 );
 -- One FREE redemption per account, ever: the primary key. Deleted with the account.
 create table if not exists promo_redemptions (
@@ -3470,6 +3471,10 @@ export async function postgresStore(
         await tx`delete from tokens where user_id = ${fromUserId}`;
         // Re-pointed BEFORE the delete: `on delete cascade` would otherwise erase A→B when B goes.
         await tx`update merged_users set into_id = ${intoUserId} where into_id = ${fromUserId}`;
+        // A redeemed free code follows the account that absorbed this one: the redemption is what keeps it once per account.
+        await tx`
+          update promo_redemptions set user_id = ${intoUserId}
+          where user_id = ${fromUserId} and not exists (select 1 from promo_redemptions where user_id = ${intoUserId})`;
         await tx`delete from users where id = ${fromUserId}`;
         await tx`
           insert into merged_users (from_id, into_id) values (${fromUserId}, ${intoUserId})

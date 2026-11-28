@@ -2528,9 +2528,13 @@ describe("the soft offer after the plan", () => {
         // A PROMO ADDS NO TEXT to the screen (DIRECTION § Rulings): the sentence lives on the redeem page only.
         expect(a).not.toContain("applied at checkout");
         expect(a).toContain('<input type="hidden" name="code" value="TEN">');
-        expect(closeOf(a)).toBe("/start/offer?step=try&code=TEN");
+        // A discount overrides the trial at checkout, so the sheet promises none: the percent in the band, no B.
+        expect(a).toContain('<div class="band">10% off</div>');
+        expect(a).toContain('<h1 class="t-y">Unlock Calodex to continue</h1>');
+        expect(a.slice(a.indexOf("<form class=\"offer\"")).replace(/<style[\s\S]*?<\/style>/g, "")).not.toMatch(/free trial|DAYS FREE|Try for/i);
+        expect(closeOf(a)).toBe("/start/offer?step=offer&code=TEN");
         const b = await (await get("/start/offer?step=try&code=TEN", session)).text();
-        expect(b).toContain('href="/start/checkout?plan=yearly&amp;code=TEN"');
+        expect(b).not.toContain("We want you to try");
         expect((await get("/start/checkout?plan=yearly&code=ten", session)).headers.get("location"))
           .toBe(`https://pay.rev.cat/eait/${userId}?discount_code=RC_TEN`);
         expect((await get("/start/checkout?plan=monthly&code=TEN", session)).headers.get("location"))

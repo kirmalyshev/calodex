@@ -167,6 +167,18 @@ function contract(name: string, make: () => Promise<Store>) {
         expect(await s.redeemPromoFree(u, open_, Date.now())).toBe("ok");
       });
 
+      it("a merge carries the redemption to the survivor, so a second code is still refused", async () => {
+        const s = await open();
+        const [a, b] = [code(), code()];
+        await s.putPromoCode({ ...spec, code: a, kind: "free", days: 10, maxRedemptions: 1 });
+        await s.putPromoCode({ ...spec, code: b, kind: "free", days: 10 });
+        const [anon, real] = [await account(s), await account(s)];
+        expect(await s.redeemPromoFree(anon, a, Date.now())).toBe("ok");
+        expect(typeof (await s.mergeUsers(anon, real))).toBe("number");
+        expect((await s.promoCode(a))!.redeemed).toBe(1);
+        expect(await s.redeemPromoFree(real, b, Date.now())).toBe("already");
+      });
+
       it("two accounts racing for the last slot apply exactly one", async () => {
         const s = await open();
         const c = code();

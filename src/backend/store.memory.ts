@@ -1248,6 +1248,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (fromBanked !== undefined) bankedDays.set(intoUserId, (bankedDays.get(intoUserId) ?? 0) + fromBanked);
       const fromBonus = bonusUntil.get(fromUserId);
       if (fromBonus !== undefined) bonusUntil.set(intoUserId, newest(bonusUntil.get(intoUserId), fromBonus));
+      const fromPromo = promoRedemptions.get(fromUserId);
+      if (fromPromo !== undefined && !promoRedemptions.has(intoUserId)) promoRedemptions.set(intoUserId, fromPromo);
+      promoRedemptions.delete(fromUserId);
       const fromGrant = referralGrants.get(fromUserId);
       if (fromGrant && !referralGrants.has(intoUserId)) referralGrants.set(intoUserId, fromGrant);
       referralGrants.delete(fromUserId);
