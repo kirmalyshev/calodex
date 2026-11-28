@@ -387,7 +387,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const now = localDate(zone);
     const label = (off: number): string => (off === 0 ? COPY.today : off === 1 ? COPY.yesterday : dateText(dateMinus(now, off)));
     const day = el("select", "nmfield") as HTMLSelectElement;
-    day.setAttribute("aria-label", dayName(meal.date));
+    day.setAttribute("aria-label", mc.whenDay);
     // The chip is disabled for a meal older than the window, so `current` is always an option here.
     const current = daysBack(now, meal.date);
     for (let off = 0; off <= MAX_DAY_OFFSET; off++) {
@@ -400,7 +400,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     time.type = "time";
     time.required = true;
     time.value = mealTime(meal);
-    time.setAttribute("aria-label", mealTime(meal));
+    time.setAttribute("aria-label", mc.whenTime);
     const errEl = el("p", "t13 nmerr");
     errEl.setAttribute("role", "alert");
     errEl.hidden = true;
