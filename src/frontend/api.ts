@@ -231,6 +231,13 @@ export const dropPushToken = (token: string): Promise<unknown> =>
   api("/push/token", json("DELETE", { platform: "web", token }));
 export const postPushOpen = (body: PushOpenRequest): Promise<unknown> => api("/push/open", json("POST", body));
 
+/** One funnel row for a paywall step (ieat-app#3719). Fire-and-forget: the sheet never waits on it. */
+export const postPaywallStep = (place: "paywall_try" | "paywall_offer", userId: string): void => {
+  void api("/onboarding/events", json("POST", { events: [{
+    id: crypto.randomUUID(), sessionId: userId, place, action: "view", contentVersion: 0, at: new Date().toISOString(),
+  }] })).catch(() => {});
+};
+
 /** Milestones: the wall and the streak, and the one write — which badges a celebration has shown. */
 export const getMilestones = (): Promise<MilestonesResponse> => api("/milestones");
 export const postMilestonesSeen = (ids: string[]): Promise<MilestonesResponse> =>

@@ -9235,6 +9235,8 @@
           "summary",
           "signup",
           "paywall",
+          "paywall_try",
+          "paywall_offer",
           "referral",
           "health"
         ]
