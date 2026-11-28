@@ -154,7 +154,7 @@ select.nmfield{appearance:none;-webkit-appearance:none}
 .svactions .cta{flex:1}
 
 /* Copy To (calodex_app#3683): the multi-select day picker, two columns on the sheet. */
-.copydays{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:48vh;overflow:auto}
+.copydays{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .card button.copyday{min-height:44px;padding:8px 10px;border:0;border-radius:var(--r-ctl);background:var(--bg);
   box-shadow:inset 0 0 0 1px var(--line);font:inherit;font-size:14px;font-weight:500;color:var(--ink);cursor:pointer;text-align:left}
 .card button.copyday.now{font-weight:700}
