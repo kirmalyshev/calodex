@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { OUTCOME_UNKNOWN } from "../../shared/contract.ts";
-import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_MEAL_ITEMS, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
+import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_MEAL_ITEMS, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scaledItem, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { LeanSchema, widen } from "../llm/lean.ts";
@@ -1428,6 +1428,338 @@ describe("editing the answer", () => {
     expect(out.analysis.kcal).toBe(265);
   });
 
+  it("detaches a catalog item whose calories were typed, so the typed number sticks", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, kcal: 300, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const item = out.analysis.items[0]!;
+    expect(item).toMatchObject({ grams: 30, kcal: 300, fat_g: 30 });
+    expect(item).not.toHaveProperty("kcal_per_100g");
+    expect(item).not.toHaveProperty("ref");
+    expect(item).not.toHaveProperty("food");
+    expect(item).not.toHaveProperty("portion");
+    expect(item).not.toHaveProperty("portion_count");
+    expect(item).not.toHaveProperty("nutrition_override");
+    expect(out.analysis.kcal).toBe(300);
+
+    const resized = await editMeal(deps, userId, meal.mealId, { items: [scaledItem(item, 60)] });
+    if (resized.kind !== "updated") throw new Error(`expected updated, got ${resized.kind}`);
+    expect(resized.analysis.items[0]).toMatchObject({ grams: 60, kcal: 600 });
+    expect(resized.analysis.items[0]).not.toHaveProperty("kcal_per_100g");
+  });
+
+  it("drops the catalog density when a typed-calorie edit renames the row", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, name: "Olive oil, extra virgin", kcal: 300, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    expect(out.analysis.items[0]).toMatchObject({ name: "Olive oil, extra virgin", kcal: 300 });
+    expect(out.analysis.items[0]).not.toHaveProperty("kcal_per_100g");
+  });
+
+  it("drops the catalog density when a typed-calorie row is shifted by an insertion", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, name: "Olive oil, extra virgin", kcal: 300, nutrition_override: true as const };
+    const prepended = { name: "Rice", grams: 100, kcal: 130, protein_g: 2.7, carbs_g: 28, fat_g: 0.3 };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [prepended, edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[1]).toMatchObject({ name: "Olive oil, extra virgin", kcal: 300 });
+    expect(out.analysis.items[1]).not.toHaveProperty("kcal_per_100g");
+  });
+
+  it("does not rescale catalog micros when only typed calories replace them", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    expect(before.satfat_g).toBe(4.2);
+    const edited = { ...before.items[0]!, kcal: 300, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[0]!.kcal).toBe(300);
+    expect(out.analysis.satfat_g).toBe(4.2);
+    expect(out.analysis.fiber_g).toBe(before.fiber_g);
+    expect(out.analysis.sugar_g).toBe(before.sugar_g);
+    expect(out.analysis.sodium_mg).toBe(before.sodium_mg);
+  });
+
+  it("moves catalog micros with a grams edit in the same patch as a nutrition override", async () => {
+    await store.putFoodRefs([oliveOil, rice]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const first = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: rice.id, grams: 100 } });
+    if (first.kind !== "updated") throw new Error(`expected updated, got ${first.kind}`);
+    const second = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
+    if (second.kind !== "updated") throw new Error(`expected updated, got ${second.kind}`);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    expect(before.satfat_g).toBe(4.3);
+    const editedOil = { ...before.items[1]!, kcal: 300, nutrition_override: true as const };
+    const doubledRice = { ...before.items[0]!, grams: 200, kcal: 260, protein_g: 5.4, carbs_g: 56, fat_g: 0.6 };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [doubledRice, editedOil] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[1]).toMatchObject({ kcal: 300 });
+    expect(out.analysis.items[1]).not.toHaveProperty("ref");
+    expect(out.analysis.satfat_g).toBe(4.4);
+    expect(out.analysis.fiber_g).toBe(0.8);
+    expect(out.analysis.sugar_g).toBe(0.2);
+    expect(out.analysis.sodium_mg).toBe(2.6);
+  });
+
+  it("keeps stored micros when the same override patch moves grams on estimate rows", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = meal.analysis.items;
+    const overridden = { ...stored[0]!, kcal: (stored[0]!.kcal ?? 0) + 100, nutrition_override: true as const };
+    const doubled = {
+      ...stored[1]!, grams: stored[1]!.grams * 2, kcal: (stored[1]!.kcal ?? 0) * 2,
+      protein_g: stored[1]!.protein_g !== undefined ? stored[1]!.protein_g * 2 : undefined,
+      carbs_g: stored[1]!.carbs_g !== undefined ? stored[1]!.carbs_g * 2 : undefined,
+      fat_g: stored[1]!.fat_g !== undefined ? stored[1]!.fat_g * 2 : undefined,
+    };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [overridden, doubled, ...stored.slice(2)] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.kcal).toBeGreaterThan(meal.analysis.kcal);
+    for (const f of ["satfat_g", "fiber_g", "sugar_g", "sodium_mg"] as const) {
+      expect(out.analysis[f], f).toBe(meal.analysis[f]);
+    }
+  });
+
+  it("keeps a catalog-known zero micro visible to medical verdicts after an override", async () => {
+    const zeroMicros: FoodRef = { ...oliveOil, id: "usda-sr:zero-micros", sodium_mg_per_100g: 0, satfat_g_per_100g: 0 };
+    await store.putFoodRefs([zeroMicros]);
+    const userId = await onboard({ restrictions: ["ldl", "kidneys"] });
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: zeroMicros.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    expect(replaced.analysis.satfat_g).toBe(0);
+    expect(replaced.analysis.verdicts.ldl).toBe("good");
+    expect(replaced.analysis.verdicts.kidneys).toBe("good");
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, kcal: 300, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.satfat_g).toBe(0);
+    expect(out.analysis.sodium_mg).toBe(0);
+    expect(out.analysis.verdicts.ldl).toBe("good");
+    expect(out.analysis.verdicts.kidneys).toBe("good");
+  });
+
+  it("derives override micros at the stored grams, not a detached portion echo", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = {
+      ...stored.items[0]!, grams: 200, kcal: 300,
+      portion: { label: "tbsp", grams: 13.5 }, portion_count: 1,
+      nutrition_override: true as const,
+    };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[0]).toMatchObject({ grams: 200, kcal: 300 });
+    expect(out.analysis.items[0]).not.toHaveProperty("portion");
+    expect(out.analysis.satfat_g).toBe(28);
+    expect(out.analysis.sodium_mg).toBe(4);
+  });
+
+  it("does not rescale micros when an override batch only reorders rows", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = meal.analysis.items;
+    expect(stored[0]!.grams).not.toBe(stored[1]!.grams);
+    const edited = { ...stored[0]!, kcal: (stored[0]!.kcal ?? 0) + 100, nutrition_override: true as const };
+    const reordered = [stored[1]!, edited, ...stored.slice(2)];
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: reordered });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.kcal).toBe(meal.analysis.kcal + 100);
+    expect(out.analysis.satfat_g).toBe(meal.analysis.satfat_g);
+    expect(out.analysis.fiber_g).toBe(meal.analysis.fiber_g);
+    expect(out.analysis.sugar_g).toBe(meal.analysis.sugar_g);
+    expect(out.analysis.sodium_mg).toBe(meal.analysis.sodium_mg);
+  });
+
+  it("does not let zero macros move typed provenance onto a prepended row", async () => {
+    const userId = await onboard();
+    const loggedNumbers = await logNumbersMeal(deps, userId, { name: "coffee", kcal: 5, protein_g: 0, fat_g: 0, carbs_g: 0 });
+    if (loggedNumbers.kind !== "logged") throw new Error(`expected logged, got ${loggedNumbers.kind}`);
+    const stored = (await store.getMeal(userId, loggedNumbers.mealId))!;
+    const coffee = stored.items[0]!;
+    expect(coffee.typed).toBe(true);
+    const water = { name: "water", grams: coffee.grams, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+
+    const out = await editMeal(deps, userId, loggedNumbers.mealId, { items: [water, { ...coffee, typed: true }] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[0]).not.toHaveProperty("typed");
+    expect(out.analysis.items[1]).toMatchObject({ name: "coffee", typed: true });
+  });
+
+  it("does not rescale micros when a row is renamed in the same override patch", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = meal.analysis.items;
+    const edited = {
+      ...stored[0]!, name: "renamed chicken",
+      kcal: (stored[0]!.kcal ?? 0) + 100, nutrition_override: true as const,
+    };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited, ...stored.slice(1)] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.kcal).toBe(meal.analysis.kcal + 100);
+    expect(out.analysis.satfat_g).toBe(meal.analysis.satfat_g);
+    expect(out.analysis.fiber_g).toBe(meal.analysis.fiber_g);
+    expect(out.analysis.sugar_g).toBe(meal.analysis.sugar_g);
+    expect(out.analysis.sodium_mg).toBe(meal.analysis.sodium_mg);
+  });
+
+  it("keeps typed provenance on its own row when a batch prepends another", async () => {
+    const userId = await onboard();
+    const loggedNumbers = await logNumbersMeal(deps, userId, { name: "shake", kcal: 400, protein_g: 30, fat_g: 10, carbs_g: 40 });
+    if (loggedNumbers.kind !== "logged") throw new Error(`expected logged, got ${loggedNumbers.kind}`);
+    const stored = (await store.getMeal(userId, loggedNumbers.mealId))!;
+    const typedRow = stored.items[0]!;
+    expect(typedRow.typed).toBe(true);
+    const prepended = { name: "rice", grams: typedRow.grams, kcal: 130, protein_g: 2.7, carbs_g: 28, fat_g: 0.3 };
+
+    const out = await editMeal(deps, userId, loggedNumbers.mealId, { items: [prepended, { ...typedRow, typed: true }] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[0]).not.toHaveProperty("typed");
+    expect(out.analysis.items[1]).toMatchObject({ name: "shake", typed: true });
+  });
+
+  it("does not let duplicate sent rows share one stored catalog shadow", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const row = stored.items[0]!;
+    expect(row.ref).toBe(oliveOil.id);
+    const override = { ...row, kcal: (row.kcal ?? 0) + 100, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [override, { ...row }] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items).toHaveLength(2);
+    expect(out.analysis.items.every((item) => item.ref === undefined)).toBe(true);
+    expect(out.analysis.satfat_g).toBe(stored.satfat_g);
+    expect(out.analysis.sodium_mg).toBe(stored.sodium_mg);
+  });
+
+  it("drops a stale density when calories are typed on an estimate", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const before = stored.items[0]!;
+    expect(before.kcal_per_100g).toBeGreaterThan(0);
+    const edited = { ...before, kcal: before.kcal! + 100, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited, ...stored.items.slice(1)] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const item = out.analysis.items[0]!;
+    expect(item.kcal).toBe(before.kcal! + 100);
+    expect(item).not.toHaveProperty("kcal_per_100g");
+  });
+
+  it("detaches a catalog item whose macro was typed, without moving calories off the catalog", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = { ...stored.items[0]!, protein_g: 2, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const item = out.analysis.items[0]!;
+    expect(item).toMatchObject({ grams: 30, kcal: 265, protein_g: 2, kcal_per_100g: 884 });
+    expect(item).not.toHaveProperty("ref");
+    expect(out.analysis.protein_g).toBe(2);
+    expect(out.analysis.kcal).toBe(265);
+  });
+
+  it("grounds duplicate rows from duplicate stored provenance, never twice from one row", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const first = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (first.kind !== "updated") throw new Error(`expected updated, got ${first.kind}`);
+    const second = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
+    if (second.kind !== "updated") throw new Error(`expected updated, got ${second.kind}`);
+    const two = (await store.getMeal(userId, meal.mealId))!.items;
+    expect(two).toHaveLength(2);
+
+    const resized = await editMeal(deps, userId, meal.mealId, { items: two.map((it, ix) => ix === 0 ? { ...it, grams: 60 } : it) });
+    if (resized.kind !== "updated") throw new Error(`expected updated, got ${resized.kind}`);
+    expect(resized.analysis.items.map((it) => it.ref)).toEqual([oliveOil.id, oliveOil.id]);
+    expect(resized.analysis.items[0]).toMatchObject({ grams: 60, kcal: 530 });
+
+    const single = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (single.kind !== "updated") throw new Error(`expected updated, got ${single.kind}`);
+    const one = (await store.getMeal(userId, meal.mealId))!.items[0]!;
+    const duplicated = await editMeal(deps, userId, meal.mealId, { items: [one, one] });
+    if (duplicated.kind !== "updated") throw new Error(`expected updated, got ${duplicated.kind}`);
+    expect(duplicated.analysis.items[0]).toHaveProperty("ref", oliveOil.id);
+    expect(duplicated.analysis.items[1]).not.toHaveProperty("ref");
+  });
+
+  it("recomputes a mismatched catalog nutrient that carries no override mark", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [{ ...stored.items[0]!, kcal: 300 }] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    // The mark is the intent. Without it this is a stale or badly scaled echo, never a detach.
+    expect(out.analysis.items[0]).toMatchObject({ ref: oliveOil.id, kcal: 265, kcal_per_100g: 884 });
+  });
+
   it("stores a catalog measurement on the item and keeps it catalog-bound", async () => {
     await store.putFoodRefs([oliveOil]);
     const userId = await onboard();
@@ -1793,6 +2125,43 @@ describe("an ingredient edit through the update queue (ieat-app#3678)", () => {
       kind: "ingredients", mealId: meal.mealId, clientId: overwriteId, edit: { kcal: 500 },
     });
     expect(await store.getJob(userId, overwriteId)).toMatchObject({ requestVersion: 1 });
+  });
+
+  it("versions a typed-nutrient edit beyond what a catalog-recomputing worker may claim", async () => {
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    const clientId = crypto.randomUUID();
+    await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId,
+      edit: { items: [{ name: "Olive oil", grams: 30, kcal: 300, protein_g: 0, carbs_g: 0, fat_g: 30, nutrition_override: true }] },
+    });
+    expect(await store.getJob(userId, clientId)).toMatchObject({ requestVersion: 4 });
+    expect(await store.claimJob("old", [{ kind: "meal-update", version: 3, grouped: true }], 30_000)).toBeNull();
+    expect((await store.claimJob("new", [{ kind: "meal-update", version: 4, grouped: true }], 30_000))?.clientId).toBe(clientId);
+    await store.releaseJobs("new");
+  });
+
+  it("settles a typed-nutrient edit with the row detached", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const storedBefore = (await store.getMeal(userId, meal.mealId))!;
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId,
+      edit: { items: [{ ...storedBefore.items[0]!, kcal: 300, nutrition_override: true }] },
+    });
+
+    const job = await settle(userId, clientId);
+    expect(job).toMatchObject({ kind: "settled", result: { kind: "updated", mealId: meal.mealId } });
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    expect(stored.items[0]).toMatchObject({ kcal: 300, fat_g: 30 });
+    expect(stored.items[0]).not.toHaveProperty("ref");
+    expect(stored.items[0]).not.toHaveProperty("nutrition_override");
+    await drainJobs(deps, 1000);
   });
 
   it("settles a dead worker's append as worker-lost rather than running it twice", async () => {

@@ -68,11 +68,12 @@ type PhotoRequest = Pick<LogPhotoInput, "caption" | "capturedAt" | "receivedAt" 
 export const retryableMealUpdate = (input: MealUpdateRequest): boolean =>
   input.kind === "reread" || (input.kind === "ingredients" && input.edit.add === undefined);
 
-/** The oldest worker shape that may claim this update. Version 3 understands named portions on items; version 2 understands appends. */
+/** The oldest worker shape that may claim this update. Version 4 detaches a catalog row marked as typed nutrition; version 3 understands named portions; version 2 understands appends. */
 export const mealUpdateRequestVersion = (input: MealUpdateRequest): number => {
   if (input.kind !== "ingredients") return 1;
+  if (input.edit.items?.some((i) => i.nutrition_override === true) === true) return 4;
   const portioned = input.edit.items?.some((i) => i.portion !== undefined || i.portion_count !== undefined) === true;
-  return portioned || input.edit.add !== undefined ? HANDLERS["meal-update"].version : 1;
+  return portioned || input.edit.add !== undefined ? 3 : 1;
 };
 
 const HANDLERS: Record<JobKind, JobHandler> = {
@@ -106,9 +107,9 @@ const HANDLERS: Record<JobKind, JobHandler> = {
     },
   },
   "meal-update": {
-    // Version 3 because a named portion is a shape version-2 workers would store without its
-    // catalog-bound validation; version 2 was the same rolling-deploy guard for an append.
-    version: 3,
+    // Version 4 because a typed nutrient is an overwrite version-3 workers would recompute back
+    // onto the catalog row; version 3 was the same rolling-deploy guard for a named portion.
+    version: 4,
     // One change at a time per account (#1347): a meal-sent note's meal is only known mid-run,
     // so the group is the account — a second update waits wherever its meal turns out to be.
     grouped: true,

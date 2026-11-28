@@ -1290,6 +1290,16 @@ export interface MessageRequest {
 }
 
 /**
+ * One item in a manual edit. `nutrition_override` is WRITE-ONLY (calodex_app#3680): the user typed
+ * this row's nutrition, so the server stores it as an estimate and drops its catalog `ref`, snapshot
+ * and portion. It is never stored on the meal or returned in meal items; the absence of `ref` is
+ * what a client reads afterwards.
+ * Send it again when nutrition is typed on a row that already detached. All four core nutrient
+ * fields ride with it — the unchanged ones echoed — so an override never blanks part of the row.
+ */
+export type EditMealItem = MealItem & { nutrition_override?: true };
+
+/**
  * `PATCH /v1/meals/:id` — the manual edit. The other half of "you can edit the LLM's answer",
  * alongside the natural-language path through `/v1/messages`.
  *
@@ -1307,7 +1317,18 @@ export interface EditMealRequest {
    * back to `mealNames(items)`.
    */
   name?: string | null;
-  items?: MealItem[];
+  /**
+   * The resulting ingredient list. On a catalog-backed row the four nutrient figures are normally
+   * the server's catalog echo and stay catalog-exact when grams move. When the user types one,
+   * the client marks that row `nutrition_override: true` (calodex_app#3680) and sends all four
+   * core nutrient fields, the unchanged ones echoed. The row then detaches:
+   * `ref`, the read-only `food` snapshot and any catalog `portion` are dropped and the typed figures
+   * are stored as an estimate. When typed calories replace the calories the row would scale to, the
+   * stale density is dropped too, so a later grams edit scales proportionally from the typed figure.
+   * Without the mark every number on a catalog row is treated as an echo and recomputed — a stale
+   * client cannot detach a row by sending old numbers beside new grams.
+   */
+  items?: EditMealItem[];
   /**
    * Change what item `index` IS to the catalog row `ref` (a `food_ref` id from `GET /v1/foods`), at
    * the item's own grams, with no model in between (ieat-app#2192). The server reads the row's
@@ -1351,7 +1372,7 @@ const ITEM_NUMBERS = ["kcal", "protein_g", "carbs_g", "fat_g", "kcal_per_100g"] 
 // `ref` and `food` are in the list because clients echo the items back: a meal card sends the
 // server-emitted provenance untouched. The server discards a request's `food` on every write and
 // re-derives both from the stored meal (#562), so a sent one only has to be small and shaped.
-const ITEM_KEYS: ReadonlySet<string> = new Set(["name", "grams", "name_en", "role", "portion", "portion_count", "ref", "food", ...ITEM_NUMBERS]);
+const ITEM_KEYS: ReadonlySet<string> = new Set(["name", "grams", "name_en", "role", "portion", "portion_count", "ref", "food", "nutrition_override", "typed", ...ITEM_NUMBERS]);
 const PER100_KEYS = ["kcal", "protein_g", "carbs_g", "fat_g"] as const;
 // Exported because the server writes `food` too: `foodSnapshot` (engine/ground.ts) clamps to these
 // same bounds, so a row the catalog ever ships can never make a meal uneditable (#562).
@@ -1438,6 +1459,9 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
       // Echoed provenance, bounded like every other client string; the server re-derives both.
       if (item.ref !== undefined && (typeof item.ref !== "string" || item.ref.length > MAX_ITEM_NAME)) return false;
       if (item.food !== undefined && !isFoodSnapshot(item.food)) return false;
+      if (item.nutrition_override !== undefined && item.nutrition_override !== true) return false;
+      if (item.nutrition_override === true && !["kcal", "protein_g", "carbs_g", "fat_g"].every((k) => item[k] !== undefined)) return false;
+      if (item.typed !== undefined && item.typed !== true) return false;
       // A measurement is a pair: the catalog portion and how many of it. Grams stay the truth;
       // this pair only says how those grams are shown, so both halves or neither may be sent.
       if ((item.portion === undefined) !== (item.portion_count === undefined)) return false;

@@ -285,7 +285,8 @@ export interface MealItem {
   portion_count?: number | undefined;
   /**
    * A `food_ref` id ("ciqual:20346") — the catalog row the item's numbers were grounded against
-   * (#562). Absent = the model's own estimate.
+   * (#562). Absent = an estimate: the model's own, or a row whose nutrient figures the user typed
+   * (calodex_app#3680), because they are no longer the catalog's.
    */
   ref?: string | undefined;
   /**
