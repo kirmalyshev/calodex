@@ -61,6 +61,13 @@ const after = <T extends object>(port: T, name: keyof T, done: () => void): T =>
 
 type PhotoRequest = Pick<LogPhotoInput, "caption" | "capturedAt" | "receivedAt" | "label" | "compression" | "maxEdge">;
 
+/**
+ * Whether a dead worker's update may run again. Overwrites are idempotent; a note would repeat its
+ * chat lines, and an ingredient append is not an overwrite — a second run would add the row twice.
+ */
+export const retryableMealUpdate = (input: MealUpdateRequest): boolean =>
+  input.kind === "reread" || (input.kind === "ingredients" && input.edit.add === undefined);
+
 const HANDLERS: Record<JobKind, JobHandler> = {
   photo: {
     version: 1,
@@ -92,13 +99,14 @@ const HANDLERS: Record<JobKind, JobHandler> = {
     },
   },
   "meal-update": {
-    version: 1,
+    // Version 2 because an ingredient append is a shape version-1 workers would ignore rather than
+    // refuse, answering success for an edit they never applied.
+    version: 2,
     // One change at a time per account (#1347): a meal-sent note's meal is only known mid-run,
     // so the group is the account — a second update waits wherever its meal turns out to be.
     grouped: true,
     calls: (job) => (job.request as MealUpdateRequest).kind === "note" ? TEXT_MODEL_CALLS : PHOTO_MODEL_CALLS,
-    // `ingredients` and `reread` overwrite the meal; a note writes chat lines that a second run would repeat.
-    retryable: (job) => (job.request as MealUpdateRequest).kind !== "note",
+    retryable: (job) => retryableMealUpdate(job.request as MealUpdateRequest),
     async run(deps, job, progress, lost) {
       const { userId, clientId } = job;
       const input = job.request as MealUpdateRequest;
@@ -301,7 +309,10 @@ export async function queueMealUpdate(
   // The whole ACCOUNT is the group (#1347), not the meal: a chat-sent note's meal is named by the
   // router mid-run, so no enqueue-time meal key can hold it — and only one group an account has
   // also stops that job from running beside a bound update on the meal it resolves to.
-  const job = { clientId: input.clientId, kind: "meal-update", requestVersion: HANDLERS["meal-update"].version,
+  // Only the append needs the new worker: overwrite jobs stay claimable by version 1 through a
+  // rolling deploy, while version-1 workers must never meet an `add` they would silently drop.
+  const requestVersion = input.kind === "ingredients" && input.edit.add !== undefined ? HANDLERS["meal-update"].version : 1;
+  const job = { clientId: input.clientId, kind: "meal-update", requestVersion,
     request: input, step: 1, photos: [], group: userId };
   if (await deps.store.enqueueJob(userId, job)) wake();
   return { kind: "queued", jobId: input.clientId };

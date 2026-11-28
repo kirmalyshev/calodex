@@ -18,7 +18,7 @@ import {
   IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, PHOTO_MAX_EDGE_MAX, PHOTO_MAX_EDGE_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRedateMealRequest, isSaveMealRequest, parseNumbersLogRequest,
   type AuthDeviceRequest, type AuthDeviceResponse, type AuthEmailCodeRequest, type AuthEmailVerifyRequest, type AuthProviderRequest,
   type AppendLinesRequest, type AppendLinesResponse, type AuthProviderResponse, type IdentitiesResponse, type Lang, type RedateMealResponse, type SaveMealResponse, type SavedMealsResponse,
-  type UnlinkResponse,
+  type UnlinkResponse, type EditMealResult,
   type MessageRequest, type OnboardingContentResponse, type OnboardingEventsRequest,
   type AttachPhotosResponse, type DeleteLineResponse, type OnboardingEventsResponse, type PatchProfileRequest, isRefusal,
   type HealthDaysRequest, type HealthDaysResponse, type HealthResponse, type LivenessResponse,
@@ -36,7 +36,7 @@ import { isCalendarDate } from "@eait/shared";
 import type { Store } from "../store.ts";
 import {
   MAX_WINDOW_DAYS, appendLines, cancelPendingMeal, logFoodMeal, logNumbersMeal, chatHistory, confirmPendingMeal, day, days, average, deleteLine, deleteMealById, editLine,
-  editMeal, handleText,
+  editMeal, editMealOnce, handleText,
   healthTrend, identitiesFor, logPhotoMeal, mintPairingCode, serveOnboarding, templateAsset, patchProfile, pendingMeals, profileView,
   sendEmailCode, unlinkIdentity, verifyEmailCode,
   EMAIL_ADDRESS, normalizeEmail,
@@ -1220,9 +1220,17 @@ export function createRouter(
         if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
         const body: unknown = await req.json();
         if (!isEditMealRequest(body)) return json({ error: "bad-edit" }, 400);
-        if (body.swap !== undefined && (await deps.store.foodById(body.swap.ref)) === null) return json({ error: "unknown-food" }, 404);
-        const result = await editMeal(deps, userId, decodeURIComponent(mealMatch[1]!), body);
+        const clientId = turnKey(req);
+        let result: EditMealResult;
+        if (body.add !== undefined) {
+          if (clientId === undefined) return json({ error: "clientId required" }, 400);
+          result = await editMealOnce(deps, userId, decodeURIComponent(mealMatch[1]!), body, clientId);
+        } else {
+          result = await editMeal(deps, userId, decodeURIComponent(mealMatch[1]!), body);
+        }
+        if (result.kind === "unknown-food") return json({ error: "unknown-food" }, 404);
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
+        if (result.kind === "meal-items-full") return json({ error: "meal-items-full", limit: result.limit }, 400);
         return isRefusal(result) ? refusal(result) : json(result);
       }
 

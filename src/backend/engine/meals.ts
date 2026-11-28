@@ -11,11 +11,11 @@
 //     verdict can never describe numbers that have since changed.
 
 import {
-  type DailyTotals, type EditMealRequest, type LogPhotoResult, type MealAnalysis, type MealHint,
+  type DailyTotals, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
-  type MealRedated, type MealUpdated, type PhotoEvent,
-  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, scaledItem,
-  explainTargets, verdictsFromTargets, visibleVerdicts,
+  type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
+  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type UnknownFood, type VerdictDimension, MAX_MEAL_NAME, MAX_SAVED_MEALS, mealDisplayName, mealNames, mealServings, scaledItem,
+  explainTargets, verdictsFromTargets, visibleVerdicts, MAX_MEAL_ITEMS,
 } from "@eait/shared";
 import {
   FOOD_LOG_DEFAULT_GRAMS, FOOD_LOG_MAX_GRAMS, LANG_TAG, type NumbersLogRequest, PHOTO_MODEL_CALLS, UNIT_KCAL, VERDICT_DIMENSIONS, dateMinus, healthScore, localDate, localTime,
@@ -87,6 +87,21 @@ export function sumTotals(meals: readonly MealRecord[]): DailyTotals {
  */
 function hintFor(analysis: AnalyzedMeal): MealHint {
   return analysis.confidence === "low" ? "lowConfidence" : "correction";
+}
+
+/** The catalog row's name in the account's language, falling back to the row's own primary name. */
+function catalogName(food: FoodRef, lang: Lang): string {
+  return (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
+}
+
+/** The catalog row as one grounded item at `grams`, with the row's absence kept apart from an unusable portion. */
+async function catalogItem(deps: EngineDeps, userId: string, ref: string, grams: number): Promise<{ item: MealItem } | "bad-grams" | "unknown-food"> {
+  const food = await deps.store.foodById(ref);
+  if (food === null) return "unknown-food";
+  if (!(grams > 0)) return "bad-grams";
+  const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
+  const item = mealFromFood(food, grams, catalogName(food, lang))?.items[0];
+  return item === undefined ? "unknown-food" : { item };
 }
 
 /**
@@ -529,7 +544,7 @@ export async function editMeal(
   // them against the stored meal would strip the provenance of every new or renamed item. Set by
   // `applyCorrection` only; the PATCH route and the meal-update job never do.
   opts: { thread?: boolean; measure?: boolean; serverItems?: boolean; attempt?: number; readVersion?: number } = {},
-): Promise<MealUpdated | TargetGone | MealChanged> {
+): Promise<EditMealResult> {
   const existing = await deps.store.getMealVersioned(userId, mealId);
   // Scoped read: another user's meal id resolves to null here, indistinguishable from a deleted one.
   if (!existing) return { kind: "target-gone", on: "correction" };
@@ -576,13 +591,27 @@ export async function editMeal(
   if (request.swap !== undefined) {
     const base = reconciled ?? existing.items;
     const target = base[request.swap.index];
-    const food = target === undefined ? null : await deps.store.foodById(request.swap.ref);
-    const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
-    const name = food === null ? "" : (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
-    const grounded = target === undefined || food === null || !(target.grams > 0) ? null : mealFromFood(food, target.grams, name)?.items[0];
-    if (!grounded || target === undefined) return { kind: "target-gone", on: "correction" };
-    const swapped: MealItem = { ...grounded, ...(target.role !== undefined ? { role: target.role } : {}) };
+    if (target === undefined) return { kind: "target-gone", on: "correction" };
+    const resolved = await catalogItem(deps, userId, request.swap.ref, target.grams);
+    if (resolved === "bad-grams") return { kind: "target-gone", on: "correction" };
+    if (resolved === "unknown-food") return { kind: "unknown-food" };
+    const swapped: MealItem = { ...resolved.item, ...(target.role !== undefined ? { role: target.role } : {}) };
     items = base.map((it, i) => (i === request.swap!.index ? swapped : it));
+  }
+
+  // An append (ieat-app#3678): the same catalog resolution as a swap, at the grams the client
+  // asked for, added after every item edit above. Provenance is ours because the row is read here.
+  let addedItem: MealItem | undefined;
+  let itemsBeforeAdd: readonly MealItem[] | undefined;
+  let editedBeforeAdd = false;
+  if (request.add !== undefined) {
+    itemsBeforeAdd = items ?? existing.items;
+    editedBeforeAdd = items !== undefined;
+    const resolved = await catalogItem(deps, userId, request.add.ref, request.add.grams);
+    if (resolved === "bad-grams" || resolved === "unknown-food") return { kind: "unknown-food" };
+    if (itemsBeforeAdd.length >= MAX_MEAL_ITEMS) return { kind: "meal-items-full", limit: MAX_MEAL_ITEMS };
+    addedItem = resolved.item;
+    items = [...itemsBeforeAdd, addedItem];
   }
 
   // When a patch replaces the items but says nothing about a total, the total is DERIVED from the
@@ -595,35 +624,50 @@ export async function editMeal(
   // describing the old plate after a grams change — they scale by the edit's kcal ratio. The same
   // goes for a macro only SOME items report: a silent item's share is unknown, never zero, so the
   // stored figure scales rather than being summed without it.
-  const mergedKcal = patch.kcal
-    ?? (items !== undefined && items.every((i) => i.kcal !== undefined)
-      ? items.reduce((s, i) => s + (i.kcal ?? 0), 0)
-      : existing.kcal);
-  const kcalRatio = items !== undefined && existing.kcal !== 0
-    ? mergedKcal / existing.kcal
+  // The appended row is a DELTA on the plate, not a rewrite of it. Derive the plate as it stood
+  // after `items`/`swap` but before `add` — `undefined` when neither edited it, so its stored totals
+  // are kept exactly — then add the catalog row's own mass. Deriving from the final list instead
+  // would drop the append whenever an older item carries no nutrient numbers.
+  const derivationItems = addedItem === undefined ? items : editedBeforeAdd ? itemsBeforeAdd : undefined;
+  const baseKcal = derivationItems !== undefined && derivationItems.every((i) => i.kcal !== undefined)
+    ? derivationItems.reduce((s, i) => s + (i.kcal ?? 0), 0)
+    : existing.kcal;
+  const mergedKcal = patch.kcal ?? baseKcal + (addedItem?.kcal ?? 0);
+  const ratioKcal = patch.kcal ?? baseKcal;
+  const kcalRatio = derivationItems !== undefined && existing.kcal !== 0
+    ? ratioKcal / existing.kcal
     : 1;
   const scale = (kept: number): number => Math.round(kept * kcalRatio * 10) / 10;
   const derived = <K extends "kcal" | "protein_g" | "carbs_g" | "fat_g">(field: K, sent: number | undefined, kept: number): number => {
     if (sent !== undefined) return sent;
-    if (items === undefined) return kept;
-    if (items.every((i) => i[field] !== undefined)) return items.reduce((s, i) => s + (i[field] ?? 0), 0);
-    return items.some((i) => i[field] !== undefined) ? scale(kept) : kept;
+    let base = kept;
+    if (derivationItems !== undefined) {
+      if (derivationItems.every((i) => i[field] !== undefined)) base = derivationItems.reduce((s, i) => s + (i[field] ?? 0), 0);
+      else if (derivationItems.some((i) => i[field] !== undefined)) base = scale(kept);
+    }
+    return base + (addedItem?.[field] ?? 0);
   };
   // #566: satfat, fibre, sugar and sodium come from the catalog per nutrient when every reconciled
-  // item carries it; otherwise they scale as before.
-  const micros = items === undefined ? {} : catalogMicros(items);
-  const scaled = (sent: number | undefined, kept: number, catalog?: number): number =>
-    sent ?? catalog ?? (items !== undefined ? scale(kept) : kept);
+  // item carries it; otherwise the pre-append plate scales as before and the append adds what its
+  // row knows. A micro the row does not carry is zero here, as `mealFromFood` already treats it.
+  const micros = derivationItems === undefined ? {} : catalogMicros(derivationItems);
+  const addedMicros = addedItem === undefined ? {} : catalogMicros([addedItem]);
+  const tenth = (n: number): number => Math.round(n * 10) / 10;
+  const scaled = (sent: number | undefined, kept: number, micro: keyof typeof addedMicros): number => {
+    if (sent !== undefined) return sent;
+    const base = derivationItems === undefined ? kept : micros[micro] ?? scale(kept);
+    return addedItem === undefined ? base : tenth(base + (addedMicros[micro] ?? 0));
+  };
   const merged = atN ? (({ servings: _s, ...rest }) => rest)(atN) : {
     items: items ?? existing.items,
     kcal: mergedKcal,
     protein_g: derived("protein_g", patch.protein_g, existing.protein_g),
     carbs_g: derived("carbs_g", patch.carbs_g, existing.carbs_g),
     fat_g: derived("fat_g", patch.fat_g, existing.fat_g),
-    satfat_g: scaled(patch.satfat_g, existing.satfat_g, micros.satfat_g),
-    fiber_g: scaled(patch.fiber_g, existing.fiber_g, micros.fiber_g),
-    sugar_g: scaled(patch.sugar_g, existing.sugar_g, micros.sugar_g),
-    sodium_mg: scaled(patch.sodium_mg, existing.sodium_mg, micros.sodium_mg),
+    satfat_g: scaled(patch.satfat_g, existing.satfat_g, "satfat_g"),
+    fiber_g: scaled(patch.fiber_g, existing.fiber_g, "fiber_g"),
+    sugar_g: scaled(patch.sugar_g, existing.sugar_g, "sugar_g"),
+    sodium_mg: scaled(patch.sodium_mg, existing.sodium_mg, "sodium_mg"),
   };
 
   // A caller that computed its edit from an earlier read holds the write to THAT version; a refetch
@@ -686,6 +730,21 @@ export async function editMeal(
     kind: "updated", mealId, analysis: toAnalysis(updated), totals, date: updated.date, via: "manual",
     line, ...verdictWordsFor(updated.verdicts, lang),
   };
+}
+
+/**
+ * A meal edit claimed as one turn. An overwrite is idempotent already; an append is not — a retry
+ * after a lost answer would add the row again — so the synchronous append path carries the turn's
+ * id and a replay is answered from the first claim rather than run again.
+ */
+export async function editMealOnce(
+  deps: EngineDeps,
+  userId: string,
+  mealId: string,
+  request: EditMealRequest,
+  clientId: string,
+): Promise<EditMealResult> {
+  return once(deps, userId, clientId, 0, (d) => editMeal(d, userId, mealId, request));
 }
 
 /**
@@ -897,6 +956,10 @@ export async function applyCorrection(
     fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g, sodium_mg: analysis.sodium_mg,
     // These items are the server's own grounded analysis, so their ref/food are kept, not audited.
   }, { thread: false, measure: false, serverItems: true, ...(readVersion !== undefined ? { readVersion } : {}) });
+  // A correction never carries `add` or names a catalog row, so either outcome is unreachable here;
+  // the type cannot see the request literal, and swallowing one would report a correction as lost.
+  if (res.kind === "meal-items-full") throw new Error("a correction cannot append an ingredient");
+  if (res.kind === "unknown-food") throw new Error("a correction cannot name a catalog row");
   return res.kind === "updated" ? { ...res, via: "nl" } : res;
 }
 
@@ -1299,7 +1362,7 @@ export async function logFoodMeal(
   deps: EngineDeps,
   userId: string,
   input: { ref: string; grams?: number | undefined; clientId?: string | undefined; capturedAt?: string | undefined },
-): Promise<MealLogged | Refusal | { kind: "unknown-food" }> {
+): Promise<MealLogged | Refusal | UnknownFood> {
   return once(deps, userId, input.clientId, 0, async (d) => {
     const profile = await d.store.getProfile(userId);
     if (!profile || profile.onboarded_at === null) return { kind: "not-onboarded" } as const;
@@ -1309,7 +1372,7 @@ export async function logFoodMeal(
     const grams = Math.round(input.grams ?? FOOD_LOG_DEFAULT_GRAMS);
     if (!food || !(grams > 0) || grams > FOOD_LOG_MAX_GRAMS) return { kind: "unknown-food" } as const;
     const lang = profile.lang;
-    const name = (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
+    const name = catalogName(food, lang);
     const analysis = mealFromFood(food, grams, name);
     if (!analysis) return { kind: "unknown-food" } as const;
 
