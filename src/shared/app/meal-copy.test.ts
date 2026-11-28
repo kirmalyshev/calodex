@@ -17,7 +17,7 @@ const KEYS = [
   "deleteTitle", "deleteBody", "deleteCta", "cancelCta",
   "webCorrect", "webLoggedPhoto",
   "phoneCorrect", "phoneDone", "phoneEdit",
-  "phoneMenuReread", "phoneMenuMoveYesterday",
+  "menuAddPhoto", "phoneMenuReread", "phoneMenuMoveYesterday",
   "phoneCorrectTitle", "phoneSheetMeal", "phoneThisMeal", "phoneSaveRecheck",
   "phoneKeypadBackspace",
   "phoneFixMeal", "phoneFixExampleLead", "phoneFixExample", "phoneUpdate",
@@ -89,6 +89,7 @@ describe("MEAL_COPY", () => {
     expect(en.webCorrect).toBe("Correct this meal");
     expect(en.phoneCorrect).toBe("Correct");
     expect(en.phoneDone).toBe("Done");
+    expect(en.menuAddPhoto).toBe("Add Photo");
     expect(en.phoneMenuReread).toBe("Re-read the photo");
     expect(en.phoneMenuMoveYesterday).toBe("Move to yesterday");
     expect(en.correctOpener).toBe("I read {items}. Tell me what I got wrong.");

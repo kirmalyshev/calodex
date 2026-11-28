@@ -737,6 +737,13 @@ export function refusalWords(err: unknown): string {
   const code = String(err.body?.error);
   // WHOSE cap is the scope's to say, and a cap that names none claims nobody's (#158).
   if (code === "cap-exceeded") return said(`cap-${String(err.body?.scope)}`) ?? words["cap-unknown"]!;
+  // `POST /v1/meals/:id/photos` answers `too-many-photos` with the server's own limit (#304, calodex_app#3684).
+  if (code === "too-many-photos") {
+    const limit = typeof err.body?.limit === "number" ? err.body.limit : null;
+    return limit !== null
+      ? fill(COPY.photosMax, { n: wholeNumbers(lang)(limit) })
+      : said("too many photos") ?? COPY.somethingWrong;
+  }
   // A 5xx with no code of ours is the edge, not this server, answering: the same unknown as a drop.
   return said(code) ?? (err.status >= 500 ? maybeLanded() : COPY.somethingWrong);
 }
