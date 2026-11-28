@@ -8,7 +8,7 @@
 
 import { execSync } from "node:child_process";
 import type { Page } from "@playwright/test";
-import type { DayResponse } from "@eait/shared/contract";
+import type { DayResponse, ProfileResponse } from "@eait/shared/contract";
 import { wholeNumbers } from "@eait/shared";
 import { expect, logMeal, onboardFast, sessionToken, signIn, test } from "./fixtures.ts";
 
@@ -475,6 +475,67 @@ test("tapping the meal title renames it, clears back to derived items, and shows
   await page.setViewportSize({ width: 390, height: 844 });
   await shot(page, "tap-to-name-390");
   await page.unroute("**/api/v1/diary/day?*");
+});
+
+
+test("Copy To retries a failed copy under the same key, then writes the picked days (#3683)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const token = await sessionToken(page);
+  const profileRes = await page.request.get("/v1/profile", { headers: { authorization: `Bearer ${token}` } });
+  expect(profileRes.status()).toBe(200);
+  const profile = (await profileRes.json()) as ProfileResponse;
+
+  await page.locator(".mdetail .ib").last().click();
+  await page.locator(".mpopup").getByText("Copy To").click();
+  const dialog = page.getByRole("dialog", { name: "Choose the days to copy to" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator(".copyday")).toHaveCount(profile.limits.mealCopyMaxOffset * 2 + 1);
+  const copy = dialog.getByRole("button", { name: "Copy", exact: true });
+  await expect(copy).toBeDisabled();
+
+  await dialog.locator(".copyday[data-offset=\"1\"]").click();
+  await dialog.locator(".copyday[data-offset=\"-1\"]").click();
+  await expect(copy).toBeEnabled();
+
+  // The first answer is lost; the retry in the same sheet must be the same idempotent write,
+  // not a second set of meals under a fresh key.
+  let failedOnce = false;
+  await page.route(/\/api\/v1\/meals\/[^/]+\/copy/, async (route) => {
+    if (!failedOnce) {
+      failedOnce = true;
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "boom" }) });
+    } else {
+      await route.continue();
+    }
+  });
+  const bodies: unknown[] = [];
+  page.on("request", (req) => {
+    if (req.method() === "POST" && req.url().includes(`/meals/${id}/copy`)) bodies.push(req.postDataJSON());
+  });
+  await copy.click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  await expect(copy).toBeEnabled();
+
+  const moved = page.waitForResponse((r) => r.url().includes(`/meals/${id}/copy`) && r.ok());
+  await copy.click();
+  const result = (await (await moved).json()) as {
+    kind: string; sourceMealId: string; meals: { mealId: string; date: string; analysis: { kcal: number } }[];
+  };
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]).toEqual(bodies[1]);
+  expect(bodies[0]).toMatchObject({ dayOffsets: [1, -1], clientId: expect.any(String) });
+  expect(result).toMatchObject({ kind: "copied", sourceMealId: id });
+  expect(result.meals).toHaveLength(2);
+  expect(new Set(result.meals.map((m) => m.mealId)).size).toBe(2);
+  await expect(dialog).toHaveCount(0);
+
+  const source = (await day(page)).meals.find((m) => m.id === id)!;
+  for (const copied of result.meals) {
+    const target = (await day(page, copied.date)).meals.find((m) => m.id === copied.mealId);
+    expect(target).toBeDefined();
+    expect(target!.kcal).toBe(source.kcal);
+    expect(target!.items).toEqual(source.items);
+  }
 });
 
 test("the menu: re-read recomputes in place, and delete asks first", async ({ inWebApp: page }) => {

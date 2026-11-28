@@ -6,7 +6,7 @@
 // verdict dots, and the one fix. From web/meal-delete.html (design-pro, on the issue) the card
 // takes its header row: X on the left, the meal's day and time in the middle, the "…" menu on the
 // right; X or Esc returns to the diary (`#/`), and the menu is the phone's (meal-menu.html): Edit,
-// Re-read the photo, Move to yesterday, Report Food, Delete — which asks first, over the master-detail.
+// Re-read the photo, Move to yesterday, Copy To, Report Food, Delete — which asks first, over the master-detail.
 //
 // THE EDIT IS CAL AI'S LAYOUT, not a chat (#188, Kirill 21:58). "Correct this meal" and the
 // menu's Edit open `web/meal-fix.html` — a PANEL over this detail: one field, an example, Update,
@@ -20,10 +20,10 @@
 // meal" are the same answer and the same panel.
 
 import type { RedateMealRequest } from "../../shared/contract.ts";
-import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_MEAL_REPORT_TEXT, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
+import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_MEAL_REPORT_TEXT, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES, MEAL_COPY_MAX_DAYS, MEAL_COPY_MAX_OFFSET } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, daysBack, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
-import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
+import { LANG_TAG, UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import {
   catalogPortions, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText,
   portionGrams, previewKcal, scaledItem, servingsPreview,
@@ -45,7 +45,7 @@ import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
 import {
   ApiError, api, apiBlob, attachMealPhotos, deleteSavedMeal, listSavedMeals, remainingMealPhotos,
-  rateMeal, renameMeal, reportMeal, saveMeal,
+  copyMeal, rateMeal, renameMeal, reportMeal, saveMeal,
 } from "../api.ts";
 import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
@@ -414,6 +414,93 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     sync();
     scrim.append(dlg);
     return { node: scrim, focus: field };
+  };
+
+  /**
+   * Copy To (calodex_app#3683): the meal menu's multi-select day sheet. The window and the most
+   * picks one write may carry are the server's `limits`; the request keeps ONE client id for the
+   * sheet, so a retry after a lost answer is the same write rather than a second set of meals.
+   */
+  const copyPanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement } => {
+    let sending = false;
+    const clientId = crypto.randomUUID();
+    const picked = new Set<number>();
+    const maxOffset = me?.limits.mealCopyMaxOffset ?? MEAL_COPY_MAX_OFFSET;
+    const maxDays = me?.limits.mealCopyMaxDays ?? MEAL_COPY_MAX_DAYS;
+    const dayFmt = new Intl.DateTimeFormat(LANG_TAG[lang], {
+      timeZone: "UTC", weekday: "short", day: "numeric", month: "short",
+    });
+
+    const scrim = el("div", "mscrim");
+    scrim.addEventListener("click", (e) => { if (e.target === scrim && !sending) closeOverlay(); });
+    const dlg = el("form", "card mfix rise") as HTMLFormElement;
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    dlg.setAttribute("aria-label", mc.copySheetTitle);
+
+    const days = el("div", "copydays");
+    const buttons: HTMLButtonElement[] = [];
+    for (let offset = maxOffset; offset >= -maxOffset; offset--) {
+      const date = dateMinus(today, offset);
+      const b = el("button", `copyday${offset === 0 ? " now" : ""}`) as HTMLButtonElement;
+      b.type = "button";
+      b.dataset.offset = `${offset}`;
+      b.setAttribute("aria-pressed", "false");
+      b.textContent = dayFmt.format(new Date(`${date}T12:00:00Z`));
+      b.addEventListener("click", () => {
+        if (sending) return;
+        if (picked.has(offset)) picked.delete(offset);
+        else if (picked.size < maxDays) picked.add(offset);
+        b.setAttribute("aria-pressed", `${picked.has(offset)}`);
+        b.classList.toggle("on", picked.has(offset));
+        sync();
+      });
+      buttons.push(b);
+      days.append(b);
+    }
+
+    const error = el("p", "nmerr", sm.saveFailed);
+    error.setAttribute("role", "alert");
+    error.hidden = true;
+    const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
+    cancel.type = "button";
+    cancel.addEventListener("click", () => { if (!sending) closeOverlay(); });
+    const copy = el("button", "cta p", mc.copyCta) as HTMLButtonElement;
+    copy.type = "submit";
+    const sync = (): void => {
+      copy.disabled = sending || picked.size === 0;
+      cancel.disabled = sending;
+      for (const b of buttons) {
+        const offset = Number(b.dataset.offset);
+        b.disabled = sending || (!picked.has(offset) && picked.size >= maxDays);
+      }
+    };
+    dlg.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (sending || picked.size === 0) return;
+      sending = true;
+      error.hidden = true;
+      sync();
+      try {
+        await copyMeal(meal.id, [...picked].sort((a, b) => b - a), clientId);
+        if (scrim.isConnected) closeOverlay();
+        // A copy onto the day behind the sheet is only visible after the server is re-read.
+        void draw().catch(() => {});
+      } catch {
+        if (!scrim.isConnected) return;
+        sending = false;
+        error.hidden = false;
+        sync();
+        copy.focus();
+      }
+    });
+
+    const actions = el("div", "row svactions");
+    actions.append(cancel, copy);
+    dlg.append(el("b", "d d22", mc.copySheetTitle), days, error, actions);
+    sync();
+    scrim.append(dlg);
+    return { node: scrim, focus: buttons[0]! };
   };
 
   /**
@@ -1007,6 +1094,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       photoPicker.click();
     });
     const reread = item("retry", mc.phoneMenuReread, () => enqueueUpdate(meal, { kind: "reread" }));
+    const copyTo = item("calendar", mc.menuCopyTo, () => openPanel(copyPanel(meal)));
     const report = item("alert-circle", mc.menuReport, () => openPanel(reportPanel(meal)));
     const del = item("trash", mc.deleteCta, () => openOverlay(deleteDialog(meal)));
     del.classList.add("bad");
@@ -1032,6 +1120,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
           // The meal left this day: follow it there rather than draw the day without it.
           location.hash = `#/meal/${encodeURIComponent(meal.id)}?d=${out.date}`;
         })),
+      copyTo,
       report,
       del,
     );

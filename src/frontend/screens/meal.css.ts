@@ -153,6 +153,15 @@ select.nmfield{appearance:none;-webkit-appearance:none}
 .svactions{gap:10px}
 .svactions .cta{flex:1}
 
+/* Copy To (calodex_app#3683): the multi-select day picker, two columns on the sheet. */
+.copydays{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:48vh;overflow:auto}
+.card button.copyday{min-height:44px;padding:8px 10px;border:0;border-radius:var(--r-ctl);background:var(--bg);
+  box-shadow:inset 0 0 0 1px var(--line);font:inherit;font-size:14px;font-weight:500;color:var(--ink);cursor:pointer;text-align:left}
+.card button.copyday.now{font-weight:700}
+.card button.copyday.on{background:var(--accent-tint);box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--ink)}
+.card button.copyday:disabled{opacity:.5;cursor:default}
+.card button.copyday:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
 /* The ingredients header (#3678): section label left, Cal AI's add action right. */
 .inghead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:2px}
 .card button.ingadd{border:0;background:none;padding:6px 0;min-height:0;color:var(--accent);font:inherit;font-size:15px;font-weight:600;cursor:pointer}
