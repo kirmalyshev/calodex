@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { grantEveryAccount } from "../dev/grant.ts";
 import { OUTCOME_UNKNOWN } from "../../shared/contract.ts";
-import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_MEAL_ITEMS, MAX_PROFILE_TEXT, MAX_USER_LINE, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scaledItem, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
+import { DEFAULT_ONBOARDING_CONTENT, MAX_APPEND_LINES_PER_BATCH, MAX_MEAL_ITEMS, MAX_PROFILE_TEXT, MAX_USER_LINE, MEAL_COPY_MAX_DAYS, MEAL_COPY_MAX_OFFSET, RESTRICTION_TAGS, isMeal, onboardingContentFor, proposalLive, scaledItem, scriptedLine, threadCopyFor, type ActivityLevel, type FoodRef, type MealAnalysis, type MealLogged, type MealUpdated, type PhotoEvent } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
 import { demoPorts } from "../llm/demo.ts";
 import { LeanSchema, widen } from "../llm/lean.ts";
@@ -210,6 +210,8 @@ describe("onboarding", () => {
     const view = (await profileView(deps, userId))!;
     expect(view.limits.maxPhotosPerMeal).toBe(CONFIG.maxPhotosPerMeal);
     expect(view.limits.maxUploadBytes).toBe(CONFIG.maxUploadBytes);
+    expect(view.limits.mealCopyMaxOffset).toBe(MEAL_COPY_MAX_OFFSET);
+    expect(view.limits.mealCopyMaxDays).toBe(MEAL_COPY_MAX_DAYS);
 
     // And it tracks the config rather than a constant that happens to match today.
     const tighter = { ...deps, config: { ...CONFIG, maxPhotosPerMeal: 1 } };

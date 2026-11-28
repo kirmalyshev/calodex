@@ -7984,6 +7984,14 @@
             "type": "number",
             "description": "How many days back the diary can be asked about, counting today.\n\nIT BOUNDS THE MARKS, NOT THE DAYS. The date picker draws a month at a time and marks the days that have meals on them; the marks come from `GET /v1/diary/week`, which refuses a window wider than this. `GET /v1/diary/day` refuses nothing — it validates the shape of a date and no more — so a day outside this window is still perfectly viewable, and the picker still offers it. What the picker cannot do out there is say whether it has meals on it.\n\nSent rather than compiled in, because that boundary is where the app is most tempted to invent: a month drawn with no dots is indistinguishable from a month nobody ate in, and neither the label nor the footer may claim the second when it only knows the first."
           },
+          "mealCopyMaxOffset": {
+            "type": "number",
+            "description": "The meal-copy picker's enforced window on either side of today. Sent for the same reason as `diaryWindowDays`: a client must not offer days the route will then refuse as `bad-copy`."
+          },
+          "mealCopyMaxDays": {
+            "type": "number",
+            "description": "The most offsets one copy request may carry, today included; duplicates are deduped server-side."
+          },
           "modelCallTimeoutMs": {
             "type": "number",
             "description": "The server's budget for ONE model call, in ms — `EAIT__BACKEND__LLM_TIMEOUT_MS` as this server is actually running it.\n\nSENT, BECAUSE IT IS ENV-CONFIGURED. It differs between environments and production sets it explicitly, so an app that computed its wait from a number compiled into its binary is the second copy this interface exists to abolish — and the failure is silent in the worst direction: the phone abandons a turn the server is still running and still billing, with no error on either side.\n\nTHE PER-CALL NUMBER RATHER THAN A WAIT, because how many budgets a turn spends depends on the ROUTE and only the client knows which one it is about to call. `clientModelTimeoutMs` turns it into a wait with `PHOTO_MODEL_CALLS` or `TEXT_MODEL_CALLS`; `DEFAULT_MODEL_TIMEOUT_MS` is the fallback for a client with no profile yet, exactly as `maxPhotosPerMeal` is."
@@ -8008,6 +8016,8 @@
           "subscriptionRequired",
           "identityOwed",
           "diaryWindowDays",
+          "mealCopyMaxOffset",
+          "mealCopyMaxDays",
           "modelCallTimeoutMs",
           "emailSignIn",
           "photoCompression",

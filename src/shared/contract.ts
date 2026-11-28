@@ -178,6 +178,13 @@ export interface Limits {
    */
   diaryWindowDays: number;
   /**
+   * The meal-copy picker's enforced window on either side of today. Sent for the same reason as
+   * `diaryWindowDays`: a client must not offer days the route will then refuse as `bad-copy`.
+   */
+  mealCopyMaxOffset: number;
+  /** The most offsets one copy request may carry, today included; duplicates are deduped server-side. */
+  mealCopyMaxDays: number;
+  /**
    * The server's budget for ONE model call, in ms — `EAIT__BACKEND__LLM_TIMEOUT_MS` as this server
    * is actually running it.
    *
