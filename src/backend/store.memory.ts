@@ -2975,7 +2975,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       const j = jobs.get(`${userId}\n${clientId}`);
       if (!j || j.leaseOwner !== owner || j.state !== "running" || j.mealId !== null || meals.has(meal.id)) return false;
       j.mealId = meal.id; j.updatedAt = now();
-      meals.set(meal.id, clone({ ...meal, question: meal.question ?? null, photo_compression: meal.photo_compression ?? null, photo_max_edge: meal.photo_max_edge ?? null }));
+      meals.set(meal.id, clone({ ...meal, name: meal.name ?? null, question: meal.question ?? null, photo_compression: meal.photo_compression ?? null, photo_max_edge: meal.photo_max_edge ?? null }));
       const list = j.photos.map((p, position) => ({ userId, position, mime: p.mime, bytes: p.bytes }));
       j.photos = [];
       if (list.length > 0) photos.set(meal.id, list);

@@ -492,11 +492,22 @@ function atServings(meal: MealRecord, servings: number) {
   };
 }
 
-/** Normalize a user-given meal title (calodex_app#3681): single-line, trimmed, capped; empty clears to null. */
+/**
+ * Normalize a user-given meal title (calodex_app#3681): single-line, control/bidi/invisible chars
+ * stripped (Postgres rejects NUL), whitespace collapsed, capped at `MAX_MEAL_NAME` without leaving
+ * a lone UTF-16 surrogate; empty clears to null.
+ */
 function normalizeMealName(raw: string | null): string | null {
   if (raw === null) return null;
-  const trimmed = raw.replace(/[\r\n\t]+/g, " ").trim().slice(0, MAX_MEAL_NAME).trim();
-  return trimmed.length > 0 ? trimmed : null;
+  const cleaned = raw
+    .replace(/[\r\n\t\u2028\u2029]+/g, " ")
+    .replace(/[\u0000-\u001F\u007F-\u009F\u200B\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_MEAL_NAME)
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "")
+    .trim();
+  return cleaned.length > 0 ? cleaned : null;
 }
 
 export async function editMeal(
@@ -528,6 +539,26 @@ export async function editMeal(
   const { items: sentItems, ...sentTotals } = request;
   const patch: EditMealRequest = sentItems !== undefined && sentItems.length > 0 && sentItems.every((i) => i.grams === 0)
     ? sentTotals : request;
+
+  // A name-only edit touches no numbers: patch `{ name }` alone so `meals.version` does not move
+  // (an in-flight billed re-read or NL correction must not 409 because the user typed a title),
+  // keep `corrected` and any open `question` untouched, and write no chat-thread cap lines.
+  const nameOnly = patch.name !== undefined
+    && Object.entries(patch).every(([k, v]) => k === "name" || v === undefined);
+  if (nameOnly) {
+    const name = normalizeMealName(patch.name ?? null);
+    const updated = opts.readVersion !== undefined
+      ? await deps.store.updateMealIfVersion(userId, mealId, { name }, opts.readVersion)
+      : await deps.store.updateMeal(userId, mealId, { name });
+    if (updated === "conflict") return { kind: "meal-changed" };
+    if (!updated) return { kind: "target-gone", on: "correction" };
+    const totals = sumTotals(await deps.store.mealsForDate(userId, updated.date));
+    const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
+    return {
+      kind: "updated", mealId, analysis: toAnalysis(updated), totals, date: updated.date, via: "manual",
+      line: null, ...verdictWordsFor(updated.verdicts, lang),
+    };
+  }
 
   // A client's `ref` is a CLAIM, never provenance (#562): it survives only where the STORED meal
   // vouches for it — a stored item with the same `ref` and the same `name`. The snapshot then
@@ -595,9 +626,6 @@ export async function editMeal(
     sodium_mg: scaled(patch.sodium_mg, existing.sodium_mg, micros.sodium_mg),
   };
 
-  const nameOnly = request.name !== undefined
-    && Object.entries(request).every(([k, v]) => k === "name" || v === undefined);
-
   // A caller that computed its edit from an earlier read holds the write to THAT version; a refetch
   // here would let the stale edit through.
   const updated = await deps.store.updateMealIfVersion(userId, mealId, {
@@ -610,14 +638,12 @@ export async function editMeal(
       // deploy scales the next write from the count the row had before this one (#3677).
       ...(existing.label ? { label: { ...existing.label, servings: atN.servings } } : {}),
     } : {}),
-    ...(nameOnly ? {} : {
-      corrected: true,
-      // One question per meal, asked once. Cleared by the write that answers it — and by a manual
-      // edit too, which is the same write: once the user has changed the numbers themselves, the
-      // question is about a plate that no longer exists, and the next `GET /day` would offer the
-      // chips again over an answer already given.
-      question: null,
-    }),
+    corrected: true,
+    // One question per meal, asked once. Cleared by the write that answers it — and by a manual
+    // edit too, which is the same write: once the user has changed the numbers themselves, the
+    // question is about a plate that no longer exists, and the next `GET /day` would offer the
+    // chips again over an answer already given.
+    question: null,
   }, opts.readVersion ?? existing.version);
   // Another write landed between our read and ours (#2695). A pinned edit (`opts.readVersion`) cannot
   // be re-merged without becoming last-write-wins, so it returns `meal-changed` on the first
@@ -1382,7 +1408,7 @@ export async function logNumbersMeal(
 /**
  * Bookmark a meal this account already logged. The composition and the nutrient snapshot are read
  * from the STORED row under `userId` — the client sends an id and nothing else — and the name is
- * the meal's own (`mealNames`). Idempotent per source meal.
+ * the meal's own (`mealDisplayName`). Idempotent per source meal.
  */
 export async function saveMealFromLog(
   deps: EngineDeps,

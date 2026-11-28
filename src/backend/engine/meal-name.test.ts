@@ -86,23 +86,89 @@ describe("renaming a meal", () => {
     expect(m.kcal).toBe(550);
   });
 
-  it("does not clear an open question or flip corrected on a name-only edit", async () => {
+  it("does not clear an open question, flip corrected, bump version, or touch chat on a name-only edit", async () => {
     const { userId, mealId } = await loggedMeal();
     const question = { text: "Cooked in oil or dry?", options: ["In oil", "Dry"] };
-    await store.updateMeal(userId, mealId, { question, corrected: false });
+    // Set a non-good verdict and a prior assistant comment on today's meal so any accidental
+    // `afterCorrection` call would supersede the comment and append cap warnings.
+    await store.updateMeal(userId, mealId, {
+      question, corrected: false, kcal: 4500, verdicts: { weight: "bad" },
+    });
+    await store.appendChat(userId, [
+      { role: "assistant", kind: "text", text: "Existing comment on this meal", speaker: "gabie", mealId },
+    ]);
+    const beforeVersion = (await store.getMealVersioned(userId, mealId))!.version;
+    const chatBefore = await store.chatBefore(userId, null, 50);
 
     const res = await editMeal(deps, userId, mealId, { name: "Weekday breakfast" });
     if (res.kind !== "updated") throw new Error("expected updated");
-    const m = (await store.getMeal(userId, mealId))!;
+    expect(res.line).toBeNull();
+    const m = (await store.getMealVersioned(userId, mealId))!;
     expect(m.name).toBe("Weekday breakfast");
     expect(m.question).toEqual(question);
     expect(m.corrected).toBe(false);
+    expect(m.version).toBe(beforeVersion);
+
+    // Chat thread is completely untouched: existing comment survives and no duplicate cap line is added.
+    const chatAfter = await store.chatBefore(userId, null, 50);
+    expect(chatAfter.map((l) => [l.id, l.text])).toEqual(chatBefore.map((l) => [l.id, l.text]));
+
+    // A concurrent version-pinned numeric edit taken before the rename still succeeds and preserves the name.
+    const concurrent = await editMeal(deps, userId, mealId, { kcal: 520 }, { readVersion: beforeVersion });
+    if (concurrent.kind !== "updated") throw new Error(`expected updated, got ${concurrent.kind}`);
+    const afterConcurrent = (await store.getMeal(userId, mealId))!;
+    expect(afterConcurrent.kcal).toBe(520);
+    expect(afterConcurrent.name).toBe("Weekday breakfast");
   });
 
-  it("carries a custom name when saving and re-logging a saved meal", async () => {
+  it("strips control/NUL/bidi/zero-width chars, avoids lone UTF-16 surrogates, and preserves ZWJ emoji", async () => {
+    const { userId, mealId } = await loggedMeal();
+
+    // NUL byte, C0 control, bidi override, and Unicode line separator are cleaned cleanly.
+    await editMeal(deps, userId, mealId, { name: "Chef\u0000\u0007\u202E\u2028bowl\u200B  \uFEFFspecial" });
+    expect((await store.getMeal(userId, mealId))!.name).toBe("Chef bowl special");
+
+    // Invisible-only string clears back to null.
+    await editMeal(deps, userId, mealId, { name: "\u200B\uFEFF\u0000" });
+    expect((await store.getMeal(userId, mealId))!.name).toBeNull();
+
+    // ZWJ emoji survives intact.
+    await editMeal(deps, userId, mealId, { name: "👨‍🍳 Home pasta" });
+    expect((await store.getMeal(userId, mealId))!.name).toBe("👨‍🍳 Home pasta");
+
+    // Astral emoji straddling MAX_MEAL_NAME does not leave a lone high surrogate.
+    const atEdge = "a".repeat(MAX_MEAL_NAME - 1) + "🍲";
+    await editMeal(deps, userId, mealId, { name: atEdge });
+    const stored = (await store.getMeal(userId, mealId))!.name!;
+    expect(stored).toBe("a".repeat(MAX_MEAL_NAME - 1));
+    expect(/[\uD800-\uDFFF]/.test(stored)).toBe(false);
+  });
+
+  it("applies name together with a numeric edit, updating corrected, question, and changeLine", async () => {
+    const { userId, mealId } = await loggedMeal();
+    await store.updateMeal(userId, mealId, {
+      question: { text: "Cooked in oil?", options: ["Yes", "No"] }, corrected: false,
+    });
+    const res = await editMeal(deps, userId, mealId, { name: "Big lunch", kcal: 777 });
+    if (res.kind !== "updated") throw new Error("expected updated");
+    expect(res.line).not.toBeNull();
+    const m = (await store.getMeal(userId, mealId))!;
+    expect(m.name).toBe("Big lunch");
+    expect(m.kcal).toBe(777);
+    expect(m.corrected).toBe(true);
+    expect(m.question).toBeNull();
+  });
+
+  it("carries a custom name when saving and re-logging a saved meal, and leaves unnamed saved meals null", async () => {
+    const first = await loggedMeal();
+    const unnamedSaved = await saveMealFromLog(deps, first.userId, first.mealId);
+    if (unnamedSaved.kind !== "saved") throw new Error("expected saved");
+    const reloggedUnnamed = await logSavedMeal(deps, first.userId, unnamedSaved.meal.id, 0);
+    if (reloggedUnnamed.kind !== "logged") throw new Error("expected logged");
+    expect((await store.getMeal(first.userId, reloggedUnnamed.mealId))!.name).toBeNull();
+
     const { userId, mealId } = await loggedMeal();
     await editMeal(deps, userId, mealId, { name: "Weekday eggs" });
-
     const saved = await saveMealFromLog(deps, userId, mealId);
     if (saved.kind !== "saved") throw new Error(`expected saved, got ${saved.kind}`);
     expect(saved.meal.name).toBe("Weekday eggs");

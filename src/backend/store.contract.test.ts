@@ -2579,10 +2579,14 @@ function contract(name: string, make: () => Promise<Store>) {
       await s.insertMeal(named);
       expect((await s.getMeal(u, named.id))!.name).toBe("Sunday pancakes");
 
+      const vBefore = (await s.getMealVersioned(u, plain.id))!.version;
       expect((await s.updateMeal(u, plain.id, { name: "Quick lunch" }))!.name).toBe("Quick lunch");
       expect((await s.getMeal(u, plain.id))!.name).toBe("Quick lunch");
-      // Updating another field preserves the custom name.
+      // Renaming touches no numbers, so `version` does not move.
+      expect((await s.getMealVersioned(u, plain.id))!.version).toBe(vBefore);
+      // Updating another field preserves the custom name and bumps `version`.
       expect((await s.updateMeal(u, plain.id, { kcal: 420 }))!.name).toBe("Quick lunch");
+      expect((await s.getMealVersioned(u, plain.id))!.version).toBe(vBefore + 1);
       // Another user cannot rename it.
       expect(await s.updateMeal(other, plain.id, { name: "Stolen" })).toBeNull();
       expect((await s.getMeal(u, plain.id))!.name).toBe("Quick lunch");
