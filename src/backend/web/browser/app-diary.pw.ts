@@ -282,3 +282,62 @@ test("a tab change while the first draw is still loading draws one page, not two
   // The column IS the main landmark since #87's split — `.wcol`, the class `main` carries.
   await expect(page.locator("main.wcol")).toHaveCount(1);
 });
+
+test("Home row delete asks first, cancel keeps the meal, confirm deletes it and updates the day", async ({ inWebApp: page }) => {
+  await logMeal(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/#/");
+  const row = page.locator(".dlist .drow").first();
+  await expect(row).toBeVisible();
+  const initialKcal = await page.locator(".dayc .hk .fig").textContent();
+
+  // Desktop hover reveals the row's Delete button; clicking opens the existing confirm.
+  await row.hover();
+  const delBtn = row.locator("button.drow-del");
+  await expect(delBtn).toBeVisible();
+  await delBtn.click();
+
+  const dialog = page.getByRole("dialog", { name: "Delete this meal?" });
+  await expect(dialog).toBeVisible();
+  // Cancel keeps the meal on the day.
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".dlist .drow")).toHaveCount(1);
+
+  // Confirm deletes it via DELETE /v1/meals/:id and redraws the empty day.
+  await row.hover();
+  await delBtn.click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Delete this meal" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".dlist .drow")).toHaveCount(0);
+  await expect(page.locator(".hempty")).toBeVisible();
+  const afterKcal = await page.locator(".dayc .hk .fig").textContent();
+  expect(afterKcal).not.toBe(initialKcal);
+});
+
+test("Home row swipe left at 390px reveals Delete and confirms deletion", async ({ inWebApp: page }) => {
+  await logMeal(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#/");
+  const row = page.locator(".dlist .drow").first();
+  await expect(row).toBeVisible();
+  const box = (await row.boundingBox())!;
+
+  // Swipe left on the row in small steps (~6px) so native anchor-drag would hijack it if unguarded.
+  await page.mouse.move(box.x + box.width - 24, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 40, box.y + box.height / 2, { steps: 40 });
+  await page.mouse.up();
+
+  await expect(row).toHaveClass(/\bopen\b/);
+  const delBtn = row.locator("button.drow-del");
+  await expect(delBtn).toContainText("Delete");
+  await delBtn.click();
+
+  const dialog = page.getByRole("dialog", { name: "Delete this meal?" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Delete this meal" }).click();
+  await expect(page.locator(".dlist .drow")).toHaveCount(0);
+  await expect(page.locator(".hempty")).toBeVisible();
+});

@@ -16,6 +16,8 @@ import { LANG_TAG, kcalNumbers, wholeNumbers } from "../../shared/lang.ts";
 import { goalLine } from "./goal.ts";
 import { badgeUnlocked } from "./milestones.ts";
 import { homeCopyFor, macroTip, streakChip, type MacroTipKind } from "../../shared/app/home-copy.ts";
+import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
+import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
 import { enqueue, inPlace, queueEl, queueLength, queuedMealIds } from "../queue.ts";
 import { scoresAppCopy } from "../../shared/app/scores-copy.ts";
@@ -27,13 +29,15 @@ import type { MealRecord } from "@eait/shared";
 import type {
   DayResponse, DaysResponse, PendingMealsResponse, ProfileResponse,
 } from "@eait/shared/contract";
+import * as analytics from "../analytics.ts";
 import { ApiError, api, apiBlob } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { firstMealScreen } from "./first-meal.ts";
 import { blobSrc, ctaEl, kitEl, mealRowEl } from "../kit.ts";
 import { failureOf, outbox } from "../outbox.ts";
+import { ROW_DELETE_WIDTH, clampRowSwipe, shouldOpenRowSwipe } from "../row-swipe.ts";
 import {
-  DAYS, PENDING, clear, composerRow, dayPickerButton, dayText, el, firstMealDue, flush, heldProposal, kcal, kept,
+  DAYS, MEAL, PENDING, clear, composerRow, dayPickerButton, dayText, el, firstMealDue, flush, heldProposal, kcal, kept,
   keptLineEl, keptNotice, lang, names, profile, proposalCard, refusalWords, sendOrKeep, setHeldProposal, setRedraw,
   takeCarried, takeTurn, type Frame,
 } from "../shell.ts";
@@ -48,6 +52,8 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
   const flow = firstMeal !== null ? firstMealScreen(firstMeal) : null;
   const uid = me.profile.user_id;
   const L = homeCopyFor(lang);
+  const MC = mealCopyFor(lang);
+  const DEL = chatScreenCopyFor(lang).phone.delete;
   const SC = scoresAppCopy(lang);
   const S = shellCopyFor(lang);
   const n = wholeNumbers(lang);
@@ -126,7 +132,14 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
       document.removeEventListener("pointerdown", onDown, true);
       return;
     }
-    if (e.key === "Escape") { if (scoreEl !== null) { closeScore(); return; } closeTip(); return; }
+    if (e.key === "Escape") {
+      if (deleteEl !== null) { closeDelete(); return; }
+      if (openRow !== null) { closeOpenRow(); return; }
+      if (scoreEl !== null) { closeScore(); return; }
+      closeTip();
+      return;
+    }
+    if (deleteEl !== null) return;
     const t = e.target as HTMLElement | null;
     if (t !== null && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -397,15 +410,16 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     el_.classList.remove("on");
     setTimeout(finish, 220);
   };
-  /** A tap anywhere else closes an open tip. */
+  /** A tap anywhere else closes an open tip or swiped meal row. */
   const onDown = (e: PointerEvent): void => {
     if (!wrap.isConnected) {
       document.removeEventListener("pointerdown", onDown, true);
       return;
     }
-    if (tipEl === null || !(e.target instanceof Node)) return;
-    if (tipEl.contains(e.target) || (tipRow?.contains(e.target) ?? false)) return;
-    closeTip();
+    if (e.target instanceof Node) {
+      if (openRow !== null && !openRow.contains(e.target)) closeOpenRow();
+      if (tipEl !== null && !tipEl.contains(e.target) && !(tipRow?.contains(e.target) ?? false)) closeTip();
+    }
   };
   document.addEventListener("pointerdown", onDown, true);
 
@@ -1093,6 +1107,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     }
 
     clear(wrap).append(h1, ...left, notice);
+    openRow = null;
     frame.side.setAttribute("aria-label", L.webDayRegion);
     // The strip is re-USED, never re-appended: clear() detaches it, and a detach mid-slide
     // cancels the transform's transitionend — the only thing that lands the week — leaving the
@@ -1102,8 +1117,71 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     frame.side.append(...right);
   }
 
+  // ── Home row delete (#3686): swipe left on narrow/touch, hover trash button on desktop,
+  //    then the meal screen's existing confirm dialog and `DELETE /v1/meals/:id`. ──────────
+  let openRow: HTMLElement | null = null;
+  let deleteEl: HTMLElement | null = null;
+  let deleteRestoreFocus: Element | null = null;
+  const closeOpenRow = (): void => {
+    if (openRow === null) return;
+    openRow.classList.remove("open");
+    const fg = openRow.querySelector<HTMLElement>(":scope > .meal");
+    if (fg !== null) { fg.style.transition = ""; fg.style.transform = ""; }
+    openRow = null;
+  };
+  const closeDelete = (): void => {
+    window.removeEventListener("hashchange", closeDelete);
+    deleteEl?.remove();
+    deleteEl = null;
+    if (deleteRestoreFocus instanceof HTMLElement && deleteRestoreFocus.isConnected &&
+        deleteRestoreFocus.closest("[hidden]") === null) deleteRestoreFocus.focus();
+    deleteRestoreFocus = null;
+  };
+  const openDelete = (meal: MealRecord): void => {
+    closeOpenRow();
+    closeDelete();
+    deleteRestoreFocus = document.activeElement;
+    const scrim = el("div", "mscrim hard");
+    deleteEl = scrim;
+    window.addEventListener("hashchange", closeDelete, { once: true });
+    scrim.addEventListener("click", (e) => { if (e.target === scrim) closeDelete(); });
+    const dlg = el("div", "card rise mdel");
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    dlg.setAttribute("aria-label", MC.deleteTitle);
+    dlg.append(el("div", "d d22", MC.deleteTitle), el("p", "t13 m", MC.deleteBody));
+    const buttons = el("div", "row mrow");
+    const cancel = el("button", "cta s", MC.cancelCta) as HTMLButtonElement;
+    cancel.type = "button";
+    const confirm = el("button", "cta danger", MC.deleteCta) as HTMLButtonElement;
+    confirm.type = "button";
+    cancel.addEventListener("click", closeDelete);
+    confirm.addEventListener("click", () => {
+      deleteRestoreFocus = null;
+      closeDelete();
+      turn(async () => {
+        try {
+          await api(MEAL(meal.id), { method: "DELETE" });
+          analytics.capture("meal_deleted", { result: "deleted" });
+        } catch (err) {
+          // Already deleted on another device: treat as gone and let the redraw clear it.
+          if (err instanceof ApiError && err.body?.error === "target-gone") {
+            analytics.capture("meal_deleted", { result: "target-gone" });
+            return;
+          }
+          throw err;
+        }
+      });
+    });
+    buttons.append(cancel, confirm);
+    dlg.append(buttons);
+    scrim.append(dlg);
+    document.body.append(scrim);
+    cancel.focus();
+  };
+
   /** A meal row: the photo or the no-photo tile, the time, the verdict line, the gram chips —
-   *  the same row on every day, past days included (F). */
+   *  the same row on every day, past days included (F), with row delete (#3686). */
   const mealRow = (meal: MealRecord): Element =>
     inPlace(meal, () => plainRow(meal));
   const plainRow = (meal: MealRecord): Element => {
@@ -1112,7 +1190,9 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     const row = mealRowEl(meal, {
       time: mealTime(meal.ts),
       href: `#/meal/${encodeURIComponent(meal.id)}?d=${encodeURIComponent(viewing)}`,
-    });
+    }) as HTMLAnchorElement;
+    // Prevent native link-drag from hijacking a mouse swipe before the 8 px deadzone triggers.
+    row.draggable = false;
     // The photo rides behind the bearer — `apiBlob`'s bytes through `blobSrc`, a data URL: the
     // one `src` form `img-src 'self' data:` permits.
     if ((meal.photos ?? 0) > 0) {
@@ -1126,7 +1206,77 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
         row.querySelector(".ph")?.replaceWith(img);
       }).catch(() => {});
     }
-    return row;
+
+    const box = el("div", "drow");
+    const del = el("button", "drow-del") as HTMLButtonElement;
+    del.type = "button";
+    del.title = DEL;
+    const mealName = names(meal.items);
+    del.setAttribute("aria-label", mealName ? `${DEL}: ${mealName}` : DEL);
+    del.append(kitEl(ico("trash")), el("span", "drow-del-lbl", DEL));
+    del.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openDelete(meal);
+    });
+    box.append(row, del);
+
+    // Swipe-left to reveal Delete when the row uses the stacked tray layout (narrow or touch).
+    let drag: { x: number; y: number; id: number; wasOpen: boolean; moved: boolean } | null = null;
+    let swallow = false;
+    const isSwipeMode = (): boolean => getComputedStyle(del).position === "absolute";
+    box.addEventListener("pointerdown", (e) => {
+      swallow = false;
+      if (e.button !== 0 || !isSwipeMode()) return;
+      if ((e.target as HTMLElement | null)?.closest(".drow-del") !== null) return;
+      drag = { x: e.clientX, y: e.clientY, id: e.pointerId, wasOpen: box.classList.contains("open"), moved: false };
+    });
+    box.addEventListener("pointermove", (e) => {
+      if (drag === null || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      if (!drag.moved && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.5 && (dx < 0 || drag.wasOpen)) {
+        drag.moved = true;
+        swallow = true;
+        if (openRow !== null && openRow !== box) closeOpenRow();
+        try { box.setPointerCapture(e.pointerId); } catch { /* the pointer is gone */ }
+      }
+      if (drag.moved) {
+        row.style.transition = "none";
+        row.style.transform = `translateX(${clampRowSwipe(drag.wasOpen ? -ROW_DELETE_WIDTH : 0, dx)}px)`;
+      }
+    });
+    const finishDrag = (dx: number, commit: boolean): void => {
+      if (drag === null) return;
+      const { wasOpen, moved } = drag;
+      drag = null;
+      row.style.transition = "";
+      row.style.transform = "";
+      if (!moved) return;
+      if (!commit) { swallow = false; }
+      else { setTimeout(() => { swallow = false; }, 0); }
+      const open = commit && shouldOpenRowSwipe(wasOpen, dx);
+      if (open) {
+        if (openRow !== null && openRow !== box) closeOpenRow();
+        box.classList.add("open");
+        openRow = box;
+      } else {
+        box.classList.remove("open");
+        if (openRow === box) openRow = null;
+      }
+    };
+    box.addEventListener("pointerup", (e) => {
+      if (drag === null || e.pointerId !== drag.id) return;
+      finishDrag(e.clientX - drag.x, true);
+    });
+    box.addEventListener("pointercancel", () => finishDrag(0, false));
+    row.addEventListener("click", (e) => {
+      if (swallow) { e.preventDefault(); e.stopPropagation(); swallow = false; return; }
+      if (box.classList.contains("open")) {
+        e.preventDefault();
+        closeOpenRow();
+      }
+    });
+    return box;
   };
 
   // One write, then the day AS THE SERVER NOW HAS IT — the diary's composer posts like the chat's
