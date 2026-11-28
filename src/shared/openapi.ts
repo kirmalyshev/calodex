@@ -132,7 +132,7 @@ export const API: readonly Endpoint[] = [
     responses: { 200: "JobsResponse", 400: ERROR } },
   { route: "meal", method: "PATCH", path: "/v1/meals/{id}", auth: "bearer",
     summary: "The manual edit. Verdicts are recomputed, never accepted.",
-    request: { json: "EditMealRequest" }, responses: { 200: "EditMealResponse", 400: ERROR, 409: ERROR, 429: ERROR } },
+    request: { json: "EditMealRequest" }, responses: { 200: "EditMealResponse", 400: ERROR, 404: ERROR, 409: ERROR, 429: ERROR } },
   { route: "meal", method: "DELETE", path: "/v1/meals/{id}", auth: "bearer",
     summary: "Delete the meal, its photos and cards, and the user line that carried it.",
     responses: { 200: "DeleteLineResponse", 409: ERROR, 429: ERROR } },

@@ -14,7 +14,7 @@ import {
   type DailyTotals, type EditMealRequest, type EditMealResult, type LogPhotoResult, type MealAnalysis, type MealHint,
   type Lang, type MealChanged, type MealFocus, type MealItem, type MealLogged, type MealProposed, type MealQuestion, type MealRecord,
   type MealRedated, type MealUpdated, type PhotoEvent, type FoodRef,
-  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type VerdictDimension, MAX_SAVED_MEALS, mealNames, mealServings, scaledItem,
+  type Profile, type SavedMeal, type TargetGone, type ConfirmMealResult, type Refusal, type UnknownFood, type VerdictDimension, MAX_SAVED_MEALS, mealNames, mealServings, scaledItem,
   explainTargets, verdictsFromTargets, visibleVerdicts, MAX_MEAL_ITEMS,
 } from "@eait/shared";
 import {
@@ -92,6 +92,15 @@ function hintFor(analysis: AnalyzedMeal): MealHint {
 /** The catalog row's name in the account's language, falling back to the row's own primary name. */
 function catalogName(food: FoodRef, lang: Lang): string {
   return (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
+}
+
+/** The catalog row as one grounded item at `grams`; null when the row is absent or too incomplete. */
+async function catalogItem(deps: EngineDeps, userId: string, ref: string, grams: number): Promise<MealItem | null> {
+  if (!(grams > 0)) return null;
+  const food = await deps.store.foodById(ref);
+  if (food === null) return null;
+  const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
+  return mealFromFood(food, grams, catalogName(food, lang))?.items[0] ?? null;
 }
 
 /**
@@ -543,11 +552,9 @@ export async function editMeal(
   if (request.swap !== undefined) {
     const base = reconciled ?? existing.items;
     const target = base[request.swap.index];
-    const food = target === undefined ? null : await deps.store.foodById(request.swap.ref);
-    const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
-    const name = food === null ? "" : catalogName(food, lang);
-    const grounded = target === undefined || food === null || !(target.grams > 0) ? null : mealFromFood(food, target.grams, name)?.items[0];
-    if (!grounded || target === undefined) return { kind: "target-gone", on: "correction" };
+    if (target === undefined) return { kind: "target-gone", on: "correction" };
+    const grounded = await catalogItem(deps, userId, request.swap.ref, target.grams);
+    if (!grounded) return { kind: "unknown-food" };
     const swapped: MealItem = { ...grounded, ...(target.role !== undefined ? { role: target.role } : {}) };
     items = base.map((it, i) => (i === request.swap!.index ? swapped : it));
   }
@@ -556,12 +563,9 @@ export async function editMeal(
   // asked for, added after every item edit above. Provenance is ours because the row is read here.
   if (request.add !== undefined) {
     const base = items ?? existing.items;
-    if (base.length >= MAX_MEAL_ITEMS) return { kind: "too-many", limit: MAX_MEAL_ITEMS };
-    const food = await deps.store.foodById(request.add.ref);
-    const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
-    const name = food === null ? "" : catalogName(food, lang);
-    const grounded = food === null || !(request.add.grams > 0) ? null : mealFromFood(food, request.add.grams, name)?.items[0];
-    if (!grounded) return { kind: "target-gone", on: "correction" };
+    if (base.length >= MAX_MEAL_ITEMS) return { kind: "meal-items-full", limit: MAX_MEAL_ITEMS };
+    const grounded = await catalogItem(deps, userId, request.add.ref, request.add.grams);
+    if (!grounded) return { kind: "unknown-food" };
     items = [...base, grounded];
   }
 
@@ -876,9 +880,10 @@ export async function applyCorrection(
     fiber_g: analysis.fiber_g, sugar_g: analysis.sugar_g, sodium_mg: analysis.sodium_mg,
     // These items are the server's own grounded analysis, so their ref/food are kept, not audited.
   }, { thread: false, measure: false, serverItems: true, ...(readVersion !== undefined ? { readVersion } : {}) });
-  // A correction never carries `add`, so the item cap is unreachable here; the type cannot see the
-  // request literal, and the failure mode of swallowing it would be a correction reported as lost.
-  if (res.kind === "too-many") throw new Error("a correction cannot append an ingredient");
+  // A correction never carries `add` or names a catalog row, so either outcome is unreachable here;
+  // the type cannot see the request literal, and swallowing one would report a correction as lost.
+  if (res.kind === "meal-items-full") throw new Error("a correction cannot append an ingredient");
+  if (res.kind === "unknown-food") throw new Error("a correction cannot name a catalog row");
   return res.kind === "updated" ? { ...res, via: "nl" } : res;
 }
 
@@ -1281,7 +1286,7 @@ export async function logFoodMeal(
   deps: EngineDeps,
   userId: string,
   input: { ref: string; grams?: number | undefined; clientId?: string | undefined; capturedAt?: string | undefined },
-): Promise<MealLogged | Refusal | { kind: "unknown-food" }> {
+): Promise<MealLogged | Refusal | UnknownFood> {
   return once(deps, userId, input.clientId, 0, async (d) => {
     const profile = await d.store.getProfile(userId);
     if (!profile || profile.onboarded_at === null) return { kind: "not-onboarded" } as const;

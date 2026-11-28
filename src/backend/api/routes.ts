@@ -1220,11 +1220,10 @@ export function createRouter(
         if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
         const body: unknown = await req.json();
         if (!isEditMealRequest(body)) return json({ error: "bad-edit" }, 400);
-        if (body.swap !== undefined && (await deps.store.foodById(body.swap.ref)) === null) return json({ error: "unknown-food" }, 404);
-        if (body.add !== undefined && (await deps.store.foodById(body.add.ref)) === null) return json({ error: "unknown-food" }, 404);
         const result = await editMeal(deps, userId, decodeURIComponent(mealMatch[1]!), body);
+        if (result.kind === "unknown-food") return json({ error: "unknown-food" }, 404);
         if (result.kind === "target-gone") return json({ error: "target-gone", on: result.on }, 409);
-        if (result.kind === "too-many") return json({ error: "too-many-items", limit: result.limit }, 400);
+        if (result.kind === "meal-items-full") return json({ error: "meal-items-full", limit: result.limit }, 400);
         return isRefusal(result) ? refusal(result) : json(result);
       }
 

@@ -1208,19 +1208,19 @@ describe("the correction-learned portion prior", () => {
   });
 });
 
+const oliveOil = {
+  id: "usda-sr:olive-oil", source: "usda-sr", name: "Olive oil", name_de: "Olivenöl", name_en: "Olive oil",
+  names: {}, category: null, kcal_per_100g: 884, protein_g_per_100g: 0, carbs_g_per_100g: 0, fat_g_per_100g: 100,
+  satfat_g_per_100g: 14, fiber_g_per_100g: 0, sugar_g_per_100g: 0, sodium_mg_per_100g: 2,
+  nutrients: {}, portions: [], source_url: null, attribution: [],
+} as unknown as FoodRef;
+
 describe("editing the answer", () => {
   async function logged(userId: string) {
     const res = await logPhotoMeal(deps, userId, photo());
     if (res.kind !== "logged") throw new Error("expected logged");
     return res;
   }
-
-  const oliveOil = {
-    id: "usda-sr:olive-oil", source: "usda-sr", name: "Olive oil", name_de: "Olivenöl", name_en: "Olive oil",
-    names: {}, category: null, kcal_per_100g: 884, protein_g_per_100g: 0, carbs_g_per_100g: 0, fat_g_per_100g: 100,
-    satfat_g_per_100g: 14, fiber_g_per_100g: 0, sugar_g_per_100g: 0, sodium_mg_per_100g: 2,
-    nutrients: {}, portions: [], source_url: null, attribution: [],
-  } as unknown as FoodRef;
 
   it("applies a manual edit, flags it corrected, and recomputes totals", async () => {
     const userId = await onboard();
@@ -1291,17 +1291,31 @@ describe("editing the answer", () => {
     expect(item.food).toMatchObject({ source: "usda-sr" });
   });
 
-  it("adds nothing for an unknown or incomplete catalog row", async () => {
+  it("answers unknown-food for an unknown or incomplete catalog row", async () => {
     await store.putFoodRefs([{ ...oliveOil, id: "usda-sr:incomplete", fat_g_per_100g: null } as unknown as FoodRef]);
     const userId = await onboard();
     const meal = await logged(userId);
     const before = (await store.getMeal(userId, meal.mealId))!;
     for (const ref of ["usda-sr:missing", "usda-sr:incomplete"]) {
       const out = await editMeal(deps, userId, meal.mealId, { add: { ref, grams: 30 } });
-      expect(out).toEqual({ kind: "target-gone", on: "correction" });
+      expect(out).toEqual({ kind: "unknown-food" });
     }
     expect((await store.getMeal(userId, meal.mealId))!.items).toHaveLength(before.items.length);
     expect((await store.getMeal(userId, meal.mealId))!.kcal).toBe(before.kcal);
+  });
+
+  it("answers unknown-food for a swap to a missing or incomplete row, and target-gone only for a missing index", async () => {
+    await store.putFoodRefs([oliveOil, { ...oliveOil, id: "usda-sr:incomplete", fat_g_per_100g: null } as unknown as FoodRef]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    for (const ref of ["usda-sr:missing", "usda-sr:incomplete"]) {
+      const out = await editMeal(deps, userId, meal.mealId, { swap: { index: 0, ref } });
+      expect(out).toEqual({ kind: "unknown-food" });
+    }
+    expect(await editMeal(deps, userId, meal.mealId, { swap: { index: before.items.length, ref: oliveOil.id } }))
+      .toEqual({ kind: "target-gone", on: "correction" });
+    expect((await store.getMeal(userId, meal.mealId))!.items).toEqual(before.items);
   });
 
   it("refuses an add that would pass the meal-items cap", async () => {
@@ -1313,8 +1327,38 @@ describe("editing the answer", () => {
     if (filled.kind !== "updated") throw new Error(`expected updated, got ${filled.kind}`);
 
     const out = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
-    expect(out).toEqual({ kind: "too-many", limit: MAX_MEAL_ITEMS });
+    expect(out).toEqual({ kind: "meal-items-full", limit: MAX_MEAL_ITEMS });
     expect((await store.getMeal(userId, meal.mealId))!.items).toHaveLength(MAX_MEAL_ITEMS);
+  });
+
+  it("reads the items cap after the request's own item edit", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const fifty = Array.from({ length: MAX_MEAL_ITEMS }, (_, i) => ({ name: `item ${i}`, grams: 10, kcal: 20 }));
+    const filled = await editMeal(deps, userId, meal.mealId, { items: fifty });
+    if (filled.kind !== "updated") throw new Error(`expected updated, got ${filled.kind}`);
+
+    const out = await editMeal(deps, userId, meal.mealId, {
+      items: fifty.slice(0, MAX_MEAL_ITEMS - 1), add: { ref: oliveOil.id, grams: 30 },
+    });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    expect(out.analysis.items).toHaveLength(MAX_MEAL_ITEMS);
+    expect(out.analysis.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 30 });
+  });
+
+  it("applies a swap and an append in one edit, with the append last", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    const out = await editMeal(deps, userId, meal.mealId, {
+      swap: { index: 0, ref: oliveOil.id }, add: { ref: oliveOil.id, grams: 30 },
+    });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+    expect(out.analysis.items).toHaveLength(before.items.length + 1);
+    expect(out.analysis.items[0]).toMatchObject({ ref: oliveOil.id, grams: before.items[0]!.grams });
+    expect(out.analysis.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 30 });
   });
 
   it("cannot add an ingredient to another user's meal", async () => {
@@ -1503,6 +1547,99 @@ describe("editing the answer", () => {
     const res = await handleText(deps, b, { text: "half that", focusMealId: meal.mealId });
     expect(res.kind).not.toBe("updated");
     expect((await store.getMeal(a, meal.mealId))!.kcal).toBe(meal.analysis.kcal);
+  });
+});
+
+describe("an ingredient edit through the update queue (ieat-app#3678)", () => {
+  const settle = async (userId: string, clientId: string) => {
+    const until = Date.now() + 10_000;
+    for (;;) {
+      const j = await photoJob(deps, userId, clientId);
+      if (!j || j.kind === "settled") return j;
+      if (Date.now() > until) throw new Error("job never settled");
+      await new Promise((r) => setTimeout(r, 15));
+    }
+  };
+  const queuedMeal = async (userId: string) => {
+    const res = await logPhotoMeal(deps, userId, photo());
+    if (res.kind !== "logged") throw new Error(`expected logged, got ${res.kind}`);
+    return res;
+  };
+
+  it("settles `updated`, with the appended row the sync edit would write", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    expect(await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId, edit: { add: { ref: oliveOil.id, grams: 30 } },
+    })).toEqual({ kind: "queued", jobId: clientId });
+
+    const job = await settle(userId, clientId);
+    expect(job).toMatchObject({ kind: "settled", result: { kind: "updated", mealId: meal.mealId } });
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    expect(stored.items).toHaveLength(before.items.length + 1);
+    expect(stored.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 30, kcal: 265 });
+    expect(stored.kcal).toBe(before.kcal + 265);
+    await drainJobs(deps, 1000);
+  });
+
+  it("settles `unknown-food` rather than a target-gone success for a missing or incomplete row", async () => {
+    await store.putFoodRefs([{ ...oliveOil, id: "usda-sr:incomplete", fat_g_per_100g: null } as unknown as FoodRef]);
+    for (const ref of ["usda-sr:missing", "usda-sr:incomplete"]) {
+      const userId = await onboard();
+      const meal = await queuedMeal(userId);
+      const before = (await store.getMeal(userId, meal.mealId))!;
+      startJobs(deps);
+      const clientId = crypto.randomUUID();
+      await queueMealUpdate(deps, userId, {
+        kind: "ingredients", mealId: meal.mealId, clientId, edit: { add: { ref, grams: 30 } },
+      });
+      const job = await settle(userId, clientId);
+      expect(job).toMatchObject({ kind: "settled", result: { kind: "unknown-food" } });
+      expect((await store.getMeal(userId, meal.mealId))!.items).toHaveLength(before.items.length);
+      await drainJobs(deps, 1000);
+    }
+  });
+
+  it("settles `meal-items-full` for an append over the cap", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    const fifty = Array.from({ length: MAX_MEAL_ITEMS }, (_, i) => ({ name: `item ${i}`, grams: 10, kcal: 20 }));
+    const filled = await editMeal(deps, userId, meal.mealId, { items: fifty });
+    if (filled.kind !== "updated") throw new Error(`expected updated, got ${filled.kind}`);
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId, edit: { add: { ref: oliveOil.id, grams: 30 } },
+    });
+    const job = await settle(userId, clientId);
+    expect(job).toMatchObject({ kind: "settled", result: { kind: "meal-items-full", limit: MAX_MEAL_ITEMS } });
+    expect((await store.getMeal(userId, meal.mealId))!.items).toHaveLength(MAX_MEAL_ITEMS);
+    await drainJobs(deps, 1000);
+  });
+
+  it("settles a swap-plus-append composition with the append last", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await queuedMeal(userId);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    startJobs(deps);
+    const clientId = crypto.randomUUID();
+    await queueMealUpdate(deps, userId, {
+      kind: "ingredients", mealId: meal.mealId, clientId,
+      edit: { swap: { index: 0, ref: oliveOil.id }, add: { ref: oliveOil.id, grams: 30 } },
+    });
+    const job = await settle(userId, clientId);
+    expect(job).toMatchObject({ kind: "settled", result: { kind: "updated", mealId: meal.mealId } });
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    expect(stored.items).toHaveLength(before.items.length + 1);
+    expect(stored.items[0]).toMatchObject({ ref: oliveOil.id, grams: before.items[0]!.grams });
+    expect(stored.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 30 });
+    await drainJobs(deps, 1000);
   });
 });
 

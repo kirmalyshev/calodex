@@ -4,7 +4,7 @@ import {
   CHANNEL_HEADER, HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_MEAL_ITEMS, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
   dateMinus, localDate, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
   type DaysResponse, type MealRecord, type ProfileResponse, type MealProposed, type PendingMealsResponse,
-  type ChatEntry, type FoodRef, type WeightsResponse,
+  type ChatEntry, type FoodRef, type MealUpdated, type WeightsResponse,
 } from "@eait/shared";
 import { DEFAULT_MEAL_REMINDERS } from "@eait/shared";
 import { configDefaults, type Config } from "../config.ts";
@@ -2695,10 +2695,30 @@ describe("ingredient appends over HTTP (ieat-app#3678)", () => {
     nutrients: {}, portions: [], source_url: null, attribution: [],
   };
 
+  it("appends a catalog ingredient over PATCH", async () => {
+    const token = await session();
+    await store.putFoodRefs([oliveOil]);
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token);
+    expect(res.status).toBe(200);
+    const out = await res.json() as MealUpdated;
+    expect(out.kind).toBe("updated");
+    expect(out.analysis.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 30, kcal: 265 });
+  });
+
   it("answers unknown-food when the appended catalog row does not exist", async () => {
     const token = await session();
     const logged = await (await handle(photoRequest(token))).json() as MealLogged;
     const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: "usda-sr:missing", grams: 30 } }, token);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "unknown-food" });
+  });
+
+  it("answers unknown-food when the appended catalog row is incomplete", async () => {
+    const token = await session();
+    await store.putFoodRefs([{ ...oliveOil, id: "usda-sr:incomplete", fat_g_per_100g: null }]);
+    const logged = await (await handle(photoRequest(token))).json() as MealLogged;
+    const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: "usda-sr:incomplete", grams: 30 } }, token);
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "unknown-food" });
   });
@@ -2714,7 +2734,7 @@ describe("ingredient appends over HTTP (ieat-app#3678)", () => {
 
     const res = await patch(ROUTES.meal(logged.mealId), { add: { ref: oliveOil.id, grams: 30 } }, token);
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "too-many-items", limit: MAX_MEAL_ITEMS });
+    expect(await res.json()).toEqual({ error: "meal-items-full", limit: MAX_MEAL_ITEMS });
   });
 });
 

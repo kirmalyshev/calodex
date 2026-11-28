@@ -61,6 +61,13 @@ const after = <T extends object>(port: T, name: keyof T, done: () => void): T =>
 
 type PhotoRequest = Pick<LogPhotoInput, "caption" | "capturedAt" | "receivedAt" | "label" | "compression" | "maxEdge">;
 
+/**
+ * Whether a dead worker's update may run again. Overwrites are idempotent; a note would repeat its
+ * chat lines, and an ingredient append is not an overwrite — a second run would add the row twice.
+ */
+export const retryableMealUpdate = (input: MealUpdateRequest): boolean =>
+  input.kind === "reread" || (input.kind === "ingredients" && input.edit.add === undefined);
+
 const HANDLERS: Record<JobKind, JobHandler> = {
   photo: {
     version: 1,
@@ -97,8 +104,7 @@ const HANDLERS: Record<JobKind, JobHandler> = {
     // so the group is the account — a second update waits wherever its meal turns out to be.
     grouped: true,
     calls: (job) => (job.request as MealUpdateRequest).kind === "note" ? TEXT_MODEL_CALLS : PHOTO_MODEL_CALLS,
-    // `ingredients` and `reread` overwrite the meal; a note writes chat lines that a second run would repeat.
-    retryable: (job) => (job.request as MealUpdateRequest).kind !== "note",
+    retryable: (job) => retryableMealUpdate(job.request as MealUpdateRequest),
     async run(deps, job, progress, lost) {
       const { userId, clientId } = job;
       const input = job.request as MealUpdateRequest;
