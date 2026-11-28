@@ -447,6 +447,10 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
       }
     }
     if (e.key === "Escape") {
+      // This sheet closes itself; a meal screen underneath must not see the same keypress as
+      // its own "back to the diary" (#3678).
+      e.preventDefault();
+      e.stopPropagation();
       if (openSwipe !== null) closeOpenSwipe();
       else o.onClose();
     }

@@ -191,6 +191,20 @@ test("+ Add More opens ingredient search, and a pick appends through the update 
   await expect(page.locator(".ing").last()).toContainText("Banana, raw");
 });
 
+test("Escape in the ingredient picker closes the picker, not the meal (#3678)", async ({ inWebApp: page }) => {
+  const { id } = await openMeal(page);
+  const addMore = page.getByRole("button", { name: "+ Add More" });
+  await addMore.click();
+  const sheet = page.locator(".fs");
+  await expect(sheet).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+  expect(page.url()).toContain(`/#/meal/${id}`);
+  await expect(addMore).toBeVisible();
+  await expect(addMore).toBeFocused();
+});
+
 test("+ Add More is absent when the meal already holds the server's item cap (#3678)", async ({ inWebApp: page }) => {
   await logMeal(page);
   const token = await sessionToken(page);

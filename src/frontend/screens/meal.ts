@@ -426,12 +426,12 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       onTell: () => {},
       onNumbers: () => {},
       onLogged: () => {},
-      onClose: () => sheet.remove(),
+      onClose: closeOverlay,
       onPick: (ref, grams) => {
         enqueueUpdate(meal, { kind: "ingredients", edit: { add: { ref, grams } } });
       },
     });
-    wrap.append(sheet);
+    openOverlay(sheet);
   };
 
   /**
