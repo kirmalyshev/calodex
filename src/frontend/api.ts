@@ -23,7 +23,7 @@ import type { MealRecord } from "@eait/shared";
 import type {
   AttachPhotosResponse, EditMealRequest, EditMealResponse, ErrorResponse, MilestonesResponse,
   MilestonesSeenRequest, NDJSON, PushConsentRequest, PushConsentResponse, PushOpenRequest,
-  PushTokenRequest, RateMealRequest, RedateMealRequest, SaveMealRequest, SaveMealResponse, SavedMeal,
+  PushTokenRequest, RateMealRequest, RedateMealRequest, ReportMealRequest, ReportMealResponse, SaveMealRequest, SaveMealResponse, SavedMeal,
   SavedMealsResponse,
 } from "@eait/shared/contract";
 import type { MealLogged, TargetGone } from "../shared/results.ts";
@@ -257,6 +257,10 @@ export const renameMeal = (mealId: string, name: string | null): Promise<EditMea
 /** Rate a meal's analysis (calodex_app#3687): `up` true is the thumbs-up; the server keeps the last write. */
 export const rateMeal = (mealId: string, up: boolean): Promise<MealRecord> =>
   api<MealRecord>(`/meals/${encodeURIComponent(mealId)}/rating`, json("POST", { up } satisfies RateMealRequest));
+
+/** Report a problem with a meal for human review (calodex_app#3688). */
+export const reportMeal = (mealId: string, text: string): Promise<ReportMealResponse> =>
+  api<ReportMealResponse>(`/meals/${encodeURIComponent(mealId)}/report`, json("POST", { text } satisfies ReportMealRequest));
 
 export const deleteSavedMeal = async (id: string): Promise<void> => {
   try {

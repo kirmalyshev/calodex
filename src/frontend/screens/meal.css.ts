@@ -118,6 +118,7 @@ export const mealCss = `
   color:var(--ink)}
 .fixfield::placeholder{color:var(--faint)}
 .fixex{padding:14px 16px;background:var(--hair);box-shadow:none;font-size:15px;line-height:1.45}
+.reportcount{margin:0;text-align:right}
 
 /* The tappable meal title beside the servings chip, and its rename dialog (calodex_app#3681). */
 .card button.mtitle{display:inline-block;max-width:100%;min-height:44px;padding:6px 0;margin:0;border:0;
