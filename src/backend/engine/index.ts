@@ -12,7 +12,7 @@ export {
 } from "./entitlement.ts";
 export { attributeInstall, logRevenueCatEvent } from "./acquisition.ts";
 export {
-  logPhotoMeal, logFoodMeal, logNumbersMeal, editMeal, editMealOnce, applyCorrection, attachPhotos, changeLine, confirmPendingMeal, cancelPendingMeal, pendingMeals, reanalyzeMeal, redateMeal, focusMeal, logSavedMeal, saveMealFromLog, sumTotals,
+  logPhotoMeal, logFoodMeal, logNumbersMeal, editMeal, editMealOnce, applyCorrection, attachPhotos, changeLine, confirmPendingMeal, cancelPendingMeal, pendingMeals, reanalyzeMeal, redateMeal, focusMeal, reportMeal, logSavedMeal, saveMealFromLog, sumTotals,
   toAnalysis, type LogPhotoInput,
 } from "./meals.ts";
 export { handleText, type HandleTextInput } from "./text.ts";

@@ -796,6 +796,14 @@ export async function redateMeal(
  * Null when the meal is not the caller's (the store scopes `id AND user_id`). Free for every user:
  * nothing here reads the entitlement.
  */
+/** Record the menu's "Report Food" against one of the caller's meals. No model, no charge, no thread write. */
+export async function reportMeal(
+  deps: EngineDeps, userId: string, mealId: string, text: string,
+): Promise<{ reported: true } | null> {
+  const row = await deps.store.insertMealReport(userId, mealId, text.trim());
+  return row === null ? null : { reported: true };
+}
+
 export async function focusMeal(
   deps: EngineDeps,
   userId: string,

@@ -23,7 +23,7 @@ import { type ChatMessage,
   type MealPatch, type MilestoneRow, type Role,
   type CampaignRow, type JobRecord, type OnboardingAssignment, type OnboardingExperiment, type ScreenTemplateRecord, type OnboardingExperimentFunnelRow, type ExperimentSurfaceCounts, type PendingMeal, type PortionCorrection, type ProfilePatch, type PromptRevision, type PushPlatform, type PushStatRow, type PushToken, type SendLogRow, type SwitchFlip, type AdminValueSet,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
-  type RecognitionWrite, type AdminRecognition, type AdminRecognitionListRow,
+  type RecognitionWrite, type AdminRecognition, type AdminRecognitionListRow, type MealReport,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
   type Acquisition, type RevenueCatEventRow, type OnboardingServed, type OnboardingServedRecord,
 } from "./store.ts";
@@ -409,6 +409,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     id: string; userId: string; analysisId: string | null; mealId: string | null; createdAt: number;
   })[] = [];
   let recognitionSeq = 0;
+  const mealReports: (MealReport & { createdMs: number })[] = [];
 
   // The admin's row, joined to the meal it made — the meal as it stands NOW, edits included.
   // `items` rides the detail read only: the list stays light, like the join in Postgres.
@@ -599,6 +600,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     }
     for (let i = recognitions.length - 1; i >= 0; i--) {
       if (recognitions[i]!.userId === userId) recognitions.splice(i, 1);
+    }
+    for (let i = mealReports.length - 1; i >= 0; i--) {
+      if (mealReports[i]!.userId === userId) mealReports.splice(i, 1);
     }
     for (const [k, t] of turns) if (t.userId === userId) turns.delete(k);
     for (const [k, j] of jobs) if (j.userId === userId) jobs.delete(k);
@@ -1121,6 +1125,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       for (const a of analyses) if (a.userId === fromUserId) a.userId = intoUserId;
       for (const c of llmCalls) if (c.userId === fromUserId) c.userId = intoUserId;
       for (const r of recognitions) if (r.userId === fromUserId) r.userId = intoUserId;
+      for (const r of mealReports) if (r.userId === fromUserId) r.userId = intoUserId;
       // A turn the anonymous session sent is replayed by the same phone under the real account.
       // One id claimed on both sides keeps the survivor's.
       for (const [k, t] of turns) {
@@ -2425,6 +2430,31 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .sort((a, b) => b.date.localeCompare(a.date) || b.ts.localeCompare(a.ts))
         .slice(0, Math.max(0, limit))
         .map((m) => scored(clone(m)));
+    },
+
+    async insertMealReport(userId, mealId, text) {
+      const m = meals.get(mealId);
+      if (!m || m.user_id !== userId) return null;
+      const at = now();
+      const row: MealReport & { createdMs: number } = {
+        id: crypto.randomUUID(), userId, mealId, text, createdMs: at, createdAt: new Date(at).toISOString(),
+        meal: { id: m.id, date: m.date, kcal: m.kcal, items: clone(m.items) },
+      };
+      mealReports.push(row);
+      return { id: row.id, userId, mealId, text, createdAt: row.createdAt, meal: null };
+    },
+
+    async adminMealReports(limit = 200) {
+      return [...mealReports]
+        .sort((a, b) => b.createdMs - a.createdMs || b.id.localeCompare(a.id))
+        .slice(0, Math.max(1, Math.min(1000, Math.floor(limit))))
+        .map((r) => {
+          const m = meals.get(r.mealId);
+          return {
+            id: r.id, userId: r.userId, mealId: r.mealId, text: r.text, createdAt: r.createdAt,
+            meal: m === undefined || m.user_id !== r.userId ? null : { id: m.id, date: m.date, kcal: m.kcal, items: clone(m.items) },
+          };
+        });
     },
 
     async putPhotos(userId, mealId, input) {

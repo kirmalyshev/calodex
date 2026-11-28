@@ -498,6 +498,8 @@ export const ROUTES = {
    * Answers the meal, or 404 when it is not the caller's. Free for every user: no entitlement, no cap.
    */
   mealFocus: (id: string) => `/v1/meals/${encodeURIComponent(id)}/focus`,
+  /** `POST` — report a problem with this meal, for human review ({@link ReportMealRequest}). */
+  mealReport: (id: string) => `/v1/meals/${encodeURIComponent(id)}/report`,
   /**
    * GET — the caller's saved meals, newest first. POST `{ mealId }` ({@link SaveMealRequest}) —
    * bookmark a meal already logged by this account as a named composition, idempotent per source
@@ -1500,6 +1502,24 @@ export function isRedateMealRequest(body: unknown): body is RedateMealRequest {
 }
 
 export type RedateMealResponse = MealRedated | TargetGone;
+
+/** One report's prose bound. The counter on the sheet counts the same characters the server accepts. */
+export const MAX_MEAL_REPORT_TEXT = 500;
+
+/** `POST /v1/meals/:id/report` — the meal ⋯ menu's "Report Food". */
+export interface ReportMealRequest {
+  text: string;
+}
+
+export function isReportMealRequest(body: unknown): body is ReportMealRequest {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const text = (body as Record<string, unknown>).text;
+  return typeof text === "string" && text.trim().length >= 1 && text.trim().length <= MAX_MEAL_REPORT_TEXT;
+}
+
+export interface ReportMealResponse {
+  reported: true;
+}
 
 /** `POST /v1/meals/:id/focus` — a second write replaces the first. */
 export interface FocusMealRequest {
