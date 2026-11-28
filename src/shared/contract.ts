@@ -1494,6 +1494,9 @@ export type EditMealResponse = MealUpdated;
  * reach it — the offset is resolved against the account's today on the server, never sent as a
  * `YYYY-MM-DD` a client could aim anywhere on the calendar.
  */
+/** How many days back a meal can be moved (the chat re-date's bound and the day picker's): the server clamps to it. */
+export const MAX_DAY_OFFSET = 7;
+
 export interface RedateMealRequest {
   dayOffset: number;
   /**

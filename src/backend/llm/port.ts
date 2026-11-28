@@ -5,6 +5,7 @@
 // engine's tests bind fakes to the same four signatures — which is what lets cap enforcement,
 // verdict gating, the correction loop and the coach's tools be tested without a billed call.
 
+import { MAX_DAY_OFFSET } from "@eait/shared";
 import type { ChatSpeaker, DayTotals, FoodTargets, MealAnalysis, MealItem, Profile, TargetBasis } from "@eait/shared";
 import type { PortionPrior } from "../store.ts";
 
@@ -415,7 +416,7 @@ export interface LlmPorts {
 }
 
 /** Clamp to an integer in `[0, MAX_DAY_OFFSET]`, warning when the value was out of contract. */
-export const MAX_DAY_OFFSET = 7;
+export { MAX_DAY_OFFSET };
 export function clampDayOffset(v: unknown): number {
   const n = Math.round(Number(v ?? 0));
   if (!Number.isFinite(n)) return 0;
