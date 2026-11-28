@@ -206,6 +206,7 @@ export function payScreen(frame: Frame): HTMLElement {
   // here by webhook). Terms and Privacy only where the operator publishes them (`WebPaywall` carries
   // "" for a link it does not have). Both states of the column draw it, so it is built on demand.
   const redeemWords = redeemCopyFor(lang);
+  let restoreBand: { row: HTMLElement; text: string | null } | null = null;
   const legal = (): HTMLElement => {
     const foot = el("p", "t12 m paylinks");
     const form = el("form", "redeem") as HTMLFormElement;
@@ -238,15 +239,22 @@ export function payScreen(frame: Frame): HTMLElement {
         discount = out.discountCode;
         status.textContent = fill(redeemWords.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) });
         // The sheet is C's values without the trial: the percent in Yearly's band, never "N days free".
-        const yearly = col.querySelector<HTMLElement>(".pwp2 .plan2");
+        const yearly = col.querySelector<HTMLElement>(".pwp2 .plan2:has(input:not([value=monthly]))");
         if (yearly !== null) {
-          const band = yearly.querySelector<HTMLElement>(".band") ?? yearly.insertBefore(el("div", "band"), yearly.firstChild!.nextSibling);
+          const had = yearly.querySelector<HTMLElement>(".band");
+          if (restoreBand === null) restoreBand = { row: yearly, text: had?.textContent ?? null };
+          const band = had ?? yearly.insertBefore(el("div", "band"), yearly.firstChild!.nextSibling);
           band.textContent = fill(pay.offerOff, { percent: paywallPercent(out.percent ?? 0, lang) });
         }
         relink();
       }).catch((err: unknown) => {
         // A refusal drops a discount held from an earlier code, so the links never carry what the status disowns.
         discount = null;
+        if (restoreBand !== null) {
+          const band = restoreBand.row.querySelector<HTMLElement>(".band");
+          if (restoreBand.text === null) band?.remove(); else if (band !== null) band.textContent = restoreBand.text;
+          restoreBand = null;
+        }
         relink();
         if (!(err instanceof ApiError)) return;
         const kind = err.body?.error;

@@ -330,3 +330,23 @@ test("Redeem code · a discount appends discount_code to the checkout, a refusal
   await page.locator(".pay .plan2", { hasText: "Monthly" }).click();
   await expect(page.locator(".pay .cta.p")).toHaveAttribute("href", /pay\.example\/m\/[^?]+\?discount_code=RC_TEN$/);
 });
+
+test("Redeem code · a refusal after a discount restores the trial band and the plain links (#3695)", async ({ page }) => {
+  await selling(page, "paywall-redeem-undo");
+  await page.route("**/v1/promo/redeem", async (route) => {
+    const code = (route.request().postDataJSON() as { code: string }).code;
+    if (code === "TEN") await route.fulfill({ status: 200, json: { kind: "discount", code: "TEN", percent: 10, discountCode: "RC_TEN", profile: {} } });
+    else await route.fulfill({ status: 422, json: { error: "promo-unknown" } });
+  });
+  await page.locator(".pay .paylinks a", { hasText: "Redeem code" }).click();
+  const form = page.locator(".pay .redeem");
+  await form.locator("input").fill("TEN");
+  await form.locator("button").click();
+  await expect(page.locator(".pay .plan2 .band").first()).toHaveText("10% off");
+  await form.locator("input").fill("nope");
+  await form.locator("button").click();
+  await expect(form.locator("p")).toHaveText("That code isn't valid.");
+  await expect(page.locator(".pay .plan2 .band").first()).toHaveText("3 days free");
+  await expect(page.locator(".pay h1")).toHaveText("Start your 3-day free trial to continue");
+  await expect(page.locator(".pay .cta.p")).toHaveAttribute("href", /^https:\/\/pay\.example\/y\/[^?]+$/);
+});
