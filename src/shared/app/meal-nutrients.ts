@@ -14,11 +14,11 @@ export interface MealNutrientCopy {
 
 export const MEAL_NUTRIENT_COPY: Localized<MealNutrientCopy> = {
   "en": { fiber: "Fiber", sugar: "Sugar", sodium: "Sodium", satfat: "Sat fat" },
-  "fr": { fiber: "Fibres", sugar: "Sucres", sodium: "Sodium", satfat: "graisses saturées" },
-  "de": { fiber: "Ballaststoffe", sugar: "Zucker", sodium: "Natrium", satfat: "gesättigte Fettsäuren" },
-  "it": { fiber: "Fibre", sugar: "Zuccheri", sodium: "Sodio", satfat: "grassi saturi" },
-  "es": { fiber: "Fibra", sugar: "Azúcar", sodium: "Sodio", satfat: "grasas saturadas" },
-  "vi": { fiber: "Chất xơ", sugar: "Đường", sodium: "Natri", satfat: "chất béo bão hòa" },
+  "fr": { fiber: "Fibres", sugar: "Sucres", sodium: "Sodium", satfat: "gras sat." },
+  "de": { fiber: "Ballaststoffe", sugar: "Zucker", sodium: "Natrium", satfat: "ges. Fette" },
+  "it": { fiber: "Fibre", sugar: "Zuccheri", sodium: "Sodio", satfat: "grassi sat." },
+  "es": { fiber: "Fibra", sugar: "Azúcar", sodium: "Sodio", satfat: "grasas sat." },
+  "vi": { fiber: "Chất xơ", sugar: "Đường", sodium: "Natri", satfat: "béo bão hòa" },
   "id": { fiber: "Serat", sugar: "Gula", sodium: "Natrium", satfat: "lemak jenuh" },
   "ru": { fiber: "Клетчатка", sugar: "Сахар", sodium: "Натрий", satfat: "нас. жиры" },
   "pt-BR": { fiber: "Fibras", sugar: "Açúcar", sodium: "Sódio", satfat: "gord. saturada" },
@@ -38,25 +38,25 @@ export const MEAL_NUTRIENT_COPY: Localized<MealNutrientCopy> = {
   "el": { fiber: "Φυτικές ίνες", sugar: "Ζάχαρη", sodium: "Νάτριο", satfat: "κορ. λιπαρά" },
   "hu": { fiber: "Rost", sugar: "Cukor", sodium: "Nátrium", satfat: "tel. zsír" },
   "da": { fiber: "Kostfibre", sugar: "Sukker", sodium: "Natrium", satfat: "mættet fedt" },
-  "fi": { fiber: "Kuitu", sugar: "Sokeri", sodium: "Natrium", satfat: "tyydyttynyt rasva" },
+  "fi": { fiber: "Kuitu", sugar: "Sokeri", sodium: "Natrium", satfat: "tyydyt. rasva" },
   "no": { fiber: "Fiber", sugar: "Sukker", sodium: "Natrium", satfat: "mettet fett" },
   "sk": { fiber: "Vláknina", sugar: "Cukor", sodium: "Sodík", satfat: "nas. tuky" },
-  "hr": { fiber: "Vlakna", sugar: "Šećer", sodium: "Natrij", satfat: "zasićene masti" },
+  "hr": { fiber: "Vlakna", sugar: "Šećer", sodium: "Natrij", satfat: "zasić. masti" },
   "sl": { fiber: "Vlaknine", sugar: "Sladkor", sodium: "Natrij", satfat: "nas. maščobe" },
   "ca": { fiber: "Fibra", sugar: "Sucre", sodium: "Sodi", satfat: "greix sat." },
   "ms": { fiber: "Serat", sugar: "Gula", sodium: "Natrium", satfat: "lemak tepu" },
   "pt-PT": { fiber: "Fibra", sugar: "Açúcar", sodium: "Sódio", satfat: "gord. saturada" },
   "bn": { fiber: "ফাইবার", sugar: "চিনি", sodium: "সোডিয়াম", satfat: "স্যাচু. ফ্যাট" },
   "gu": { fiber: "ફાઇબર", sugar: "ખાંડ", sodium: "સોડિયમ", satfat: "સેચ્યુ. ફેટ" },
-  "kn": { fiber: "ನಾರಿನಂಶ", sugar: "ಸಕ್ಕರೆ", sodium: "ಸೋಡಿಯಂ", satfat: "ಸ್ಯಾಚುರೇಟೆಡ್ ಕೊಬ್ಬು" },
+  "kn": { fiber: "ನಾರಿನಂಶ", sugar: "ಸಕ್ಕರೆ", sodium: "ಸೋಡಿಯಂ", satfat: "ಸ್ಯಾಚು. ಕೊಬ್ಬು" },
   "ml": { fiber: "നാരുകൾ", sugar: "പഞ്ചസാര", sodium: "സോഡിയം", satfat: "പൂരിത കൊഴുപ്പ്" },
   "mr": { fiber: "फायबर", sugar: "साखर", sodium: "सोडियम", satfat: "सॅच. फॅट" },
   "or": { fiber: "ଫାଇବର୍", sugar: "ଚିନି", sodium: "ସୋଡିୟମ୍", satfat: "ସାଚୁ. ଫ୍ୟାଟ୍" },
   "pa": { fiber: "ਫ਼ਾਈਬਰ", sugar: "ਸ਼ੂਗਰ", sodium: "ਸੋਡੀਅਮ", satfat: "ਸੈਚੁ. ਫ਼ੈਟ" },
   "ta": { fiber: "நார்ச்சத்து", sugar: "சர்க்கரை", sodium: "சோடியம்", satfat: "நிறை. கொழுப்பு" },
   "te": { fiber: "ఫైబర్", sugar: "చక్కెర", sodium: "సోడియం", satfat: "సంతృప్త కొవ్వు" },
-  "bg": { fiber: "Фибри", sugar: "Захар", sodium: "Натрий", satfat: "наситени мазнини" },
-  "sq": { fiber: "Fibrë", sugar: "Sheqer", sodium: "Natrium", satfat: "yndyrë të ngopura" },
+  "bg": { fiber: "Фибри", sugar: "Захар", sodium: "Натрий", satfat: "нас. мазнини" },
+  "sq": { fiber: "Fibrë", sugar: "Sheqer", sodium: "Natrium", satfat: "ynd. e ngopur" },
 };
 
 export interface MealNutrientTile {
@@ -76,9 +76,9 @@ export const mealNutrientTiles = (
   const g = spellUnit(lang, "g");
   const mg = spellUnit(lang, "mg");
   return [
-    { key: "fiber", icon: "fibre", value: n(meal.fiber_g) + g, label: copy.fiber },
-    { key: "sugar", icon: "sugar", value: n(meal.sugar_g) + g, label: copy.sugar },
-    { key: "sodium", icon: "salt", value: n(meal.sodium_mg) + mg, label: copy.sodium },
-    { key: "satfat", icon: "satfat", value: n(meal.satfat_g) + g, label: copy.satfat },
+    { key: "fiber", icon: "fibre", value: `${n(meal.fiber_g)} ${g}`, label: copy.fiber },
+    { key: "sugar", icon: "sugar", value: `${n(meal.sugar_g)} ${g}`, label: copy.sugar },
+    { key: "sodium", icon: "salt", value: `${n(meal.sodium_mg)} ${mg}`, label: copy.sodium },
+    { key: "satfat", icon: "satfat", value: `${n(meal.satfat_g)} ${g}`, label: copy.satfat },
   ];
 };

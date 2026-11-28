@@ -56,19 +56,35 @@ test("the meal opens: photo, kcal, macro tiles, ingredients, verdicts, score", a
     await expect(dots.nth(i)).toHaveText(v.label);
     await expect(dots.nth(i)).toHaveClass(new RegExp(`\\bv ${v.tone}\\b`));
   }
-  // Page 1 is the macro trio; page 2 is the meal's four nutrient figures (ieat-app#3676).
-  await expect(page.locator(".mtilepage").first().locator(".mcard")).toHaveCount(3);
-  await expect(page.locator(".mtilepage").nth(1).locator(".mcard")).toHaveCount(4);
-  await page.getByRole("button", { name: "Page 2 of 2" }).click();
+  // Page 1 is the macro trio; page 2 is the meal's four nutrient figures (ieat-app#3676). The
+  // click is proven by the pager's own state — both pages are in the DOM, so their text alone
+  // would pass even if the page never turned.
+  const macros = page.locator(".mtilepage").first();
   const micro = page.locator(".mtilepage").nth(1);
+  await expect(macros.locator(".mcard")).toHaveCount(3);
+  await expect(micro.locator(".mcard")).toHaveCount(4);
+  await expect(macros).toHaveAttribute("aria-hidden", "false");
+  await expect(micro).toHaveAttribute("aria-hidden", "true");
+  await expect(page.getByRole("button", { name: "Page 1 of 2" })).toHaveAttribute("aria-current", "true");
+  await page.getByRole("button", { name: "Page 2 of 2" }).click();
+  await expect(macros).toHaveAttribute("aria-hidden", "true");
+  await expect(macros).toHaveAttribute("inert", "");
+  await expect(micro).toHaveAttribute("aria-hidden", "false");
+  await expect(page.getByRole("button", { name: "Page 2 of 2" })).toHaveAttribute("aria-current", "true");
+  await expect(page.locator(".mtiletrack")).not.toHaveCSS("transform", "none");
   await expect(micro).toContainText("Fiber");
   await expect(micro).toContainText("Sugar");
   await expect(micro).toContainText("Sodium");
   await expect(micro).toContainText("Sat fat");
-  await expect(micro).toContainText(`${Math.round(record.fiber_g)}g`);
-  await expect(micro).toContainText(`${Math.round(record.sugar_g)}g`);
-  await expect(micro).toContainText(`${Math.round(record.sodium_mg)}mg`);
-  await expect(micro).toContainText(`${Math.round(record.satfat_g)}g`);
+  const whole = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
+  await expect(micro).toContainText(`${whole.format(record.fiber_g)} g`);
+  await expect(micro).toContainText(`${whole.format(record.sugar_g)} g`);
+  await expect(micro).toContainText(`${whole.format(record.sodium_mg)} mg`);
+  await expect(micro).toContainText(`${whole.format(record.satfat_g)} g`);
+  // The arrow key on a focused dot is the same page turn, back to the macros.
+  await page.keyboard.press("ArrowLeft");
+  await expect(macros).toHaveAttribute("aria-hidden", "false");
+  await expect(page.getByRole("button", { name: "Page 1 of 2" })).toHaveAttribute("aria-current", "true");
   await expect(page.locator(".ing").first()).toBeVisible();
   await expect(page.locator(".ing").first()).toContainText("g");
   await expect(page.locator(".ing b").first()).toBeVisible();

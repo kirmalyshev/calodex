@@ -640,6 +640,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     return box;
   };
 
+  // The tile page survives a redraw: an edit landing or a queued update must not yank a reader
+  // off page 2 (the day card carries its page across draws for the same reason).
+  let tilePage = 0 as 0 | 1;
+
   const detailCard = (meal: MealRecord, day: DayResponse): HTMLElement => {
     const updating = updateFor(meal.id) !== undefined;
     const card = el("div", `card mdet${updating ? " updating" : ""}`);
@@ -664,21 +668,22 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const tileTrack = el("div", "mtiletrack");
     const macroPage = el("div", "mtilepage mcards");
     for (const [macro, value, label] of [
-      ["protein", `${n(meal.protein_g)}${spellUnit(lang, "g")}`, mc.macroProtein],
-      ["carbs", `${n(meal.carbs_g)}${spellUnit(lang, "g")}`, mc.macroCarbs],
-      ["fat", `${n(meal.fat_g)}${spellUnit(lang, "g")}`, mc.macroFat],
+      ["protein", `${n(meal.protein_g)} ${spellUnit(lang, "g")}`, mc.macroProtein],
+      ["carbs", `${n(meal.carbs_g)} ${spellUnit(lang, "g")}`, mc.macroCarbs],
+      ["fat", `${n(meal.fat_g)} ${spellUnit(lang, "g")}`, mc.macroFat],
     ] as const) {
       macroPage.append(mcardEl({ macro, value, label, centred: true }));
     }
     const nutrientPage = el("div", "mtilepage mcards p2");
     for (const tile of mealNutrientTiles(meal, lang)) {
+      // The satfat literal is split only for the typechecker: the kit's flat-card union does not
+      // distribute the four-icon union across `tile.icon`.
       const card = tile.icon === "satfat"
         ? mcardEl({ macro: "satfat", value: tile.value, label: tile.label, centred: true })
         : mcardEl({ macro: tile.icon, value: tile.value, label: tile.label, centred: true });
       nutrientPage.append(card);
     }
     tileTrack.append(macroPage, nutrientPage);
-    let tilePage = 0 as 0 | 1;
     const tileDotEls: HTMLButtonElement[] = [];
     const showTilePage = (to: 0 | 1): void => {
       tilePage = to;
@@ -688,7 +693,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       nutrientPage.setAttribute("aria-hidden", String(to !== 1));
       macroPage.toggleAttribute("inert", to !== 0);
       nutrientPage.toggleAttribute("inert", to !== 1);
-      for (const [i, d] of tileDotEls.entries()) d.classList.toggle("on", i === to);
+      for (const [i, d] of tileDotEls.entries()) {
+        d.classList.toggle("on", i === to);
+        d.setAttribute("aria-current", i === to ? "true" : "false");
+      }
     };
     const tileDots = el("div", "dots");
     for (const i of [0, 1] as const) {
@@ -703,6 +711,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     tiles.append(tileTrack, tileDots);
     // Pan under the finger, the trackpad, or ←/→; a drag past 40 px commits the page.
     let tileDrag: { x: number; id: number; moved: boolean } | null = null;
+    let swallowTileClick = false;
     tiles.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       tileDrag = { x: e.clientX, id: e.pointerId, moved: false };
@@ -712,6 +721,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       const dx = e.clientX - tileDrag.x;
       if (!tileDrag.moved && Math.abs(dx) > 8) {
         tileDrag.moved = true;
+        swallowTileClick = true;
         try { tiles.setPointerCapture(e.pointerId); } catch { /* the pointer is gone */ }
       }
       if (tileDrag.moved) {
@@ -735,6 +745,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       tileTrack.style.transition = "";
       tileTrack.style.transform = tilePage === 1 ? "translateX(-100%)" : "";
     });
+    tiles.addEventListener("click", (e) => {
+      if (swallowTileClick) { e.preventDefault(); e.stopPropagation(); swallowTileClick = false; }
+    }, true);
     let tileWheelAt = 0;
     tiles.addEventListener("wheel", (e) => {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
@@ -746,7 +759,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       if (e.key === "ArrowRight") { e.preventDefault(); showTilePage(1); }
       else if (e.key === "ArrowLeft") { e.preventDefault(); showTilePage(0); }
     });
-    showTilePage(0);
+    showTilePage(tilePage);
     sheet.append(tiles);
     // The health score is the SERVER'S (`MealRecord.healthScore`, S10): drawn, never computed here.
     if (meal.healthScore !== null) {
