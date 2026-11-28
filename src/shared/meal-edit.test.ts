@@ -4,7 +4,7 @@
 // and the meal's totals are the SERVER's job on an items-only patch (`editMeal` derives them).
 
 import { describe, expect, it } from "bun:test";
-import { mealEditParams, mealEditRequest, mealServings, scaledItem, servingsPreview } from "./meal-edit.ts";
+import { catalogPortions, itemAtGrams, itemAtPortion, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText, portionGrams, scaledItem, servingsPreview } from "./meal-edit.ts";
 import type { MealItem } from "./types.ts";
 
 const rice = (over: Partial<MealItem> = {}): MealItem => ({
@@ -35,6 +35,46 @@ describe("scaledItem — one ingredient at a new amount", () => {
     expect(scaledItem({ ...rice(), role: "cooking-fat" }, 300).role).toBe("cooking-fat");
     expect(scaledItem(rice(), 300).name_en).toBe("rice");
   });
+  it("scales a chosen portion's count with the grams, so meal servings keep the pair honest", () => {
+    const portion = { label: "cup", grams: 150 };
+    const s = scaledItem({ ...rice(), portion, portion_count: 1 }, 300);
+    expect(s.portion).toEqual(portion);
+    expect(s.portion_count).toBe(2);
+  });
+});
+
+describe("named portions on one ingredient", () => {
+  const cup = { label: "cup", grams: 150 };
+
+  it("reads portions only from a catalog-grounded item's stored snapshot", () => {
+    expect(catalogPortions({ ...rice(), portion: cup, portion_count: 2 })).toEqual([]);
+    expect(catalogPortions({ ...rice(), ref: "usda-sr:rice", food: { name: "Rice", source: "usda-sr", attribution: [], portions: [cup], per100: { kcal: 130, protein_g: 2.7, carbs_g: 28, fat_g: 0.3, satfat_g: 0.1, fiber_g: 0.4, sugar_g: 0.1, sodium_mg: 1 } } })).toEqual([cup]);
+  });
+
+  it("derives and formats a count as a decimal input, never a grammage", () => {
+    expect(portionCountFor({ ...rice(), grams: 300 }, cup)).toBe(2);
+    expect(portionCountFor({ ...rice(), grams: 151 }, cup)).toBeCloseTo(1.01, 5);
+    expect(portionCountText("en", 1.5)).toBe("1.5");
+    expect(portionCountText("en", 2)).toBe("2");
+  });
+
+  it("turns a portion and its count into the grams that remain the truth", () => {
+    expect(portionGrams(cup, 2)).toBe(300);
+    expect(portionGrams({ label: "tbsp", grams: 14.2 }, 1.5)).toBe(21.3);
+  });
+
+  it("scales the item at those grams and stores the measurement beside them", () => {
+    const next = itemAtPortion(rice(), cup, 2);
+    expect(next).toMatchObject({ grams: 300, kcal: 390, portion: cup, portion_count: 2 });
+    expect(next.protein_g).toBe(6);
+  });
+
+  it("returns to plain grams by dropping the measurement rather than letting it lie", () => {
+    const plain = itemAtGrams({ ...rice(), portion: cup, portion_count: 2 }, 180);
+    expect(plain.grams).toBe(180);
+    expect(plain).not.toHaveProperty("portion");
+    expect(plain).not.toHaveProperty("portion_count");
+  });
 });
 
 describe("mealEditRequest — the PATCH body is items, or null when nothing moved", () => {
@@ -50,6 +90,11 @@ describe("mealEditRequest — the PATCH body is items, or null when nothing move
   });
   it("sends the shortened list on a removal", () => {
     expect(mealEditRequest(MEAL, [salmon, broccoli])).toEqual({ items: [salmon, broccoli] });
+  });
+  it("a measurement alone is a change even when the grams it makes are unchanged", () => {
+    const portion = { label: "cup", grams: 150 };
+    const items = [salmon, { ...rice(), portion, portion_count: 1 }, broccoli];
+    expect(mealEditRequest(MEAL, items)).toEqual({ items });
   });
 });
 

@@ -68,6 +68,13 @@ type PhotoRequest = Pick<LogPhotoInput, "caption" | "capturedAt" | "receivedAt" 
 export const retryableMealUpdate = (input: MealUpdateRequest): boolean =>
   input.kind === "reread" || (input.kind === "ingredients" && input.edit.add === undefined);
 
+/** The oldest worker shape that may claim this update. Version 3 understands named portions on items; version 2 understands appends. */
+export const mealUpdateRequestVersion = (input: MealUpdateRequest): number => {
+  if (input.kind !== "ingredients") return 1;
+  const portioned = input.edit.items?.some((i) => i.portion !== undefined || i.portion_count !== undefined) === true;
+  return portioned || input.edit.add !== undefined ? HANDLERS["meal-update"].version : 1;
+};
+
 const HANDLERS: Record<JobKind, JobHandler> = {
   photo: {
     version: 1,
@@ -99,9 +106,9 @@ const HANDLERS: Record<JobKind, JobHandler> = {
     },
   },
   "meal-update": {
-    // Version 2 because an ingredient append is a shape version-1 workers would ignore rather than
-    // refuse, answering success for an edit they never applied.
-    version: 2,
+    // Version 3 because a named portion is a shape version-2 workers would store without its
+    // catalog-bound validation; version 2 was the same rolling-deploy guard for an append.
+    version: 3,
     // One change at a time per account (#1347): a meal-sent note's meal is only known mid-run,
     // so the group is the account — a second update waits wherever its meal turns out to be.
     grouped: true,
@@ -309,10 +316,10 @@ export async function queueMealUpdate(
   // The whole ACCOUNT is the group (#1347), not the meal: a chat-sent note's meal is named by the
   // router mid-run, so no enqueue-time meal key can hold it — and only one group an account has
   // also stops that job from running beside a bound update on the meal it resolves to.
-  // Only the append needs the new worker: overwrite jobs stay claimable by version 1 through a
-  // rolling deploy, while version-1 workers must never meet an `add` they would silently drop.
-  const requestVersion = input.kind === "ingredients" && input.edit.add !== undefined ? HANDLERS["meal-update"].version : 1;
-  const job = { clientId: input.clientId, kind: "meal-update", requestVersion,
+  // Only the shapes a newer worker understands opt out of version 1: overwrite jobs stay claimable
+  // through a rolling deploy, while an old worker must never meet an `add` it would silently drop
+  // or a portion it would store unvalidated.
+  const job = { clientId: input.clientId, kind: "meal-update", requestVersion: mealUpdateRequestVersion(input),
     request: input, step: 1, photos: [], group: userId };
   if (await deps.store.enqueueJob(userId, job)) wake();
   return { kind: "queued", jobId: input.clientId };

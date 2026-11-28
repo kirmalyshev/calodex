@@ -16,7 +16,7 @@
 // and a row made FROM the food is not the food.
 
 import {
-  MAX_MEAL_AMOUNT, MAX_SNAPSHOT_ATTRIBUTION, MAX_SNAPSHOT_ATTRIBUTIONS, MAX_SNAPSHOT_NAME, SNAPSHOT_MICROS,
+  MAX_MEAL_AMOUNT, MAX_PORTION_LABEL, MAX_SNAPSHOT_ATTRIBUTION, MAX_SNAPSHOT_ATTRIBUTIONS, MAX_SNAPSHOT_NAME, MAX_SNAPSHOT_PORTIONS, SNAPSHOT_MICROS,
   type FoodRef, type FoodSnapshot, type MealItem,
 } from "@eait/shared";
 import type { AnalyzedMeal } from "../llm/port.ts";
@@ -382,6 +382,7 @@ const foodSnapshot = (f: Complete): FoodSnapshot => ({
     })),
   },
   attribution: (f.attribution ?? []).slice(0, MAX_SNAPSHOT_ATTRIBUTIONS).map((t) => t.slice(0, MAX_SNAPSHOT_ATTRIBUTION)),
+  portions: f.portions.filter((p) => p.label.length > 0 && p.label.length <= MAX_PORTION_LABEL && Number.isFinite(p.grams) && p.grams > 0).slice(0, MAX_SNAPSHOT_PORTIONS),
 });
 
 /**

@@ -6970,6 +6970,13 @@
               "type": "string"
             },
             "description": "The row's own attribution texts, verbatim; `[]` for CC0."
+          },
+          "portions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodPortion"
+            },
+            "description": "The row's named servings, copied with the snapshot so an edit can measure in them. Absent on rows stored before portions existed."
           }
         },
         "required": [
@@ -7863,6 +7870,14 @@
             "type": "boolean",
             "const": true,
             "description": "The item came from numbers the user typed (#2088): its `grams` is a storage unit, not a weight anybody measured, so no surface may show it. Set by the server only."
+          },
+          "portion": {
+            "$ref": "#/components/schemas/FoodPortion",
+            "description": "The catalog measurement the user chose for this item — \"large\", \"tbsp\", \"slice\" — copied from the row `ref` names. Grams remain the truth: `grams` is `portion.grams × portion_count`, and this pair is how that amount is shown. Absent on a plain grams entry and on every row stored before portions existed."
+          },
+          "portion_count": {
+            "type": "number",
+            "description": "How many of `portion` the grams stand for. Meaningless without `portion`, and invalid without it at the boundary."
           },
           "ref": {
             "type": "string",
