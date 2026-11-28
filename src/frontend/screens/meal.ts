@@ -28,6 +28,7 @@ import {
   portionGrams, previewKcal, scaledItem, servingsPreview, nutritionOverrideItem,
 } from "../../shared/meal-edit.ts";
 import { initialPortionIndex, measuredItem } from "../measurement.ts";
+import { dayBudget } from "../../shared/budget.ts";
 import { mealDisplayName, mealNames } from "../../shared/meal-names.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
@@ -519,6 +520,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
    * verdicts. The bin PATCHes the item off the meal at once; Done PATCHes the grams —
    * `mealEditRequest` sends `{ items }` alone and a Done that moved nothing writes nothing.
    */
+  // The nested nutrition editor's "Out of {n} left today" is TODAY's remaining budget through the
+  // shared arithmetic (#3680) — never the meal's own day, which the words do not name, and never a
+  // client subtraction. draw() refreshes it before any panel can open; null hides the line.
+  let nutBudgetLeft: number | null = null;
   const ingredientPanel = (meal: MealRecord, index: number, day: DayResponse): { node: HTMLElement; focus: HTMLElement } => {
     const item = meal.items[index]!;
     const scrim = el("div", "mscrim");
@@ -790,7 +795,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       const staged = stagedNutrition !== null;
       srcCard.hidden = staged;
       if (measureBlock !== null) measureBlock.hidden = staged;
-      if (!item.typed) amountRow.hidden = staged ? amountRow.hidden : portionIndex !== null;
+      if (!item.typed) amountRow.hidden = staged || portionIndex !== null;
       if (wasK !== null) wasK.hidden = staged || gramsNow() === item.grams;
       kcalNow.textContent = stagedNutrition?.kcal !== undefined ? kn(stagedNutrition.kcal)
         : item.kcal !== undefined ? kn(item.kcal) : "";
@@ -808,7 +813,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     nutSpacer.setAttribute("aria-hidden", "true");
     nutSpacer.style.visibility = "hidden";
     nutHead.append(nutBack, el("span", "d d17", mc.phoneEditNutrition), nutSpacer);
-    const budget = el("p", "t13 m ingbudget", fill(mc.phoneNutritionLeftToday, { n: kn(Math.max(0, day.targets.kcal - day.totals.kcal)) }));
+    const budget = el("p", "t13 m ingbudget");
+    if (nutBudgetLeft !== null) budget.textContent = fill(mc.phoneNutritionLeftToday, { n: kn(nutBudgetLeft) });
+    else budget.hidden = true;
     const nutFields = el("div", "card ingnutfields");
     const nutInputs = {} as Record<NutritionField, HTMLInputElement>;
     const nutSpecs = [
@@ -880,7 +887,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     kcalOpen?.addEventListener("click", () => {
       const base = amountEdited(item);
       const seed = stagedNutrition ?? base;
-      nutInputs.kcal.value = seed.kcal === undefined ? "" : `${Math.round(seed.kcal)}`;
+      nutInputs.kcal.value = seed.kcal === undefined ? "" : `${seed.kcal}`;
       nutInputs.protein_g.value = seed.protein_g === undefined ? "" : `${seed.protein_g}`;
       nutInputs.carbs_g.value = seed.carbs_g === undefined ? "" : `${seed.carbs_g}`;
       nutInputs.fat_g.value = seed.fat_g === undefined ? "" : `${seed.fat_g}`;
@@ -1402,6 +1409,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     }
     activeMeal = found;
     viewing = day.date;
+    const budgetDay = ownDay.date === today ? ownDay : day.date === today ? day
+      : await api<DayResponse>(`/diary/day?date=${today}`).catch(() => null);
+    const budgetNow = budgetDay === null ? null : dayBudget(budgetDay, today, me?.profile.goal ?? null);
+    nutBudgetLeft = budgetNow === null ? null : budgetNow.state === "left" ? budgetNow.kcal : 0;
 
     clear(left);
     left.append(el("span", "lab", dateText(day.date)));

@@ -114,9 +114,11 @@ export function nutritionOverrideItem(
   delete display.portion;
   delete display.portion_count;
   delete (display as Partial<EditMealItem>).nutrition_override;
-  if (display.grams > 0 && display.kcal_per_100g !== undefined) {
-    const consistent = Math.abs((display.kcal_per_100g * display.grams) / 100 - nutrition.kcal!) < 0.5;
-    if (!consistent) delete display.kcal_per_100g;
+  // The server's own comparison (engine/meals.ts): the density-derived figure is rounded first,
+  // and any real difference is the typed figure winning — the density goes with the provenance.
+  if (display.grams > 0 && display.kcal_per_100g !== undefined && display.kcal !== undefined) {
+    const densityKcal = Math.round((display.kcal_per_100g * display.grams) / 100);
+    if (Math.abs(display.kcal - densityKcal) > 1e-9) delete display.kcal_per_100g;
   }
   return { write, display };
 }

@@ -389,11 +389,14 @@ test("Revert abandons a staged typed-nutrition draft before the ingredient save 
   await nutrition.locator(".ingnutrow").first().locator("input").fill("300");
   await nutrition.getByRole("button", { name: "Done" }).click();
   await expect(editor.locator(".ingmeasure")).toBeHidden();
+  // Typed figures are absolute: while they are staged there is no amount to scale them by, on any measurement.
+  await expect(editor.locator(".amlab", { hasText: "Amount" })).toBeHidden();
 
   await editor.getByRole("button", { name: "Edit Calories" }).click();
   await nutrition.getByRole("button", { name: "Revert" }).click();
   await expect(editor.locator(".ingmeasure")).toBeVisible();
   await expect(editor.locator(".ingsrc")).toBeVisible();
+  await expect(editor.locator(".amlab", { hasText: "Amount" })).toBeVisible();
   await expect(editor.locator(".ingkcal")).not.toContainText("300");
 });
 
