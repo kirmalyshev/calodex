@@ -56,8 +56,19 @@ test("the meal opens: photo, kcal, macro tiles, ingredients, verdicts, score", a
     await expect(dots.nth(i)).toHaveText(v.label);
     await expect(dots.nth(i)).toHaveClass(new RegExp(`\\bv ${v.tone}\\b`));
   }
-  // The macro tiles name their macros; the ingredient rows carry grams and their own kcal.
-  await expect(page.locator(".mcards .mcard")).toHaveCount(3);
+  // Page 1 is the macro trio; page 2 is the meal's four nutrient figures (ieat-app#3676).
+  await expect(page.locator(".mtilepage").first().locator(".mcard")).toHaveCount(3);
+  await expect(page.locator(".mtilepage").nth(1).locator(".mcard")).toHaveCount(4);
+  await page.getByRole("button", { name: "Page 2 of 2" }).click();
+  const micro = page.locator(".mtilepage").nth(1);
+  await expect(micro).toContainText("Fiber");
+  await expect(micro).toContainText("Sugar");
+  await expect(micro).toContainText("Sodium");
+  await expect(micro).toContainText("Sat fat");
+  await expect(micro).toContainText(`${Math.round(record.fiber_g)}g`);
+  await expect(micro).toContainText(`${Math.round(record.sugar_g)}g`);
+  await expect(micro).toContainText(`${Math.round(record.sodium_mg)}mg`);
+  await expect(micro).toContainText(`${Math.round(record.satfat_g)}g`);
   await expect(page.locator(".ing").first()).toBeVisible();
   await expect(page.locator(".ing").first()).toContainText("g");
   await expect(page.locator(".ing b").first()).toBeVisible();
@@ -197,7 +208,7 @@ test("an id that was never a meal reads gone the same way", async ({ inWebApp: p
 test("reduced motion: the detail is at its end state with nothing running", async ({ inWebApp: page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openMeal(page);
-  await expect(page.locator(".mcards .mcard")).toHaveCount(3);
+  await expect(page.locator(".mtilepage").first().locator(".mcard")).toHaveCount(3);
   expect(await page.evaluate<number>("document.getAnimations().length")).toBe(0);
   // And the drawn elements sit AT that end state — getAnimations() == 0 alone can't tell an
   // opacity:0 that never ran from a card that is up (#152).
