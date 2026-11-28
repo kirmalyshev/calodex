@@ -547,6 +547,18 @@ export async function editMeal(
     items = base.map((it, i) => (i === request.swap!.index ? swapped : it));
   }
 
+  // An append (ieat-app#3678): the same catalog resolution as a swap, at the grams the client
+  // asked for, added after every item edit above. Provenance is ours because the row is read here.
+  if (request.add !== undefined) {
+    const base = items ?? existing.items;
+    const food = await deps.store.foodById(request.add.ref);
+    const lang = (await deps.store.getProfile(userId))?.lang ?? "en";
+    const name = food === null ? "" : (lang === "de" ? food.name_de : lang === "en" ? food.name_en : food.names[lang]) ?? food.name;
+    const grounded = food === null || !(request.add.grams > 0) ? null : mealFromFood(food, request.add.grams, name)?.items[0];
+    if (!grounded) return { kind: "target-gone", on: "correction" };
+    items = [...base, grounded];
+  }
+
   // When a patch replaces the items but says nothing about a total, the total is DERIVED from the
   // items — `patch.kcal ?? existing.kcal` used to keep the old figure on top of new items, which
   // an items-only edit (the phone's and web's ingredient editors send `{ items }` alone) left

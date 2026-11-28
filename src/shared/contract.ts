@@ -1301,6 +1301,12 @@ export interface EditMealRequest {
    * `items`, to the index in the resulting list.
    */
   swap?: { index: number; ref: string };
+  /**
+   * Append the catalog row `ref` at `grams`, with no model in between (ieat-app#3678). The server
+   * reads the row's nutrition itself; a client cannot send a number the catalog does not carry.
+   * Applied after `items` and `swap`, to the end of the resulting list.
+   */
+  add?: { ref: string; grams: number };
   kcal?: number;
   protein_g?: number;
   carbs_g?: number;
@@ -1372,6 +1378,13 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
     if (Object.keys(w).some((k) => k !== "index" && k !== "ref")) return false;
     if (!Number.isInteger(w.index) || (w.index as number) < 0 || (w.index as number) >= MAX_MEAL_ITEMS) return false;
     if (typeof w.ref !== "string" || w.ref.length === 0 || w.ref.length > MAX_ITEM_NAME) return false;
+  }
+  if (b.add !== undefined) {
+    const a = b.add as Record<string, unknown> | null;
+    if (typeof a !== "object" || a === null || Array.isArray(a)) return false;
+    if (Object.keys(a).some((k) => k !== "ref" && k !== "grams")) return false;
+    if (typeof a.ref !== "string" || a.ref.length === 0 || a.ref.length > MAX_ITEM_NAME) return false;
+    if (!amount(a.grams) || a.grams === 0) return false;
   }
   if (b.items !== undefined) {
     if (!Array.isArray(b.items) || b.items.length > MAX_MEAL_ITEMS) return false;

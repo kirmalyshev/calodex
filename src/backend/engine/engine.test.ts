@@ -1215,6 +1215,13 @@ describe("editing the answer", () => {
     return res;
   }
 
+  const oliveOil = {
+    id: "usda-sr:olive-oil", source: "usda-sr", name: "Olive oil", name_de: "Olivenöl", name_en: "Olive oil",
+    names: {}, category: null, kcal_per_100g: 884, protein_g_per_100g: 0, carbs_g_per_100g: 0, fat_g_per_100g: 100,
+    satfat_g_per_100g: 14, fiber_g_per_100g: 0, sugar_g_per_100g: 0, sodium_mg_per_100g: 2,
+    nutrients: {}, portions: [], source_url: null, attribution: [],
+  } as unknown as FoodRef;
+
   it("applies a manual edit, flags it corrected, and recomputes totals", async () => {
     const userId = await onboard();
     const meal = await logged(userId);
@@ -1237,6 +1244,75 @@ describe("editing the answer", () => {
     if (out.kind !== "updated") throw new Error("expected updated");
     expect(out.analysis.verdicts.ldl).toBe("bad");
     expect(out.analysis.verdicts.ldl).not.toBe(before);
+  });
+
+  it("appends a catalog ingredient at its grams, with the server's nutrition and recomputed totals", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    expect(before.verdicts.weight).not.toBe("bad");
+
+    const out = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 200 } });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items).toHaveLength(before.items.length + 1);
+    const added = out.analysis.items.at(-1)!;
+    expect(added).toMatchObject({
+      name: "Olive oil", grams: 200, kcal: 1768, protein_g: 0, carbs_g: 0, fat_g: 200,
+      kcal_per_100g: 884, ref: oliveOil.id,
+    });
+    expect(added.food).toMatchObject({ source: "usda-sr", per100: { kcal: 884, satfat_g: 14 } });
+    expect(out.analysis.kcal).toBe(before.kcal + 1768);
+    expect(out.analysis.protein_g).toBeCloseTo(before.protein_g, 5);
+    expect(out.analysis.carbs_g).toBeCloseTo(before.carbs_g, 5);
+    expect(out.analysis.fat_g).toBeCloseTo(before.fat_g + 200, 5);
+    expect(out.analysis.verdicts.weight).toBe("bad");
+
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    expect(stored.items.at(-1)).toMatchObject({ ref: oliveOil.id, grams: 200, kcal: 1768 });
+    expect(stored.kcal).toBe(before.kcal + 1768);
+  });
+
+  it("keeps an added ingredient's provenance through a later items edit", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const added = await editMeal(deps, userId, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
+    if (added.kind !== "updated") throw new Error(`expected updated, got ${added.kind}`);
+
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const edited = await editMeal(deps, userId, meal.mealId, {
+      items: stored.items.map((i, ix) => ix === stored.items.length - 1 ? { ...i, grams: 60 } : i),
+    });
+    if (edited.kind !== "updated") throw new Error(`expected updated, got ${edited.kind}`);
+    const item = edited.analysis.items.at(-1)!;
+    expect(item).toMatchObject({ ref: oliveOil.id, grams: 60, kcal: 530 });
+    expect(item.food).toMatchObject({ source: "usda-sr" });
+  });
+
+  it("adds nothing for an unknown or incomplete catalog row", async () => {
+    await store.putFoodRefs([{ ...oliveOil, id: "usda-sr:incomplete", fat_g_per_100g: null } as unknown as FoodRef]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const before = (await store.getMeal(userId, meal.mealId))!;
+    for (const ref of ["usda-sr:missing", "usda-sr:incomplete"]) {
+      const out = await editMeal(deps, userId, meal.mealId, { add: { ref, grams: 30 } });
+      expect(out).toEqual({ kind: "target-gone", on: "correction" });
+    }
+    expect((await store.getMeal(userId, meal.mealId))!.items).toHaveLength(before.items.length);
+    expect((await store.getMeal(userId, meal.mealId))!.kcal).toBe(before.kcal);
+  });
+
+  it("cannot add an ingredient to another user's meal", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const a = await onboard();
+    const b = await onboard();
+    const meal = await logged(a);
+    const before = (await store.getMeal(a, meal.mealId))!;
+    const out = await editMeal(deps, b, meal.mealId, { add: { ref: oliveOil.id, grams: 30 } });
+    expect(out).toEqual({ kind: "target-gone", on: "correction" });
+    expect((await store.getMeal(a, meal.mealId))!.items).toHaveLength(before.items.length);
   });
 
   it("leaves unspecified fields alone", async () => {
