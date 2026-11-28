@@ -6444,6 +6444,23 @@
             "additionalProperties": false,
             "description": "Change what item `index` IS to the catalog row `ref` (a `food_ref` id from `GET /v1/foods`), at the item's own grams, with no model in between (ieat-app#2192). The server reads the row's nutrition itself; a client cannot send a number the catalog does not carry. Applied after `items`, to the index in the resulting list."
           },
+          "add": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "grams": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ref",
+              "grams"
+            ],
+            "additionalProperties": false,
+            "description": "Append the catalog row `ref` at `grams`, with no model in between (ieat-app#3678). The server reads the row's nutrition itself; a client cannot send a number the catalog does not carry. Applied after `items` and `swap`, to the end of the resulting list."
+          },
           "kcal": {
             "type": "number"
           },
