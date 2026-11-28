@@ -1129,7 +1129,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         b.setAttribute("aria-label", label);
         b.addEventListener("click", () => {
           btns.querySelectorAll("button").forEach((x) => { (x as HTMLButtonElement).disabled = true; });
-          rateMeal(meal.id, up).then(() => rate.remove(), () => {
+          rateMeal(meal.id, up).then(() => rate.remove()).catch((e: unknown) => {
+            console.error("rate meal failed", e);
+            // A meal gone (404) or a rate cap (429) can never succeed on retry: drop the card.
+            if (e instanceof ApiError && (e.status === 404 || e.status === 429)) { rate.remove(); return; }
             btns.querySelectorAll("button").forEach((x) => { (x as HTMLButtonElement).disabled = false; });
           });
         });
