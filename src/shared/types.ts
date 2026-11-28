@@ -419,6 +419,9 @@ export interface MealLabel {
 }
 
 /** A persisted meal row. */
+/** The thumb on a meal's analysis ("How did Calodex do?"). One per meal; a second write replaces the first. */
+export type MealRating = "up" | "down";
+
 /** `minutes` is one of {@link FOCUS_MINUTES}. A second write replaces the first. */
 export interface MealFocus {
   minutes: number;
@@ -457,6 +460,8 @@ export interface MealRecord extends MealAnalysis {
   photo_max_edge?: number | null;
   /** The phone break taken after this meal (ieat-app#2129): how long, and whether it was held to the end. Null until one is recorded; absent on bare rows. */
   focus?: MealFocus | null;
+  /** The thumb the eater gave this meal's analysis; null until rated (the app draws the rating card only then), absent on bare rows. */
+  rating?: MealRating | null;
   /** Set when the meal was read off a nutrition label (ieat-app#2087); null on every other meal. */
   label?: MealLabel | null;
   /**

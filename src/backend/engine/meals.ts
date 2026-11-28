@@ -879,6 +879,15 @@ export async function focusMeal(
 }
 
 /**
+ * `POST /v1/meals/:id/rating` — the thumb on the analysis ("How did Calodex do?"). Replaces any
+ * earlier one. Null when the meal is not the caller's (the store scopes `id AND user_id`). Free for
+ * every user: nothing here reads the entitlement, and no number or verdict is touched.
+ */
+export async function rateMeal(deps: EngineDeps, userId: string, mealId: string, up: boolean): Promise<MealRecord | null> {
+  return deps.store.updateMeal(userId, mealId, { rating: up ? "up" : "down" });
+}
+
+/**
  * A catalog row in its dry or raw state grounding an item the eater did not call raw or dry: the
  * density is the suspect number, so a smaller portion is the user offsetting it (couscous 180 → 80 g
  * against a 360 kcal/100 g dry row), not a portion preference — and must not train the prior (#2189).

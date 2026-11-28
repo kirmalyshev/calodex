@@ -78,13 +78,17 @@ const get = (p: string, token?: string) =>
   handle(new Request(url(p), { headers: token ? { authorization: `Bearer ${token}` } : {} }));
 
 /** A meal on the record, bypassing the analysis path — for tests about what HOLDS one. */
-const seedMeal = (userId: string) => store.insertMeal({
-  id: crypto.randomUUID(), user_id: userId, ts: new Date().toISOString(), date: localDate("Europe/Berlin"),
+const seedMeal = async (userId: string) => {
+  const id = crypto.randomUUID();
+  await store.insertMeal({
+  id, user_id: userId, ts: new Date().toISOString(), date: localDate("Europe/Berlin"),
   isFood: true, items: [{ name: "Rice", grams: 200 }, { name: "Chicken", grams: 150 }],
   kcal: 500, protein_g: 40, carbs_g: 56, fat_g: 8, satfat_g: 2, fiber_g: 1, sugar_g: 0.1,
   sodium_mg: 400, verdicts: { weight: "good" }, healthScore: null, confidence: "high", notes: "", corrected: false,
   model: "test",
-});
+  });
+  return { id };
+};
 
 /**
  * Register a device, sign it in with Google, and complete onboarding. Returns the bearer token.
@@ -2842,5 +2846,39 @@ describe("meal-changed over HTTP (ieat-app#2695)", () => {
     const res = await post(ROUTES.messages, { text: "only half of it", focusMealId: logged.mealId }, token);
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ error: "meal-changed" });
+  });
+});
+
+describe("POST /v1/meals/:id/rating", () => {
+  it("stores the thumb on the meal, the last write wins, and the meal reads it back", async () => {
+    const token = await session();
+    const userId = (await store.userIdForToken(token))!;
+    const meal = await seedMeal(userId);
+    expect((await store.getMeal(userId, meal.id))!.rating ?? null).toBeNull();
+
+    const down = await post(ROUTES.mealRating(meal.id), { up: false }, token);
+    expect(down.status).toBe(200);
+    expect(await down.json()).toMatchObject({ id: meal.id, rating: "down" });
+
+    const up = await post(ROUTES.mealRating(meal.id), { up: true }, token);
+    expect(await up.json()).toMatchObject({ id: meal.id, rating: "up" });
+    expect((await store.getMeal(userId, meal.id))!.rating).toBe("up");
+  });
+
+  it("404s another account's meal and rates nothing", async () => {
+    const owner = await session();
+    const ownerId = (await store.userIdForToken(owner))!;
+    const meal = await seedMeal(ownerId);
+    expect((await post(ROUTES.mealRating(meal.id), { up: true }, await session())).status).toBe(404);
+    expect((await store.getMeal(ownerId, meal.id))!.rating ?? null).toBeNull();
+  });
+
+  it("400s a body that is not { up: boolean }, and 401s without a token", async () => {
+    const token = await session();
+    const meal = await seedMeal((await store.userIdForToken(token))!);
+    for (const body of [{}, { up: "yes" }, { up: 1 }, null, [], { up: true, extra: 1 }]) {
+      expect((await post(ROUTES.mealRating(meal.id), body, token)).status).toBe(400);
+    }
+    expect((await post(ROUTES.mealRating(meal.id), { up: true })).status).toBe(401);
   });
 });
