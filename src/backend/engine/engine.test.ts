@@ -1617,6 +1617,25 @@ describe("editing the answer", () => {
     expect(out.analysis.sodium_mg).toBe(meal.analysis.sodium_mg);
   });
 
+  it("treats amounts exchanged between rows as a physical edit, not a reorder", async () => {
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const stored = meal.analysis.items;
+    expect(stored[0]!.grams).not.toBe(stored[1]!.grams);
+    const first = {
+      ...stored[0]!, grams: stored[1]!.grams,
+      kcal: (stored[0]!.kcal ?? 0) + 100, nutrition_override: true as const,
+    };
+    const second = { ...stored[1]!, grams: stored[0]!.grams };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [first, second, ...stored.slice(2)] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    const ratio = out.analysis.kcal / meal.analysis.kcal;
+    expect(ratio).not.toBe(1);
+    expect(out.analysis.satfat_g).toBeCloseTo(meal.analysis.satfat_g * ratio, 1);
+  });
+
   it("keeps typed provenance on its own row when a batch prepends another", async () => {
     const userId = await onboard();
     const loggedNumbers = await logNumbersMeal(deps, userId, { name: "shake", kcal: 400, protein_g: 30, fat_g: 10, carbs_g: 40 });

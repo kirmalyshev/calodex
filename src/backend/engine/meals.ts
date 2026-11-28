@@ -660,12 +660,16 @@ export async function editMeal(
   const addedMicros = addedItem === undefined ? {} : catalogMicros([addedItem]);
   const tenth = (n: number): number => Math.round(n * 10) / 10;
   const nutritionOverride = patch.items?.some((i) => i.nutrition_override === true) === true;
-  // Reordering rows is not physical. Items carry no ids, so the fallback reads the grams as a
-  // multiset: a moved amount, an insertion and a deletion change it, a reorder does not.
+  // Reordering rows is not physical, but rows carry no ids. Pair each amount with the row evidence
+  // a reorder moves unchanged — names, repertoire key and role — and compare those pairs as a
+  // multiset. Bare grams cannot do it: two rows exchanging 100g and 200g leave the same gram
+  // multiset while the plate physically changed. A renamed row cannot be told apart from an edit
+  // and takes the scaling fallback, which is the safe direction.
+  const amountKey = (item: MealItem): string => JSON.stringify([item.name, item.name_en ?? null, item.role ?? null, item.typed === true, item.grams]);
   const sameAmounts = derivationItems !== undefined && derivationItems.length === existing.items.length && (() => {
-    const before = existing.items.map((item) => item.grams).sort((a, b) => a - b);
-    const after = derivationItems.map((item) => item.grams).sort((a, b) => a - b);
-    return after.every((grams, ix) => grams === before[ix]);
+    const before = existing.items.map(amountKey).sort();
+    const after = derivationItems.map(amountKey).sort();
+    return after.every((key, ix) => key === before[ix]);
   })();
   const physicalEdit = derivationItems !== undefined && (request.swap !== undefined || !sameAmounts);
   const scaled = (sent: number | undefined, kept: number, micro: keyof typeof addedMicros): number => {
