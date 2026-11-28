@@ -2015,9 +2015,9 @@ describe("editing the answer", () => {
     const userId = await onboard();
     const meal = await logged(userId);
     const zone = deps.config.timezone;
-    const early = await redateMeal(deps, userId, meal.mealId, 0, { time: "00:01" });
+    const early = await redateMeal(deps, userId, meal.mealId, 0, { time: "00:00" });
     if (early.kind !== "redated") throw new Error("expected redated");
-    expect(localTime(zone, new Date((await store.getMeal(userId, meal.mealId))!.ts))).toBe("00:01");
+    expect(localTime(zone, new Date((await store.getMeal(userId, meal.mealId))!.ts))).toBe("00:00");
     const at = new Date();
     const late = await redateMeal(deps, userId, meal.mealId, 0, { time: "23:59", at });
     if (late.kind !== "redated") throw new Error("expected redated");
