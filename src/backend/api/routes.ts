@@ -15,7 +15,7 @@
 //    encoder cannot drift.
 
 import {
-  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, PHOTO_MAX_EDGE_MAX, PHOTO_MAX_EDGE_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRedateMealRequest, isSaveMealRequest, parseNumbersLogRequest,
+  IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, NDJSON, OUTCOME_UNKNOWN, PHOTO_COMPRESSION_MAX, PHOTO_COMPRESSION_MIN, PHOTO_MAX_EDGE_MAX, PHOTO_MAX_EDGE_MIN, RATE_LIMITED, REFUSAL_STATUS, ROUTES, type JobsFilter, isEditMealRequest, isFocusMealRequest, isMealUpdateRequest, isRateMealRequest, isRedateMealRequest, isSaveMealRequest, parseNumbersLogRequest,
   type AuthDeviceRequest, type AuthDeviceResponse, type AuthEmailCodeRequest, type AuthEmailVerifyRequest, type AuthProviderRequest,
   type AppendLinesRequest, type AppendLinesResponse, type AuthProviderResponse, type IdentitiesResponse, type Lang, type RedateMealResponse, type SaveMealResponse, type SavedMealsResponse,
   type UnlinkResponse, type EditMealResult,
@@ -42,7 +42,7 @@ import {
   EMAIL_ADDRESS, normalizeEmail,
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
   attachPhotos, attributeInstall, recordPushOpen, recordPushDelivered, pushConsent, setPushConsent,
-  reanalyzeMeal, redateMeal, focusMeal, logSavedMeal, saveMealFromLog, followPhotoJob, listJobs, photoJob, queuePhoto, queueMealUpdate, removePhotoJob,
+  reanalyzeMeal, redateMeal, focusMeal, rateMeal, logSavedMeal, saveMealFromLog, followPhotoJob, listJobs, photoJob, queuePhoto, queueMealUpdate, removePhotoJob,
   foodSearch, productByBarcode, redeemReferral, shareReferral,
 } from "../engine/index.ts";
 import { analyticsRequestOf } from "../engine/analytics.ts";
@@ -117,6 +117,7 @@ export const STREAM_KEEPALIVE_MS = 5_000;
 const REANALYZE_PATH = /^\/v1\/meals\/([^/]+)\/reanalyze$/;
 const REDATE_PATH = /^\/v1\/meals\/([^/]+)\/redate$/;
 const FOCUS_PATH = /^\/v1\/meals\/([^/]+)\/focus$/;
+const RATING_PATH = /^\/v1\/meals\/([^/]+)\/rating$/;
 const SAVED_LOG_PATH = /^\/v1\/saved-meals\/([^/]+)\/log$/;
 const SAVED_PATH = /^\/v1\/saved-meals\/([^/]+)$/;
 /** `POST /v1/meals/:id/photos` — one segment shorter than the GET that reads one by position. */
@@ -1171,6 +1172,15 @@ export function createRouter(
         const body: unknown = await req.json();
         if (!isFocusMealRequest(body)) return json({ error: "bad-focus" }, 400);
         const meal = await focusMeal(deps, userId, decodeURIComponent(focusMatch[1]!), { minutes: body.minutes, completed: body.completed });
+        return meal ? json(meal) : json({ error: "not found" }, 404);
+      }
+      const ratingMatch = RATING_PATH.exec(pathname);
+      if (req.method === "POST" && ratingMatch) {
+        const wait = limit(req, peer, "meal-rating", deps.config.linesRateLimitPerHour, HOUR);
+        if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
+        const body: unknown = await req.json();
+        if (!isRateMealRequest(body)) return json({ error: "bad-rating" }, 400);
+        const meal = await rateMeal(deps, userId, decodeURIComponent(ratingMatch[1]!), body.up);
         return meal ? json(meal) : json({ error: "not found" }, 404);
       }
       if (pathname === "/v1/saved-meals" && req.method === "GET") {
