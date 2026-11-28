@@ -27,6 +27,9 @@ export interface MealCopy {
    * `phone/meal-{menu,delete,edit,edited}.html`.
    */
   sheetWhen: string;
+  /** The time chip's picker (calodex_app#3682): the accessible names of its day and time fields. */
+  whenDay: string;
+  whenTime: string;
   /** The three macro tiles' labels (web + phone `meal.html`), under each figure. */
   macroProtein: string;
   macroCarbs: string;
@@ -216,6 +219,8 @@ export interface MealCopy {
 export const MEAL_COPY: Localized<MealCopy> = {
   en: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Day",
+    whenTime: "Time",
     macroProtein: "protein",
     macroCarbs: "carbs",
     macroFat: "fat",
@@ -300,6 +305,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   fr: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Jour",
+    whenTime: "Heure",
     macroProtein: "protéines",
     macroCarbs: "glucides",
     macroFat: "lipides",
@@ -384,6 +391,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   de: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Tag",
+    whenTime: "Uhrzeit",
     macroProtein: "Protein",
     macroCarbs: "Kohlenhydrate",
     macroFat: "Fett",
@@ -468,6 +477,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   it: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Giorno",
+    whenTime: "Ora",
     macroProtein: "proteine",
     macroCarbs: "carboidrati",
     macroFat: "grassi",
@@ -552,6 +563,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   es: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Día",
+    whenTime: "Hora",
     macroProtein: "proteína",
     macroCarbs: "carbohidratos",
     macroFat: "grasas",
@@ -636,6 +649,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   vi: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Ngày",
+    whenTime: "Giờ",
     macroProtein: "đạm",
     macroCarbs: "tinh bột",
     macroFat: "chất béo",
@@ -720,6 +735,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   id: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Hari",
+    whenTime: "Waktu",
     macroProtein: "protein",
     macroCarbs: "karbohidrat",
     macroFat: "lemak",
@@ -804,6 +821,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   ru: {
     sheetWhen: "{day} · {time}",
+    whenDay: "День",
+    whenTime: "Время",
     macroProtein: "белок",
     macroCarbs: "углеводы",
     macroFat: "жиры",
@@ -888,6 +907,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   sq: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dita",
+    whenTime: "Ora",
     macroProtein: "proteinë",
     macroCarbs: "karbohidrate",
     macroFat: "yndyrë",
@@ -972,6 +993,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   bg: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Ден",
+    whenTime: "Час",
     macroProtein: "протеин",
     macroCarbs: "въглехидрати",
     macroFat: "мазнини",
@@ -1056,6 +1079,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   te: {
     sheetWhen: "{day} · {time}",
+    whenDay: "రోజు",
+    whenTime: "సమయం",
     macroProtein: "ప్రోటీన్",
     macroCarbs: "కార్బ్స్",
     macroFat: "కొవ్వు",
@@ -1140,6 +1165,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   ta: {
     sheetWhen: "{day} · {time}",
+    whenDay: "நாள்",
+    whenTime: "நேரம்",
     macroProtein: "புரதம்",
     macroCarbs: "கார்ப்ஸ்",
     macroFat: "கொழுப்பு",
@@ -1224,6 +1251,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   pa: {
     sheetWhen: "{day} · {time}",
+    whenDay: "ਦਿਨ",
+    whenTime: "ਸਮਾਂ",
     macroProtein: "ਪ੍ਰੋਟੀਨ",
     macroCarbs: "ਕਾਰਬਸ",
     macroFat: "ਫ਼ੈਟ",
@@ -1308,6 +1337,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   or: {
     sheetWhen: "{day} · {time}",
+    whenDay: "ଦିନ",
+    whenTime: "ସମୟ",
     macroProtein: "ପ୍ରୋଟିନ୍",
     macroCarbs: "କାର୍ବସ୍",
     macroFat: "ଫ୍ୟାଟ୍",
@@ -1392,6 +1423,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   mr: {
     sheetWhen: "{day} · {time}",
+    whenDay: "दिवस",
+    whenTime: "वेळ",
     macroProtein: "प्रोटीन",
     macroCarbs: "कार्ब्स",
     macroFat: "फॅट",
@@ -1476,6 +1509,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   ml: {
     sheetWhen: "{day} · {time}",
+    whenDay: "ദിവസം",
+    whenTime: "സമയം",
     macroProtein: "പ്രോട്ടീൻ",
     macroCarbs: "കാർബ്സ്",
     macroFat: "കൊഴുപ്പ്",
@@ -1560,6 +1595,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   kn: {
     sheetWhen: "{day} · {time}",
+    whenDay: "ದಿನ",
+    whenTime: "ಸಮಯ",
     macroProtein: "ಪ್ರೋಟೀನ್",
     macroCarbs: "ಕಾರ್ಬ್ಸ್",
     macroFat: "ಕೊಬ್ಬು",
@@ -1644,6 +1681,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   gu: {
     sheetWhen: "{day} · {time}",
+    whenDay: "દિવસ",
+    whenTime: "સમય",
     macroProtein: "પ્રોટીન",
     macroCarbs: "કાર્બ્સ",
     macroFat: "ફેટ",
@@ -1728,6 +1767,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   bn: {
     sheetWhen: "{day} · {time}",
+    whenDay: "দিন",
+    whenTime: "সময়",
     macroProtein: "প্রোটিন",
     macroCarbs: "কার্বস",
     macroFat: "ফ্যাট",
@@ -1812,6 +1853,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   "pt-PT": {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dia",
+    whenTime: "Hora",
     macroProtein: "proteína",
     macroCarbs: "hidratos",
     macroFat: "gordura",
@@ -1896,6 +1939,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   ms: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Hari",
+    whenTime: "Masa",
     macroProtein: "protein",
     macroCarbs: "karbohidrat",
     macroFat: "lemak",
@@ -1980,6 +2025,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   ca: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dia",
+    whenTime: "Hora",
     macroProtein: "proteïna",
     macroCarbs: "carbohidrats",
     macroFat: "greix",
@@ -2064,6 +2111,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   sl: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dan",
+    whenTime: "Ura",
     macroProtein: "beljakovine",
     macroCarbs: "ogljikovi hidrati",
     macroFat: "maščobe",
@@ -2148,6 +2197,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   hr: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dan",
+    whenTime: "Vrijeme",
     macroProtein: "proteini",
     macroCarbs: "ugljikohidrati",
     macroFat: "masti",
@@ -2232,6 +2283,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   sk: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Deň",
+    whenTime: "Čas",
     macroProtein: "bielkoviny",
     macroCarbs: "sacharidy",
     macroFat: "tuky",
@@ -2316,6 +2369,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   no: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dag",
+    whenTime: "Tid",
     macroProtein: "protein",
     macroCarbs: "karbohydrater",
     macroFat: "fett",
@@ -2400,6 +2455,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   fi: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Päivä",
+    whenTime: "Aika",
     macroProtein: "proteiini",
     macroCarbs: "hiilihydraatit",
     macroFat: "rasva",
@@ -2484,6 +2541,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   da: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dag",
+    whenTime: "Tid",
     macroProtein: "protein",
     macroCarbs: "kulhydrater",
     macroFat: "fedt",
@@ -2568,6 +2627,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   hu: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Nap",
+    whenTime: "Idő",
     macroProtein: "fehérje",
     macroCarbs: "szénhidrát",
     macroFat: "zsír",
@@ -2652,6 +2713,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   el: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Ημέρα",
+    whenTime: "Ώρα",
     macroProtein: "πρωτεΐνη",
     macroCarbs: "υδατάνθρακες",
     macroFat: "λιπαρά",
@@ -2736,6 +2799,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   ro: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Zi",
+    whenTime: "Ora",
     macroProtein: "proteine",
     macroCarbs: "carbohidrați",
     macroFat: "grăsimi",
@@ -2820,6 +2885,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   cs: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Den",
+    whenTime: "Čas",
     macroProtein: "bílkoviny",
     macroCarbs: "sacharidy",
     macroFat: "tuky",
@@ -2904,6 +2971,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   hi: {
     sheetWhen: "{day} · {time}",
+    whenDay: "दिन",
+    whenTime: "समय",
     macroProtein: "प्रोटीन",
     macroCarbs: "कार्ब्स",
     macroFat: "फ़ैट",
@@ -2988,6 +3057,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   th: {
     sheetWhen: "{day} · {time}",
+    whenDay: "วัน",
+    whenTime: "เวลา",
     macroProtein: "โปรตีน",
     macroCarbs: "คาร์บ",
     macroFat: "ไขมัน",
@@ -3072,6 +3143,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   sv: {
     sheetWhen: "{day} · {time}",
+    whenDay: "Dag",
+    whenTime: "Tid",
     macroProtein: "protein",
     macroCarbs: "kolhydrater",
     macroFat: "fett",
@@ -3156,6 +3229,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
   },
   uk: {
     sheetWhen: "{day} · {time}",
+    whenDay: "День",
+    whenTime: "Час",
     macroProtein: "білок",
     macroCarbs: "вуглеводи",
     macroFat: "жири",
@@ -3245,6 +3320,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "Niets gevonden. Probeer een ander woord.",
     phoneSwapFailed: "Dat is niet gelukt. Er is niets veranderd.",
     sheetWhen: "{day} · {time}",
+    whenDay: "Dag",
+    whenTime: "Tijd",
     macroProtein: "eiwit",
     macroCarbs: "koolhydraten",
     macroFat: "vet",
@@ -3329,6 +3406,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "Nic nie pasuje. Spróbuj innego słowa.",
     phoneSwapFailed: "To nie przeszło. Nic się nie zmieniło.",
     sheetWhen: "{day} · {time}",
+    whenDay: "Dzień",
+    whenTime: "Godzina",
     macroProtein: "białko",
     macroCarbs: "węglowodany",
     macroFat: "tłuszcz",
@@ -3413,6 +3492,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "Eşleşen bir şey yok. Başka bir kelime dene.",
     phoneSwapFailed: "Bu iletilemedi. Hiçbir şey değişmedi.",
     sheetWhen: "{day} · {time}",
+    whenDay: "Gün",
+    whenTime: "Saat",
     macroProtein: "protein",
     macroCarbs: "karbonhidrat",
     macroFat: "yağ",
@@ -3497,6 +3578,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "沒有符合的結果。換個詞試試。",
     phoneSwapFailed: "沒有成功送出。沒有任何變更。",
     sheetWhen: "{day} · {time}",
+    whenDay: "日期",
+    whenTime: "時間",
     macroProtein: "蛋白質",
     macroCarbs: "碳水",
     macroFat: "脂肪",
@@ -3581,6 +3664,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "没有匹配的结果。换个词试试。",
     phoneSwapFailed: "没有成功。什么都没变。",
     sheetWhen: "{day} · {time}",
+    whenDay: "日期",
+    whenTime: "时间",
     macroProtein: "蛋白质",
     macroCarbs: "碳水",
     macroFat: "脂肪",
@@ -3665,6 +3750,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "일치하는 항목이 없어요. 다른 단어로 시도해 보세요.",
     phoneSwapFailed: "저장되지 않았어요. 아무것도 바뀌지 않았어요.",
     sheetWhen: "{day} · {time}",
+    whenDay: "날짜",
+    whenTime: "시간",
     macroProtein: "단백질",
     macroCarbs: "탄수화물",
     macroFat: "지방",
@@ -3749,6 +3836,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "一致するものがありません。別の言葉で試してください。",
     phoneSwapFailed: "送信できませんでした。何も変更されていません。",
     sheetWhen: "{day} · {time}",
+    whenDay: "日付",
+    whenTime: "時刻",
     macroProtein: "タンパク質",
     macroCarbs: "炭水化物",
     macroFat: "脂質",
@@ -3833,6 +3922,8 @@ export const MEAL_COPY: Localized<MealCopy> = {
     phoneSwapNone: "Nada encontrado. Tente outra palavra.",
     phoneSwapFailed: "Não deu certo. Nada mudou.",
     sheetWhen: "{day} · {time}",
+    whenDay: "Dia",
+    whenTime: "Hora",
     macroProtein: "proteína",
     macroCarbs: "carboidratos",
     macroFat: "gordura",

@@ -1487,6 +1487,9 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
  */
 export type EditMealResponse = MealUpdated;
 
+/** How many days back a meal can be moved (the chat re-date's bound and the day picker's): the server clamps to it. */
+export const MAX_DAY_OFFSET = 7;
+
 /**
  * `POST /v1/meals/:id/redate` — "Move to yesterday", as an offset: `1` is yesterday, `0` a no-op,
  * and the bound is the chat re-date's own (`MAX_DAY_OFFSET`), clamped in the engine rather

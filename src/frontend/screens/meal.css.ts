@@ -132,6 +132,12 @@ export const mealCss = `
 .nmfield:focus-visible{outline:none;box-shadow:0 0 0 2px var(--accent)}
 .nmfield::placeholder{color:var(--faint)}
 .nmerr{margin:0;color:var(--bad)}
+select.nmfield{appearance:none;-webkit-appearance:none}
+/* The time chip under the meal name (calodex_app#3682). */
+.card button.mwhen{margin-top:4px;min-height:44px;padding:0;background:none;border:0;font:inherit;font-size:13px;color:var(--muted);text-align:left;cursor:pointer}
+.card button.mwhen:hover{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
+.card button.mwhen:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mdet.updating .mwhen{pointer-events:none}
 
 /* The servings chip beside the meal name, and the stepper it opens (#3677). */
 .mtitlerow{align-items:center;gap:8px;flex-wrap:wrap}
