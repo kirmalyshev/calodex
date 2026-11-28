@@ -218,6 +218,14 @@ export interface MealRedated {
 /** A write refused because the meal's numbers changed under it (ieat-app#2695). A member of `Refusal`: its status comes from `REFUSAL_STATUS` (409) and `streamEnd`/`isRefusal` carry it with no special case. */
 export type MealChanged = Extract<Refusal, { kind: "meal-changed" }>;
 
+/** A catalog ingredient would put the meal past `MAX_MEAL_ITEMS` (ieat-app#3678). Its own kind, not the photo cap's `too-many`: a settled job carries no second discriminator. Not a `Refusal` union member: it is this edit's state, not a turn or account refusal, so a route encodes it itself. */
+export interface MealItemsFull { kind: "meal-items-full"; limit: number }
+
+/** The catalog row an edit or log names is missing or too incomplete to ground (ieat-app#3678). */
+export interface UnknownFood { kind: "unknown-food" }
+
+export type EditMealResult = MealUpdated | TargetGone | MealChanged | MealItemsFull | UnknownFood;
+
 export type HandleTextResult =
   | Answered
   | MealProposed

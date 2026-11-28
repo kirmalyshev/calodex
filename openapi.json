@@ -1385,6 +1385,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "description": "Required when the edit carries `add`: the key makes a retried append replay rather than add a second row.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -1420,6 +1429,16 @@
           },
           "401": {
             "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -6442,7 +6461,24 @@
               "ref"
             ],
             "additionalProperties": false,
-            "description": "Change what item `index` IS to the catalog row `ref` (a `food_ref` id from `GET /v1/foods`), at the item's own grams, with no model in between (ieat-app#2192). The server reads the row's nutrition itself; a client cannot send a number the catalog does not carry. Applied after `items`, to the index in the resulting list."
+            "description": "Change what item `index` IS to the catalog row `ref` (a `food_ref` id from `GET /v1/foods`), at the item's own grams, with no model in between (ieat-app#2192). The server reads the row's nutrition itself; a client cannot send a number the catalog does not carry. A row missing or too incomplete to ground is `unknown-food`. Applied after `items`, to the index in the resulting list."
+          },
+          "add": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "grams": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ref",
+              "grams"
+            ],
+            "additionalProperties": false,
+            "description": "Append the catalog row `ref` at `grams`, with no model in between (ieat-app#3678). The server reads the row's nutrition itself; a client cannot send the appended item's nutrient numbers. Grams carry the food log's ceiling ( {@link  FOOD_LOG_MAX_GRAMS } ), not the edit body's looser one. A row missing or too incomplete to ground is `unknown-food`. Applied after `items` and `swap`, to the end of the resulting list. A synchronous PATCH carrying `add` must carry  {@link  IDEMPOTENCY_KEY } : appending is not an overwrite, and the key is what makes a retried gesture replay rather than append a second row. The queued update route already requires its `clientId` for the same reason."
           },
           "kcal": {
             "type": "number"
@@ -6474,20 +6510,11 @@
           }
         },
         "additionalProperties": false,
-        "description": "`PATCH /v1/meals/:id` — the manual edit. The other half of \"you can edit the LLM's answer\", alongside the natural-language path through `/v1/messages`.\n\nThe client sends the numbers it wants stored. It does NOT send `verdicts`, and the field does not exist on this type: verdicts are recomputed server-side from the user's caps after every edit (`verdictsFromTargets` → `visibleVerdicts`). A client that could set them could paint \"good\" over a meal that blows a medical cap, and the person reading that card declared a medical restriction."
+        "description": "`PATCH /v1/meals/:id` — the manual edit. The other half of \"you can edit the LLM's answer\", alongside the natural-language path through `/v1/messages`.\n\nThe client sends the numbers it wants stored. It does NOT send `verdicts`, and the field does not exist on this type: verdicts are recomputed server-side from the user's caps after every edit (`verdictsFromTargets` → `visibleVerdicts`). A client that could set them could paint \"good\" over a meal that blows a medical cap, and the person reading that card declared a medical restriction. Sent beside `items`, `swap` or `add`, an explicit total still wins over the total derived from the resulting items — the appended row's included — because that is what the manual override is."
       },
       "EditMealResponse": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/MealUpdated"
-          },
-          {
-            "$ref": "#/components/schemas/TargetGone"
-          },
-          {
-            "$ref": "#/components/schemas/MealChanged"
-          }
-        ]
+        "$ref": "#/components/schemas/MealUpdated",
+        "description": "The PATCH's 200 body. Every other engine outcome is encoded as the route's error body and status (`unknown-food` 404, `target-gone`/`meal-changed` 409, `meal-items-full` 400), never as a 200 carrying a failure kind; the unencoded union stays internal as `EditMealResult` and is what a queued meal update settles verbatim."
       },
       "Entitlement": {
         "type": "object",
@@ -7765,20 +7792,6 @@
         "additionalProperties": false,
         "description": "The analyzer's validated output for one photo. No photo path — the bytes live in `meal_photos`, reached by meal id."
       },
-      "MealChanged": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "const": "meal-changed"
-          }
-        },
-        "required": [
-          "kind"
-        ],
-        "additionalProperties": false,
-        "description": "A write refused because the meal's numbers changed under it (ieat-app#2695). A member of `Refusal`: its status comes from `REFUSAL_STATUS` (409) and `streamEnd`/`isRefusal` carry it with no special case."
-      },
       "MealFocus": {
         "type": "object",
         "properties": {
@@ -7859,6 +7872,24 @@
         ],
         "additionalProperties": false,
         "description": "One food on the plate.\n\nThe optional fields are written `?: T | undefined` rather than `?: T` on purpose, despite `exactOptionalPropertyTypes`. An item crosses two JSON boundaries — the analyzer's response and this API's — and \"absent\" and \"present but undefined\" are the same value on the far side of both. Claiming the stricter type is what forces a cast at the parser, and a cast at the parser is how a missing field reached a phone once already. Every consumer here already tests `!== undefined`."
+      },
+      "MealItemsFull": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "meal-items-full"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "limit"
+        ],
+        "additionalProperties": false,
+        "description": "A catalog ingredient would put the meal past `MAX_MEAL_ITEMS` (ieat-app#3678). Its own kind, not the photo cap's `too-many`: a settled job carries no second discriminator. Not a `Refusal` union member: it is this edit's state, not a turn or account refusal, so a route encodes it itself."
       },
       "MealLabel": {
         "type": "object",
@@ -8247,10 +8278,16 @@
             "$ref": "#/components/schemas/HandleTextResult"
           },
           {
+            "$ref": "#/components/schemas/MealItemsFull"
+          },
+          {
+            "$ref": "#/components/schemas/UnknownFood"
+          },
+          {
             "$ref": "#/components/schemas/OutcomeUnknown"
           }
         ],
-        "description": "A queued update's last line: what the same change answers when it is not queued."
+        "description": "A queued update's last line: the engine's outcome verbatim, including kinds the sync route encodes as error statuses."
       },
       "MealUpdateRequest": {
         "anyOf": [
@@ -11877,6 +11914,20 @@
           "metric",
           "imperial"
         ]
+      },
+      "UnknownFood": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "unknown-food"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false,
+        "description": "The catalog row an edit or log names is missing or too incomplete to ground (ieat-app#3678)."
       },
       "UnlinkResponse": {
         "type": "object",

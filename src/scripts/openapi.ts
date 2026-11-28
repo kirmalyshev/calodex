@@ -43,6 +43,9 @@ function operation(e: Endpoint) {
     ...Object.entries(e.query ?? {}).map(([name, description]) => ({
       name, in: "query", required: false, description, schema: { type: "string" },
     })),
+    ...Object.entries(e.headers ?? {}).map(([name, description]) => ({
+      name, in: "header", required: false, description, schema: { type: "string" },
+    })),
   ];
   if (e.stream) {
     parameters.push({

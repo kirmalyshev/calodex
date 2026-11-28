@@ -14,7 +14,7 @@ import type { FirstVerdictArm, OnboardingContent, OnboardingEvent } from "./onbo
 import type { ServedScreens } from "./screen-template.ts";
 import type { AnalyticsServerContext } from "./analytics.ts";
 import type { TargetBasis } from "./targets.ts";
-import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, LogPhotoResult, MealChanged, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
+import type { ChatSpeaker, ConfirmMealResult, HandleTextResult, MealItemsFull, UnknownFood, LogPhotoResult, MealProposed, MealRedated, MealUpdated, Refusal, TargetGone } from "./results.ts";
 import type { HealthDay } from "./health.ts";
 import type { BmiRange } from "./scores.ts";
 import { WEIGHT_RANGES, type ChartDay, type WeightRange } from "./ui/charts.ts";
@@ -26,7 +26,7 @@ import type { ChatPromptId } from "./onboarding-chat.ts";
 import type { FoodTargets } from "./types.ts";
 import type { MicroGoals } from "./micro-goals.ts";
 import type { StreakMark, StreakRead } from "./dates.ts";
-import { SNAPSHOT_MICROS, type FoodAttribution, type FoodRef, type OffProduct } from "./foods.ts";
+import { FOOD_LOG_MAX_GRAMS, SNAPSHOT_MICROS, type FoodAttribution, type FoodRef, type OffProduct } from "./foods.ts";
 
 /** Bumped when a change is not backwards compatible. Shipped apps outlive the server they were built against. */
 export const API_VERSION = "v1";
@@ -1291,16 +1291,29 @@ export interface MessageRequest {
  * exist on this type: verdicts are recomputed server-side from the user's caps after every edit
  * (`verdictsFromTargets` → `visibleVerdicts`). A client that could set them could paint "good" over
  * a meal that blows a medical cap, and the person reading that card declared a medical restriction.
+ * Sent beside `items`, `swap` or `add`, an explicit total still wins over the total derived from
+ * the resulting items — the appended row's included — because that is what the manual override is.
  */
 export interface EditMealRequest {
   items?: MealItem[];
   /**
    * Change what item `index` IS to the catalog row `ref` (a `food_ref` id from `GET /v1/foods`), at
    * the item's own grams, with no model in between (ieat-app#2192). The server reads the row's
-   * nutrition itself; a client cannot send a number the catalog does not carry. Applied after
-   * `items`, to the index in the resulting list.
+   * nutrition itself; a client cannot send a number the catalog does not carry. A row missing or
+   * too incomplete to ground is `unknown-food`. Applied after `items`, to the index in the resulting list.
    */
   swap?: { index: number; ref: string };
+  /**
+   * Append the catalog row `ref` at `grams`, with no model in between (ieat-app#3678). The server
+   * reads the row's nutrition itself; a client cannot send the appended item's nutrient numbers.
+   * Grams carry the food log's ceiling ({@link FOOD_LOG_MAX_GRAMS}), not the edit body's looser one.
+   * A row missing or too incomplete to ground is `unknown-food`. Applied after `items` and `swap`,
+   * to the end of the resulting list. A synchronous PATCH carrying `add` must carry
+   * {@link IDEMPOTENCY_KEY}: appending is not an overwrite, and the key is what makes a retried
+   * gesture replay rather than append a second row. The queued update route already requires its
+   * `clientId` for the same reason.
+   */
+  add?: { ref: string; grams: number };
   kcal?: number;
   protein_g?: number;
   carbs_g?: number;
@@ -1373,9 +1386,17 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
     if (!Number.isInteger(w.index) || (w.index as number) < 0 || (w.index as number) >= MAX_MEAL_ITEMS) return false;
     if (typeof w.ref !== "string" || w.ref.length === 0 || w.ref.length > MAX_ITEM_NAME) return false;
   }
+  if (b.add !== undefined) {
+    const a = b.add as Record<string, unknown> | null;
+    if (typeof a !== "object" || a === null || Array.isArray(a)) return false;
+    if (Object.keys(a).some((k) => k !== "ref" && k !== "grams")) return false;
+    if (typeof a.ref !== "string" || a.ref.length === 0 || a.ref.length > MAX_ITEM_NAME) return false;
+    if (!amount(a.grams) || a.grams === 0 || (a.grams as number) > FOOD_LOG_MAX_GRAMS) return false;
+  }
   if (b.items !== undefined) {
     if (!Array.isArray(b.items) || b.items.length > MAX_MEAL_ITEMS) return false;
     // Every item at 0g is no meal: it saved a 0kcal meal that still counted (ieat-app#1224).
+    // An empty list stays legal — with `add` it is how a plate is replaced by the catalog row alone.
     if (b.items.length > 0 && b.items.every((i) => (i as { grams?: unknown })?.grams === 0)) return false;
     for (const i of b.items as unknown[]) {
       if (typeof i !== "object" || i === null) return false;
@@ -1397,7 +1418,13 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
   return true;
 }
 
-export type EditMealResponse = MealUpdated | TargetGone | MealChanged;
+/**
+ * The PATCH's 200 body. Every other engine outcome is encoded as the route's error body and status
+ * (`unknown-food` 404, `target-gone`/`meal-changed` 409, `meal-items-full` 400), never as a 200
+ * carrying a failure kind; the unencoded union stays internal as `EditMealResult` and is what a
+ * queued meal update settles verbatim.
+ */
+export type EditMealResponse = MealUpdated;
 
 /**
  * `POST /v1/meals/:id/redate` — "Move to yesterday", as an offset: `1` is yesterday, `0` a no-op,
@@ -2183,8 +2210,8 @@ export type MealUpdateBody =
 export type MealUpdateRequest =
   | ({ mealId: string; clientId: string; capturedAt?: string } & MealUpdateBody)
   | { kind: "note"; text: string; clientId: string; capturedAt?: string };
-/** A queued update's last line: what the same change answers when it is not queued. */
-export type MealUpdateLast = HandleTextResult | OutcomeUnknown;
+/** A queued update's last line: the engine's outcome verbatim, including kinds the sync route encodes as error statuses. */
+export type MealUpdateLast = HandleTextResult | MealItemsFull | UnknownFood | OutcomeUnknown;
 
 /** The body is a cast, not a validation: it ends in a stored sentence and a verdict. */
 export function isMealUpdateRequest(body: unknown): body is MealUpdateRequest {
