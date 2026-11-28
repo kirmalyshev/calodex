@@ -660,24 +660,13 @@ export async function editMeal(
   const addedMicros = addedItem === undefined ? {} : catalogMicros([addedItem]);
   const tenth = (n: number): number => Math.round(n * 10) / 10;
   const nutritionOverride = patch.items?.some((i) => i.nutrition_override === true) === true;
-  // Reordering rows is not physical, but rows carry no ids. Pair each amount with the row evidence
-  // a reorder moves unchanged — names, repertoire key and role — and compare those pairs as a
-  // multiset. Bare grams cannot do it: two rows exchanging 100g and 200g leave the same gram
-  // multiset while the plate physically changed. A renamed row cannot be told apart from an edit
-  // and takes the scaling fallback, which is the safe direction.
-  const amountKey = (item: MealItem): string => JSON.stringify([item.name, item.name_en ?? null, item.role ?? null, item.typed === true, item.grams]);
-  const sameAmounts = derivationItems !== undefined && derivationItems.length === existing.items.length && (() => {
-    const before = existing.items.map(amountKey).sort();
-    const after = derivationItems.map(amountKey).sort();
-    return after.every((key, ix) => key === before[ix]);
-  })();
-  const physicalEdit = derivationItems !== undefined && (request.swap !== undefined || !sameAmounts);
   const scaled = (sent: number | undefined, kept: number, micro: keyof typeof addedMicros): number => {
     if (sent !== undefined) return sent;
     // A nutrition overwrite is not an amount change: scaling the plate's micros by its calorie
-    // ratio would invent saturated fat, fibre, sugar and sodium nobody ate. Those move with grams
-    // edits, whose ratio is physical; a typed-nutrition edit by itself keeps the stored figure.
-    const base = derivationItems === undefined ? kept : micros[micro] ?? (nutritionOverride && !physicalEdit ? kept : scale(kept));
+    // ratio would invent saturated fat, fibre, sugar and sodium nobody ate. Rows carry no ids, so
+    // once any row is overridden a grams move cannot be told apart from a reorder; the fallback
+    // keeps the stored figure. Catalog-derived micros above still move with the grams they measure.
+    const base = derivationItems === undefined ? kept : micros[micro] ?? (nutritionOverride ? kept : scale(kept));
     return addedItem === undefined ? base : tenth(base + (addedMicros[micro] ?? 0));
   };
   const merged = atN ? (({ servings: _s, ...rest }) => rest)(atN) : {
@@ -881,19 +870,16 @@ function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): Recon
   const claimedRefs = new Set<MealItem>();
   const typedRows = stored.map((item, index) => ({ item, index })).filter((r) => r.item.typed === true);
   const claimedTyped = new Set<number>();
-  const coreNutrientMatches = (a: MealItem, b: EditMealItem): number =>
-    (["kcal", "protein_g", "carbs_g", "fat_g"] as const).filter((k) => a[k] !== undefined && a[k] === b[k]).length;
   // `typed` (#2088) is the server's claim about grams, not client text: it is re-derived here.
   // Rows carry no item id, so the match is the row's own evidence — same storage-unit grams plus
-  // its name, its repertoire key, or at least three of its four nutrient figures. That keeps the
-  // mark on its own row across a rename, a one-nutrient override, deletion or reordering, without
-  // letting an inserted row at the old index claim it merely by being there. A gram edit drops it.
+  // its name or its repertoire key. That keeps the mark on its own row across a deletion or
+  // reordering, without letting an inserted row at the old index claim it merely by being there.
+  // A gram edit drops it.
   const typedMatch = (raw: EditMealItem, ix: number): boolean => {
     const candidates = typedRows.filter(({ item, index }) =>
       !claimedTyped.has(index) && item.grams === raw.grams
       && (item.name === raw.name
-        || (item.name_en !== undefined && item.name_en === raw.name_en)
-        || coreNutrientMatches(item, raw) >= 3));
+        || (item.name_en !== undefined && item.name_en === raw.name_en)));
     if (candidates.length === 0) return false;
     const chosen = candidates.find((c) => c.index === ix) ?? candidates[0]!;
     claimedTyped.add(chosen.index);
@@ -943,6 +929,7 @@ function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): Recon
       // The stored estimate keeps the raw grams and drops the measurement, so its shadow does
       // the same: a portion echo must never size the micros off a different mass (#3680).
       const { nutrition_override: _no, portion: _shadowPortion, portion_count: _shadowCount, ...shadowRaw } = i;
+      if (s !== undefined) claimedRefs.add(s);
       const micro = s?.food === undefined ? estimate : cataloged(shadowRaw, s.food);
       return { item: estimate, micro };
     }

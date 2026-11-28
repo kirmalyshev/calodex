@@ -1532,7 +1532,7 @@ describe("editing the answer", () => {
     expect(out.analysis.sodium_mg).toBe(2.6);
   });
 
-  it("resumes kcal-ratio micro scaling when the same patch also moves grams on estimate rows", async () => {
+  it("keeps stored micros when the same override patch moves grams on estimate rows", async () => {
     const userId = await onboard();
     const meal = await logged(userId);
     const stored = meal.analysis.items;
@@ -1547,11 +1547,9 @@ describe("editing the answer", () => {
     const out = await editMeal(deps, userId, meal.mealId, { items: [overridden, doubled, ...stored.slice(2)] });
     if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
 
-    const ratio = out.analysis.kcal / meal.analysis.kcal;
-    expect(ratio).toBeGreaterThan(1);
+    expect(out.analysis.kcal).toBeGreaterThan(meal.analysis.kcal);
     for (const f of ["satfat_g", "fiber_g", "sugar_g", "sodium_mg"] as const) {
-      expect(out.analysis[f], f).toBeCloseTo(meal.analysis[f] * ratio, 1);
-      expect(out.analysis[f], f).not.toBe(meal.analysis[f]);
+      expect(out.analysis[f], f).toBe(meal.analysis[f]);
     }
   });
 
@@ -1617,23 +1615,39 @@ describe("editing the answer", () => {
     expect(out.analysis.sodium_mg).toBe(meal.analysis.sodium_mg);
   });
 
-  it("treats amounts exchanged between rows as a physical edit, not a reorder", async () => {
+  it("does not let zero macros move typed provenance onto a prepended row", async () => {
+    const userId = await onboard();
+    const loggedNumbers = await logNumbersMeal(deps, userId, { name: "coffee", kcal: 5, protein_g: 0, fat_g: 0, carbs_g: 0 });
+    if (loggedNumbers.kind !== "logged") throw new Error(`expected logged, got ${loggedNumbers.kind}`);
+    const stored = (await store.getMeal(userId, loggedNumbers.mealId))!;
+    const coffee = stored.items[0]!;
+    expect(coffee.typed).toBe(true);
+    const water = { name: "water", grams: coffee.grams, kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+
+    const out = await editMeal(deps, userId, loggedNumbers.mealId, { items: [water, { ...coffee, typed: true }] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items[0]).not.toHaveProperty("typed");
+    expect(out.analysis.items[1]).toMatchObject({ name: "coffee", typed: true });
+  });
+
+  it("does not rescale micros when a row is renamed in the same override patch", async () => {
     const userId = await onboard();
     const meal = await logged(userId);
     const stored = meal.analysis.items;
-    expect(stored[0]!.grams).not.toBe(stored[1]!.grams);
-    const first = {
-      ...stored[0]!, grams: stored[1]!.grams,
+    const edited = {
+      ...stored[0]!, name: "renamed chicken",
       kcal: (stored[0]!.kcal ?? 0) + 100, nutrition_override: true as const,
     };
-    const second = { ...stored[1]!, grams: stored[0]!.grams };
 
-    const out = await editMeal(deps, userId, meal.mealId, { items: [first, second, ...stored.slice(2)] });
+    const out = await editMeal(deps, userId, meal.mealId, { items: [edited, ...stored.slice(1)] });
     if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
 
-    const ratio = out.analysis.kcal / meal.analysis.kcal;
-    expect(ratio).not.toBe(1);
-    expect(out.analysis.satfat_g).toBeCloseTo(meal.analysis.satfat_g * ratio, 1);
+    expect(out.analysis.kcal).toBe(meal.analysis.kcal + 100);
+    expect(out.analysis.satfat_g).toBe(meal.analysis.satfat_g);
+    expect(out.analysis.fiber_g).toBe(meal.analysis.fiber_g);
+    expect(out.analysis.sugar_g).toBe(meal.analysis.sugar_g);
+    expect(out.analysis.sodium_mg).toBe(meal.analysis.sodium_mg);
   });
 
   it("keeps typed provenance on its own row when a batch prepends another", async () => {
@@ -1650,6 +1664,26 @@ describe("editing the answer", () => {
 
     expect(out.analysis.items[0]).not.toHaveProperty("typed");
     expect(out.analysis.items[1]).toMatchObject({ name: "shake", typed: true });
+  });
+
+  it("does not let duplicate sent rows share one stored catalog shadow", async () => {
+    await store.putFoodRefs([oliveOil]);
+    const userId = await onboard();
+    const meal = await logged(userId);
+    const replaced = await editMeal(deps, userId, meal.mealId, { items: [], add: { ref: oliveOil.id, grams: 30 } });
+    if (replaced.kind !== "updated") throw new Error(`expected updated, got ${replaced.kind}`);
+    const stored = (await store.getMeal(userId, meal.mealId))!;
+    const row = stored.items[0]!;
+    expect(row.ref).toBe(oliveOil.id);
+    const override = { ...row, kcal: (row.kcal ?? 0) + 100, nutrition_override: true as const };
+
+    const out = await editMeal(deps, userId, meal.mealId, { items: [override, { ...row }] });
+    if (out.kind !== "updated") throw new Error(`expected updated, got ${out.kind}`);
+
+    expect(out.analysis.items).toHaveLength(2);
+    expect(out.analysis.items.every((item) => item.ref === undefined)).toBe(true);
+    expect(out.analysis.satfat_g).toBe(stored.satfat_g);
+    expect(out.analysis.sodium_mg).toBe(stored.sodium_mg);
   });
 
   it("drops a stale density when calories are typed on an estimate", async () => {
