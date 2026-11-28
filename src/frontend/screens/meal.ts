@@ -623,10 +623,12 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       wasK.hidden = true;
       const kcalRight = el("div", "row ingkright");
       kcalRight.append(wasK, kitEl(ico("chevron-right")));
-      kcalOpen = el("button", "card row between ingkcal") as HTMLButtonElement;
+      kcalOpen = el("button", "card ingkcal") as HTMLButtonElement;
       kcalOpen.type = "button";
       kcalOpen.setAttribute("aria-label", mc.phoneEditNutrition);
-      kcalOpen.append(kcalLeft, kcalRight);
+      const kcalContent = el("div", "row between");
+      kcalContent.append(kcalLeft, kcalRight);
+      kcalOpen.append(kcalContent);
       dlg.append(kcalOpen);
     }
 
@@ -852,7 +854,14 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     };
     const syncNutritionDone = (): void => { nutDone.disabled = readNutrition() === null; };
     for (const input of Object.values(nutInputs)) input.addEventListener("input", syncNutritionDone);
-    const closeNutrition = (): void => { nutPage.hidden = true; dlg.setAttribute("aria-label", mc.phoneIngredientTitle); };
+    const nutritionOpen = (open: boolean): void => {
+      nutPage.hidden = !open;
+      dlg.setAttribute("aria-label", open ? mc.phoneEditNutrition : mc.phoneIngredientTitle);
+      for (const child of Array.from(dlg.children)) {
+        if (child !== nutPage) child.toggleAttribute("inert", open);
+      }
+    };
+    const closeNutrition = (): void => nutritionOpen(false);
     nutBack.addEventListener("click", () => { closeNutrition(); kcalOpen?.focus(); });
     nutRevert.addEventListener("click", () => {
       stagedNutrition = null;
@@ -876,8 +885,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       nutInputs.carbs_g.value = seed.carbs_g === undefined ? "" : `${seed.carbs_g}`;
       nutInputs.fat_g.value = seed.fat_g === undefined ? "" : `${seed.fat_g}`;
       syncNutritionDone();
-      nutPage.hidden = false;
-      dlg.setAttribute("aria-label", mc.phoneEditNutrition);
+      nutritionOpen(true);
       nutInputs.kcal.focus();
       nutInputs.kcal.select();
     });
@@ -889,7 +897,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const applyItems = (items: MealItem[], typed?: string): void => {
       const req = mealEditRequest(meal, items);
       if (req === null) { closeOverlay(); return; }
-      const nutrition = stagedNutrition === null ? undefined : Object.fromEntries(nutSpecs.map(([key]) => [key, nutInputs[key].value])) as Partial<Record<"kcal" | "protein_g" | "carbs_g" | "fat_g", string>>;
+      const staged = stagedNutrition;
+      const nutrition = staged === null ? undefined : Object.fromEntries(nutSpecs.map(([key]) => [key, String(staged[key])])) as Partial<Record<"kcal" | "protein_g" | "carbs_g" | "fat_g", string>>;
       enqueueUpdate(meal, { kind: "ingredients", edit: req }, { index, ...(typed === undefined ? {} : { grams: typed }), ...(nutrition === undefined ? {} : { nutrition }) });
       closeOverlay();
     };

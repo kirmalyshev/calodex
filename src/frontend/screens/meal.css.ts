@@ -168,7 +168,7 @@ button.ingbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .card button.ingchip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .ingserv .amtpill{padding:6px 10px;gap:6px;cursor:text}
 .ingserv .amtunit{white-space:nowrap}
-.ingserv[hidden],.row[hidden]{display:none}
+.ingserv[hidden],.row[hidden],.ingmeasure[hidden],.ingsrc[hidden]{display:none}
 
 /* The ingredient editor's rows: the label 600, the amount pill an editable figure. */
 .ming .amlab{font-weight:600}
@@ -181,7 +181,7 @@ button.ingbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .amtpill:focus-within{box-shadow:0 0 0 2px var(--accent)}
 .ingwas{align-self:flex-end;margin-top:-6px}
 .ingkcal{padding:16px 18px}
-.card button.ingkcal{display:flex;width:100%;min-height:0;border:0;background:var(--surface);box-shadow:var(--shadow);
+.card button.ingkcal{display:block;width:100%;min-height:0;border:0;margin:0 0 14px;padding:16px 18px;background:var(--surface);box-shadow:var(--shadow);
   font:inherit;color:inherit;cursor:pointer;text-align:left;border-radius:var(--r-card)}
 .card button.ingkcal:hover{background:var(--bg)}
 .card button.ingkcal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
