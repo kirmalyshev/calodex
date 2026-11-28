@@ -24,6 +24,7 @@ const KEYS = [
   "phoneFixMeal", "phoneFixExampleLead", "phoneFixExample", "phoneUpdate",
   "tapToName", "renameTitle", "renameLabel", "renameFailed", "rateTitle", "rateUp", "rateDown",
   "phoneIngredientTitle", "phoneAmount", "phoneRemoveIngredient", "phoneWasAmount",
+  "phoneEditNutrition", "phoneNutritionLeftToday", "phoneRevert",
   "phoneGrams", "phoneMealMove",
   "phoneGoneTitle", "phoneGoneBody", "phoneGoneBack",
   "webGoneTitle", "webGoneBody", "webGoneBack", "itemAmount", "menuButton",
@@ -57,6 +58,7 @@ describe("MEAL_COPY", () => {
       itemAmount: ["{amount}", "{item}"],
       phoneSheetMeal: ["{meal}", "{time}"],
       phoneWasAmount: ["{amount}"],
+      phoneNutritionLeftToday: ["{n}"],
       phoneFixMeal: ["{name}", "{kcal}", "{time}"],
       renameLabel: ["{name}"],
       phoneGrams: ["{n}"],
@@ -127,6 +129,9 @@ describe("MEAL_COPY", () => {
     expect(en.renameTitle).toBe("Name meal");
     expect(en.renameLabel).toBe("Rename meal: {name}");
     expect(en.phoneIngredientTitle).toBe("Edit ingredient");
+    expect(en.phoneEditNutrition).toBe("Edit Calories");
+    expect(en.phoneNutritionLeftToday).toBe("Out of {n} left today");
+    expect(en.phoneRevert).toBe("Revert");
     expect(en.phoneAmount).toBe("Amount");
     expect(en.phoneRemoveIngredient).toBe("Remove ingredient");
   });
