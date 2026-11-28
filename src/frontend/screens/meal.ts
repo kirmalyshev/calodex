@@ -925,7 +925,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     }
     const ingHead = el("div", "inghead");
     ingHead.append(el("span", "lab", ac.ingredients));
-    if (meal.items.length < MAX_MEAL_ITEMS) {
+    if (!updating && meal.items.length < MAX_MEAL_ITEMS) {
       const addMore = el("button", "ingadd", ac.addMore) as HTMLButtonElement;
       addMore.type = "button";
       addMore.addEventListener("click", () => openAddPicker(meal));

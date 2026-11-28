@@ -171,6 +171,7 @@ test("+ Add More opens ingredient search, and a pick appends through the update 
   await sheet.locator("input").fill("banana");
   const row = sheet.locator(".fs-row", { hasText: "Banana, raw" }).first();
   await expect(row).toBeVisible();
+  await expect(row.locator("button.fs-add")).toHaveAttribute("aria-label", "Banana, raw");
   const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/meals/update/queue"));
   await row.locator("button.fs-add").click();
   const body = (await sent).postDataJSON() as { edit?: { add?: { ref?: string; grams?: number } }; kind?: string; mealId?: string; clientId?: string };
@@ -189,6 +190,25 @@ test("+ Add More opens ingredient search, and a pick appends through the update 
   expect(after.items.at(-1)).toMatchObject({ name: "Banana, raw", grams: 118 });
   expect(after.kcal).toBeGreaterThan(before.kcal);
   await expect(page.locator(".ing").last()).toContainText("Banana, raw");
+});
+
+test("+ Add More is unavailable while another update on the meal is open (#3678)", async ({ inWebApp: page }) => {
+  await openMeal(page);
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => { release = resolve; });
+  await page.route(/\/api\/v1\/meals\/update\/queue/, async (route) => {
+    await hold;
+    await route.continue();
+  });
+  const addMore = page.getByRole("button", { name: "+ Add More" });
+  await addMore.click();
+  const sheet = page.locator(".fs");
+  await sheet.locator("input").fill("banana");
+  const row = sheet.locator(".fs-row", { hasText: "Banana, raw" }).first();
+  await row.locator("button.fs-add").click();
+  await expect(addMore).toHaveCount(0);
+  release();
+  await expect(addMore).toBeVisible();
 });
 
 test("a failed ingredient append does not offer a blind retry (#3678)", async ({ inWebApp: page }) => {
