@@ -50,6 +50,7 @@ test("meal ⋯ menu saves and unsaves a meal, persists across reload, and leaves
   await menu.getByText("Save meal").click();
   await savedRes;
   await expect(menu).toBeHidden();
+  await expect(page.locator(".notice")).toBeHidden();
   expect(await savedList(page)).toHaveLength(1);
 
   // Re-opening the menu shows "Remove from saved", and reloading keeps that state.
@@ -64,6 +65,7 @@ test("meal ⋯ menu saves and unsaves a meal, persists across reload, and leaves
   const delRes = page.waitForResponse((r) => r.url().includes("/v1/saved-meals/") && r.request().method() === "DELETE" && r.ok());
   await menu.getByText("Remove from saved").click();
   await delRes;
+  await expect(page.locator(".notice")).toBeHidden();
   expect(await savedList(page)).toHaveLength(0);
   expect((await day(page)).meals).toHaveLength(1);
 

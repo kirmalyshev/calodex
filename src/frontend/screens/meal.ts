@@ -631,11 +631,10 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
           if (was !== null) {
             await deleteSavedMeal(was);
             savedId = null;
-            tell(sm.removeDone);
           } else {
             savedId = (await saveMeal(meal.id)).id;
-            tell(sm.section);
           }
+          tell(null);
         } catch {
           tell(was !== null ? sm.removeFailed : sm.saveFailed);
         } finally {
