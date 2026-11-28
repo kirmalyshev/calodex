@@ -808,7 +808,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     nutSpacer.setAttribute("aria-hidden", "true");
     nutSpacer.style.visibility = "hidden";
     nutHead.append(nutBack, el("span", "d d17", mc.phoneEditNutrition), nutSpacer);
-    const budget = el("p", "t13 m ingbudget", fill(mc.phoneNutritionLeftToday, { n: kn(day.targets.kcal) }));
+    const budget = el("p", "t13 m ingbudget", fill(mc.phoneNutritionLeftToday, { n: kn(Math.max(0, day.targets.kcal - day.totals.kcal)) }));
     const nutFields = el("div", "card ingnutfields");
     const nutInputs = {} as Record<NutritionField, HTMLInputElement>;
     const nutSpecs = [
