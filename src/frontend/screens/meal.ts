@@ -163,24 +163,25 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   // what Esc and a scrim tap close. Focus moves INTO a panel on open and back to whatever opened
   // it on close — a keyboard path has to end where it started.
   let overlay: HTMLElement | null = null;
+  let overlayCanClose: (() => boolean) | null = null;
   let restoreFocus: Element | null = null;
   // The open ⋯ menu's closer (#172): Esc takes it before it takes the screen — a menu up is a
   // popup, not a page, and the order here is overlay → menu → diary.
   let closeMenu: (() => void) | null = null;
   const closeOverlay = (): void => {
-    overlay?.remove(); overlay = null;
+    overlay?.remove(); overlay = null; overlayCanClose = null;
     if (restoreFocus instanceof HTMLElement && restoreFocus.isConnected &&
         restoreFocus.closest("[hidden]") === null) restoreFocus.focus();
     restoreFocus = null;
   };
-  const openOverlay = (node: HTMLElement, focus?: HTMLElement): void => {
+  const openOverlay = (node: HTMLElement, focus?: HTMLElement, canClose?: () => boolean): void => {
     closeOverlay();
     restoreFocus = document.activeElement;
-    wrap.append(node); overlay = node;
+    wrap.append(node); overlay = node; overlayCanClose = canClose ?? null;
     focus?.focus();
   };
-  const openPanel = (p: { node: HTMLElement; focus: HTMLElement }): void => {
-    openOverlay(p.node, p.focus);
+  const openPanel = (p: { node: HTMLElement; focus: HTMLElement; canClose?: () => boolean }): void => {
+    openOverlay(p.node, p.focus, p.canClose);
     // A value put back for the user is edited from its end; the panel may open before the page is attached.
     if (p.focus instanceof HTMLInputElement || p.focus instanceof HTMLTextAreaElement) {
       const field = p.focus;
@@ -201,7 +202,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   document.addEventListener("keydown", function onKey(e) {
     if (!wrap.isConnected) { document.removeEventListener("keydown", onKey); return; }
     if (e.key !== "Escape") return;
-    if (overlay !== null) closeOverlay();
+    if (overlay !== null && overlayCanClose?.() !== false) closeOverlay();
     else if (closeMenu !== null) closeMenu();
     else closeToDiary();
   });
@@ -419,12 +420,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
 
   /**
    * Copy To (calodex_app#3683): the meal menu's multi-select day sheet. The window and the most
-   * picks one write may carry are the server's `limits`; the request keeps ONE client id for the
-   * sheet, so a retry after a lost answer is the same write rather than a second set of meals.
+   * picks one write may carry are the server's `limits`; each exact selection keeps ONE client id,
+   * so a retry of it is the same write while a changed selection is a new one rather than silently
+   * answered with the first selection's outcome.
    */
-  const copyPanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement } => {
+  const copyPanel = (meal: MealRecord): { node: HTMLElement; focus: HTMLElement; canClose: () => boolean } => {
     let sending = false;
-    const clientId = crypto.randomUUID();
+    const clientIds = new Map<string, string>();
     const picked = new Set<number>();
     const maxOffset = me?.limits.mealCopyMaxOffset ?? MEAL_COPY_MAX_OFFSET;
     const maxDays = me?.limits.mealCopyMaxDays ?? MEAL_COPY_MAX_DAYS;
@@ -486,7 +488,14 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       error.hidden = true;
       sync();
       try {
-        await copyMeal(meal.id, [...picked].sort((a, b) => b - a), clientId);
+        const dayOffsets = [...picked].sort((a, b) => b - a);
+        const fingerprint = dayOffsets.join(",");
+        let clientId = clientIds.get(fingerprint);
+        if (clientId === undefined) {
+          clientId = crypto.randomUUID();
+          clientIds.set(fingerprint, clientId);
+        }
+        await copyMeal(meal.id, dayOffsets, clientId);
         if (scrim.isConnected) closeOverlay();
         // A copy onto the day behind the sheet is only visible after the server is re-read.
         void draw().catch(() => {});
@@ -509,7 +518,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     dlg.append(el("b", "d d22", mc.copySheetTitle), days, error, actions);
     sync();
     scrim.append(dlg);
-    return { node: scrim, focus: buttons[0]! };
+    return { node: scrim, focus: buttons[0]!, canClose: () => !sending };
   };
 
   /**
