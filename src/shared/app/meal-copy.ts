@@ -99,10 +99,10 @@ export interface MealCopy {
   phoneFixExample: string;
   phoneUpdate: string;
   /**
-   * A label meal's servings, edited in Correct (ieat-app#2087, `phone/pw1-label-servings.html`):
-   * the row's name and its two stepper buttons' accessible names, the "Per serving" line
-   * (`{kcal}` spelled with its unit, `{macros}` the next key filled) and the macro run.
-   * `{protein}`, `{carbs}` and `{fat}` arrive spelled through `phoneGrams`.
+   * Number of Servings on any meal (#3677): the row's name and its two stepper buttons'
+   * accessible names, the "Per serving" line (`{kcal}` spelled with its unit, `{macros}` the
+   * next key filled) and the macro run. `{protein}`, `{carbs}` and `{fat}` arrive spelled
+   * through `phoneGrams`.
    */
   /** The servings panel's title — Cal AI's "Number of Servings" (#3677). */
   servingsTitle: string;

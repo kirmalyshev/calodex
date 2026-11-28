@@ -19,7 +19,7 @@
 // id resolves to the gone state — the server scopes the read, so "another user's meal" and "no
 // meal" are the same answer and the same panel.
 
-import type { FoodSearchResponse } from "@eait/shared/contract";
+import { MAX_LABEL_SERVINGS, type FoodSearchResponse } from "@eait/shared/contract";
 import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem, servingsPreview } from "../../shared/meal-edit.ts";
@@ -265,11 +265,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       });
     };
     const kcalOf = (k: number): string => `${kn(servingsPreview(meal, k).kcal)}${UNIT_KCAL[lang]}`;
-    // The contract's bound, spelled here because the bundle may not value-import it; the server
-    // refuses above it, so a drift is a refused Update, never a wrong number.
-    const MAX_SERVINGS = 20;
     let servings = stored;
     const count = el("b", "num svnum", num(servings));
+    count.setAttribute("aria-live", "polite");
     const totals = el("b", "num d d28");
     const totalMacros = el("span", "t13 m");
     const update = el("button", "cta p", mc.phoneUpdate) as HTMLButtonElement;
@@ -285,7 +283,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       b.type = "button";
       b.setAttribute("aria-label", label);
       b.addEventListener("click", () => {
-        servings = Math.min(MAX_SERVINGS, Math.max(0.5, Math.round((servings + by) * 2) / 2));
+        servings = Math.min(MAX_LABEL_SERVINGS, Math.max(0.5, Math.round((servings + by) * 2) / 2));
         sync();
       });
       return b;
@@ -295,6 +293,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const row = el("div", "row svrow");
     row.append(el("span", "svlab", mc.servingsLabel), fewer, count, more);
     const sum = el("div", "row svtotals");
+    sum.setAttribute("aria-live", "polite");
     sum.append(totals, totalMacros);
     const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
     cancel.type = "button";
