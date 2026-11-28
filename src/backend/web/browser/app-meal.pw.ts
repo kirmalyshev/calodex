@@ -519,6 +519,29 @@ test("the servings chip opens Number of Servings on any meal, and Update sends s
   await expect(correct.getByText("Servings", { exact: true })).toHaveCount(0);
 });
 
+test("the time chip changes the meal's day and time, sending an offset and HH:MM, never a date (#3682)", async ({ inWebApp: page }) => {
+  const { id, date } = await openMeal(page);
+  await page.locator(".mwhen").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  const save = dialog.locator(".cta.p");
+  await expect(save).toBeDisabled();
+  // Today back to the server's 7-day window, and nothing ahead of today.
+  await expect(dialog.locator("select option")).toHaveCount(8);
+  await dialog.locator("select").selectOption("2");
+  await dialog.locator("input[type=time]").fill("07:45");
+  await expect(save).toBeEnabled();
+  const sent = page.waitForRequest((r) => r.url().endsWith(`/v1/meals/${id}/redate`) && r.method() === "POST");
+  const moved = page.waitForResponse((r) => r.url().endsWith(`/v1/meals/${id}/redate`) && r.ok());
+  await save.click();
+  expect((await sent).postDataJSON()).toEqual({ dayOffset: 2, time: "07:45" });
+  const result = (await (await moved).json()) as { kind: string; date?: string };
+  expect(result.kind).toBe("redated");
+  expect(result.date).not.toBe(date);
+  await expect(page).toHaveURL(new RegExp(`#\\/meal\\/${id}\\?d=${result.date}`));
+  await expect(page.locator(".mwhen")).toContainText("07:45");
+});
+
 test("tapping the meal title renames it, clears back to derived items, and shows Tap to Name when unnamed (#3681)", async ({ inWebApp: page }) => {
   const { id } = await openMeal(page);
   const titleBtn = page.locator(".mtitle");
