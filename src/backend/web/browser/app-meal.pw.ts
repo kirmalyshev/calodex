@@ -496,6 +496,11 @@ test("Copy To retries a failed copy under the same key, then writes the picked d
   await dialog.locator(".copyday[data-offset=\"1\"]").click();
   await dialog.locator(".copyday[data-offset=\"-1\"]").click();
   await expect(copy).toBeEnabled();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await shot(page, "copy-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "copy-390");
+  await page.setViewportSize({ width: 1280, height: 720 });
 
   // The first answer is lost; the retry in the same sheet must be the same idempotent write,
   // not a second set of meals under a fresh key.
