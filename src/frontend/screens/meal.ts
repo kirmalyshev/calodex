@@ -25,6 +25,7 @@ import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../.
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem, servingsPreview } from "../../shared/meal-edit.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
+import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
 import { ingredientSourceCard } from "../../shared/app/ingredient-source.ts";
 import { updateCopyFor } from "../../shared/app/update-copy.ts";
 import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
@@ -35,7 +36,7 @@ import type { ScorePart } from "../../shared/scores.ts";
 import type { MealItem, MealRecord } from "@eait/shared";
 import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
-import { api, apiBlob } from "../api.ts";
+import { api, apiBlob, deleteSavedMeal, listSavedMeals, saveMeal } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import {
   enqueueUpdate, inPlace, jobFor, queueJobRow, takeSentGrams, takeSentNote, updateBannerEl,
@@ -62,6 +63,7 @@ addEventListener("hashchange", (e) => {
 
 export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   const mc = mealCopyFor(lang);
+  const sm = savedMealsCopyFor(lang);
   const cc = chatScreenCopyFor(lang);
   const sc = scoresAppCopy(lang);
   const me = frame.me ?? await profile().catch(() => null);
@@ -569,6 +571,28 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     return { node: scrim, focus: grams };
   };
 
+  // Save / remove from saved (#907, calodex_app#3685): `savedId` is the saved row made from THIS
+  // meal (`source_meal_id`). Unbilled; a failure puts a note on the meal screen and leaves state alone.
+  let savedId: string | null = null;
+  let saveBusy = false;
+  let saveReady = false;
+  let saveAvailable = true;
+  let saveBtn: HTMLButtonElement | null = null;
+  let saveLabel: Text | null = null;
+  const syncSaveItem = (): void => {
+    if (saveLabel !== null) saveLabel.data = savedId !== null ? sm.menuRemove : sm.menuSave;
+    if (saveBtn !== null) saveBtn.disabled = saveBusy || !saveReady;
+  };
+  void listSavedMeals().then((all) => {
+    savedId = all.find((m) => m.source_meal_id === id)?.id ?? null;
+    saveReady = true;
+    syncSaveItem();
+  }).catch(() => {
+    // Without the list we cannot know whether this meal is already saved: no guessing menu item.
+    saveAvailable = false;
+    saveBtn?.remove();
+  });
+
   const menuButton = (meal: MealRecord): HTMLElement => {
     const box = el("div", "mwrap");
     const btn = iconButton("dots", mc.menuButton);
@@ -588,6 +612,37 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       b.addEventListener("click", () => { setOpen(false); onPick(); });
       return b;
     };
+    const save = el("button", "mi") as HTMLButtonElement;
+    save.type = "button";
+    const label = document.createTextNode(savedId !== null ? sm.menuRemove : sm.menuSave);
+    save.append(kitEl(ico("bookmark")), label);
+    save.disabled = saveBusy || !saveReady;
+    saveBtn = save;
+    saveLabel = label;
+    save.addEventListener("click", () => {
+      setOpen(false);
+      if (saveBusy) return;
+      saveBusy = true;
+      syncSaveItem();
+      tell(null);
+      const was = savedId;
+      void (async () => {
+        try {
+          if (was !== null) {
+            await deleteSavedMeal(was);
+            savedId = null;
+          } else {
+            savedId = (await saveMeal(meal.id)).id;
+          }
+          tell(null);
+        } catch {
+          tell(was !== null ? sm.removeFailed : sm.saveFailed);
+        } finally {
+          saveBusy = false;
+          syncSaveItem();
+        }
+      })();
+    });
     const reread = item("retry", mc.phoneMenuReread, () => enqueueUpdate(meal, { kind: "reread" }));
     const del = item("trash", mc.deleteCta, () => openOverlay(deleteDialog(meal)));
     del.classList.add("bad");
@@ -596,6 +651,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     else popup.append(
       // "Correct" is the one fix verb (#1546) — a panel over this detail, not the chat.
       item("pencil", mc.phoneCorrect, () => openPanel(fixPanel(meal))),
+      ...(saveAvailable ? [save] : []),
       // Nothing to re-read without a photo, so a typed meal is not offered it (ieat-app#1225).
       ...((meal.photos ?? 0) > 0 ? [reread] : []),
       item("calendar-back", mc.phoneMenuMoveYesterday, () =>

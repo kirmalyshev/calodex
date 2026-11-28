@@ -7,9 +7,9 @@ export const ROW_DELETE_WIDTH = 84;
 /** Horizontal drag distance (px) that commits opening or closing the Delete action. */
 export const ROW_DELETE_THRESHOLD = 36;
 
-/** Clamp a row's horizontal drag offset between fully revealed (-ROW_DELETE_WIDTH) and closed (0). */
-export const clampRowSwipe = (baseOffset: number, dx: number): number =>
-  Math.max(-ROW_DELETE_WIDTH, Math.min(0, baseOffset + dx));
+/** Clamp a row's horizontal drag offset between fully revealed (-width) and closed (0). */
+export const clampRowSwipe = (baseOffset: number, dx: number, width = ROW_DELETE_WIDTH): number =>
+  Math.max(-width, Math.min(0, baseOffset + dx));
 
 /** Decide whether a released drag leaves the Delete action revealed. */
 export const shouldOpenRowSwipe = (wasOpen: boolean, dx: number): boolean =>

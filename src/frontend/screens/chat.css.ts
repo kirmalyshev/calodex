@@ -281,6 +281,42 @@ ${Array.from({ length: 14 }, (_, i) => `.thread .dly-${i} { --d: ${i * MOTION.st
 .fs-failed { color: var(--bad); }
 .fs-retry { border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; font-weight: 600; }
 .fs-source { margin: 0; padding: 8px 2px 12px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+/* Saved meals on empty search (#907, calodex_app#3685): section header, photo/disc tile, macro chips,
+   swipe-left Remove on narrow/touch and hover/focus trash button on desktop. */
+.fs-sec { padding: 10px 2px 6px; }
+.fs-empty { margin: 4px 2px 12px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+.fs-srow { position: relative; border-top: 1px solid var(--hair); overflow: hidden;
+  touch-action: pan-y; user-select: none; -webkit-touch-callout: none; }
+.fs-srow > .fs-saved { border-top: 0; padding: 10px 2px; position: relative; z-index: 1;
+  background: var(--bg); transition: transform .22s var(--ease); }
+.fs-srow.open > .fs-saved, .fs-srow:has(.fs-srem:focus-visible) > .fs-saved { transform: translateX(-88px); }
+.fs-tile { position: relative; flex: 0 0 56px; width: 56px; height: 56px; border-radius: var(--r-thumb, 12px);
+  background: var(--accent-tint); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.fs-tile .ico { width: 22px; height: 22px; background: var(--accent); }
+.fs-tile .ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
+.fs-saved .fs-txt b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-saved .macs { margin-top: 4px; font-size: 12px; gap: 10px; color: var(--muted); }
+.fs-srem { position: absolute; top: 0; right: 0; bottom: 0; width: 88px; border: 0; margin: 0; padding: 0;
+  background: var(--bad); color: var(--accent-ink); display: flex; align-items: center; justify-content: center;
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.fs-srem .ico { display: none; width: 18px; height: 18px; }
+.fs-srem:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .fs-srow { display: flex; align-items: center; touch-action: auto; user-select: auto; }
+  .fs-srow > .fs-saved { flex: 1; min-width: 0; position: static; z-index: auto; transition: none; }
+  .fs-srow.open > .fs-saved, .fs-srow:has(.fs-srem:focus-visible) > .fs-saved { transform: none; }
+  .fs-srem { position: static; width: 0; height: 32px; flex: 0 0 0; overflow: hidden; opacity: 0;
+    border-radius: var(--r-ctl); background: var(--bad-tint); color: var(--bad);
+    transition: width .16s var(--ease), flex-basis .16s var(--ease), margin-left .16s var(--ease),
+      opacity .16s var(--ease), background .15s ease, color .15s ease; }
+  .fs-srem .ico { display: block; }
+  .fs-srem-lbl { display: none; }
+  .fs-srow:hover .fs-srem, .fs-srow:focus-within .fs-srem { width: 32px; flex-basis: 32px; margin-left: 6px; opacity: 1; }
+  .fs-srem:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fs-srow > .fs-saved, .fs-srem { transition: none; }
+}
 
 /* The busy row ("web-chat-busy", #70): three dots that pulse in turn while the answer is out. */
 .thread .dots { display: flex; gap: 6px; padding: 6px 2px; }
