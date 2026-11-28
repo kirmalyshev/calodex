@@ -176,7 +176,7 @@ export interface PayCopy {
   closeLabel: string;
   /** every pay board's footer (web + phone): restore a purchase. */
   restoreLink: string;
-  /** every pay board's footer (phone only while Android is not live): enter an Apple offer code. */
+  /** every pay board's footer: enter a code. The phone: an Apple offer code; the web: a campaign code (S4, #3695). Phone only while Android is not live. */
   redeemLink: string;
   /** every pay board's footer: the terms document. */
   termsLink: string;

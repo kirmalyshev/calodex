@@ -21,7 +21,7 @@ import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl } from "../kit.ts";
 import * as analytics from "../analytics.ts";
-import { ApiError, redeemPromoCode } from "../api.ts";
+import { ApiError, postPaywallStep, redeemPromoCode } from "../api.ts";
 
 /** The pay sheet's hero — the welcome plate the phone's sheet draws on A (ieat-app#3465), served
     by the backend off shared/assets/img on this origin. The alt names the plate's own figures
@@ -385,6 +385,7 @@ export function payScreen(frame: Frame): HTMLElement {
     if (step === "plans" && w?.yearly != null && w.trialDays > 0 && !skipTry) {
       ev.preventDefault();
       step = "try";
+      if (frame.me) postPaywallStep("paywall_try", frame.me.profile.user_id);
       showTry(w.yearly, w.trialDays);
       return;
     }
@@ -397,6 +398,7 @@ export function payScreen(frame: Frame): HTMLElement {
     ev.preventDefault();
     step = "offer";
     markOfferSeen(uid);
+    postPaywallStep("paywall_offer", uid);
     showOffer(offer);
   });
 

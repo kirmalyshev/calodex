@@ -123,3 +123,11 @@ describe("the first-meal screen's served words", () => {
     expect(src).not.toMatch(/await api<OnboardingContentResponse>/);
   });
 });
+
+describe("the paywall's B and C steps reach the funnel (ieat-app#3719)", () => {
+  it("logs paywall_try on B and paywall_offer on C, each once per show", () => {
+    const src = code("screens/pay.ts");
+    expect(src.match(/postPaywallStep\("paywall_try"/g)).toHaveLength(1);
+    expect(src.match(/postPaywallStep\("paywall_offer"/g)).toHaveLength(1);
+  });
+});
