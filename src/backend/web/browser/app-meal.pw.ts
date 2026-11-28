@@ -116,6 +116,10 @@ test("the servings chip opens Number of Servings on any meal, and Update sends s
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("Per serving:", { exact: false })).toBeVisible();
   await expect(dialog.locator(".svnum")).toHaveText("1");
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await shot(page, "servings-1440");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, "servings-390");
   const update = dialog.getByRole("button", { name: "Update" });
   await expect(update).toBeDisabled();
 
