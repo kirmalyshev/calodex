@@ -19,7 +19,7 @@
 //     dependence invisible the day somebody changes it.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-import type { ErrorResponse, MilestonesResponse, MilestonesSeenRequest, NDJSON, PushConsentRequest, PushConsentResponse, PushOpenRequest, PushTokenRequest } from "@eait/shared/contract";
+import type { ErrorResponse, MilestonesResponse, MilestonesSeenRequest, NDJSON, PromoRedeemResponse, PushConsentRequest, PushConsentResponse, PushOpenRequest, PushTokenRequest } from "@eait/shared/contract";
 
 let bearer: string | null = null;
 
@@ -232,6 +232,8 @@ export const dropPushToken = (token: string): Promise<unknown> =>
 export const postPushOpen = (body: PushOpenRequest): Promise<unknown> => api("/push/open", json("POST", body));
 
 /** Milestones: the wall and the streak, and the one write — which badges a celebration has shown. */
+/** Redeem a campaign code (S4, #3695). A refusal is an `ApiError` whose body names it (`promo-unknown`…). */
+export const redeemPromoCode = (code: string): Promise<PromoRedeemResponse> => api("/promo/redeem", json("POST", { code }));
 export const getMilestones = (): Promise<MilestonesResponse> => api("/milestones");
 export const postMilestonesSeen = (ids: string[]): Promise<MilestonesResponse> =>
   api("/milestones/seen", json("POST", { ids } satisfies MilestonesSeenRequest));
