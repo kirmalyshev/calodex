@@ -35,6 +35,11 @@ export function localTime(zone: string, at: Date = new Date()): string {
   return zonedFormat(zone, "en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(at);
 }
 
+/** Whole calendar days from `date` forward to `today` (both `YYYY-MM-DD`): 0 is today, 1 yesterday. Never negative; UTC arithmetic, so DST-safe. */
+export function daysBack(today: string, date: string): number {
+  return Math.max(0, Math.round((Date.parse(today) - Date.parse(date)) / 86_400_000));
+}
+
 /**
  * Shift a stored `YYYY-MM-DD` by whole days — CALENDAR subtraction, DST-safe.
  *

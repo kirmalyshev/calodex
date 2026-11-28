@@ -22,7 +22,7 @@
 import type { RedateMealRequest } from "../../shared/contract.ts";
 import { MAX_DAY_OFFSET, MAX_LABEL_SERVINGS, MAX_MEAL_ITEMS, MAX_MEAL_NAME, MAX_PHOTOS_PER_MEAL, MAX_UPLOAD_BYTES } from "../../shared/contract.ts";
 import type { FoodSearchResponse } from "@eait/shared/contract";
-import { dateMinus, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
+import { dateMinus, daysBack, isCalendarDate, localDate, localTime, weekStart } from "../../shared/dates.ts";
 import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../shared/lang.ts";
 import {
   catalogPortions, mealEditParams, mealEditRequest, mealServings, portionCountFor, portionCountText,
@@ -382,18 +382,17 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     dlg.setAttribute("aria-modal", "true");
     const title = meta(meal);
     dlg.setAttribute("aria-label", title);
+    // The server resolves the offset against ITS today, so the options are offsets from today as it
+    // is NOW, not the day this screen was opened (a sheet left open past midnight would be a day off).
+    const now = localDate(zone);
+    const label = (off: number): string => (off === 0 ? COPY.today : off === 1 ? COPY.yesterday : dateText(dateMinus(now, off)));
     const day = el("select", "nmfield") as HTMLSelectElement;
-    day.setAttribute("aria-label", title);
-    const current = Math.max(0, Math.round((Date.parse(today) - Date.parse(meal.date)) / 86_400_000));
+    day.setAttribute("aria-label", dayName(meal.date));
+    // The chip is disabled for a meal older than the window, so `current` is always an option here.
+    const current = daysBack(now, meal.date);
     for (let off = 0; off <= MAX_DAY_OFFSET; off++) {
-      const o = el("option", "", dayName(dateMinus(today, off))) as HTMLOptionElement;
+      const o = el("option", "", label(off)) as HTMLOptionElement;
       o.value = String(off);
-      day.append(o);
-    }
-    // A meal older than the window keeps its own row, so opening the picker never silently re-dates it.
-    if (current > MAX_DAY_OFFSET) {
-      const o = el("option", "", dayName(meal.date)) as HTMLOptionElement;
-      o.value = String(current);
       day.append(o);
     }
     day.value = String(current);
@@ -401,7 +400,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     time.type = "time";
     time.required = true;
     time.value = mealTime(meal);
-    time.setAttribute("aria-label", title);
+    time.setAttribute("aria-label", mealTime(meal));
     const errEl = el("p", "t13 nmerr");
     errEl.setAttribute("role", "alert");
     errEl.hidden = true;
@@ -445,7 +444,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         sync();
         errEl.textContent = keptWords(err, cc.tryAgain);
         errEl.hidden = false;
-        time.focus();
+        day.focus();
       }
     });
     const actions = el("div", "row svactions");
@@ -453,7 +452,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     dlg.append(el("b", "d d22", title), day, time, errEl, actions);
     sync();
     scrim.append(dlg);
-    return { node: scrim, focus: time };
+    // The select takes focus: `openPanel` puts a caret at the end of an input, which a time input refuses.
+    return { node: scrim, focus: day };
   };
 
   /**
@@ -1062,8 +1062,8 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     // The time chip (calodex_app#3682): the day and time under the name, tapped to change them.
     const when = el("button", "mwhen t13", meta(meal)) as HTMLButtonElement;
     when.type = "button";
-    when.setAttribute("aria-label", meta(meal));
-    when.disabled = updating;
+    // Older than the server's back window the picker could only clamp it, so the chip is plain text.
+    when.disabled = updating || daysBack(localDate(zone), meal.date) > MAX_DAY_OFFSET;
     when.addEventListener("click", () => openPanel(whenPanel(meal)));
     titleBox.append(titleRow, when);
     const kfig = el("span", "row kfig");
