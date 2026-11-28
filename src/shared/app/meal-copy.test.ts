@@ -88,6 +88,15 @@ describe("MEAL_COPY", () => {
     }
   });
 
+  it("keeps the Copy To words in their own language", () => {
+    expect(mealCopyFor("ko" as Lang).menuCopyTo).toBe("다른 날짜로 복사");
+    expect(mealCopyFor("ko" as Lang).copySheetTitle).toBe("복사할 날짜를 선택하세요");
+    expect(mealCopyFor("ko" as Lang).copyCta).toBe("복사");
+    expect(mealCopyFor("pt-BR" as Lang).menuCopyTo).toBe("Copiar para");
+    expect(mealCopyFor("pt-BR" as Lang).copySheetTitle).toBe("Escolha os dias para copiar");
+    expect(mealCopyFor("pt-BR" as Lang).copyCta).toBe("Copiar");
+  });
+
   it("draws the boards' words in English", () => {
     const en = mealCopyFor("en" as Lang);
     // The meal's meta line says when, never "from a photo": the photo is on the screen (#3041).
