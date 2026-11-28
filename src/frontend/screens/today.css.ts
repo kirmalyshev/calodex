@@ -159,7 +159,7 @@ button.hsc { cursor: pointer; }
 /* Home row delete (#3686): narrow / touch swipes left to reveal the 84 px red Delete action
    (matching iOS); fine-pointer desktop reveals a quiet trash button on hover or focus. */
 .drow { position: relative; margin: 0 -16px; border-top: 1px solid var(--hair); overflow: hidden;
-  touch-action: pan-y; }
+  touch-action: pan-y; user-select: none; -webkit-touch-callout: none; }
 .dlist > .uslot:first-child .drow, .dlist > .queue:empty + .uslot .drow { border-top: 0; }
 .drow > .meal, .drow > .meal:first-child, .drow > .meal:last-child {
   border-top: 0; padding: 12px 16px; flex: 1; min-width: 0;
@@ -176,7 +176,7 @@ button.hsc { cursor: pointer; }
 .drow-del .ico { width: 18px; height: 18px; }
 .drow-del:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media (min-width: 761px) and (hover: hover) and (pointer: fine) {
-  .drow { display: flex; align-items: center; padding-right: 16px; touch-action: auto; }
+  .drow { display: flex; align-items: center; padding-right: 16px; touch-action: auto; user-select: auto; }
   .drow > .meal, .drow > .meal:first-child, .drow > .meal:last-child {
     position: static; z-index: auto; transition: none; padding-right: 0; }
   .drow.open > .meal, .drow:has(.drow-del:focus-visible) > .meal { transform: none; }

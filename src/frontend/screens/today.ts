@@ -139,6 +139,7 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
       closeTip();
       return;
     }
+    if (deleteEl !== null) return;
     const t = e.target as HTMLElement | null;
     if (t !== null && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1189,7 +1190,9 @@ async function diaryScreen(frame: Frame, firstMeal: ProfileResponse | null = nul
     const row = mealRowEl(meal, {
       time: mealTime(meal.ts),
       href: `#/meal/${encodeURIComponent(meal.id)}?d=${encodeURIComponent(viewing)}`,
-    }) as HTMLElement;
+    }) as HTMLAnchorElement;
+    // Prevent native link-drag from hijacking a mouse swipe before the 8 px deadzone triggers.
+    row.draggable = false;
     // The photo rides behind the bearer — `apiBlob`'s bytes through `blobSrc`, a data URL: the
     // one `src` form `img-src 'self' data:` permits.
     if ((meal.photos ?? 0) > 0) {

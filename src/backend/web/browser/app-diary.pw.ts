@@ -324,10 +324,10 @@ test("Home row swipe left at 390px reveals Delete and confirms deletion", async 
   await expect(row).toBeVisible();
   const box = (await row.boundingBox())!;
 
-  // Swipe left on the row to reveal the red Delete action.
+  // Swipe left on the row in small steps (~6px) so native anchor-drag would hijack it if unguarded.
   await page.mouse.move(box.x + box.width - 24, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + 40, box.y + box.height / 2, { steps: 8 });
+  await page.mouse.move(box.x + 40, box.y + box.height / 2, { steps: 40 });
   await page.mouse.up();
 
   await expect(row).toHaveClass(/\bopen\b/);
