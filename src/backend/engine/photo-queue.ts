@@ -71,7 +71,7 @@ export const retryableMealUpdate = (input: MealUpdateRequest): boolean =>
 /** The oldest worker shape that may claim this update. Version 4 detaches a catalog row marked as typed nutrition; version 3 understands named portions; version 2 understands appends. */
 export const mealUpdateRequestVersion = (input: MealUpdateRequest): number => {
   if (input.kind !== "ingredients") return 1;
-  if (input.edit.items?.some((i) => i.nutrition_override === true) === true) return HANDLERS["meal-update"].version;
+  if (input.edit.items?.some((i) => i.nutrition_override === true) === true) return 4;
   const portioned = input.edit.items?.some((i) => i.portion !== undefined || i.portion_count !== undefined) === true;
   return portioned || input.edit.add !== undefined ? 3 : 1;
 };

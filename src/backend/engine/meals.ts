@@ -653,9 +653,13 @@ export async function editMeal(
   const micros = derivationItems === undefined ? {} : catalogMicros(derivationItems);
   const addedMicros = addedItem === undefined ? {} : catalogMicros([addedItem]);
   const tenth = (n: number): number => Math.round(n * 10) / 10;
+  const nutritionOverride = patch.items?.some((i) => i.nutrition_override === true) === true;
   const scaled = (sent: number | undefined, kept: number, micro: keyof typeof addedMicros): number => {
     if (sent !== undefined) return sent;
-    const base = derivationItems === undefined ? kept : micros[micro] ?? scale(kept);
+    // A nutrition overwrite is not an amount change: scaling the plate's micros by its calorie
+    // ratio would invent saturated fat, fibre, sugar and sodium nobody ate. Those move with grams
+    // edits, whose ratio is physical; a typed-nutrition edit keeps the stored figure instead.
+    const base = derivationItems === undefined ? kept : micros[micro] ?? (nutritionOverride ? kept : scale(kept));
     return addedItem === undefined ? base : tenth(base + (addedMicros[micro] ?? 0));
   };
   const merged = atN ? (({ servings: _s, ...rest }) => rest)(atN) : {
@@ -848,17 +852,40 @@ function portionCorrections(before: readonly MealItem[], after: readonly MealIte
  * client) is dropped along with `food`, leaving the item an estimate.
  */
 function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): MealItem[] {
-  const provenance = new Map<string, MealItem>();
+  const provenance = new Map<string, MealItem[]>();
   for (const s of stored) {
-    if (s.ref !== undefined && s.food !== undefined) provenance.set(`${s.ref} ${s.name}`, s);
+    if (s.ref === undefined || s.food === undefined) continue;
+    const key = `${s.ref} ${s.name}`;
+    provenance.set(key, [...(provenance.get(key) ?? []), s]);
   }
-  // `typed` (#2088) is the server's claim about grams, not about the name: it survives at an index
-  // whose stored item has it and whose grams were not edited. A rename keeps it; a gram edit drops it.
+  const claimedRefs = new Set<MealItem>();
+  const typedRows = stored.map((item, index) => ({ item, index })).filter((r) => r.item.typed === true);
+  const claimedTyped = new Set<number>();
+  const coreNutrientMatches = (a: MealItem, b: EditMealItem): number =>
+    (["kcal", "protein_g", "carbs_g", "fat_g"] as const).filter((k) => a[k] !== undefined && a[k] === b[k]).length;
+  // `typed` (#2088) is the server's claim about grams, not client text: it is re-derived here.
+  // Rows carry no item id, so the match is the row's own evidence — same storage-unit grams plus
+  // its name, its repertoire key, or at least three of its four nutrient figures. That keeps the
+  // mark on its own row across a rename, a one-nutrient override, deletion or reordering, without
+  // letting an inserted row at the old index claim it merely by being there. A gram edit drops it.
+  const typedMatch = (raw: EditMealItem, ix: number): boolean => {
+    const candidates = typedRows.filter(({ item, index }) =>
+      !claimedTyped.has(index) && item.grams === raw.grams
+      && (item.name === raw.name
+        || (item.name_en !== undefined && item.name_en === raw.name_en)
+        || coreNutrientMatches(item, raw) >= 3));
+    if (candidates.length === 0) return false;
+    const chosen = candidates.find((c) => c.index === ix) ?? candidates[0]!;
+    claimedTyped.add(chosen.index);
+    return true;
+  };
   return sent.map((raw, ix) => {
     const { typed: _typed, ...rest } = raw;
-    const was = stored[ix];
-    const i: EditMealItem = was?.typed && raw.grams === was.grams ? { ...rest, typed: true } : rest;
-    const s = i.ref === undefined ? undefined : provenance.get(`${i.ref} ${i.name}`);
+    const i: EditMealItem = typedMatch(raw, ix) ? { ...rest, typed: true } : rest;
+    const candidates = i.ref === undefined ? undefined : provenance.get(`${i.ref} ${i.name}`);
+    const s = candidates === undefined ? undefined
+      : candidates.find((item) => !claimedRefs.has(item) && stored[ix] === item)
+        ?? candidates.find((item) => !claimedRefs.has(item));
     // The explicit escape (calodex_app#3680): the client marks a row whose nutrition the user
     // typed. That row becomes an estimate — provenance and the catalog measurement go with the
     // ref. A typed kcal also drops the catalog density: with none stored, a later grams edit scales
@@ -868,16 +895,18 @@ function reconcileRefs(sent: EditMealItem[], stored: readonly MealItem[]): MealI
     // failed to rescale.
     if (i.nutrition_override === true) {
       const { ref: _ref, food: _food, portion: _portion, portion_count: _count, nutrition_override: _override, ...estimate } = i;
-      const expectedKcal = s?.food !== undefined ? Math.round(s.food.per100.kcal * i.grams / 100)
-        : was?.kcal === undefined ? undefined : scaledItem(was, i.grams).kcal;
-      const typedKcal = estimate.kcal !== undefined && expectedKcal !== undefined && Math.abs(estimate.kcal - expectedKcal) > 1e-9;
-      if (typedKcal) delete estimate.kcal_per_100g;
+      // Density and calories are consistent everywhere they are both written, so an inconsistency
+      // here is the typed figure itself — independent of where the row moved in the list. Drop the
+      // density; a later grams edit then scales proportionally from what the user typed.
+      const densityKcal = estimate.kcal_per_100g === undefined ? undefined : Math.round(estimate.kcal_per_100g * estimate.grams / 100);
+      if (estimate.kcal !== undefined && densityKcal !== undefined && Math.abs(estimate.kcal - densityKcal) > 1e-9) delete estimate.kcal_per_100g;
       return estimate;
     }
     if (s?.food === undefined) {
       const { ref: _ref, food: _food, portion: _portion, portion_count: _count, ...estimate } = i;
       return estimate;
     }
+    claimedRefs.add(s);
     const out = recomputeFromSnapshot(i, s.food);
     // A measurement is catalog data, not a claim: it survives only as one of the portions on the
     // stored snapshot of the row it names. Anything else would print a unit the catalog never had.

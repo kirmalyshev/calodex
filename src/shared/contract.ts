@@ -1294,7 +1294,8 @@ export interface MessageRequest {
  * this row's nutrition, so the server stores it as an estimate and drops its catalog `ref`, snapshot
  * and portion. It is never stored on the meal or returned in meal items; the absence of `ref` is
  * what a client reads afterwards.
- * Send it again when nutrition is typed on a row that already detached.
+ * Send it again when nutrition is typed on a row that already detached. All four core nutrient
+ * fields ride with it — the unchanged ones echoed — so an override never blanks part of the row.
  */
 export type EditMealItem = MealItem & { nutrition_override?: true };
 
@@ -1319,7 +1320,8 @@ export interface EditMealRequest {
   /**
    * The resulting ingredient list. On a catalog-backed row the four nutrient figures are normally
    * the server's catalog echo and stay catalog-exact when grams move. When the user types one,
-   * the client marks that row `nutrition_override: true` (calodex_app#3680). The row then detaches:
+   * the client marks that row `nutrition_override: true` (calodex_app#3680) and sends all four
+   * core nutrient fields, the unchanged ones echoed. The row then detaches:
    * `ref`, the read-only `food` snapshot and any catalog `portion` are dropped and the typed figures
    * are stored as an estimate. When typed calories replace the calories the row would scale to, the
    * stale density is dropped too, so a later grams edit scales proportionally from the typed figure.
@@ -1458,7 +1460,7 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
       if (item.ref !== undefined && (typeof item.ref !== "string" || item.ref.length > MAX_ITEM_NAME)) return false;
       if (item.food !== undefined && !isFoodSnapshot(item.food)) return false;
       if (item.nutrition_override !== undefined && item.nutrition_override !== true) return false;
-      if (item.nutrition_override === true && !["kcal", "protein_g", "carbs_g", "fat_g"].some((k) => item[k] !== undefined)) return false;
+      if (item.nutrition_override === true && !["kcal", "protein_g", "carbs_g", "fat_g"].every((k) => item[k] !== undefined)) return false;
       if (item.typed !== undefined && item.typed !== true) return false;
       // A measurement is a pair: the catalog portion and how many of it. Grams stay the truth;
       // this pair only says how those grams are shown, so both halves or neither may be sent.
