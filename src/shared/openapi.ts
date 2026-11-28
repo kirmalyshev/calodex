@@ -295,6 +295,7 @@ export const UNDOCUMENTED: Partial<Record<keyof typeof ROUTES, string>> = {
   authAppleAndroidReturn: "Apple's form POST, answered with a redirect into the app.",
   authAppleAndroidApp: "An Android App Link's landing path, answered with a tap-through page.",
   assetlinks: "Android's domain-verification document, not an API endpoint.",
+  adminPromoStats: "An operator admin endpoint, not part of the public client API.",
 };
 
 /** Every refusal kind at its status, for the endpoints that can refuse. */
