@@ -677,7 +677,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       const edited = (it: MealItem): MealItem => {
         if (portions.length === 0) return scaledItem(it, g!);
         const raw = countField === null ? Number.NaN : Number.parseFloat(countField.value.replace(",", "."));
-        const count = Number.isFinite(raw) && raw >= 0 ? raw : null;
+        const count = Number.isFinite(raw) && raw > 0 ? raw : null;
         return measuredItem(it, portionIndex, count, g!);
       };
       applyItems(g === null ? [...meal.items]
