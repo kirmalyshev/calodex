@@ -7216,8 +7216,8 @@ if (PG_URL) {
         "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
         // ieat-app#2788: the same admin read as the arm funnel above it, counted per place.
         "onboardingExperimentPlaces", "onboardingFunnel",
-        // ieat-app#3693: promo stats are the admin's cross-account aggregate; rows carry counts and
-        // timestamps only, never the accounts they were counted from.
+        // ieat-app#3693: promo stats are the admin's cross-account cohort read. Its rows are
+        // internal account keys for the engine; the API answer erases them into counts.
         "promoStats",
         "promptRevisions", "pruneAbandonedAccounts", "pruneExpiredPendings", "pruneExpiredTokens",
         "pruneHealthDaysBefore", "pushAudience", "pushOpenStats",
