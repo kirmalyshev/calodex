@@ -16,7 +16,7 @@ function flat(node: unknown, at = "", out: Record<string, string> = {}): Record<
 }
 
 const KEYS: readonly (keyof SavedMealsCopy)[] = [
-  "menuSave", "menuRemove", "saveFailed", "section", "empty",
+  "menuSave", "menuRemove", "saveFailed", "failedLog", "section", "empty",
   "removeFailed", "removeDone", "remove", "logLabel", "loggedLabel", "removeLabel",
 ];
 
