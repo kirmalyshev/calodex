@@ -428,6 +428,9 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const picked = new Set<number>();
     const maxOffset = me?.limits.mealCopyMaxOffset ?? MEAL_COPY_MAX_OFFSET;
     const maxDays = me?.limits.mealCopyMaxDays ?? MEAL_COPY_MAX_DAYS;
+    // The offsets resolve against the server's today when Copy is pressed, so the labels are the
+    // day as it is when this sheet opens — not the day a long-lived meal screen first rendered.
+    const panelToday = localDate(zone);
     const dayFmt = new Intl.DateTimeFormat(LANG_TAG[lang], {
       timeZone: "UTC", weekday: "short", day: "numeric", month: "short",
     });
@@ -442,7 +445,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const days = el("div", "copydays");
     const buttons: HTMLButtonElement[] = [];
     for (let offset = maxOffset; offset >= -maxOffset; offset--) {
-      const date = dateMinus(today, offset);
+      const date = dateMinus(panelToday, offset);
       const b = el("button", `copyday${offset === 0 ? " now" : ""}`) as HTMLButtonElement;
       b.type = "button";
       b.dataset.offset = `${offset}`;
@@ -460,7 +463,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       days.append(b);
     }
 
-    const error = el("p", "nmerr", sm.saveFailed);
+    const error = el("p", "nmerr", mc.copyFailed);
     error.setAttribute("role", "alert");
     error.hidden = true;
     const cancel = el("button", "cta s", mc.cancelCta) as HTMLButtonElement;
@@ -487,8 +490,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
         if (scrim.isConnected) closeOverlay();
         // A copy onto the day behind the sheet is only visible after the server is re-read.
         void draw().catch(() => {});
-      } catch {
+      } catch (err) {
         if (!scrim.isConnected) return;
+        if (err instanceof ApiError && err.status === 409 && err.body?.error === "target-gone") {
+          closeOverlay();
+          await draw();
+          return;
+        }
         sending = false;
         error.hidden = false;
         sync();
