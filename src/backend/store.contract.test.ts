@@ -110,6 +110,86 @@ function contract(name: string, make: () => Promise<Store>) {
     let store: Store | null = null;
     const open = async () => (store ??= await make());
 
+    describe("promo codes (S4, kirmalyshev-org/calodex_app#3695)", () => {
+      const code = () => `T${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
+      const spec = { days: null, discountCode: null, percent: null, expiresAt: null, maxRedemptions: null };
+      const account = async (s: Store) => (await s.upsertDeviceUser(device(), "en")).userId;
+
+      it("round-trips a code, answers null for an unknown one, and keeps the redemption count on a replace", async () => {
+        const s = await open();
+        const c = code();
+        expect(await s.promoCode(c)).toBeNull();
+        await s.putPromoCode({ ...spec, code: c, kind: "free", days: 30, maxRedemptions: 5, expiresAt: "2099-01-01T00:00:00.000Z" });
+        expect(await s.promoCode(c)).toEqual({ ...spec, code: c, kind: "free", days: 30, maxRedemptions: 5, expiresAt: "2099-01-01T00:00:00.000Z", redeemed: 0 });
+        expect(await s.redeemPromoFree(await account(s), c, Date.now())).toBe("ok");
+        await s.putPromoCode({ ...spec, code: c, kind: "free", days: 14 });
+        expect(await s.promoCode(c)).toMatchObject({ days: 14, maxRedemptions: null, redeemed: 1 });
+        const d = code();
+        await s.putPromoCode({ ...spec, code: d, kind: "discount", discountCode: "RC_X", percent: 25 });
+        expect(await s.promoCode(d)).toMatchObject({ kind: "discount", discountCode: "RC_X", percent: 25, days: null });
+      });
+
+      it("a free redemption moves bonus_until by its days, once per account across codes", async () => {
+        const s = await open();
+        const [a, b] = [code(), code()];
+        await s.putPromoCode({ ...spec, code: a, kind: "free", days: 10 });
+        await s.putPromoCode({ ...spec, code: b, kind: "free", days: 10 });
+        const u = await account(s);
+        const at = Date.now();
+        expect(await s.redeemPromoFree(u, a, at)).toBe("ok");
+        const until = Date.parse((await s.bonusUntil(u))!);
+        expect(Math.abs(until - (at + 10 * 86_400_000))).toBeLessThan(1000);
+        expect(await s.redeemPromoFree(u, b, at)).toBe("already");
+        expect(await s.redeemPromoFree(u, a, at)).toBe("already");
+        expect(Date.parse((await s.bonusUntil(u))!)).toBe(until);
+      });
+
+      it("stacks onto a week already running, and refuses an ended code and a spent one, writing nothing", async () => {
+        const s = await open();
+        const [open_, old, capped] = [code(), code(), code()];
+        await s.putPromoCode({ ...spec, code: open_, kind: "free", days: 10 });
+        await s.putPromoCode({ ...spec, code: old, kind: "free", days: 10, expiresAt: "2020-01-01T00:00:00.000Z" });
+        await s.putPromoCode({ ...spec, code: capped, kind: "free", days: 10, maxRedemptions: 1 });
+        const referrer = await account(s);
+        const friend = await account(s);
+        expect(await s.redeemReferral(friend, (await s.referralOf(referrer))!.code, 7)).toBe("ok");
+        const week = Date.parse((await s.bonusUntil(friend))!);
+        expect(await s.redeemPromoFree(friend, open_, Date.now())).toBe("ok");
+        expect(Math.abs(Date.parse((await s.bonusUntil(friend))!) - (week + 10 * 86_400_000))).toBeLessThan(1000);
+
+        const u = await account(s);
+        expect(await s.redeemPromoFree(u, old, Date.now())).toBe("expired");
+        expect(await s.bonusUntil(u)).toBeNull();
+        expect(await s.redeemPromoFree(await account(s), capped, Date.now())).toBe("ok");
+        expect(await s.redeemPromoFree(u, capped, Date.now())).toBe("exhausted");
+        expect(await s.bonusUntil(u)).toBeNull();
+        // The refusal left the account free to redeem another code.
+        expect(await s.redeemPromoFree(u, open_, Date.now())).toBe("ok");
+      });
+
+      it("a merge carries the redemption to the survivor, so a second code is still refused", async () => {
+        const s = await open();
+        const [a, b] = [code(), code()];
+        await s.putPromoCode({ ...spec, code: a, kind: "free", days: 10, maxRedemptions: 1 });
+        await s.putPromoCode({ ...spec, code: b, kind: "free", days: 10 });
+        const [anon, real] = [await account(s), await account(s)];
+        expect(await s.redeemPromoFree(anon, a, Date.now())).toBe("ok");
+        expect(typeof (await s.mergeUsers(anon, real))).toBe("number");
+        expect((await s.promoCode(a))!.redeemed).toBe(1);
+        expect(await s.redeemPromoFree(real, b, Date.now())).toBe("already");
+      });
+
+      it("two accounts racing for the last slot apply exactly one", async () => {
+        const s = await open();
+        const c = code();
+        await s.putPromoCode({ ...spec, code: c, kind: "free", days: 10, maxRedemptions: 1 });
+        const [x, y] = [await account(s), await account(s)];
+        const out = await Promise.all([s.redeemPromoFree(x, c, Date.now()), s.redeemPromoFree(y, c, Date.now())]);
+        expect(out.slice().sort()).toEqual(["exhausted", "ok"]);
+        expect((await s.promoCode(c))!.redeemed).toBe(1);
+      });
+    });
+
     describe("account lifecycle (ieat-app#2696)", () => {
       const anonAndReal = async (s: Store) => ({
         anon: (await s.upsertDeviceUser(device(), "en")).userId,
@@ -7216,6 +7296,9 @@ if (PG_URL) {
         "moveIdentity", "offProductByBarcode", "onboardingAssignments", "onboardingExperimentFunnel",
         // ieat-app#2788: the same admin read as the arm funnel above it, counted per place.
         "onboardingExperimentPlaces", "onboardingFunnel",
+        // S4 (#3695): campaign codes belong to no account, and a free redemption also writes the
+        // redeeming account's bonus_until in the same statement, like redeemReferral.
+        "promoCode",
         // ieat-app#3693: promo stats are the admin's cross-account cohort read. Its rows are
         // internal account keys for the engine; the API answer erases them into counts.
         "promoStats",
@@ -7225,7 +7308,7 @@ if (PG_URL) {
         // and scoping to a user that may not exist yet is not a concept the table has (#569).
         "putEmailCode",
         "putFoodRefs", "putNotificationCopy",
-        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "recordRevenueCatEvent", "redeemReferral", "referralOf", "referralStats",
+        "putOffProducts", "putOnboardingContent", "putOnboardingExperiment", "putPromoCode", "putPrompt", "putPushTemplate", "putPushToken", "putScreenTemplate", "putTemplateAsset", "recentSends", "recordReferralOpen", "recordReferralRefusal", "recordRevenueCatEvent", "redeemPromoFree", "redeemReferral", "referralOf", "referralStats",
         // #615: rebuilds the food index over `food_ref`, a table belonging to nobody.
         "refreshFoodIndex",
         "releaseJobs", "restoreEmailCode", "revokeReferralWeek",

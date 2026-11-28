@@ -1,5 +1,5 @@
 import { billedAround, fill, payCopyFor, paywallPercent, trialBillLine, welcomePlateAlt, WELCOME_PLATES, zeroLike } from "@eait/shared";
-import type { ExitOffer, Lang, WebPaywall } from "@eait/shared";
+import type { ExitOffer, Lang, PayCopy, WebPaywall } from "@eait/shared";
 import { pageCopyFor } from "../copy.ts";
 import { IMG_URL_DIR } from "./board.ts";
 import { escape, shell } from "./shell.ts";
@@ -24,6 +24,10 @@ export interface OfferView {
   privacyHref: string | null;
   /** The terms document — the operator's `TERMS_URL`, or null where none is published. */
   termsHref: string | null;
+  /** A discount code the server honours (S4, #3695), carried through the steps as `code`; null when none. */
+  code?: string | null;
+  /** The held code's percent off: the band draws it and the plans promise no trial. */
+  codePercent?: number | null;
   /** Where × goes: the next step, or after the last one the flow's own next place. */
   closeHref: string;
   /** The host's zone, for the day billing starts. */
@@ -36,10 +40,9 @@ export function offer(v: OfferView): string {
   const PAGE_COPY = pageCopyFor(v.lang);
   const pay = payCopyFor(v.lang);
   const w = v.paywall;
-  const legal: string[] = [];
-  if (v.termsHref !== null) legal.push(`<a href="${escape(v.termsHref)}">${escape(pay.termsLink)}</a>`);
-  if (v.privacyHref !== null) legal.push(`<a href="${escape(v.privacyHref)}">${escape(pay.privacyLink)}</a>`);
-  const fine = legal.length === 0 ? "" : `<p class="fine">${legal.join(" · ")}</p>`;
+  const code = v.code ?? null;
+  const withCode = (href: string): string => (code === null ? href : `${href}${href.includes("?") ? "&" : "?"}code=${encodeURIComponent(code)}`);
+  const fine = offerFoot(v, pay);
   const x = `<a class="x" href="${escape(v.closeHref)}" aria-label="${escape(PAGE_COPY.offerClose)}">×</a>`;
   const cta = (href: string, words: string): string =>
     `<a class="button primary" href="${escape(href)}">${escape(words)}</a>`;
@@ -63,7 +66,7 @@ ${li(fill(pay.tryDay, { day: String(Math.max(1, days - 1)) }), pay.tryRemind)}
 ${li(fill(pay.tryDay, { day: String(days) }), trialBillLine(pay, v.lang, v.timezone, v.now, days, renewal), "bill")}
 </ol>
 <p class="nopay">${escape(pay.noPaymentDue)}</p>
-${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}
+${cta(withCode(`${v.checkoutUrl}?plan=yearly`), zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero }))}
 <p class="note">${escape(pay.renewsPlain)}</p>`);
   }
 
@@ -79,9 +82,10 @@ ${cta(`${v.checkoutUrl}?plan=yearly`, zero === null ? pay.continueCta : fill(pay
     // The New Year promotion (ieat-app#3606, pay-cal-a-newyear) swaps values only: no trial, its
     // band, the regular yearly price struck before its own, its footer, and yearly buys plan=newyear.
     const ny = o === null && w.yearly !== null ? w.promoYearly : null;
-    const days = o === null && w.yearly !== null && ny === null ? w.trialDays : 0;
+    const days = o === null && w.yearly !== null && ny === null && code === null ? w.trialDays : 0;
     const band = o !== null ? fill(pay.offerOff, { percent: paywallPercent(o.percentOff, v.lang) })
       : ny !== null ? fill(pay.promoBand, { percent: paywallPercent(ny.percent, v.lang) })
+      : code !== null && v.codePercent != null ? fill(pay.offerOff, { percent: paywallPercent(v.codePercent, v.lang) })
       : days > 0 ? fill(pay.trialBadge, { days: String(days) }) : null;
     const row = (value: "yearly" | "monthly" | "newyear" | "exit", name: string, billed: string | null, perMonth: string,
         trial: string | null, checked: boolean): string => `<label class="plan2">
@@ -114,7 +118,7 @@ ${trial === null ? "" : `<div class="band">${escape(trial)}</div>`}
 <p class="note t-m">${escape(pay.renewsPlain)}</p>`;
     return shell(PAGE_COPY.titleOffer, `
 <form class="offer" action="${escape(v.checkoutUrl)}" method="get">
-<img class="heroimg" src="${IMG_URL_DIR}/frenchtoast.webp" alt="${escape(welcomePlateAlt(WELCOME_PLATES["french-toast"], v.lang))}">
+${code === null ? "" : `<input type="hidden" name="code" value="${escape(code)}">\n`}<img class="heroimg" src="${IMG_URL_DIR}/frenchtoast.webp" alt="${escape(welcomePlateAlt(WELCOME_PLATES["french-toast"], v.lang))}">
 ${x}
 <h1 class="t-y">${escape(fill(days > 0 ? pay.plansTrialTitle : pay.plansUnlockTitle, { days: String(days) }))}</h1>
 <h1 class="t-m">${escape(fill(pay.plansUnlockTitle, {}))}</h1>
@@ -127,4 +131,22 @@ ${fine}
 </form>
 `, v.lang);
   }
+}
+
+/**
+ * The offer's foot — board you-subscription / pay-cal-a, web line (S4, #3695): `Redeem code` then
+ * `Terms · Privacy`, two groups that never break at a separator, and no Restore (a web purchase
+ * lands by webhook, `frontend/screens/pay.ts`). A line too wide for a phone stacks the groups and
+ * drops the separator (`long`); the measure is the text, so it is the same on every surface.
+ */
+export function offerFoot(v: Pick<OfferView, "termsHref" | "privacyHref">, pay: Pick<PayCopy, "redeemLink" | "termsLink" | "privacyLink">): string {
+  const link = (href: string, words: string): string => `<a href="${escape(href)}">${escape(words)}</a>`;
+  const legal = [
+    ...(v.termsHref === null ? [] : [[v.termsHref, pay.termsLink] as const]),
+    ...(v.privacyHref === null ? [] : [[v.privacyHref, pay.privacyLink] as const]),
+  ];
+  const groups = [`<span class="g">${link("/start/redeem", pay.redeemLink)}</span>`];
+  if (legal.length > 0) groups.push(`<span class="g">${legal.map(([h, w]) => link(h, w)).join(" · ")}</span>`);
+  const width = [pay.redeemLink, ...legal.map(([, w]) => w)].join(" · ").length;
+  return `<p class="fine${width > 36 ? " long" : ""}">${groups.join(' <span class="sep">·</span> ')}</p>`;
 }

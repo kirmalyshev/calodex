@@ -449,6 +449,11 @@ msgstr "Taj kod nije točan. Provjeri najnoviju poruku e-pošte od {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Taj kôd nije valjan."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Odgovor nije stigao. Pokušaj ponovno."
 
@@ -549,6 +554,16 @@ msgstr "Ovaj račun još nije prijavljen — prijavi se na webu uz Apple ili Goo
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Ovaj kôd je istekao."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Ovaj kôd je istekao."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Ovo je novi {app_name}. Tvoji obroci i fotografije čuvaju se na tvom {app_name} računu: prijavi se na webu i na svom planu pritisni Poveži Telegram."
 
@@ -611,6 +626,11 @@ msgstr "Koja je lakša zamjena za večeru?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Koji je jednostavan način da danas pojedeš više?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Već si iskoristio kôd."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

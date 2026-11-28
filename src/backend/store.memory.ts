@@ -25,7 +25,7 @@ import { type ChatMessage,
   type StoredEntitlement, type Store, type StoreOptions, type StoredPhoto, type LlmCall, type ReferralRefusal, type ReferralStats,
   type RecognitionWrite, type AdminRecognition, type AdminRecognitionListRow,
   type AdminOnboardingAccount, type AdminOnboardingEvent, NO_EVENT_CONTEXT, type NullableEventContext,
-  type Acquisition, type RevenueCatEventRow, type OnboardingServed, type OnboardingServedRecord,
+  type Acquisition, type PromoCode, type RevenueCatEventRow, type OnboardingServed, type OnboardingServedRecord,
 } from "./store.ts";
 
 /** A stored funnel event: what the client sent, plus who and when we received it. */
@@ -257,6 +257,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     return !!e && !(e.trial === true && e.lifetimeProductId === null);
   };
   const bonusUntil = new Map<string, string>(); // userId -> ISO
+  /** `promo_codes` by code, and `promo_redemptions` (userId -> code): the account is the key, one free code per account. */
+  const promoCodes = new Map<string, Omit<PromoCode, "redeemed">>();
+  const promoRedemptions = new Map<string, string>();
   /** `referral_grants`, keyed on the friend as its primary key is. */
   /** `bucket`: where the days went — `bonus_until` (a dated week) or `referral_banked_days`. */
   type Grant = {
@@ -547,6 +550,7 @@ export function memoryStore(opts: StoreOptions = {}): Store {
     bankedDays.delete(userId);
     for (const [t, owner] of referralRefunds) if (owner === userId) referralRefunds.delete(t);
     bonusUntil.delete(userId);
+    promoRedemptions.delete(userId);
     for (const [friend, referrer] of referredBy) if (referrer === userId) referredBy.delete(friend);
     for (const [friend, g] of referralGrants) if (friend === userId || g.referrerId === userId) referralGrants.delete(friend);
     for (let i = referralShares.length - 1; i >= 0; i--) if (referralShares[i]!.referrerId === userId) referralShares.splice(i, 1);
@@ -1244,6 +1248,9 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       if (fromBanked !== undefined) bankedDays.set(intoUserId, (bankedDays.get(intoUserId) ?? 0) + fromBanked);
       const fromBonus = bonusUntil.get(fromUserId);
       if (fromBonus !== undefined) bonusUntil.set(intoUserId, newest(bonusUntil.get(intoUserId), fromBonus));
+      const fromPromo = promoRedemptions.get(fromUserId);
+      if (fromPromo !== undefined && !promoRedemptions.has(intoUserId)) promoRedemptions.set(intoUserId, fromPromo);
+      promoRedemptions.delete(fromUserId);
       const fromGrant = referralGrants.get(fromUserId);
       if (fromGrant && !referralGrants.has(intoUserId)) referralGrants.set(intoUserId, fromGrant);
       referralGrants.delete(fromUserId);
@@ -1333,6 +1340,26 @@ export function memoryStore(opts: StoreOptions = {}): Store {
       referredBy.set(userId, owner);
       referredAt.set(userId, now());
       bonusUntil.set(userId, extend(days, bonusUntil.get(userId)));
+      return "ok";
+    },
+
+    async promoCode(code) {
+      const c = promoCodes.get(code);
+      return c === undefined ? null : { ...c, redeemed: [...promoRedemptions.values()].filter((r) => r === code).length };
+    },
+
+    async putPromoCode(c) {
+      promoCodes.set(c.code, c);
+    },
+
+    async redeemPromoFree(userId, code, nowMs) {
+      const c = promoCodes.get(code);
+      if (c === undefined || c.kind !== "free" || !users.has(userId)) return "already";
+      if (c.expiresAt !== null && Date.parse(c.expiresAt) <= nowMs) return "expired";
+      if (promoRedemptions.has(userId)) return "already";
+      if (c.maxRedemptions !== null && [...promoRedemptions.values()].filter((r) => r === code).length >= c.maxRedemptions) return "exhausted";
+      promoRedemptions.set(userId, code);
+      bonusUntil.set(userId, extend(c.days ?? 0, bonusUntil.get(userId)));
       return "ok";
     },
 

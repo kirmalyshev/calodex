@@ -449,6 +449,11 @@ msgstr "Koodi ei ole oikein. Tarkista uusin {app_name}-sähköposti."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Koodi ei kelpaa."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Siihen ei tullut vastausta. Yritä uudelleen."
 
@@ -549,6 +554,16 @@ msgstr "Tälle tilille ei ole vielä kirjauduttu – kirjaudu verkossa Applella 
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Tämä koodi on vanhentunut."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Tämä koodi on vanhentunut."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Tämä on uusi {app_name}. Ateriasi ja kuvasi säilytetään {app_name}-tililläsi: kirjaudu verkossa ja paina suunnitelmassasi Yhdistä Telegram."
 
@@ -611,6 +626,11 @@ msgstr "Miten saisin päivällisestä kevyemmän?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Mikä on helppo tapa syödä enemmän tänään?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Olet jo käyttänyt koodin."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

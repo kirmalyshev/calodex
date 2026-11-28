@@ -449,6 +449,11 @@ msgstr "Tento kód nie je správny. Pozri najnovší e-mail od {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Tento kód nie je platný."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Odpoveď neprišla. Skús to znova."
 
@@ -549,6 +554,16 @@ msgstr "Do tohto účtu sa ešte nikto neprihlásil — prihlás sa cez Apple al
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Platnosť tohto kódu skončila."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Platnosť tohto kódu skončila."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Toto je nový {app_name}. Tvoje jedlá a fotky sú uložené v tvojom účte {app_name}: prihlás sa na webe a na stránke plánu stlač Pripojiť Telegram."
 
@@ -611,6 +626,11 @@ msgstr "Aká je ľahšia alternatíva na večeru?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Aký je jednoduchý spôsob, ako dnes zjesť viac?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Kód ste už použili."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

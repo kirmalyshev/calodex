@@ -23,6 +23,7 @@ export * from "./page/email.ts";
 export * from "./page/question.ts";
 export * from "./page/moment.ts";
 export * from "./page/offer.ts";
+export * from "./page/redeem.ts";
 export * from "./page/stopped.ts";
 export * from "./page/chat.ts";
 export * from "./page/plan.ts";

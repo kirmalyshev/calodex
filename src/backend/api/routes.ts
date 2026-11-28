@@ -26,7 +26,7 @@ import {
   type PairCodeResponse, type PendingMealsResponse,
   AVERAGE_WEEKS_BACK, type AverageResponse, DIARY_RANGE_MAX_DAYS, isAcceptableWeightKg, isWeightRange, WEIGHT_RANGES, type DaysResponse, type WeightEditRequest, type WeightsResponse, type MilestonesResponse, type MilestonesSeenRequest,
   MAX_FOOD_QUERY, FOOD_LOG_MAX_GRAMS, normalizeBarcode, type FoodSearchResponse, type ProductResponse,
-  type ReferralRedeemRequest, type ReferralSharedRequest,
+  type PromoRedeemRequest, type ReferralRedeemRequest, type ReferralSharedRequest,
 } from "@eait/shared";
 import { APP_HEADER, CHANNEL_HEADER, acceptLang, narrowLang, knownApp, parseChannel } from "@eait/shared";
 import { appLinkLanding, html } from "../web/page.ts";
@@ -43,7 +43,7 @@ import {
   changeWeighIn, recordHealthDays, recordOnboardingEvents, signInWithProvider, week, weights, milestones, markSeen, type EngineDeps,
   attachPhotos, attributeInstall, recordPushOpen, recordPushDelivered, pushConsent, setPushConsent,
   reanalyzeMeal, redateMeal, focusMeal, logSavedMeal, saveMealFromLog, followPhotoJob, listJobs, photoJob, queuePhoto, queueMealUpdate, removePhotoJob,
-  foodSearch, productByBarcode, redeemReferral, shareReferral,
+  foodSearch, productByBarcode, redeemPromo, redeemReferral, shareReferral,
 } from "../engine/index.ts";
 import { analyticsRequestOf } from "../engine/analytics.ts";
 import { adminRoutes } from "./admin.ts";
@@ -1429,6 +1429,14 @@ export function createRouter(
         const body = await req.json().catch(() => null) as Partial<ReferralRedeemRequest> | null;
         const out = await redeemReferral(deps, userId, body?.code);
         return "kind" in out ? refusal(out) : json(out);
+      }
+      // A campaign code (S4, #3695) is guessed against the whole table like a referral code, so it shares that allowance.
+      if (req.method === "POST" && pathname === ROUTES.promoRedeem) {
+        const wait = limit(req, peer, "referral", deps.config.authRateLimitPerHour, HOUR);
+        if (wait !== null) return tooManyRequests(wait, { error: RATE_LIMITED });
+        const body = await req.json().catch(() => null) as Partial<PromoRedeemRequest> | null;
+        const out = await redeemPromo(deps, userId, body?.code);
+        return out.kind.startsWith("promo-") ? refusal(out) : json(out);
       }
       if (req.method === "POST" && pathname === ROUTES.referralShared) {
         const wait = limit(req, peer, "referral-shared", deps.config.linesRateLimitPerHour, HOUR);

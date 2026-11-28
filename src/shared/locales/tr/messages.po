@@ -449,6 +449,11 @@ msgstr "Bu kod doğru değil. {app_name}'ten gelen en yeni e-postaya bak."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Bu kod geçerli değil."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Yanıt gelmedi. Tekrar dene."
 
@@ -549,6 +554,16 @@ msgstr "Bu hesaba henüz giriş yapılmadı — web'de Apple veya Google ile gir
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Bu kodun süresi doldu."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Bu kodun süresi doldu."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Bu yeni {app_name}. Öğünlerin ve fotoğrafların {app_name} hesabında saklanıyor: web'de giriş yap ve planında Telegram'ı Bağla'ya bas."
 
@@ -611,6 +626,11 @@ msgstr "Akşam yemeği için daha hafif bir alternatif ne?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Bugün daha fazla yemenin kolay bir yolu ne?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Zaten bir kod kullandın."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -123,6 +123,11 @@ const COPY = (i18n: I18n): TelegramCopy => ({
     "referral-own": i18n._("tg.refusal.referral-own", undefined, { message: "That's your own invite link. A friend's link goes here." }),
     "referral-already": i18n._("tg.refusal.referral-already", undefined, { message: "This account already joined with a friend's link." }),
     "referral-paid": i18n._("tg.refusal.referral-paid", brandValues(), { message: "Invite links are for new members, and this account has already bought {app_name}." }),
+    // Campaign codes (S4, #3695) — the same: the bot never redeems one, the list is shared.
+    "promo-unknown": i18n._("tg.refusal.promo-unknown", undefined, { message: "That code isn't valid." }),
+    "promo-expired": i18n._("tg.refusal.promo-expired", undefined, { message: "This code has ended." }),
+    "promo-exhausted": i18n._("tg.refusal.promo-exhausted", undefined, { message: "This code has been used up." }),
+    "promo-already": i18n._("tg.refusal.promo-already", undefined, { message: "You've already used a code." }),
   },
 });
 

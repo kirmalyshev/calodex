@@ -27,6 +27,13 @@ body:has(.pay) .wtop { display: none; }
 .pay .pcol > .t12, .pay .pcol > .t13 { text-align: center; }
 .pay .paylinks { display: flex; justify-content: center; align-items: center; min-height: 32px; }
 .pay .paylinks a { color: inherit; text-decoration: underline; }
+.pay .paylinks { flex-wrap: wrap; gap: 0 .4em; }
+.pay .paylinks .g { white-space: nowrap; }
+.pay .foot { display: flex; flex-direction: column; align-items: center; }
+.pay .redeem { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; width: 100%; }
+.pay .redeem[hidden] { display: none; }
+.pay .redeem input { flex: 1 1 140px; min-width: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+.pay .redeem p { flex-basis: 100%; text-align: center; margin: 0; }
 /* A's plan rows (Cal AI 04, ieat-app#3442): Yearly over Monthly — the trial band on top, the check,
    the name (with its saving tag) and the billed price under it, the per-month figure on the right. */
 .pay .pwp2 { display: flex; flex-direction: column; gap: 10px; }

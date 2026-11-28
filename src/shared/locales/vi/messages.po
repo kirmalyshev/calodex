@@ -455,6 +455,11 @@ msgstr "Mã chưa đúng. Kiểm tra email mới nhất từ {app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Mã này không hợp lệ."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "Chưa nhận được kết quả. Thử lại nhé."
 
@@ -555,6 +560,16 @@ msgstr "Tài khoản này chưa đăng nhập — đăng nhập bằng Apple ho�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Mã này đã hết hạn."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Mã này đã hết hạn."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Đây là {app_name} mới. Bữa ăn và ảnh của bạn được lưu trong tài khoản {app_name}: đăng nhập trên web rồi bấm Kết nối Telegram ở trang kế hoạch."
 
@@ -617,6 +632,11 @@ msgstr "Đổi món gì nhẹ hơn cho bữa tối?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Cách dễ dàng để ăn nhiều hơn hôm nay là gì?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Bạn đã dùng một mã rồi."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

@@ -4337,6 +4337,89 @@
         ]
       }
     },
+    "/v1/promo/redeem": {
+      "post": {
+        "operationId": "post_promoRedeem",
+        "summary": "Redeem a campaign code. A free code grants its days through `bonus_until`, once per account; a discount code answers its percent and is applied at web checkout.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromoRedeemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoRedeemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Target gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/v1/referral/shared": {
       "post": {
         "operationId": "post_referralShared",
@@ -11060,6 +11143,61 @@
         ],
         "additionalProperties": false,
         "description": "Profile plus everything derived from it, so the app never recomputes targets locally."
+      },
+      "PromoRedeemRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false,
+        "description": "`POST /v1/promo/redeem`. `code` is what the person typed; the server trims and upper-cases it."
+      },
+      "PromoRedeemResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "free",
+              "discount"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "description": "The normalised code — what `/start/checkout?code=` takes for a `discount`."
+          },
+          "percent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Percent off, for a `discount`; null for a `free` code."
+          },
+          "discountCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "For a `discount`: the RevenueCat Web Billing discount code, which the web app appends to its checkout link as `?discount_code=` (the server-rendered `/start` flow resolves `code` itself)."
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ProfileResponse"
+          }
+        },
+        "required": [
+          "kind",
+          "code",
+          "percent",
+          "discountCode",
+          "profile"
+        ],
+        "additionalProperties": false,
+        "description": "The answer to a redeemed code: `free` already live in `profile`; `discount` is applied at checkout as `?code=`."
       },
       "PromoYearly": {
         "type": "object",

@@ -21,7 +21,7 @@
 import {
   ageFrom, type OnboardingPlace,
   AMBIGUOUS_AGE, BARRIERS, COUNTED_BEFORE, DIETS, MEDICAL_TAGS, SITUATIONS, STREAK_GOALS, UNDER_AGE_CARD, UNDER_AGE_LINES, askLines,
-  countryOptions, fill,
+  countryOptions, fill, paywallPercent, redeemCopyFor,
   chatCopyFor as CHAT,
   askPlaceholder, checkDirection, checkNumber, defaultUnits, dietOf, disabledScreens, ftInToCm,
   heightToCm, isAnswered, promptsFor,
@@ -50,6 +50,7 @@ import {
   type EngineDeps,
 } from "../engine/index.ts";
 import { analyticsRequestOf, track } from "../engine/analytics.ts";
+import { checkoutDiscount, normalizePromoCode, redeemPromo } from "../engine/promo-code.ts";
 import { clickParamsOf, isConsentChoice, sendWebVisit, type ConsentChoice } from "../engine/appsflyer-web.ts";
 import { observedAddress } from "../api/ratelimit.ts";
 import { blankProfile, type Store } from "../store.ts";
@@ -59,7 +60,7 @@ import {
   // `pageCopyFor(lang)` — so importing it buys nothing and costs a silent English render the
   // day somebody writes `PAGE_COPY.foo` outside one of those scopes. Unimported, that is a
   // compile error instead.
-  chat, country, emailAddress, emailCode, frontDoor, html, interstitial, offer, pageCopyFor, plan, question,
+  chat, country, emailAddress, emailCode, frontDoor, html, interstitial, offer, pageCopyFor, plan, question, redeem,
   referralStep, signUp, stopped,
   FONT_FILES, FONT_URL_DIR, IMG_FILES, IMG_URL_DIR,
   type PageCopy,
@@ -2051,7 +2052,52 @@ async function routeStart(
       : plan === "newyear" ? (promo === null ? "" : config.promoNewYear?.webCheckoutUrl ?? "")
       : "";
     if (target === "") return notFound();
-    return seeOther(target.replaceAll("{userId}", encodeURIComponent(userId)));
+    const link = target.replaceAll("{userId}", encodeURIComponent(userId));
+    // A live discount code (S4, #3695) becomes RevenueCat's own `discount_code`; anything else is the plain link.
+    // Asking is guessing, so the code is read only inside the sign-in allowance (over it: the plain link).
+    const asked = url.searchParams.get("code");
+    const wait = asked === null ? null : ctx.limitAuth();
+    // Over the allowance the code is refused, never silently dropped: a page said "10% off" and a plain link would charge full price.
+    if (wait !== null) return tooManyAttempts(wait, profile.lang);
+    const discount = asked === null ? null : await checkoutDiscount(ctx.deps, asked);
+    if (discount === null) return seeOther(link);
+    const out = new URL(link);
+    out.searchParams.set("discount_code", discount.discountCode);
+    return seeOther(out.toString());
+  }
+
+  // ── Redeem code (S4, kirmalyshev-org/calodex_app#3695) ─────────────────────────────────────
+  //
+  // The offer's `Redeem code` link. A FREE code grants its days through the engine (`bonus_until`,
+  // once per account) and the account goes where × on the last offer step goes; a DISCOUNT code
+  // grants nothing and returns to the plans carrying the code, which the checkout turns into
+  // RevenueCat's `discount_code`. A code is guessed against the whole table, so a POST takes the
+  // sign-in allowance per address, like the friend's link.
+  if (pathname === `${START_PREFIX}/redeem`) {
+    if (profile.onboarded_at === null) return seeOther(`${START_PREFIX}/q`);
+    const lang = profile.lang;
+    const words = redeemCopyFor(lang);
+    const page = (value: string, notice: { ok: boolean; text: string } | null, continueHref: string | null = null) => html(redeem({
+      value, notice, continueHref, action: `${START_PREFIX}/redeem`, closeHref: `${START_PREFIX}/offer`, lang,
+    }));
+    if (req.method === "GET") return page("", null);
+    if (req.method === "POST") {
+      const wait = ctx.limitAuth();
+      if (wait !== null) return tooManyAttempts(wait, lang);
+      const form = await req.formData().catch(() => null);
+      const typed = form?.get("code");
+      const value = typeof typed === "string" ? typed.slice(0, 40) : "";
+      const out = await redeemPromo(ctx.deps, userId, value);
+      if (out.kind === "free") {
+        return seeOther(await isAnonymous(ctx.deps, userId) ? `${START_PREFIX}/signup` : await resumeTo(ctx, userId, profile));
+      }
+      if (out.kind === "discount") {
+        return page(value, { ok: true, text: fill(words.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) }) }, `${START_PREFIX}/offer?code=${encodeURIComponent(out.code)}`);
+      }
+      return page(value, { ok: false, text: out.kind === "promo-already" ? words.redeemAlready
+        : out.kind === "promo-unknown" ? words.redeemUnknown : words.redeemEnded });
+    }
+    return notFound();
   }
 
   if (req.method === "GET" && pathname === `${START_PREFIX}/offer`) {
@@ -2075,17 +2121,26 @@ async function routeStart(
     // C only while an offer is armed. A step that is not sold is A, never a page the checkout 404s.
     // While the promotion is drawn and `skipTrialStep` (ieat-app#3606), no B: × on its A closes.
     const skipTry = promo?.skipTrialStep === true && wp.promoYearly !== null;
-    const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 && !skipTry ? ["try" as const] : []),
+    // A discount code rides the steps only while the server still honours it (S4, #3695). It overrides a
+    // trial at checkout, so with one held the plans draw the percent and no trial, and B is skipped.
+    const asCode = normalizePromoCode(url.searchParams.get("code"));
+    const wait = asCode === null ? null : ctx.limitAuth();
+    if (wait !== null) return tooManyAttempts(wait, profile.lang);
+    const held = asCode === null ? null : await checkoutDiscount(ctx.deps, asCode);
+    const code = held === null ? null : asCode;
+    const hasCode = code !== null;
+    const chain: OfferStep[] = ["plans", ...(wp.yearly !== null && wp.trialDays > 0 && !skipTry && !hasCode ? ["try" as const] : []),
       ...(wp.exitOffer !== null ? ["offer" as const] : [])];
     const asked = url.searchParams.get("step");
     const step = chain.find((s) => s === asked) ?? "plans";
     const next = chain[chain.indexOf(step) + 1];
+    const withCode = (href: string): string => (code === null ? href : `${href}${href.includes("?") ? "&" : "?"}code=${code}`);
     return html(offer({
-      step, paywall: wp,
+      step, paywall: wp, code, codePercent: held?.percent ?? null,
       checkoutUrl: `${START_PREFIX}/checkout`,
       privacyHref: legalUrls(config).privacy || null,
       termsHref: legalUrls(config).terms || null,
-      closeHref: next === undefined ? closeTo : `${START_PREFIX}/offer?step=${next}`,
+      closeHref: next === undefined ? closeTo : withCode(`${START_PREFIX}/offer?step=${next}`),
       timezone: config.timezone,
       now: new Date(),
       lang: profile.lang,

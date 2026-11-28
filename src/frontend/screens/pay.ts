@@ -15,12 +15,13 @@ import { fill } from "../../shared/lang.ts";
 import { WELCOME_PLATES } from "../../shared/onboarding.ts";
 import { paywallPercent, zeroLike, type ExitOffer, type PaywallPlan, type WebPaywall } from "../../shared/paywall.ts";
 import { payCopyFor } from "../../shared/app/pay-copy.ts";
+import { redeemCopyFor } from "../../shared/app/redeem-copy.ts";
 import { billedAround, trialBillLine, welcomePlateAlt } from "../../shared/app/pay-lines.ts";
 import { ico, payPlans as payPlansMarkup } from "../../shared/ui/kit.ts";
 import { COPY, el, lang, type Frame } from "../shell.ts";
 import { kitEl } from "../kit.ts";
 import * as analytics from "../analytics.ts";
-import { postPaywallStep } from "../api.ts";
+import { ApiError, postPaywallStep, redeemPromoCode } from "../api.ts";
 
 /** The pay sheet's hero — the welcome plate the phone's sheet draws on A (ieat-app#3465), served
     by the backend off shared/assets/img on this origin. The alt names the plate's own figures
@@ -134,8 +135,21 @@ export function payScreen(frame: Frame): HTMLElement {
   analytics.capture("paywall_opened", { blocked, source: blocked ? "blocked" : "settings" });
   const sold = () => {
     const sel = plans?.picked() ?? null;
-    return { plan: sel?.value ?? "monthly", trial_shown: sel?.value === "yearly" && (w?.trialDays ?? 0) > 0, storefront: null };
+    return { plan: sel?.value ?? "monthly", trial_shown: sel?.value === "yearly" && (w?.trialDays ?? 0) > 0 && discount === null, storefront: null };
   };
+
+  // A redeemed DISCOUNT code (S4, #3695): RevenueCat's own code, appended to every checkout link below.
+  let discount: { code: string; rc: string | null } | null = null;
+  // A link through `/start/checkout` (the promotion and the no-config fallback) names OUR code and the server maps it;
+  // a direct RevenueCat link takes RevenueCat's own `discount_code`.
+  const buy = (href: string): string => {
+    if (discount === null) return href;
+    const via = href.startsWith("/start/checkout");
+    const value = via ? discount.code : discount.rc;
+    return value === null ? href : `${href}${href.includes("?") ? "&" : "?"}${via ? "code" : "discount_code"}=${encodeURIComponent(value)}`;
+  };
+  let relink = (): void => { /* set where the plans exist */ };
+  let toPlans = (): void => { /* set once A is built */ };
 
   // The × over the photo, top-left like the phone's CloseButton.
   const close = el("a", "ib x") as HTMLAnchorElement;
@@ -164,6 +178,7 @@ export function payScreen(frame: Frame): HTMLElement {
     col.append(kitEl(payPlansMarkup(
       [{ value: "monthly", name: pay.planMonthly, checked: true }], COPY.offerPlans)));
     go.href = "/start/checkout";
+    relink = () => { go.href = buy("/start/checkout"); };
     // No paywall config means nothing about a trial is known — Continue, not a promise of one.
     title.textContent = fill(pay.plansUnlockTitle, {});
     go.textContent = pay.continueCta;
@@ -172,11 +187,12 @@ export function payScreen(frame: Frame): HTMLElement {
     const update = (): void => {
       const sel = plans.picked();
       if (sel === null) return;
-      go.href = sel.plan.checkoutUrl;
+      go.href = buy(sel.plan.checkoutUrl);
       // The trial is on yearly only: the trial words ride while yearly is picked; a plan that
       // sells no trial takes the store's own Subscribe (the phone's subscribePhone). The New Year
       // promotion is the board's Continue, no trial, and its own footer (pay-cal-a-newyear).
-      const days = sel.value === "yearly" ? w.trialDays : 0;
+      // A discount overrides the trial at checkout (RevenueCat), so the sheet stops promising one.
+      const days = sel.value === "yearly" && discount === null ? w.trialDays : 0;
       const ny = sel.value === "newyear" && w.yearly !== null ? w.promoYearly : null;
       title.textContent = days > 0 ? fill(pay.plansTrialTitle, { days: String(days) }) : fill(pay.plansUnlockTitle, {});
       go.textContent = days > 0 || ny !== null ? pay.continueCta : pay.subscribePhone;
@@ -186,33 +202,118 @@ export function payScreen(frame: Frame): HTMLElement {
         ? fill(pay.promoFooter, { price: ny.price, regular: w.yearly.price }) : pay.renewsPlain;
     };
     plans.group.addEventListener("change", update);
+    relink = update;
     plans.group.addEventListener("change", () => analytics.capture("paywall_plan_selected", sold()));
     update();
     col.append(plans.group);
   }
   col.append(go, note);
   go.addEventListener("click", () => analytics.capture("paywall_purchase_started", sold()));
-  // The footer's legal links — only the ones the operator publishes (`WebPaywall` carries "" for
-  // a link it does not have). No Restore: the web has no store to restore from; a purchase lands
-  // here by webhook. Both states of the column draw it, so it is built on demand.
-  const legal = (): HTMLElement | null => {
+  // The footer — board you-subscription / pay-cal-a, web line (S4, #3695): `Redeem code` then
+  // `Terms · Privacy`, two groups; no Restore (the web has no store to restore from; a purchase lands
+  // here by webhook). Terms and Privacy only where the operator publishes them (`WebPaywall` carries
+  // "" for a link it does not have). Both states of the column draw it, so it is built on demand.
+  const redeemWords = redeemCopyFor(lang);
+  // The field's state outlives the sheet's steps: a code redeemed on B returns to A, whose own foot shows it.
+  let lastStatus = "";
+  let redeemOpen = false;
+  let restoreBand: { row: HTMLElement; text: string | null } | null = null;
+  const legal = (): HTMLElement => {
+    const foot = el("p", "t12 m paylinks");
+    const form = el("form", "redeem") as HTMLFormElement;
+    form.hidden = !redeemOpen;
+    const field = el("input", "") as HTMLInputElement;
+    field.type = "text";
+    field.name = "code";
+    field.autocomplete = "off";
+    field.autocapitalize = "characters";
+    field.maxLength = 40;
+    field.required = true;
+    field.setAttribute("aria-label", redeemWords.redeemField);
+    field.placeholder = redeemWords.redeemField;
+    const submit = el("button", "cta s", redeemWords.redeemSubmit) as HTMLButtonElement;
+    submit.type = "submit";
+    const status = el("p", "t12 m", lastStatus);
+    status.setAttribute("role", "status");
+    form.append(field, submit, status);
+    form.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      submit.disabled = true;
+      status.textContent = lastStatus = "";
+      void redeemPromoCode(field.value).then((out) => {
+        if (out.kind === "free") {
+          // Entitled through `bonus_until`: Home reads the profile afresh and the sheet is gone.
+          location.hash = "#/";
+          location.reload();
+          return;
+        }
+        discount = { code: out.code, rc: out.discountCode };
+        status.textContent = lastStatus = fill(redeemWords.redeemDiscount, { percent: paywallPercent(out.percent ?? 0, lang) });
+        // B and C promise a trial or a fixed offer a discount overrides: back to A, which draws the code's values.
+        toPlans();
+        // The sheet is C's values without the trial: the percent in Yearly's band, never "N days free".
+        const yearly = col.querySelector<HTMLElement>(".pwp2 .plan2:has(input[value=yearly])");
+        if (yearly !== null) {
+          const had = yearly.querySelector<HTMLElement>(".band");
+          if (restoreBand === null) restoreBand = { row: yearly, text: had?.textContent ?? null };
+          const band = had ?? yearly.insertBefore(el("div", "band"), yearly.firstChild!.nextSibling);
+          band.textContent = fill(pay.offerOff, { percent: paywallPercent(out.percent ?? 0, lang) });
+        }
+        relink();
+      }).catch((err: unknown) => {
+        // A refusal drops a discount held from an earlier code, so the links never carry what the status disowns.
+        discount = null;
+        if (restoreBand !== null) {
+          const band = restoreBand.row.querySelector<HTMLElement>(".band");
+          if (restoreBand.text === null) band?.remove(); else if (band !== null) band.textContent = restoreBand.text;
+          restoreBand = null;
+        }
+        relink();
+        if (!(err instanceof ApiError)) return;
+        const kind = err.body?.error;
+        status.textContent = lastStatus = kind === "promo-already" ? redeemWords.redeemAlready
+          : kind === "promo-unknown" ? redeemWords.redeemUnknown
+          : kind === "promo-expired" || kind === "promo-exhausted" ? redeemWords.redeemEnded : "";
+      }).finally(() => { submit.disabled = false; });
+    });
+    const redeemLink = el("a", "", pay.redeemLink) as HTMLAnchorElement;
+    redeemLink.href = "#/pay";
+    redeemLink.setAttribute("role", "button");
+    redeemLink.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      redeemOpen = form.hidden !== false;
+      form.hidden = !form.hidden;
+      if (!form.hidden) field.focus();
+    });
+    const groups: HTMLElement[] = [];
+    const g1 = el("span", "g");
+    g1.append(redeemLink);
+    groups.push(g1);
     const links: [words: string, href: string][] = [];
     if ((w?.termsUrl ?? "") !== "") links.push([pay.termsLink, w!.termsUrl]);
     if ((w?.privacyUrl ?? "") !== "") links.push([pay.privacyLink, w!.privacyUrl]);
-    if (links.length === 0) return null;
-    const foot = el("p", "t12 m paylinks");
-    links.forEach(([words, href], i) => {
-      if (i > 0) foot.append(" · ");
-      const a = el("a", "", words) as HTMLAnchorElement;
-      a.href = href;
-      a.target = "_blank";
-      a.rel = "noopener";
-      foot.append(a);
+    if (links.length > 0) {
+      const g2 = el("span", "g");
+      links.forEach(([words, href], i) => {
+        if (i > 0) g2.append(" · ");
+        const a = el("a", "", words) as HTMLAnchorElement;
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener";
+        g2.append(a);
+      });
+      groups.push(g2);
+    }
+    groups.forEach((g, i) => {
+      if (i > 0) foot.append(el("span", "sep", " · "));
+      foot.append(g);
     });
-    return foot;
+    const wrap = el("div", "foot");
+    wrap.append(foot, form);
+    return wrap;
   };
-  const plansFoot = legal();
-  if (plansFoot !== null) col.append(plansFoot);
+  col.append(legal());
+  const plansNodes = [...col.children];
 
   // A step swap replaces the whole column: focus would fall to <body>, so the screen reader would
   // stay silent on the new screen. The new h1 takes it (tabindex -1: focusable, not a tab stop).
@@ -245,7 +346,7 @@ export function payScreen(frame: Frame): HTMLElement {
     }
     const zero = zeroLike(yearly.price);
     const cta = el("a", "cta p", zero === null ? pay.continueCta : fill(pay.tryCta, { price: zero })) as HTMLAnchorElement;
-    cta.href = yearly.checkoutUrl;
+    cta.href = buy(yearly.checkoutUrl);
     cta.addEventListener("click", () => analytics.capture("paywall_purchase_started", { plan: "yearly", trial_shown: true, storefront: null }));
     const nopay = el("p", "nopay");
     nopay.append(kitEl(ico("check")), pay.noPaymentDue);
@@ -253,8 +354,7 @@ export function payScreen(frame: Frame): HTMLElement {
     // the space the title and the CTA block leave — the phone's `s.tryMid`.
     const parts: HTMLElement[] = [el("h1", "d d28", fill(pay.tryTitle, {})), steps,
       nopay, cta, el("p", "t12 m", pay.renewsPlain)];
-    const foot = legal();
-    if (foot !== null) parts.push(foot);
+    parts.push(legal());
     col.replaceChildren(...parts);
     focusTitle();
   };
@@ -272,7 +372,7 @@ export function payScreen(frame: Frame): HTMLElement {
       const sel = pair.picked();
       if (sel === null) return;
       const isOffer = sel.plan === offer;
-      claim.href = sel.plan.checkoutUrl;
+      claim.href = buy(sel.plan.checkoutUrl);
       claim.textContent = isOffer ? pay.offerClaim : pay.subscribePhone;
       line.textContent = isOffer ? fill(pay.renewNoteYearly, { price: offer.price }) : pay.renewsPlain;
     };
@@ -283,8 +383,7 @@ export function payScreen(frame: Frame): HTMLElement {
       else analytics.capture("paywall_purchase_started", { plan: "monthly", trial_shown: false, storefront: null });
     });
     const parts: HTMLElement[] = [el("h1", "d d22", fill(pay.plansUnlockTitle, {})), pair.group, claim, line];
-    const foot = legal();
-    if (foot !== null) parts.push(foot);
+    parts.push(legal());
     col.replaceChildren(...parts);
     focusTitle();
   };
@@ -293,11 +392,19 @@ export function payScreen(frame: Frame): HTMLElement {
   // trial is sold; C once per account (`offered` this mount, the stored flag across visits) and only
   // while the server sent an offer, which it does only while the admin's web switch is on.
   let step: "plans" | "try" | "offer" = "plans";
+  toPlans = (): void => {
+    if (step === "plans") return;
+    step = "plans";
+    if (!hero.isConnected) sheet.insertBefore(hero, pane);
+    plansNodes[plansNodes.length - 1] = legal();
+    col.replaceChildren(...plansNodes);
+    focusTitle();
+  };
   close.addEventListener("click", (ev) => {
     const offer = w?.exitOffer ?? null;
     const uid = frame.me?.profile.user_id;
     // While the promotion is drawn and `skipTrialStep` (ieat-app#3606), no B: × on its A closes.
-    const skipTry = frame.me?.promo?.skipTrialStep === true && w?.promoYearly != null;
+    const skipTry = discount !== null || (frame.me?.promo?.skipTrialStep === true && w?.promoYearly != null);
     if (step === "plans" && w?.yearly != null && w.trialDays > 0 && !skipTry) {
       ev.preventDefault();
       step = "try";

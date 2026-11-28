@@ -3,7 +3,7 @@ import { grantEveryAccount } from "../dev/grant.ts";
 import {
   CHANNEL_HEADER, HEALTH_RETENTION_DAYS, IDEMPOTENCY_KEY, MAX_CLIENT_ID, MAX_USER_LINE, MAX_HEALTH_DAYS_PER_BATCH, ROUTES, emptyHealthDay,
   dateMinus, localDate, NDJSON, OUTCOME_UNKNOWN, type ChatHistoryResponse, type PairCodeResponse, type PhotoEvent, type MealLogged,
-  type DaysResponse, type MealRecord, type ProfileResponse, type MealProposed, type PendingMealsResponse,
+  type DaysResponse, type MealRecord, type ProfileResponse, type PromoRedeemResponse, type MealProposed, type PendingMealsResponse,
   type ChatEntry, type WeightsResponse,
 } from "@eait/shared";
 import { DEFAULT_MEAL_REMINDERS } from "@eait/shared";
@@ -2512,6 +2512,37 @@ describe("POST /v1/meals/update/queue", () => {
     // The bound kinds still refuse the field's absence.
     expect((await post(ROUTES.mealUpdateQueue, { kind: "ingredients", edit: { kcal: 500 }, clientId: crypto.randomUUID() }, token)).status).toBe(400);
     expect((await post(ROUTES.mealUpdateQueue, { kind: "reread", clientId: crypto.randomUUID() }, token)).status).toBe(400);
+  });
+});
+
+describe("promo codes (S4, #3695)", () => {
+  const code = { days: null, discountCode: null, percent: null, expiresAt: null, maxRedemptions: null };
+
+  it("a free code is redeemed once per account, the profile shows it live, and each refusal has its status", async () => {
+    await store.putPromoCode({ ...code, code: "BLOG30", kind: "free", days: 30 });
+    await store.putPromoCode({ ...code, code: "OLD", kind: "free", days: 30, expiresAt: "2020-01-01T00:00:00.000Z" });
+    const token = await session();
+    expect((await post(ROUTES.promoRedeem, { code: "nope" }, token)).status).toBe(422);
+    expect((await post(ROUTES.promoRedeem, {}, token)).status).toBe(422);
+    const expired = await post(ROUTES.promoRedeem, { code: "old" }, token);
+    expect([expired.status, await expired.json()]).toEqual([410, { error: "promo-expired" }]);
+    const res = await post(ROUTES.promoRedeem, { code: " blog30 " }, token);
+    expect(res.status).toBe(200);
+    const body = await res.json() as PromoRedeemResponse;
+    expect([body.kind, body.code, body.percent, body.profile.entitlement.active]).toEqual(["free", "BLOG30", null, true]);
+    const again = await post(ROUTES.promoRedeem, { code: "BLOG30" }, token);
+    expect([again.status, await again.json()]).toEqual([409, { error: "promo-already" }]);
+  });
+
+  it("a discount code answers its percent and leaves the account unentitled", async () => {
+    await store.putPromoCode({ ...code, code: "TEN", kind: "discount", discountCode: "RC_TEN", percent: 10 });
+    const token = await session();
+    const body = await (await post(ROUTES.promoRedeem, { code: "ten" }, token)).json() as PromoRedeemResponse;
+    expect([body.kind, body.percent, body.profile.entitlement.active]).toEqual(["discount", 10, false]);
+  });
+
+  it("needs a bearer", async () => {
+    expect((await post(ROUTES.promoRedeem, { code: "TEN" })).status).toBe(401);
   });
 });
 

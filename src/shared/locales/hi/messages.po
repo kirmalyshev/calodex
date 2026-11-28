@@ -449,6 +449,11 @@ msgstr "वह कोड सही नहीं है। {app_name} का स�
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "यह कोड मान्य नहीं है।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "उसका जवाब नहीं आया। फिर से कोशिश करें।"
 
@@ -549,6 +554,16 @@ msgstr "इस अकाउंट में अभी साइन इन नह
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "इस कोड की अवधि समाप्त हो गई है।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "इस कोड की अवधि समाप्त हो गई है।"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "यह नया {app_name} है। आपके भोजन और फ़ोटो आपके {app_name} अकाउंट में रखे हैं: वेब पर साइन इन करें और अपने प्लान पर Telegram कनेक्ट करें दबाएँ।"
 
@@ -611,6 +626,11 @@ msgstr "रात के खाने के लिए हल्का विक
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "आज ज़्यादा खाने का आसान तरीका क्या है?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "आप पहले ही एक कोड इस्तेमाल कर चुके हैं।"
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts

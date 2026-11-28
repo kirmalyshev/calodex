@@ -449,6 +449,11 @@ msgstr "Aquest codi no és correcte. Mira el correu més recent {d_app_name}."
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-unknown"
+msgstr "Aquest codi no és vàlid."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.refusal.analysis-failed"
 msgstr "No ha arribat cap resposta. Torna-ho a provar."
 
@@ -549,6 +554,16 @@ msgstr "Aquest compte encara no té la sessió iniciada — inicia sessió amb A
 
 #. js-lingui-explicit-id
 #: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-exhausted"
+msgstr "Aquest codi ha caducat."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-expired"
+msgstr "Aquest codi ha caducat."
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
 msgid "tg.stranger"
 msgstr "Aquest és el nou {app_name}. Els teus àpats i fotos es conserven al teu compte {d_app_name}: inicia sessió al web i prem Connecta Telegram al teu pla."
 
@@ -611,6 +626,11 @@ msgstr "Quina alternativa més lleugera hi ha per sopar?"
 #: src/shared/chat-copy.ts
 msgid "thread.coachStarters.eatmore"
 msgstr "Quina és una manera fàcil de menjar més avui?"
+
+#. js-lingui-explicit-id
+#: src/backend/telegram/copy.ts
+msgid "tg.refusal.promo-already"
+msgstr "Ja has fet servir un codi."
 
 #. js-lingui-explicit-id
 #: src/shared/chat-copy.ts
