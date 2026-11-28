@@ -1,26 +1,30 @@
-// The web "+ Log" chooser's Search (#909): a full-width sheet over the chat — the field, Cancel
-// (Done once something was logged), "Logging to today · N kcal left", the catalog's rows with a
-// round +, and the "Ask in Chat" row that hands her words to the composer. One tap logs the
-// source's named serving, else 100 g (`foodLogChoice`); the sheet stays open. Nothing is
-// estimated here: the row's kcal is the same arithmetic the server writes, and the server reads
-// the numbers off the catalog row — this sends an id and a weight.
+// The web "+ Log" chooser's Search (#909) and saved meals (#907, calodex_app#3685): a full-width
+// sheet (560 px dialog on desktop) — the field, Cancel (Done once something was logged), "Logging
+// to today · N kcal left", her saved meals while the field is empty, and the catalog's rows with
+// a round + plus "Ask in Chat" and "Enter numbers" once she types. One tap logs a catalog food's
+// serving or re-logs a saved meal (`POST /v1/saved-meals/:id/log { dayOffset }`); the sheet stays
+// open. Nothing is estimated here: the server reads the numbers and computes verdicts after the write.
 
-import type { FoodSearchResponse } from "@eait/shared/contract";
+import type { FoodSearchResponse, SavedMeal } from "@eait/shared/contract";
 import type { FoodRef } from "@eait/shared";
 import { numbersCopyFor } from "../../shared/app/numbers-copy.ts";
 import { foodLogChoice, foodSearchCopyFor, isLoggableFood } from "../../shared/app/food-search-copy.ts";
-import { wholeNumbers } from "../../shared/lang.ts";
+import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
+import { UNIT_KCAL, kcalNumbers, wholeNumbers } from "../../shared/lang.ts";
 import type { Lang } from "../../shared/types.ts";
-import { ApiError, api } from "../api.ts";
+import { ApiError, api, apiBlob, deleteSavedMeal, listSavedMeals, logSavedMeal } from "../api.ts";
 import { fillCopy as fill } from "../copy.ts";
 import { ico } from "../../shared/ui/kit.ts";
-import { kitEl } from "../kit.ts";
+import { blobSrc, gramMacsEl, kitEl } from "../kit.ts";
+import { clampRowSwipe, shouldOpenRowSwipe } from "../row-swipe.ts";
 import { COPY, el } from "../shell.ts";
 
 export interface FoodSearchOpts {
   lang: Lang;
-  /** kcal left today, or null when the day could not be read — the line is then left out. */
+  /** kcal left on the target day, or null when the day could not be read — the line is left out. */
   left: number | null;
+  /** Days before today to re-log a saved meal onto (0 = today). Sent as an offset, never a date. */
+  dayOffset?: number;
   /** Her words go to the composer, as a typed meal does today. */
   onTell: (q: string) => void;
   /** "Enter numbers": the typed-numbers sheet, the query as its name. */
@@ -31,13 +35,20 @@ export interface FoodSearchOpts {
 }
 
 const DEBOUNCE_MS = 250;
+const SAVED_REMOVE_WIDTH = 88;
 
 export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
   const c = foodSearchCopyFor(o.lang);
   const nc = numbersCopyFor(o.lang);
+  const sc = savedMealsCopyFor(o.lang);
   const num = wholeNumbers(o.lang);
+  const kn = kcalNumbers(o.lang);
+  const dayOffset = o.dayOffset ?? 0;
   let left = o.left;
   let seq = 0;
+  let savedMeals: SavedMeal[] | null = null;
+  const savedLogged = new Set<string>();
+  const photoCache = new Map<string, Promise<string | null>>();
 
   const sheet = el("div", "fs");
   sheet.setAttribute("role", "dialog");
@@ -61,6 +72,177 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     line.textContent = left === null ? "" : fill(c.logging, { day: c.today, left: num(Math.max(0, left)) });
   };
   drawLine();
+
+  // Swipe-left to remove a saved meal on narrow/touch (`log-pw1-search-remove`): one row open at a time.
+  let openSwipe: HTMLElement | null = null;
+  const closeOpenSwipe = (): void => {
+    if (openSwipe === null) return;
+    openSwipe.classList.remove("open");
+    const fg = openSwipe.querySelector<HTMLElement>(":scope > .fs-saved");
+    if (fg !== null) { fg.style.transition = ""; fg.style.transform = ""; }
+    openSwipe = null;
+  };
+  sheet.addEventListener("pointerdown", (e) => {
+    if (openSwipe !== null && e.target instanceof Node && !openSwipe.contains(e.target)) {
+      closeOpenSwipe();
+    }
+  }, true);
+
+  const photoFor = (mealId: string): Promise<string | null> => {
+    let hit = photoCache.get(mealId);
+    if (hit === undefined) {
+      hit = apiBlob(`/meals/${encodeURIComponent(mealId)}/photos/0`).then(blobSrc).catch(() => null);
+      photoCache.set(mealId, hit);
+    }
+    return hit;
+  };
+
+  const removeSaved = (m: SavedMeal): void => {
+    if (savedMeals === null) return;
+    const idx = savedMeals.findIndex((x) => x.id === m.id);
+    if (idx < 0) return;
+    closeOpenSwipe();
+    savedMeals = savedMeals.filter((x) => x.id !== m.id);
+    if (field.value.trim() === "") renderSaved();
+    void deleteSavedMeal(m.id).catch(() => {
+      if (savedMeals === null || savedMeals.some((x) => x.id === m.id)) return;
+      const next = [...savedMeals];
+      next.splice(Math.min(idx, next.length), 0, m);
+      savedMeals = next;
+      if (field.value.trim() === "") renderSaved();
+    });
+  };
+
+  const savedRow = (m: SavedMeal): HTMLElement => {
+    const box = el("div", "fs-srow");
+    const row = el("div", "fs-row fs-saved");
+
+    // The accent-tinted chat disc is the base; the source meal's first photo covers it while it
+    // still exists (a 404 keeps the disc, matching iOS SavedMealsList).
+    const tile = el("span", "fs-tile");
+    tile.append(kitEl(ico("chat")));
+    void photoFor(m.source_meal_id).then((src) => {
+      if (src === null || !tile.isConnected) return;
+      const img = el("img", "ph") as HTMLImageElement;
+      img.src = src;
+      img.alt = "";
+      tile.append(img);
+    });
+
+    const txt = el("div", "fs-txt");
+    const fail = el("div", "fs-fail");
+    fail.hidden = true;
+    txt.append(
+      el("b", "", m.name),
+      el("div", "fs-sub", `${kn(m.kcal)} ${UNIT_KCAL[o.lang]}`),
+      gramMacsEl({ protein: m.protein_g, carbs: m.carbs_g, fat: m.fat_g }),
+      fail,
+    );
+
+    const add = el("button", "fs-add") as HTMLButtonElement;
+    add.type = "button";
+    const face = (done: boolean): void => {
+      add.classList.toggle("fs-done", done);
+      add.setAttribute("aria-label", fill(done ? sc.loggedLabel : sc.logLabel, { name: m.name }));
+      add.replaceChildren(el("i", `ico i-${done ? "check" : "plus"}`));
+    };
+    face(savedLogged.has(m.id));
+    let busy = false;
+    add.addEventListener("click", async () => {
+      if (busy || add.classList.contains("fs-done")) return;
+      busy = true; fail.hidden = true;
+      try {
+        const res = await logSavedMeal(m.id, dayOffset);
+        if (res.kind === "target-gone") {
+          savedMeals = savedMeals?.filter((x) => x.id !== m.id) ?? savedMeals;
+          if (field.value.trim() === "") renderSaved();
+          return;
+        }
+        savedLogged.add(m.id);
+        face(true);
+        close.textContent = c.done;
+        if (left !== null) { left -= res.analysis.kcal; drawLine(); }
+        o.onLogged();
+      } catch (e) {
+        const code = e instanceof ApiError ? e.body?.error : undefined;
+        fail.textContent = code !== undefined && Object.hasOwn(COPY.refusals, code) ? COPY.refusals[code]! : c.logFailedWeb;
+        fail.hidden = false;
+      } finally { busy = false; }
+    });
+
+    row.append(tile, txt, add);
+
+    // Swipe-left red Remove tray on narrow/touch; hover/focus trash button on fine-pointer desktop.
+    const rem = el("button", "fs-srem") as HTMLButtonElement;
+    rem.type = "button";
+    rem.title = sc.remove;
+    rem.setAttribute("aria-label", fill(sc.removeLabel, { name: m.name }));
+    rem.append(kitEl(ico("trash")), el("span", "fs-srem-lbl", sc.remove));
+    rem.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeSaved(m);
+    });
+
+    box.append(row, rem);
+
+    let drag: { x: number; y: number; id: number; wasOpen: boolean; moved: boolean } | null = null;
+    const isSwipeMode = (): boolean => getComputedStyle(rem).position === "absolute";
+    box.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || !isSwipeMode()) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest(".fs-srem, .fs-add") !== null) return;
+      drag = { x: e.clientX, y: e.clientY, id: e.pointerId, wasOpen: box.classList.contains("open"), moved: false };
+    });
+    box.addEventListener("pointermove", (e) => {
+      if (drag === null || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      if (!drag.moved && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.5 && (dx < 0 || drag.wasOpen)) {
+        drag.moved = true;
+        if (openSwipe !== null && openSwipe !== box) closeOpenSwipe();
+        try { box.setPointerCapture(e.pointerId); } catch { /* pointer gone */ }
+      }
+      if (drag.moved) {
+        row.style.transition = "none";
+        row.style.transform = `translateX(${clampRowSwipe(drag.wasOpen ? -SAVED_REMOVE_WIDTH : 0, dx, SAVED_REMOVE_WIDTH)}px)`;
+      }
+    });
+    const finishDrag = (dx: number, commit: boolean): void => {
+      if (drag === null) return;
+      const { wasOpen, moved } = drag;
+      drag = null;
+      row.style.transition = "";
+      row.style.transform = "";
+      if (!moved) return;
+      const open = commit && shouldOpenRowSwipe(wasOpen, dx);
+      if (open) {
+        if (openSwipe !== null && openSwipe !== box) closeOpenSwipe();
+        box.classList.add("open");
+        openSwipe = box;
+      } else {
+        box.classList.remove("open");
+        if (openSwipe === box) openSwipe = null;
+      }
+    };
+    box.addEventListener("pointerup", (e) => {
+      if (drag !== null && e.pointerId === drag.id) finishDrag(e.clientX - drag.x, true);
+    });
+    box.addEventListener("pointercancel", (e) => {
+      if (drag !== null && e.pointerId === drag.id) finishDrag(0, false);
+    });
+    return box;
+  };
+
+  const renderSaved = (): void => {
+    closeOpenSwipe();
+    const nodes: HTMLElement[] = [el("div", "lab fs-sec", sc.section)];
+    if (savedMeals !== null) {
+      if (savedMeals.length === 0) nodes.push(el("p", "fs-empty", sc.empty));
+      else nodes.push(...savedMeals.map(savedRow));
+    }
+    body.replaceChildren(...nodes);
+    source.textContent = "";
+  };
 
   const tellRow = (q: string): HTMLElement => {
     const row = el("button", "fs-row fs-tell") as HTMLButtonElement;
@@ -134,7 +316,8 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
 
   const run = async (q: string): Promise<void> => {
     const mine = ++seq;
-    if (q === "") { body.replaceChildren(); source.textContent = ""; return; }
+    if (q === "") { renderSaved(); return; }
+    closeOpenSwipe();
     try {
       const r = await api<FoodSearchResponse>(`/foods?q=${encodeURIComponent(q)}&limit=20`);
       if (mine !== seq) return;
@@ -157,14 +340,21 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     }
   };
 
+  // Load saved meals on open so the empty search screen shows them immediately (#907).
+  renderSaved();
+  void listSavedMeals().then(
+    (meals) => { savedMeals = meals; if (field.value.trim() === "") renderSaved(); },
+    () => { savedMeals = []; if (field.value.trim() === "") renderSaved(); },
+  );
+
   let timer: ReturnType<typeof setTimeout> | undefined;
   field.addEventListener("input", () => {
     clearTimeout(timer);
     hot = -1;
     timer = setTimeout(() => { void run(field.value.trim()); }, DEBOUNCE_MS);
   });
-  // ↑/↓ move a highlight over the rows (the food rows, then "Tell"); Return picks it. With nothing
-  // highlighted Return is the board's "Tell" — her words go to Chat as they are.
+  // ↑/↓ move a highlight over the rows (saved rows, or catalog rows then "Tell"); Return picks it.
+  // With nothing highlighted and text typed, Return is the board's "Tell" — her words go to Chat.
   let hot = -1;
   const rowsNow = (): HTMLElement[] => [...body.querySelectorAll<HTMLElement>(".fs-row")];
   const paintHot = (): void => {
@@ -175,13 +365,21 @@ export function foodSearchSheet(o: FoodSearchOpts): HTMLElement {
     const rows = rowsNow();
     if (e.key === "ArrowDown" && rows.length > 0) { e.preventDefault(); hot = Math.min(hot + 1, rows.length - 1); paintHot(); }
     else if (e.key === "ArrowUp" && rows.length > 0) { e.preventDefault(); hot = Math.max(hot - 1, -1); paintHot(); }
-    else if (e.key === "Enter" && field.value.trim() !== "") {
-      e.preventDefault();
-      const pick = rows[hot];
-      if (pick !== undefined) pick.querySelector<HTMLElement>(".fs-add")?.click() ?? pick.click();
-      else { o.onClose(); o.onTell(field.value.trim()); }
+    else if (e.key === "Enter") {
+      const pick = hot >= 0 ? rows[hot] : undefined;
+      if (pick !== undefined) {
+        e.preventDefault();
+        pick.querySelector<HTMLElement>(".fs-add")?.click() ?? pick.click();
+      } else if (field.value.trim() !== "") {
+        e.preventDefault();
+        o.onClose();
+        o.onTell(field.value.trim());
+      }
     }
-    if (e.key === "Escape") o.onClose();
+    if (e.key === "Escape") {
+      if (openSwipe !== null) closeOpenSwipe();
+      else o.onClose();
+    }
   });
   queueMicrotask(() => field.focus());
   return sheet;

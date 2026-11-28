@@ -19,7 +19,12 @@
 //     dependence invisible the day somebody changes it.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-import type { ErrorResponse, MilestonesResponse, MilestonesSeenRequest, NDJSON, PushConsentRequest, PushConsentResponse, PushOpenRequest, PushTokenRequest } from "@eait/shared/contract";
+import type {
+  ErrorResponse, MilestonesResponse, MilestonesSeenRequest, NDJSON, PushConsentRequest,
+  PushConsentResponse, PushOpenRequest, PushTokenRequest, RedateMealRequest, SaveMealRequest,
+  SaveMealResponse, SavedMeal, SavedMealsResponse,
+} from "@eait/shared/contract";
+import type { MealLogged, TargetGone } from "../shared/results.ts";
 
 let bearer: string | null = null;
 
@@ -235,3 +240,33 @@ export const postPushOpen = (body: PushOpenRequest): Promise<unknown> => api("/p
 export const getMilestones = (): Promise<MilestonesResponse> => api("/milestones");
 export const postMilestonesSeen = (ids: string[]): Promise<MilestonesResponse> =>
   api("/milestones/seen", json("POST", { ids } satisfies MilestonesSeenRequest));
+
+/** Saved meals (#907, calodex_app#3685): list, bookmark, remove, and one-tap re-log. */
+export const listSavedMeals = async (): Promise<SavedMeal[]> =>
+  (await api<SavedMealsResponse>("/saved-meals")).meals;
+
+export const saveMeal = async (mealId: string): Promise<SavedMeal> =>
+  (await api<SaveMealResponse>("/saved-meals", json("POST", { mealId } satisfies SaveMealRequest))).meal;
+
+export const deleteSavedMeal = async (id: string): Promise<void> => {
+  try {
+    await apiSend(`/saved-meals/${encodeURIComponent(id)}`, { method: "DELETE" });
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 409 && e.body?.error === "target-gone") return;
+    throw e;
+  }
+};
+
+export const logSavedMeal = async (id: string, dayOffset: number): Promise<MealLogged | TargetGone> => {
+  try {
+    return await api<MealLogged>(
+      `/saved-meals/${encodeURIComponent(id)}/log`,
+      json("POST", { dayOffset } satisfies RedateMealRequest),
+    );
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 409 && e.body?.error === "target-gone") {
+      return { kind: "target-gone", on: "saved-meal" };
+    }
+    throw e;
+  }
+};
