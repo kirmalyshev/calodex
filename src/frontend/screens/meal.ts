@@ -26,6 +26,7 @@ import { UNIT_KCAL, kcalNumbers, numbers, spellUnit, wholeNumbers } from "../../
 import { mealEditParams, mealEditRequest, mealServings, previewKcal, scaledItem, servingsPreview } from "../../shared/meal-edit.ts";
 import { mealCopyFor } from "../../shared/app/meal-copy.ts";
 import { savedMealsCopyFor } from "../../shared/app/saved-meals-copy.ts";
+import { mealAddCopyFor } from "../../shared/app/meal-add-copy.ts";
 import { ingredientSourceCard } from "../../shared/app/ingredient-source.ts";
 import { updateCopyFor } from "../../shared/app/update-copy.ts";
 import { chatScreenCopyFor } from "../../shared/app/chat-copy.ts";
@@ -37,6 +38,7 @@ import type { MealItem, MealRecord } from "@eait/shared";
 import type { DayResponse, DaysResponse } from "@eait/shared/contract";
 import type { MealRedated } from "../../shared/results.ts";
 import { api, apiBlob, deleteSavedMeal, listSavedMeals, saveMeal } from "../api.ts";
+import { foodSearchSheet } from "./food-search.ts";
 import { fillCopy as fill } from "../copy.ts";
 import {
   enqueueUpdate, inPlace, jobFor, queueJobRow, takeSentGrams, takeSentNote, updateBannerEl,
@@ -63,6 +65,7 @@ addEventListener("hashchange", (e) => {
 
 export async function mealScreen(frame: Frame): Promise<HTMLElement> {
   const mc = mealCopyFor(lang);
+  const ac = mealAddCopyFor(lang);
   const sm = savedMealsCopyFor(lang);
   const cc = chatScreenCopyFor(lang);
   const sc = scoresAppCopy(lang);
@@ -373,6 +376,22 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     dlg.append(title, named, field, example, update);
     scrim.append(dlg);
     return { node: scrim, focus: field };
+  };
+
+  /** Ingredient search in pick mode (#3678): one tap queues the server-side append and closes. */
+  const openAddPicker = (meal: MealRecord): void => {
+    const sheet = foodSearchSheet({
+      lang,
+      left: null,
+      onTell: () => {},
+      onNumbers: () => {},
+      onLogged: () => {},
+      onClose: () => sheet.remove(),
+      onPick: (ref, grams) => {
+        enqueueUpdate(meal, { kind: "ingredients", edit: { add: { ref, grams } } });
+      },
+    });
+    wrap.append(sheet);
   };
 
   /**
@@ -857,6 +876,13 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
       row.addEventListener("click", () => openOverlay(scoreOverlay(meal, day)));
       sheet.append(row);
     }
+    const ingHead = el("div", "inghead");
+    ingHead.append(el("span", "lab", ac.ingredients));
+    const addMore = el("button", "ingadd", ac.addMore) as HTMLButtonElement;
+    addMore.type = "button";
+    addMore.addEventListener("click", () => openAddPicker(meal));
+    ingHead.append(addMore);
+    sheet.append(ingHead);
     meal.items.forEach((item, i) => {
       // Each row opens its own editor (#188): the kit's `ing` markup wrapped in a button —
       // the board's row verbatim, the control around it rather than inside it.

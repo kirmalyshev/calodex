@@ -61,7 +61,7 @@ export const mealCss = `
 .msteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 .msteps .now{color:var(--ink);font-weight:600}.msteps .done{color:var(--muted)}
 .mbar{display:block;height:4px;border-radius:2px;background:var(--accent);transition:width 600ms ease-out}
-.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn,.mdet.updating .svchip{pointer-events:none}
+.mdet.updating .msheet>:not(.mupd):not(.cta){opacity:.45}.mdet.updating .cta,.mdet.updating .ingbtn,.mdet.updating .ingadd,.mdet.updating .svchip{pointer-events:none}
 
 /* The "…" menu — popped under its trigger, the phone menu's items in order, delete last and bad. */
 .mwrap{position:relative}
@@ -128,6 +128,11 @@ export const mealCss = `
 .svtotals{flex-direction:column;align-items:flex-start;gap:4px}
 .svactions{gap:10px}
 .svactions .cta{flex:1}
+
+/* The ingredients header (#3678): section label left, Cal AI's add action right. */
+.inghead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:2px}
+.card button.ingadd{border:0;background:none;padding:6px 0;min-height:0;color:var(--accent);font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.card button.ingadd:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* The ingredient rows open their editor — a button wrapping the kit's .ing row. Inside a .card
    the shell draws every button a pill; the row is the exception — matching that rule's
