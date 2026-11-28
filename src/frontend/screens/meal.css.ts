@@ -138,6 +138,18 @@ export const mealCss = `
 button.ingbtn:hover .ing{background:var(--bg)}
 button.ingbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+/* The measurement chips and the servings count on the ingredient editor (calodex_app#3679) —
+   the "Measurement" label over a wrap of pills, the picked one accented; the count row mirrors
+   the amount row and reuses its pill. */
+.ingmeasure{display:flex;flex-direction:column;gap:8px}
+.ingchips{display:flex;flex-wrap:wrap;gap:8px}
+.card button.ingchip{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:18px;
+  background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.card button.ingchip.on{background:var(--accent-tint);box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--ink)}
+.card button.ingchip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ingserv .amtpill{padding:6px 12px;cursor:text}
+.ingserv[hidden]{display:none}
+
 /* The ingredient editor's rows: the label 600, the amount pill an editable figure. */
 .ming .amlab{font-weight:600}
 .amtpill{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;
