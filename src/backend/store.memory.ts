@@ -1496,6 +1496,41 @@ export function memoryStore(opts: StoreOptions = {}): Store {
         .sort((a, b) => a.eventAt.localeCompare(b.eventAt)).map((e) => ({ ...e }));
     },
 
+    async promoStats(since, environment) {
+      const sinceMs = since.getTime();
+      type CohortRow = { key: string; offerCode: string; userId: string; firstMs: number; lastMs: number };
+      const cohort = new Map<string, CohortRow>();
+      const firstCoded = new Map<string, number>();
+      for (const e of rcEvents.values()) {
+        if (e.environment !== environment || e.offerCode === null || e.userId === null || !users.has(e.userId)) continue;
+        const at = Date.parse(e.eventAt);
+        if (!Number.isFinite(at)) continue;
+        const key = `${e.offerCode}\n${e.userId}`;
+        firstCoded.set(key, Math.min(firstCoded.get(key) ?? at, at));
+        if (at < sinceMs) continue;
+        const row = cohort.get(key) ?? { key, offerCode: e.offerCode, userId: e.userId, firstMs: at, lastMs: at };
+        row.firstMs = Math.min(row.firstMs, at);
+        row.lastMs = Math.max(row.lastMs, at);
+        cohort.set(key, row);
+      }
+
+      return [...cohort.values()]
+        .sort((a, b) => a.offerCode === b.offerCode
+          ? a.userId.localeCompare(b.userId)
+          : a.offerCode.localeCompare(b.offerCode))
+        .map((row) => {
+          const firstAt = firstCoded.get(row.key)!;
+          const paid = [...rcEvents.values()].some((e) =>
+            e.environment === environment && e.userId === row.userId
+            && (e.type === "RENEWAL" || e.type === "INITIAL_PURCHASE")
+            && e.price !== null && e.price > 0 && Date.parse(e.eventAt) >= firstAt);
+          return {
+            offerCode: row.offerCode, userId: row.userId, paid,
+            firstSeenAt: new Date(row.firstMs).toISOString(), lastSeenAt: new Date(row.lastMs).toISOString(),
+          };
+        });
+    },
+
     async acquisitionOf(userId) {
       const a = acquisitions.get(userId);
       return a ? { ...a } : null;
