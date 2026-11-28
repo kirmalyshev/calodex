@@ -675,6 +675,7 @@ export async function mealScreen(frame: Frame): Promise<HTMLElement> {
     const chip = el("button", "svchip") as HTMLButtonElement;
     chip.type = "button";
     chip.setAttribute("aria-label", fill(mc.servingsChipLabel, { n: num(mealServings(meal)) }));
+    chip.disabled = updating;
     chip.append(document.createTextNode(num(mealServings(meal))), kitEl(ico("pencil")));
     chip.addEventListener("click", () => openPanel(servingsPanel(meal)));
     titleRow.append(chip);
