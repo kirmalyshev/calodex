@@ -860,10 +860,20 @@ function reconcileRefs(sent: MealItem[], stored: readonly MealItem[]): MealItem[
     const i: MealItem = was?.typed && raw.grams === was.grams ? { ...rest, typed: true } : rest;
     const s = i.ref === undefined ? undefined : provenance.get(`${i.ref} ${i.name}`);
     if (s?.food === undefined) {
-      const { ref: _ref, food: _food, ...estimate } = i;
+      const { ref: _ref, food: _food, portion: _portion, portion_count: _count, ...estimate } = i;
       return estimate;
     }
-    return recomputeFromSnapshot(i, s.food);
+    const out = recomputeFromSnapshot(i, s.food);
+    // A measurement is catalog data, not a claim: it survives only as one of the portions on the
+    // stored snapshot of the row it names. Anything else would print a unit the catalog never had.
+    if (out.portion !== undefined) {
+      const known = s.food.portions?.some((p) => p.label === out.portion?.label && p.grams === out.portion.grams) === true;
+      if (!known || out.portion_count === undefined || out.portion_count <= 0) {
+        const { portion: _portion, portion_count: _count, ...plain } = out;
+        return plain;
+      }
+    }
+    return out;
   });
 }
 

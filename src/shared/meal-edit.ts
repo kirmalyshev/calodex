@@ -13,6 +13,9 @@
 //     either way, so nothing a client sends can paint over them.
 
 import type { EditMealRequest } from "./contract.ts";
+import { LANG_TAG } from "./lang.ts";
+import type { Lang } from "./types.ts";
+import type { FoodPortion } from "./foods.ts";
 import type { MealAnalysis, MealItem, MealRecord } from "./types.ts";
 
 /** The servings a meal row stands for. A label scan's count comes first while released servers still write only there; then the meal's own count, then one as logged. */
@@ -50,12 +53,44 @@ export function scaledItem(item: MealItem, grams: number): MealItem {
   return {
     ...item,
     grams,
+    ...(item.portion_count !== undefined ? { portion_count: tenth(item.portion_count * f) } : {}),
     kcal: item.kcal_per_100g !== undefined ? whole(item.kcal_per_100g * grams / 100)
       : item.kcal !== undefined ? whole(item.kcal * f) : undefined,
     protein_g: macro(item.protein_g),
     carbs_g: macro(item.carbs_g),
     fat_g: macro(item.fat_g),
   };
+}
+
+/** The grams a named portion count stands for, rounded as every item amount is. Grams remain the truth; the portion is how they are shown. */
+export function portionGrams(portion: FoodPortion, count: number): number {
+  return tenth(portion.grams * count);
+}
+
+/** The catalog portions an item may be measured in — its stored snapshot, only while a catalog ref still grounds it. */
+export function catalogPortions(item: MealItem): FoodPortion[] {
+  return item.ref === undefined ? [] : (item.food?.portions ?? []).filter((p) => p.label.length > 0 && Number.isFinite(p.grams) && p.grams > 0);
+}
+
+/** How many of `portion` an item's grams stand for. A count is an amount input, so it keeps hundredths rather than the weight formatter's tenth. */
+export function portionCountFor(item: Pick<MealItem, "grams">, portion: FoodPortion): number {
+  return Math.round((item.grams / portion.grams) * 100) / 100;
+}
+
+/** The count in the input, localized by `Intl` and precise to hundredths. */
+export function portionCountText(lang: Lang, count: number): string {
+  return new Intl.NumberFormat(LANG_TAG[lang], { maximumFractionDigits: 2 }).format(count);
+}
+
+/** One item measured as `count × portion`: the grams and nutrition are derived, then the measurement is stored beside them. */
+export function itemAtPortion(item: MealItem, portion: FoodPortion, count: number): MealItem {
+  return { ...scaledItem(item, portionGrams(portion, count)), portion, portion_count: count };
+}
+
+/** One item back in plain grams: a stale measurement must never describe an amount it no longer makes. */
+export function itemAtGrams(item: MealItem, grams: number): MealItem {
+  const { portion: _portion, portion_count: _count, ...rest } = scaledItem(item, grams);
+  return rest;
 }
 
 const ITEM_TOTALS = ["kcal", "protein_g", "carbs_g", "fat_g"] as const;
@@ -72,6 +107,8 @@ export function mealEditRequest(
   const same = meal.items.length === items.length && meal.items.every((o, i) => {
     const it = items[i]!;
     return o.name === it.name && o.name_en === it.name_en && o.grams === it.grams &&
+      o.portion?.label === it.portion?.label && o.portion?.grams === it.portion?.grams &&
+      o.portion_count === it.portion_count &&
       ITEM_TOTALS.every((f) => o[f] === it[f]);
   });
   return same ? null : { items };

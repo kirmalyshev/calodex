@@ -6,7 +6,7 @@
 // differs (`Profile` gains the anthropometrics a computed calorie target needs) the difference is
 // commented. See `docs/PORTED_FROM_EAIT.md`.
 
-import type { FoodSnapshot } from "./foods.ts";
+import type { FoodPortion, FoodSnapshot } from "./foods.ts";
 import type { HealthScore } from "./scores.ts";
 
 export type Goal = "lose" | "maintain" | "gain";
@@ -274,6 +274,15 @@ export interface MealItem {
    * weight anybody measured, so no surface may show it. Set by the server only.
    */
   typed?: true | undefined;
+  /**
+   * The catalog measurement the user chose for this item — "large", "tbsp", "slice" — copied
+   * from the row `ref` names. Grams remain the truth: `grams` is `portion.grams × portion_count`,
+   * and this pair is how that amount is shown. Absent on a plain grams entry and on every row
+   * stored before portions existed.
+   */
+  portion?: FoodPortion | undefined;
+  /** How many of `portion` the grams stand for. Meaningless without `portion`, and invalid without it at the boundary. */
+  portion_count?: number | undefined;
   /**
    * A `food_ref` id ("ciqual:20346") — the catalog row the item's numbers were grounded against
    * (#562). Absent = the model's own estimate.

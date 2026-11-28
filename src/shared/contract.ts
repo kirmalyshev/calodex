@@ -1345,13 +1345,23 @@ const ITEM_NUMBERS = ["kcal", "protein_g", "carbs_g", "fat_g", "kcal_per_100g"] 
 // `ref` and `food` are in the list because clients echo the items back: a meal card sends the
 // server-emitted provenance untouched. The server discards a request's `food` on every write and
 // re-derives both from the stored meal (#562), so a sent one only has to be small and shaped.
-const ITEM_KEYS: ReadonlySet<string> = new Set(["name", "grams", "name_en", "role", "ref", "food", ...ITEM_NUMBERS]);
+const ITEM_KEYS: ReadonlySet<string> = new Set(["name", "grams", "name_en", "role", "portion", "portion_count", "ref", "food", ...ITEM_NUMBERS]);
 const PER100_KEYS = ["kcal", "protein_g", "carbs_g", "fat_g"] as const;
 // Exported because the server writes `food` too: `foodSnapshot` (engine/ground.ts) clamps to these
 // same bounds, so a row the catalog ever ships can never make a meal uneditable (#562).
 export const MAX_SNAPSHOT_NAME = 200;
 export const MAX_SNAPSHOT_ATTRIBUTIONS = 8;
 export const MAX_SNAPSHOT_ATTRIBUTION = 500;
+/** Bounds on the named servings a snapshot echoes: catalog data, but still client-supplied JSON at this boundary. */
+export const MAX_SNAPSHOT_PORTIONS = 40;
+export const MAX_PORTION_LABEL = 80;
+const isFoodPortion = (v: unknown): boolean => {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const p = v as Record<string, unknown>;
+  return Object.keys(p).every((k) => k === "label" || k === "grams")
+    && typeof p.label === "string" && p.label.length > 0 && p.label.length <= MAX_PORTION_LABEL
+    && amount(p.grams) && p.grams !== 0;
+};
 /** The shape a client echoes, not the truth: `editMeal` replaces this with the stored row's. */
 const isFoodSnapshot = (v: unknown): boolean => {
   if (typeof v !== "object" || v === null) return false;
@@ -1363,7 +1373,8 @@ const isFoodSnapshot = (v: unknown): boolean => {
     && PER100_KEYS.every((k) => amount((p as Record<string, unknown>)[k]))
     && SNAPSHOT_MICROS.every((k) => (p as Record<string, unknown>)[k] === undefined || amount((p as Record<string, unknown>)[k]))
     && Array.isArray(f.attribution) && f.attribution.length <= MAX_SNAPSHOT_ATTRIBUTIONS
-    && f.attribution.every((a) => typeof a === "string" && a.length <= MAX_SNAPSHOT_ATTRIBUTION);
+    && f.attribution.every((a) => typeof a === "string" && a.length <= MAX_SNAPSHOT_ATTRIBUTION)
+    && (f.portions === undefined || (Array.isArray(f.portions) && f.portions.length <= MAX_SNAPSHOT_PORTIONS && f.portions.every(isFoodPortion)));
 };
 /** An edit's items are bounded like every other client string: their names reach every later prompt that day. */
 export const MAX_MEAL_ITEMS = 50;
@@ -1421,6 +1432,10 @@ export function isEditMealRequest(body: unknown): body is EditMealRequest {
       // Echoed provenance, bounded like every other client string; the server re-derives both.
       if (item.ref !== undefined && (typeof item.ref !== "string" || item.ref.length > MAX_ITEM_NAME)) return false;
       if (item.food !== undefined && !isFoodSnapshot(item.food)) return false;
+      // A measurement is a pair: the catalog portion and how many of it. Grams stay the truth;
+      // this pair only says how those grams are shown, so both halves or neither may be sent.
+      if ((item.portion === undefined) !== (item.portion_count === undefined)) return false;
+      if (item.portion !== undefined && (!isFoodPortion(item.portion) || !amount(item.portion_count) || item.portion_count === 0)) return false;
       for (const k of ITEM_NUMBERS) if (item[k] !== undefined && !amount(item[k])) return false;
     }
   }
